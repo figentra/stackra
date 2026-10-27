@@ -1,5 +1,13 @@
 # AGENTS — @stackra/webhooks
 
+<!--
+Stackra file contract:
+Purpose: the rules an agent follows when it changes @stackra/webhooks.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0224; ADR 0308; ADR 0294; ADR 0448.
+-->
+
 Standard Webhooks signing and verification, the inbound receiver of `WebhookEvent<I>`, and outbound delivery of
 `webhook: true` integration events as a queue job with a delivery log (ADR 0224, ADR 0308 rules 15 to 17). Member at
 `packages/communication/webhooks` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
@@ -39,7 +47,9 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
 - Compare signatures only through `crypto.subtle.verify` (constant time); never compare signature strings.
 - A provider whose signature is an HMAC over the raw body and headers is Integration data: `scheme: "hmac"` with its
   `webhooks.signature` recipe, verified by `verifyHmacWebhook`. Never add a per-provider verifier for such a scheme;
-  add a `SignatureScheme` code only for a scheme a recipe cannot describe.
+  add a `SignatureScheme` code only for a scheme a recipe cannot describe. A recipe this package ships for a provider
+  whose Integration lives elsewhere (`CHATWOOT_WEBHOOK_SIGNATURE`, ADR 0448) is a `src/core/constants/` data constant
+  with a test that signs and verifies a sample through `verifyHmacWebhook`.
 - Secrets are read blind from the `SecretStore` (or the loaded connection) at the moment of signing or verifying and
   kept nowhere: not in a job input, the delivery log, an event, a log line or an error (ADR 0173, ADR 0308 rule 20).
 - A delivery attempt is logged in its own transaction (`WebhookDeliveryService.record`) before the refusal that makes

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/webhooks (`SignatureScheme` for the template, the Standard
  *          Webhooks signer and verifier, one delivery attempt and its body (`attemptWebhook`, `webhookBody`), the data-driven HMAC verifier, the inbound registration and receiver, the `http` sender and the delivery
- *          refusal, the S3 target parser and object key, and the memory entitlement source) until `stackra gen` writes
+ *          refusal, the S3 target parser and object key, the memory entitlement source, and Chatwoot's signature recipe
+ *          (ADR 0448)) until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The routing table, the key import and the Base64 and hex
  *           readers stay internal. The sender port is `./contracts`'; the endpoint and delivery models, the delivery job and its
@@ -10,6 +11,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
+export { CHATWOOT_WEBHOOK_SIGNATURE } from "#core/constants/chatwoot-webhook-signature.constant";
 export { HttpWebhookSenderDriver } from "#core/drivers/http-webhook-sender.driver";
 export { MemoryWebhookEntitlementSourceDriver } from "#core/drivers/memory-webhook-entitlement-source.driver";
 export { SignatureScheme } from "#core/enums/signature-scheme.enum";

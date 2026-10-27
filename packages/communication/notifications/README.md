@@ -1,5 +1,13 @@
 # @stackra/notifications
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: notifications, channels and providers, inbound WhatsApp, templates and testing.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0356; ADR 0448.
+-->
+
 Messages to people (ADR 0086, 0223 as amended by 0294). A notification is a class beside the model it concerns,
 `resources/<model>/<name>.notification.ts`. It extends `Notification({ category })`. `recipients(event)` names who
 hears it, and the type of that parameter is the trigger. An optional `data(event)` reads what every channel renders.
@@ -29,6 +37,9 @@ optional peer, needed by `./node`, `./react` and `./testing` only.
 | `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                             |
 | `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                  |
 | `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)         |
+| `./contracts` | `WhatsAppInbound`, `InboundWhatsApp`, `InboundWhatsAppCartItem` (types)        | reads customer texts, native carts and replies from a webhook          |
+| `.`           | `MemoryWhatsAppInboundDriver`, `MetaWhatsAppInboundDriver`                     | the `memory` and `meta` (Cloud API) drivers of `WhatsAppInbound`       |
+| `.`           | `META_WHATSAPP_WEBHOOK_SIGNATURE`                                              | Meta's `hmac` signature recipe for the Integration's `webhooks`        |
 | `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service        |
 | `./node`      | `MESSAGES_NOTIFIER_TARGET`, `DELIVERY_NOTIFIER_TARGET`                         | the built-in targets config `notifications.target` names               |
 | `./node`      | `NotifierTarget`, `NotifierMessage`, `NotifierAddressMessage` (types)          | what a host's own target is written with                               |
@@ -224,6 +235,35 @@ left this package for the OS integrations service (os-104). Copy them from
 `src/core/functions/sign-aws-v4.function.ts` at commit `8d3f7b2` (`figentra/sta-666-wave12` before the move). They
 import only public names (`@stackra/notifications`' `twiml`, `@stackra/notifications/contracts`,
 `@stackra/integrations`, `@stackra/config`).
+
+## Inbound WhatsApp (ADR 0448)
+
+`WhatsAppInbound.read(body)` turns one verified WhatsApp webhook delivery into `InboundWhatsApp` messages: `text`,
+`cart` (a native cart order: catalogue id, retailer ids, quantities and `MoneyAmount` unit prices) and `reply` (a
+button or list row the business sent, or a template quick reply), each with the provider's message id, the customer's
+E.164 number, the receiving business number's `channelId` and the id of the business message it answers (`replyTo`).
+
+```ts
+if (
+  !(await verifyHmacWebhook(
+    headers,
+    body,
+    META_WHATSAPP_WEBHOOK_SIGNATURE,
+    [appSecret],
+    clock.now(),
+  ))
+)
+  throw InvalidSignatureError.create();
+for (const message of await inbound.read(body)) await whatsappInbox.handle(message); // the host's own handler
+```
+
+- Verify first: the Meta Integration (OS integrations) declares `webhooks: { scheme: "hmac", signature:
+META_WHATSAPP_WEBHOOK_SIGNATURE, ... }`, so `@stackra/webhooks` checks `x-hub-signature-256` before `read` runs.
+- `meta` reads the Cloud API payload; statuses, media, locations and reactions are left out, as is any malformed
+  message or a price its currency cannot hold. It never throws for the body.
+- `memory` (dev and tests): `push(...messages)`, and the next `read` hands them out.
+- The host dedupes by message id, maps `channelId` to its scope and routes carts, orders and replies (Commerce,
+  OS messaging). The Meta subscribe handshake (`hub.challenge`) is the host route's.
 
 ## Templates, quiet hours and escalation
 

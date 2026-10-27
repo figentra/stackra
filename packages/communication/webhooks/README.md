@@ -1,5 +1,13 @@
 # @stackra/webhooks
 
+<!--
+Stackra file contract:
+Purpose: the package's reader guide: signing, verification, the inbound receiver, provider recipes and outbound delivery.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0224; ADR 0308 (rules 15 to 17); ADR 0448.
+-->
+
 Stackra webhooks: Standard Webhooks signing and verification, the inbound receiver that verifies a provider webhook
 against the secret its Integration names and routes it to its `WebhookEvent<I>` class, and outbound delivery of
 `webhook: true` integration events to the endpoints a scope registers (ADR 0224, ADR 0308 rules 15 to 17).
@@ -16,6 +24,8 @@ on `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contra
 | `SignatureScheme`                                                  | `.`           | an Integration's `webhooks.scheme`: `SignatureScheme.StandardWebhooks`                         |
 | `signWebhook`, `WebhookMessage`, `WebhookHeaders`                  | `.`           | the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers of a message             |
 | `verifyWebhook`                                                    | `.`           | whether a received webhook is signed by one of the secrets, within five minutes                |
+| `verifyHmacWebhook`                                                | `.`           | the `hmac` scheme: checks a provider's data recipe (`WebhookSignature`)                        |
+| `CHATWOOT_WEBHOOK_SIGNATURE`                                       | `.`           | Chatwoot's recipe: `sha256=<hex>` of `<x-chatwoot-timestamp>.<body>`, five minutes (ADR 0448)  |
 | `registerWebhookEvents`, `WebhookEventRegistration`                | `.`           | gen's entry routes each `WebhookEvent<I>` class by its Integration and event type              |
 | `WebhookReceiver`, `InboundWebhook`                                | `.`           | verifies, routes and writes one inbound webhook to the outbox; the generated route calls it    |
 | `attemptWebhook`, `webhookBody`                                    | `.`           | one signed delivery attempt (https post or S3 object) and the `{ type, timestamp, data }` body |
@@ -57,6 +67,9 @@ export class InboundMailReceived extends WebhookEvent<ResendIntegration>({ type:
 - A verified event is written to the `EventOutbox` with the `webhook-id` as its id (the inbox deduplicates a
   redelivery) and `connection` in its metadata, which listeners read as `ctx.connection`. An event type with no class
   is acknowledged and dropped, so the provider never retries it.
+- Chatwoot (OS-204, OS-206; ADR 0448): the OS integrations Chatwoot Integration declares
+  `webhooks: { scheme: SignatureScheme.Hmac, secret: "{webhookSecret}", eventType: { path: "event" }, signature:
+CHATWOOT_WEBHOOK_SIGNATURE }`; the recipe is data, so Chatwoot has no verifier of its own.
 - Gen's entry calls `registerWebhookEvents([{ event, integration, connection }])`; the scheme must be a
   `SignatureScheme` code.
 

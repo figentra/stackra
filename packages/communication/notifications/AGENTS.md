@@ -1,5 +1,13 @@
 # AGENTS — @stackra/notifications
 
+<!--
+Stackra file contract:
+Purpose: the rules an agent follows when it changes @stackra/notifications.
+Boundary: documentation only; the code and the ADRs win on any difference.
+Runtime: none
+Governing contract: ADR 0086; ADR 0223; ADR 0294; ADR 0305; ADR 0448.
+-->
+
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`,
 `./react`, `./testing`.
@@ -54,6 +62,10 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   a case in the driver's `TARGETS` and in the `target` config enum (options and `NOTIFICATIONS_CONFIG_SCHEMA`).
 - An address recipient (`Recipient.address`) is only for a person with no principal; a target takes it through
   `addressPayload`, and the driver refuses it, before queueing anything, when the target has none.
+- Inbound WhatsApp (ADR 0448): `WhatsAppInbound` only decodes a verified delivery; the signature is a recipe
+  (`META_WHATSAPP_WEBHOOK_SIGNATURE`) checked by `@stackra/webhooks` before `read`. A driver never throws for the body
+  and leaves out what it cannot read; prices become `MoneyAmount` through `Money.of`, never a float. The `meta` driver is
+  payload decoding only (like `twiml`); its Integration and Connection stay in OS integrations (R3-8).
 - An in-app entry always names its product; a store driver filters `list` by it.
 - A restricted record never falls back from the content-free template to the full one.
 
@@ -67,4 +79,5 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 | Recipient address, body             | `OutboundMail`                                               | Passed to the transport only; this package never stores or logs it.                  |
 | Rendered mail                       | `renderMail`, the renderer                                   | Returned to the caller; never cached, logged or written here.                        |
 | Phone numbers, push targets         | `OutboundSms`, `OutboundWhatsApp`, `PushTarget`, `CallEvent` | Passed to the provider only; never logged; a dead push target is revoked.            |
+| Inbound sender number, profile name | `InboundWhatsApp`                                            | Returned to the host's handler only; never logged or stored here.                    |
 | Provider credentials, VAPID keys    | connection `@Secret` fields, `SecretStore`                   | Read at call time; never logged or put in an error.                                  |

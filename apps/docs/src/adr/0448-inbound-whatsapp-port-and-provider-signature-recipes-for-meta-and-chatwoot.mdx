@@ -1,0 +1,46 @@
+---
+title: "0448 — An inbound WhatsApp port, and provider signature recipes for Meta and Chatwoot"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract. Purpose: ADR 0448, the inbound WhatsApp port with its memory and Meta drivers, and the Meta and Chatwoot webhook signature recipes. Boundary: decisions for @stackra/notifications and @stackra/webhooks only. Runtime: documentation. Governing contract: ADR 0086, 0223, 0308, 0422, 0220; OS-204, OS-206; STA-923, STA-805; COM-297. */}
+
+<Note>
+  Proposed (STA-923, batch stackra-47). It closes the Commerce gap "notifications: inbound WhatsApp"
+  (native WhatsApp carts in R1, COM-297) and the Chatwoot item of STA-805 (OS-204, OS-206).
+</Note>
+
+## Context
+
+`@stackra/notifications` sends WhatsApp messages (ADR 0223, `WhatsAppTransport`) but cannot read what a customer sends
+back. Commerce takes native WhatsApp cart orders at launch (COM-297), confirms cash-on-delivery orders by a button reply
+and answers order questions, so every host would otherwise parse Meta's Cloud API payload itself. Separately, inbound
+Chatwoot webhooks (OS messaging's headless inbox, OS-204, OS-206) declared no signature scheme, so the OS could not
+verify them (build-wave10 note 4). Vendor Integrations and Connections live in the OS integrations service (owner
+decision R3-8); `@stackra/webhooks` verifies any HMAC whose recipe is data (`scheme: "hmac"`, ADR 0308 rule 15).
+
+## Decision
+
+1. **`WhatsAppInbound` is a port in `@stackra/notifications/contracts`.** `read(body)` turns one verified delivery into
+   `InboundWhatsApp` messages of three kinds: `text`, `cart` (catalogue id, retailer ids, quantities and unit prices as
+   `MoneyAmount`, ADR 0220) and `reply` (a button or list row, or a template quick reply). Each carries the provider's
+   message id (the dedupe key), the customer's E.164 number, the receiving number's `channelId` (the host maps it to its
+   scope), the send time and the id of the business message it answers. A driver never throws for the body and leaves
+   out what it cannot read. The host dedupes, routes and acts; the port decides nothing about carts or orders.
+2. **Two drivers: `memory` and `meta`.** `memory` hands out messages a dev or test pushed. `meta` decodes the Cloud API
+   payload only, like `twiml` encodes Twilio's: it holds no credential and makes no call, so R3-8 stands (the Meta
+   Integration stays in OS integrations). Meta's signature is the recipe `META_WHATSAPP_WEBHOOK_SIGNATURE`
+   (`x-hub-signature-256: sha256=<hex>` of the body), which the Meta Integration declares under `scheme: "hmac"`, so the
+   delivery is verified before `read` runs.
+3. **Chatwoot is a recipe, not a scheme.** `CHATWOOT_WEBHOOK_SIGNATURE` in `@stackra/webhooks` is
+   `x-chatwoot-signature: sha256=<hex>` of `<x-chatwoot-timestamp>.<body>`, five minutes either way. The Chatwoot
+   Integration declares it under `scheme: "hmac"`; no `SignatureScheme` code and no verifier is added.
+
+## Consequences
+
+- Commerce and OS messaging read carts and replies through one port; another WhatsApp provider is one more driver.
+- Media, locations, reactions and delivery statuses are not read yet; a later decision adds kinds additively.
+- The Meta subscribe handshake (`hub.challenge`) stays in the host's route.
+- Both recipes are written from the providers' published schemes; certification against live traffic is pending
+  (owner decision D3: ship marked, certify later).
+- Runway placement is unchanged; the catalogue row for `@stackra/notifications` goes to stackra-90.
