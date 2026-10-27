@@ -1,6 +1,10 @@
 /**
- * Proves the refs-issue-key rule: off without a prefix, keyed types need `Refs: <PREFIX>-n`, unkeyed types do not,
- * and a different prefix does not satisfy it; the preset ships the rule off.
+ * Stackra file contract:
+ * Purpose: proves the refs-issue-key rule: off without a prefix, keyed types need `Refs: <PREFIX>-n`, unkeyed types do
+ *          not, and a different prefix does not satisfy it; the preset ships the rule off.
+ * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); the commit conventions (`Refs:` trailer).
  */
 import { describe, expect, it } from "vitest";
 import preset, { refsIssueKey } from "../preset.ts";
