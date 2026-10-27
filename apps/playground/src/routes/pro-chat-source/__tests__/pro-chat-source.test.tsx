@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatSource } from "#src/routes/pro-chat-source/pro-chat-source";
 import { ProChatSourceRoute } from "#src/routes/pro-chat-source/pro-chat-source.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatSource", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatSource", () => {
 
   it("sits at /pro-chat-source in the Pro category, and titles the page and the document", () => {
     render(<ProChatSource />);
-    expect(ProChatSourceRoute.path).toBe("/pro-chat-source");
+    expect(routePath(ProChatSourceRoute)).toBe("/pro-chat-source");
     expect(ProChatSourceRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProChatSourceRoute.title })).toBeTruthy();
     expect(document.title).toBe("ChatSource · Stackra Playground");

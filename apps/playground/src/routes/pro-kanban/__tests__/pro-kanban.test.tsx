@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProKanban } from "#src/routes/pro-kanban/pro-kanban";
 import { ProKanbanRoute } from "#src/routes/pro-kanban/pro-kanban.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 /** The titles of the cards in a column. */
 const cards = (column: string) =>
@@ -26,7 +27,7 @@ describe("ProKanban", () => {
 
   it("sits at /pro-kanban in the Pro group, and titles the page and the document", () => {
     render(<ProKanban />);
-    expect(ProKanbanRoute.path).toBe("/pro-kanban");
+    expect(routePath(ProKanbanRoute)).toBe("/pro-kanban");
     expect(ProKanbanRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProKanbanRoute.title })).toBeTruthy();
     expect(document.title).toBe("Kanban · Stackra Playground");

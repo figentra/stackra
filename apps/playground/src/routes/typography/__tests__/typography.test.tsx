@@ -14,6 +14,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Typography } from "#src/routes/typography/typography";
 import { TypographyRoute } from "#src/routes/typography/typography.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -41,7 +42,7 @@ describe("Typography page", () => {
 
   it("titles the page and the document, with exactly one level-1 heading, and sits at /typography", () => {
     renderPage();
-    expect(TypographyRoute.path).toBe("/typography");
+    expect(routePath(TypographyRoute)).toBe("/typography");
     expect(TypographyRoute.category).toBe("Foundations");
     expect(screen.getByRole("heading", { level: 1, name: "Typography" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

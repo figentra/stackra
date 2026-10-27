@@ -15,6 +15,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { FormField } from "#src/routes/form-field/form-field";
 import { FormFieldRoute } from "#src/routes/form-field/form-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -43,7 +44,7 @@ describe("Form field page", () => {
 
   it("titles the page and the document, and sits at /form-field under Forms", () => {
     renderPage();
-    expect(FormFieldRoute.path).toBe("/form-field");
+    expect(routePath(FormFieldRoute)).toBe("/form-field");
     expect(FormFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Form field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

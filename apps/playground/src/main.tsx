@@ -16,7 +16,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { PlaygroundShell } from "#src/components/playground-shell";
-import { PLAYGROUND_PAGES } from "#src/components/playground-pages";
+import { PLAYGROUND_PAGES, routePath } from "#src/components/playground-pages";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
 import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
@@ -30,8 +30,8 @@ const router = createBrowserRouter([
   {
     element: <PlaygroundShell pages={links} />,
     children: [
-      { path: HomeRoute.path, element: <Home pages={links} /> },
-      { path: ThemeStudioRoute.path, element: <ThemeStudio /> },
+      { path: routePath(HomeRoute), element: <Home pages={links} /> },
+      { path: routePath(ThemeStudioRoute), element: <ThemeStudio /> },
       ...PLAYGROUND_PAGES.map(({ route, element }) => ({ path: route.path, element })),
     ],
   },

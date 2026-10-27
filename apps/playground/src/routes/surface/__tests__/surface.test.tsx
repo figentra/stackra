@@ -11,6 +11,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Surface } from "#src/routes/surface/surface";
 import { SurfaceRoute } from "#src/routes/surface/surface.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("Surface page", () => {
 
   it("titles the page and the document, and sits at /surface under Surfaces", () => {
     renderPage();
-    expect(SurfaceRoute.path).toBe("/surface");
+    expect(routePath(SurfaceRoute)).toBe("/surface");
     expect(SurfaceRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "Surface" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

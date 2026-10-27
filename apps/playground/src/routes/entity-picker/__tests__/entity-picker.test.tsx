@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { EntityPicker } from "#src/routes/entity-picker/entity-picker";
 import { EntityPickerRoute } from "#src/routes/entity-picker/entity-picker.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -65,7 +66,7 @@ describe("Entity picker page", () => {
 
   it("titles the page and the document, and sits at /entity-picker under Selection", () => {
     renderPage();
-    expect(EntityPickerRoute.path).toBe("/entity-picker");
+    expect(routePath(EntityPickerRoute)).toBe("/entity-picker");
     expect(EntityPickerRoute.category).toBe("Selection");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Entity picker" })).toBeTruthy();

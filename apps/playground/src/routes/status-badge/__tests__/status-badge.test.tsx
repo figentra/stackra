@@ -12,6 +12,7 @@ import { Size, Tone } from "@stackra/ui/contracts";
 
 import { StatusBadge } from "#src/routes/status-badge/status-badge";
 import { StatusBadgeRoute } from "#src/routes/status-badge/status-badge.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -38,7 +39,7 @@ describe("StatusBadge page", () => {
 
   it("titles the page and the document, and sits at /status-badge under Status", () => {
     renderPage();
-    expect(StatusBadgeRoute.path).toBe("/status-badge");
+    expect(routePath(StatusBadgeRoute)).toBe("/status-badge");
     expect(StatusBadgeRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Status badge" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

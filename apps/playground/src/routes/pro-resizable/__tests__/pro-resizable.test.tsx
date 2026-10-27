@@ -13,6 +13,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProResizable } from "#src/routes/pro-resizable/pro-resizable";
 import { ProResizableRoute } from "#src/routes/pro-resizable/pro-resizable.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProResizable", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProResizable", () => {
 
   it("sits at /pro-resizable in the Pro category, and titles the page and the document", () => {
     render(<ProResizable />);
-    expect(ProResizableRoute.path).toBe("/pro-resizable");
+    expect(routePath(ProResizableRoute)).toBe("/pro-resizable");
     expect(ProResizableRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: ProResizableRoute.title })).toBeTruthy();
     expect(document.title).toBe("Resizable · Stackra Playground");

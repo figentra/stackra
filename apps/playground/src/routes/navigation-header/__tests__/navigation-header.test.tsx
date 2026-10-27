@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { NavigationHeader } from "#src/routes/navigation-header/navigation-header";
 import { NavigationHeaderRoute } from "#src/routes/navigation-header/navigation-header.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -46,7 +47,7 @@ describe("Navigation header page", () => {
 
   it("titles the page and the document, and sits at /navigation-header under Navigation", () => {
     renderPage();
-    expect(NavigationHeaderRoute.path).toBe("/navigation-header");
+    expect(routePath(NavigationHeaderRoute)).toBe("/navigation-header");
     expect(NavigationHeaderRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Navigation header" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

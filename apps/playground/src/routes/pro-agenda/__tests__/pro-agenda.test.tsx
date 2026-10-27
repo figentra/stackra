@@ -15,6 +15,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProAgenda } from "#src/routes/pro-agenda/pro-agenda";
 import { ProAgendaRoute } from "#src/routes/pro-agenda/pro-agenda.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProAgenda", () => {
   beforeEach(() => {
@@ -26,7 +27,7 @@ describe("ProAgenda", () => {
 
   it("sits at /pro-agenda in the Pro category, and titles the page and the document", () => {
     render(<ProAgenda />);
-    expect(ProAgendaRoute.path).toBe("/pro-agenda");
+    expect(routePath(ProAgendaRoute)).toBe("/pro-agenda");
     expect(ProAgendaRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: ProAgendaRoute.title })).toBeTruthy();
     expect(document.title).toBe("Agenda · Stackra Playground");

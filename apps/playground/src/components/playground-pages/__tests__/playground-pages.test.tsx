@@ -11,17 +11,17 @@
 // HeroUI Pro's Sheet reads matchMedia as its module loads, and the real route folders include the Pro pages.
 import "#src/__tests__/stub-browser-apis";
 
+import { Route } from "@stackra/navigation";
+
 import { discoverPages, PLAYGROUND_PAGES, tierOf } from "#src/components/playground-pages";
 
 /** The real catalogue's link to `path`. */
 const linkAt = (path: string) =>
   PLAYGROUND_PAGES.find(({ route: link }) => link.path === path)?.route;
 
-/** A route module with the statics a route class carries. */
+/** A route module: a class that extends `Route({ path })` and carries the title and category statics. */
 const route = (path: string, title: string, category?: string) => ({
-  Route: class {
-    static readonly path = path;
-
+  Page: class extends Route({ path }) {
     static readonly title = title;
 
     static readonly category = category;

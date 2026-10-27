@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatConversation } from "#src/routes/pro-chat-conversation/pro-chat-conversation";
 import { ProChatConversationRoute } from "#src/routes/pro-chat-conversation/pro-chat-conversation.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatConversation", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatConversation", () => {
 
   it("sits at /pro-chat-conversation in the Pro category, and titles the page and the document", () => {
     render(<ProChatConversation />);
-    expect(ProChatConversationRoute.path).toBe("/pro-chat-conversation");
+    expect(routePath(ProChatConversationRoute)).toBe("/pro-chat-conversation");
     expect(ProChatConversationRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatConversationRoute.title }),

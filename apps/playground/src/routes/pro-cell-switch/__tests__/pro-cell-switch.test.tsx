@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCellSwitch } from "#src/routes/pro-cell-switch/pro-cell-switch";
 import { ProCellSwitchRoute } from "#src/routes/pro-cell-switch/pro-cell-switch.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCellSwitch", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProCellSwitch", () => {
 
   it("sits at /pro-cell-switch in the Pro group, and titles the page and the document", () => {
     render(<ProCellSwitch />);
-    expect(ProCellSwitchRoute.path).toBe("/pro-cell-switch");
+    expect(routePath(ProCellSwitchRoute)).toBe("/pro-cell-switch");
     expect(ProCellSwitchRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProCellSwitchRoute.title })).toBeTruthy();
     expect(document.title).toBe("CellSwitch · Stackra Playground");

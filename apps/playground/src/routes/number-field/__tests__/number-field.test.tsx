@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { NumberField } from "#src/routes/number-field/number-field";
 import { NumberFieldRoute } from "#src/routes/number-field/number-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -49,7 +50,7 @@ describe("Number field page", () => {
 
   it("titles the page and the document, and sits at /number-field under Inputs and forms", () => {
     renderPage();
-    expect(NumberFieldRoute.path).toBe("/number-field");
+    expect(routePath(NumberFieldRoute)).toBe("/number-field");
     expect(NumberFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Number field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Tooltip } from "#src/routes/tooltip/tooltip";
 import { TooltipRoute } from "#src/routes/tooltip/tooltip.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -56,7 +57,7 @@ describe("Tooltip page", () => {
 
   it("titles the page and the document, and sits at /tooltip under Overlays", () => {
     renderPage();
-    expect(TooltipRoute.path).toBe("/tooltip");
+    expect(routePath(TooltipRoute)).toBe("/tooltip");
     expect(TooltipRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Tooltip" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

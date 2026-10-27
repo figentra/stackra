@@ -12,6 +12,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { CloseButton } from "#src/routes/close-button/close-button";
 import { CloseButtonRoute } from "#src/routes/close-button/close-button.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("CloseButton page", () => {
 
   it("titles the page and the document, and sits at /close-button under Actions", () => {
     renderPage();
-    expect(CloseButtonRoute.path).toBe("/close-button");
+    expect(routePath(CloseButtonRoute)).toBe("/close-button");
     expect(CloseButtonRoute.category).toBe("Actions");
     expect(screen.getByRole("heading", { level: 1, name: "Close button" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

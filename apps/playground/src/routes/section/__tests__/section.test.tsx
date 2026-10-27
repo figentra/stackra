@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Section } from "#src/routes/section/section";
 import { SectionRoute } from "#src/routes/section/section.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -46,7 +47,7 @@ describe("Section page", () => {
 
   it("opens with the page's one h1, and sits at /section under Layout", () => {
     renderPage();
-    expect(SectionRoute.path).toBe("/section");
+    expect(routePath(SectionRoute)).toBe("/section");
     expect(SectionRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Section" })).toBeTruthy();

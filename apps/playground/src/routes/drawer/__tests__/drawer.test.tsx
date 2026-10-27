@@ -17,6 +17,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { Drawer } from "#src/routes/drawer/drawer";
 import { DrawerRoute } from "#src/routes/drawer/drawer.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -60,7 +61,7 @@ describe("Drawer page", () => {
 
   it("titles the page and the document, and sits at /drawer under Overlays", () => {
     renderPage();
-    expect(DrawerRoute.path).toBe("/drawer");
+    expect(routePath(DrawerRoute)).toBe("/drawer");
     expect(DrawerRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Drawer" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

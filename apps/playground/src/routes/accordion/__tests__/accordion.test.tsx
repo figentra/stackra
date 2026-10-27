@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Accordion } from "#src/routes/accordion/accordion";
 import { AccordionRoute } from "#src/routes/accordion/accordion.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -49,7 +50,7 @@ describe("Accordion page", () => {
 
   it("titles the page and the document, and sits at /accordion under Data display", () => {
     renderPage();
-    expect(AccordionRoute.path).toBe("/accordion");
+    expect(routePath(AccordionRoute)).toBe("/accordion");
     expect(AccordionRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Accordion" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

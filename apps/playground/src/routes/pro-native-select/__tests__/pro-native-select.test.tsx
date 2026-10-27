@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProNativeSelect } from "#src/routes/pro-native-select/pro-native-select";
 import { ProNativeSelectRoute } from "#src/routes/pro-native-select/pro-native-select.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProNativeSelect", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProNativeSelect", () => {
 
   it("sits at /pro-native-select in the Pro group, and titles the page and the document", () => {
     render(<ProNativeSelect />);
-    expect(ProNativeSelectRoute.path).toBe("/pro-native-select");
+    expect(routePath(ProNativeSelectRoute)).toBe("/pro-native-select");
     expect(ProNativeSelectRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProNativeSelectRoute.title }),

@@ -12,6 +12,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Badge } from "#src/routes/badge/badge";
 import { BadgeRoute } from "#src/routes/badge/badge.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("Badge page", () => {
 
   it("titles the page and the document, and sits at /badge under Status", () => {
     renderPage();
-    expect(BadgeRoute.path).toBe("/badge");
+    expect(routePath(BadgeRoute)).toBe("/badge");
     expect(BadgeRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Badge" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProPromptSuggestion } from "#src/routes/pro-prompt-suggestion/pro-prompt-suggestion";
 import { ProPromptSuggestionRoute } from "#src/routes/pro-prompt-suggestion/pro-prompt-suggestion.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProPromptSuggestion", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProPromptSuggestion", () => {
 
   it("sits at /pro-prompt-suggestion in the Pro category, and titles the page and the document", () => {
     render(<ProPromptSuggestion />);
-    expect(ProPromptSuggestionRoute.path).toBe("/pro-prompt-suggestion");
+    expect(routePath(ProPromptSuggestionRoute)).toBe("/pro-prompt-suggestion");
     expect(ProPromptSuggestionRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPromptSuggestionRoute.title }),

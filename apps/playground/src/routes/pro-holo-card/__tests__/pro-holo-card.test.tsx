@@ -13,6 +13,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProHoloCard } from "#src/routes/pro-holo-card/pro-holo-card";
 import { ProHoloCardRoute } from "#src/routes/pro-holo-card/pro-holo-card.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProHoloCard", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProHoloCard", () => {
 
   it("sits at /pro-holo-card in the Pro category, and titles the page and the document", () => {
     render(<ProHoloCard />);
-    expect(ProHoloCardRoute.path).toBe("/pro-holo-card");
+    expect(routePath(ProHoloCardRoute)).toBe("/pro-holo-card");
     expect(ProHoloCardRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProHoloCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("HoloCard · Stackra Playground");

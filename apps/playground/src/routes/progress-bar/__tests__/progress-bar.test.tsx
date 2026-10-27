@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { ProgressBar } from "#src/routes/progress-bar/progress-bar";
 import { ProgressBarRoute } from "#src/routes/progress-bar/progress-bar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -41,7 +42,7 @@ describe("ProgressBar page", () => {
 
   it("titles the page and the document, and sits at /progress-bar under Feedback and status", () => {
     renderPage();
-    expect(ProgressBarRoute.path).toBe("/progress-bar");
+    expect(routePath(ProgressBarRoute)).toBe("/progress-bar");
     expect(ProgressBarRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Progress bar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

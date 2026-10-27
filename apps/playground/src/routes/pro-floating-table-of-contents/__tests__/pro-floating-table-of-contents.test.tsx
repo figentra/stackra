@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProFloatingTableOfContents } from "#src/routes/pro-floating-table-of-contents/pro-floating-table-of-contents";
 import { ProFloatingTableOfContentsRoute } from "#src/routes/pro-floating-table-of-contents/pro-floating-table-of-contents.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProFloatingTableOfContents", () => {
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe("ProFloatingTableOfContents", () => {
 
   it("sits at /pro-floating-table-of-contents in the Pro category, and titles the page and the document", () => {
     render(<ProFloatingTableOfContents />);
-    expect(ProFloatingTableOfContentsRoute.path).toBe("/pro-floating-table-of-contents");
+    expect(routePath(ProFloatingTableOfContentsRoute)).toBe("/pro-floating-table-of-contents");
     expect(ProFloatingTableOfContentsRoute.category).toBe("Navigation");
     expect(
       screen.getByRole("heading", { level: 1, name: ProFloatingTableOfContentsRoute.title }),

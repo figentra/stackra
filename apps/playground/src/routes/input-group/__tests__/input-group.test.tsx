@@ -14,6 +14,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { InputGroup } from "#src/routes/input-group/input-group";
 import { InputGroupRoute } from "#src/routes/input-group/input-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("Input group page", () => {
 
   it("titles the page and the document, and sits at /input-group under Inputs", () => {
     renderPage();
-    expect(InputGroupRoute.path).toBe("/input-group");
+    expect(routePath(InputGroupRoute)).toBe("/input-group");
     expect(InputGroupRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Input group" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

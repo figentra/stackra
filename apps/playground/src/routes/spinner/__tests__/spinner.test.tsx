@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Spinner } from "#src/routes/spinner/spinner";
 import { SpinnerRoute } from "#src/routes/spinner/spinner.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -43,7 +44,7 @@ describe("Spinner page", () => {
 
   it("titles the page and the document, and sits at /spinner under Status", () => {
     renderPage();
-    expect(SpinnerRoute.path).toBe("/spinner");
+    expect(routePath(SpinnerRoute)).toBe("/spinner");
     expect(SpinnerRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Spinner" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

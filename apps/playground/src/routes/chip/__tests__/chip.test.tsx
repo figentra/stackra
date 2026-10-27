@@ -13,6 +13,7 @@ import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Chip } from "#src/routes/chip/chip";
 import { ChipRoute } from "#src/routes/chip/chip.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -41,7 +42,7 @@ describe("Chip page", () => {
 
   it("titles the page and the document, and sits at /chip under Status", () => {
     renderPage();
-    expect(ChipRoute.path).toBe("/chip");
+    expect(routePath(ChipRoute)).toBe("/chip");
     expect(ChipRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Chip" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

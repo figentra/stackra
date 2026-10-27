@@ -10,11 +10,12 @@ import { render, screen } from "@testing-library/react";
 
 import { AiMark } from "#src/routes/ai-mark/ai-mark";
 import { AiMarkRoute } from "#src/routes/ai-mark/ai-mark.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("AiMark page", () => {
   it("sits at /ai-mark in the AI category, and titles the page and the document", () => {
     render(<AiMark />);
-    expect(AiMarkRoute.path).toBe("/ai-mark");
+    expect(routePath(AiMarkRoute)).toBe("/ai-mark");
     expect(AiMarkRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: AiMarkRoute.title })).toBeTruthy();
     expect(document.title).toBe("AI mark · Stackra Playground");

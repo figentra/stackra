@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProEmojiReactionButton } from "#src/routes/pro-emoji-reaction-button/pro-emoji-reaction-button";
 import { ProEmojiReactionButtonRoute } from "#src/routes/pro-emoji-reaction-button/pro-emoji-reaction-button.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProEmojiReactionButton", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProEmojiReactionButton", () => {
 
   it("sits at /pro-emoji-reaction-button in the Pro category, and titles the page and the document", () => {
     render(<ProEmojiReactionButton />);
-    expect(ProEmojiReactionButtonRoute.path).toBe("/pro-emoji-reaction-button");
+    expect(routePath(ProEmojiReactionButtonRoute)).toBe("/pro-emoji-reaction-button");
     expect(ProEmojiReactionButtonRoute.category).toBe("Feedback and status");
     expect(
       screen.getByRole("heading", { level: 1, name: ProEmojiReactionButtonRoute.title }),

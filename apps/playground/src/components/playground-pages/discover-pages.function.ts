@@ -11,8 +11,10 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14, rule R7); ADR 0295 (decision 7).
  */
+import { kindOf } from "@stackra/container";
 import { createElement, type ReactElement } from "react";
 
+import { routePath } from "#src/components/playground-pages/route-path.function";
 import { tierOf } from "#src/components/playground-pages/tier-of.function";
 import { PageCategory } from "#src/enums/page-category.enum";
 import type { PageLink } from "#src/types/page-link.type";
@@ -34,16 +36,16 @@ function byFolder(files: Readonly<Record<string, ModuleExports>>, pattern: RegEx
 }
 
 /**
- * The route class a route module exports: the one export that carries a string `path`, `title` and `category`, and
- * `ownsMain` when it is `true`.
+ * The route class a route module exports: the one export that extends `Route({ path })` and carries a string `title`
+ * and `category` static, and `ownsMain` when it is `true`.
  */
 function routeOf(exports: ModuleExports): PageLink | undefined {
   for (const value of Object.values(exports)) {
-    if (typeof value !== "function") continue;
-    const { path, title, category, ownsMain } = value as unknown as Record<string, unknown>;
-    if (typeof path === "string" && typeof title === "string" && typeof category === "string")
+    if (typeof value !== "function" || kindOf(value)?.kind !== "route") continue;
+    const { title, category, ownsMain } = value as unknown as Record<string, unknown>;
+    if (typeof title === "string" && typeof category === "string")
       return {
-        path,
+        path: routePath(value),
         title,
         category: category as PageCategory,
         ...(ownsMain === true && { ownsMain }),

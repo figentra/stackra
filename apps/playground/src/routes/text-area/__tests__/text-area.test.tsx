@@ -14,6 +14,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { TextArea } from "#src/routes/text-area/text-area";
 import { TextAreaRoute } from "#src/routes/text-area/text-area.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("Text area page", () => {
 
   it("titles the page and the document, and sits at /text-area under Inputs", () => {
     renderPage();
-    expect(TextAreaRoute.path).toBe("/text-area");
+    expect(routePath(TextAreaRoute)).toBe("/text-area");
     expect(TextAreaRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Text area" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

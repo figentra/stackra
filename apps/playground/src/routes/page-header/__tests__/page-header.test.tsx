@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { PageHeader } from "#src/routes/page-header/page-header";
 import { PageHeaderRoute } from "#src/routes/page-header/page-header.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -46,7 +47,7 @@ describe("Page header page", () => {
 
   it("opens with a page header that is the page's one h1, and sits at /page-header under Layout", () => {
     renderPage();
-    expect(PageHeaderRoute.path).toBe("/page-header");
+    expect(routePath(PageHeaderRoute)).toBe("/page-header");
     expect(PageHeaderRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     const h1 = screen.getByRole("heading", { level: 1, name: "Page header" });

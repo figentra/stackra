@@ -16,6 +16,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Avatar } from "#src/routes/avatar/avatar";
 import { AvatarRoute } from "#src/routes/avatar/avatar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -44,7 +45,7 @@ describe("Avatar page", () => {
 
   it("titles the page and the document, and sits at /avatar under Status", () => {
     renderPage();
-    expect(AvatarRoute.path).toBe("/avatar");
+    expect(routePath(AvatarRoute)).toBe("/avatar");
     expect(AvatarRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Avatar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

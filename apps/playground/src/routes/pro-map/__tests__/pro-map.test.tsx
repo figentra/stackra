@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProMap } from "#src/routes/pro-map/pro-map";
 import { ProMapRoute } from "#src/routes/pro-map/pro-map.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 const { seen } = vi.hoisted(() => ({ seen: [] as Record<string, unknown>[] }));
 
@@ -58,7 +59,7 @@ describe("ProMap", () => {
 
   it("sits at /pro-map in the Pro category, and titles the page and the document", () => {
     render(<ProMap />);
-    expect(ProMapRoute.path).toBe("/pro-map");
+    expect(routePath(ProMapRoute)).toBe("/pro-map");
     expect(ProMapRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProMapRoute.title })).toBeTruthy();
     expect(document.title).toBe("Map · Stackra Playground");

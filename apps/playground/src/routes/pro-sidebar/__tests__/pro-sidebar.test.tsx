@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProSidebar } from "#src/routes/pro-sidebar/pro-sidebar";
 import { ProSidebarRoute } from "#src/routes/pro-sidebar/pro-sidebar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProSidebar", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProSidebar", () => {
 
   it("sits at /pro-sidebar in the Pro group, and titles the page and the document", () => {
     render(<ProSidebar />);
-    expect(ProSidebarRoute.path).toBe("/pro-sidebar");
+    expect(routePath(ProSidebarRoute)).toBe("/pro-sidebar");
     expect(ProSidebarRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProSidebarRoute.title })).toBeTruthy();
     expect(document.title).toBe("Sidebar · Stackra Playground");

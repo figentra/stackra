@@ -17,6 +17,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { AppHeader } from "#src/routes/app-header/app-header";
 import { AppHeaderRoute } from "#src/routes/app-header/app-header.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -46,7 +47,7 @@ describe("App header page", () => {
 
   it("titles the page and the document, and sits at /app-header under Layout", () => {
     renderPage();
-    expect(AppHeaderRoute.path).toBe("/app-header");
+    expect(routePath(AppHeaderRoute)).toBe("/app-header");
     expect(AppHeaderRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "App header" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

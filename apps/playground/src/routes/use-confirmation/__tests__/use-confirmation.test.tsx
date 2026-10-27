@@ -14,6 +14,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { UseConfirmation } from "#src/routes/use-confirmation/use-confirmation";
 import { UseConfirmationRoute } from "#src/routes/use-confirmation/use-confirmation.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -47,7 +48,7 @@ describe("UseConfirmation page", () => {
 
   it("titles the page and the document, and sits at /use-confirmation under Overlays", () => {
     renderPage();
-    expect(UseConfirmationRoute.path).toBe("/use-confirmation");
+    expect(routePath(UseConfirmationRoute)).toBe("/use-confirmation");
     expect(UseConfirmationRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "useConfirmation" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProItemCardGroup } from "#src/routes/pro-item-card-group/pro-item-card-group";
 import { ProItemCardGroupRoute } from "#src/routes/pro-item-card-group/pro-item-card-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProItemCardGroup", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProItemCardGroup", () => {
 
   it("sits at /pro-item-card-group in the Pro category, and titles the page and the document", () => {
     render(<ProItemCardGroup />);
-    expect(ProItemCardGroupRoute.path).toBe("/pro-item-card-group");
+    expect(routePath(ProItemCardGroupRoute)).toBe("/pro-item-card-group");
     expect(ProItemCardGroupRoute.category).toBe("Data display");
     expect(
       screen.getByRole("heading", { level: 1, name: ProItemCardGroupRoute.title }),

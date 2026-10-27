@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProStepper } from "#src/routes/pro-stepper/pro-stepper";
 import { ProStepperRoute } from "#src/routes/pro-stepper/pro-stepper.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProStepper", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProStepper", () => {
 
   it("sits at /pro-stepper in the Pro category, and titles the page and the document", () => {
     render(<ProStepper />);
-    expect(ProStepperRoute.path).toBe("/pro-stepper");
+    expect(routePath(ProStepperRoute)).toBe("/pro-stepper");
     expect(ProStepperRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProStepperRoute.title })).toBeTruthy();
     expect(document.title).toBe("Stepper · Stackra Playground");

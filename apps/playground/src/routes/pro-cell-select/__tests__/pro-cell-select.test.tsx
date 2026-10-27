@@ -13,6 +13,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCellSelect } from "#src/routes/pro-cell-select/pro-cell-select";
 import { ProCellSelectRoute } from "#src/routes/pro-cell-select/pro-cell-select.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCellSelect", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProCellSelect", () => {
 
   it("sits at /pro-cell-select in the Pro group, and titles the page and the document", () => {
     render(<ProCellSelect />);
-    expect(ProCellSelectRoute.path).toBe("/pro-cell-select");
+    expect(routePath(ProCellSelectRoute)).toBe("/pro-cell-select");
     expect(ProCellSelectRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProCellSelectRoute.title })).toBeTruthy();
     expect(document.title).toBe("CellSelect · Stackra Playground");

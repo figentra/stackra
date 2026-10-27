@@ -14,6 +14,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { FormSection } from "#src/routes/form-section/form-section";
 import { FormSectionRoute } from "#src/routes/form-section/form-section.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("Form section page", () => {
 
   it("titles the page and the document, and sits at /form-section under Forms", () => {
     renderPage();
-    expect(FormSectionRoute.path).toBe("/form-section");
+    expect(routePath(FormSectionRoute)).toBe("/form-section");
     expect(FormSectionRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Form section" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

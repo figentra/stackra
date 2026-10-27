@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProRating } from "#src/routes/pro-rating/pro-rating";
 import { ProRatingRoute } from "#src/routes/pro-rating/pro-rating.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProRating", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProRating", () => {
 
   it("sits at /pro-rating in the Pro category, and titles the page and the document", () => {
     render(<ProRating />);
-    expect(ProRatingRoute.path).toBe("/pro-rating");
+    expect(routePath(ProRatingRoute)).toBe("/pro-rating");
     expect(ProRatingRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: ProRatingRoute.title })).toBeTruthy();
     expect(document.title).toBe("Rating · Stackra Playground");

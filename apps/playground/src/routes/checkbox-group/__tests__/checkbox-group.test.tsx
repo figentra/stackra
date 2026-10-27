@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { CheckboxGroup } from "#src/routes/checkbox-group/checkbox-group";
 import { CheckboxGroupRoute } from "#src/routes/checkbox-group/checkbox-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("CheckboxGroup page", () => {
 
   it("titles the page and the document, and sits at /checkbox-group under Selection", () => {
     renderPage();
-    expect(CheckboxGroupRoute.path).toBe("/checkbox-group");
+    expect(routePath(CheckboxGroupRoute)).toBe("/checkbox-group");
     expect(CheckboxGroupRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Checkbox group" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

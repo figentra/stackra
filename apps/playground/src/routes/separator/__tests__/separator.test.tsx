@@ -11,6 +11,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Separator } from "#src/routes/separator/separator";
 import { SeparatorRoute } from "#src/routes/separator/separator.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("Separator page", () => {
 
   it("titles the page and the document, and sits at /separator under Surfaces", () => {
     renderPage();
-    expect(SeparatorRoute.path).toBe("/separator");
+    expect(routePath(SeparatorRoute)).toBe("/separator");
     expect(SeparatorRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "Separator" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

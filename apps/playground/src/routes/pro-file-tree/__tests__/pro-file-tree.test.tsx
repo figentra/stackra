@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProFileTree } from "#src/routes/pro-file-tree/pro-file-tree";
 import { ProFileTreeRoute } from "#src/routes/pro-file-tree/pro-file-tree.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProFileTree", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProFileTree", () => {
 
   it("sits at /pro-file-tree in the Pro category, and titles the page and the document", () => {
     render(<ProFileTree />);
-    expect(ProFileTreeRoute.path).toBe("/pro-file-tree");
+    expect(routePath(ProFileTreeRoute)).toBe("/pro-file-tree");
     expect(ProFileTreeRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProFileTreeRoute.title })).toBeTruthy();
     expect(document.title).toBe("FileTree · Stackra Playground");

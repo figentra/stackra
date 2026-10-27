@@ -38,6 +38,7 @@
     "@internationalized/date": "catalog:frontend",
     "@number-flow/react": "catalog:frontend",
     "@stackra-pro/ui": "workspace:*",
+    "@stackra/container": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/navigation": "workspace:*",
     "@stackra/tokens": "workspace:*",

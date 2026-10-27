@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { FilterBar } from "#src/routes/filter-bar/filter-bar";
 import { FilterBarRoute } from "#src/routes/filter-bar/filter-bar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -54,7 +55,7 @@ describe("Filter bar page", () => {
 
   it("titles the page and the document, and sits at /filter-bar under Data display", () => {
     renderPage();
-    expect(FilterBarRoute.path).toBe("/filter-bar");
+    expect(routePath(FilterBarRoute)).toBe("/filter-bar");
     expect(FilterBarRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Filter bar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

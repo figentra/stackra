@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProDropZone } from "#src/routes/pro-drop-zone/pro-drop-zone";
 import { ProDropZoneRoute } from "#src/routes/pro-drop-zone/pro-drop-zone.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProDropZone", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProDropZone", () => {
 
   it("sits at /pro-drop-zone in the Pro group, and titles the page and the document", () => {
     render(<ProDropZone />);
-    expect(ProDropZoneRoute.path).toBe("/pro-drop-zone");
+    expect(routePath(ProDropZoneRoute)).toBe("/pro-drop-zone");
     expect(ProDropZoneRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProDropZoneRoute.title })).toBeTruthy();
     expect(document.title).toBe("DropZone · Stackra Playground");

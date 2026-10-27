@@ -14,6 +14,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Tabs } from "#src/routes/tabs/tabs";
 import { TabsRoute } from "#src/routes/tabs/tabs.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -61,7 +62,7 @@ describe("Tabs page", () => {
 
   it("titles the page and the document, and sits at /tabs under Navigation", () => {
     renderPage();
-    expect(TabsRoute.path).toBe("/tabs");
+    expect(routePath(TabsRoute)).toBe("/tabs");
     expect(TabsRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Tabs" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

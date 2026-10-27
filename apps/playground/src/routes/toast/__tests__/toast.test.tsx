@@ -16,6 +16,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 
 import { Toast } from "#src/routes/toast/toast";
 import { ToastRoute } from "#src/routes/toast/toast.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 /** Watches nothing: jsdom has no layout, and the toast stack only needs the observer to exist. */
 class ResizeObserverStandIn {
@@ -59,7 +60,7 @@ describe("Toast page", () => {
 
   it("titles the page and the document, and sits at /toast under Feedback and status", () => {
     renderPage();
-    expect(ToastRoute.path).toBe("/toast");
+    expect(routePath(ToastRoute)).toBe("/toast");
     expect(ToastRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Toast" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

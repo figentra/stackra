@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { SearchField } from "#src/routes/search-field/search-field";
 import { SearchFieldRoute } from "#src/routes/search-field/search-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -45,7 +46,7 @@ describe("Search field page", () => {
 
   it("titles the page and the document, and sits at /search-field under Inputs", () => {
     renderPage();
-    expect(SearchFieldRoute.path).toBe("/search-field");
+    expect(routePath(SearchFieldRoute)).toBe("/search-field");
     expect(SearchFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Search field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProPressableFeedback } from "#src/routes/pro-pressable-feedback/pro-pressable-feedback";
 import { ProPressableFeedbackRoute } from "#src/routes/pro-pressable-feedback/pro-pressable-feedback.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProPressableFeedback", () => {
   beforeEach(() => {
@@ -26,7 +27,7 @@ describe("ProPressableFeedback", () => {
 
   it("sits at /pro-pressable-feedback in the Pro category, and titles the page and the document", () => {
     render(<ProPressableFeedback />);
-    expect(ProPressableFeedbackRoute.path).toBe("/pro-pressable-feedback");
+    expect(routePath(ProPressableFeedbackRoute)).toBe("/pro-pressable-feedback");
     expect(ProPressableFeedbackRoute.category).toBe("Actions");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPressableFeedbackRoute.title }),

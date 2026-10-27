@@ -10,11 +10,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ProResourceScheduler } from "#src/routes/pro-resource-scheduler/pro-resource-scheduler";
 import { ProResourceSchedulerRoute } from "#src/routes/pro-resource-scheduler/pro-resource-scheduler.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProResourceScheduler", () => {
   it("sits at /pro-resource-scheduler, and titles the page and the document", () => {
     render(<ProResourceScheduler />);
-    expect(ProResourceSchedulerRoute.path).toBe("/pro-resource-scheduler");
+    expect(routePath(ProResourceSchedulerRoute)).toBe("/pro-resource-scheduler");
     expect(
       screen.getByRole("heading", { level: 1, name: ProResourceSchedulerRoute.title }),
     ).toBeTruthy();

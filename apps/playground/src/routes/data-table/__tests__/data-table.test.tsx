@@ -18,6 +18,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { DataTable } from "#src/routes/data-table/data-table";
 import { DataTableRoute } from "#src/routes/data-table/data-table.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -69,7 +70,7 @@ describe("DataTable page", () => {
 
   it("titles the page and the document, and sits at /data-table under Data display", () => {
     renderPage();
-    expect(DataTableRoute.path).toBe("/data-table");
+    expect(routePath(DataTableRoute)).toBe("/data-table");
     expect(DataTableRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Data table" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

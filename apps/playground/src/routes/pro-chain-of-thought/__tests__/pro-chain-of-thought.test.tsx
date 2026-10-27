@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChainOfThought } from "#src/routes/pro-chain-of-thought/pro-chain-of-thought";
 import { ProChainOfThoughtRoute } from "#src/routes/pro-chain-of-thought/pro-chain-of-thought.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChainOfThought", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChainOfThought", () => {
 
   it("sits at /pro-chain-of-thought in the Pro category, and titles the page and the document", () => {
     render(<ProChainOfThought />);
-    expect(ProChainOfThoughtRoute.path).toBe("/pro-chain-of-thought");
+    expect(routePath(ProChainOfThoughtRoute)).toBe("/pro-chain-of-thought");
     expect(ProChainOfThoughtRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChainOfThoughtRoute.title }),

@@ -6,15 +6,10 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0320 (the Theme Studio).
  */
+import { Route } from "@stackra/navigation";
 
 /** The Theme Studio, at `/theme-studio`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class ThemeStudioRoute extends Route({ path: "/theme-studio" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class ThemeStudioRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/theme-studio";
-
+export class ThemeStudioRoute extends Route({ path: "/theme-studio" }) {
   /** The page title. */
   static readonly title = "Theme Studio";
 }

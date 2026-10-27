@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { TagGroup } from "#src/routes/tag-group/tag-group";
 import { TagGroupRoute } from "#src/routes/tag-group/tag-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -44,7 +45,7 @@ describe("Tag group page", () => {
 
   it("titles the page and the document, and sits at /tag-group under Selection", () => {
     renderPage();
-    expect(TagGroupRoute.path).toBe("/tag-group");
+    expect(routePath(TagGroupRoute)).toBe("/tag-group");
     expect(TagGroupRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Tag group" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

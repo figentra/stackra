@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCellSlider } from "#src/routes/pro-cell-slider/pro-cell-slider";
 import { ProCellSliderRoute } from "#src/routes/pro-cell-slider/pro-cell-slider.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCellSlider", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProCellSlider", () => {
 
   it("sits at /pro-cell-slider in the Pro group, and titles the page and the document", () => {
     render(<ProCellSlider />);
-    expect(ProCellSliderRoute.path).toBe("/pro-cell-slider");
+    expect(routePath(ProCellSliderRoute)).toBe("/pro-cell-slider");
     expect(ProCellSliderRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProCellSliderRoute.title })).toBeTruthy();
     expect(document.title).toBe("CellSlider · Stackra Playground");

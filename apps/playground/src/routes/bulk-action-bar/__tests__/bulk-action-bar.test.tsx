@@ -16,6 +16,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { BulkActionBar } from "#src/routes/bulk-action-bar/bulk-action-bar";
 import { BulkActionBarRoute } from "#src/routes/bulk-action-bar/bulk-action-bar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -45,7 +46,7 @@ describe("BulkActionBar page", () => {
 
   it("titles the page and the document, and sits at /bulk-action-bar under Data display", () => {
     renderPage();
-    expect(BulkActionBarRoute.path).toBe("/bulk-action-bar");
+    expect(routePath(BulkActionBarRoute)).toBe("/bulk-action-bar");
     expect(BulkActionBarRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Bulk action bar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

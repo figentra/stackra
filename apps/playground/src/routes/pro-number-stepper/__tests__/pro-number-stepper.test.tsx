@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProNumberStepper } from "#src/routes/pro-number-stepper/pro-number-stepper";
 import { ProNumberStepperRoute } from "#src/routes/pro-number-stepper/pro-number-stepper.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProNumberStepper", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProNumberStepper", () => {
 
   it("sits at /pro-number-stepper in the Pro group, and titles the page and the document", () => {
     render(<ProNumberStepper />);
-    expect(ProNumberStepperRoute.path).toBe("/pro-number-stepper");
+    expect(routePath(ProNumberStepperRoute)).toBe("/pro-number-stepper");
     expect(ProNumberStepperRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProNumberStepperRoute.title }),

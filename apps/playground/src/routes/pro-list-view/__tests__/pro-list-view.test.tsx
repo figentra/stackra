@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProListView } from "#src/routes/pro-list-view/pro-list-view";
 import { ProListViewRoute } from "#src/routes/pro-list-view/pro-list-view.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProListView", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProListView", () => {
 
   it("sits at /pro-list-view in the Pro category, and titles the page and the document", () => {
     render(<ProListView />);
-    expect(ProListViewRoute.path).toBe("/pro-list-view");
+    expect(routePath(ProListViewRoute)).toBe("/pro-list-view");
     expect(ProListViewRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProListViewRoute.title })).toBeTruthy();
     expect(document.title).toBe("ListView · Stackra Playground");

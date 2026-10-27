@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProComposedChart } from "#src/routes/pro-composed-chart/pro-composed-chart";
 import { ProComposedChartRoute } from "#src/routes/pro-composed-chart/pro-composed-chart.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProComposedChart", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProComposedChart", () => {
 
   it("sits at /pro-composed-chart in the Pro category, and titles the page and the document", () => {
     render(<ProComposedChart />);
-    expect(ProComposedChartRoute.path).toBe("/pro-composed-chart");
+    expect(routePath(ProComposedChartRoute)).toBe("/pro-composed-chart");
     expect(ProComposedChartRoute.category).toBe("Charts");
     expect(
       screen.getByRole("heading", { level: 1, name: ProComposedChartRoute.title }),

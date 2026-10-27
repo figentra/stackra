@@ -13,12 +13,13 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
 import { ThemeStudioRoute } from "#src/routes/theme-studio/theme-studio.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
-function renderStudio(url = ThemeStudioRoute.path) {
+function renderStudio(url = routePath(ThemeStudioRoute)) {
   const router = createMemoryRouter(
     [
       {
-        path: ThemeStudioRoute.path,
+        path: routePath(ThemeStudioRoute),
         element: (
           <AriaRouterProvider navigate={() => undefined}>
             <DesignSystemProvider colorScheme="light">

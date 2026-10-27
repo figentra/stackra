@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { Switch } from "#src/routes/switch/switch";
 import { SwitchRoute } from "#src/routes/switch/switch.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("Switch page", () => {
 
   it("titles the page and the document, and sits at /switch under Selection", () => {
     renderPage();
-    expect(SwitchRoute.path).toBe("/switch");
+    expect(routePath(SwitchRoute)).toBe("/switch");
     expect(SwitchRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Switch" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

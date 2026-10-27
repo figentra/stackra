@@ -6,16 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0310 (decision 12); STA-416 FR-012.
  */
+import { Route } from "@stackra/navigation";
+
 import type { PageCategory } from "#src/enums/page-category.enum";
 
 /** The `@stackra-pro/ui` FileTree page, at `/pro-file-tree`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class ProFileTreeRoute extends Route({ path: "/pro-file-tree" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class ProFileTreeRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/pro-file-tree";
-
+export class ProFileTreeRoute extends Route({ path: "/pro-file-tree" }) {
   /** The page title, the component's name. */
   static readonly title = "FileTree";
 

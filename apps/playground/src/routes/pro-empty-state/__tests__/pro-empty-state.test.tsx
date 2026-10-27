@@ -13,6 +13,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProEmptyState } from "#src/routes/pro-empty-state/pro-empty-state";
 import { ProEmptyStateRoute } from "#src/routes/pro-empty-state/pro-empty-state.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProEmptyState", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProEmptyState", () => {
 
   it("sits at /pro-empty-state in the Pro category, and titles the page and the document", () => {
     render(<ProEmptyState />);
-    expect(ProEmptyStateRoute.path).toBe("/pro-empty-state");
+    expect(routePath(ProEmptyStateRoute)).toBe("/pro-empty-state");
     expect(ProEmptyStateRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProEmptyStateRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmptyState · Stackra Playground");

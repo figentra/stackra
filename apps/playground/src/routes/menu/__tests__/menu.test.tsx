@@ -15,6 +15,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Menu } from "#src/routes/menu/menu";
 import { MenuRoute } from "#src/routes/menu/menu.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -44,7 +45,7 @@ describe("Menu page", () => {
 
   it("titles the page and the document, and sits at /menu under Overlays", () => {
     renderPage();
-    expect(MenuRoute.path).toBe("/menu");
+    expect(routePath(MenuRoute)).toBe("/menu");
     expect(MenuRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Menu" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

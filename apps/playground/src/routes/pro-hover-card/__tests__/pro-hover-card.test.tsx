@@ -14,6 +14,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProHoverCard } from "#src/routes/pro-hover-card/pro-hover-card";
 import { ProHoverCardRoute } from "#src/routes/pro-hover-card/pro-hover-card.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProHoverCard", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProHoverCard", () => {
 
   it("sits at /pro-hover-card in the Pro category, and titles the page and the document", () => {
     render(<ProHoverCard />);
-    expect(ProHoverCardRoute.path).toBe("/pro-hover-card");
+    expect(routePath(ProHoverCardRoute)).toBe("/pro-hover-card");
     expect(ProHoverCardRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProHoverCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("HoverCard · Stackra Playground");

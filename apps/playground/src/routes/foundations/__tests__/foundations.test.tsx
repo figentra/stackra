@@ -16,6 +16,7 @@ import { render, screen, within } from "@testing-library/react";
 
 import { Foundations } from "#src/routes/foundations/foundations";
 import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(colorScheme: "light" | "dark") {
   render(
@@ -42,7 +43,7 @@ describe("Foundations", () => {
 
   it("titles the page and the document, and sits at /foundations", () => {
     renderPage("light");
-    expect(FoundationsRoute.path).toBe("/foundations");
+    expect(routePath(FoundationsRoute)).toBe("/foundations");
     expect(screen.getByRole("heading", { level: 1, name: FoundationsRoute.title })).toBeTruthy();
     expect(document.title).toBe("Foundations · Stackra Playground");
   });

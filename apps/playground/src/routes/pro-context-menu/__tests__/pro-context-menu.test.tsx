@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProContextMenu } from "#src/routes/pro-context-menu/pro-context-menu";
 import { ProContextMenuRoute } from "#src/routes/pro-context-menu/pro-context-menu.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProContextMenu", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProContextMenu", () => {
 
   it("sits at /pro-context-menu in the Pro category, and titles the page and the document", () => {
     render(<ProContextMenu />);
-    expect(ProContextMenuRoute.path).toBe("/pro-context-menu");
+    expect(routePath(ProContextMenuRoute)).toBe("/pro-context-menu");
     expect(ProContextMenuRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProContextMenuRoute.title })).toBeTruthy();
     expect(document.title).toBe("ContextMenu · Stackra Playground");

@@ -13,6 +13,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProTrendChip } from "#src/routes/pro-trend-chip/pro-trend-chip";
 import { ProTrendChipRoute } from "#src/routes/pro-trend-chip/pro-trend-chip.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 const chips = (selector = "") => [...document.querySelectorAll(`[data-trend]${selector}`)];
 
@@ -22,7 +23,7 @@ describe("ProTrendChip", () => {
 
   it("sits at /pro-trend-chip in the Pro group, and titles the page and the document", () => {
     render(<ProTrendChip />);
-    expect(ProTrendChipRoute.path).toBe("/pro-trend-chip");
+    expect(routePath(ProTrendChipRoute)).toBe("/pro-trend-chip");
     expect(ProTrendChipRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: ProTrendChipRoute.title })).toBeTruthy();
     expect(document.title).toBe("TrendChip · Stackra Playground");

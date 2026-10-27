@@ -15,6 +15,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProEmojiPicker } from "#src/routes/pro-emoji-picker/pro-emoji-picker";
 import { ProEmojiPickerRoute } from "#src/routes/pro-emoji-picker/pro-emoji-picker.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProEmojiPicker", () => {
   beforeEach(stubBrowserApis);
@@ -22,7 +23,7 @@ describe("ProEmojiPicker", () => {
 
   it("sits at /pro-emoji-picker in the Pro category, and titles the page and the document", () => {
     render(<ProEmojiPicker />);
-    expect(ProEmojiPickerRoute.path).toBe("/pro-emoji-picker");
+    expect(routePath(ProEmojiPickerRoute)).toBe("/pro-emoji-picker");
     expect(ProEmojiPickerRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProEmojiPickerRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmojiPicker · Stackra Playground");

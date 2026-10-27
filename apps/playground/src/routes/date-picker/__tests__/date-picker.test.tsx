@@ -16,6 +16,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { DatePicker } from "#src/routes/date-picker/date-picker";
 import { DatePickerRoute } from "#src/routes/date-picker/date-picker.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -48,7 +49,7 @@ describe("Date picker page", () => {
 
   it("titles the page and the document, and sits at /date-picker under Date and time", () => {
     renderPage();
-    expect(DatePickerRoute.path).toBe("/date-picker");
+    expect(routePath(DatePickerRoute)).toBe("/date-picker");
     expect(DatePickerRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: "Date picker" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

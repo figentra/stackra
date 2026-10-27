@@ -11,6 +11,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProAssistantPanel } from "#src/routes/pro-assistant-panel/pro-assistant-panel";
 import { ProAssistantPanelRoute } from "#src/routes/pro-assistant-panel/pro-assistant-panel.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProAssistantPanel", () => {
   beforeEach(stubBrowserApis);
@@ -18,7 +19,7 @@ describe("ProAssistantPanel", () => {
 
   it("sits at /pro-assistant-panel in the AI category, and titles the page and the document", () => {
     render(<ProAssistantPanel />);
-    expect(ProAssistantPanelRoute.path).toBe("/pro-assistant-panel");
+    expect(routePath(ProAssistantPanelRoute)).toBe("/pro-assistant-panel");
     expect(ProAssistantPanelRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProAssistantPanelRoute.title }),

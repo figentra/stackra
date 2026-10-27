@@ -10,11 +10,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ProSignatureField } from "#src/routes/pro-signature-field/pro-signature-field";
 import { ProSignatureFieldRoute } from "#src/routes/pro-signature-field/pro-signature-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProSignatureField", () => {
   it("sits at /pro-signature-field, and titles the page and the document", () => {
     render(<ProSignatureField />);
-    expect(ProSignatureFieldRoute.path).toBe("/pro-signature-field");
+    expect(routePath(ProSignatureFieldRoute)).toBe("/pro-signature-field");
     expect(
       screen.getByRole("heading", { level: 1, name: ProSignatureFieldRoute.title }),
     ).toBeTruthy();

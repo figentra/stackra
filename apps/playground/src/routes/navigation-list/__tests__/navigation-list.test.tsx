@@ -17,6 +17,7 @@ import { MemoryRouter } from "react-router";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { NavigationList } from "#src/routes/navigation-list/navigation-list";
 import { NavigationListRoute } from "#src/routes/navigation-list/navigation-list.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(url = "/navigation-list?scheme=dark&locale=ar") {
   render(
@@ -48,7 +49,7 @@ describe("Navigation list page", () => {
 
   it("titles the page and the document, and sits at /navigation-list under Navigation", () => {
     renderPage();
-    expect(NavigationListRoute.path).toBe("/navigation-list");
+    expect(routePath(NavigationListRoute)).toBe("/navigation-list");
     expect(NavigationListRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Navigation list" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

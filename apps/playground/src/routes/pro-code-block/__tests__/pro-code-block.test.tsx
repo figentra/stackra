@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCodeBlock } from "#src/routes/pro-code-block/pro-code-block";
 import { ProCodeBlockRoute } from "#src/routes/pro-code-block/pro-code-block.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCodeBlock", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProCodeBlock", () => {
 
   it("sits at /pro-code-block in the Pro category, and titles the page and the document", () => {
     render(<ProCodeBlock />);
-    expect(ProCodeBlockRoute.path).toBe("/pro-code-block");
+    expect(routePath(ProCodeBlockRoute)).toBe("/pro-code-block");
     expect(ProCodeBlockRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProCodeBlockRoute.title })).toBeTruthy();
     expect(document.title).toBe("CodeBlock · Stackra Playground");

@@ -12,6 +12,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProMarkdown } from "#src/routes/pro-markdown/pro-markdown";
 import { ProMarkdownRoute } from "#src/routes/pro-markdown/pro-markdown.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProMarkdown", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProMarkdown", () => {
 
   it("sits at /pro-markdown in the Pro category, and titles the page and the document", () => {
     render(<ProMarkdown />);
-    expect(ProMarkdownRoute.path).toBe("/pro-markdown");
+    expect(routePath(ProMarkdownRoute)).toBe("/pro-markdown");
     expect(ProMarkdownRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProMarkdownRoute.title })).toBeTruthy();
     expect(document.title).toBe("Markdown · Stackra Playground");

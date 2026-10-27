@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProTextShimmer } from "#src/routes/pro-text-shimmer/pro-text-shimmer";
 import { ProTextShimmerRoute } from "#src/routes/pro-text-shimmer/pro-text-shimmer.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProTextShimmer", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProTextShimmer", () => {
 
   it("sits at /pro-text-shimmer in the Pro category, and titles the page and the document", () => {
     render(<ProTextShimmer />);
-    expect(ProTextShimmerRoute.path).toBe("/pro-text-shimmer");
+    expect(routePath(ProTextShimmerRoute)).toBe("/pro-text-shimmer");
     expect(ProTextShimmerRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProTextShimmerRoute.title })).toBeTruthy();
     expect(document.title).toBe("TextShimmer · Stackra Playground");

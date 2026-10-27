@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCheckboxButtonGroup } from "#src/routes/pro-checkbox-button-group/pro-checkbox-button-group";
 import { ProCheckboxButtonGroupRoute } from "#src/routes/pro-checkbox-button-group/pro-checkbox-button-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCheckboxButtonGroup", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProCheckboxButtonGroup", () => {
 
   it("sits at /pro-checkbox-button-group in the Pro group, and titles the page and the document", () => {
     render(<ProCheckboxButtonGroup />);
-    expect(ProCheckboxButtonGroupRoute.path).toBe("/pro-checkbox-button-group");
+    expect(routePath(ProCheckboxButtonGroupRoute)).toBe("/pro-checkbox-button-group");
     expect(ProCheckboxButtonGroupRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProCheckboxButtonGroupRoute.title }),

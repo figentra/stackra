@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { CursorPagination } from "#src/routes/cursor-pagination/cursor-pagination";
 import { CursorPaginationRoute } from "#src/routes/cursor-pagination/cursor-pagination.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -54,7 +55,7 @@ describe("Cursor pagination page", () => {
 
   it("titles the page and the document, and sits at /cursor-pagination under Navigation", () => {
     renderPage();
-    expect(CursorPaginationRoute.path).toBe("/cursor-pagination");
+    expect(routePath(CursorPaginationRoute)).toBe("/cursor-pagination");
     expect(CursorPaginationRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Cursor pagination" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

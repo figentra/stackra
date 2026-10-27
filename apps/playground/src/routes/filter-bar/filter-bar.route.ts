@@ -6,16 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5).
  */
+import { Route } from "@stackra/navigation";
+
 import type { PageCategory } from "#src/enums/page-category.enum";
 
 /** The FilterBar page, at `/filter-bar`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class FilterBarRoute extends Route({ path: "/filter-bar" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class FilterBarRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/filter-bar";
-
+export class FilterBarRoute extends Route({ path: "/filter-bar" }) {
   /** The page title. */
   static readonly title = "Filter bar";
 

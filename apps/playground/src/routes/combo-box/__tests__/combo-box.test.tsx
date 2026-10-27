@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { ComboBox } from "#src/routes/combo-box/combo-box";
 import { ComboBoxRoute } from "#src/routes/combo-box/combo-box.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -68,7 +69,7 @@ describe("Combo box page", () => {
 
   it("titles the page and the document, and sits at /combo-box under Selection", () => {
     renderPage();
-    expect(ComboBoxRoute.path).toBe("/combo-box");
+    expect(routePath(ComboBoxRoute)).toBe("/combo-box");
     expect(ComboBoxRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Combo box" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

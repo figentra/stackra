@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatMessage } from "#src/routes/pro-chat-message/pro-chat-message";
 import { ProChatMessageRoute } from "#src/routes/pro-chat-message/pro-chat-message.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatMessage", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatMessage", () => {
 
   it("sits at /pro-chat-message in the Pro category, and titles the page and the document", () => {
     render(<ProChatMessage />);
-    expect(ProChatMessageRoute.path).toBe("/pro-chat-message");
+    expect(routePath(ProChatMessageRoute)).toBe("/pro-chat-message");
     expect(ProChatMessageRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProChatMessageRoute.title })).toBeTruthy();
     expect(document.title).toBe("ChatMessage · Stackra Playground");

@@ -17,6 +17,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { TwoColumnLayout } from "#src/routes/two-column-layout/two-column-layout";
 import { TwoColumnLayoutRoute } from "#src/routes/two-column-layout/two-column-layout.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -47,7 +48,7 @@ describe("Two column layout page", () => {
 
   it("opens with the page's one h1, and sits at /two-column-layout under Layout", () => {
     renderPage();
-    expect(TwoColumnLayoutRoute.path).toBe("/two-column-layout");
+    expect(routePath(TwoColumnLayoutRoute)).toBe("/two-column-layout");
     expect(TwoColumnLayoutRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Two column layout" })).toBeTruthy();

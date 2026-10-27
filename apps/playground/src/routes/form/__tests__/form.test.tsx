@@ -14,6 +14,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { Form } from "#src/routes/form/form";
 import { FormRoute } from "#src/routes/form/form.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("Form page", () => {
 
   it("titles the page and the document, and sits at /form under Forms", () => {
     renderPage();
-    expect(FormRoute.path).toBe("/form");
+    expect(routePath(FormRoute)).toBe("/form");
     expect(FormRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Form" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

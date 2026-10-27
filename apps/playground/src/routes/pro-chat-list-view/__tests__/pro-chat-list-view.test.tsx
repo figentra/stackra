@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatListView } from "#src/routes/pro-chat-list-view/pro-chat-list-view";
 import { ProChatListViewRoute } from "#src/routes/pro-chat-list-view/pro-chat-list-view.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatListView", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatListView", () => {
 
   it("sits at /pro-chat-list-view in the Pro category, and titles the page and the document", () => {
     render(<ProChatListView />);
-    expect(ProChatListViewRoute.path).toBe("/pro-chat-list-view");
+    expect(routePath(ProChatListViewRoute)).toBe("/pro-chat-list-view");
     expect(ProChatListViewRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatListViewRoute.title }),

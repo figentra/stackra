@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProBarChart } from "#src/routes/pro-bar-chart/pro-bar-chart";
 import { ProBarChartRoute } from "#src/routes/pro-bar-chart/pro-bar-chart.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProBarChart", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProBarChart", () => {
 
   it("sits at /pro-bar-chart in the Pro category, and titles the page and the document", () => {
     render(<ProBarChart />);
-    expect(ProBarChartRoute.path).toBe("/pro-bar-chart");
+    expect(routePath(ProBarChartRoute)).toBe("/pro-bar-chart");
     expect(ProBarChartRoute.category).toBe("Charts");
     expect(screen.getByRole("heading", { level: 1, name: ProBarChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("BarChart · Stackra Playground");

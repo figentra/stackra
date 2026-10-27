@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProLineChart } from "#src/routes/pro-line-chart/pro-line-chart";
 import { ProLineChartRoute } from "#src/routes/pro-line-chart/pro-line-chart.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProLineChart", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProLineChart", () => {
 
   it("sits at /pro-line-chart in the Pro category, and titles the page and the document", () => {
     render(<ProLineChart />);
-    expect(ProLineChartRoute.path).toBe("/pro-line-chart");
+    expect(routePath(ProLineChartRoute)).toBe("/pro-line-chart");
     expect(ProLineChartRoute.category).toBe("Charts");
     expect(screen.getByRole("heading", { level: 1, name: ProLineChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("LineChart · Stackra Playground");

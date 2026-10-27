@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProActionPalette } from "#src/routes/pro-action-palette/pro-action-palette";
 import { ProActionPaletteRoute } from "#src/routes/pro-action-palette/pro-action-palette.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProActionPalette", () => {
   beforeEach(stubBrowserApis);
@@ -22,7 +23,7 @@ describe("ProActionPalette", () => {
 
   it("sits at /pro-action-palette in the Pro group, and titles the page and the document", () => {
     render(<ProActionPalette />);
-    expect(ProActionPaletteRoute.path).toBe("/pro-action-palette");
+    expect(routePath(ProActionPaletteRoute)).toBe("/pro-action-palette");
     expect(ProActionPaletteRoute.category).toBe("Actions");
     expect(
       screen.getByRole("heading", { level: 1, name: ProActionPaletteRoute.title }),

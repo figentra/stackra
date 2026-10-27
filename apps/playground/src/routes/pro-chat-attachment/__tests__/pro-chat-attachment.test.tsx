@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatAttachment } from "#src/routes/pro-chat-attachment/pro-chat-attachment";
 import { ProChatAttachmentRoute } from "#src/routes/pro-chat-attachment/pro-chat-attachment.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatAttachment", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatAttachment", () => {
 
   it("sits at /pro-chat-attachment in the Pro category, and titles the page and the document", () => {
     render(<ProChatAttachment />);
-    expect(ProChatAttachmentRoute.path).toBe("/pro-chat-attachment");
+    expect(routePath(ProChatAttachmentRoute)).toBe("/pro-chat-attachment");
     expect(ProChatAttachmentRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatAttachmentRoute.title }),

@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { Checkbox } from "#src/routes/checkbox/checkbox";
 import { CheckboxRoute } from "#src/routes/checkbox/checkbox.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -41,7 +42,7 @@ describe("Checkbox page", () => {
 
   it("titles the page and the document, and sits at /checkbox under Selection", () => {
     renderPage();
-    expect(CheckboxRoute.path).toBe("/checkbox");
+    expect(routePath(CheckboxRoute)).toBe("/checkbox");
     expect(CheckboxRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Checkbox" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

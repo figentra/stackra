@@ -10,11 +10,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { EnvironmentBanner } from "#src/routes/environment-banner/environment-banner";
 import { EnvironmentBannerRoute } from "#src/routes/environment-banner/environment-banner.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("EnvironmentBanner page", () => {
   it("sits at /environment-banner, and titles the page and the document", () => {
     render(<EnvironmentBanner />);
-    expect(EnvironmentBannerRoute.path).toBe("/environment-banner");
+    expect(routePath(EnvironmentBannerRoute)).toBe("/environment-banner");
     expect(
       screen.getByRole("heading", { level: 1, name: EnvironmentBannerRoute.title }),
     ).toBeTruthy();

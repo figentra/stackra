@@ -16,6 +16,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { ErrorState } from "#src/routes/error-state/error-state";
 import { ErrorStateRoute } from "#src/routes/error-state/error-state.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -44,7 +45,7 @@ describe("Error state page", () => {
 
   it("titles the page and the document, and sits at /error-state under Feedback and status", () => {
     renderPage();
-    expect(ErrorStateRoute.path).toBe("/error-state");
+    expect(routePath(ErrorStateRoute)).toBe("/error-state");
     expect(ErrorStateRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Error state" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

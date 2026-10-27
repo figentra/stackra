@@ -19,6 +19,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { RouteOverlay } from "#src/routes/route-overlay/route-overlay";
 import { RouteOverlayRoute } from "#src/routes/route-overlay/route-overlay.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -54,7 +55,7 @@ describe("RouteOverlay page", () => {
 
   it("titles the page and the document, and sits at /route-overlay under Overlays", () => {
     renderPage();
-    expect(RouteOverlayRoute.path).toBe("/route-overlay");
+    expect(routePath(RouteOverlayRoute)).toBe("/route-overlay");
     expect(RouteOverlayRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Route overlay" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

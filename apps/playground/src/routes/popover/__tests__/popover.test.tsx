@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Popover } from "#src/routes/popover/popover";
 import { PopoverRoute } from "#src/routes/popover/popover.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -51,7 +52,7 @@ describe("Popover page", () => {
 
   it("titles the page and the document, and sits at /popover under Overlays", () => {
     renderPage();
-    expect(PopoverRoute.path).toBe("/popover");
+    expect(routePath(PopoverRoute)).toBe("/popover");
     expect(PopoverRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Popover" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

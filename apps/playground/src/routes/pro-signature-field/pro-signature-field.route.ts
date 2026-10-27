@@ -6,16 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0310 (decision 12); STA-803.
  */
+import { Route } from "@stackra/navigation";
+
 import type { PageCategory } from "#src/enums/page-category.enum";
 
 /** The `@stackra-pro/ui` Signature field page, at `/pro-signature-field`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class ProSignatureFieldRoute extends Route({ path: "/pro-signature-field" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class ProSignatureFieldRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/pro-signature-field";
-
+export class ProSignatureFieldRoute extends Route({ path: "/pro-signature-field" }) {
   /** The page title, the component's name. */
   static readonly title = "Signature field";
 

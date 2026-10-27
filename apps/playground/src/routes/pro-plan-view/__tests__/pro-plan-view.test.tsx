@@ -11,6 +11,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProPlanView } from "#src/routes/pro-plan-view/pro-plan-view";
 import { ProPlanViewRoute } from "#src/routes/pro-plan-view/pro-plan-view.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProPlanView", () => {
   beforeEach(stubBrowserApis);
@@ -18,7 +19,7 @@ describe("ProPlanView", () => {
 
   it("sits at /pro-plan-view in the AI category, and titles the page and the document", () => {
     render(<ProPlanView />);
-    expect(ProPlanViewRoute.path).toBe("/pro-plan-view");
+    expect(routePath(ProPlanViewRoute)).toBe("/pro-plan-view");
     expect(screen.getByRole("heading", { level: 1, name: ProPlanViewRoute.title })).toBeTruthy();
     expect(document.title).toBe("Plan view · Stackra Playground");
   });

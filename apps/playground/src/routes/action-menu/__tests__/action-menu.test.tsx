@@ -14,6 +14,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { ActionMenu } from "#src/routes/action-menu/action-menu";
 import { ActionMenuRoute } from "#src/routes/action-menu/action-menu.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -43,7 +44,7 @@ describe("Action menu page", () => {
 
   it("titles the page and the document, and sits at /action-menu under Overlays", () => {
     renderPage();
-    expect(ActionMenuRoute.path).toBe("/action-menu");
+    expect(routePath(ActionMenuRoute)).toBe("/action-menu");
     expect(ActionMenuRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Action menu" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

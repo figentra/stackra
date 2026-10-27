@@ -20,6 +20,7 @@ import { MemoryRouter } from "react-router";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { AppShell } from "#src/routes/app-shell/app-shell";
 import { AppShellRoute } from "#src/routes/app-shell/app-shell.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(url = "/app-shell?scheme=dark&locale=ar") {
   render(
@@ -51,7 +52,7 @@ describe("App shell page", () => {
 
   it("titles the page and the document, and sits at /app-shell under Layout", () => {
     renderPage();
-    expect(AppShellRoute.path).toBe("/app-shell");
+    expect(routePath(AppShellRoute)).toBe("/app-shell");
     expect(AppShellRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "App shell" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

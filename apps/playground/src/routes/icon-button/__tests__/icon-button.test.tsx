@@ -13,6 +13,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { IconButton } from "#src/routes/icon-button/icon-button";
 import { IconButtonRoute } from "#src/routes/icon-button/icon-button.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("IconButton page", () => {
 
   it("titles the page and the document, and sits at /icon-button under Actions", () => {
     renderPage();
-    expect(IconButtonRoute.path).toBe("/icon-button");
+    expect(routePath(IconButtonRoute)).toBe("/icon-button");
     expect(IconButtonRoute.category).toBe("Actions");
     expect(screen.getByRole("heading", { level: 1, name: "Icon button" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

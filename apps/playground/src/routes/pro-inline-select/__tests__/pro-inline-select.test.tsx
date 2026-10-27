@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProInlineSelect } from "#src/routes/pro-inline-select/pro-inline-select";
 import { ProInlineSelectRoute } from "#src/routes/pro-inline-select/pro-inline-select.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProInlineSelect", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProInlineSelect", () => {
 
   it("sits at /pro-inline-select in the Pro group, and titles the page and the document", () => {
     render(<ProInlineSelect />);
-    expect(ProInlineSelectRoute.path).toBe("/pro-inline-select");
+    expect(routePath(ProInlineSelectRoute)).toBe("/pro-inline-select");
     expect(ProInlineSelectRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProInlineSelectRoute.title }),

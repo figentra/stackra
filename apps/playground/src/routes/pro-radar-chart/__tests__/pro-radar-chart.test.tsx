@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProRadarChart } from "#src/routes/pro-radar-chart/pro-radar-chart";
 import { ProRadarChartRoute } from "#src/routes/pro-radar-chart/pro-radar-chart.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProRadarChart", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProRadarChart", () => {
 
   it("sits at /pro-radar-chart in the Pro category, and titles the page and the document", () => {
     render(<ProRadarChart />);
-    expect(ProRadarChartRoute.path).toBe("/pro-radar-chart");
+    expect(routePath(ProRadarChartRoute)).toBe("/pro-radar-chart");
     expect(ProRadarChartRoute.category).toBe("Charts");
     expect(screen.getByRole("heading", { level: 1, name: ProRadarChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("RadarChart · Stackra Playground");

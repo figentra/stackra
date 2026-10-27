@@ -13,5 +13,6 @@ export { type ModuleExports } from "./module-exports.type";
 export { type PageTier } from "./page-tier";
 export { TIER_FILTERS } from "./tier-filters.constant";
 export { type TierFilter } from "./tier-filter.type";
+export { routePath } from "./route-path.function";
 export { tierOf } from "./tier-of.function";
 export { matchesTier } from "./matches-tier.function";

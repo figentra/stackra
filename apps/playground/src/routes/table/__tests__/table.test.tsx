@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Table } from "#src/routes/table/table";
 import { TableRoute } from "#src/routes/table/table.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -56,7 +57,7 @@ describe("Table page", () => {
 
   it("titles the page and the document, and sits at /table under Data display", () => {
     renderPage();
-    expect(TableRoute.path).toBe("/table");
+    expect(routePath(TableRoute)).toBe("/table");
     expect(TableRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Table" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

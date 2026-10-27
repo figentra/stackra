@@ -6,15 +6,10 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5).
  */
+import { Route } from "@stackra/navigation";
 
 /** The index of the playground's pages, at `/`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class HomeRoute extends Route({ path: "/" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class HomeRoute {
-  /** The URL path of the route. */
-  static readonly path = "/";
-
+export class HomeRoute extends Route({ path: "/" }) {
   /** The page title. */
   static readonly title = "Stackra Design System";
 }

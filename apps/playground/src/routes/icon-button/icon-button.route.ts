@@ -6,16 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5).
  */
+import { Route } from "@stackra/navigation";
+
 import type { PageCategory } from "#src/enums/page-category.enum";
 
 /** The Icon button page, at `/icon-button`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class IconButtonRoute extends Route({ path: "/icon-button" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class IconButtonRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/icon-button";
-
+export class IconButtonRoute extends Route({ path: "/icon-button" }) {
   /** The page title. */
   static readonly title = "Icon button";
 

@@ -14,6 +14,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Icon } from "#src/routes/icon/icon";
 import { IconRoute } from "#src/routes/icon/icon.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(locale = "en") {
   render(
@@ -55,7 +56,7 @@ describe("Icon page", () => {
 
   it("titles the page and the document, and sits at /icon", () => {
     renderPage();
-    expect(IconRoute.path).toBe("/icon");
+    expect(routePath(IconRoute)).toBe("/icon");
     expect(IconRoute.category).toBe("Foundations");
     expect(screen.getByRole("heading", { level: 1, name: "Icon" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

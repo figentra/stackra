@@ -6,16 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0310 (decision 12); STA-803.
  */
+import { Route } from "@stackra/navigation";
+
 import type { PageCategory } from "#src/enums/page-category.enum";
 
 /** The `@stackra-pro/ui` Resource scheduler page, at `/pro-resource-scheduler`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class ProResourceSchedulerRoute extends Route({ path: "/pro-resource-scheduler" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
-export class ProResourceSchedulerRoute {
-  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
-  static readonly path = "/pro-resource-scheduler";
-
+export class ProResourceSchedulerRoute extends Route({ path: "/pro-resource-scheduler" }) {
   /** The page title, the component's name. */
   static readonly title = "Resource scheduler";
 

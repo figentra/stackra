@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCarousel } from "#src/routes/pro-carousel/pro-carousel";
 import { ProCarouselRoute } from "#src/routes/pro-carousel/pro-carousel.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCarousel", () => {
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe("ProCarousel", () => {
 
   it("sits at /pro-carousel in the Pro category, and titles the page and the document", () => {
     render(<ProCarousel />);
-    expect(ProCarouselRoute.path).toBe("/pro-carousel");
+    expect(routePath(ProCarouselRoute)).toBe("/pro-carousel");
     expect(ProCarouselRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProCarouselRoute.title })).toBeTruthy();
     expect(document.title).toBe("Carousel · Stackra Playground");

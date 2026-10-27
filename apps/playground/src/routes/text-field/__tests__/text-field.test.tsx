@@ -15,6 +15,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { TextField } from "#src/routes/text-field/text-field";
 import { TextFieldRoute } from "#src/routes/text-field/text-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -43,7 +44,7 @@ describe("Text field page", () => {
 
   it("titles the page and the document, and sits at /text-field under Inputs", () => {
     renderPage();
-    expect(TextFieldRoute.path).toBe("/text-field");
+    expect(routePath(TextFieldRoute)).toBe("/text-field");
     expect(TextFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Text field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

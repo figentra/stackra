@@ -17,6 +17,7 @@ import { MemoryRouter } from "react-router";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Sidebar } from "#src/routes/sidebar/sidebar";
 import { SidebarRoute } from "#src/routes/sidebar/sidebar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(url = "/sidebar?scheme=dark&locale=ar") {
   render(
@@ -48,7 +49,7 @@ describe("Sidebar page", () => {
 
   it("titles the page and the document, and sits at /sidebar under Navigation", () => {
     renderPage();
-    expect(SidebarRoute.path).toBe("/sidebar");
+    expect(routePath(SidebarRoute)).toBe("/sidebar");
     expect(SidebarRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Sidebar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

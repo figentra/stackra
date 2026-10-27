@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Screen } from "#src/routes/screen/screen";
 import { ScreenRoute } from "#src/routes/screen/screen.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 const TOP = "pt-[env(titlebar-area-height,env(safe-area-inset-top,0px))]";
 const BOTTOM = "pb-[env(safe-area-inset-bottom,0px)]";
@@ -51,7 +52,7 @@ describe("Screen page", () => {
 
   it("titles the page and the document, and sits at /screen under Layout", () => {
     renderPage();
-    expect(ScreenRoute.path).toBe("/screen");
+    expect(routePath(ScreenRoute)).toBe("/screen");
     expect(ScreenRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "Screen" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

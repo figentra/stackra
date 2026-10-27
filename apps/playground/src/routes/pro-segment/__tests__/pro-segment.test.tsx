@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProSegment } from "#src/routes/pro-segment/pro-segment";
 import { ProSegmentRoute } from "#src/routes/pro-segment/pro-segment.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProSegment", () => {
   beforeEach(() => {
@@ -25,7 +26,7 @@ describe("ProSegment", () => {
 
   it("sits at /pro-segment in the Pro category, and titles the page and the document", () => {
     render(<ProSegment />);
-    expect(ProSegmentRoute.path).toBe("/pro-segment");
+    expect(routePath(ProSegmentRoute)).toBe("/pro-segment");
     expect(ProSegmentRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProSegmentRoute.title })).toBeTruthy();
     expect(document.title).toBe("Segment · Stackra Playground");

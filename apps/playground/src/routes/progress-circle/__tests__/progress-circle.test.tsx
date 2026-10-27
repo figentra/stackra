@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { ProgressCircle } from "#src/routes/progress-circle/progress-circle";
 import { ProgressCircleRoute } from "#src/routes/progress-circle/progress-circle.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -41,7 +42,7 @@ describe("ProgressCircle page", () => {
 
   it("titles the page and the document, and sits at /progress-circle under Feedback and status", () => {
     renderPage();
-    expect(ProgressCircleRoute.path).toBe("/progress-circle");
+    expect(routePath(ProgressCircleRoute)).toBe("/progress-circle");
     expect(ProgressCircleRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Progress circle" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

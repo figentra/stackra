@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProCellColorPicker } from "#src/routes/pro-cell-color-picker/pro-cell-color-picker";
 import { ProCellColorPickerRoute } from "#src/routes/pro-cell-color-picker/pro-cell-color-picker.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProCellColorPicker", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProCellColorPicker", () => {
 
   it("sits at /pro-cell-color-picker in the Pro group, and titles the page and the document", () => {
     render(<ProCellColorPicker />);
-    expect(ProCellColorPickerRoute.path).toBe("/pro-cell-color-picker");
+    expect(routePath(ProCellColorPickerRoute)).toBe("/pro-cell-color-picker");
     expect(ProCellColorPickerRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProCellColorPickerRoute.title }),

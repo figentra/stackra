@@ -14,6 +14,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { DateField } from "#src/routes/date-field/date-field";
 import { DateFieldRoute } from "#src/routes/date-field/date-field.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -45,7 +46,7 @@ describe("Date field page", () => {
 
   it("titles the page and the document, and sits at /date-field under Date and time", () => {
     renderPage();
-    expect(DateFieldRoute.path).toBe("/date-field");
+    expect(routePath(DateFieldRoute)).toBe("/date-field");
     expect(DateFieldRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: "Date field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

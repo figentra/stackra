@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProWidget } from "#src/routes/pro-widget/pro-widget";
 import { ProWidgetRoute } from "#src/routes/pro-widget/pro-widget.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProWidget", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProWidget", () => {
 
   it("sits at /pro-widget in the Pro category, and titles the page and the document", () => {
     render(<ProWidget />);
-    expect(ProWidgetRoute.path).toBe("/pro-widget");
+    expect(routePath(ProWidgetRoute)).toBe("/pro-widget");
     expect(ProWidgetRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProWidgetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Widget · Stackra Playground");

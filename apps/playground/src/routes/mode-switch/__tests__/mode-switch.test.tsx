@@ -10,11 +10,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { ModeSwitch } from "#src/routes/mode-switch/mode-switch";
 import { ModeSwitchRoute } from "#src/routes/mode-switch/mode-switch.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ModeSwitch page", () => {
   it("sits at /mode-switch, and titles the page and the document", () => {
     render(<ModeSwitch />);
-    expect(ModeSwitchRoute.path).toBe("/mode-switch");
+    expect(routePath(ModeSwitchRoute)).toBe("/mode-switch");
     expect(screen.getByRole("heading", { level: 1, name: ModeSwitchRoute.title })).toBeTruthy();
     expect(document.title).toBe("Mode switch · Stackra Playground");
   });

@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChartTooltip } from "#src/routes/pro-chart-tooltip/pro-chart-tooltip";
 import { ProChartTooltipRoute } from "#src/routes/pro-chart-tooltip/pro-chart-tooltip.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChartTooltip", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChartTooltip", () => {
 
   it("sits at /pro-chart-tooltip in the Pro category, and titles the page and the document", () => {
     render(<ProChartTooltip />);
-    expect(ProChartTooltipRoute.path).toBe("/pro-chart-tooltip");
+    expect(routePath(ProChartTooltipRoute)).toBe("/pro-chart-tooltip");
     expect(ProChartTooltipRoute.category).toBe("Charts");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChartTooltipRoute.title }),

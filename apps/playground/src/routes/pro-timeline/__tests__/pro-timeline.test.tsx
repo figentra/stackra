@@ -13,6 +13,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProTimeline } from "#src/routes/pro-timeline/pro-timeline";
 import { ProTimelineRoute } from "#src/routes/pro-timeline/pro-timeline.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProTimeline", () => {
   beforeEach(stubBrowserApis);
@@ -20,7 +21,7 @@ describe("ProTimeline", () => {
 
   it("sits at /pro-timeline in the Pro category, and titles the page and the document", () => {
     render(<ProTimeline />);
-    expect(ProTimelineRoute.path).toBe("/pro-timeline");
+    expect(routePath(ProTimelineRoute)).toBe("/pro-timeline");
     expect(ProTimelineRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProTimelineRoute.title })).toBeTruthy();
     expect(document.title).toBe("Timeline · Stackra Playground");

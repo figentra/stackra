@@ -7,7 +7,7 @@ left-to-right and right-to-left, checked by Playwright and axe. App at `apps/pla
   and the app groups (`routes/<name>/`, `components/<name>/`, `types/`, `styles/`), each with its first file.
 - `src/main.tsx` and `index.html` are stand-ins for what gen writes (STA-339); keep them thin. Never add a `main.ts`
   elsewhere or an entry barrel.
-- One route folder per component: `routes/<name>/<name>.route.ts` (static `path` = `/<name>`, `title` and `category`), the page
+- One route folder per component: `routes/<name>/<name>.route.ts` (`extends Route({ path: "/<name>" })`, static `title` and `category`), the page
   `<name>.tsx` whose h1 is the title, and `__tests__/`; its route class names a `category` (see `PageCategory`). Nothing
   else: `components/playground-pages` finds the folder, so the router, the index page and the navigation list it
   with no edit, and the e2e suite lists the folders, so every new route is checked in light, dark, LTR and RTL.

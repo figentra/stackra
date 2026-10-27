@@ -11,6 +11,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProApprovalCard } from "#src/routes/pro-approval-card/pro-approval-card";
 import { ProApprovalCardRoute } from "#src/routes/pro-approval-card/pro-approval-card.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProApprovalCard", () => {
   beforeEach(stubBrowserApis);
@@ -18,7 +19,7 @@ describe("ProApprovalCard", () => {
 
   it("sits at /pro-approval-card in the AI category, and titles the page and the document", () => {
     render(<ProApprovalCard />);
-    expect(ProApprovalCardRoute.path).toBe("/pro-approval-card");
+    expect(routePath(ProApprovalCardRoute)).toBe("/pro-approval-card");
     expect(ProApprovalCardRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProApprovalCardRoute.title }),

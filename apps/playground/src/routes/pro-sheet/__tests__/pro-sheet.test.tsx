@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProSheet } from "#src/routes/pro-sheet/pro-sheet";
 import { ProSheetRoute } from "#src/routes/pro-sheet/pro-sheet.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProSheet", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProSheet", () => {
 
   it("sits at /pro-sheet in the Pro category, and titles the page and the document", () => {
     render(<ProSheet />);
-    expect(ProSheetRoute.path).toBe("/pro-sheet");
+    expect(routePath(ProSheetRoute)).toBe("/pro-sheet");
     expect(ProSheetRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProSheetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Sheet · Stackra Playground");

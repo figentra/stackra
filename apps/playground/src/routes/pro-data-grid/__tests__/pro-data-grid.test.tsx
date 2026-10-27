@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProDataGrid } from "#src/routes/pro-data-grid/pro-data-grid";
 import { ProDataGridRoute } from "#src/routes/pro-data-grid/pro-data-grid.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 /** The customers in the grid, top to bottom. */
 const customers = () =>
@@ -26,7 +27,7 @@ describe("ProDataGrid", () => {
 
   it("sits at /pro-data-grid in the Pro group, and titles the page and the document", () => {
     render(<ProDataGrid />);
-    expect(ProDataGridRoute.path).toBe("/pro-data-grid");
+    expect(routePath(ProDataGridRoute)).toBe("/pro-data-grid");
     expect(ProDataGridRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProDataGridRoute.title })).toBeTruthy();
     expect(document.title).toBe("DataGrid · Stackra Playground");

@@ -16,6 +16,7 @@ import { MemoryRouter } from "react-router";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Breadcrumbs } from "#src/routes/breadcrumbs/breadcrumbs";
 import { BreadcrumbsRoute } from "#src/routes/breadcrumbs/breadcrumbs.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(url = "/breadcrumbs?scheme=dark&locale=ar") {
   render(
@@ -47,7 +48,7 @@ describe("Breadcrumbs page", () => {
 
   it("titles the page and the document, and sits at /breadcrumbs under Navigation", () => {
     renderPage();
-    expect(BreadcrumbsRoute.path).toBe("/breadcrumbs");
+    expect(routePath(BreadcrumbsRoute)).toBe("/breadcrumbs");
     expect(BreadcrumbsRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Breadcrumbs" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

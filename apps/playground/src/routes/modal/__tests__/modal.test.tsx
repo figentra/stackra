@@ -17,6 +17,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { Modal } from "#src/routes/modal/modal";
 import { ModalRoute } from "#src/routes/modal/modal.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -53,7 +54,7 @@ describe("Modal page", () => {
 
   it("titles the page and the document, and sits at /modal under Overlays", () => {
     renderPage();
-    expect(ModalRoute.path).toBe("/modal");
+    expect(routePath(ModalRoute)).toBe("/modal");
     expect(ModalRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Modal" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProActionBar } from "#src/routes/pro-action-bar/pro-action-bar";
 import { ProActionBarRoute } from "#src/routes/pro-action-bar/pro-action-bar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProActionBar", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProActionBar", () => {
 
   it("sits at /pro-action-bar in the Pro category, and titles the page and the document", () => {
     render(<ProActionBar />);
-    expect(ProActionBarRoute.path).toBe("/pro-action-bar");
+    expect(routePath(ProActionBarRoute)).toBe("/pro-action-bar");
     expect(ProActionBarRoute.category).toBe("Actions");
     expect(screen.getByRole("heading", { level: 1, name: ProActionBarRoute.title })).toBeTruthy();
     expect(document.title).toBe("ActionBar · Stackra Playground");

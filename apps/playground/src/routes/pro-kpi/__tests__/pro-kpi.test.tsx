@@ -14,6 +14,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProKpi } from "#src/routes/pro-kpi/pro-kpi";
 import { ProKpiRoute } from "#src/routes/pro-kpi/pro-kpi.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProKpi", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProKpi", () => {
 
   it("sits at /pro-kpi in the Pro group, and titles the page and the document", () => {
     render(<ProKpi />);
-    expect(ProKpiRoute.path).toBe("/pro-kpi");
+    expect(routePath(ProKpiRoute)).toBe("/pro-kpi");
     expect(ProKpiRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProKpiRoute.title })).toBeTruthy();
     expect(document.title).toBe("Kpi · Stackra Playground");

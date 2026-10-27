@@ -15,6 +15,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProRichTextEditor } from "#src/routes/pro-rich-text-editor/pro-rich-text-editor";
 import { ProRichTextEditorRoute } from "#src/routes/pro-rich-text-editor/pro-rich-text-editor.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProRichTextEditor", () => {
   beforeAll(() => {
@@ -29,7 +30,7 @@ describe("ProRichTextEditor", () => {
 
   it("sits at /pro-rich-text-editor in the Pro group, and titles the page and the document", () => {
     render(<ProRichTextEditor />);
-    expect(ProRichTextEditorRoute.path).toBe("/pro-rich-text-editor");
+    expect(routePath(ProRichTextEditorRoute)).toBe("/pro-rich-text-editor");
     expect(ProRichTextEditorRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProRichTextEditorRoute.title }),

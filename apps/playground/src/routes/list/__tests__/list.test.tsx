@@ -17,6 +17,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { List } from "#src/routes/list/list";
 import { ListRoute } from "#src/routes/list/list.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -69,7 +70,7 @@ describe("List page", () => {
 
   it("titles the page and the document, and sits at /list under Data display", () => {
     renderPage();
-    expect(ListRoute.path).toBe("/list");
+    expect(routePath(ListRoute)).toBe("/list");
     expect(ListRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "List" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

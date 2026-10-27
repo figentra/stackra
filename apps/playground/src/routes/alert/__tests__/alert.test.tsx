@@ -14,6 +14,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { Alert } from "#src/routes/alert/alert";
 import { AlertRoute } from "#src/routes/alert/alert.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -40,7 +41,7 @@ describe("Alert page", () => {
 
   it("titles the page and the document, and sits at /alert under Feedback and status", () => {
     renderPage();
-    expect(AlertRoute.path).toBe("/alert");
+    expect(routePath(AlertRoute)).toBe("/alert");
     expect(AlertRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Alert" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -14,6 +14,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 import type { PageLink } from "#src/types/page-link.type";
 
 const PAGES: readonly PageLink[] = [
@@ -23,9 +24,12 @@ const PAGES: readonly PageLink[] = [
 ];
 
 function renderHome(url = "/") {
-  const router = createMemoryRouter([{ path: HomeRoute.path, element: <Home pages={PAGES} /> }], {
-    initialEntries: [url],
-  });
+  const router = createMemoryRouter(
+    [{ path: routePath(HomeRoute), element: <Home pages={PAGES} /> }],
+    {
+      initialEntries: [url],
+    },
+  );
   render(<RouterProvider router={router} />);
 }
 

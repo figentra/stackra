@@ -13,6 +13,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Select } from "#src/routes/select/select";
 import { SelectRoute } from "#src/routes/select/select.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("Select page", () => {
 
   it("titles the page and the document, and sits at /select under Selection", () => {
     renderPage();
-    expect(SelectRoute.path).toBe("/select");
+    expect(routePath(SelectRoute)).toBe("/select");
     expect(SelectRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Select" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

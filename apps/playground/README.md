@@ -44,7 +44,7 @@ masks, so axe measures text against every tint at once rather than giving up on 
 | `/icon`         | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample       |
 | `/typography`   | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                          |
 
-Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
+Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (a class that `extends Route({ path: "/<name>" })` and carries a static title), the page
 `<name>.tsx` and `__tests__/`, and nothing else: the router, the gallery, the palette and the e2e suite find it. Its
 h1 is its title. The route class also names its `category` (`Foundations`, `Actions`, `Inputs and forms`, `Charts` and
 the rest, in `src/enums/page-category.enum.ts`), which groups it on the index, in the category strip and in the

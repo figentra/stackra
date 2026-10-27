@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProChatMessageActions } from "#src/routes/pro-chat-message-actions/pro-chat-message-actions";
 import { ProChatMessageActionsRoute } from "#src/routes/pro-chat-message-actions/pro-chat-message-actions.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProChatMessageActions", () => {
   beforeEach(stubBrowserApis);
@@ -19,7 +20,7 @@ describe("ProChatMessageActions", () => {
 
   it("sits at /pro-chat-message-actions in the Pro category, and titles the page and the document", () => {
     render(<ProChatMessageActions />);
-    expect(ProChatMessageActionsRoute.path).toBe("/pro-chat-message-actions");
+    expect(routePath(ProChatMessageActionsRoute)).toBe("/pro-chat-message-actions");
     expect(ProChatMessageActionsRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatMessageActionsRoute.title }),

@@ -15,6 +15,7 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProNumberValue } from "#src/routes/pro-number-value/pro-number-value";
 import { ProNumberValueRoute } from "#src/routes/pro-number-value/pro-number-value.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 vi.mock("@number-flow/react", () => ({
   default: (props: {
@@ -30,7 +31,7 @@ describe("ProNumberValue", () => {
 
   it("sits at /pro-number-value in the Pro category, and titles the page and the document", () => {
     render(<ProNumberValue />);
-    expect(ProNumberValueRoute.path).toBe("/pro-number-value");
+    expect(routePath(ProNumberValueRoute)).toBe("/pro-number-value");
     expect(ProNumberValueRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: ProNumberValueRoute.title })).toBeTruthy();
     expect(document.title).toBe("NumberValue · Stackra Playground");

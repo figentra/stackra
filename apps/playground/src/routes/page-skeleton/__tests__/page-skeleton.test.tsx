@@ -15,6 +15,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { PageSkeleton } from "#src/routes/page-skeleton/page-skeleton";
 import { PageSkeletonRoute } from "#src/routes/page-skeleton/page-skeleton.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -43,7 +44,7 @@ describe("Page skeleton page", () => {
 
   it("titles the page and the document, and sits at /page-skeleton under Feedback and status", () => {
     renderPage();
-    expect(PageSkeletonRoute.path).toBe("/page-skeleton");
+    expect(routePath(PageSkeletonRoute)).toBe("/page-skeleton");
     expect(PageSkeletonRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Page skeleton" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

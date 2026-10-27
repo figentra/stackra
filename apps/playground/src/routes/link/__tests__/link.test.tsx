@@ -14,6 +14,7 @@ import { MemoryRouter } from "react-router";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Link } from "#src/routes/link/link";
 import { LinkRoute } from "#src/routes/link/link.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage(url = "/link?scheme=dark&locale=ar") {
   render(
@@ -44,7 +45,7 @@ describe("Link page", () => {
 
   it("titles the page and the document, and sits at /link under Navigation", () => {
     renderPage();
-    expect(LinkRoute.path).toBe("/link");
+    expect(routePath(LinkRoute)).toBe("/link");
     expect(LinkRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Link" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

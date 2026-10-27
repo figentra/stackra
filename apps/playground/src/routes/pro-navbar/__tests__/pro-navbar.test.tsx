@@ -14,6 +14,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProNavbar } from "#src/routes/pro-navbar/pro-navbar";
 import { ProNavbarRoute } from "#src/routes/pro-navbar/pro-navbar.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProNavbar", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProNavbar", () => {
 
   it("sits at /pro-navbar in the Pro category, and titles the page and the document", () => {
     render(<ProNavbar />);
-    expect(ProNavbarRoute.path).toBe("/pro-navbar");
+    expect(routePath(ProNavbarRoute)).toBe("/pro-navbar");
     expect(ProNavbarRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProNavbarRoute.title })).toBeTruthy();
     expect(document.title).toBe("Navbar · Stackra Playground");

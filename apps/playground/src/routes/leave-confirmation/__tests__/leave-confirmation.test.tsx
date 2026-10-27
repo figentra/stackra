@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { LeaveConfirmation } from "#src/routes/leave-confirmation/leave-confirmation";
 import { LeaveConfirmationRoute } from "#src/routes/leave-confirmation/leave-confirmation.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -52,7 +53,7 @@ describe("LeaveConfirmation page", () => {
 
   it("titles the page and the document, and sits at /leave-confirmation under Overlays", () => {
     renderPage();
-    expect(LeaveConfirmationRoute.path).toBe("/leave-confirmation");
+    expect(routePath(LeaveConfirmationRoute)).toBe("/leave-confirmation");
     expect(LeaveConfirmationRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Leave confirmation" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

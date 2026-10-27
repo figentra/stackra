@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { AlertDialog } from "#src/routes/alert-dialog/alert-dialog";
 import { AlertDialogRoute } from "#src/routes/alert-dialog/alert-dialog.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -52,7 +53,7 @@ describe("AlertDialog page", () => {
 
   it("titles the page and the document, and sits at /alert-dialog under Overlays", () => {
     renderPage();
-    expect(AlertDialogRoute.path).toBe("/alert-dialog");
+    expect(routePath(AlertDialogRoute)).toBe("/alert-dialog");
     expect(AlertDialogRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: "Alert dialog" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

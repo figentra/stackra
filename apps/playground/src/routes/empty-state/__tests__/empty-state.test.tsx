@@ -16,6 +16,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 import { EmptyState } from "#src/routes/empty-state/empty-state";
 import { EmptyStateRoute } from "#src/routes/empty-state/empty-state.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -44,7 +45,7 @@ describe("Empty state page", () => {
 
   it("titles the page and the document, and sits at /empty-state under Feedback and status", () => {
     renderPage();
-    expect(EmptyStateRoute.path).toBe("/empty-state");
+    expect(routePath(EmptyStateRoute)).toBe("/empty-state");
     expect(EmptyStateRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Empty state" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

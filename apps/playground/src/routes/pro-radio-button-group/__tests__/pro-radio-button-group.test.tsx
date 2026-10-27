@@ -14,6 +14,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProRadioButtonGroup } from "#src/routes/pro-radio-button-group/pro-radio-button-group";
 import { ProRadioButtonGroupRoute } from "#src/routes/pro-radio-button-group/pro-radio-button-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 describe("ProRadioButtonGroup", () => {
   beforeEach(stubBrowserApis);
@@ -21,7 +22,7 @@ describe("ProRadioButtonGroup", () => {
 
   it("sits at /pro-radio-button-group in the Pro group, and titles the page and the document", () => {
     render(<ProRadioButtonGroup />);
-    expect(ProRadioButtonGroupRoute.path).toBe("/pro-radio-button-group");
+    expect(routePath(ProRadioButtonGroupRoute)).toBe("/pro-radio-button-group");
     expect(ProRadioButtonGroupRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProRadioButtonGroupRoute.title }),

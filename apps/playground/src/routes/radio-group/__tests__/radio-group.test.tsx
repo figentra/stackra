@@ -13,6 +13,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { RadioGroup } from "#src/routes/radio-group/radio-group";
 import { RadioGroupRoute } from "#src/routes/radio-group/radio-group.route";
+import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderPage() {
   render(
@@ -42,7 +43,7 @@ describe("RadioGroup page", () => {
 
   it("titles the page and the document, and sits at /radio-group under Selection", () => {
     renderPage();
-    expect(RadioGroupRoute.path).toBe("/radio-group");
+    expect(routePath(RadioGroupRoute)).toBe("/radio-group");
     expect(RadioGroupRoute.category).toBe("Selection");
     expect(screen.getByRole("heading", { level: 1, name: "Radio group" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
