@@ -8,14 +8,18 @@
  *           models only. It is `Lifetime.Transient`, so the container builds it, and with it the `Embedder` driver
  *           (which needs `search.embedder.url`), only when the relay resolves it for a semantic model's change, never
  *           at boot. The runtime `ai: never` guard (`semanticPassageOf`) runs before any text reaches the embedder, so
- *           a refused field is never sent. A passage's id is `<Model>:<primary key>`, unique across the shared vector
- *           table, with metadata `{ source: "search", model }`. Its scope is the row's own `scopeId` and `scopePath`
+ *           a refused field is never sent. A long row is cut into overlapping passages (`semanticChunksOf`,
+ *           `search.embedder.passage*`), ids `<Model>:<primary key>` then `#1`, `#2`..., unique across the shared vector
+ *           table, with metadata `{ source: "search", model, row, hash }`. `hash` covers the text, the scope and the
+ *           embedder, so an unchanged row is never embedded again; a row that shrinks loses its trailing chunks. Its scope is the row's own `scopeId` and `scopePath`
  *           (ADR 0327 decision 3), never request input; a semantic model without them is refused.
  * Runtime: node
  * Governing contract: ADR 0380 (decisions 2 and 3: the `ai: never` floor); ADR 0221 (decision 5: indexing through the
  *                     outbox); ADR 0160 (pgvector); ADR 0327 (decisions 3 and 9); ADR 0078 (decision 4: idempotent
- *                     consumers); ADR 0294 (decision 17: lifetimes); STA-1326.
+ *                     consumers); ADR 0294 (decision 17: lifetimes); STA-1326; stackra-301 (content hash, chunker, `row` for the vector lane).
  */
+import { createHash } from "node:crypto";
+
 import { Lifetime, Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
@@ -24,13 +28,14 @@ import { Searchable } from "@stackra/model";
 import { RowChangeKind } from "@stackra/outbox/contracts";
 import type { ChangeConsumer, RowChange } from "@stackra/outbox/contracts";
 
+import type { SearchConfig } from "#config/search.config";
 import type { Embedder, VectorIndex, VectorItem } from "#contracts/index";
+import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
+import { semanticChunksOf } from "#core/functions/semantic-chunks-of.function";
 import { semanticPassageOf } from "#core/functions/semantic-passage-of.function";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 import { passageIdOf } from "#node/functions/passage-id-of.function";
-
-/** The metadata `source` of every passage this service stores, so a retrieval can filter search passages in or out. */
-const SOURCE = "search";
+import { passageIdsOf } from "#node/functions/passage-ids-of.function";
 
 /** Field kinds that are not relations, so a dotted path through them needs no populate. */
 const NOT_RELATIONS: ReadonlySet<string> = new Set(["scalar", "embedded"]);
@@ -53,16 +58,21 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
   /** The connected database whose running context loads the row. */
   private readonly database: Database;
 
+  /** The embedder's model and the passage size the chunker cuts to (`search.embedder`). */
+  private readonly config: SearchConfig;
+
   /**
    * @param embedder - the in-region embedder (`search.embedder`).
    * @param vectors - the vector index the passages go to.
    * @param database - the connected database.
+   * @param config - the search configuration; `embedder` names the model and the passage size.
    */
-  constructor(embedder: Embedder, vectors: VectorIndex, database: Database) {
+  constructor(embedder: Embedder, vectors: VectorIndex, database: Database, config: SearchConfig) {
     super();
     this.embedder = embedder;
     this.vectors = vectors;
     this.database = database;
+    this.config = config;
   }
 
   /** Embeds the changed row, or removes its passage when the row is gone. */
@@ -114,28 +124,64 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
       text: semanticPassageOf(row, facet),
     }));
     const empty = passages.filter((passage) => passage.text === "");
-    const full = passages.filter((passage) => passage.text !== "");
     if (empty.length > 0)
       await this.remove(
         model,
         empty.map((passage) => passage.id),
       );
+    const full = passages
+      .filter((passage) => passage.text !== "")
+      .map((passage) => {
+        const scope = scopeOf(model, passage.row);
+        return { ...passage, scope, hash: this.hashOf(scope, passage.text) };
+      });
     if (full.length === 0) return;
-    const scopes = full.map((passage) => scopeOf(model, passage.row));
-    const vectors = await this.embedder.embed(full.map((passage) => passage.text));
-    const items: VectorItem[] = full.map((passage, at) => ({
-      id: passageIdOf(model, passage.id),
-      scope: scopes[at] as ScopeRef,
-      vector: vectors[at] ?? [],
-      text: passage.text,
-      metadata: { source: SOURCE, model: model.name },
-    }));
+    // An unchanged passage in an unchanged scope, by the same embedder, keeps its vectors: no embedding is paid twice.
+    const stored = await this.vectors.metadataOf(
+      full.map((passage) => passageIdOf(model, passage.id)),
+    );
+    const { passageCharacters, passageOverlap } = this.config.embedder;
+    const changed = full
+      .filter((passage) => stored.get(passageIdOf(model, passage.id))?.["hash"] !== passage.hash)
+      .map((passage) => ({
+        ...passage,
+        chunks: semanticChunksOf(passage.text, passageCharacters, passageOverlap),
+      }));
+    if (changed.length === 0) return;
+    const vectors = await this.embedder.embed(changed.flatMap((passage) => passage.chunks));
+    let at = 0;
+    const items: VectorItem[] = changed.flatMap((passage) =>
+      passage.chunks.map((text, chunk) => ({
+        id: passageIdOf(model, passage.id, chunk),
+        scope: passage.scope,
+        vector: vectors[at++] ?? [],
+        text,
+        metadata: {
+          source: SEMANTIC_SOURCE,
+          model: model.name,
+          row: passage.id,
+          hash: passage.hash,
+        },
+      })),
+    );
     await this.vectors.upsert(items);
+    // A row that now has fewer chunks loses the ones past its last.
+    await this.vectors.remove(
+      changed.flatMap((passage) => passageIdsOf(model, passage.id, passage.chunks.length)),
+    );
   }
 
-  /** Removes the passages of `ids` (an erasure, a deleted row or a row hidden from search). */
+  /** Removes every passage of `ids` (an erasure, a deleted row or a row hidden from search). */
   async remove(model: AnyClass, ids: readonly string[]): Promise<void> {
-    if (ids.length > 0) await this.vectors.remove(ids.map((id) => passageIdOf(model, id)));
+    if (ids.length > 0) await this.vectors.remove(ids.flatMap((id) => passageIdsOf(model, id)));
+  }
+
+  /** The content hash of a passage: its text, its scope and the embedder that would embed it. */
+  private hashOf(scope: ScopeRef, text: string): string {
+    const { model, dimensions } = this.config.embedder;
+    return createHash("sha256")
+      .update(JSON.stringify([model, dimensions, scope.path, text]))
+      .digest("hex");
   }
 }
 

@@ -2,20 +2,22 @@
  * Stackra file contract:
  * Purpose: `SearchRequest`, what `Search` asks a driver: the normalised words of the phrase, the exact filter values,
  *          the slice of the ranked result, and the scope paths the session may read.
- * Boundary: a type only. Every word must match (as a word prefix, or as text for a fuzzy engine), itself or one of its
+ * Boundary: a type only. With `vector`, a row whose passages are near it also ranks (a third lane, fused by
+ *           reciprocal rank), and empty `words` mean the vector lane alone (a semantic read). Every word must match (as a word prefix, or as text for a fuzzy engine), itself or one of its
  *           alternatives; every filter must hold its value among its stored values; only visible rows are ranked.
- *           `words` is never empty and its words are distinct. `scopePaths` comes from the scope session
+ *           `words` is empty only beside a `vector`, and its words are distinct. `scopePaths` comes from the scope session
  *           (`app.scope_paths`), never from input.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
  *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language); ADR 0089 (decision 6: every query
- *                     scoped); ADR 0327 (decision 9).
+ *                     scoped); ADR 0327 (decision 9); stackra-301 (the vector lane).
  */
 import type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
+import type { SearchVector } from "#contracts/types/search-vector.type";
 
 /** One ranked read. */
 export interface SearchRequest {
-  /** The phrase's distinct words, normalised as documents are. */
+  /** The phrase's distinct words, normalised as documents are; empty only for a semantic read (`vector` alone). */
   readonly words: readonly string[];
 
   /** The filter paths and the value each must hold. */
@@ -49,4 +51,11 @@ export interface SearchRequest {
    * document counts.
    */
   readonly scopePaths?: readonly string[];
+
+  /**
+   * The phrase's embedding, for a driver that fuses vectors (`SearchDriver.fusesVectors`): its nearest passages rank
+   * their rows in a third lane, under the same filters and visibility. Absent for a lexical read; a driver that does
+   * not fuse vectors never receives it.
+   */
+  readonly vector?: SearchVector;
 }

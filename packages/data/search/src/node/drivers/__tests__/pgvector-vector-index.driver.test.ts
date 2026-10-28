@@ -23,7 +23,16 @@ const ACME: ScopeRef = { id: "scp_01jab3k4m5n6p7q8r9s0t1v2w3", path: "acme" };
 
 /** A configuration whose embedder returns `dimensions` numbers. */
 function configWith(dimensions = 2): SearchConfig {
-  return { embedder: { url: null, model: "", dimensions, tokenSecret: null } } as SearchConfig;
+  return {
+    embedder: {
+      url: null,
+      model: "",
+      dimensions,
+      tokenSecret: null,
+      passageCharacters: 2000,
+      passageOverlap: 200,
+    },
+  } as SearchConfig;
 }
 
 /** One recorded statement. */

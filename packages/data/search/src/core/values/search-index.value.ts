@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchIndex<M>`, one model's search index as `search.in(Model)` returns it: ranked `find` and cursor
- *          `page` reads that return loaded rows, `facets` (value counts of the filter fields over the same matches),
+ *          `page` reads that return loaded rows (hybrid with the vector lane when given an embedder), the semantic
+ *          `similar` read, `facets` (value counts of the filter fields over the same matches),
  *          `snippets` for a result list, and `index`, `remove` and `reindex`, which keep the documents current.
  * Boundary: a value built by `Search`, never injected. It reads the model's `@Searchable` facet and its ORM metadata,
  *           builds documents and phrase words (the one normalisation, ADR 0221 d3) and leaves ranking and storage to the
@@ -21,7 +22,7 @@
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
  *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
- *                     every query scoped).
+ *                     every query scoped); stackra-301 (the vector lane, `similar`).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -31,7 +32,14 @@ import type { SearchableOptions } from "@stackra/model";
 import type { SettingsReader } from "@stackra/settings";
 import { z } from "zod";
 
-import type { SearchDriver, SearchFacets, SearchTable } from "#contracts/index";
+import type {
+  Embedder,
+  SearchDriver,
+  SearchFacets,
+  SearchTable,
+  SearchVector,
+} from "#contracts/index";
+import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
@@ -43,6 +51,7 @@ import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
 import type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
+import type { SearchSimilarOptions } from "#core/types/search-similar-options.type";
 
 /** The session's granted scope paths, `null` outside a scope session. */
 const SCOPE_PATHS = z.array(z.object({ paths: z.string().nullable() }));
@@ -134,7 +143,29 @@ export class SearchIndex<M extends object> {
    * @throws TypeError for a filter path the facet does not list.
    */
   async find(phrase: string, options: SearchFindOptions<M> = {}): Promise<M[]> {
-    return (await this.read(phrase, 0, options)).items;
+    return (await this.read(phrase, 0, options, false)).items;
+  }
+
+  /**
+   * The rows whose passages mean the closest to `phrase`, best first, up to `limit`: a semantic read by the vector
+   * lane alone, under the same filters, visibility and scope session as `find`.
+   *
+   * @throws TypeError when the model is not `@Searchable({ semantic: true })`, the driver does not fuse vectors, or
+   *         for a filter path the facet does not list.
+   * @throws RangeError for a limit that is not a whole number from 1 to 100.
+   * @example
+   * const notes = await search.in(CaseNote).similar("customer disputes the invoice", { embedder: this.embedder });
+   */
+  async similar(phrase: string, options: SearchSimilarOptions<M>): Promise<M[]> {
+    if (this.facet.semantic !== true)
+      throw new TypeError(
+        `${this.model.name} is not @Searchable({ semantic: true }), so it has no passages`,
+      );
+    if (!this.driver.fusesVectors)
+      throw new TypeError(
+        `The search driver does not rank by vectors, so ${this.model.name} has no semantic read`,
+      );
+    return (await this.read(phrase, 0, options, true)).items;
   }
 
   /**
@@ -145,7 +176,7 @@ export class SearchIndex<M extends object> {
    * @throws TypeError for a filter path the facet does not list.
    */
   async page(phrase: string, options: SearchPageOptions<M> = {}): Promise<TablePage<M>> {
-    return this.read(phrase, offsetOf(options.cursor), options);
+    return this.read(phrase, offsetOf(options.cursor), options, false);
   }
 
   /**
@@ -264,25 +295,34 @@ export class SearchIndex<M extends object> {
     }
   }
 
-  /** One ranked read from `offset`. */
+  /**
+   * One ranked read from `offset`: lexical, hybrid when the options carry an embedder the index can use, or the
+   * vector lane alone when `semantic`.
+   */
   private async read(
     phrase: string,
     offset: number,
     options: SearchFindOptions<M>,
+    semantic: boolean,
   ): Promise<TablePage<M>> {
     const limit = this.limitOf(options.limit);
     const filters = options.filters ?? {};
     this.checkFilters(Object.keys(filters));
     const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     if (words.length === 0) return { items: [], hasMore: false };
+    const vector =
+      options.embedder !== undefined && this.facet.semantic === true && this.driver.fusesVectors
+        ? await this.vectorOf(words, options.embedder)
+        : undefined;
     const visible = await visibleKeysQuery(this.model);
     const scopePaths = await this.scopePaths();
     const { table, key } = this.shape();
     const ids = await this.driver.search(table, {
-      words,
+      words: semantic ? [] : words,
       filters,
       offset,
       limit: limit + 1,
+      ...(vector === undefined ? {} : { vector }),
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
       ...(visible === undefined ? {} : { visible }),
       ...(scopePaths === undefined ? {} : { scopePaths }),
@@ -291,6 +331,19 @@ export class SearchIndex<M extends object> {
     return ids.length > limit
       ? { items, hasMore: true, nextCursor: String(offset + limit) }
       : { items, hasMore: false };
+  }
+
+  /**
+   * The vector lane of a read: the phrase's words embedded (the fold the passages were embedded from) and the metadata
+   * of this index's passages.
+   *
+   * @throws RangeError when the embedder returns no vector for the phrase.
+   */
+  private async vectorOf(words: readonly string[], embedder: Embedder): Promise<SearchVector> {
+    const [values] = await embedder.embed([words.join(" ")]);
+    if (values === undefined || values.length === 0)
+      throw new RangeError(`The embedder returned no vector for a ${this.model.name} search`);
+    return { values, passages: { source: SEMANTIC_SOURCE, model: this.model.name } };
   }
 
   /**

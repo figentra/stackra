@@ -17,7 +17,8 @@
  *           be bound.
  * Runtime: node
  * Governing contract: ADR 0160 (raw SQL is parameterised; pgvector is approved); ADR 0327 (decision 9: isolation in the
- *                     database); `.agents/rules/tenancy.md` (point 3); ADR 0294 (decision 16); owner decision 23; STA-1251 (the fixed-dimension HNSW index).
+ *                     database); `.agents/rules/tenancy.md` (point 3); ADR 0294 (decision 16); owner decision 23; STA-1251 (the fixed-dimension HNSW index);
+ *                     stackra-301 (`metadataOf`).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -139,6 +140,24 @@ limit ?`,
     await this.database
       .em()
       .execute(`delete from ${TABLE} where "id" in (${ids.map(() => "?").join(", ")})`, [...ids]);
+  }
+
+  /** The stored metadata of each of `ids` the session can see, by id; an unknown id has no entry. */
+  override async metadataOf(
+    ids: readonly string[],
+  ): Promise<ReadonlyMap<string, VectorItem["metadata"]>> {
+    if (ids.length === 0) return new Map();
+    // raw-sql: a read by id of rows that are not a model's
+    const rows = (await this.database
+      .em()
+      .execute(
+        `select "id", "metadata" from ${TABLE} where "id" in (${ids.map(() => "?").join(", ")})`,
+        [...ids],
+      )) as unknown as readonly {
+      readonly id: unknown;
+      readonly metadata: VectorItem["metadata"];
+    }[];
+    return new Map(rows.map((row) => [String(row.id), row.metadata]));
   }
 
   /**

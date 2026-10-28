@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SEARCH_CONFIG_SCHEMA`, the zod schema this package ships for `SearchConfig` (exported as `SearchConfig$`):
- *          which driver runs.
+ *          which driver runs, and the embedder (with the passage size the chunker cuts to).
  *          The `health` field tunes `SearchHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `SearchConfig$` can `.extend` it. The default equals `SearchOptions`'
@@ -28,7 +28,20 @@ export const SEARCH_CONFIG_SCHEMA = z.object({
         .regex(/^[A-Z][A-Z0-9_]*$/)
         .nullable()
         .default(null),
+      passageCharacters: z.number().int().min(100).max(100_000).default(2000),
+      passageOverlap: z.number().int().min(0).max(10_000).default(200),
     })
-    .default(() => ({ url: null, model: "", dimensions: 1024, tokenSecret: null })),
+    .refine((embedder) => embedder.passageOverlap < embedder.passageCharacters, {
+      path: ["passageOverlap"],
+      message: "passageOverlap is under passageCharacters",
+    })
+    .default(() => ({
+      url: null,
+      model: "",
+      dimensions: 1024,
+      tokenSecret: null,
+      passageCharacters: 2000,
+      passageOverlap: 200,
+    })),
   health: HEALTH_CHECK_SCHEMA,
 });

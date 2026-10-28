@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `SearchForgetService`: a registered model's rows leave the search index, a semantic model's
- *          also leave the vector index under their passage ids; an unregistered model, or no ids, touches nothing.
+ *          also leave the vector index under every passage id (chunk) a row may hold; an unregistered model, or no ids, touches nothing.
  * Boundary: test only; the search reader and the vector index are stand-ins recording calls, and the registry entries
  *           are set directly and cleared after each case.
  * Runtime: node (vitest)
@@ -15,6 +15,7 @@ import { vi } from "vitest";
 import type { VectorIndex } from "#contracts/index";
 import type { Search } from "#core/index";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
+import { passageIdsOf } from "#node/functions/passage-ids-of.function";
 import { SearchForgetService } from "#node/services/search-forget.service";
 
 @Searchable({ text: ["title"] })
@@ -58,7 +59,7 @@ describe(SearchForgetService, () => {
     const { index, vectors, service } = setup();
     await service.forget(CaseNote, ["cnt_1"]);
     expect(index.remove).toHaveBeenCalledWith(["cnt_1"]);
-    expect(vectors.remove).toHaveBeenCalledWith(["CaseNote:cnt_1"]);
+    expect(vectors.remove).toHaveBeenCalledWith(passageIdsOf(CaseNote, "cnt_1"));
   });
 
   it("ignores an unregistered model and an empty list", async () => {

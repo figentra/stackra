@@ -8,7 +8,7 @@
  *           of its own: the scope option is the only isolation. A zero vector scores 0; vectors of different lengths
  *           are refused. Nothing survives a restart.
  * Runtime: isomorphic
- * Governing contract: ADR 0266 (memory drivers first); ADR 0160; ADR 0294 (decision 16); owner decision 23.
+ * Governing contract: ADR 0266 (memory drivers first); ADR 0160; ADR 0294 (decision 16); owner decision 23; stackra-301 (`metadataOf`).
  */
 import { Driver } from "@stackra/container";
 
@@ -84,5 +84,17 @@ export class MemoryVectorIndexDriver extends Driver(VectorIndex) {
   /** Removes the items of `ids`; an unknown id is ignored. */
   async remove(ids: readonly string[]): Promise<void> {
     for (const id of ids) this.items.delete(id);
+  }
+
+  /** The stored metadata of each of `ids`, by id; an unknown id has no entry. */
+  override async metadataOf(
+    ids: readonly string[],
+  ): Promise<ReadonlyMap<string, VectorItem["metadata"]>> {
+    return new Map(
+      ids.flatMap((id) => {
+        const item = this.items.get(id);
+        return item === undefined ? [] : [[id, item.metadata] as const];
+      }),
+    );
   }
 }

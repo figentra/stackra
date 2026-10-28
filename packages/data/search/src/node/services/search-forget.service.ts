@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchForgetService`, removes named rows of a model from search at once: their documents from the search
- *          index and, for a `@Searchable({ semantic: true })` model, their passages from the vector index. The search
+ *          index and, for a `@Searchable({ semantic: true })` model, every passage (every chunk) from the vector index. The search
  *          side of an erasure (gap gov6, stackra-275): @stackra/privacy hands it the rows of an erased subject that
  *          are still in the table (shredded or held), whose indexed copies would otherwise stay searchable in clear.
  * Boundary: a service over `Search` and the `VectorIndex` port, in the caller's transaction and scope session. A model
@@ -10,7 +10,8 @@
  *           (a shredded field loads as null), so nothing it forgot comes back.
  * Runtime: node
  * Governing contract: ADR 0221 (decision 7: erasure removes documents); ADR 0189 (decision 2: erasure reaches every
- *                     copy); ADR 0160 (pgvector); data-layer gap gov6.
+ *                     copy); ADR 0160 (pgvector); data-layer gap gov6;
+ *                     stackra-301 (chunked passages).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -19,7 +20,7 @@ import { Searchable } from "@stackra/model";
 import type { VectorIndex } from "#contracts/index";
 import type { Search } from "#core/index";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
-import { passageIdOf } from "#node/functions/passage-id-of.function";
+import { passageIdsOf } from "#node/functions/passage-ids-of.function";
 
 /**
  * Forgets rows in every index.
@@ -49,6 +50,6 @@ export class SearchForgetService extends Service {
     if (ids.length === 0 || SEARCHABLE_MODELS.get(model.name) !== model) return;
     await this.search.in(model).remove(ids);
     if (Searchable.on(model)?.semantic === true)
-      await this.vectors.remove(ids.map((id) => passageIdOf(model, id)));
+      await this.vectors.remove(ids.flatMap((id) => passageIdsOf(model, id)));
   }
 }

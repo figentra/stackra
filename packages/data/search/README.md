@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), semantic indexing, visibility, Arabizi and global search, the driver conformance suite, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite, Pro drivers).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); stackra-301 (vector lane, `similar`, content hash, chunker); ADR 0089 d5 and ADR 0461 (conformance suite, Pro drivers).
 -->
 
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
@@ -20,30 +20,32 @@ one vector store (ADR 0465): `@stackra/ai` reads and writes through it and keeps
 
 ## What is here
 
-| Entry         | Symbol                                                                | Use                                                                |
-| ------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `.`           | `Search`                                                              | the injected reader: `search.in(Model)`                            |
-| `.`           | `SearchIndex`, `SearchFindOptions`, `SearchPageOptions`               | one model's index: `find`, `page`, `index`, `remove`, `reindex`    |
-| `.`           | `MemorySearchDriver`                                                  | the in-process engine (tests, the dev lane)                        |
-| `.`           | `MemoryVectorIndexDriver`                                             | the in-process `VectorIndex` (tests, the dev lane)                 |
-| `.`           | `SearchConfig`, `SearchConfig$`, `SearchOptions`                      | `search.driver`: `postgres` (default) or `memory`                  |
-| `.`           | `SearchSettings`                                                      | `search.synonyms`: synonym sets per index and language (settings)  |
-| `.`           | `SearchCursorInvalidError`                                            | refusal of a cursor no page gave (`search_cursor_invalid`, 400)    |
-| `.`           | `searchWordsOf`, `arabiziOf`                                          | the index's one normalisation, and an Arabizi word's Arabic form   |
-| `.`           | `SearchAcrossOptions`                                                 | `across`'s limit, per-model filters, locale and Arabizi switch     |
-| `./contracts` | `SearchDriver`                                                        | the port                                                           |
-| `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                  |
-| `./contracts` | `VectorIndex`, `Embedder`                                             | the vector ports @stackra/ai retrieves through                     |
-| `./contracts` | `VectorItem`, `VectorHit`, `VectorQueryOptions`                       | what a vector index stores, returns and is asked                   |
-| `./node`      | `PostgresSearchDriver`                                                | the hybrid engine: full-text and trigram, fused by reciprocal rank |
-| `./node`      | `PgvectorVectorIndexDriver`                                           | the pgvector `VectorIndex`: cosine distance, scope-filtered        |
-| `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
-| `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
-| `./node`      | `RelatedChangeService`                                                | re-indexes the parents of a changed related row                    |
-| `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`      |
-| `./node`      | `SearchForgetService`                                                 | `forget(Model, ids)`: drops rows from the search and vector index  |
-| `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes           |
-| `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on        |
+| Entry         | Symbol                                                                | Use                                                               |
+| ------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `.`           | `Search`                                                              | the injected reader: `search.in(Model)`                           |
+| `.`           | `SearchIndex`, `SearchFindOptions`, `SearchPageOptions`               | one model's index: `find`, `page`, `index`, `remove`, `reindex`   |
+| `.`           | `SearchSimilarOptions`                                                | `similar(phrase, { embedder })`: the semantic read                |
+| `.`           | `MemorySearchDriver`                                                  | the in-process engine (tests, the dev lane)                       |
+| `.`           | `MemoryVectorIndexDriver`                                             | the in-process `VectorIndex` (tests, the dev lane)                |
+| `.`           | `SearchConfig`, `SearchConfig$`, `SearchOptions`                      | `search.driver`: `postgres` (default) or `memory`                 |
+| `.`           | `SearchSettings`                                                      | `search.synonyms`: synonym sets per index and language (settings) |
+| `.`           | `SearchCursorInvalidError`                                            | refusal of a cursor no page gave (`search_cursor_invalid`, 400)   |
+| `.`           | `searchWordsOf`, `arabiziOf`                                          | the index's one normalisation, and an Arabizi word's Arabic form  |
+| `.`           | `SearchAcrossOptions`                                                 | `across`'s limit, per-model filters, locale and Arabizi switch    |
+| `./contracts` | `SearchDriver`                                                        | the port                                                          |
+| `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                 |
+| `./contracts` | `SearchVector`                                                        | a request's query embedding, for a driver that fuses vectors      |
+| `./contracts` | `VectorIndex`, `Embedder`                                             | the vector ports @stackra/ai retrieves through                    |
+| `./contracts` | `VectorItem`, `VectorHit`, `VectorQueryOptions`                       | what a vector index stores, returns and is asked                  |
+| `./node`      | `PostgresSearchDriver`                                                | the hybrid engine: full-text, trigram and pgvector, fused by RRF  |
+| `./node`      | `PgvectorVectorIndexDriver`                                           | the pgvector `VectorIndex`: cosine distance, scope-filtered       |
+| `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration         |
+| `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)   |
+| `./node`      | `RelatedChangeService`                                                | re-indexes the parents of a changed related row                   |
+| `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`     |
+| `./node`      | `SearchForgetService`                                                 | `forget(Model, ids)`: drops rows from the search and vector index |
+| `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes          |
+| `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on       |
 
 ## Searching
 
@@ -172,10 +174,34 @@ every vector's size against `dimensions`. Provider-specific drivers live with th
 
 `@Searchable({ text: ["subject", "body"], semantic: true })` also embeds the text fields. `registerSearchableModels`
 then watches the model's rows with `SemanticChangeService` too: each committed change loads the row, joins its text
-fields (the same normalised words as the lexical document, every locale of a translated field) into one passage,
-embeds it through the `Embedder` and stores it in the `VectorIndex` as `<Model>:<primary key>`, with metadata
-`{ source: "search", model }`, in the row's own scope (`scopeId`, `scopePath`). A deleted row, one the session no longer
-sees and one with no text lose their passage. A backfill calls `index(Model, rows)` on the service per batch.
+fields (the same normalised words as the lexical document, every locale of a translated field), cuts a long text into
+overlapping passages on word boundaries (`search.embedder.passageCharacters`, default 2000, and `passageOverlap`, 200;
+at most 16 per row), embeds them through the `Embedder` and stores them in the `VectorIndex` as `<Model>:<primary key>`,
+`<Model>:<primary key>#1` and on, with metadata `{ source: "search", model, row, hash }`, in the row's own scope
+(`scopeId`, `scopePath`). `hash` is a SHA-256 of the text, the scope path and the embedder's model and dimension: a
+change whose passage hashes the same as the stored one embeds nothing (`VectorIndex.metadataOf`), so a reindex or an
+unrelated field's change costs no embedding. A row that shrinks loses its trailing chunks; a deleted row, one the
+session no longer sees and one with no text lose every passage. A backfill calls `index(Model, rows)` on the service
+per batch.
+
+### Hybrid and semantic reads
+
+A query that holds the `Embedder` passes it to a read of a semantic model:
+
+```ts
+const page = await this.search
+  .in(CaseNote)
+  .page(input.q, { embedder: this.embedder, cursor: input.cursor });
+const like = await this.search
+  .in(CaseNote)
+  .similar("customer disputes the invoice", { embedder: this.embedder });
+```
+
+With an embedder, `find` and `page` embed the folded phrase and the Postgres driver ranks a third lane, the rows whose
+passages are nearest (pgvector cosine over `search.vector_items`, joined to the row by metadata `row`), fused with the
+full-text and trigram lanes by reciprocal rank under the same filters, visibility and row-level security. `similar` is
+the vector lane alone. A driver says whether it can (`SearchDriver.fusesVectors`): on one that cannot, the embedder is
+ignored and `similar` refuses. Facet counts stay lexical.
 
 The `ai: never` floor (ADR 0380) holds twice: gen refuses `searchable_semantic_ai_never` when a text path ends at a field
 whose data class says `ai: never`, and the service refuses the same at index time, on the loaded row and through its

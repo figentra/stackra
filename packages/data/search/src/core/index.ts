@@ -33,4 +33,5 @@ export type { SearchHit } from "#core/types/search-hit.type";
 export type { SearchIndexStatus } from "#core/types/search-index-status.type";
 export type { SearchPageOptions } from "#core/types/search-page-options.type";
 export type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
+export type { SearchSimilarOptions } from "#core/types/search-similar-options.type";
 export { SearchIndex } from "#core/values/search-index.value";

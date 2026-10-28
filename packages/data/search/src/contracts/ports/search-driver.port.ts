@@ -11,7 +11,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1, 7 and 9: hybrid ranking, erasure, later engines behind one interface);
  *                     ADR 0089 (decision 6: every query scoped);
- *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type); ADR 0404 (facets).
+ *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type); ADR 0404 (facets);
+ *                     stackra-301 (the vector lane).
  */
 import { Port } from "@stackra/contracts";
 
@@ -38,6 +39,12 @@ export abstract class SearchDriver extends Port {
    * passes no `scopePaths`; false for an engine that keeps its own copy of the documents.
    */
   readonly isolatesScopes: boolean = false;
+
+  /**
+   * Whether the engine ranks a request's `vector` as a third lane (and answers a request with no words from it alone);
+   * false for an engine that does not, so `SearchIndex` reads it lexically and refuses `similar`.
+   */
+  readonly fusesVectors: boolean = false;
 
   /** The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit. */
   abstract search(table: SearchTable, request: SearchRequest): Promise<readonly string[]>;

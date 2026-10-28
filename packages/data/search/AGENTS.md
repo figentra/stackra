@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -61,7 +61,14 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 - Semantic indexing (`@Searchable({ semantic: true })`) goes through `SemanticChangeService` only: it is
   `Lifetime.Transient` so boot never builds the `Embedder`; keep it so. `semanticPassageOf` runs the `ai: never` guard
   (ADR 0380) on every row before any text reaches the embedder; never embed a field around it. Passage ids are
-  `<Model>:<key>`, metadata `{ source: "search", model }`, scope from the row's own `scopeId`/`scopePath`, never input.
+  `<Model>:<key>` (then `#1`... for a chunked row, at most `MAX_SEMANTIC_CHUNKS`; `passageIdsOf` lists every slot, so
+  a removal always takes `passageIdsOf`, never one id), metadata `{ source: SEMANTIC_SOURCE, model, row, hash }`, scope
+  from the row's own `scopeId`/`scopePath`, never input. `hash` (text, scope path, embedder model and dimension) skips
+  re-embedding; anything that changes what a vector means joins the hash. The vector lane joins a passage to its row by
+  metadata `row` only.
+- The vector lane is the driver's (`SearchDriver.fusesVectors`, `SearchRequest.vector`): `SearchIndex` embeds the
+  folded words with the caller's `Embedder` (never injected into `Search`, so boot never builds one) and the driver
+  applies the same filters and visibility to it as to every other lane.
 - Drivers deal in ids and documents; only `SearchIndex`, `SearchableChangeService`, `RelatedChangeService` and `SemanticChangeService` (row loads and populate) touch the ORM. Isolation is the database's: never add a
   scope filter in application code (ADR 0327 d9). The one exception is an engine that keeps its own copy of the
   documents (`SearchDriver.isolatesScopes` false: memory, the Pro engines): each `SearchDocument` carries its row's

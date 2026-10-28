@@ -14,9 +14,24 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
   it("parses {} to the default", () => {
     expect(SEARCH_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "postgres",
-      embedder: { url: null, model: "", dimensions: 1024, tokenSecret: null },
+      embedder: {
+        url: null,
+        model: "",
+        dimensions: 1024,
+        tokenSecret: null,
+        passageCharacters: 2000,
+        passageOverlap: 200,
+      },
       health: { timeout: "PT2S", critical: true, table: "", primaryKey: "id" },
     });
+  });
+
+  it("refuses a passage overlap that is not under the passage size", () => {
+    const embedder = { passageCharacters: 500, passageOverlap: 500 };
+    expect(SEARCH_CONFIG_SCHEMA.safeParse({ embedder }).success).toBe(false);
+    expect(
+      SEARCH_CONFIG_SCHEMA.parse({ embedder: { ...embedder, passageOverlap: 50 } }).embedder,
+    ).toMatchObject({ passageCharacters: 500, passageOverlap: 50 });
   });
 
   it("takes the shipped drivers and refuses others", () => {

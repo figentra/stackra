@@ -42,7 +42,18 @@ export class SearchOptions extends Schema {
     dimensions: number;
     /** The secret holding the bearer token, read through `SecretStore`; `null` for an endpoint that needs none. */
     tokenSecret: string | null;
-  } = { url: null, model: "", dimensions: 1024, tokenSecret: null };
+    /** The most characters one embedded passage holds; a longer row is cut into overlapping passages. */
+    passageCharacters: number;
+    /** The most characters of a passage's end repeated at the start of the next, under `passageCharacters`. */
+    passageOverlap: number;
+  } = {
+    url: null,
+    model: "",
+    dimensions: 1024,
+    tokenSecret: null,
+    passageCharacters: 2000,
+    passageOverlap: 200,
+  };
 
   /** How `SearchHealthIndicatorDriver` probes the search engine for `/readyz`. */
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules

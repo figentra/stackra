@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresSearchDriver`, the server's `SearchDriver`: the index lives in the model's own table, in the
- *          columns `t.searchable(...)` wrote, and a search fuses two ranked lanes by reciprocal rank: full-text (every
+ *          columns `t.searchable(...)` wrote, and a search fuses two ranked lanes (three with a query vector) by reciprocal rank: full-text (every
  *          word as a prefix, `ts_rank_cd` over the weighted vectors, the best locale counting) and trigram (word
  *          similarity of the phrase to the folded `search_text`). Facets count the filter values of the rows either lane
  *          matches (every indexed row holding the filters when there are no words), each row once per value.
@@ -13,11 +13,14 @@
  *           Every value is a bound parameter; identifiers are quoted and come from the ORM metadata and the catalogue; configuration names come from
  *           `TEXT_SEARCH_CONFIGS` only. A table's vector columns are read once from the catalogue and kept, so a
  *           table's locales need no configuration. Each lane ranks at most `CANDIDATES` rows, so a page past that window
- *           is empty. The vector lane (pgvector) waits for an embedding port.
+ *           is empty. With a request `vector`, a third lane ranks rows by their nearest passages in `search.vector_items`
+ *           (pgvector, cosine, the `CANDIDATES` nearest passages joined to their rows by metadata `row`, under the same
+ *           filters and visibility, and that table's row-level security); with no words it is the only lane (a semantic
+ *           read). Facets count the lexical matches only.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 3 and 7); ADR 0160 (raw SQL is parameterised; approved extensions);
  *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16); ADR 0333 (amendment);
- *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`).
+ *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`); stackra-301 (the vector lane).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -30,6 +33,7 @@ import type {
   SearchRequest,
   SearchTable,
 } from "#contracts/index";
+import { checkVector } from "#core/functions/check-vector.function";
 import { TEXT_SEARCH_CONFIGS } from "#node/constants/text-search-configs.constant";
 
 /** One full-text column, the locale it holds (none for `search_vector`) and its text search configuration. */
@@ -53,6 +57,9 @@ const FUSION = 60;
 
 /** The most phrases the trigram lane matches: the phrase and its variants with one word swapped for an alternative. */
 const MAX_PHRASES = 8;
+
+/** The vector table of migration `search.0002_create_vector_items`, which semantic passages live in. */
+const VECTOR_ITEMS = '"search"."vector_items"';
 
 /** The folding function of migration `search.0003_create_fold_function`, which the trigram index is built on. */
 const FOLD = "search.fold";
@@ -146,6 +153,9 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
   /** Row-level security on the indexed table isolates scopes, so a request carries no `scopePaths`. */
   override readonly isolatesScopes = true;
 
+  /** A request's `vector` ranks rows through their passages in `search.vector_items` as a third lane. */
+  override readonly fusesVectors = true;
+
   /** The connected database. */
   private readonly database: Database;
 
@@ -164,42 +174,82 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
    * The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit.
    */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
-    const vectors = await this.vectorsOf(table);
     const { sql: narrowing, params: laneParams } = narrowingOf(table, request);
     const key = `t.${quote(table.primaryKey)}`;
-    const phrases = phrasesOf(request);
-    const prefixes = prefixesOf(request);
-    // raw-sql: hybrid ranking (tsvector and trigram lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
-    const rows = (await this.database.em().execute(
-      `with q as (select ${vectors.map((vector, index) => `to_tsquery('${vector.config}', ?) as q${index}`).join(", ")}),
-fts as (
+    const ctes: string[] = [];
+    const params: unknown[] = [];
+    const lanes: string[] = [];
+    if (request.words.length > 0) {
+      const vectors = await this.vectorsOf(table);
+      const phrases = phrasesOf(request);
+      const prefixes = prefixesOf(request);
+      ctes.push(
+        `q as (select ${vectors.map((vector, index) => `to_tsquery('${vector.config}', ?) as q${index}`).join(", ")})`,
+        `fts as (
   select ${key} as id, row_number() over (order by greatest(${vectors.map((vector, index) => `ts_rank_cd(t.${quote(vector.name)}, q.q${index})`).join(", ")}) desc, ${key}) as rank
   from ${qualified(table)} t cross join q
   where (${vectors.map((vector, index) => `t.${quote(vector.name)} @@ q.q${index}`).join(" or ")})${narrowing}
   order by rank limit ${CANDIDATES}
-),
-trigram as (
+)`,
+        `trigram as (
   select ${key} as id, row_number() over (order by ${similarityOf(phrases.length)} desc, ${key}) as rank
   from ${qualified(table)} t
   where ${trigramMatchOf(phrases.length)}${narrowing}
   order by rank limit ${CANDIDATES}
-)
-select id from (
-  select coalesce(fts.id, trigram.id) as id,
-    coalesce(1.0 / (${FUSION} + fts.rank), 0) + coalesce(1.0 / (${FUSION} + trigram.rank), 0) as score
-  from fts full join trigram on trigram.id = fts.id
-) fused
-order by score desc, id
-limit ? offset ?`,
-      [
+)`,
+      );
+      params.push(
         ...vectors.map(() => prefixes),
         ...laneParams,
         ...phrases,
         ...phrases,
         ...laneParams,
-        request.limit,
-        request.offset,
-      ],
+      );
+      lanes.push("fts", "trigram");
+    }
+    if (request.vector !== undefined) {
+      const { values, passages } = request.vector;
+      checkVector(values);
+      // A type modifier cannot be bound: n is the checked length of the vector, never a caller's text.
+      const n = values.length;
+      ctes.push(
+        `near as (
+  select v."metadata" ->> 'row' as row_id, (v."embedding"::vector(${n})) <=> ?::vector(${n}) as distance
+  from ${VECTOR_ITEMS} v
+  where vector_dims(v."embedding") = ${n} and v."metadata" @> ?::jsonb
+  order by distance limit ${CANDIDATES}
+)`,
+        `vec as (
+  select ${key} as id, row_number() over (order by min(near.distance), ${key}) as rank
+  from near join ${qualified(table)} t on ${key}::text = near.row_id
+  where true${narrowing}
+  group by ${key}
+  order by rank limit ${CANDIDATES}
+)`,
+      );
+      params.push(JSON.stringify(values), JSON.stringify(passages), ...laneParams);
+      lanes.push("vec");
+    }
+    if (lanes.length === 0) return [];
+    const [first = "", ...rest] = lanes;
+    const ids = (upTo: number): string =>
+      upTo === 1
+        ? `${first}.id`
+        : `coalesce(${lanes
+            .slice(0, upTo)
+            .map((lane) => `${lane}.id`)
+            .join(", ")})`;
+    // raw-sql: hybrid ranking (tsvector, trigram and pgvector lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
+    const rows = (await this.database.em().execute(
+      `with ${ctes.join(",\n")}
+select id from (
+  select ${ids(lanes.length)} as id,
+    ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score
+  from ${first}${rest.map((lane, at) => ` full join ${lane} on ${lane}.id = ${ids(at + 1)}`).join("")}
+) fused
+order by score desc, id
+limit ? offset ?`,
+      [...params, request.limit, request.offset],
     )) as unknown as readonly { readonly id: unknown }[];
     return rows.map((row) => String(row.id));
   }

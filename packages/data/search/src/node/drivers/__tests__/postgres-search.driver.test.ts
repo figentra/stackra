@@ -9,7 +9,7 @@
  * Boundary: test only; a stand-in entity manager records each statement and answers the catalogue read and the
  *           search from fixed rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane).
  */
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
@@ -128,6 +128,88 @@ describe(PostgresSearchDriver, () => {
     ]);
     const placeholders = search?.sql.match(/\?/g) ?? [];
     expect(placeholders).toHaveLength(search?.params.length ?? -1);
+  });
+
+  it("fuses the vector lane as a third lane under the same narrowing, binding every value in order", async () => {
+    const { database, statements } = databaseWith(["search_vector"], ["prd_1"]);
+    const driver = new PostgresSearchDriver(database);
+    expect(driver.fusesVectors).toBe(true);
+    const visible = {
+      sql: 'select "v"."id" from "catalogue"."products" as "v" where "w" = ?',
+      params: [1],
+    };
+    await driver.search(PRODUCTS, {
+      words: ["mug"],
+      filters: {},
+      offset: 0,
+      limit: 5,
+      visible,
+      vector: { values: [0.1, 0.9], passages: { source: "search", model: "Product" } },
+    });
+    const search = statements.at(-1);
+    expect(search?.sql).toContain(`(v."embedding"::vector(2)) <=> ?::vector(2)`);
+    expect(search?.sql).toContain(
+      `from near join "catalogue"."products" t on t."id"::text = near.row_id`,
+    );
+    expect(search?.sql).toContain(
+      "from fts full join trigram on trigram.id = fts.id full join vec on vec.id = coalesce(fts.id, trigram.id)",
+    );
+    expect(search?.sql).toContain("coalesce(1.0 / (60 + vec.rank), 0)");
+    expect(search?.sql.match(/ and t\."id" in \(select "v"\."id"/g)).toHaveLength(3);
+    expect(search?.params).toEqual([
+      "mug:*",
+      1,
+      "mug",
+      "mug",
+      1,
+      "[0.1,0.9]",
+      '{"source":"search","model":"Product"}',
+      1,
+      5,
+      0,
+    ]);
+    expect(search?.sql.match(/\?/g)).toHaveLength(search?.params.length ?? -1);
+  });
+
+  it("ranks by the vector lane alone for a semantic read, without reading the catalogue", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    await new PostgresSearchDriver(database).search(PRODUCTS, {
+      words: [],
+      filters: { status: "active" },
+      offset: 0,
+      limit: 5,
+      vector: { values: [1, 0, 0], passages: { model: "Product" } },
+    });
+    expect(statements).toHaveLength(1);
+    const search = statements[0];
+    expect(search?.sql.startsWith("with near as")).toBe(true);
+    expect(search?.sql).not.toContain("fts");
+    expect(search?.sql).toContain("select vec.id as id");
+    expect(search?.params).toEqual([
+      "[1,0,0]",
+      '{"model":"Product"}',
+      '{"status":["active"]}',
+      5,
+      0,
+    ]);
+  });
+
+  it("refuses a query vector that is not finite numbers, and ranks nothing with neither words nor vector", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    const driver = new PostgresSearchDriver(database);
+    await expect(
+      driver.search(PRODUCTS, {
+        words: [],
+        filters: {},
+        offset: 0,
+        limit: 5,
+        vector: { values: [Number.NaN], passages: {} },
+      }),
+    ).rejects.toThrow(TypeError);
+    await expect(
+      driver.search(PRODUCTS, { words: [], filters: {}, offset: 0, limit: 5 }),
+    ).resolves.toEqual([]);
+    expect(statements).toHaveLength(0);
   });
 
   it("leaves the filter out when none is asked for", async () => {

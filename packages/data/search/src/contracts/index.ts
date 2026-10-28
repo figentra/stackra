@@ -17,6 +17,7 @@ export type { SearchFacets } from "#contracts/types/search-facets.type";
 export type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
 export type { SearchRequest } from "#contracts/types/search-request.type";
 export type { SearchTable } from "#contracts/types/search-table.type";
+export type { SearchVector } from "#contracts/types/search-vector.type";
 export type { VectorHit } from "#contracts/types/vector-hit.type";
 export type { VectorItem } from "#contracts/types/vector-item.type";
 export type { VectorQueryOptions } from "#contracts/types/vector-query-options.type";

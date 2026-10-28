@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit test of `passageIdOf`: the class name, a colon and the primary key.
+ * Purpose: unit test of `passageIdOf`: the class name, a colon and the primary key, `#<n>` for a later chunk.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0160.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0160; stackra-301.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -14,5 +14,10 @@ class CaseNote {}
 describe(passageIdOf, () => {
   it("prefixes the primary key with the model's class name", () => {
     expect(passageIdOf(CaseNote, "cnt_1")).toBe("CaseNote:cnt_1");
+    expect(passageIdOf(CaseNote, "cnt_1", 0)).toBe("CaseNote:cnt_1");
+  });
+
+  it("suffixes a later chunk's number", () => {
+    expect(passageIdOf(CaseNote, "cnt_1", 3)).toBe("CaseNote:cnt_1#3");
   });
 });

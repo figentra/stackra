@@ -8,11 +8,13 @@
  *          counting, facets count filter values over the matches (or every row for an empty phrase), and a privileged
  *          field is excerpted only for the record's team; a document carries its row's scope, and a read on an engine
  *          that does not isolate scopes carries the session's granted paths (none outside a scope session, none at all
- *          when the session holds an empty grant), while one on an engine that does carries none.
+ *          when the session holds an empty grant), while one on an engine that does carries none; `similar` embeds the folded
+ *          phrase and reads by the vector lane alone, a find given an embedder on a semantic index and a fusing driver
+ *          carries the vector, and `similar` refuses a non-semantic model or a driver without the lane.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301.
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
@@ -23,6 +25,7 @@ import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import type { Embedder } from "#contracts/index";
 import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { SearchIndex } from "#core/values/search-index.value";
@@ -372,5 +375,83 @@ describe("SearchIndex Arabizi, visibility and snippets", () => {
       ["mem_2", "The lease clause is void."],
     ]);
     expect([...index.snippets(MEMOS, "lease")]).toEqual([["mem_2", "Lease review"]]);
+  });
+});
+
+@Searchable({
+  text: ["title"],
+  filters: ["status"],
+  semantic: true,
+})
+class Guide extends Model.with() {
+  id = "";
+
+  title = "";
+
+  status = "draft";
+}
+
+/** A memory driver that claims the vector lane and answers every search with `ids`. */
+class FusingDriver extends MemorySearchDriver {
+  override readonly fusesVectors = true;
+}
+
+describe("SearchIndex vector lane", () => {
+  const embedder = {
+    dimensions: 2,
+    embed: vi.fn(async (texts: readonly string[]) => texts.map(() => [0.6, 0.8])),
+  } as unknown as Embedder;
+
+  it("embeds the folded phrase and reads by the vector lane alone for similar", async () => {
+    const driver = new FusingDriver();
+    const search = vi.spyOn(driver, "search").mockResolvedValue(["prd_2"]);
+    const guides = new SearchIndex(driver, databaseOver(ROWS).database, Guide);
+    expect(
+      await guides.similar("Shirt  Dress!", { embedder, filters: { status: "active" } }),
+    ).toEqual([ROWS[1]]);
+    expect(embedder.embed).toHaveBeenCalledWith(["shirt dress"]);
+    expect(search.mock.calls[0]?.[1]).toMatchObject({
+      words: [],
+      filters: { status: "active" },
+      vector: { values: [0.6, 0.8], passages: { source: "search", model: "Guide" } },
+    });
+  });
+
+  it("adds the vector to a find on a semantic index given an embedder, and only then", async () => {
+    const driver = new FusingDriver();
+    const search = vi.spyOn(driver, "search").mockResolvedValue([]);
+    const guides = new SearchIndex(driver, databaseOver(ROWS).database, Guide);
+    await guides.find("linen", { embedder });
+    await guides.find("linen");
+    expect(search.mock.calls[0]?.[1]).toMatchObject({
+      words: ["linen"],
+      vector: { values: [0.6, 0.8] },
+    });
+    expect(search.mock.calls[1]?.[1].vector).toBeUndefined();
+    const lexical = new MemorySearchDriver();
+    const plain = vi.spyOn(lexical, "search");
+    await new SearchIndex(lexical, databaseOver(ROWS).database, Guide).find("linen", { embedder });
+    expect(plain.mock.calls[0]?.[1].vector).toBeUndefined();
+    const products = vi.spyOn(driver, "search");
+    await new SearchIndex(driver, databaseOver(ROWS).database, Product).find("linen", { embedder });
+    expect(products.mock.calls.at(-1)?.[1].vector).toBeUndefined();
+  });
+
+  it("refuses similar on a model that is not semantic or a driver without the vector lane", async () => {
+    const { database } = databaseOver(ROWS);
+    await expect(
+      new SearchIndex(new FusingDriver(), database, Product).similar("x", { embedder }),
+    ).rejects.toThrow(/semantic: true/);
+    await expect(
+      new SearchIndex(new MemorySearchDriver(), database, Guide).similar("x", { embedder }),
+    ).rejects.toThrow(/does not rank by vectors/);
+  });
+
+  it("reads nothing for a blank phrase and refuses an embedder that gives no vector", async () => {
+    const driver = new FusingDriver();
+    const guides = new SearchIndex(driver, databaseOver(ROWS).database, Guide);
+    expect(await guides.similar("  ", { embedder })).toEqual([]);
+    const silent = { dimensions: 2, embed: async () => [] } as unknown as Embedder;
+    await expect(guides.similar("linen", { embedder: silent })).rejects.toThrow(RangeError);
   });
 });

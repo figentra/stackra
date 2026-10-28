@@ -8,7 +8,8 @@
  *           leaf file: it imports nothing outside `src/contracts` but the `Port` base.
  * Runtime: isomorphic
  * Governing contract: ADR 0160 (pgvector, no separate vector store); ADR 0327 (decision 9); ADR 0294 (decisions 15
- *                     and 16); owner decision 23.
+ *                     and 16); owner decision 23;
+ *                     stackra-301 (`metadataOf`, the content hash).
  */
 import { Port } from "@stackra/contracts";
 
@@ -43,4 +44,13 @@ export abstract class VectorIndex extends Port {
 
   /** Removes the items of `ids`; an unknown id is ignored. */
   abstract remove(ids: readonly string[]): Promise<void>;
+
+  /**
+   * The stored metadata of each of `ids` the session can see, by id; an unknown id has no entry. A writer compares the
+   * content hash it stored there to skip re-embedding unchanged text. The default knows none, so every item is
+   * embedded again.
+   */
+  async metadataOf(_ids: readonly string[]): Promise<ReadonlyMap<string, VectorItem["metadata"]>> {
+    return new Map();
+  }
 }
