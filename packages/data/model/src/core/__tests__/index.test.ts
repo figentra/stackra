@@ -162,11 +162,13 @@ describe("@stackra/model", () => {
       "createTrait",
       "currentRows",
       "encryptedFieldsOf",
+      "encryptedLookupOf",
       "encryptedSubjectOf",
       "publicIdToUuid",
       "systemFieldsOf",
       "traitsOf",
       "uuidToPublicId",
+      "whereEncrypted",
     ]);
   });
 

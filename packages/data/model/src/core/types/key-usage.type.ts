@@ -19,6 +19,9 @@ export interface KeyUsage {
   /** Per key id, the sealed values resting under it (a null field counts nowhere). */
   readonly keys: Readonly<Record<string, number>>;
 
-  /** Rows with at least one value off the current key: what `reseal` still has to do. */
+  /**
+   * Rows with a value or a blind index off the current key, or a lookup field's index missing: what `reseal` still
+   * has to do.
+   */
   readonly stale: number;
 }

@@ -6,17 +6,21 @@
  *          a failed flush is not sealed twice, a model without the trait is left alone, and a non-string value or an
  *          entity without a module schema is refused. A subject-sealed model is sealed and opened with its subject's
  *          cipher, creates no salt for a row of nulls, reseals every field when its subject changes, loads an erased
- *          subject's fields as null, and is refused without a resolver or a subject id.
+ *          subject's fields as null, and is refused without a resolver or a subject id. A lookup field gets its blind
+ *          index written with each seal and nulled with the field, and is refused without a key provider or without
+ *          its declared `<field>Bidx` property.
  * Boundary: test only; stand-in event arguments shaped like the ORM's, and an in-test `FieldCipher` that is
  *           reversible, not a cipher.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0096 (decision 4); registry gap R-36.
  */
 import type { EventArgs } from "@mikro-orm/core";
-import { FieldCipher } from "@stackra/contracts";
+import { FieldCipher, KeyProvider } from "@stackra/contracts";
+import type { DataKey } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Model } from "#core/bases/model.base";
+import { blindIndexOf } from "#core/functions/blind-index-of.function";
 import { EncryptedFieldsSubscriber } from "#core/orm/encrypted-fields.subscriber";
 import { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 import { HasEncryptedFields } from "#core/traits/has-encrypted-fields.trait";
@@ -313,5 +317,82 @@ describe(EncryptedFieldsSubscriber, () => {
     await expect(subscriber.beforeCreate(argsOf(orphan, Profile))).rejects.toThrow(
       /must hold an id/,
     );
+  });
+});
+
+class OneKey extends KeyProvider {
+  override async current(): Promise<DataKey> {
+    return { id: "k1", key: new Uint8Array(32).fill(3) };
+  }
+
+  override async byId(id: string): Promise<DataKey> {
+    return { id, key: new Uint8Array(32).fill(3) };
+  }
+}
+
+class Lead extends Model.with(HasEncryptedFields({ lookup: ["email"] }, "email", "phone")) {
+  email: string | null = null;
+
+  emailBidx: string | null = null;
+
+  phone: string | null = null;
+}
+
+/** Stand-in ORM event arguments for a lead, its metadata declaring `properties`. */
+function leadArgs(lead: Lead, properties: readonly string[], payload?: object): EventArgs<object> {
+  return {
+    entity: lead,
+    em: {},
+    meta: {
+      class: Lead,
+      className: "Lead",
+      schema: "crm",
+      properties: Object.fromEntries(properties.map((name) => [name, {}])),
+    },
+    changeSet: payload === undefined ? undefined : { payload },
+  } as unknown as EventArgs<object>;
+}
+
+/** A new lead with an email. */
+function newLead(): Lead {
+  return Object.assign(new Lead(), { email: "hala@example.com" });
+}
+
+describe("EncryptedFieldsSubscriber with lookup fields", () => {
+  const declared = ["email", "emailBidx", "phone"];
+
+  it("writes the blind index of a lookup field when it seals it, and none for other fields", async () => {
+    const keys = new OneKey();
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), undefined, keys);
+    const lead = Object.assign(new Lead(), { email: "hala@example.com", phone: "1" });
+
+    await subscriber.beforeCreate(leadArgs(lead, declared));
+    expect(lead.emailBidx).toBe(await blindIndexOf(keys, "hala@example.com", "crm.lead.email"));
+    expect(lead.email).toBe("sealed(crm.lead.email)moc.elpmaxe@alah");
+  });
+
+  it("nulls the index when the field is written null", async () => {
+    const subscriber = new EncryptedFieldsSubscriber(
+      new ReversingCipher(),
+      undefined,
+      new OneKey(),
+    );
+    const lead = Object.assign(new Lead(), { email: null, emailBidx: "k1.old" });
+
+    await subscriber.beforeUpdate(leadArgs(lead, declared, { email: null }));
+    expect(lead.emailBidx).toBeNull();
+  });
+
+  it("refuses a lookup field without a key provider or without its declared index property", async () => {
+    await expect(
+      new EncryptedFieldsSubscriber(new ReversingCipher()).beforeCreate(
+        leadArgs(newLead(), declared),
+      ),
+    ).rejects.toThrow(/needs a KeyProvider/);
+    await expect(
+      new EncryptedFieldsSubscriber(new ReversingCipher(), undefined, new OneKey()).beforeCreate(
+        leadArgs(newLead(), ["email", "phone"]),
+      ),
+    ).rejects.toThrow(/declares emailBidx/);
   });
 });

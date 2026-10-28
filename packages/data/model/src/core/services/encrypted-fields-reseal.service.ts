@@ -14,18 +14,23 @@
  *           erased subject is skipped (it is shredded). The current key is the scope `KeyProvider`'s; a subject's key
  *           keeps that id. A single-column primary key only. The cursor is the raw primary key of the last row read;
  *           the caller stores it (the import-ledger pattern) to resume. Registering it as a queued job per model is
- *           the host's (gen's) wiring; this package ships the work.
+ *           the host's (gen's) wiring; this package ships the work. A `lookup` field's blind index is rewritten with
+ *           its value, and a row whose index is missing (written before the field kept one) or made under another key
+ *           counts as stale, so a run also backfills and rotates the indexes `whereEncrypted` matches.
  * Runtime: node
  * Governing contract: ADR 0188 (decision 2); ADR 0212; ADR 0294 (decisions 16 and 17); ADR 0367 (decisions 7 to 9);
  *                     ADR 0465 (decision 5: a re-seal job before any merge of the two encryption paths); gap gov7
- *                     (stackra-312).
+ *                     (stackra-312); gap gov9 (stackra-313).
  */
 import type { EntityManager, EntityMetadata, EntityProperty } from "@mikro-orm/core";
 import { Service } from "@stackra/container";
 import type { FieldCipher, KeyProvider } from "@stackra/contracts";
 
+import { blindIndexOf } from "#core/functions/blind-index-of.function";
+import { blindIndexProperty } from "#core/functions/blind-index-property.function";
 import { encryptedFieldContext } from "#core/functions/encrypted-field-context.function";
 import { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
+import { encryptedLookupOf } from "#core/functions/encrypted-lookup-of.function";
 import { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 import { sealedKeyId } from "#core/functions/sealed-key-id.function";
 import type { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
@@ -45,6 +50,7 @@ interface Plan {
   readonly key: string;
   readonly fields: readonly string[];
   readonly subject: string | undefined;
+  readonly lookup: readonly string[];
 }
 
 /**
@@ -92,14 +98,11 @@ export class EncryptedFieldsResealService extends Service {
     for (;;) {
       const page = await this.page(em, plan, after, PAGE);
       for (const row of page) {
-        let off = false;
         for (const field of plan.fields) {
           const id = this.keyOf(plan, row, field);
-          if (id === undefined) continue;
-          keys[id] = (keys[id] ?? 0) + 1;
-          off ||= id !== current;
+          if (id !== undefined) keys[id] = (keys[id] ?? 0) + 1;
         }
-        if (off) stale += 1;
+        if (this.staleFields(plan, row, current).length > 0) stale += 1;
       }
       rows += page.length;
       after = this.cursorOf(plan, page, PAGE);
@@ -124,10 +127,7 @@ export class EncryptedFieldsResealService extends Service {
     let resealed = 0;
     let skipped = 0;
     for (const row of page) {
-      const stale = plan.fields.filter((field) => {
-        const id = this.keyOf(plan, row, field);
-        return id !== undefined && id !== current;
-      });
+      const stale = this.staleFields(plan, row, current);
       if (stale.length === 0) continue;
       if (await this.resealRow(em, plan, row, stale)) resealed += 1;
       else skipped += 1;
@@ -153,8 +153,11 @@ export class EncryptedFieldsResealService extends Service {
     for (const field of fields) {
       const sealed = row[field] as string;
       const context = encryptedFieldContext(plan.meta, field);
-      data[field] = await ciphers.sealing.seal(await ciphers.opening.open(sealed, context), context);
+      const plain = await ciphers.opening.open(sealed, context);
+      data[field] = await ciphers.sealing.seal(plain, context);
       where[field] = sealed;
+      if (plan.lookup.includes(field))
+        data[blindIndexProperty(field)] = await blindIndexOf(this.keys, plain, context);
     }
     const result = await em
       .getDriver()
@@ -199,6 +202,21 @@ export class EncryptedFieldsResealService extends Service {
   }
 
   /**
+   * The fields of a row to re-seal: a value off the current key, or a lookup field whose blind index is missing or
+   * was made under another key.
+   */
+  private staleFields(plan: Plan, row: Row, current: string): readonly string[] {
+    return plan.fields.filter((field) => {
+      const id = this.keyOf(plan, row, field);
+      if (id === undefined) return false;
+      if (id !== current) return true;
+      if (!plan.lookup.includes(field)) return false;
+      const index = row[blindIndexProperty(field)];
+      return typeof index !== "string" || index.slice(0, index.lastIndexOf(".")) !== current;
+    });
+  }
+
+  /**
    * The key id of one value of a row.
    *
    * @returns undefined for a null value.
@@ -222,7 +240,12 @@ export class EncryptedFieldsResealService extends Service {
     after: string | number | null | undefined,
     limit: number,
   ): Promise<Row[]> {
-    const fields = [plan.key, ...plan.fields, ...(plan.subject === undefined ? [] : [plan.subject])];
+    const fields = [
+      plan.key,
+      ...plan.fields,
+      ...plan.lookup.map(blindIndexProperty),
+      ...(plan.subject === undefined ? [] : [plan.subject]),
+    ];
     const where = after === undefined || after === null ? {} : { [plan.key]: { $gt: after } };
     // the model's own type is erased here, so the driver's typed options are passed through `never`
     return em.getDriver().find(plan.meta.class, where as never, {
@@ -252,6 +275,12 @@ export class EncryptedFieldsResealService extends Service {
     const [key, ...rest] = meta.primaryKeys as readonly string[];
     if (key === undefined || rest.length > 0)
       throw new TypeError(`${meta.className} needs a single-column primary key to be re-sealed`);
-    return { meta, key, fields, subject: encryptedSubjectOf(type) };
+    return {
+      meta,
+      key,
+      fields,
+      subject: encryptedSubjectOf(type),
+      lookup: encryptedLookupOf(type),
+    };
   }
 }

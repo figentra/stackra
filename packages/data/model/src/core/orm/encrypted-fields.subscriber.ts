@@ -17,18 +17,24 @@
  *           subject its subject property names (the property must hold an id, or the write or load is refused); an
  *           update that changes the subject seals every encrypted field again, under the new subject. A field whose
  *           subject was erased (no salt left) loads as null. Without a resolver such a model is refused rather than
- *           sealed under the scope's key, which would make a later shred a false erasure.
+ *           sealed under the scope's key, which would make a later shred a false erasure. A `lookup` field also
+ *           gets its blind index (`blindIndexOf`, under the bound `KeyProvider`) written to `<field>Bidx` whenever
+ *           the field is sealed, and null when the field is written null; without a `KeyProvider`, or when the model
+ *           does not declare the property, the write is refused.
  * Runtime: node
  * Governing contract: ADR 0096 (decision 4: traits run as ORM subscribers); ADR 0097 (decision 4); ADR 0294
  *                     (decisions 20 and 27); ADR 0173; ADR 0188 (decision 2); ADR 0212; registry gap R-36 (owner
- *                     decision 23); gap gov2 (stackra-263).
+ *                     decision 23); gap gov2 (stackra-263); gap gov9 (stackra-313).
  */
 import type { EventArgs, EventSubscriber } from "@mikro-orm/core";
 import { wrap } from "@mikro-orm/core";
-import type { FieldCipher } from "@stackra/contracts";
+import type { FieldCipher, KeyProvider } from "@stackra/contracts";
 
+import { blindIndexOf } from "#core/functions/blind-index-of.function";
+import { blindIndexProperty } from "#core/functions/blind-index-property.function";
 import { encryptedFieldContext } from "#core/functions/encrypted-field-context.function";
 import { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
+import { encryptedLookupOf } from "#core/functions/encrypted-lookup-of.function";
 import { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 import type { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 
@@ -45,16 +51,21 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
   /** Hands out the cipher of one subject, for a model sealed per subject; absent when the host binds none. */
   private readonly subjects: SubjectCipherResolver | undefined;
 
+  /** The scope's keys, for the blind index of a `lookup` field; absent when the host binds none. */
+  private readonly keys: KeyProvider | undefined;
+
   /** Per entity, each field this subscriber sealed: its plain text and the sealed value it wrote in its place. */
   private readonly written = new WeakMap<object, Map<string, readonly [string, string]>>();
 
   /**
    * @param cipher - the cipher the host binds, a KMS-backed driver in production.
    * @param subjects - the per-subject ciphers, needed once any model is `HasEncryptedFields({ subject })`.
+   * @param keys - the scope's key provider, needed once any model is `HasEncryptedFields({ lookup })`.
    */
-  constructor(cipher: FieldCipher, subjects?: SubjectCipherResolver) {
+  constructor(cipher: FieldCipher, subjects?: SubjectCipherResolver, keys?: KeyProvider) {
     this.cipher = cipher;
     this.subjects = subjects;
+    this.keys = keys;
   }
 
   /** The ORM's `beforeCreate`: seals every encrypted field the new row holds. */
@@ -116,16 +127,25 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
     if (fields.length === 0) return;
     const record = entity as Record<string, unknown>;
     const written = this.written.get(entity) ?? new Map<string, readonly [string, string]>();
+    const lookup = encryptedLookupOf(meta.class);
     let cipher: FieldCipher | undefined;
     for (const field of fields) {
       const value = record[field];
+      if (value === null && lookup.includes(field)) record[this.indexOf(meta, field)] = null;
       // the second test skips a value this subscriber already sealed, left in place by a flush that failed
       if (value === null || value === undefined || written.get(field)?.[1] === value) continue;
       if (typeof value !== "string")
         throw new TypeError(`${meta.className}.${field} is encrypted, so it must hold a string`);
       // resolved once per row and only when a value is sealed, so a row of nulls creates no subject salt
       cipher ??= await this.sealingCipher(entity, meta);
-      const sealed = await cipher.seal(value, this.contextOf(meta, field));
+      const context = this.contextOf(meta, field);
+      if (lookup.includes(field))
+        record[this.indexOf(meta, field)] = await blindIndexOf(
+          this.lookupKeys(meta),
+          value,
+          context,
+        );
+      const sealed = await cipher.seal(value, context);
       written.set(field, [value, sealed]);
       record[field] = sealed;
     }
@@ -216,6 +236,33 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
         `${meta.className} is sealed per subject, so EncryptedFieldsSubscriber needs a SubjectCipherResolver`,
       );
     return this.subjects;
+  }
+
+  /**
+   * The blind-index property of a lookup `field`.
+   *
+   * @throws TypeError when the model does not declare it, rather than dropping the index.
+   */
+  private indexOf(meta: EventArgs<object>["meta"], field: string): string {
+    const property = blindIndexProperty(field);
+    if (!(property in meta.properties))
+      throw new TypeError(
+        `${meta.className}.${field} keeps a blind index, so the model declares ${property}: string | null`,
+      );
+    return property;
+  }
+
+  /**
+   * The bound key provider.
+   *
+   * @throws TypeError when none is bound, rather than writing a lookup field without its index.
+   */
+  private lookupKeys(meta: EventArgs<object>["meta"]): KeyProvider {
+    if (this.keys === undefined)
+      throw new TypeError(
+        `${meta.className} keeps a blind index, so EncryptedFieldsSubscriber needs a KeyProvider`,
+      );
+    return this.keys;
   }
 
   /** Moves the ORM's snapshot of `field` to its plain text, so the next flush compares plain with plain. */

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `HasEncryptedFields`: it records the encrypted field names (and the subject property when
- *          given), adds no field, and refuses an empty or repeated list, an empty subject or an encrypted subject.
+ *          given, and the lookup fields), adds no field, and refuses an empty or repeated list, an empty subject, an
+ *          encrypted subject, empty options, and a lookup that is empty, repeated, not encrypted or subject-sealed.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0096; registry gap R-36.
@@ -20,6 +21,14 @@ class Profile extends Model.with(HasEncryptedFields({ subject: "userId" }, "emai
 
 class Contact extends Model.with(HasEncryptedFields("email", "phone")) {
   email!: string;
+
+  phone: string | null = null;
+}
+
+class Lead extends Model.with(HasEncryptedFields({ lookup: ["email"] }, "email", "phone")) {
+  email: string | null = null;
+
+  emailBidx: string | null = null;
 
   phone: string | null = null;
 }
@@ -48,6 +57,24 @@ describe(HasEncryptedFields, () => {
     expect(() => HasEncryptedFields({ subject: "" }, "email")).toThrow(TypeError);
     expect(() => HasEncryptedFields({ subject: "userId" }, "userId", "email")).toThrow(
       /subject the other fields are sealed for/,
+    );
+  });
+
+  it("records the lookup fields", () => {
+    expect(traitsOf(Lead)).toEqual([
+      { name: "has_encrypted_fields", options: { fields: ["email", "phone"], lookup: ["email"] } },
+    ]);
+  });
+
+  it("refuses empty options and a lookup that is empty, repeated, not encrypted or subject-sealed", () => {
+    expect(() => HasEncryptedFields({}, "email")).toThrow(TypeError);
+    expect(() => HasEncryptedFields({ lookup: [] }, "email")).toThrow(TypeError);
+    expect(() => HasEncryptedFields({ lookup: ["email", "email"] }, "email")).toThrow(TypeError);
+    expect(() => HasEncryptedFields({ lookup: ["name"] }, "email")).toThrow(
+      /does not encrypt: name/,
+    );
+    expect(() => HasEncryptedFields({ subject: "userId", lookup: ["email"] }, "email")).toThrow(
+      /outlive the shred/,
     );
   });
 });

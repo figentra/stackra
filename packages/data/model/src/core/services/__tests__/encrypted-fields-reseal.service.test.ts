@@ -5,7 +5,8 @@
  *          same context, guards the write with the old values, skips a row a write changed first and a row of an
  *          erased subject, converts a custom-typed subject, returns a cursor that resumes, and refuses a model
  *          without encrypted fields, a composite key, an unsealed value, a bad limit, and a subject-sealed model
- *          without a resolver.
+ *          without a resolver. A lookup field's blind index is rewritten with its value, and a missing or rotated
+ *          index makes a row stale even when its value is on the current key.
  * Boundary: test only; a stand-in entity manager whose driver pages an in-memory table by primary key, and an
  *           in-test cipher that writes the `v1.<keyId>.<iv>.<body>` form reversibly, not a cipher.
  * Runtime: node (vitest)
@@ -17,6 +18,7 @@ import type { DataKey } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Model } from "#core/bases/model.base";
+import { blindIndexOf } from "#core/functions/blind-index-of.function";
 import { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 import { EncryptedFieldsResealService } from "#core/services/encrypted-fields-reseal.service";
 import { HasEncryptedFields } from "#core/traits/has-encrypted-fields.trait";
@@ -78,6 +80,14 @@ class Profile extends Model.with(HasEncryptedFields({ subject: "userId" }, "emai
   userId!: string;
 
   email: string | null = null;
+}
+
+class Lead extends Model.with(HasEncryptedFields({ lookup: ["email"] }, "email")) {
+  id!: string;
+
+  email: string | null = null;
+
+  emailBidx: string | null = null;
 }
 
 class Note extends Model {
@@ -304,5 +314,33 @@ describe(EncryptedFieldsResealService, () => {
     await expect(service.reseal(managerOf(Contact, []).em, Contact, { limit: 0 })).rejects.toThrow(
       TypeError,
     );
+  });
+
+  it("backfills a missing blind index and rewrites one made under another key", async () => {
+    const keys = new RotatingKeys();
+    const current = await sealedFor(keys, "k2", "email", "a@x.io", "lead");
+    const rows: Row[] = [
+      { id: "a", email: current, emailBidx: null },
+      {
+        id: "b",
+        email: await sealedFor(keys, "k2", "email", "b@x.io", "lead"),
+        emailBidx: "k1.00",
+      },
+      { id: "c", email: null, emailBidx: null },
+    ];
+    const { em } = managerOf(Lead, rows);
+    const service = new EncryptedFieldsResealService(new FormCipher(keys), keys);
+
+    expect((await service.usage(em, Lead)).stale).toBe(2);
+    expect(await service.reseal(em, Lead)).toEqual({
+      scanned: 3,
+      resealed: 2,
+      skipped: 0,
+      cursor: null,
+    });
+    expect(rows[0]?.["emailBidx"]).toBe(await blindIndexOf(keys, "a@x.io", "crm.lead.email"));
+    expect(rows[1]?.["emailBidx"]).toBe(await blindIndexOf(keys, "b@x.io", "crm.lead.email"));
+    expect(rows[2]?.["emailBidx"]).toBeNull();
+    expect((await service.usage(em, Lead)).stale).toBe(0);
   });
 });
