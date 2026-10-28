@@ -1,0 +1,95 @@
+---
+title: "0479 — Stripe Terminal: the first card terminal acquirer SDK, in @stackra/native-card-terminal"
+description: "Proposed · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the acquirer SDK decision record for Stripe Terminal, the first acquirer of @stackra/native-card-terminal: the `stripe_terminal` CardTerminal driver, the `native` StripeTerminalBridge binding of @stackra/payments' Tap to Pay driver, connection tokens from the server and no offline payment. Boundary: decision text only; the code is in packages/experience/native-card-terminal (batch stackra-430, STA-1532). Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0339, 0377, 0442, 0446, 0478. */}
+
+<Note>
+  Proposed (batch stackra-430, STA-1532). The acquirer SDK ADR that
+  [0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template) decision 6
+  asks for, written before the module, for Stripe Terminal. Nothing may rely on it until the owner
+  accepts it. Certification pending: written from Stripe's public Terminal SDK documents, not yet
+  checked on a reader.
+</Note>
+
+## Context
+
+Commerce, Mezzora and Jute take card-present payments on phones, tablets and Android tills with Bluetooth readers
+(Stripe Reader M2, BBPOS WisePad 3) and with the phone itself (Tap to Pay on iPhone and Android). Only Stripe
+Terminal's native iOS and Android SDKs reach them. [0478](/adr/0478-native-code-lives-only-in-expo-module-packages-one-per-capability-behind-a-port)
+puts card terminal native code in one Expo module package, `@stackra/native-card-terminal`, behind the existing
+`CardTerminal` port of `@stackra/peripherals/contracts`
+([0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+decision 1), and 0442 decision 6 asks for one ADR per acquirer SDK: payments go through the tenant's payment
+Connection (OS payments, STA-664) and never complete offline. [0446](/adr/0446-agent-payments-confirmed-in-the-shoppers-wallet-and-the-softpos-tap-to-pay-driver-family)
+decision 4 already has `@stackra/payments`' `stripe-tap-to-pay` SoftPos driver talk to Stripe only through the
+`StripeTerminalBridge` port, which it left for the staff app to bind over Stripe's React Native SDK; under 0478 an app
+holds no native code, so the binding needs a home. The alternatives were Stripe's React Native SDK package in each app
+(rejected: a third-party native dependency per app, versioned outside our release, and a second copy of the SDK beside
+the module) and Stripe's server-driven readers only (WisePOS E, S700; rejected as the only path because handheld and
+Tap to Pay checkout need the mobile SDK; those readers stay server-driven, see decision 7).
+
+## Decision
+
+1. **Stripe Terminal is the first acquirer SDK of `@stackra/native-card-terminal`.** The package wraps Stripe
+   Terminal's native iOS SDK (`StripeTerminal` pod) and Android SDK (`com.stripe:stripeterminal` and its Tap to Pay
+   artifact), declared only in its podspec and Gradle file and fetched from Stripe's repositories at build time under
+   Stripe's terms (0478 decision 4). The Expo module, `StackraCardTerminal`, is a pass-through: discovery, connect,
+   disconnect, the reader's state, collect and confirm, cancel, and the connection-token handshake. It maps nothing;
+   the TypeScript drivers read its answers.
+2. **`CardTerminal` driver `stripe_terminal`.** `StripeTerminalCardTerminalDriver` pairs a Bluetooth reader by its
+   serial number (`TerminalPairing.terminalId`; `provider` is the market pack's `stripe`; `address` is null), at the
+   Stripe location the server names, and reports ready, busy or offline. A refused Bluetooth or location permission
+   resolves `permission_denied` on capability `bluetooth`; no reader, another provider, a LAN address or an SDK error
+   resolves `unavailable` on `card_terminal` (0253, `CapabilityResult`). The port is unchanged: it pairs and reports,
+   and the payment stays the payments driver's (0339 decision 1).
+3. **The bridge is bound by the package.** `NativeStripeTerminalBridgeDriver` (driver `native`) binds `@stackra/payments`' `StripeTerminalBridge`
+   over the same module, so the `stripe-tap-to-pay` SoftPos driver and a Bluetooth reader share one SDK instance and
+   one connected reader. This replaces 0446 decision 4's "the staff app binds that port over Stripe Terminal's React
+   Native SDK" once accepted; the port and the SoftPos driver do not change.
+4. **Connection tokens come from the server.** The SDK asks for a connection token through the module; the package
+   answers through the `StripeTerminalServer` port, which the host binds over a server action that asks the tenant's
+   Stripe payment Connection (OS integrations, STA-664) for a token. The app holds no Stripe secret key, no
+   restricted key and no account id; a token request that fails is answered as a failure, never retried with a
+   stored value. The reader's Stripe location comes from the same port (a site setting on the server).
+5. **Never offline.** A payment is a server-created payment intent whose client secret the server hands the device
+   (0446 decision 3); the device retrieves, collects and confirms it, and the server captures, cancels and reconciles
+   over the Connection. The module never enables the SDK's offline mode and never creates an intent on the device, so
+   a payment cannot complete without Stripe. A lost answer is cancel-then-reconcile on the server
+   ([0377](/adr/0377-semi-integrated-card-terminals-ecr-drivers-for-gulf-acquirers-and-the-local-link) decision 2).
+6. **Permissions are the package's config plugin.** `plugin/` adds Bluetooth (always) and location (when in use)
+   usage strings, the `bluetooth-central` background mode, and, when the app's runway turns Tap to Pay on, the
+   proximity reader entitlement on iOS; on Android the Bluetooth scan and connect, fine location and NFC permissions,
+   with NFC not required as a hardware feature. The usage strings are options with English defaults; the app's
+   locale overlays translate them.
+7. **Choice is data.** Which Markets offer Stripe card-present payments is pack data (`payments.terminal-providers`,
+   `payments.softpos`); which devices may run it is the device catalogue's; the Tap to Pay entitlement per app bundle
+   is a `launch-gate:<pack>:<product>` row (0446 decision 5). Server-driven Stripe readers (WisePOS E, S700) stay a
+   `TerminalGateway` of the Stripe Connection on the server and are not part of this package.
+8. **Mock.** The `memory` driver of `@stackra/peripherals` is the `CardTerminal` mock; the package's TypeScript drivers
+   are tested against a stand-in module that replays the SDK's answers. The Swift and Kotlin are checked on the box
+   and on certified readers (STA-739), not on a developer Mac.
+
+## Consequences
+
+- Stripe card-present payments work in every Expo app that lists the package, with one SDK version per release.
+- The staff app no longer needs Stripe's React Native SDK; 0446's bridge is bound by a package with tests.
+- The server must offer a connection-token action over the tenant's Stripe Connection (OS integrations) and a site
+  setting for the Stripe location; until it does, pairing refuses.
+- A second acquirer SDK (a Gulf SoftPOS SDK, 0377 decision 7) is its own ADR and its own driver in the same package.
+- `PERIPHERAL_DRIVERS.cardTerminal` gains `stripe_terminal` through the integration batch, since the list is
+  `@stackra/peripherals`' file.
+
+## Enforcement
+
+- planned — the 0478 `validate-repository.mjs` check (module packages carry `src/`, `ios/`, `android/`, `plugin/`).
+- `packages/experience/native-card-terminal/src/native/__tests__/no-secret-key.test.ts` — no file under `src/`,
+  `plugin/`, `ios/` or `android/` holds a string shaped like a Stripe secret or restricted key (`sk_`, `rk_`).
+- planned — review by `architecture-guardian` until both land.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends, once accepted, 0446 decision 4 (who binds `StripeTerminalBridge`). Sources: ADR 0478
+decision 8, ADR 0442 decision 6, batch stackra-430 (`notes/handover/batches/stackra.yaml`), Stripe Terminal's public
+iOS and Android SDK documents.

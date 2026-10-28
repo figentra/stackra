@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["StackraCardTerminalModule"]
+  },
+  "android": {
+    "modules": ["com.figentra.stackra.cardterminal.StackraCardTerminalModule"]
+  }
+}

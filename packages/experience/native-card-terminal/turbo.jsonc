@@ -1,0 +1,14 @@
+// Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags
+// (tier, category, runtimes; pnpm validate checks them). Member-only task overrides go here.
+// Owner: release-operations · Secrets: forbidden
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tags": [
+    "tier:lib",
+    "category:experience",
+    "runtime:isomorphic",
+    "runtime:node",
+    "runtime:react-native",
+  ],
+}

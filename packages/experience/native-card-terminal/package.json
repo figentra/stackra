@@ -1,0 +1,122 @@
+{
+  "name": "@stackra/native-card-terminal",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Stackra native card terminal: the StackraCardTerminal Expo module over Stripe Terminal's iOS and Android SDKs, the stripe_terminal CardTerminal driver for Bluetooth readers, the native StripeTerminalBridge driver for Tap to Pay, connection tokens from the server through the StripeTerminalServer port, and the config plugin that adds the Bluetooth, location and NFC permissions",
+  "keywords": [
+    "card-terminal",
+    "experience",
+    "expo-module",
+    "point-of-sale",
+    "stackra",
+    "stripe-terminal",
+    "tap-to-pay"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/native-card-terminal#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
+  "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/experience/native-card-terminal"
+  },
+  "files": [
+    "dist",
+    "src",
+    "plugin",
+    "ios",
+    "android",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "stackra.manifest.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
+    "#plugin/*": [
+      "./plugin/*",
+      "./plugin/*.ts",
+      "./plugin/*/index.ts"
+    ]
+  },
+  "exports": {
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/payments": "workspace:*",
+    "@stackra/peripherals": "workspace:*",
+    "@stackra/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "expo": "catalog:mobile",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "expo": "catalog:mobile"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "experience",
+    "runtimes": [
+      "isomorphic",
+      "node",
+      "react-native"
+    ],
+    "summary": "Use it when an Expo app takes card-present payments with a Stripe Bluetooth reader or Tap to Pay on the phone, behind the CardTerminal port and the payments StripeTerminalBridge."
+  }
+}
