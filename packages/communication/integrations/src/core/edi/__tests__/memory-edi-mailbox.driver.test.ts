@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MemoryEdiMailbox`: a name is put once, the inbox lists from a date oldest first, get and
+ * Purpose: unit tests of `MemoryEdiMailboxDriver`: a name is put once, the inbox lists from a date oldest first, get and
  *          remove follow it, and control numbers count up per partner.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -8,18 +8,18 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { MemoryEdiMailbox } from "#core/edi/memory-edi-mailbox.driver";
+import { MemoryEdiMailboxDriver } from "#core/edi/memory-edi-mailbox.driver";
 
-describe("MemoryEdiMailbox", () => {
+describe("MemoryEdiMailboxDriver", () => {
   it("puts once per name", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     await mailbox.put("a", "first");
     await expect(mailbox.put("a", "second")).resolves.toEqual({ id: "a" });
     expect(mailbox.sent.get("a")).toBe("first");
   });
 
   it("lists, gets and removes the inbox", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     mailbox.deliver("late", "L", new Date("2026-10-28T10:00:00Z"));
     mailbox.deliver("early", "E", new Date("2026-10-28T09:00:00Z"));
     mailbox.deliver("old", "O", new Date("2026-10-27T09:00:00Z"));
@@ -34,7 +34,7 @@ describe("MemoryEdiMailbox", () => {
   });
 
   it("counts control numbers per partner", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     expect(await mailbox.nextControlNumber("ZZ:A")).toBe(1);
     expect(await mailbox.nextControlNumber("ZZ:A")).toBe(2);
     expect(await mailbox.nextControlNumber("ZZ:B")).toBe(1);

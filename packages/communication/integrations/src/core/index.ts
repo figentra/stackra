@@ -7,7 +7,7 @@
  *          accounting folder adds `mapJournal`, `postMappedJournal` and `UnmappedAccountError` (STA-794); the ads folder
  *          adds `matchKeysOf`, the hashed match keys of a person for an ad platform (STA-793). The edi
  *          folder adds the X12 and EDIFACT envelope (`readInterchange`, `writeInterchange`), the 997 and CONTRL
- *          `functionalAcknowledgement`, `MailboxEdiConnector`, `MemoryEdiMailbox`, `EDI_MESSAGE_CODES` and
+ *          `functionalAcknowledgement`, `MailboxEdiConnector`, `MemoryEdiMailboxDriver`, `EDI_MESSAGE_CODES` and
  *          `MalformedEdiError` (stackra-46).
  * Boundary: names each re-export and declares nothing. The provider-category, catalogue and managed-provisioning
  *           template seeds are exported for the registry and the seeders. The managed client's internals (`managedClient`, the placeholder
@@ -29,7 +29,7 @@ export { functionalAcknowledgement } from "#core/edi/functional-acknowledgement.
 export { MailboxEdiConnector } from "#core/edi/mailbox-edi.connector";
 export type { MailboxEdiOptions } from "#core/edi/mailbox-edi-options.type";
 export { MalformedEdiError } from "#core/edi/malformed-edi.error";
-export { MemoryEdiMailbox } from "#core/edi/memory-edi-mailbox.driver";
+export { MemoryEdiMailboxDriver } from "#core/edi/memory-edi-mailbox.driver";
 export { readInterchange } from "#core/edi/read-interchange.function";
 export { writeInterchange } from "#core/edi/write-interchange.function";
 export { Integration } from "#core/bases/integration.base";

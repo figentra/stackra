@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `MemoryEdiMailbox`, the in-memory `EdiMailbox`: what is put is kept once per name in `sent`, `deliver`
+ * Purpose: `MemoryEdiMailboxDriver`, the in-memory `EdiMailbox`: what is put is kept once per name in `sent`, `deliver`
  *          plays a trading partner dropping an interchange in the inbox, and control numbers count up per partner.
  * Boundary: the driver named `memory`; no transport and no certificate. `list` returns one page (no cursor). Its
  *           constructor takes no data (ADR 0294 rule 17). Production transports (AS2, SFTP, a VAN) are OS integrations
@@ -18,11 +18,11 @@ import type { EdiMailboxPage } from "#contracts/edi/edi-mailbox-page.type";
  * A mailbox in memory.
  *
  * @example
- * const mailbox = new MemoryEdiMailbox();
+ * const mailbox = new MemoryEdiMailboxDriver();
  * mailbox.deliver("in_1", x12Order);
  * const page = await new MailboxEdiConnector(mailbox, options).receive(new Date(0));
  */
-export class MemoryEdiMailbox extends Driver(EdiMailbox) {
+export class MemoryEdiMailboxDriver extends Driver(EdiMailbox) {
   /** Name to the interchange put under it, first put wins. */
   readonly sent = new Map<string, string>();
 

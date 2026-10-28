@@ -431,7 +431,7 @@ machinery that names no vendor (ADR 0443 decision 8):
   `body.segments` for the partner (`<qualifier>:<id>`); `receive` turns each message into a canonical `EdiDocument`
   (type from `EDI_MESSAGE_CODES`: 850/ORDERS, 855/ORDRSP, 856/DESADV, 810/INVOIC, 997/CONTRL; reference from BEG, BAK,
   BSN, BIG or BGM); `acknowledge` sends the 997 or CONTRL and removes the interchange. `MailboxEdiOptions` (syntax, our
-  party, version, test) is Connection data. `MemoryEdiMailbox` is the memory transport.
+  party, version, test) is Connection data. `MemoryEdiMailboxDriver` is the memory transport.
 - **Recorded cases.** An OS EDI connector ships `EdiCase` recordings and passes `runEdiCase(make, case)` from
   `./testing`: each document sent twice under its key (same id), every page received, each acknowledged, every recorded
   call made.

@@ -6,7 +6,7 @@
  * Boundary: an abstract class that is its own token, key `integrations.EdiMailbox`. It moves interchange text only and
  *           knows no syntax; `MailboxEdiConnector` envelopes and reads. Every transport driver that names a vendor or
  *           holds certificates (AS2 MDNs, SFTP keys, a VAN's API) is an OS integrations connector (ADR 0443 decision 7);
- *           `MemoryEdiMailbox` in `./testing` is the in-memory one. Ids never contain `#`. A leaf file.
+ *           `MemoryEdiMailboxDriver` in `./testing` is the in-memory one. Ids never contain `#`. A leaf file.
  * Runtime: isomorphic
  * Governing contract: ADR 0447 (decision 4); ADR 0443 (decisions 7 and 8); stackra-46 re-scope (R2-7, M6);
  *                     ADR 0294 (decision 16).

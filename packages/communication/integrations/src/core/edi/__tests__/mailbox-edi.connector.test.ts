@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MailboxEdiConnector` over `MemoryEdiMailbox`: an order sent twice under one key is put once
+ * Purpose: unit tests of `MailboxEdiConnector` over `MemoryEdiMailboxDriver`: an order sent twice under one key is put once
  *          as an X12 interchange to the partner; a body without segments or a partner without a qualifier is refused;
  *          the recorded 850 and ORDERS are received as canonical documents with their reference; acknowledging sends
  *          the 997 or CONTRL once and removes the interchange; an incoming 997 is removed without an answer; a message
@@ -17,7 +17,7 @@ import { EDIFACT_ORDER } from "#core/edi/__tests__/edifact-order.constant";
 import { X12_ORDER } from "#core/edi/__tests__/x12-order.constant";
 import { MailboxEdiConnector } from "#core/edi/mailbox-edi.connector";
 import { MalformedEdiError } from "#core/edi/malformed-edi.error";
-import { MemoryEdiMailbox } from "#core/edi/memory-edi-mailbox.driver";
+import { MemoryEdiMailboxDriver } from "#core/edi/memory-edi-mailbox.driver";
 import { readInterchange } from "#core/edi/read-interchange.function";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 
@@ -37,7 +37,7 @@ const order = {
 
 describe("MailboxEdiConnector", () => {
   it("puts an order once per key as an X12 interchange", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     const edi = new MailboxEdiConnector(mailbox, x12);
     await expect(edi.send(order, "po:1")).resolves.toEqual({ id: "po:1" });
     await expect(edi.send(order, "po:1")).resolves.toEqual({ id: "po:1" });
@@ -51,7 +51,7 @@ describe("MailboxEdiConnector", () => {
   });
 
   it("refuses a body without segments or a partner without a qualifier", async () => {
-    const edi = new MailboxEdiConnector(new MemoryEdiMailbox(), x12);
+    const edi = new MailboxEdiConnector(new MemoryEdiMailboxDriver(), x12);
     for (const document of [
       { ...order, body: {} },
       { ...order, partner: "ACMEFOODS" },
@@ -62,7 +62,7 @@ describe("MailboxEdiConnector", () => {
   });
 
   it("receives the recorded interchanges as canonical documents", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     mailbox.deliver("in_1", X12_ORDER, new Date("2026-10-28T09:31:00Z"));
     mailbox.deliver("in_2", EDIFACT_ORDER, new Date("2026-10-28T09:32:00Z"));
     const page = await new MailboxEdiConnector(mailbox, x12).receive(
@@ -79,7 +79,7 @@ describe("MailboxEdiConnector", () => {
   });
 
   it("acknowledges once and removes the interchange", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     mailbox.deliver("in_1", X12_ORDER);
     mailbox.deliver("in_2", EDIFACT_ORDER);
     const edi = new MailboxEdiConnector(mailbox, x12);
@@ -93,7 +93,7 @@ describe("MailboxEdiConnector", () => {
   });
 
   it("removes an incoming acknowledgement without answering it", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     const edi = new MailboxEdiConnector(mailbox, x12);
     mailbox.deliver("in_1", X12_ORDER);
     await edi.acknowledge("in_1");
@@ -106,7 +106,7 @@ describe("MailboxEdiConnector", () => {
   });
 
   it("refuses a message outside the canonical set and leaves it", async () => {
-    const mailbox = new MemoryEdiMailbox();
+    const mailbox = new MemoryEdiMailboxDriver();
     mailbox.deliver("in_1", X12_ORDER.replaceAll("850", "940"));
     const error = await new MailboxEdiConnector(mailbox, x12)
       .receive(new Date(0))

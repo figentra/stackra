@@ -57,7 +57,7 @@ describe("@stackra/integrations", () => {
       "MarketPackProviderDefaultsDriver",
       "MemoryAudioDeviceDriver",
       "MemoryConnectionStoreDriver",
-      "MemoryEdiMailbox",
+      "MemoryEdiMailboxDriver",
       "MemoryManagedProvisioningDriver",
       "NoProviderError",
       "PROVIDER_CATALOGUE_SEEDS",
