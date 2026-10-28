@@ -28,6 +28,7 @@ export { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 export { RateLimitBudget } from "#contracts/ports/rate-limit-budget.port";
 export { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 export { ReplicaLog } from "#contracts/ports/replica-log.port";
+export { ReplicaReads } from "#contracts/ports/replica-reads.port";
 export { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
 export { StepUpCheck } from "#contracts/ports/step-up-check.port";
 export { TenancyCheck } from "#contracts/ports/tenancy-check.port";

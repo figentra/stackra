@@ -22,7 +22,9 @@
  *          context, and no step without a bound `Cache`; and `ctx.consent()` (ADR 0472): refused without a snapshot or
  *          a bound `ConsentCheck`, the check's answer otherwise, verified once per call, never refusing the call; and
  *          the `Tracer` span per call (ADR 0147, STA-1513): its name, the attribute names with no input values, the
- *          outcome of a success, a refusal and a bug, a proposal's span, and no span without a bound tracer.
+ *          outcome of a success, a refusal and a bug, a proposal's span, and no span without a bound tracer; and
+ *          `reads: "replica"` (STA-1504): on the replica outside the window, on the primary after the caller's own
+ *          committed write or a carried `lastWriteAt`, never for a refused write or another caller's write.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -81,6 +83,7 @@ import {
   RateLimitBudget,
   RateLimitStore,
   ReplicaLog,
+  ReplicaReads,
   ReviewItemSink,
   StepUpCheck,
   TenancyCheck,
@@ -2140,5 +2143,112 @@ describe("ActionPipeline tracing (ADR 0147, STA-1513)", () => {
     await expect(
       pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer }),
     ).resolves.toEqual({ orderId: "ord_1", afterCommit: false });
+  });
+});
+
+/** Replica reads in memory: records where each read ran and keeps a 5-second window per writer. */
+class RecordingReplicaReads extends Driver(ReplicaReads) {
+  readonly writes = new Map<string, number>();
+
+  readonly reads: string[] = [];
+
+  async onReplica<T>(work: () => Promise<T>): Promise<T> {
+    this.reads.push("replica");
+    return work();
+  }
+
+  async wrote(writer: string, at: Date): Promise<void> {
+    this.writes.set(writer, at.getTime());
+  }
+
+  async pinned(writer: string, at: Date, lastWriteAt?: Date): Promise<boolean> {
+    const last = Math.max(
+      this.writes.get(writer) ?? -Infinity,
+      lastWriteAt?.getTime() ?? -Infinity,
+    );
+    return at.getTime() - last < 5000;
+  }
+}
+
+/** A query that reads the replica. */
+class VisitsQuery extends Query({
+  key: "visit.list",
+  actors: [ActorKind.User],
+  reads: "replica",
+}) {
+  async handle(): Promise<string> {
+    return "visits";
+  }
+}
+
+/** A pipeline with recording replica reads and the replica query bound. */
+function withReplicaReads() {
+  const reads = new RecordingReplicaReads();
+  const { pipeline, shop } = setup([
+    [ReplicaReads, reads],
+    [VisitsQuery, new VisitsQuery()],
+  ]);
+  return { pipeline, reads, shop };
+}
+
+describe("ActionPipeline replica reads (STA-1504)", () => {
+  it("runs a reads: replica query on the replica", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
+    expect(reads.reads).toEqual(["replica"]);
+  });
+
+  it("keeps a primary query on the primary", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer });
+    expect(reads.reads).toEqual([]);
+  });
+
+  it("pins the caller to the primary after its own committed write, in its scope", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 1 },
+      { actor: customer, scope: SCOPE, idempotencyKey: "k1" },
+    );
+    expect([...reads.writes.keys()]).toEqual([`${SCOPE.id}:usr_1`]);
+    await pipeline.execute(VisitsQuery, {}, { actor: customer, scope: SCOPE });
+    expect(reads.reads).toEqual([]);
+    await pipeline.execute(VisitsQuery, {}, { actor: { ...customer, id: "usr_2" }, scope: SCOPE });
+    expect(reads.reads).toEqual(["replica"]);
+  });
+
+  it("opens no window for a refused write", async () => {
+    const { pipeline, reads, shop } = withReplicaReads();
+    shop.failNext = true;
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k" },
+      ),
+    ).rejects.toBeInstanceOf(OutOfStockError);
+    expect(reads.writes.size).toBe(0);
+  });
+
+  it("reads the primary inside a window the transport carried, and the replica after it", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    await pipeline.execute(
+      VisitsQuery,
+      {},
+      { actor: customer, lastWriteAt: new Date(NOW.getTime() - 1000) },
+    );
+    expect(reads.reads).toEqual([]);
+    await pipeline.execute(
+      VisitsQuery,
+      {},
+      { actor: customer, lastWriteAt: new Date(NOW.getTime() - 60_000) },
+    );
+    expect(reads.reads).toEqual(["replica"]);
+  });
+
+  it("reads the primary when no ReplicaReads is bound", async () => {
+    const { pipeline } = setup([[VisitsQuery, new VisitsQuery()]]);
+    await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
   });
 });

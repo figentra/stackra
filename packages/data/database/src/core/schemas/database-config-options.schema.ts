@@ -3,12 +3,13 @@
  * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
  *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness); `timeouts` are the
  *          statement, lock and idle-in-transaction timeouts every runtime session starts with; `pool` is the connection
- *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`.
+ *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`;
+ *          `readYourWrites` is how long a caller's `reads: "replica"` queries stay on the primary after its write.
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); registry gap R-27; gap analysis devx-ops "Health checks" (P0,
- *                     owner D10); ADR 0473 (decision 2: the pool).
+ *                     owner D10); ADR 0473 (decision 2: the pool); STA-1504 (the read-your-writes window).
  */
 import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
@@ -52,6 +53,14 @@ export class DatabaseConfigOptions extends Schema {
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
   @Field(DATABASE_CONFIG_SCHEMA.shape.pool)
   pool: DatabasePool = { max: 10, min: 0, idleTimeout: Duration.seconds(10) };
+
+  /**
+   * How long a caller's `reads: "replica"` queries read the primary after its own action committed, so it never reads a
+   * replica behind its write; set it above the replicas' usual lag (`DatabaseReplicaReadsDriver`).
+   */
+  // reason: a duration in either form, stored canonical; the shipped config schema holds its rule
+  @Field(DATABASE_CONFIG_SCHEMA.shape.readYourWrites)
+  readYourWrites: Duration = Duration.seconds(5);
 }
 
 registerSchemas([[DatabaseConfigOptions, DATABASE_CONFIG_SCHEMA]]);

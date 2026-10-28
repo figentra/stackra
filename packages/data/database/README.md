@@ -145,6 +145,11 @@ const visits = await database.onReplica(() => this.visits.find({ day: { $gte: fr
 - `onReplica(work)` opens a read-only transaction on a replica and replays the running transaction's `app.*` settings
   (scope and tenant) there, so row-level security holds. The replica lags and never sees the caller's uncommitted
   writes, so use it for reports and dashboards, never read-your-write paths. With no replica it runs `work` as it is.
+- A query that declares `reads: "replica"` (`@stackra/actions`) runs its `handle` there through
+  `DatabaseReplicaReadsDriver`, the `database` driver of the `ReplicaReads` port. After a caller's action commits, its
+  replica queries read the primary for `DatabaseConfig.readYourWrites` (5 seconds by default), keyed by scope and
+  actor. The driver remembers writes per instance; the transport carries the last write to other instances as
+  `CallOptions.lastWriteAt`.
 
 ## A migration
 

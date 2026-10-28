@@ -8,7 +8,7 @@
  *           runs only through `ActionPipeline`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 28 and 31, as amended 2026-10-28); ADR 0155 (queries are MCP
- *                     tools); ADR 0136 (decision 2: queries have no transaction); ADR 0338 (decision 3: `replica`).
+ *                     tools); ADR 0136 (decision 2: queries have no transaction); ADR 0338 (decision 3: `replica`); STA-1504 (`reads`).
  */
 import { createKind } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -38,7 +38,11 @@ const FIELD = /^[a-z][A-Za-z0-9]*$/;
 /** Checks the options of a query and applies their defaults. */
 function read(options: QueryOptions) {
   const shared = readCallOptions("Query", options);
-  const { cache, replica } = options;
+  const { cache, replica, reads } = options;
+  if (reads !== undefined && reads !== "primary" && reads !== "replica")
+    throw new TypeError(
+      `Query({ reads }) is "primary" or "replica", got ${JSON.stringify(reads)} (${options.key})`,
+    );
   if (cache !== undefined) {
     try {
       duration(String(cache.ttl));

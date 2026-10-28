@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `DatabaseConfig`: a configuration over `DatabaseConfigOptions` keyed `database`, built
  *          with its defaults and a runway values layer, refusing a timeout that is not a duration and a pool whose `min`
- *          is above its `max`.
+ *          is above its `max`, and the read-your-writes window.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decisions 19 and
@@ -48,6 +48,13 @@ describe("DatabaseConfig", () => {
       buildConfig(DatabaseConfig, {
         values: { pool: { max: 2, min: 3, idleTimeout: Duration.seconds(10) } },
       }),
+    ).toThrow(ConfigInvalidError);
+  });
+
+  it("ships a five-second read-your-writes window and refuses one that is not a duration (STA-1504)", () => {
+    expect(buildConfig(DatabaseConfig).readYourWrites).toBe(Duration.seconds(5));
+    expect(() =>
+      buildConfig(DatabaseConfig, { values: { readYourWrites: "soon" as Duration } }),
     ).toThrow(ConfigInvalidError);
   });
 });

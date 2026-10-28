@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the Postgres, unit-of-work, idempotency and rate-limit
+ * Purpose: the consumer contract of the `./node` entry: the Postgres, unit-of-work, replica-reads, idempotency and rate-limit
  *          drivers, the service-backed hold registry, the migration runner, the seed runner, the direct URL reader and the health indicator are exported, nothing else is.
  * Boundary: test only; no database is connected.
  * Runtime: node (vitest)
@@ -14,6 +14,7 @@ describe("@stackra/database/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DatabaseHealthIndicatorDriver",
+      "DatabaseReplicaReadsDriver",
       "DatabaseUnitOfWorkDriver",
       "PostgresDatabaseDriver",
       "PostgresIdempotencyStoreDriver",

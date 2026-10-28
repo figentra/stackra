@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `QueryOptions`, what `Query({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the API area, interceptors, the surfaces (`endpoint`, `tool`, `intent`), the `cache` profile and the
- *          offline `replica`.
+ *          offline `replica`, and `reads`: whether `handle` reads a database replica (with the caller's read-your-writes
+ *          window kept by `ReplicaReads`).
  * Boundary: a type only. A query changes no state, so it takes no preconditions, idempotency, job or offline option;
  *           `tool` is on by default (queries are MCP tools under the caller's permissions).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP tools);
- *                     ADR 0338 (decision 3: replicas).
+ *                     ADR 0338 (decision 3: replicas); ADR 0057 (decision 6: read replica), STA-1504 (`reads`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
@@ -51,4 +52,11 @@ export interface QueryOptions {
 
   /** Hold it on clients as a bounded replica, refreshed by change cursor; not available offline when absent. */
   readonly replica?: QueryReplica;
+
+  /**
+   * Where `handle` reads: `"replica"` runs it on a database read replica through `ReplicaReads`, except inside the
+   * caller's read-your-writes window after its own write; `"primary"` (the default) always reads the primary. Not the
+   * offline `replica` above.
+   */
+  readonly reads?: "primary" | "replica";
 }

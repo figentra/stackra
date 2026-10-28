@@ -123,6 +123,8 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   step (token refresh) is `lock(where)` inside a transaction, then a re-check of what it reads (STA-1239).
 - Replica reads go only through `Database.onReplica`, which replays the running `app.*` settings in a read-only replica
   transaction; MikroORM's `preferReadReplicas` stays off, because a read outside that transaction carries no scope.
+- `DatabaseReplicaReadsDriver` keeps the read-your-writes window in instance memory (writer keys only, swept once
+  1000 are held); a `lastWriteAt` may only keep reads on the primary, never move them off it.
 - Faker, Testcontainers, `@electric-sql/pglite` and `@mikro-orm/pglite` are imported by `./testing` only.
 - The unit tier's database is `MemoryDatabaseDriver` (PGlite, ADR 0266 memory first), connected by
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`

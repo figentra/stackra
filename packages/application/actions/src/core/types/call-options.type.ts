@@ -6,7 +6,8 @@
  *          replayed from the device's offline queue), the verified assurance of the caller's last authentication,
  *          whether the call runs in a sandbox, the network client it came from (STA-1248), and the product surface it
  *          arrived through (`origin`: storefront, console, API key, agent; ADR 0456), and the signed consent snapshot
- *          the client sent (`consentSnapshot`, ADR 0472).
+ *          the client sent (`consentSnapshot`, ADR 0472), and the caller's last write the transport carried
+ *          (`lastWriteAt`, the read-your-writes window of a replica query).
  * Boundary: a type only. The actor comes from the verified credential, never from a request body (ADR 0098); the scope
  *           is the one the resolver chain settled on, never request input (ADR 0327 decision 7); the device order is
  *           set only once the transport matched its device id to the verified session's device (the header names are
@@ -90,4 +91,11 @@ export interface CallOptions {
    * unverified here. Absent when the client sent none, which reads as refused.
    */
   readonly consentSnapshot?: string;
+
+  /**
+   * When the caller's last action committed, as the transport carried it (a short-lived cookie or header the
+   * transport sets on a committed action's answer). It only keeps a `reads: "replica"` query on the primary inside
+   * the read-your-writes window, so a forged value costs a replica read and nothing else. Absent when none was sent.
+   */
+  readonly lastWriteAt?: Date;
 }

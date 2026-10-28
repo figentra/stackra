@@ -14,7 +14,8 @@
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
  *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456), and
  *          the visitor's consent (`ctx.consent()`: the call's signed snapshot verified once through `ConsentCheck`;
- *          ADR 0472). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
+ *          ADR 0472), and a `reads: "replica"` query's `handle` on a replica outside the caller's read-your-writes
+ *          window (`ReplicaReads`, opened by each committed action). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
@@ -45,7 +46,7 @@
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
  *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
  *                     never a refusal by itself); ADR 0147 (decision 3: the span attributes, no values) and ADR 0184
- *                     (decision 1: OpenTelemetry), STA-1513.
+ *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504.
  */
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
@@ -91,6 +92,7 @@ import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 import { RateLimitBudget } from "#contracts/ports/rate-limit-budget.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
+import { ReplicaReads } from "#contracts/ports/replica-reads.port";
 import { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
 import { StepUpCheck } from "#contracts/ports/step-up-check.port";
 import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
@@ -160,6 +162,7 @@ interface Recorded {
   readonly stepUp?: AssuranceLevel;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
+  readonly reads?: "primary" | "replica";
 }
 
 /** What one call accumulates while it runs. */
@@ -360,6 +363,8 @@ export class ActionPipeline {
       const amount = await this.capped(call, input);
       await this.limit(call);
       const output = await this.intercepted(call, input);
+      if (kind === "action")
+        await this.optional(ReplicaReads)?.wrote(this.writerOf(descriptor), call.at);
       if (claim !== undefined)
         await this.required(IdempotencyStore, "").complete(claim.held, output);
       if (amount !== undefined && call.request.device?.sequence !== undefined)
@@ -595,7 +600,7 @@ export class ActionPipeline {
    */
   private intercepted(call: Call, input: unknown): Promise<unknown> {
     const instance = this.resolver.get(call.type) as unknown as Handler;
-    const handle = () => instance.handle(input, call.ctx);
+    const handle = () => this.routed(call, () => instance.handle(input, call.ctx));
     const accepts = call.kind === "action" ? call.options.accepts : undefined;
     const reviewed =
       accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
@@ -639,6 +644,26 @@ export class ActionPipeline {
             return next();
           });
       }, core)();
+  }
+
+  /**
+   * Runs a `reads: "replica"` query's `handle` on a replica through `ReplicaReads`, unless the caller's read-your-writes
+   * window is open (its own write, here or carried as `lastWriteAt`); every other call, and every call with no
+   * `ReplicaReads` bound, runs as it is (on the primary).
+   */
+  private async routed(call: Call, handle: () => Promise<unknown>): Promise<unknown> {
+    const reads = call.options.reads === "replica" ? this.optional(ReplicaReads) : undefined;
+    if (
+      reads === undefined ||
+      (await reads.pinned(this.writerOf(call.descriptor), call.at, call.request.lastWriteAt))
+    )
+      return handle();
+    return reads.onReplica(handle);
+  }
+
+  /** Whose read-your-writes window a call opens or reads: the actor in its scope (`<scope>:<actor>`). */
+  private writerOf(descriptor: CallDescriptor): string {
+    return `${descriptor.scope?.id ?? descriptor.scopeId ?? "-"}:${descriptor.actor.id}`;
   }
 
   /**

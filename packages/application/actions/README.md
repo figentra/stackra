@@ -160,6 +160,14 @@ which gen calls for every query with `invalidateOn`) forgets every entry of the 
 whichever scope node wrote it; `handle` still runs in the call's own context. With no `Cache` bound the step does not
 run. Answers are stored as they are, so a network cache driver keeps plain data only (a `Date` comes back a string).
 
+A query that declares `reads: "replica"` runs its `handle` on a database read replica through the `ReplicaReads` port
+(`DatabaseReplicaReadsDriver` of `@stackra/database`, over `Database.onReplica`); the default `"primary"` never does,
+and neither does any query with no `ReplicaReads` bound. Read-your-writes: each committed action records its writer
+(`<scope>:<actor>`), and that writer's replica queries read the primary until the window closes (`DatabaseConfig`
+`readYourWrites`, 5 seconds by default). The driver's memory is per instance, so the transport also carries the last
+write as `CallOptions.lastWriteAt` (a short-lived cookie or header set on a committed action's answer). A forged value
+only costs a replica read. `reads` is not the offline `replica` option.
+
 An action that also runs as a job declares `job: { queue, unique, timeout, retries, backoff, cron }` (`backoff` is the
 contracts `Backoff` curve); `cron: { schedule,
 perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.
