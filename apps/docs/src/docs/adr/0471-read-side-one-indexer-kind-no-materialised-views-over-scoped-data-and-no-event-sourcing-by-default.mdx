@@ -1,0 +1,91 @@
+---
+title: "0471 — Read side: one Indexer kind, no materialised views over scoped data, and no event sourcing by default"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0471 (Accepted 2026-10-28, owner decisions 14 and 15 of the data-layer questionnaire), naming one `Indexer` kind on the outbox change feed for derived index tables and rollups, limiting materialised views to platform-wide tables, refusing pg_ivm and pg_cron, and rejecting event sourcing as a platform default. Boundary: decision text only; the code is batch stackra-399 (`@stackra/database`, `@stackra/outbox`, `@stackra/gen`, `@stackra/cli`) and its followers stackra-400, stackra-414; the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0078, 0089, 0104, 0160, 0163, 0221, 0260, 0294, 0470; notes handover/gap-analysis/data-layer (index-tables-cqrs.md gaps 1, 7 and 10; DECISIONS.md 14 and 15). */}
+
+<Note>
+  Reserved number: 0471, assigned to batch stackra-381 (STA-1481) for the data-layer wave 1 round
+  of 2026-10-28.
+</Note>
+
+## Context
+
+Products need denormalised read tables: an order grid that joins orders, customers and lines; dashboard rollups; a
+search document that changes when a child row changes. Stackra already has the parts of Magento's indexers: watched row
+changes are written with the transaction and delivered after commit to `ChangeConsumer`s (`@stackra/outbox`,
+`registerChangeConsumers`), and `@stackra/search` and `@stackra/segments` use them, under five seconds of lag
+([0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) decision 5). What is missing is a
+kind that declares a target table and its sources, maps a source change to the target rows it affects, keeps index
+state and rebuilds. A `Projection` ([0163](/adr/0163-reports-exports-imports-and-declared-read-models) decision 1) is
+versioned JSONB in one shared table, so it cannot be filtered, sorted or grouped fast. Postgres cannot apply row-level
+security to a materialised view, and refreshing one rebuilds it whole. Event sourcing was asked about as the general
+answer and weighed against the outbox, projections and the append-only traits that exist. The owner answered on
+2026-10-28 (data-layer decisions 14 and 15).
+
+## Decision
+
+1. **One `Indexer` kind builds derived tables.** `class OrderGrid extends Indexer<OrderGridRow>({ key, target,
+   sources, mode })` lives in a module's `models/` group beside its target, kind base in `@stackra/database`, runtime in
+   `@stackra/outbox`.
+   - `rows(ids)` builds target rows from the sources in one query; `affected(change)` maps a source row change to the
+     target ids it touches.
+   - The target is an ordinary `Model` with the `Derived` trait, which refuses writes from anything but its indexer.
+     It carries the scope columns and the standard row-level security policy, so a `Query`, `CrudService`, `Report`
+     ([0470](/adr/0470-reports-v2-a-report-kind-server-grouping-and-pivots-and-report-definitions-as-data)) or
+     `@Searchable` reads it like any model.
+   - `mode: "on_save"` updates in the relay, within the 0221 lag; `mode: "scheduled"` appends ids to a backlog that a
+     scheduler job drains in batches.
+   - Index state (valid, invalid, working; definition hash; last drained position) is kept per indexer; a changed
+     definition marks it invalid. A full rebuild fills a shadow table in keyset batches and swaps it in one
+     transaction; a partial rebuild takes ids. `stackra index:status|rebuild|invalidate` operate them.
+   - Sources are models of the same service. A read model of another service's data stays a `Projection`
+     ([0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)).
+2. **Rollups are indexers.** A dashboard aggregate or summary table is an `Indexer` in `scheduled` mode; there is no
+   separate `Rollup` kind.
+3. **No materialised view over scoped data.** `CREATE MATERIALIZED VIEW` over a table that carries scope columns or
+   row-level security is refused. A materialised view is allowed only over platform-wide tables with no scope data,
+   refreshed by a scheduler job, and its SQL needs the raw-SQL reason of
+   [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions).
+4. **pg_ivm and pg_cron are not approved.** Incremental refresh is the indexer's job and scheduling is
+   `@stackra/scheduler`'s.
+5. **Hot read paths across modules use an indexer or the search index.** Decision 4 of
+   [0104](/adr/0104-links-and-query-graph) is widened: an index read model may be an `Indexer` target as well as the
+   `@stackra/search` index, and a `@Searchable` path through a relation is reindexed through the indexer's
+   `affected` mapping.
+6. **Event sourcing is rejected as a platform default.** State lives in tables written by actions; events are the
+   outbox's integration events and change feed, not the source of truth. Reasons: replay and snapshot cost, painful
+   event migrations, erasure conflicts that would make crypto-shredding mandatory, and a poor fit with configuration
+   over code and with row-level security on tables. The append-only, versioned and correction traits and the ledger
+   cover the audit-grade cases. No separate command and query buses or handler classes are added either: actions are
+   commands, queries are reads, and the pipeline is the bus.
+
+## Consequences
+
+- Hand-written denormalisation and trigger tables go away; one kind covers grids, rollups and related-row search.
+- An index table trails its sources by the relay lag (on save) or the drain interval (scheduled); a screen that must
+  show its own write needs the consistency token planned in stackra-414.
+- A changed indexer definition needs a rebuild before its table is valid again, which gen and the CLI report.
+- A product that truly needs an event-sourced aggregate must ask for the opt-in in the revival trigger, not build its
+  own store.
+
+## Enforcement
+
+planned — gen refuses an `Indexer` whose sources span services or whose target lacks the `Derived` trait, and the
+`Derived` trait refuses a write outside the indexer (stackra-399); a migration check refuses `MATERIALIZED VIEW` over a
+table with scope columns and any `CREATE EXTENSION pg_ivm` or `pg_cron`. Nothing checks this today.
+
+## Revival trigger
+
+For event sourcing only (decision 6): a product needs an aggregate whose full history is the business record and which
+the append-only and correction traits or the ledger cannot express. It then comes as a per-aggregate opt-in, a
+`Model.with(EventSourced)` trait over an append-only stream table with snapshots, through a new ADR.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0104](/adr/0104-links-and-query-graph) (decision 4) and
+[0163](/adr/0163-reports-exports-imports-and-declared-read-models) (decision 1: read models inside one service may be
+`Indexer` targets); each carries a note dated 2026-10-28. Sources: owner answers to the data-layer questionnaire,
+2026-10-28 (decisions 14 and 15); notes `handover/gap-analysis/data-layer/index-tables-cqrs.md` (answers A and B, gaps
+1, 7 and 10); Linear STA-1481.

@@ -4,6 +4,13 @@ description: "Accepted, amended by 0260 · 2026-10-20 · noted 2026-10-26 (STA-1
 ---
 
 <Note>
+  Amended 2026-10-28 (STA-1481) by [0471](/adr/0471-read-side-one-indexer-kind-no-materialised-views-over-scoped-data-and-no-event-sourcing-by-default): a read model inside one service may be an `Indexer`
+  target (a typed, scoped table built from its source models), and a rollup is an `Indexer` in
+  scheduled mode. `Projection` stays the read model of another service's data. No materialised view
+  over scoped data, and event sourcing is not a platform default.
+</Note>
+
+<Note>
   Amended 2026-10-28 (STA-1478) by [0470](/adr/0470-reports-v2-a-report-kind-server-grouping-and-pivots-and-report-definitions-as-data): the `@Report` of decisions 1 and 2 is the `Report` kind
   base of `@stackra/reports`, declared over typed dimensions and measures and compiled on the server
   into grouped, totalled and pivoted results; a user may save a report definition as data over those
