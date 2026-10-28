@@ -1,0 +1,14 @@
+[
+  {
+    "member": "packages/shop",
+    "code": "tool_reason_missing",
+    "file": "metro.extend.ts",
+    "subject": "metro.extend.ts"
+  },
+  {
+    "member": "packages/shop",
+    "code": "tool_reason_missing",
+    "file": "webpack.extend.ts",
+    "subject": "webpack.extend.ts"
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "member": "services/shop",
+    "code": "encore_app_missing",
+    "file": "../../runway.yaml",
+    "subject": "../../runway.yaml"
+  }
+]

@@ -1,0 +1,104 @@
+[
+  {
+    "member": "packages/shop",
+    "code": "shape_number_kind",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.count"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_unknown_type",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.mode"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_unknown_type",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.loose"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_unknown_type",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.status"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_default_not_constant",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.createdAt"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_rule_not_constant",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.capped"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_number_kind",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.capped"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_hatch_reason_missing",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.hatched"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shape_decorator_type_mismatch",
+    "file": "src/core/schemas/banned.schema.ts",
+    "subject": "Banned.misplaced"
+  },
+  {
+    "member": "packages/shop",
+    "code": "two_declarations_in_file",
+    "file": "src/core/schemas/two.schema.ts",
+    "subject": "src/core/schemas/two.schema.ts"
+  },
+  {
+    "member": "packages/shop",
+    "code": "token_not_a_class",
+    "file": "src/core/services/bad-token.service.ts",
+    "subject": "BadTokenService.constructor"
+  },
+  {
+    "member": "packages/shop",
+    "code": "action_handle_signature",
+    "file": "src/node/actions/untyped.action.ts",
+    "subject": "UntypedAction"
+  },
+  {
+    "member": "packages/shop",
+    "code": "action_handle_signature",
+    "file": "src/node/actions/untyped.action.ts",
+    "subject": "UntypedAction"
+  },
+  {
+    "member": "packages/shop",
+    "code": "event_base_abstract",
+    "file": "src/node/events/raw.event.ts",
+    "subject": "RawEvent"
+  },
+  {
+    "member": "packages/shop",
+    "code": "permission_unknown",
+    "file": "src/node/actions/untyped.action.ts",
+    "subject": "UntypedAction"
+  },
+  {
+    "member": "packages/shop",
+    "code": "kind_class_name",
+    "file": "src/core/schemas/two.schema.ts",
+    "subject": "One"
+  },
+  {
+    "member": "packages/shop",
+    "code": "kind_class_name",
+    "file": "src/node/events/raw.event.ts",
+    "subject": "RawEvent"
+  }
+]

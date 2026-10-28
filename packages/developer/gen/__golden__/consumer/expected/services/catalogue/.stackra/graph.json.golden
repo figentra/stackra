@@ -1,0 +1,35 @@
+{
+  "member": "catalogue",
+  "package": "@golden/service-catalogue",
+  "layout": "service",
+  "modules": [
+    "catalogue"
+  ],
+  "calls": [],
+  "eventsOut": [
+    "catalogue.item.published.v1"
+  ],
+  "eventsIn": [],
+  "tables": [],
+  "packages": [
+    "@stackra/actions",
+    "@stackra/app",
+    "@stackra/clients",
+    "@stackra/config",
+    "@stackra/container",
+    "@stackra/contracts",
+    "@stackra/errors",
+    "@stackra/events",
+    "@stackra/locking",
+    "@stackra/money",
+    "@stackra/outbox",
+    "@stackra/queue",
+    "@stackra/scheduler",
+    "@stackra/settings",
+    "@stackra/testing",
+    "@stackra/tsdown-config",
+    "@stackra/validation",
+    "@stackra/vitest-config"
+  ],
+  "drivers": []
+}

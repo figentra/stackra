@@ -21,7 +21,8 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/validation": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
-    "@stackra/model": "workspace:*"
+    "@stackra/model": "workspace:*",
+    "@stackra/database": "workspace:*"
   },
   "imports": {
     "#config/*": ["./src/config/*.ts", "./src/config/*.tsx"],

@@ -1,0 +1,35 @@
+{
+  "member": "customers",
+  "package": "@golden/customers",
+  "layout": "package",
+  "modules": [
+    "customers"
+  ],
+  "calls": [],
+  "eventsOut": [],
+  "eventsIn": [],
+  "tables": [],
+  "packages": [
+    "@stackra/actions",
+    "@stackra/app",
+    "@stackra/clients",
+    "@stackra/config",
+    "@stackra/container",
+    "@stackra/contracts",
+    "@stackra/errors",
+    "@stackra/events",
+    "@stackra/i18n",
+    "@stackra/locking",
+    "@stackra/loyalty-kit",
+    "@stackra/money",
+    "@stackra/outbox",
+    "@stackra/queue",
+    "@stackra/scheduler",
+    "@stackra/settings",
+    "@stackra/testing",
+    "@stackra/tsdown-config",
+    "@stackra/validation",
+    "@stackra/vitest-config"
+  ],
+  "drivers": []
+}

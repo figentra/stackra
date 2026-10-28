@@ -1,0 +1,14 @@
+[
+  {
+    "member": "packages/shop",
+    "code": "shim_authored",
+    "file": "vitest.config.ts",
+    "subject": "vitest.config.ts"
+  },
+  {
+    "member": "packages/shop",
+    "code": "shim_authored",
+    "file": "tsdown.config.ts",
+    "subject": "tsdown.config.ts"
+  }
+]

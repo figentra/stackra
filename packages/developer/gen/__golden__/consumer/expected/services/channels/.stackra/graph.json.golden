@@ -1,0 +1,37 @@
+{
+  "member": "channels",
+  "package": "@golden/service-channels",
+  "layout": "service",
+  "modules": [
+    "channels"
+  ],
+  "calls": [
+    "catalogue"
+  ],
+  "eventsOut": [],
+  "eventsIn": [
+    "catalogue.item.published.v1"
+  ],
+  "tables": [],
+  "packages": [
+    "@stackra/actions",
+    "@stackra/app",
+    "@stackra/clients",
+    "@stackra/config",
+    "@stackra/container",
+    "@stackra/contracts",
+    "@stackra/errors",
+    "@stackra/events",
+    "@stackra/locking",
+    "@stackra/money",
+    "@stackra/outbox",
+    "@stackra/queue",
+    "@stackra/scheduler",
+    "@stackra/settings",
+    "@stackra/testing",
+    "@stackra/tsdown-config",
+    "@stackra/validation",
+    "@stackra/vitest-config"
+  ],
+  "drivers": []
+}

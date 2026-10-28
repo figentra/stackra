@@ -1,0 +1,8 @@
+[
+  {
+    "member": "services/channels",
+    "code": "client_service_unknown",
+    "file": "src/core/services/sync.service.ts",
+    "subject": "SyncService.constructor"
+  }
+]

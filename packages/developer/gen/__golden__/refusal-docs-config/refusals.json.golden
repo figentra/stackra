@@ -1,0 +1,8 @@
+[
+  {
+    "member": "apps/handbook",
+    "code": "docs_config_invalid",
+    "file": "src/config/docs.config.ts",
+    "subject": "src/config/docs.config.ts"
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "member": "shop",
+  "package": "@golden/shop",
+  "layout": "package",
+  "modules": [
+    "shop"
+  ],
+  "calls": [],
+  "eventsOut": [
+    "shop.order.paid.v1"
+  ],
+  "eventsIn": [],
+  "tables": [],
+  "packages": [
+    "@stackra/actions",
+    "@stackra/app",
+    "@stackra/clients",
+    "@stackra/config",
+    "@stackra/container",
+    "@stackra/contracts",
+    "@stackra/errors",
+    "@stackra/events",
+    "@stackra/locking",
+    "@stackra/money",
+    "@stackra/outbox",
+    "@stackra/queue",
+    "@stackra/scheduler",
+    "@stackra/settings",
+    "@stackra/testing",
+    "@stackra/tsdown-config",
+    "@stackra/validation",
+    "@stackra/vitest-config"
+  ],
+  "drivers": [
+    {
+      "port": "shop.PaymentGateway",
+      "candidates": [
+        "manual",
+        "stripe"
+      ]
+    }
+  ]
+}

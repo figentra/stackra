@@ -1,5 +1,6 @@
 import { I18n } from "#stackra/i18n";
 
-export const gold = I18n.loyalty_kit.enums.loyalty_tier.gold;
-
-export const title = I18n.customers.title;
+export const LABELS = {
+  gold: I18n.loyalty_kit.enums.loyalty_tier.gold,
+  title: I18n.customers.title,
+};
