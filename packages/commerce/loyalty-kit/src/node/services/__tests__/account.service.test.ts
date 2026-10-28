@@ -43,7 +43,7 @@ import { AccountService } from "#node/services/account.service";
 import { LoyaltyMembersFake } from "#testing/loyalty-members.fake";
 
 /** One purchase of 100.00, idempotent on its order reference. */
-const purchase = { amountMinor: 10_000, currency: "SAR", reference: "ord_1" };
+const purchase = { amount: { minor: 10_000, currency: "SAR" }, reference: "ord_1" };
 
 /** The clock every entry is dated by. */
 const NOW = new Date("2026-10-21T00:00:00Z");
@@ -127,7 +127,7 @@ describe("AccountService", () => {
   });
 
   it("credits nothing for a sub-point purchase", async () => {
-    expect(await accounts.earn(memberId("usr_1"), { ...purchase, amountMinor: 50 })).toBe(0);
+    expect(await accounts.earn(memberId("usr_1"), { ...purchase, amount: { minor: 50, currency: "SAR" } })).toBe(0);
     expect(await ledger.balance(memberId("usr_1"))).toBe(0);
   });
 

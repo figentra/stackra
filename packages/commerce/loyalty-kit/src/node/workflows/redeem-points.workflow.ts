@@ -82,11 +82,13 @@ export class RedeemPointsWorkflow extends Workflow<RedeemPointsInput>({ timeout:
     const [input] = await this.extensions.redeemVerify(run.input, ctx);
     await this.loyalty.assertCanRedeem(member, input.points);
     const rates = await this.settings.get(LoyaltyKitSettings);
-    const quote = await this.loyalty.quote(member, input.points, input.totalMinor, rates);
+    // the stored input keeps `totalMinor`; the run's currency makes it a MoneyAmount at this boundary
+    const total = { minor: input.totalMinor, currency: ctx.currency };
+    const quote = await this.loyalty.quote(member, input.points, total, rates);
     return QuotedRedemption.create({
       memberId: member,
       points: quote.points,
-      amountMinor: quote.amountMinor,
+      amountMinor: quote.amount.minor,
       reference: run.input.reference,
     });
   }

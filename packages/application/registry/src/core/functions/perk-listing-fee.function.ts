@@ -6,7 +6,8 @@
  * Boundary: pure. The fee is the schedule's `fixedMinor`; its rate is ignored, since a listing has no gross. A listing
  *           that names a schedule with no version in force is a `RangeError`: billing never guesses a fee.
  * Runtime: isomorphic
- * Governing contract: ADR 0393 (decision 1); ADR 0355 (decision 8: fee-schedule records); owner M3-7, OS-130.
+ * Governing contract: ADR 0393 (decision 1); ADR 0355 (decision 8: fee-schedule records); owner M3-7, OS-130;
+ *                     STA-1383 (MoneyAmount).
  */
 import type { FeeSchedule } from "#core/schemas/fee-schedule.schema";
 import type { PerkListing } from "#core/schemas/perk-listing.schema";
@@ -41,7 +42,6 @@ export function perkListingFee(
     partner: listing.partner,
     listing: listing.key,
     feeSchedule: found.key,
-    currency: found.currency,
-    amountMinor: found.fixedMinor,
+    amount: Object.freeze({ minor: found.fixedMinor, currency: found.currency }),
   });
 }

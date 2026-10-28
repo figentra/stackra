@@ -7,6 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
+import type { CurrencyCode } from "@stackra/money";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as ledger from "#core/index";
@@ -30,7 +31,7 @@ describe("@stackra/ledger", () => {
       "earn" | "redeem" | "expire"
     >();
     expectTypeOf<ledger.JournalEntry<LedgerEntry>["currency"]>().toEqualTypeOf<
-      string | undefined
+      CurrencyCode | undefined
     >();
     expectTypeOf<ledger.JournalLine<LedgerEntry>["floor"]>().toEqualTypeOf<
       number | null | undefined

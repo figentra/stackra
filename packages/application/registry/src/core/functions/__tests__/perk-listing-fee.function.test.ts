@@ -18,13 +18,12 @@ const SCHEDULES = [
 
 describe("perkListingFee", () => {
   it("charges the schedule in force on the period start", () => {
-    expect(perkListingFee(LISTING, SCHEDULES, "2026-10-01")?.amountMinor).toBe(40_000);
+    expect(perkListingFee(LISTING, SCHEDULES, "2026-10-01")?.amount.minor).toBe(40_000);
     expect(perkListingFee(LISTING, SCHEDULES, "2026-11-01")).toEqual({
       partner: "dev_1",
       listing: "perk-shipping",
       feeSchedule: "perk-listing",
-      currency: "AED",
-      amountMinor: 50_000,
+      amount: { minor: 50_000, currency: "AED" },
     });
   });
 

@@ -16,7 +16,7 @@ import { memberId } from "#core/functions/member-id.function";
 import { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";
 
 /** An earn of 100.00 in a currency the extension does not need to know. */
-const draft = { memberId: memberId("usr_1"), amountMinor: 10_000, currency: "SAR" };
+const draft = { memberId: memberId("usr_1"), amount: { minor: 10_000, currency: "SAR" } };
 
 describe("TierMultiplierExtension", () => {
   it("runs at order 100", () => {

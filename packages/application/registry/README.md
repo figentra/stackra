@@ -16,7 +16,7 @@ decision 8: the review state, developer sandboxes, fee schedules and partner pay
 (ADR 0335 decision 5).
 
 **Tier:** `tier:lib` (`packages/application/registry`). One entry, `.`. Depends on `@stackra/contracts`,
-`@stackra/validation` and zod. Pure functions, no I/O.
+`@stackra/money` (the `MoneyAmount` type), `@stackra/validation` and zod. Pure functions, no I/O.
 
 ## What is here
 
@@ -92,11 +92,12 @@ event the previous release offered and this one does not comes back with `withdr
 import { canTransitionReview, computePartnerPayout, ReviewState } from "@stackra/registry";
 
 canTransitionReview(ReviewState.InReview, ReviewState.Approved); // true; Rejected is final
-computePartnerPayout(10_005, schedule); // { grossMinor: 10_005, feeMinor: 2_001, netMinor: 8_004 } at 2,000 bp
+computePartnerPayout({ minor: 10_005, currency: "SAR" }, schedule); // fee 2_001 SAR, net 8_004 SAR at 2,000 bp
 ```
 
 A fee schedule's rate, fixed fee, currency and start date are catalogue data (`fee-schedule:<name>`); the payout
-rounds the rate half up to a whole minor unit and never keeps more than the gross.
+rounds the rate half up to a whole minor unit and never keeps more than the gross. Its amounts, and a
+`PerkListingCharge`'s, are `@stackra/money` `MoneyAmount`s; the stored `PartnerPayout` keeps its minor-unit columns.
 
 ## Edition install
 

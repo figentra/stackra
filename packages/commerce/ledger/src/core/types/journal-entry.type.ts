@@ -7,8 +7,10 @@
  * Boundary: a type only. `kind` is the model's own `kind` type when it has one (an `Enum.of` code), else a string.
  *           Amounts are whole units (points or minor units), never a float (ADR 0220).
  * Runtime: node
- * Governing contract: ADR 0220 (decisions 4 and 5: entries, reversals, the idempotency key in the entry).
+ * Governing contract: ADR 0220 (decisions 4 and 5: entries, reversals, the idempotency key in the entry); STA-1383
+ *                     (`currency` is a `CurrencyCode`; the amount stays a number so a points journal still works).
  */
+import type { CurrencyCode } from "@stackra/money";
 
 /**
  * One journal movement.
@@ -36,7 +38,7 @@ export interface JournalEntry<M extends object = object> {
    * The ISO 4217 code (`EUR`) of the amount. Required when the model's `@Journaled` facet names a `currency` field,
    * refused when it does not: a points journal has no currency.
    */
-  readonly currency?: string;
+  readonly currency?: CurrencyCode;
 
   /**
    * Model fields written beside the journal's own, typed by the model (`{ locationId, lotId }`). Each key must be

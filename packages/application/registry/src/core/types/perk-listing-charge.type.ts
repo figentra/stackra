@@ -5,8 +5,10 @@
  * Boundary: a type only; `perkListingFee` builds it. Money flows from the partner to Figentra here, the reverse of a
  *           partner payout.
  * Runtime: isomorphic
- * Governing contract: ADR 0393 (decision 1); owner M3-7 (listing fee), OS-130.
+ * Governing contract: ADR 0393 (decision 1); owner M3-7 (listing fee), OS-130; STA-1383 (MoneyAmount in place of a
+ *                     bare minor amount and currency).
  */
+import type { MoneyAmount } from "@stackra/money/contracts";
 
 /** One listing fee. */
 export interface PerkListingCharge {
@@ -19,9 +21,6 @@ export interface PerkListingCharge {
   /** The fee schedule key applied. */
   readonly feeSchedule: string;
 
-  /** The ISO 4217 currency. */
-  readonly currency: string;
-
-  /** The fee, in minor units. */
-  readonly amountMinor: number;
+  /** The fee: the schedule's fixed fee in its ISO 4217 currency. */
+  readonly amount: MoneyAmount;
 }

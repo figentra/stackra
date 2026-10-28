@@ -26,6 +26,9 @@ const usr1 = memberId("usr_1");
 /** A scope's redemption rates: a point is worth one minor unit, at most 30 % of a total. */
 const RATES = { pointValueMinor: 1, maxRedeemPercent: 30 };
 
+/** The amount still to pay that each quote caps against. */
+const TOTAL = { minor: 1_000, currency: "SAR" };
+
 /** The time of every entry. */
 const at = new Date("2026-10-21T00:00:00Z");
 
@@ -49,14 +52,14 @@ describe("LoyaltyService", () => {
 
   it("caps redemption at maxRedeemPercent of the total and at the balance", async () => {
     await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
-    expect(await loyalty.quote(usr1, 9_999, 1_000, RATES)).toEqual({
+    expect(await loyalty.quote(usr1, 9_999, TOTAL, RATES)).toEqual({
       points: 300,
-      amountMinor: 300,
+      amount: { minor: 300, currency: "SAR" },
     });
-    expect(await loyalty.quote(usr1, 50, 1_000, RATES)).toEqual({ points: 50, amountMinor: 50 });
-    expect(await loyalty.quote(memberId("usr_2"), 50, 1_000, RATES)).toEqual({
+    expect(await loyalty.quote(usr1, 50, TOTAL, RATES)).toEqual({ points: 50, amount: { minor: 50, currency: "SAR" } });
+    expect(await loyalty.quote(memberId("usr_2"), 50, TOTAL, RATES)).toEqual({
       points: 0,
-      amountMinor: 0,
+      amount: { minor: 0, currency: "SAR" },
     });
   });
 
@@ -64,11 +67,11 @@ describe("LoyaltyService", () => {
     await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
     // 20 % of 1 000 is 200 minor units; at 5 a point that is 40 points
     expect(
-      await loyalty.quote(usr1, 9_999, 1_000, { pointValueMinor: 5, maxRedeemPercent: 20 }),
-    ).toEqual({ points: 40, amountMinor: 200 });
+      await loyalty.quote(usr1, 9_999, TOTAL, { pointValueMinor: 5, maxRedeemPercent: 20 }),
+    ).toEqual({ points: 40, amount: { minor: 200, currency: "SAR" } });
     expect(
-      await loyalty.quote(usr1, 9_999, 1_000, { pointValueMinor: 1, maxRedeemPercent: 0 }),
-    ).toEqual({ points: 0, amountMinor: 0 });
+      await loyalty.quote(usr1, 9_999, TOTAL, { pointValueMinor: 1, maxRedeemPercent: 0 }),
+    ).toEqual({ points: 0, amount: { minor: 0, currency: "SAR" } });
   });
 
   it("refuses a redemption above the balance, and any redemption by a non-member", async () => {

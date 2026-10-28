@@ -28,6 +28,7 @@ import type { Repository } from "@stackra/database";
 import type { Where } from "@stackra/database/contracts";
 import type { Locks } from "@stackra/locking";
 import { traitsOf } from "@stackra/model";
+import type { CurrencyCode } from "@stackra/money";
 
 import { JOURNAL_FIELDS } from "#node/constants/journal-fields.constant";
 import { JOURNAL_LOCK_TTL } from "#node/constants/journal-lock-ttl.constant";
@@ -142,7 +143,10 @@ function entryOf<M extends object>(row: object, fields: Fields): JournalEntry<M>
     kind: record[fields.kind] as JournalEntry<M>["kind"],
     reference: String(record[fields.reference]),
     at: record[fields.at] as Date,
-    ...(fields.currency === undefined ? {} : { currency: String(record[fields.currency]) }),
+    // reason: the stored column is text; `currencyOf` checked the code on the way in
+    ...(fields.currency === undefined
+      ? {}
+      : { currency: String(record[fields.currency]) as CurrencyCode }),
     // reason: the keys are the model's listed field names, read from its facet at run time
     ...(Object.keys(extra).length === 0
       ? {}

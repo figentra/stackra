@@ -9,9 +9,12 @@
  *           config and has no fallback, so a server can never quote at a deploy-time rate. Exported by
  *           `LoyaltyKitModule` for hosts to inject by class.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units); ADR 0454 (decision 2); STA-1323.
+ * Governing contract: ADR 0294 (decisions 15, 16 and 17); ADR 0220 (integer minor units);
+ *                     ADR 0454 (decision 2); STA-1323;
+ *                     STA-1383 (the quote takes and returns a MoneyAmount).
  */
 import { Service } from "@stackra/container";
+import type { MoneyAmount } from "@stackra/money/contracts";
 
 import { DebitOutcome } from "#contracts/enums/debit-outcome.enum";
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
@@ -52,26 +55,26 @@ export class LoyaltyService extends Service {
   }
 
   /**
-   * Largest redemption allowed for `requested` points against `totalMinor`: never more than the balance, never more
+   * Largest redemption allowed for `requested` points against `total`: never more than the balance, never more
    * than `maxRedeemPercent` of the total, converted at `pointValueMinor`. Reads only; nothing is held.
    *
-   * @param totalMinor - the amount still to pay at this point of the adjustment chain, in minor units.
+   * @param total - the amount still to pay at this point of the adjustment chain; the quote is in its currency.
    * @param rates - the scope's point value and cap (`LoyaltyKitSettings`).
    * @returns zero points and zero amount when the member has no balance or the cap rounds to nothing.
    */
   async quote(
     member: MemberId,
     requested: number,
-    totalMinor: number,
+    total: MoneyAmount,
     rates: RedemptionRates,
   ): Promise<RedemptionQuote> {
     const balance = await this.ledger.balance(member);
-    const capMinor = Math.floor((totalMinor * rates.maxRedeemPercent) / 100);
+    const capMinor = Math.floor((total.minor * rates.maxRedeemPercent) / 100);
     const points = Math.max(
       0,
       Math.min(requested, balance, Math.floor(capMinor / rates.pointValueMinor)),
     );
-    return { points, amountMinor: points * rates.pointValueMinor };
+    return { points, amount: { minor: points * rates.pointValueMinor, currency: total.currency } };
   }
 
   /**

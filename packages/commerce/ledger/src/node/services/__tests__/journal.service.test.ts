@@ -19,6 +19,7 @@ import type { Repository } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { AppendOnly, Model } from "@stackra/model";
+import type { CurrencyCode } from "@stackra/money";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Journaled } from "#core/decorators/journaled.decorator";
@@ -470,7 +471,7 @@ class MoneyEntry extends Model.with(AppendOnly) {
 }
 
 /** A money line on `account` in `currency`. */
-const money = (account: string, amount: number, currency: string, reference = "t1") => ({
+const money = (account: string, amount: number, currency: CurrencyCode, reference = "t1") => ({
   account,
   amount,
   kind: "transfer",
@@ -552,7 +553,7 @@ describe("Journal with a currency field", () => {
     await expect(
       journal.append({ account: "a1", amount: 1, kind: "x", reference: "o1", at: day(1) }),
     ).rejects.toThrow(RangeError);
-    await expect(journal.append(money("a1", 1, "eur", "o1"))).rejects.toThrow(RangeError);
+    await expect(journal.append(money("a1", 1, "eur" as CurrencyCode, "o1"))).rejects.toThrow(RangeError);
     await expect(journal.balance({ account: "a1" })).rejects.toThrow(TypeError);
   });
 

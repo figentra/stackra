@@ -140,14 +140,13 @@ export class AccountService extends CrudService<LoyaltyAccount> {
     if (!isActive) return 0;
     const account = await this.enroll(member, LoyaltyTier.Bronze);
     if (!account.canTransact) throw AccountFrozenError.create({ accountId: account.id });
-    const base = this.loyalty.quoteEarn(request.amountMinor, earnPerMinor);
+    const base = this.loyalty.quoteEarn(request.amount.minor, earnPerMinor);
     const points = await this.extensions.earnAdjust(
       base,
       {
         memberId: member,
         tier: account.tier,
-        amountMinor: request.amountMinor,
-        currency: request.currency,
+        amount: request.amount,
       },
       this.request.current(),
     );

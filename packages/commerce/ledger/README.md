@@ -8,7 +8,8 @@ debit below a balance floor, reverses entries set-wise and posts balanced multi-
 
 **Tier:** `tier:lib` (`packages/commerce/ledger`). Entries `.` (the `@Journaled` facet, the refusal and the types, no database import) and `./node` (the
 database-bound `Journal` and `journalOf`). Depends on `@stackra/container`,
-`@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/locking` and `@stackra/model`.
+`@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/locking`, `@stackra/model` and
+`@stackra/money` (an entry's `currency` is a `CurrencyCode`; the stored column stays text).
 
 ## What is here
 

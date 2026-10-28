@@ -30,14 +30,14 @@ export class LoyaltyKitConfig extends BaseLoyaltyKitConfig {
 }
 
 // the one earn path
-await accounts.earn(memberId(event.customerId), { amountMinor, currency, reference: event.orderId });
+await accounts.earn(memberId(event.customerId), { amount: event.total, reference: event.orderId });
 
 // a refund takes points back (never below zero); a migration imports a balance from another platform
 await accounts.takeBack(member, 120, refund.id); // the points taken; the rest was already spent
 await accounts.importBalance(member, { points: 1_250, reference: `${run.id}:${row.id}`, tier: LoyaltyTier.Silver });
 
 // a quote converts and caps at the scope's settings
-const quote = await loyalty.quote(member, requested, totalMinor, await settings.get(LoyaltyKitSettings));
+const quote = await loyalty.quote(member, requested, total, await settings.get(LoyaltyKitSettings));
 
 // spending points on a purchase: hold in the purchase's transaction, settle once it exists, release if it ends unpaid
 await loyalty.hold(member, points, orderId, at); // InsufficientPointsError if uncovered
@@ -128,7 +128,8 @@ stampCardProgress(balance, settings.stampsPerCard); // the renderers' card
   `loyalty_kit.earnPerMinor` (default `0.01`), `loyalty_kit.pointValueMinor` (default `1`) and
   `loyalty_kit.maxRedeemPercent` (default `50`, 0 to 100). Config holds none of them (STA-1323). `LoyaltyService` stays
   isomorphic by taking them as arguments: `quoteEarn(amountMinor, earnPerMinor)`, `pointsFor(amountMinor,
-pointValueMinor)` and `quote(member, requested, totalMinor, rates)`; a resolved settings group is a `RedemptionRates`
+pointValueMinor)` and `quote(member, requested, total, rates)` (`total` and the quote's `amount` are `@stackra/money`
+MoneyAmounts; the stored redeem input keeps `totalMinor` and the workflow adds the run's currency); a resolved settings group is a `RedemptionRates`
   as it is. `AccountService.earn` and `RedeemPointsWorkflow` read them per call.
 - **Tiers:** `RecalculateTierListener` asks the `LoyaltyTierPolicy` port which tier an earn earns and only ever raises
   one. The kit's driver, `threshold`, reads `loyalty_kit.tiers`; a host applies its own tier rules with

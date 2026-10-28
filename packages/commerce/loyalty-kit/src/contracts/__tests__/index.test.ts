@@ -7,6 +7,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
  */
 import type { Branded } from "@stackra/contracts";
+import type { MoneyAmount } from "@stackra/money/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -33,8 +34,10 @@ describe("@stackra/loyalty-kit/contracts", () => {
     expectTypeOf<contracts.TierDraft["current"]>().toEqualTypeOf<contracts.LoyaltyTier>();
     expectTypeOf<contracts.RedemptionQuote>().toEqualTypeOf<{
       readonly points: number;
-      readonly amountMinor: number;
+      readonly amount: MoneyAmount;
     }>();
+    expectTypeOf<contracts.EarnRequest["amount"]>().toEqualTypeOf<MoneyAmount>();
+    expectTypeOf<contracts.EarnDraft["amount"]>().toEqualTypeOf<MoneyAmount>();
     expectTypeOf<contracts.RedemptionRates>().toEqualTypeOf<{
       readonly pointValueMinor: number;
       readonly maxRedeemPercent: number;

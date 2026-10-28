@@ -134,6 +134,7 @@
     "@stackra/integrations": "workspace:*",
     "@stackra/ledger": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/money": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/panel": "workspace:*",
     "@stackra/queue": "workspace:*",

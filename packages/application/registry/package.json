@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "@stackra/contracts": "workspace:*",
+    "@stackra/money": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

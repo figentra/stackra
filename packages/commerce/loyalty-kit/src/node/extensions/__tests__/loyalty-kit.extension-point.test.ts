@@ -29,8 +29,7 @@ describe("LoyaltyKitExtensionPoint", () => {
     const draft = {
       memberId: memberId("usr_1"),
       tier: LoyaltyTier.Bronze,
-      amountMinor: 10_000,
-      currency: "SAR",
+      amount: { minor: 10_000, currency: "SAR" },
     };
     expect(await point.earnAdjust(100, draft, ctx)).toBe(100);
     const input = RedeemPointsInput.create({ points: 300, reference: "ord_2", totalMinor: 10_000 });

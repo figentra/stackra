@@ -78,7 +78,8 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/locking": "workspace:*",
-    "@stackra/model": "workspace:*"
+    "@stackra/model": "workspace:*",
+    "@stackra/money": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
