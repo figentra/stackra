@@ -14,7 +14,8 @@
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
  *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456), and
  *          the visitor's consent (`ctx.consent()`: the call's signed snapshot verified once through `ConsentCheck`;
- *          ADR 0472).
+ *          ADR 0472). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
+ *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -43,7 +44,8 @@
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
  *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
- *                     never a refusal by itself).
+ *                     never a refusal by itself); ADR 0147 (decision 3: the span attributes, no values) and ADR 0184
+ *                     (decision 1: OpenTelemetry), STA-1513.
  */
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
@@ -57,6 +59,8 @@ import {
   Logger,
   MeterKind,
   mintPublicId,
+  type TraceAttributes,
+  Tracer,
 } from "@stackra/contracts";
 import {
   ForbiddenError,
@@ -224,7 +228,10 @@ export class ActionPipeline {
     request: CallOptions,
   ): Promise<OutputOf<InstanceType<C>>> {
     const call = this.prepare(type, request);
-    const work = () => this.audited(call, () => this.ordered(call, () => this.steps(call, input)));
+    const work = () =>
+      this.traced(call, call.kind, () =>
+        this.audited(call, () => this.ordered(call, () => this.steps(call, input))),
+      );
     const storage = this.optional(ContextStorage);
     return (await (storage === undefined ? work() : storage.run(call.ctx, work))) as OutputOf<
       InstanceType<C>
@@ -248,7 +255,7 @@ export class ActionPipeline {
     const call = this.prepare(type, request);
     if (call.kind !== "action")
       throw new TypeError(`${type.name} is a query: only an action is proposed`);
-    const work = async (): Promise<ActionDraft> => {
+    const draft = async (): Promise<ActionDraft> => {
       const checked = await this.checked(call, input);
       await this.metered(call, { name: PROPOSAL_METER, kind: MeterKind.Count }, checked);
       return Object.freeze({
@@ -258,8 +265,46 @@ export class ActionPipeline {
         proposedAt: call.at,
       });
     };
+    const work = (): Promise<ActionDraft> => this.traced(call, "propose", draft);
     const storage = this.optional(ContextStorage);
     return storage === undefined ? work() : storage.run(call.ctx, work);
+  }
+
+  /**
+   * Runs `work` in one `Tracer` span named `<verb> <key>` when a tracer is bound (ADR 0147 decision 3): the call's
+   * ids as attributes, then its `outcome` (`ok`, `refused` with the refusal's `code`, or `error`) and `latencyMs`.
+   * Only an error that is not a Refusal fails the span: a refusal is an answer, not a fault. No attribute carries
+   * input, output or a person's data.
+   */
+  private traced<T>(call: Call, verb: string, work: () => Promise<T>): Promise<T> {
+    const tracer = this.optional(Tracer);
+    if (tracer === undefined) return work();
+    const { descriptor } = call;
+    const attributes: TraceAttributes = {
+      action: descriptor.key,
+      correlationId: descriptor.callId,
+      actorType: descriptor.actor.kind,
+      actorId: descriptor.actor.id,
+      ...(descriptor.scope === undefined ? {} : { scopeId: descriptor.scope.id }),
+      ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin.kind }),
+    };
+    return tracer.span(`${verb} ${descriptor.key}`, attributes, async (span) => {
+      const started = globalThis.performance.now();
+      const latency = () => Math.round(globalThis.performance.now() - started);
+      try {
+        const output = await work();
+        span.set({ outcome: "ok", latencyMs: latency() });
+        return output;
+      } catch (error) {
+        if (isRefusal(error))
+          span.set({ outcome: "refused", code: error.code, latencyMs: latency() });
+        else {
+          span.set({ outcome: "error", latencyMs: latency() });
+          span.fail(error);
+        }
+        throw error;
+      }
+    });
   }
 
   /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */

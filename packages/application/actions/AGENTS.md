@@ -68,6 +68,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   writes through `EventOutbox` at once, so it belongs in `handle` (inside the unit of work), never in `afterCommit`.
 - A replica change reaches readers at its scope node or above it; only `cascade: true` also reaches the readers below
   (a recall). Never widen the default rule: a driver's read must keep both cases (ADR 0456 decision 3).
+- The `Tracer` span wraps the whole call (`traced`), outside the audit and device order; its attributes follow ADR
+  0147 decision 3 and carry ids and codes only, never input, output, the client or the consent snapshot. A refusal sets
+  `outcome: "refused"` and never fails the span; only a bug does.
 - A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 - Event ids come from `@stackra/contracts`' `mintPublicId("evt")`; never add a local minter (STA-1380).

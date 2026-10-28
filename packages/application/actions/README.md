@@ -133,6 +133,12 @@ with the snapshot id, subject, granted categories and expiry, or refused with a 
 a server-side send (analytics, a conversion, an audience push) runs only when `granted` includes its category. In a
 unit test, `fakeActionContext({ consent: grantedConsent("analytics") })`; the fake reads as refused otherwise.
 
+When a `Tracer` (the `@stackra/contracts` port; the OTLP driver ships with the telemetry runtime) is bound, each
+call runs in one span named `action <key>`, `query <key>` or `propose <key>` (ADR 0147 decision 3). It carries the
+attribute names `action` (the key), `correlationId` (the call id), `actorType`, `actorId`, `scopeId` and `origin`, then
+`outcome` (`ok`, `refused` with the refusal's `code`, or `error`) and `latencyMs`: ids and codes only, never input,
+output or a person's data. Only an error that is not a refusal fails the span. With no tracer bound nothing changes.
+
 An event a model owns is recorded on the model. One that no model owns (a near-expiry alert, a notice) is
 `await ctx.publish(StockNearExpiry.create({ ... }))` from `handle` (ADR 0456 decision 2): the pipeline writes it
 through the `EventOutbox` in the action's unit of work, with the call id as its correlation, so it leaves only if the

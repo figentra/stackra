@@ -20,7 +20,9 @@
  *          model inside the unit of work (ADR 0456); and the query cache step (STA-1445): a hit inside the
  *          interceptors, keys per principal, scope node and site, the shared namespace with `handle` in the call's
  *          context, and no step without a bound `Cache`; and `ctx.consent()` (ADR 0472): refused without a snapshot or
- *          a bound `ConsentCheck`, the check's answer otherwise, verified once per call, never refusing the call.
+ *          a bound `ConsentCheck`, the check's answer otherwise, verified once per call, never refusing the call; and
+ *          the `Tracer` span per call (ADR 0147, STA-1513): its name, the attribute names with no input values, the
+ *          outcome of a success, a refusal and a bug, a proposal's span, and no span without a bound tracer.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -42,6 +44,9 @@ import {
   MeterKind,
   Realm,
   type ScopeRef,
+  type TraceAttributes,
+  type TraceSpan,
+  Tracer,
 } from "@stackra/contracts";
 import {
   ErrorKind,
@@ -2025,5 +2030,115 @@ describe("ActionPipeline consent (ADR 0472)", () => {
     await expect(
       pipeline.execute(ConsentQuery, {}, { actor: customer, consentSnapshot: "forged" }),
     ).resolves.toEqual({ verified: false, refusal: ConsentRefusal.BadSignature, granted: [] });
+  });
+});
+
+/** One span the recording tracer saw: its name, start attributes, attributes set later and the failure. */
+interface SeenSpan {
+  readonly name: string;
+  readonly attributes: TraceAttributes;
+  readonly set: Record<string, string | number | boolean>;
+  failed: unknown;
+}
+
+/** A tracer that records every span and runs the work unchanged. */
+class RecordingTracer extends Driver(Tracer) {
+  readonly spans: SeenSpan[] = [];
+
+  async span<T>(
+    name: string,
+    attributes: TraceAttributes,
+    work: (span: TraceSpan) => Promise<T>,
+  ): Promise<T> {
+    const seen: SeenSpan = { name, attributes, set: {}, failed: undefined };
+    this.spans.push(seen);
+    return work({
+      set: (more) => Object.assign(seen.set, more),
+      fail: (error) => {
+        seen.failed = error;
+      },
+    });
+  }
+}
+
+/** A query whose handle throws a plain error (a bug, not a refusal). */
+class BrokenQuery extends Query({
+  key: "order.broken",
+  actors: [ActorKind.User],
+}) {
+  async handle(): Promise<never> {
+    throw new Error("boom");
+  }
+}
+
+describe("ActionPipeline tracing (ADR 0147, STA-1513)", () => {
+  it("runs an action in one span with the call's ids and an ok outcome, no input values", async () => {
+    const tracer = new RecordingTracer();
+    const { pipeline } = setup([[Tracer, tracer]]);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 7 },
+      { actor: customer, scope: SCOPE, idempotencyKey: "k1", callId: "call_1" },
+    );
+    expect(tracer.spans).toHaveLength(1);
+    const [span] = tracer.spans;
+    expect(span?.name).toBe("action order.create");
+    expect(span?.attributes).toEqual({
+      action: "order.create",
+      correlationId: "call_1",
+      actorType: ActorKind.User,
+      actorId: "usr_1",
+      scopeId: SCOPE.id,
+    });
+    expect(span?.set).toMatchObject({ outcome: "ok", latencyMs: expect.any(Number) });
+    expect(span?.failed).toBeUndefined();
+    const values = Object.values({ ...span?.attributes, ...span?.set });
+    expect(values).not.toContain(7);
+    expect(values).not.toContain("k1");
+  });
+
+  it("marks a refusal as refused with its code and does not fail the span", async () => {
+    const tracer = new RecordingTracer();
+    const { pipeline, shop } = setup([[Tracer, tracer]]);
+    shop.failNext = true;
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k" },
+      ),
+    ).rejects.toBeInstanceOf(OutOfStockError);
+    expect(tracer.spans[0]?.set).toMatchObject({ outcome: "refused", code: "out_of_stock" });
+    expect(tracer.spans[0]?.failed).toBeUndefined();
+  });
+
+  it("fails the span of a query whose handle throws a plain error and passes the error on", async () => {
+    const tracer = new RecordingTracer();
+    const { pipeline } = setup([
+      [Tracer, tracer],
+      [BrokenQuery, new BrokenQuery()],
+    ]);
+    await expect(pipeline.execute(BrokenQuery, {}, { actor: customer })).rejects.toThrow("boom");
+    expect(tracer.spans[0]?.name).toBe("query order.broken");
+    expect(tracer.spans[0]?.set).toMatchObject({ outcome: "error" });
+    expect(tracer.spans[0]?.failed).toBeInstanceOf(Error);
+  });
+
+  it("traces a proposal as propose <key>", async () => {
+    const tracer = new RecordingTracer();
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [Tracer, tracer],
+      [EventOutbox, outbox],
+    ]);
+    await pipeline.propose(CreateOrderAction, { quantity: 1 }, { actor: customer });
+    expect(tracer.spans.map((span) => span.name)).toEqual(["propose order.create"]);
+  });
+
+  it("runs the call as before when no Tracer is bound", async () => {
+    const { pipeline } = setup();
+    await expect(
+      pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer }),
+    ).resolves.toEqual({ orderId: "ord_1", afterCommit: false });
   });
 });
