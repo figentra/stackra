@@ -3,7 +3,7 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its HTTP adapter
+ *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
@@ -53,6 +53,7 @@ import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
+import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
@@ -185,6 +186,7 @@ export function generateMember(
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [
     emitEncoreCronJobs(ir, manifest),
+    emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
     emitEncoreHttp(ir),
   ])

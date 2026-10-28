@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262); ADR 0238 (the Encore database and the boot's url, replicas and timeouts, stackra-250).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -181,8 +181,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - `emitBoot` is the only place a service's connect calls are written, in order after the container is ready: database,
   segments, `EventBus#connect` and `InboxService#connect` (disconnected when the shutdown signal aborts), then the
   relay. Without the bus and inbox connects, relays and typed subscribers receive nothing. A signal already aborted
-  connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which calls it with
-  `DATABASE_URL` and aborts the signal on `close()`.
+  connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which aborts the signal on
+  `close()`. The database url is the service's Encore `database` (`emitEncoreDatabase`, ADR 0238, stackra-250), never
+  `DATABASE_URL`; the replicas are `DATABASE_REPLICA_URLS` (comma-separated); the timeouts are the bound
+  `DatabaseConfig`'s. `usesDatabase` is the one answer to whether a service has a database: the boot never connects
+  one Encore does not declare.
 
 - Platform services (ADR 0263): a `@stackra/*` service gen binds where injected is a `PLATFORM_BINDINGS` row
   (`MediaLibrary` included, STA-1297); a token

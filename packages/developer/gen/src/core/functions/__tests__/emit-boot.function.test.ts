@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
- *          (the bound legal-hold registry and sequence time zone, the database with the hold subscriber and the outbox
- *          writer among its subscribers, then segments, then the bus and inbox connected until the shutdown signal,
+ *          (the bound legal-hold registry and sequence time zone, the database at the Encore database's url with the
+ *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts, and the hold, stamp and outbox writer
+ *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
  *          (stackra-262); each step only when its package is used; no file for a package, an app or a
  *          service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4).
+ * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -25,8 +26,9 @@ describe("emitBoot", () => {
     expect(boot).toContain('import type { Container } from "@stackra/container";');
     expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database/node";');
     expect(boot).toContain(
-      'import { connectHoldRegistry, connectSequenceTimeZone, HoldSubscriber } from "@stackra/database";',
+      'import { connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
+    expect(boot).toContain('import { database } from "../encore/billing/database";');
     expect(boot).toContain(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
     );
@@ -39,14 +41,21 @@ describe("emitBoot", () => {
       [
         "export async function boot(",
         "  container: Container,",
-        "  options: { readonly url: string; readonly signal: AbortSignal },",
+        "  options: { readonly signal: AbortSignal },",
         "): Promise<void> {",
         "  if (options.signal.aborted) return;",
         "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
         "  connectSequenceTimeZone(",
         "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
         "  );",
-        "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber(), container.get(OutboxWriterService)] });",
+        "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
+        '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
+        "  await PostgresDatabaseDriver.connect({",
+        "    url: database.connectionString,",
+        "    replicas,",
+        "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
+        "    subscribers: [new HoldSubscriber(), new StampSubscriber(), container.get(OutboxWriterService)],",
+        "  });",
         "  container.get(SegmentService).connect(container);",
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
@@ -68,9 +77,7 @@ describe("emitBoot", () => {
 
   it("writes only the steps whose packages the service runs", () => {
     const boot = emitBoot(COMMERCE_IR) ?? "";
-    expect(boot).toContain(
-      "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber()] });",
-    );
+    expect(boot).toContain("    subscribers: [new HoldSubscriber(), new StampSubscriber()],");
     expect(boot).not.toContain("Outbox");
     expect(boot).not.toContain("SegmentService");
     expect(boot).not.toContain("EventBus");
@@ -109,7 +116,7 @@ describe("emitBoot", () => {
     expect(boot).toContain('import { FieldCipher } from "@stackra/contracts";');
     expect(boot).toContain('import { EncryptedFieldsSubscriber } from "@stackra/model";');
     expect(boot).toContain(
-      "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))] });",
+      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))],",
     );
   });
 
