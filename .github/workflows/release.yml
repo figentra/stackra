@@ -2,18 +2,24 @@
 # Purpose: release on every push to main (and workflow_dispatch with `dry_run`) through Runway's `npm` provider,
 #          runway-npm.yml: with pending changesets it opens or updates the "version packages" PR as stackra-bot; on that
 #          PR's merge it publishes the public @stackra/* packages to the Stackra registry with provenance, then attaches
-#          a signed CycloneDX SBOM to each release. The job runs in the protected `release` environment, which needs a
-#          required reviewer's approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
+#          a signed CycloneDX SBOM to each release. One gate per release (ADR 0468, owner decision 2026-10-28): the run
+#          that publishes runs in the protected `release` environment, whose required reviewer is the owner, so it shows
+#          "waiting" until the owner approves it (runbook, release). The `gate` job picks that environment only for the
+#          version PR's squash merge; every other run (opening the version PR, a push with nothing new, a dry run) runs
+#          in `release-pr`, which has no reviewer and which the registry never accepts a publish from.
+#          An agent merges the version PR through `pnpm pr:merge` like any PR (ADR 0119 D7 retired by ADR 0468).
 #          The registry's trusted publisher row names THIS file, `refs/heads/main` and the `release` environment.
 #          A second path, workflow_dispatch with `prerelease` on main (owner decision D8, stackra-212): the `prerelease`
 #          job publishes only the `packages` filter (default: the five *-config presets) at `<base>-<dist_tag>.<run
 #          number>` (0.1.0-next.<n>) under the `dist_tag` (default `next`). The version is set on the runner only: no
 #          commit, no tag, no version PR, nothing pushed. The normal `release` job does not run on that dispatch.
+#          The prerelease job still waits on `release`, because the publisher row names that environment; it moves to an
+#          unprotected environment once the registry has a row for it (ADR 0468, plan).
 # Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
 #           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
 #           npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
-# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group).
+# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
 #          decision A1), passed to the provider. Publishing uses GitHub OIDC exchanged at the registry; no token.
@@ -25,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release environment"
+        description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release-pr environment (no approval)"
         type: boolean
         default: false
       prerelease:
@@ -55,8 +61,45 @@ concurrency: release-${{ github.ref }}
 permissions: {}
 
 jobs:
+  # ADR 0468: the owner approves the publish, nothing else. Only the version PR's squash merge (no changeset pending,
+  # subject "chore(release): version packages") runs in `release`; every other run, which opens the version PR or finds
+  # every version already on the registry (the publish script skips those), runs in `release-pr`. If this pick were
+  # ever wrong, a publish from `release-pr` fails at the registry, whose publisher row names `release` (fail closed).
+  gate:
+    name: Release gate
+    if: ${{ !inputs.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # read .changeset at the pushed commit
+    outputs:
+      environment: ${{ steps.pick.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          sparse-checkout: .changeset
+
+      - name: Pick the environment
+        id: pick
+        env:
+          DRY_RUN: ${{ inputs.dry_run == true }}
+        run: |
+          pending="$(find .changeset -maxdepth 1 -name '*.md' ! -name README.md | wc -l)"
+          subject="$(git log -1 --format=%s)"
+          # Only the squash merge of the version PR (runway-npm.yml's pr-title) has anything new to publish.
+          environment=release-pr
+          if [ "$DRY_RUN" != true ] && [ "$pending" -eq 0 ] && [[ "$subject" == "chore(release): version packages"* ]]; then
+            environment=release
+          fi
+          echo "::notice title=Release gate::${pending} pending changesets, environment ${environment}"
+          echo "environment=${environment}" >> "$GITHUB_OUTPUT"
+
   release:
     name: Release
+    needs: gate
     # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push.
     if: ${{ !inputs.prerelease }}
     permissions:
@@ -65,7 +108,7 @@ jobs:
       id-token: write
     uses: ./.github/workflows/runway-npm.yml
     with:
-      environment: release
+      environment: ${{ needs.gate.outputs.environment }}
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
       # in are not installed; none of them is published.
       install-args: >-
@@ -84,6 +127,8 @@ jobs:
   # and only on main. Changesets is not used: `changeset version --snapshot` versions from 0.0.0 or from the pending
   # bumps and cannot give 0.1.0-next.<n> while every member already says 0.1.0, so the runner's package.json files
   # get the version directly and are thrown away with the runner.
+  # ADR 0468: a prerelease is a staging publish and should need no approval; it waits on `release` only until the
+  # registry has a publisher row for an unprotected `prerelease` environment (workers/registry migration, plan).
   prerelease:
     name: Prerelease
     if: ${{ inputs.prerelease && github.ref == 'refs/heads/main' }}
