@@ -4,7 +4,8 @@
  *          `ConflictResolution`, `Extension`, `ExtensionPoint`, `IdMinting`, `Idempotency`, `OfflineMode`,
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
  *          and the registry row's runtime are exported with the offline additions (the device, cap, replica and review
- *          memory drivers, `ReplicaFeed` and two refusals; no header name), nothing else is, the ports are not,
+ *          memory drivers, `ReplicaFeed` and two refusals; no header name), the query cache's `CacheScope`,
+ *          `registerCachedQueries` and `QueryCacheEvictorListener`, nothing else is, the ports are not,
  *          and the template's types (`ActionContext`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`,
  *          `PreconditionContext`, `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -48,6 +49,7 @@ describe("@stackra/actions", () => {
       "ActionPipeline",
       "ApprovalRequiredError",
       "AuditEntryRecorded",
+      "CacheScope",
       "ConflictResolution",
       "DeviceSequenceOutOfOrderError",
       "Extension",
@@ -71,6 +73,7 @@ describe("@stackra/actions", () => {
       "PipelineStage",
       "Precondition",
       "Query",
+      "QueryCacheEvictorListener",
       "RateLimitConfig",
       "RateLimitConfig$",
       "ReplicaFeed",
@@ -84,6 +87,7 @@ describe("@stackra/actions", () => {
       "isRawBody",
       "rawBody",
       "registerActions",
+      "registerCachedQueries",
       "registerExtensions",
     ]);
     expect("IdempotencyStore" in actions).toBe(false);

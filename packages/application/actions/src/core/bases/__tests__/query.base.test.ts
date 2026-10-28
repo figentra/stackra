@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `Query`: the called form records the `query` kind with `tool` on by default, keeps
  *          constructor dependencies, takes a cache profile and a `GET` override, and refuses a non-GET endpoint, a bad
- *          cache duration or a non-class in `invalidateOn`; records a replica and refuses a malformed one; a bare
+ *          cache duration, a `per` outside `CacheScope` or a non-class in `invalidateOn`; records a replica and refuses a malformed one; a bare
  *          `extends Query` fails to compile.
  * Boundary: test only; the options are the template's KPI and storefront queries.
  * Runtime: node (vitest)
@@ -15,6 +15,7 @@ import { DomainEvent } from "@stackra/events";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Query } from "#core/bases/query.base";
+import { CacheScope } from "#core/enums/cache-scope.enum";
 import type { QueryClass } from "#core/types/query-class.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { QueryOptions } from "#core/types/query-options.type";
@@ -92,6 +93,14 @@ describe("Query", () => {
         cache: { ttl: "1m", invalidateOn: ["order.paid" as unknown as typeof OrderPaid] },
       }),
     ).toThrow(TypeError);
+    expect(
+      kindOf(Query({ ...base, cache: { ttl: "1m", per: CacheScope.Scope } }))?.options,
+    ).toMatchObject({
+      cache: { per: "scope" },
+    });
+    expect(() =>
+      Query({ ...base, cache: { ttl: "1m", per: "tenant" as unknown as CacheScope } }),
+    ).toThrow(/must be a CacheScope/);
     expect(() => Query({ ...base, tool: true })).toThrow(/tool_without_agent_actor/);
     expect(() => Query({ ...base, key: "order" })).toThrow(TypeError);
   });

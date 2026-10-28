@@ -46,6 +46,7 @@ describe("@stackra/gen", () => {
       "checkEncryptedFields",
       "checkIdentityLock",
       "checkModelScope",
+      "checkQueryCache",
       "checkSurfaces",
       "compareManifests",
       "configKeyOf",

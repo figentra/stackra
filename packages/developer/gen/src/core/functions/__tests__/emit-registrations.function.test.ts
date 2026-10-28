@@ -229,3 +229,30 @@ describe("emitRegistrations for entitlements", () => {
     expect(content).toContain('import { registerEntitlements } from "@stackra/entitlements";');
   });
 });
+
+describe("emitRegistrations for cached queries (STA-1445)", () => {
+  const query = COMMERCE_IR.classes.find((declared) => declared.kind === "query") as DeclaredClass;
+  const orderPaid = {
+    $class: "OrderPaid",
+    from: "#modules/orders/events/order-paid.event",
+    kind: "integration_event",
+  };
+  /** The commerce registrations with its query's `cache` option set to `cache`. */
+  const withCache = (cache: object): string =>
+    registrationsOf({
+      ...COMMERCE_IR,
+      classes: COMMERCE_IR.classes.map((declared) =>
+        declared === query ? { ...declared, options: { ...declared.options, cache } } : declared,
+      ),
+    }) ?? "";
+
+  it("registers a query whose cache names invalidating events", () => {
+    const content = withCache({ ttl: "5m", invalidateOn: [orderPaid] });
+    expect(content).toContain(`registerCachedQueries([\n  ${query.name},\n]);`);
+    expect(content).toContain('registerCachedQueries } from "@stackra/actions";');
+  });
+
+  it("leaves out a query cached by time only", () => {
+    expect(withCache({ ttl: "5m" })).not.toContain("registerCachedQueries");
+  });
+});

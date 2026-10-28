@@ -6,12 +6,13 @@
  *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
- *          (stackra-262); each step only when its package is used; no file for a package, an app or a
- *          service with nothing to connect.
+ *          (stackra-262); the live queries' refresh subscribed on the bus with realtime declared (STA-1445); each
+ *          step only when its package is used; no file for a package, an app or a service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238.
  */
+import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { emitBoot } from "#core/functions/emit-boot.function";
@@ -128,5 +129,52 @@ describe("emitBoot", () => {
     expect(emitBoot(LOYALTY_KIT_IR)).toBeUndefined();
     expect(emitBoot(WEB_APP_IR)).toBeUndefined();
     expect(emitBoot({ ...COMMERCE_IR, classes: [] })).toBeUndefined();
+  });
+
+  it("subscribes each live query's refresh routes on the bus when the service runs realtime (STA-1445)", () => {
+    const manifest = {
+      actions: [
+        {
+          kind: "query",
+          key: "billing.invoice.get",
+          permission: "billing.invoice.read",
+          cache: { ttl: "5m", invalidateOn: ["billing.invoice.paid.v1"] },
+        },
+        {
+          kind: "query",
+          key: "billing.plan.list",
+          permission: "billing.plan.read",
+          cache: { ttl: "1h", per: "scope", invalidateOn: ["billing.plan.changed.v1"] },
+        },
+        {
+          kind: "query",
+          key: "billing.rate.get",
+          permission: "billing.rate.read",
+          cache: { ttl: "1m" },
+        },
+      ],
+    } as unknown as StackraManifest;
+    const realtime = {
+      ...BILLING_IR,
+      packages: [...(BILLING_IR.packages ?? []), "@stackra/realtime"],
+    };
+    const boot = emitBoot(realtime, manifest) ?? "";
+    expect(boot).toContain(
+      'import { type BroadcastRoute, liveQueryRoutes, RealtimeBroadcaster, RealtimeRelay } from "@stackra/realtime";',
+    );
+    expect(boot).toContain(
+      '  { permission: "billing.invoice.read", audience: BroadcastAudience.Principal, invalidateOn: ["billing.invoice.paid.v1"] },',
+    );
+    expect(boot).toContain(
+      '  { permission: "billing.plan.read", audience: BroadcastAudience.Scope, invalidateOn: ["billing.plan.changed.v1"] },',
+    );
+    expect(boot).not.toContain("billing.rate.read");
+    expect(boot).toContain("class LiveQueryRefreshListener extends Listener {");
+    expect(boot).toContain("      bus.subscribe(type, new LiveQueryRefreshListener(send, route));");
+    expect(boot.indexOf("bus.connect(container);")).toBeLessThan(
+      boot.indexOf("for (const refresh of LIVE_QUERIES)"),
+    );
+    // Without realtime the queries refresh nothing.
+    expect(emitBoot(BILLING_IR, manifest)).not.toContain("LIVE_QUERIES");
   });
 });

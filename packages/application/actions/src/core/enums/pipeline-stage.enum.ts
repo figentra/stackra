@@ -1,15 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `PipelineStage`, the named steps of the fixed action pipeline, in their one order: tenancy, permission,
- *          precondition, entitlement, flag, approval, idempotency, rate limit, interceptors, then `handle`.
+ *          precondition, entitlement, flag, approval, idempotency, rate limit, interceptors, the query cache, then
+ *          `handle`.
  * Boundary: an enum (`Enum.of`) whose source order is the order (`Enum.values(PipelineStage)`); `ActionPipeline` runs
  *           its steps in exactly this order, and nothing reorders it. Rate limit sits after idempotency so a replayed
  *           key costs no token. Approval sits before idempotency (ADR 0098 decision 3), so a parked call holds no key.
- *           Per-device order (ADR 0338 decision 1) is no stage: it wraps them all, like the audit.
+ *           Per-device order (ADR 0338 decision 1) is no stage: it wraps them all, like the audit. The cache step runs
+ *           for a query that declares `cache` only, inside the interceptors, so they see a hit too and only `handle`
+ *           is skipped.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended by 0294: the order is fixed); ADR 0305 (rule 24: interceptors between
  *                     idempotency and `handle`); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098
- *                     (decision 3: approval before idempotency).
+ *                     (decision 3: approval before idempotency); ADR 0305 (rule 31: the query cache).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -38,6 +41,8 @@ export const PipelineStage = Enum.of({
   RateLimit: "rate_limit",
   /** The declared interceptors wrap the call, first outermost. */
   Interceptors: "interceptors",
+  /** A query that declares `cache` answers from its entry, or runs `handle` once and stores the answer. */
+  Cache: "cache",
   /** `handle` runs, in the unit of work for an action, with the `accepts` review of an offline-computed document. */
   Handle: "handle",
 });

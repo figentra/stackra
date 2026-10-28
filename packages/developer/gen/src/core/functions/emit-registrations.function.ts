@@ -6,7 +6,7 @@
  *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the outbound webhooks, the job actions for the queue
- *          and the scheduler, the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
+ *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
  *          and the `@Searchable` models.
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -16,7 +16,8 @@
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
  *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
  *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
- *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities); STA-1387
+ *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities); ADR 0305 (rule 31: the query
+ *                     cache's evictor); STA-1387
  *                     (`registerEventNames` from @stackra/events, below @stackra/actions: no package cycle).
  */
 import type { StackraManifest } from "@stackra/contracts";
@@ -185,7 +186,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       .map((declared) => ref({ name: declared.name, from: declared.importPath })),
   );
 
-  const jobs = ((manifest.actions ?? []) as readonly Entry[])
+  const actionRows = (manifest.actions ?? []) as readonly Entry[];
+  const jobs = actionRows
     .filter((entry) => entry["kind"] === "action" && entry["job"] !== undefined)
     .map((entry) => {
       const type = classOf(entry);
@@ -194,6 +196,22 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
         : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
     });
   call("registerJobs", "@stackra/queue", jobs);
+
+  // Each query whose `cache` names invalidating events, so the evictor forgets it after them (ADR 0305 rule 31).
+  call(
+    "registerCachedQueries",
+    "@stackra/actions",
+    actionRows
+      .filter((entry) => {
+        const cache = entry["cache"] as { readonly invalidateOn?: unknown } | undefined;
+        return (
+          entry["kind"] === "query" &&
+          Array.isArray(cache?.invalidateOn) &&
+          cache.invalidateOn.length > 0
+        );
+      })
+      .map((entry) => classOf(entry)),
+  );
   call("registerScheduledJobs", "@stackra/scheduler", jobs);
 
   const integrations = Array.isArray(manifest["integrations"])
@@ -278,7 +296,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     from: "stackra.manifest.json and the kind classes under src/",
     purpose:
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
-      "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, jobs, " +
+      "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, jobs, cached queries, " +
       "connections, webhook events, outbound webhooks, sequences, entitlements and searchable models).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +

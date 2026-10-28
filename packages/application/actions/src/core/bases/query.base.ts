@@ -7,12 +7,14 @@
  *           without a transaction and is never audited by the pipeline. A binding with constructor dependencies; it
  *           runs only through `ActionPipeline`.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP
+ * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 28 and 31, as amended 2026-10-28); ADR 0155 (queries are MCP
  *                     tools); ADR 0136 (decision 2: queries have no transaction); ADR 0338 (decision 3: `replica`).
  */
 import { createKind } from "@stackra/container";
+import { Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
+import { CacheScope } from "#core/enums/cache-scope.enum";
 import { readCallOptions } from "#core/functions/read-call-options.function";
 import type { QueryClass } from "#core/types/query-class.type";
 import type { QueryContext } from "#core/types/query-context.type";
@@ -45,6 +47,10 @@ function read(options: QueryOptions) {
         `Query({ cache: { ttl } }) must be a duration such as "5m", got ${JSON.stringify(cache.ttl)}`,
       );
     }
+    if (cache.per !== undefined && !Enum.values(CacheScope).includes(cache.per))
+      throw new TypeError(
+        `Query({ cache: { per } }) must be a CacheScope, got ${JSON.stringify(cache.per)} (${options.key})`,
+      );
     for (const event of cache.invalidateOn ?? [])
       if (typeof event !== "function")
         throw new TypeError(

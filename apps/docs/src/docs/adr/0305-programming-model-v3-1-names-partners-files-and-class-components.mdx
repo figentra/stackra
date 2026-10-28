@@ -285,6 +285,25 @@ Enforcement of this note: automated — `check-conventions.function.ts`, `create
 `check-i18n.function.ts` and `generate.function.ts` in `packages/developer/gen`, with their tests (run on ci-box). It
 moves the STA-340 items `partner_mismatch`, `empty_module` and `secret_name_missing` above to automated.
 
+## Amendment 2026-10-28: cache scopes named after the scope (rule 31, STA-1445)
+
+Owner decision 4 of the data-layer gap analysis (R-59, ADR 0323) renames the cache scopes of rule 31. `cache.per` takes
+`CacheScope.Principal` (the default), `CacheScope.Scope` or `CacheScope.Site`. `CacheScope.Tenant` does not exist:
+`CacheScope.Scope` shares one entry among the callers of one scope node, and the tenant is always part of the key. The
+test helper for scope-wide keys is `expectScopeCacheSafe` (`@stackra/actions/testing`), which replaces the name
+`expectTenantCacheSafe`.
+
+The server now serves the option. The pipeline has a `cache` step inside the interceptors, before `handle`. The key is
+`<Query>:<tenant>:<per>:<holder>:<fingerprint>`, and the fingerprint covers the input, the locale, currency, market and
+time zone, the sandbox flag and, per principal, the whole actor. Entries live in the shared cache namespace, so
+`QueryCacheEvictorListener` can forget a tenant's entries after an `invalidateOn` event commits. Gen registers the
+evictor with `registerCachedQueries`. Isolation comes from the key, and rule 32 is unchanged for every other use of
+the `Cache` port.
+
+Enforcement of this amendment: `site_cache_reads_caller` is enforced by gen's `checkQueryCache` (STA-1445), which
+replaces the planned STA-340 line above. It refuses a `CacheScope.Site` query whose `handle` reads `ctx.actor`,
+`scopeId`, `scope`, `authorize`, `deviceId`, `assurance` or `client`, or whose input has a caller id field.
+
 ## Supersedes and sources
 
 Supersedes: none as a whole. The rules listed above amend the pages named in the note at the top of this page.

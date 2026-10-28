@@ -236,6 +236,12 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   lint when either changes. An abstract class is never `event_base_abstract` and its constructor is never read; a
   class without one inherits its chain's nearest. `usesContainer` false (a member declaring packages without
   `@stackra/container`) means no wiring, no member module and a container-free setup.
+- The query cache (STA-1445): `checkQueryCache` (core, full pass only) is `site_cache_reads_caller`, over the
+  reader's `DeclaredClass.callerReads` (a text scan of the class body for the `handle` context's caller fields) and
+  the input shape's caller id fields. `registerCachedQueries` rows come from the manifest's query entries with
+  `cache.invalidateOn`; the evictor binding is a `SERVER_CONTRIBUTIONS` row; the live queries' refresh is written into
+  `emitBoot` (which now takes the manifest) and resolves each wire name through `EVENT_NAMES`, so a name the
+  registrations never registered fails at boot, never silently.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
   `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.

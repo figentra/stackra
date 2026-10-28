@@ -25,7 +25,9 @@
  *           entries are written outside), so a call refused by any step still settles its sequence; the cap is part
  *           of the idempotency step and the review part of `handle`. A device's sequences are strictly increasing, not contiguous: one above
  *           the last settled is applied (the client sends one call at a time, so it is the next), one at or below may
- *           only replay its stored output. Only a Refusal is a refusal; any other error is a bug and propagates.
+ *           only replay its stored output. Only a Refusal is a refusal; any other error is a bug and propagates. A
+ *           query that declares `cache` answers from the `Cache` port inside its interceptors (the cache step runs only
+ *           when a `Cache` is bound).
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended by 0294: the order is fixed); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
  *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098; ADR
@@ -37,8 +39,10 @@
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
- *                     refusal's back-off details, the `rate_limited` usage event).
+ *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
+ *                     2026-10-28: the query cache step, STA-1445).
  */
+import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
   type ActorKind,
@@ -97,6 +101,8 @@ import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
+import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
+import { CacheScope } from "#core/enums/cache-scope.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -106,6 +112,7 @@ import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
 import { periodOf } from "#core/functions/period-of.function";
+import { queryCacheKey } from "#core/functions/query-cache-key.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
@@ -120,6 +127,7 @@ import type { CallOptions } from "#core/types/call-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OutputOf } from "#core/types/output-of.type";
 import type { PeriodInput } from "#core/types/period-input.type";
+import type { QueryCache } from "#core/types/query-cache.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { ReplicaBounds } from "#core/types/replica-bounds.type";
 import type { Resolver } from "#core/types/resolver.type";
@@ -141,6 +149,7 @@ interface Recorded {
   readonly approval?: boolean;
   readonly stepUp?: AssuranceLevel;
   readonly timeout?: Duration;
+  readonly cache?: QueryCache;
 }
 
 /** What one call accumulates while it runs. */
@@ -564,7 +573,7 @@ export class ActionPipeline {
               ? commit()
               : reservation.reserve(call.descriptor, input, commit);
           }
-        : handle;
+        : () => this.cached(call, input, handle);
     return call.options.interceptors
       .map((type) => this.resolver.get(type))
       .reduceRight<() => Promise<unknown>>((next, interceptor) => {
@@ -579,6 +588,35 @@ export class ActionPipeline {
             return next();
           });
       }, core)();
+  }
+
+  /**
+   * The cache step of a query that declares `cache`: answers from its entry, or runs `handle` once (callers of one key
+   * share the load) and stores the answer for the `ttl`. The entry is read and written in the shared namespace under
+   * a key that carries the tenant and the `cache.per` holder (`queryCacheKey`), so `QueryCacheEvictorListener` reaches
+   * it from an event; `handle` runs in the call's own context. With no `Cache` bound the step does not run.
+   */
+  private async cached(
+    call: Call,
+    input: unknown,
+    handle: () => Promise<unknown>,
+  ): Promise<unknown> {
+    const declared = call.options.cache;
+    const cache = this.optional(Cache);
+    if (declared === undefined || cache === undefined) return handle();
+    const key = await queryCacheKey(
+      call.type,
+      declared.per ?? CacheScope.Principal,
+      call.descriptor,
+      call.ctx,
+      input,
+    );
+    const ttl = duration(declared.ttl);
+    const storage = this.optional(ContextStorage);
+    if (storage === undefined) return cache.remember(key, ttl, handle);
+    return storage.run(SHARED_CACHE_CONTEXT, () =>
+      cache.remember(key, ttl, () => storage.run(call.ctx, handle)),
+    );
   }
 
   /**

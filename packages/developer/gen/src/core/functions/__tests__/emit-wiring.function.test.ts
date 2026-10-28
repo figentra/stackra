@@ -493,6 +493,20 @@ describe("emitWiring", () => {
     expect(billing).not.toContain("FilesystemHealthIndicatorDriver");
   });
 
+  it("binds the query cache evictor in a service that declares @stackra/cache (STA-1445)", () => {
+    const cached = emitWiring({
+      ...BILLING_IR,
+      packages: [...(BILLING_IR.packages ?? []), "@stackra/cache"],
+    });
+    expect(cached).toContain(
+      '    { module: "billing", kind: "service", provide: QueryCacheEvictorListener, deps: [Cache, ContextStorage] },',
+    );
+    expect(cached).toMatch(
+      /import \{[^}]*\bQueryCacheEvictorListener\b[^}]*\} from "@stackra\/actions";/,
+    );
+    expect(emitWiring(BILLING_IR)).not.toContain("QueryCacheEvictorListener");
+  });
+
   it("binds no guard or indicator outside a service (STA-1385)", () => {
     const content = emitWiring({ ...BILLING_IR, layout: "package" });
     expect(content).not.toContain("OriginGuard");

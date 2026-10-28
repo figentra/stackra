@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `PipelineStage`: an `Enum.of` enum holding the fixed order of ADR 0138 as amended, with interceptors and the rate limit before handle, codes in source order, with a
+ * Purpose: unit and type tests of `PipelineStage`: an `Enum.of` enum holding the fixed order of ADR 0138 as amended, with interceptors, the rate limit and the query cache before handle, codes in source order, with a
  *          same-named type.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -23,6 +23,7 @@ describe("PipelineStage", () => {
       "idempotency",
       "rate_limit",
       "interceptors",
+      "cache",
       "handle",
     ]);
     expect(PipelineStage.Tenancy).toBe("tenancy");
@@ -34,6 +35,7 @@ describe("PipelineStage", () => {
     expect(PipelineStage.Idempotency).toBe("idempotency");
     expect(PipelineStage.RateLimit).toBe("rate_limit");
     expect(PipelineStage.Interceptors).toBe("interceptors");
+    expect(PipelineStage.Cache).toBe("cache");
     expect(PipelineStage.Handle).toBe("handle");
   });
 
@@ -48,6 +50,7 @@ describe("PipelineStage", () => {
       | "idempotency"
       | "rate_limit"
       | "interceptors"
+      | "cache"
       | "handle"
     >();
   });

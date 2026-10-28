@@ -5,7 +5,7 @@
  *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
  *          included; the value argument of `Driver(Port)`, `Widget.place` and `ModelAddition(Base)`, ADR 0336), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
- *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, statics and traits; each shape's fields from the declared
+ *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; each file's exports; and the services any own file (tests included) imports from
@@ -161,6 +161,17 @@ type SelfOf = (name: string) => unknown;
 /** The fix printed for a field type the grammar does not allow. */
 const FIX_SHAPE =
   "use a shape type: string, an @Int/@Num number, boolean, Date, an enum (Enum.of) or a Schema class";
+
+/** What a query may read of its caller from its context: the caller, its tenant and scope, its device and credential. */
+const CALLER_FIELDS = new Set([
+  "actor",
+  "scopeId",
+  "scope",
+  "authorize",
+  "deviceId",
+  "assurance",
+  "client",
+]);
 
 /** JavaScript's own error classes, which are never refusals. */
 const BUILT_IN_ERRORS = new Set([
@@ -2458,6 +2469,24 @@ export function createSourceReader(
     }
     if (/\.authorize\s*\(/.test(body)) refusals.add("forbidden");
 
+    // What a query reads of its caller through its `handle` context, for `site_cache_reads_caller` (ADR 0305 rule 31).
+    const callerReads = new Set<string>();
+    if (info.kind === "query") {
+      const handleMember = members.find(
+        (member) => host.kind(member) === "MethodDeclaration" && nameOf(member.name) === "handle",
+      );
+      const param = handleMember?.parameters?.[1]?.name;
+      const ctx = param !== undefined && kindOf(param) === "Identifier" ? nameOf(param) : "ctx";
+      const escaped = ctx.replaceAll("$", "\\$");
+      for (const match of body.matchAll(new RegExp(`\\b${escaped}\\s*\\??\\.\\s*(\\w+)`, "g")))
+        if (match[1] !== undefined && CALLER_FIELDS.has(match[1])) callerReads.add(match[1]);
+      for (const match of body.matchAll(new RegExp(`\\{([^}]*)\\}\\s*=\\s*${escaped}\\b`, "g")))
+        for (const binding of (match[1] ?? "").split(",")) {
+          const field = binding.split(":")[0]?.trim() ?? "";
+          if (CALLER_FIELDS.has(field)) callerReads.add(field);
+        }
+    }
+
     const statics: Record<string, string> = {};
     for (const member of members)
       if (
@@ -2498,6 +2527,7 @@ export function createSourceReader(
       methods,
       ...(handle !== undefined ? { handle } : {}),
       refusals: [...refusals],
+      ...(callerReads.size > 0 ? { callerReads: [...callerReads] } : {}),
       statics,
       traits,
       ...(renamed !== undefined ? { renamed } : {}),

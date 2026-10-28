@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `DeclaredClass`, one class of the member that extends a kind base, as discovery read it from source: its
- *          kind, module, options, partner, constructor tokens, facets, `handle` signature (a listener's event) and the
- *          refusals its body
- *          raises. Every identity, binding and manifest entry is derived from these records.
+ *          kind, module, options, partner, constructor tokens, facets, `handle` signature (a listener's event), the
+ *          refusals its body raises and, for a query, what it reads of its caller. Every identity, binding and
+ *          manifest entry is derived from these records.
  * Boundary: a type only. Options are read from the heritage clause of the member's own source, never from a `.d.ts`
  *           (ADR 0294 decision 25); a class from a dependency is described by that dependency's manifest instead.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4, 16, 17, 20 and 25); ADR 0305 (rules 5 to 9 and 42); ADR 0260 (decision 4).
+ * Governing contract: ADR 0294 (decisions 4, 16, 17, 20 and 25); ADR 0305 (rules 5 to 9, 31 and 42); ADR 0260 (decision 4).
  */
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { FacetUse } from "#core/types/facet-use.type";
@@ -72,6 +72,13 @@ export interface DeclaredClass {
 
   /** The refusal codes the class body raises (`XError.create`, `new XError`, `ctx.authorize`). */
   readonly refusals: readonly string[];
+
+  /**
+   * A query's reads of its caller through its `handle` context (`actor`, `scopeId`, `scope`, `authorize`, `deviceId`,
+   * `assurance`, `client`), as `ctx.<name>` or a destructuring of it; absent when it reads none. Read by
+   * `site_cache_reads_caller` (ADR 0305 rule 31).
+   */
+  readonly callerReads?: readonly string[];
 
   /** Static readonly members and their initializer source (a Permissions class's verbs). */
   readonly statics: Readonly<Record<string, string>>;

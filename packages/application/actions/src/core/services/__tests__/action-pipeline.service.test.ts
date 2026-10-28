@@ -17,7 +17,9 @@
  *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814); and the sandbox flag on the
  *          descriptor and the context, and the network client on the context only (STA-1248); and the request origin
  *          on the descriptor, the audit entry and the context, and `ctx.publish` of an integration event without a
- *          model inside the unit of work (ADR 0456).
+ *          model inside the unit of work (ADR 0456); and the query cache step (STA-1445): a hit inside the
+ *          interceptors, keys per principal, scope node and site, the shared namespace with `handle` in the call's
+ *          context, and no step without a bound `Cache`.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -25,6 +27,8 @@
  *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6); ADR 0338 (decisions 1, 3 and 5); ADR
  *                     0337 (decisions 4 and 5); ADR 0456 (decisions 1 and 2).
  */
+import { Cache } from "@stackra/cache/contracts";
+import type { CacheKey } from "@stackra/cache";
 import { type AnyClass, Driver } from "@stackra/container";
 import {
   type Actor,
@@ -82,6 +86,7 @@ import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
 import { Precondition } from "#core/bases/precondition.base";
 import { Query } from "#core/bases/query.base";
+import { CacheScope } from "#core/enums/cache-scope.enum";
 import { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
 import { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-store.driver";
@@ -1741,5 +1746,196 @@ describe("ActionPipeline ctx.publish (ADR 0456)", () => {
     await expect(bare.pipeline.execute(AlertAction, {}, { actor: customer })).rejects.toThrow(
       /EventOutbox is not bound/,
     );
+  });
+});
+
+/** A cache over a map: records each key with the namespace (the storage's current scope id) it was used in. */
+class MapCache extends Driver(Cache) {
+  readonly entries = new Map<string, unknown>();
+
+  readonly used: string[] = [];
+
+  private readonly storage: AsyncContextStorageDriver;
+
+  constructor(storage: AsyncContextStorageDriver) {
+    super();
+    this.storage = storage;
+  }
+
+  async get<T>(key: CacheKey): Promise<T | undefined> {
+    return this.entries.get(this.at(key)) as T | undefined;
+  }
+
+  async put<T>(key: CacheKey, value: T): Promise<void> {
+    this.entries.set(this.at(key), value);
+  }
+
+  async remember<T>(key: CacheKey, _ttl: Duration, load: () => T | Promise<T>): Promise<T> {
+    const at = this.at(key);
+    if (this.entries.has(at)) return this.entries.get(at) as T;
+    const value = await load();
+    this.entries.set(at, value);
+    return value;
+  }
+
+  async forget(key: CacheKey): Promise<void> {
+    for (const known of this.entries.keys())
+      if (known === this.at(key) || known.startsWith(`${this.at(key)}:`))
+        this.entries.delete(known);
+  }
+
+  private at(key: CacheKey): string {
+    const scope = (this.storage.current() as { scope?: ScopeRef } | undefined)?.scope;
+    const at = `${scope?.id ?? ""}/${key}`;
+    this.used.push(at);
+    return at;
+  }
+}
+
+/** A cached query that answers how often it ran and the scope its handle saw. */
+class CountQuery extends Query({
+  key: "order.count",
+  actors: [ActorKind.User, ActorKind.Agent],
+  interceptors: [TracingInterceptor],
+  cache: { ttl: "5m" },
+}) {
+  runs = 0;
+
+  async handle(
+    _input: { range: string },
+    ctx: QueryContext,
+  ): Promise<{ runs: number; scope?: string }> {
+    log.push("handle");
+    this.runs += 1;
+    return { runs: this.runs, ...(ctx.scope === undefined ? {} : { scope: ctx.scope.id }) };
+  }
+}
+
+/** The same query shared per scope node. */
+class ScopeCountQuery extends Query({
+  key: "order.scope_count",
+  actors: [ActorKind.User, ActorKind.Agent],
+  cache: { ttl: "5m", per: CacheScope.Scope },
+}) {
+  runs = 0;
+
+  async handle(): Promise<number> {
+    this.runs += 1;
+    return this.runs;
+  }
+}
+
+/** The same query shared per site. */
+class SiteCountQuery extends Query({
+  key: "order.site_count",
+  actors: [ActorKind.User, ActorKind.Agent],
+  cache: { ttl: "5m", per: CacheScope.Site },
+}) {
+  runs = 0;
+
+  async handle(): Promise<number> {
+    this.runs += 1;
+    return this.runs;
+  }
+}
+
+/** A pipeline with a map cache, its storage and the three cached queries. */
+function cached() {
+  const storage = new AsyncContextStorageDriver();
+  const cache = new MapCache(storage);
+  const count = new CountQuery();
+  const scoped = new ScopeCountQuery();
+  const site = new SiteCountQuery();
+  const { pipeline } = setup([
+    [ContextStorage, storage],
+    [Cache, cache],
+    [CountQuery, count],
+    [ScopeCountQuery, scoped],
+    [SiteCountQuery, site],
+  ]);
+  return { pipeline, cache, count, scoped, site };
+}
+
+describe("ActionPipeline query cache (STA-1445)", () => {
+  it("answers a repeat from the entry inside the interceptors, so only handle is skipped", async () => {
+    const { pipeline, count } = cached();
+    const first = await pipeline.execute(
+      CountQuery,
+      { range: "7d" },
+      { actor: customer, scope: SCOPE },
+    );
+    log = [];
+    const second = await pipeline.execute(
+      CountQuery,
+      { range: "7d" },
+      { actor: customer, scope: SCOPE },
+    );
+    expect(first).toEqual({ runs: 1, scope: SCOPE.id });
+    expect(second).toEqual(first);
+    expect(count.runs).toBe(1);
+    expect(log).toContain("interceptor:before");
+    expect(log).not.toContain("handle");
+  });
+
+  it("keys per principal by default: another caller, input, locale or sandbox runs handle again", async () => {
+    const { pipeline, count } = cached();
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: agent });
+    await pipeline.execute(CountQuery, { range: "30d" }, { actor: customer });
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer, locale: "ar-SA" });
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer, sandbox: true });
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
+    expect(count.runs).toBe(5);
+  });
+
+  it("shares a Scope entry between callers of one scope node, never across nodes or tenants", async () => {
+    const { pipeline, scoped } = cached();
+    const other: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.east" };
+    expect(await pipeline.execute(ScopeCountQuery, {}, { actor: customer, scope: SCOPE })).toBe(1);
+    expect(await pipeline.execute(ScopeCountQuery, {}, { actor: agent, scope: SCOPE })).toBe(1);
+    expect(await pipeline.execute(ScopeCountQuery, {}, { actor: agent, scope: other })).toBe(2);
+    const stranger: Actor = { ...agent, scopeId: "ten_2" };
+    expect(await pipeline.execute(ScopeCountQuery, {}, { actor: stranger, scope: SCOPE })).toBe(3);
+    expect(scoped.runs).toBe(3);
+  });
+
+  it("shares a Site entry between callers of one origin", async () => {
+    const { pipeline, site } = cached();
+    const storefront: CallOrigin = { kind: CallOriginKind.Storefront, id: "sfr_1" };
+    expect(
+      await pipeline.execute(SiteCountQuery, {}, { actor: customer, origin: storefront }),
+    ).toBe(1);
+    expect(await pipeline.execute(SiteCountQuery, {}, { actor: agent, origin: storefront })).toBe(
+      1,
+    );
+    expect(
+      await pipeline.execute(
+        SiteCountQuery,
+        {},
+        { actor: agent, origin: { kind: CallOriginKind.Storefront, id: "sfr_2" } },
+      ),
+    ).toBe(2);
+    expect(site.runs).toBe(2);
+  });
+
+  it("keeps the entry in the shared namespace under the tenant's key, while handle sees the call's scope", async () => {
+    const { pipeline, cache } = cached();
+    const output = await pipeline.execute(
+      CountQuery,
+      { range: "7d" },
+      { actor: customer, scope: SCOPE },
+    );
+    expect(output).toEqual({ runs: 1, scope: SCOPE.id });
+    expect([...cache.entries.keys()]).toEqual([
+      expect.stringMatching(/^\/CountQuery:ten_1:principal:usr_1:[0-9a-f]{64}$/),
+    ]);
+  });
+
+  it("does not run without a bound Cache", async () => {
+    const count = new CountQuery();
+    const { pipeline } = setup([[CountQuery, count]]);
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
+    await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
+    expect(count.runs).toBe(2);
   });
 });

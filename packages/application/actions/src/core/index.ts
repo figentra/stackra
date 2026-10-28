@@ -26,6 +26,7 @@ export { MemoryReplicaLogDriver } from "#core/drivers/memory-replica-log.driver"
 export { MemoryReviewItemSinkDriver } from "#core/drivers/memory-review-item-sink.driver";
 export { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver";
 export { OutboxAuditTrailDriver } from "#core/drivers/outbox-audit-trail.driver";
+export { CacheScope } from "#core/enums/cache-scope.enum";
 export { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 export { IdMinting } from "#core/enums/id-minting.enum";
 export { Idempotency } from "#core/enums/idempotency.enum";
@@ -44,7 +45,9 @@ export { connectExtensions } from "#core/functions/connect-extensions.function";
 export { isRawBody } from "#core/functions/is-raw-body.function";
 export { rawBody } from "#core/functions/raw-body.function";
 export { registerActions } from "#core/functions/register-actions.function";
+export { registerCachedQueries } from "#core/functions/register-cached-queries.function";
 export { registerExtensions } from "#core/functions/register-extensions.function";
+export { QueryCacheEvictorListener } from "#core/listeners/query-cache-evictor.listener";
 export { ActionPipeline } from "#core/services/action-pipeline.service";
 export { ReplicaFeed } from "#core/services/replica-feed.service";
 export { RequestContext } from "#core/services/request-context.service";

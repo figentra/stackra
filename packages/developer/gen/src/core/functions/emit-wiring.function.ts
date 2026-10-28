@@ -15,7 +15,8 @@
  *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves; `RuleSetService`
  *          with its `repositoryOf(Revision)`), and in a service the `SERVER_CONTRIBUTIONS` of its declared packages: the
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
- *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385).
+ *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
+ *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its

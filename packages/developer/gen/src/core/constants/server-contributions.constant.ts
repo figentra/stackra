@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: `SERVER_CONTRIBUTIONS`, the extension-point contributions gen binds in a service's wiring when the service
  *          declares their package: the request guards of `@stackra/app/server` (`OriginGuard`, `CsrfGuard`, with the
- *          `app.cors` and `app.csrf` config rows) and the six `HealthIndicator` drivers `/readyz` runs (database,
- *          cache, queue, realtime, filesystem, search, each with its package config row).
+ *          `app.cors` and `app.csrf` config rows), the six `HealthIndicator` drivers `/readyz` runs (database,
+ *          cache, queue, realtime, filesystem, search, each with its package config row) and, with `@stackra/cache`,
+ *          the query cache's `QueryCacheEvictorListener` from `@stackra/actions` (STA-1445).
  * Boundary: data only; each entry lists the package that must be declared, the class, its constructor tokens in
  *           parameter order and the config rows (key and class) its tokens need. The container finds them with
- *           `getAll(RequestGuard)` and `getAll(HealthIndicator)`; gen adds them so no member binds them by hand.
+ *           `getAll(RequestGuard)` and `getAll(HealthIndicator)`, and `EventBus#connect` finds the evictor among the
+ *           listeners `registerCachedQueries` registered; gen adds them so no member binds them by hand.
  * Runtime: isomorphic
  * Governing contract: ADR 0457 (multi-binding); ADR 0437 (server-check order); ADR 0190 (health); STA-1374
- *                     (stackra-216); STA-1379 (stackra-221); STA-1385.
+ *                     (stackra-216); STA-1379 (stackra-221); STA-1385; ADR 0305 (rule 31: the query cache evictor).
  */
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ServerContribution } from "#core/types/server-contribution.type";
@@ -35,7 +37,7 @@ function health(
   };
 }
 
-/** The contributions, guards first (in their `order`), then the health drivers. */
+/** The contributions, guards first (in their `order`), then the health drivers, then the query cache evictor. */
 export const SERVER_CONTRIBUTIONS: readonly ServerContribution[] = Object.freeze([
   {
     package: "@stackra/app",
@@ -94,4 +96,13 @@ export const SERVER_CONTRIBUTIONS: readonly ServerContribution[] = Object.freeze
     "SearchConfig",
     "search",
   ),
+  {
+    package: "@stackra/cache",
+    provide: { name: "QueryCacheEvictorListener", from: "@stackra/actions" },
+    deps: [
+      { name: "Cache", from: "@stackra/cache/contracts" },
+      { name: "ContextStorage", from: "@stackra/actions/contracts" },
+    ],
+    configs: [],
+  },
 ]);

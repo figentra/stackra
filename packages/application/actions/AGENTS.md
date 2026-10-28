@@ -68,6 +68,13 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 - Event ids come from `@stackra/contracts`' `mintPublicId("evt")`; never add a local minter (STA-1380).
+- The query cache (ADR 0305 rule 31, STA-1445) is a step of the pipeline, never a facet or `ctx.cache`. Its key always
+  starts `<Query>:<tenant>` (`queryCacheKey`), because `QueryCacheEvictorListener` forgets by exactly that prefix: change
+  both together. Its entries live in the shared namespace (`SHARED_CACHE_CONTEXT`) so an event that names only the
+  tenant reaches them; the key, never the namespace, isolates tenants, scope nodes and callers. `handle` runs in the
+  call's own context. `CacheScope` names a scope, never a tenant (R-59): `Principal`, `Scope`, `Site`.
+- A `per: CacheScope.Site` query reads no caller (gen's `site_cache_reads_caller`); a `per: CacheScope.Scope` query
+  has an `expectScopeCacheSafe` test.
 
 ## Devtools
 
@@ -88,3 +95,4 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 | Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours.     |
 | Audit fields | `ctx.audit(...)`, the `AuditTrail` port | Whatever the handler adds; never add a classified field. Stored by the port. |
 | Client IP    | `ctx.client` (`CallClient`)             | Held for the call only; a handler that keeps it hashes or truncates it.      |
+| Query output | the `Cache` port (`cache.ttl`)          | Kept for the query's `ttl` under a key per caller unless `per` widens it.    |

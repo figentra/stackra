@@ -8,7 +8,9 @@
  *          `StampSubscriber`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` (when a model, own or a declared package's, has
  *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
  *          `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
- *          registered listeners and relays, disconnected when the signal aborts), then `relay.connect(container)` and
+ *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
+ *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
+ *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then `relay.connect(container)` and
  *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
@@ -20,20 +22,81 @@
  *                     0332 (segments); ADR 0295 (decision 8: boot order belongs to the runtime); ADR 0134 (2026-10-24
  *                     amendment: every disposal path asks the connected `HoldRegistry`); ADR 0394 (decision 1); ADR 0263 (the
  *                     container is ready before anything resolves from it); ADR 0260 (decision 4: typed subscribers
- *                     and relays receive only once connected); ADR 0465 (decision 5: the model encryption path); ADR 0238 (the service's own database, stackra-250); ADR 0057
- *                     (decision 6: read replicas).
+ *                     and relays receive only once connected); ADR 0465 (decision 5: the model encryption path); ADR 0238 (the
+ *                     service's own database, stackra-250); ADR 0057 (decision 6: read replicas); ADR 0315 (decision 1: a
+ *                     query with `cache.invalidateOn` is live, its refresh sent after commit).
  */
+import type { StackraManifest } from "@stackra/contracts";
+
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
+/** A manifest entry, read loosely. */
+type Entry = Readonly<Record<string, unknown>>;
+
+/** The refresh listener and helpers a boot with live queries carries (ADR 0315 decision 1). */
+const LIVE_QUERY_LISTENER = [
+  "",
+  "/** Sends one live query refresh route of a committed event: data-free, under the query's permission. */",
+  "class LiveQueryRefreshListener extends Listener {",
+  "  private readonly send: (record: RecordedEvent, route: BroadcastRoute) => Promise<unknown>;",
+  "",
+  "  private readonly route: BroadcastRoute;",
+  "",
+  "  constructor(send: (record: RecordedEvent, route: BroadcastRoute) => Promise<unknown>, route: BroadcastRoute) {",
+  "    super();",
+  "    this.send = send;",
+  "    this.route = route;",
+  "  }",
+  "",
+  "  async handle(event: Event, ctx: ListenerContext): Promise<void> {",
+  "    const meta = {",
+  "      id: ctx.eventId,",
+  "      occurredAt: ctx.occurredAt,",
+  "      ...(ctx.scopeId === undefined ? {} : { scopeId: ctx.scopeId }),",
+  "      ...(ctx.actor === undefined ? {} : { actor: ctx.actor }),",
+  "    };",
+  "    await this.send({ event, meta }, this.route);",
+  "  }",
+  "}",
+];
+
+/**
+ * The live queries of `manifest` (its own and its hosted packages'): each query with `cache.invalidateOn`, printed as
+ * a row of its permission, its refresh audience (the caller's own for `per: principal`, the scope's otherwise) and the
+ * invalidating events' wire names.
+ */
+function liveQueryRows(manifest: StackraManifest | undefined): string[] {
+  return ((manifest?.actions ?? []) as readonly Entry[]).flatMap((entry) => {
+    const cache = entry["cache"] as
+      | { readonly per?: unknown; readonly invalidateOn?: unknown }
+      | undefined;
+    const names = Array.isArray(cache?.invalidateOn)
+      ? cache.invalidateOn.filter((name): name is string => typeof name === "string")
+      : [];
+    const permission = entry["permission"];
+    if (entry["kind"] !== "query" || names.length === 0 || typeof permission !== "string")
+      return [];
+    const audience =
+      cache?.per === undefined || cache.per === "principal"
+        ? "BroadcastAudience.Principal"
+        : "BroadcastAudience.Scope";
+    return [
+      `  { permission: ${JSON.stringify(permission)}, audience: ${audience}, invalidateOn: ${JSON.stringify(names)} },`,
+    ];
+  });
+}
+
 /**
  * The boot file of a service, or undefined when it has nothing to connect.
  *
+ * @param ir - the member read by discovery.
+ * @param built - the manifest built from `ir`, whose live queries (own and hosted) get their refresh wired.
  * @example
  * emitBoot(serviceIr); // "...export async function boot(container: Container, options: ...): Promise<void> {..."
  */
-export function emitBoot(ir: MemberIR): string | undefined {
+export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefined {
   if (ir.layout !== "service") return undefined;
   const uses = (name: string): boolean =>
     (ir.packages ?? []).includes(name) ||
@@ -54,6 +117,8 @@ export function emitBoot(ir: MemberIR): string | undefined {
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
   if (!database && !outbox && !segments && !events) return undefined;
+  // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
+  const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
   const imports = ['import type { Container } from "@stackra/container";'];
   const steps: string[] = [];
@@ -93,8 +158,33 @@ export function emitBoot(ir: MemberIR): string | undefined {
     steps.push("  container.get(SegmentService).connect(container);");
   }
   if (events) {
-    imports.push('import { EventBus } from "@stackra/events";');
+    imports.push(
+      live.length > 0
+        ? 'import { BroadcastAudience, type Event, EVENT_NAMES, EventBus, Listener, type ListenerContext } from "@stackra/events";'
+        : 'import { EventBus } from "@stackra/events";',
+    );
     steps.push("  const bus = container.get(EventBus);", "  bus.connect(container);");
+  }
+  if (live.length > 0) {
+    imports.push(
+      'import type { RecordedEvent } from "@stackra/events/contracts";',
+      'import { type BroadcastRoute, liveQueryRoutes, RealtimeBroadcaster, RealtimeRelay } from "@stackra/realtime";',
+    );
+    steps.push(
+      "  // With more than one instance the relay fans the refresh out; with the local fanout both deliver the same.",
+      "  const realtime = container.has(RealtimeRelay) ? container.get(RealtimeRelay) : container.get(RealtimeBroadcaster);",
+      "  const send = (record: RecordedEvent, route: BroadcastRoute): Promise<unknown> => realtime.broadcast(record, route);",
+      "  for (const refresh of LIVE_QUERIES)",
+      "    for (const route of liveQueryRoutes({",
+      "      ...refresh,",
+      "      invalidateOn: refresh.invalidateOn.map((eventName) => ({ eventName, prototype: {} })),",
+      "    })) {",
+      "      const type = EVENT_NAMES.byName.get(route.name);",
+      "      if (type === undefined)",
+      "        throw new Error(`the live query event ${route.name} is not registered: run stackra gen`);",
+      "      bus.subscribe(type, new LiveQueryRefreshListener(send, route));",
+      "    }",
+    );
   }
   if (outbox)
     steps.push("  const inbox = container.get(InboxService);", "  inbox.connect(container);");
@@ -127,6 +217,20 @@ export function emitBoot(ir: MemberIR): string | undefined {
     header,
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     ...imports.sort(),
+    ...(live.length > 0
+      ? [
+          "",
+          "/** The live queries: each one's permission, refresh audience and invalidating events (wire names). */",
+          "const LIVE_QUERIES: readonly {",
+          "  readonly permission: string;",
+          "  readonly audience: BroadcastAudience;",
+          "  readonly invalidateOn: readonly string[];",
+          "}[] = [",
+          ...live,
+          "];",
+          ...LIVE_QUERY_LISTENER,
+        ]
+      : []),
     "",
     "/** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */",
     "export async function boot(",

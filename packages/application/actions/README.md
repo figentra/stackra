@@ -37,6 +37,7 @@ configuration and the action testing helpers.
 | `.`           | `MemoryDeviceSequenceStoreDriver`, `MemoryOfflineCapStoreDriver`                         | the in-process device order and cap stores                              |
 | `.`           | `MemoryReplicaLogDriver`, `MemoryReviewItemSinkDriver`                                   | the in-process replica log and review sink                              |
 | `.`           | `rawBody`, `isRawBody`, `RawBody`                                                        | a query output the transport sends as the body itself (iCal, CSV)       |
+| `.`           | `QueryCache`, `CacheScope`, `registerCachedQueries`, `QueryCacheEvictorListener`         | a query's `cache` option, its sharing, and the evictor gen registers    |
 | `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                         | the ports of the pipeline's checks                                      |
 | `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                         | the ports of its stores and its transaction                             |
 | `./contracts` | `RateLimitBudget`                                                                        | the plan-sized area bucket of a call's scope (a value entitlement)      |
@@ -47,6 +48,7 @@ configuration and the action testing helpers.
 | `./contracts` | `CallOrigin`, `CallOriginKind`                                                           | the request origin on `ctx.origin` and the descriptor (ADR 0456)        |
 | `./node`      | `AsyncContextStorageDriver`                                                              | `ContextStorage` over `AsyncLocalStorage`                               |
 | `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`         | call through the real pipeline; fake contexts; inline extensions        |
+| `./testing`   | `expectScopeCacheSafe`, `ScopeCacheSafeOptions`                                          | a `per: CacheScope.Scope` query answers every caller the same           |
 
 ## Declaring an action
 
@@ -78,7 +80,7 @@ its effect tags (`Effect` from `@stackra/actions/contracts`, snake_case codes).
 
 `ActionPipeline.execute(Class, input, { actor, idempotencyKey, locale, ... })` runs, in this order and no other:
 tenancy, permission (the actor kind, then `AccessControl`), preconditions, entitlement, flag, input validation,
-approval and idempotency, rate limit, interceptors, then `handle` (an action's in its `UnitOfWork`, with its usage
+approval and idempotency, rate limit, interceptors, the query cache, then `handle` (an action's in its `UnitOfWork`, with its usage
 event and its success audit entry, all inside the `LimitReservation` when one is bound: reserve, then commit), then the
 `afterCommit` work. A refusal's audit entry is written after the rollback. A step whose port nobody binds is skipped,
 except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
@@ -129,6 +131,18 @@ call commits. Only an `IntegrationEvent` is published; without a bound outbox th
 A query whose response is not JSON (an iCalendar feed, a CSV) returns `rawBody(contentType, body, filename?)`; the
 transport tests the output with `isRawBody` and sends the body as is with that content type. An ordinary output with
 `contentType` and `body` fields stays JSON: only the `~raw` marker counts.
+
+A query that declares `cache: { ttl, per?, invalidateOn? }` (ADR 0305 rule 31) is served from the `Cache` port of
+`@stackra/cache` by the cache step, inside its interceptors, so they see a hit too and only `handle` is skipped;
+callers of one key share one `handle` run. `per` says whom one entry is shared with: `CacheScope.Principal` (the
+default: the caller, and whom it acts for), `CacheScope.Scope` (every caller in the call's scope node; prove it with
+`expectScopeCacheSafe`) or `CacheScope.Site` (every caller of one storefront origin; gen refuses one that reads the
+caller, `site_cache_reads_caller`). The key is `<Query>:<tenant>:<per>:<holder>:<fingerprint>`, the fingerprint
+covering the input, locale, currency, market, time zone and sandbox flag. The entries sit in the shared cache
+namespace and carry the tenant in their key, so `QueryCacheEvictorListener` (subscribed by `registerCachedQueries`,
+which gen calls for every query with `invalidateOn`) forgets every entry of the event's tenant after the event commits,
+whichever scope node wrote it; `handle` still runs in the call's own context. With no `Cache` bound the step does not
+run. Answers are stored as they are, so a network cache driver keeps plain data only (a `Date` comes back a string).
 
 An action that also runs as a job declares `job: { queue, unique, timeout, retries, backoff, cron }` (`backoff` is the
 contracts `Backoff` curve); `cron: { schedule,
@@ -245,6 +259,13 @@ expect(placed).toHaveAudited({ outcome: "ok", fields: { orderId: placed.output.o
 const ctx = fakeActionContext({ actor: actors.admin() });
 await service.reenable(scopeId, ctx);
 expect(ctx).toHaveAudited({ fields: { scopeId } }); // the fields passed to ctx.audit; no outcome on a fake context
+
+// a query cached per scope node: every caller that may read it gets the same answer (the cache step is off here)
+await expectScopeCacheSafe(
+  GetPriceListQuery,
+  { listId },
+  { as: [actors.owner(), actors.cashier()], scope },
+);
 
 createTestingModule(OrdersModule).withExtensions([
   extension(OrderExtensionPoint, "adjustTotals", { order: 10 }, (totals) => discounted(totals)),

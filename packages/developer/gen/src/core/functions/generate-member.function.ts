@@ -21,7 +21,8 @@
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
- *           `model_tenancy_missing`, stackra-258) or a slot fill that breaks its slot's contract (`checkSlotFills`,
+ *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
+ *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
@@ -41,6 +42,7 @@ import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
+import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
@@ -141,6 +143,7 @@ export function generateMember(
     ...checkSemanticSearch(ir),
     ...checkEncryptedFields(ir),
     ...checkModelScope(ir),
+    ...checkQueryCache(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     ...checkTableIndexes(ir, previous),
@@ -176,7 +179,7 @@ export function generateMember(
     files.push({ path: ".stackra/gen/module.ts", content: memberModule });
   const optional: readonly (readonly [string, string | undefined])[] = [
     [".stackra/gen/registrations.ts", emitRegistrations(ir, manifest)],
-    [".stackra/gen/boot.ts", emitBoot(ir)],
+    [".stackra/gen/boot.ts", emitBoot(ir, manifest)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
