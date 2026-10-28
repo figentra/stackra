@@ -1,9 +1,15 @@
 ---
 title: "0025 — Packages publish to npm.figentra.com; every package builds to ESM dist"
-description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20"
+description: "Superseded by 0177, decisions 1 and 2 amended by 0453, read with 0468 · 2026-10-20"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0025, the first registry and dist-build decision. Boundary: decision text only; superseded by ADR 0177, its registry decisions amended by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0177, 0453. */}
+
+<Note>
+  Read with [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) (2026-10-28, STA-1394, owner decision of that date): decision 5's carried rule "a human approves every release" means a production release. That approval is
+  the owner's one approval of the `release` GitHub Environment when `release.yml` publishes; an agent merges the
+  version pull request, and prereleases to the Stackra registry need no approval.
+</Note>
 
 <Note>
   Amended 2026-10-27 (STA-1333) by

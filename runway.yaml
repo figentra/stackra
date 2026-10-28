@@ -9,7 +9,7 @@
 #           here identify, they do not grant. `ref:<path>` resolves from the private stacks repository (ADR 0289
 #           decision 9) once it exists. `workers/static` gets its member runway with gen (ADR 0284 decision 8).
 # Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by `tools/scripts/runway.mjs`
-# Governing contract: ADR 0002, 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299
+# Governing contract: ADR 0002, 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299, 0468
 $schema: "@stackra/runway/schema/root.json"
 version: 3
 project: stackra
@@ -32,9 +32,14 @@ providers:
         tags: ["schemas@*"]
       docs:
         branches: [main]
+      # The one owner approval per package release (ADR 0468 decision 3): only the version PR's squash merge runs here.
       release:
         branches: [main]
         reviewers: [figentra-usr]
+      # Every other release.yml run (opening the version PR, nothing new to publish, a dry run): no reviewer, and the
+      # registry never accepts a publish from it (ADR 0468 decision 3).
+      release-pr:
+        branches: [main]
   infisical:
     # Infisical Cloud EU; the workspace id of .infisical.yaml, not a secret.
     domain: https://eu.infisical.com
@@ -44,6 +49,8 @@ providers:
       production: prod
     paths:
       ci: /ci
+      # The Turborepo remote cache (STA-1393), read by its own identity INFISICAL_TURBO_IDENTITY_ID.
+      turbo: /ci/turbo
       agents: /agents
   # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
   mintlify:
@@ -114,6 +121,12 @@ secrets:
     - NPM_BOOTSTRAP_TOKEN
     - HEROUI_AUTH_TOKEN
     - UNIWIND_AUTH_TOKEN
+    # From `/ci/turbo` (paths.turbo, STA-1393): ci.yml and release.yml export them for turbo; deploy-turbo-cache.yml
+    # sets TURBO_TOKEN as the Worker's TURBO_CACHE_TOKEN.
+    - TURBO_API
+    - TURBO_TOKEN
+    - TURBO_TEAM
+    - TURBO_REMOTE_CACHE_SIGNATURE_KEY
 
 # ── Release policy (ADR 0170) ────────────────────────────────────────────────────────────────────────
 release:

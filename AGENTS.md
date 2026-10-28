@@ -586,7 +586,8 @@ In Infisical `/agents` (local):
 
 In Infisical `/ci` (CI/CD):
 
-- `TURBO_TOKEN` - Turborepo remote cache
+- `TURBO_TOKEN` - Turborepo remote cache, in the subfolder `/ci/turbo` with `TURBO_API`, `TURBO_TEAM` and
+  `TURBO_REMOTE_CACHE_SIGNATURE_KEY` (STA-1393)
 - `HEROUI_AUTH_TOKEN` - HeroUI Pro CI/CD token for the Quality Gate install (ADR 0310)
 - `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0310)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
