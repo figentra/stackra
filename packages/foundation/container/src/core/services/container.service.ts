@@ -57,6 +57,7 @@ interface MergedDriver {
   key: string | undefined;
   selectedBy: string | undefined;
   named: string | undefined;
+  default: string | undefined;
   readonly candidates: Record<string, () => Promise<AnyClass<Port>>>;
   readonly deps: Record<string, readonly Token[]>;
 }
@@ -150,12 +151,14 @@ function mergeWirings(wirings: readonly Wiring[], overrides: ReadonlyMap<Token, 
         key: undefined,
         selectedBy: undefined,
         named: undefined,
+        default: undefined,
         candidates: {},
         deps: {},
       };
       driver.key = entry.key ?? driver.key;
       driver.selectedBy = entry.selectedBy ?? driver.selectedBy;
       driver.named = entry.named ?? driver.named;
+      driver.default = entry.default ?? driver.default;
       Object.assign(driver.candidates, entry.candidates);
       Object.assign(driver.deps, entry.deps);
       graph.drivers.set(entry.port, driver);
@@ -483,7 +486,7 @@ export class Container {
     }
   }
 
-  /** The name of the driver a port takes: the test's choice, then config, then its only candidate. */
+  /** The name of the driver a port takes: the test's choice, then config, then its default, then its only candidate. */
   private chooseDriver(driver: MergedDriver, choice: DriverChoice): string {
     const names = Object.keys(driver.candidates);
     const list = names.length === 0 ? "it has no candidate" : `its drivers are ${names.join(", ")}`;
@@ -508,6 +511,7 @@ export class Container {
         );
       return selected;
     }
+    if (driver.default !== undefined && names.includes(driver.default)) return driver.default;
     const [only] = names;
     if (names.length === 1 && only !== undefined) return only;
     throw new UnresolvedPortError(

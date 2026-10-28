@@ -18,7 +18,9 @@
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
- *           abstract driver (a base the candidates extend) is never a candidate. A package candidate's tokens from a
+ *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
+ *           own tests register, a port with several candidates and no selector defaults to its `memory` driver, else
+ *           to its one `./testing` driver; a service's or app's wiring never gets a default. A package candidate's tokens from a
  *           library the member does not declare are left out, so the wiring never imports an undeclared library. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
@@ -535,6 +537,20 @@ export function emitWiring(ir: MemberIR): string {
   for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
+    // A package's own wiring is registered only by its own tests: a port they cannot select gets its memory driver,
+    // else its one testing-entry driver (ADR 0266: the module's tests pass on the memory driver and the fake).
+    const testing = candidates.filter(
+      (candidate) =>
+        candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
+    );
+    const fallback =
+      ir.layout !== "package" || select !== undefined || candidates.length < 2
+        ? undefined
+        : candidates.some((candidate) => candidate.name === "memory")
+          ? "memory"
+          : testing.length === 1
+            ? testing[0]?.name
+            : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);
@@ -544,6 +560,7 @@ export function emitWiring(ir: MemberIR): string {
       `      key: ${JSON.stringify(key)},`,
       ...(select !== undefined ? [`      selectedBy: ${JSON.stringify(select)},`] : []),
       ...(selected?.named !== undefined ? [`      named: ${JSON.stringify(selected.named)},`] : []),
+      ...(fallback !== undefined ? [`      default: ${JSON.stringify(fallback)},`] : []),
       "      candidates: {",
       ...candidates.map(
         (candidate) =>

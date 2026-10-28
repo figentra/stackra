@@ -10,8 +10,8 @@
  *          tokens of a library the member does not declare; no abstract driver), MediaLibrary over the media
  *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
- *          own row wins; none for a member that is not a service; STA-1385), and the names the container really
- *          exports.
+ *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
+ *          else its one testing driver) where nothing selects one, and the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263; ADR 0457; STA-1385.
@@ -23,6 +23,7 @@ import { emitWiring } from "#core/functions/emit-wiring.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
 const service = (deps: readonly { name: string; from: string }[]) => ({
   name: "InvoiceScanService",
@@ -496,5 +497,53 @@ describe("emitWiring", () => {
     expect(content).not.toContain("OriginGuard");
     expect(content).not.toContain("HealthIndicatorDriver");
     expect(content).not.toContain('key: "app.cors"');
+  });
+});
+
+/** The lines of the driver table of `key`, up to its candidates. */
+const table = (content: string, key: string): string =>
+  content.slice(
+    content.indexOf(`key: "${key}"`),
+    content.indexOf("candidates:", content.indexOf(`key: "${key}"`)),
+  );
+
+describe("emitWiring's defaults for a package's own tests", () => {
+  const memory = LOYALTY_KIT_IR.classes.find(
+    (declared) => declared.name === "MemoryLoyaltyLedgerDriver",
+  );
+  if (memory === undefined) throw new Error("the fixture has no memory ledger driver");
+  /** A driver of `port` in `folder` (`core` or `testing`), named `<name>-<port>`. */
+  const driver = (name: string, port: string, folder = "core") => {
+    const stem = `${name}${port}`.replaceAll(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+    return {
+      ...memory,
+      name: `${name}${port}Driver`,
+      file: `src/${folder}/drivers/${stem}.driver.ts`,
+      importPath: `#${folder}/drivers/${stem}.driver`,
+      partner: { name: port, kind: "port", from: `#contracts/ports/${port}.port` },
+    };
+  };
+  const ir: MemberIR = {
+    ...LOYALTY_KIT_IR,
+    classes: [
+      ...LOYALTY_KIT_IR.classes,
+      driver("Outbox", "AuditSink"),
+      driver("Recording", "AuditSink", "testing"),
+      driver("Memory", "SecretVault"),
+      driver("Cloud", "SecretVault"),
+      driver("MarketPack", "Pricer"),
+      driver("RegionMap", "Pricer"),
+    ],
+  };
+  it("defaults a port with several candidates and no selector to memory, else its one testing driver", () => {
+    const content = emitWiring(ir);
+    expect(table(content, "loyalty_kit.SecretVault")).toContain('default: "memory",');
+    expect(table(content, "loyalty_kit.AuditSink")).toContain('default: "recording",');
+    expect(table(content, "loyalty_kit.Pricer")).not.toContain("default:");
+    expect(table(content, "loyalty_kit.LoyaltyLedger")).not.toContain("default:");
+  });
+
+  it("gives a service's wiring no default", () => {
+    expect(emitWiring({ ...ir, layout: "service" })).not.toContain("default:");
   });
 });

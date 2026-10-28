@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `WiringDriver`, the driver table of one port in a generated wiring: the candidates by name (lazy imports,
- *          so a node driver never reaches a browser bundle), the config field that selects one, and the config field
- *          that declares named instances.
- * Boundary: a type only. A port with one candidate needs no selector; a port with none is bound by the host, an
+ *          so a node driver never reaches a browser bundle), the config field that selects one, the config field
+ *          that declares named instances, and the default a package's own tests take.
+ * Boundary: a type only. A port with one candidate needs no selector, and a package's own tests take its default; a port with none is bound by the host, an
  *           override or `@Replaces`, or the container fails with `UnresolvedPortError`.
  * Runtime: isomorphic
  * Governing contract: ADR 0263 (decision 9); ADR 0266 (one option, one driver, memory first); ADR 0294 (decision 19).
@@ -26,6 +26,12 @@ export interface WiringDriver {
 
   /** `config:<key>.<field>`: the config record of instance name to driver name, for `Named<Port, "x">`. */
   readonly named?: string;
+
+  /**
+   * The candidate the port takes when neither a test nor config picks one. Gen sets it only in a package's own wiring
+   * (its `memory` driver, else its one `./testing` driver), which only that package's own tests register.
+   */
+  readonly default?: string;
 
   /** Driver name (the file prefix) to a lazy import of the driver class. */
   readonly candidates: Readonly<Record<string, () => Promise<AnyClass<Port>>>>;

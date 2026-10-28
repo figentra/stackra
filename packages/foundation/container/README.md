@@ -74,7 +74,7 @@ class definition.
 ## The container
 
 `Container.create(wirings, { roots, overrides, drivers })` merges the wirings (dependencies first), loads each port's
-driver (an override, then a test's choice, then the config field `selectedBy` names, then the only candidate), builds
+driver (an override, then a test's choice, then the config field `selectedBy` names, then the `default` a package's own wiring sets for its own tests, then the only candidate), builds
 the singletons of the booted modules, and runs each Explorer once. A port nothing binds fails the boot with
 `UnresolvedPortError`, a plain `Error`. `forRequest()` gives a container that keeps `Lifetime.Request` instances;
 `close()` calls `onApplicationShutdown()` on what it built. `Clock` defaults to a system driver.
