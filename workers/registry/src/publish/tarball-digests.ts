@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `tarballDigests`: the integrity, shasum and SHA-256 of a tarball.
+ * Purpose: `tarballDigests`: the integrity, shasum, SHA-256 and SHA-512 hex of a tarball.
  * Boundary: pure Web Crypto; no I/O.
  * Runtime: worker
  * Governing contract: ADR 0453 (decision 8).
@@ -16,7 +16,7 @@ async function digest(algorithm: string, bytes: Bytes): Promise<Bytes> {
 }
 
 /**
- * The integrity, shasum and SHA-256 of a tarball.
+ * The integrity, shasum, SHA-256 and SHA-512 hex of a tarball.
  *
  * @example
  * const { integrity } = await tarballDigests(tarball); // "sha512-…"
@@ -27,5 +27,10 @@ export async function tarballDigests(tarball: Bytes): Promise<TarballDigests> {
     digest("SHA-1", tarball),
     digest("SHA-256", tarball),
   ]);
-  return { integrity: `sha512-${toBase64(sha512)}`, shasum: toHex(sha1), sha256: toHex(sha256) };
+  return {
+    integrity: `sha512-${toBase64(sha512)}`,
+    shasum: toHex(sha1),
+    sha256: toHex(sha256),
+    sha512: toHex(sha512),
+  };
 }

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the byte helpers: base64 and base64url round trips and the three tarball digests against
+ * Purpose: unit tests of the byte helpers: base64 and base64url round trips and the tarball digests against
  *          node:crypto.
  * Boundary: pure.
  * Runtime: node (vitest)
@@ -15,12 +15,13 @@ import { toBase64Url } from "#src/bytes/to-base64-url";
 import { tarballDigests } from "#src/publish/tarball-digests";
 
 describe("tarballDigests", () => {
-  it("computes the SRI integrity, the shasum and the SHA-256", async () => {
+  it("computes the SRI integrity, the shasum and the SHA-256 and SHA-512 hex", async () => {
     const bytes = new TextEncoder().encode("tarball bytes");
     expect(await tarballDigests(bytes)).toEqual({
       integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
       shasum: createHash("sha1").update(bytes).digest("hex"),
       sha256: createHash("sha256").update(bytes).digest("hex"),
+      sha512: createHash("sha512").update(bytes).digest("hex"),
     });
     expect(await sha256Hex("x")).toBe(createHash("sha256").update("x").digest("hex"));
   });

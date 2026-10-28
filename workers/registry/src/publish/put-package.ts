@@ -171,7 +171,7 @@ export async function putPackage(
       return failure(400, "the provenance attachment is not base64");
     }
   }
-  const provenance = checkProvenance(bundle, computed.sha256, publisher);
+  const provenance = checkProvenance(bundle, computed, publisher);
   if (!provenance.ok || bundle === null)
     return failure(400, provenance.ok ? "provenance bundle is missing" : provenance.reason);
 

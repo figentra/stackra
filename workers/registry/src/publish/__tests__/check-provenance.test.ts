@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `checkProvenance`: a matching bundle passes with its predicate type; a missing bundle, a
- *          foreign subject, a foreign workflow identity and a malformed bundle are refused.
+ * Purpose: unit tests of `checkProvenance`: a bundle whose subject matches by SHA-512 (as npm writes it) or SHA-256
+ *          passes with its predicate type; a missing bundle, a foreign subject, a foreign workflow identity and a
+ *          malformed bundle are refused.
  * Boundary: pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 9).
@@ -20,10 +21,15 @@ const PUBLISHER: PublisherRow = {
   environment: "release",
 };
 
+const DIGESTS = { sha256: "a256", sha512: "a512" };
+
 describe("checkProvenance", () => {
-  it("passes the trusted publisher's bundle for this tarball", () => {
+  it.each([
+    ["npm's sha512 subject", { sha512: "a512" }],
+    ["a sha256 subject", { sha256: "a256" }],
+  ])("passes the trusted publisher's bundle for this tarball by %s", (_, digest) => {
     expect(
-      checkProvenance(sigstoreBundle("abc", identityOf("figentra/stackra")), "abc", PUBLISHER),
+      checkProvenance(sigstoreBundle(digest, identityOf("figentra/stackra")), DIGESTS, PUBLISHER),
     ).toEqual({
       ok: true,
       predicateType: "https://slsa.dev/provenance/v1",
@@ -34,12 +40,15 @@ describe("checkProvenance", () => {
     [null, "provenance bundle is missing"],
     ["{", "provenance bundle is not a Sigstore DSSE bundle"],
     [
-      sigstoreBundle("other", identityOf("figentra/stackra")),
+      sigstoreBundle({ sha512: "other" }, identityOf("figentra/stackra")),
       "provenance subject is not this tarball",
     ],
-    [sigstoreBundle("abc", identityOf("someone/else")), "provenance was not signed by"],
+    [
+      sigstoreBundle({ sha512: "a512" }, identityOf("someone/else")),
+      "provenance was not signed by",
+    ],
   ])("refuses %#", (bundle, reason) => {
-    const verdict = checkProvenance(bundle, "abc", PUBLISHER);
+    const verdict = checkProvenance(bundle, DIGESTS, PUBLISHER);
     expect(verdict.ok).toBe(false);
     if (!verdict.ok) expect(verdict.reason).toContain(reason);
   });

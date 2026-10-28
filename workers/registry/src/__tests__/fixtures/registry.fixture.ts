@@ -74,12 +74,15 @@ export const PRO_CLAIMS: GithubClaims = {
   workflow_ref: "figentra/stackra-pro/.github/workflows/release.yml@refs/heads/main",
 };
 
-/** A Sigstore bundle whose subject is `sha256` and whose certificate names `identity`. */
-export function sigstoreBundle(sha256: string, identity: string): string {
+/**
+ * A Sigstore bundle whose subject has `digest` and whose certificate names `identity`. npm's v1 statement names the
+ * subject as a purl with `{ sha512: <hex> }`.
+ */
+export function sigstoreBundle(digest: Readonly<Record<string, string>>, identity: string): string {
   const statement = {
     _type: "https://in-toto.io/Statement/v1",
     predicateType: "https://slsa.dev/provenance/v1",
-    subject: [{ name: "pkg.tgz", digest: { sha256 } }],
+    subject: [{ name: "pkg:npm/%40stackra/pkg@1.0.0", digest }],
   };
   const der = new TextEncoder().encode(`\x30\x82fake-der\x86${identity}\x00`);
   return JSON.stringify({
@@ -122,7 +125,7 @@ export async function publishBody(
     },
   };
   if (options.provenance !== false) {
-    const bundle = sigstoreBundle(computed.sha256, identityOf(repository));
+    const bundle = sigstoreBundle({ sha512: computed.sha512 }, identityOf(repository));
     attachments[`${pkg.name}-${pkg.version}.sigstore`] = {
       content_type: "application/vnd.dev.sigstore.bundle.v0.3+json",
       data:

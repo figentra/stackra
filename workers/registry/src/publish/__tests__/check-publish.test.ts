@@ -22,7 +22,7 @@ const PRO: ScopeRow = {
   read_rule: "licensed",
   licence_rule: "commercial",
 };
-const DIGESTS = { integrity: "sha512-x", shasum: "abc", sha256: "def" };
+const DIGESTS = { integrity: "sha512-x", shasum: "abc", sha256: "def", sha512: "fed" };
 
 const candidate = (
   pkg: Record<string, unknown>,

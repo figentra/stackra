@@ -11,6 +11,7 @@
 import { fromBase64 } from "#src/bytes/from-base64";
 import type { ProvenanceVerdict } from "#src/interfaces/provenance-verdict.type";
 import type { PublisherRow } from "#src/interfaces/publisher-row.interface";
+import type { TarballDigests } from "#src/interfaces/tarball-digests.interface";
 
 /** The parts of a Sigstore bundle (v0.1 to v0.3) the check reads. */
 interface SigstoreBundle {
@@ -26,7 +27,9 @@ interface SigstoreBundle {
 /** The in-toto statement inside the envelope. */
 interface Statement {
   readonly predicateType?: unknown;
-  readonly subject?: readonly { readonly digest?: { readonly sha256?: unknown } }[];
+  readonly subject?: readonly {
+    readonly digest?: { readonly sha256?: unknown; readonly sha512?: unknown };
+  }[];
 }
 
 const refuse = (reason: string): ProvenanceVerdict => ({ ok: false, reason });
@@ -35,14 +38,14 @@ const refuse = (reason: string): ProvenanceVerdict => ({ ok: false, reason });
  * The provenance check of one publish.
  *
  * @param bundle - the `.sigstore` attachment's text, or null when it is missing.
- * @param sha256 - the tarball's SHA-256 hex.
+ * @param digests - the tarball's SHA-256 and SHA-512 hex; a subject matches by either (npm writes sha512).
  * @param publisher - the trusted publisher of the token's repository.
  * @example
- * checkProvenance(text, digests.sha256, publisher); // { ok: true, predicateType: "https://slsa.dev/provenance/v1" }
+ * checkProvenance(text, digests, publisher); // { ok: true, predicateType: "https://slsa.dev/provenance/v1" }
  */
 export function checkProvenance(
   bundle: string | null,
-  sha256: string,
+  digests: Pick<TarballDigests, "sha256" | "sha512">,
   publisher: PublisherRow,
 ): ProvenanceVerdict {
   if (bundle === null) return refuse("provenance bundle is missing");
@@ -56,7 +59,9 @@ export function checkProvenance(
   } catch {
     return refuse("provenance bundle is not a Sigstore DSSE bundle");
   }
-  if (!(statement.subject ?? []).some((subject) => subject.digest?.sha256 === sha256))
+  const matches = (subject: NonNullable<Statement["subject"]>[number]): boolean =>
+    subject.digest?.sha512 === digests.sha512 || subject.digest?.sha256 === digests.sha256;
+  if (!(statement.subject ?? []).some(matches))
     return refuse("provenance subject is not this tarball");
   if (typeof statement.predicateType !== "string")
     return refuse("provenance has no predicate type");
