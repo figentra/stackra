@@ -6,8 +6,9 @@
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
- *          collation of a text column (with its refusals), and column changes on an existing table (nullable, NOT NULL,
- *          type with a stated `from`) with their inverses and refusals.
+ *          collation of a text column (with its refusals), column changes on an existing table (nullable, NOT NULL,
+ *          type with a stated `from`) with their inverses and refusals, and a foreign key or enum check on an existing
+ *          table added NOT VALID and validated in its own step (stackra-251).
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -227,6 +228,59 @@ describe(compileMigration, () => {
         inverse: ['drop index concurrently if exists "orders"."idx_orders_status_paid_at"'],
       },
     ]);
+  });
+
+  it("adds a foreign key and an enum check to an existing table NOT VALID, then validates each in its own step", () => {
+    class AddReturnsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("order_lines", (t: Blueprint) => {
+          t.belongsTo("returns", { column: "return_id" })
+            .nullable()
+            .withoutIndex()
+            .comment("The return this line came back in.");
+          t.enum("return_state", ["requested", "received"])
+            .nullable()
+            .comment("Where the return stands.");
+        });
+      }
+    }
+    const table = '"orders"."order_lines"';
+    const steps = compileMigration(AddReturnsMigration, { schema: "orders" }).steps;
+    expect(steps[0]?.sql).toContain(
+      `alter table ${table} add constraint "fk_order_lines_return_id" foreign key ("return_id") references "orders"."returns" ("id") not valid`,
+    );
+    expect(steps[0]?.sql).toContain(`alter table ${table} add column "return_state" text null`);
+    expect(steps[0]?.sql).toContain(
+      `alter table ${table} add constraint "ck_order_lines_return_state" check ("return_state" in ('requested', 'received')) not valid`,
+    );
+    expect(steps.slice(1)).toEqual([
+      {
+        sql: [`alter table ${table} validate constraint "fk_order_lines_return_id"`],
+        transactional: true,
+        inverse: [],
+      },
+      {
+        sql: [`alter table ${table} validate constraint "ck_order_lines_return_state"`],
+        transactional: true,
+        inverse: [],
+      },
+    ]);
+  });
+
+  it("keeps the enum check inline when the table is created", () => {
+    class CreateReturnsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("returns", (t: Blueprint) => {
+          t.enum("state", ["requested", "received"]).notNull().comment("Where the return stands.");
+        });
+      }
+    }
+    const steps = compileMigration(CreateReturnsMigration, { schema: "orders" }).steps;
+    expect(steps).toHaveLength(1);
+    expect(steps[0]?.sql.join("\n")).toContain(
+      `constraint "ck_returns_state" check ("state" in ('requested', 'received'))`,
+    );
+    expect(steps[0]?.sql.join("\n")).not.toContain("not valid");
   });
 
   it("changes existing columns before the added ones, each with its inverse", () => {

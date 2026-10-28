@@ -7,7 +7,9 @@
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
  *           builds in the transaction; no primary key is added to an existing table; a column change (`t.change`) is
- *           made only on an existing table, once per column, and never on a column the same blueprint adds.
+ *           made only on an existing table, once per column, and never on a column the same blueprint adds; a foreign
+ *           key or enum check added to an existing table is `NOT VALID` in the transaction and validated in a step of
+ *           its own after it, so no long lock is held while the rows are scanned (stackra-251).
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
  *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
@@ -550,12 +552,15 @@ export class BlueprintRecord {
           `${this.table}.${column.name}: an added column is nullable or has a default; NOT NULL without one waits for a contract step`,
         );
       statements.push({
-        sql: `alter table ${qualified} add column ${column.definition(this.table, schema)}`,
+        sql: `alter table ${qualified} add column ${column.definition(this.table, schema, false)}`,
         inverse: [`alter table ${qualified} drop column if exists ${quoteIdentifier(column.name)}`],
       });
       statements.push({ sql: column.commentSql(qualified), inverse: [] });
-      const foreignKey = column.foreignKeySql(schema, this.table, qualified);
-      if (foreignKey !== undefined) statements.push({ sql: foreignKey, inverse: [] });
+      for (const constraint of [
+        column.foreignKeySql(schema, this.table, qualified, true),
+        column.checkSql(this.table, qualified),
+      ])
+        if (constraint !== undefined) statements.push({ sql: constraint, inverse: [] });
       if (column.indexed) onlineIndex(new TableIndexRecord([column.name], false));
     }
     for (const index of this.indexes) {
@@ -565,6 +570,10 @@ export class BlueprintRecord {
         );
       onlineIndex(index);
     }
+    // Validation takes SHARE UPDATE EXCLUSIVE, so writes go on while it scans; dropping the column undoes it.
+    for (const column of this.columns)
+      for (const validate of column.validateSql(this.table, qualified))
+        online.push({ sql: [validate], transactional: true, inverse: [] });
     if (this.policy !== undefined) statements.push(...this.policySql(qualified, this.policy));
     return { statements, online };
   }

@@ -1,8 +1,8 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
-#          install, Linear key check, format, lint, typecheck, test, build, docs a11y, playground e2e, validate,
-#          boundaries, knip, secrets scan, agent sync), plus `Dependency Review` on pull requests.
+#          install, Linear key check, format, lint, typecheck, test, build, migration lint (Squawk), docs a11y,
+#          playground e2e, validate, boundaries, knip, secrets scan, agent sync), plus `Dependency Review` on pull requests.
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
 # Secrets: HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN (the HeroUI and Uniwind CI/CD licence tokens) from Infisical /ci
@@ -142,6 +142,30 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
+      # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
+      # is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
+      # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
+      - name: Migration lint (Squawk)
+        run: |
+          mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted"
+            exit 0
+          fi
+          transactional=()
+          online=()
+          for file in "${files[@]}"; do
+            if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi
+          done
+          lint() {
+            mise exec github:sbdchd/squawk@2.0.0 -- squawk --pg-version=18.0 \
+              --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \
+              --exclude=prefer-bigint-over-int "$@"
+          }
+          if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi
+          if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi
 
       # ADR 0302: the playground's Playwright + axe tier, every route in light, dark, LTR and RTL. Not part of
       # `pnpm verify`; the browser comes from Playwright's own download, pinned by catalog:e2e.

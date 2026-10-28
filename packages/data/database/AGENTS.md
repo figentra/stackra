@@ -79,7 +79,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other
   isolation macro live in their owning package.
 - Migration rules the compiler enforces (explicit nullability and comments, expand-only adds, online indexes, approved
-  extensions, stated raw inverses) change only with ADR 0159 or 0160.
+  extensions, stated raw inverses) change only with ADR 0159 or 0160. A constraint added to an existing table is `NOT
+VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); never inline it there.
 - Column changes (`t.change(column)`, `ColumnChangeRecord`): existing tables only, every value a literal, a type change
   states its `from` so the inverse needs no database read. Never read the live schema to fill a change in.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).

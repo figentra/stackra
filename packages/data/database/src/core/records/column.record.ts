@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ColumnRecord`, the recorded state of one blueprint column, and its SQL: the column definition, its
- *          comment statement and its foreign key.
+ *          comment statement, its foreign key and its enum check, each of the last two inline or `NOT VALID` for an
+ *          existing table (ADR 0159 d3, stackra-251).
  * Boundary: internal; the runtime side of `ColumnDefinition` and `ForeignKeyColumn`. It records calls and checks each
  *           value as it comes; the blueprint decides where each statement goes (create, alter, online step).
  * Runtime: node
@@ -175,19 +176,37 @@ export class ColumnRecord implements ForeignKeyColumn {
     return this;
   }
 
-  /** The column definition inside `CREATE TABLE` or `ADD COLUMN`; a collation is the module schema's. */
-  definition(table: string, schema: string): string {
+  /**
+   * The column definition inside `CREATE TABLE` or `ADD COLUMN`; a collation is the module schema's.
+   *
+   * @param checked - false leaves the enum check out, for `checkSql` to add it `NOT VALID` on an existing table.
+   */
+  definition(table: string, schema: string, checked = true): string {
     const parts = [quoteIdentifier(this.name), this.type];
     if (this.collation !== undefined)
       parts.push(`collate ${quoteIdentifier(schema)}.${quoteIdentifier(this.collation)}`);
     if (this.generated !== undefined) parts.push(`generated always as (${this.generated}) stored`);
     if (this.defaultSql !== undefined) parts.push(`default ${this.defaultSql}`);
     if (this.nullability !== undefined) parts.push(this.nullability);
-    if (this.values !== undefined)
-      parts.push(
-        `constraint ${quoteIdentifier(constraintName("ck", table, [this.name]))} check (${quoteIdentifier(this.name)} in (${this.values.map(sqlLiteral).join(", ")}))`,
-      );
+    const check = this.checkConstraint(table);
+    if (checked && check !== undefined) parts.push(check);
     return parts.join(" ");
+  }
+
+  /**
+   * The enum check added `NOT VALID` to an existing table, so adding it takes no scan; `validateSql` scans later.
+   */
+  checkSql(table: string, qualified: string): string | undefined {
+    const check = this.checkConstraint(table);
+    return check === undefined ? undefined : `alter table ${qualified} add ${check} not valid`;
+  }
+
+  /** The `VALIDATE CONSTRAINT` statements of this column's `NOT VALID` foreign key and check, in that order. */
+  validateSql(table: string, qualified: string): string[] {
+    return [
+      ...(this.references === undefined ? [] : [constraintName("fk", table, [this.name])]),
+      ...(this.values === undefined ? [] : [constraintName("ck", table, [this.name])]),
+    ].map((name) => `alter table ${qualified} validate constraint ${quoteIdentifier(name)}`);
   }
 
   /** The `COMMENT ON COLUMN` statement. */
@@ -195,12 +214,27 @@ export class ColumnRecord implements ForeignKeyColumn {
     return `comment on column ${qualified}.${quoteIdentifier(this.name)} is ${sqlLiteral(`${this.commentText ?? ""}${this.suffix}`)}`;
   }
 
-  /** The foreign key statement, when it is a foreign key. */
-  foreignKeySql(schema: string, table: string, qualified: string): string | undefined {
+  /**
+   * The foreign key statement, when it is a foreign key.
+   *
+   * @param notValid - true on an existing table: the key holds for new rows at once, and `validateSql` checks the rest.
+   */
+  foreignKeySql(
+    schema: string,
+    table: string,
+    qualified: string,
+    notValid = false,
+  ): string | undefined {
     if (this.references === undefined) return undefined;
     const target = `${quoteIdentifier(schema)}.${quoteIdentifier(this.references)}`;
     const name = quoteIdentifier(constraintName("fk", table, [this.name]));
     const rule = this.cascades ? " on delete cascade" : "";
-    return `alter table ${qualified} add constraint ${name} foreign key (${quoteIdentifier(this.name)}) references ${target} ("id")${rule}`;
+    return `alter table ${qualified} add constraint ${name} foreign key (${quoteIdentifier(this.name)}) references ${target} ("id")${rule}${notValid ? " not valid" : ""}`;
+  }
+
+  /** The named enum check constraint, when it is an enum. */
+  private checkConstraint(table: string): string | undefined {
+    if (this.values === undefined) return undefined;
+    return `constraint ${quoteIdentifier(constraintName("ck", table, [this.name]))} check (${quoteIdentifier(this.name)} in (${this.values.map(sqlLiteral).join(", ")}))`;
   }
 }
