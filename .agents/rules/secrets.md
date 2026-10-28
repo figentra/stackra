@@ -49,7 +49,7 @@ agent's raw `infisical run` asks the owner (ADR 0293). A new flow that needs a t
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` and settings until the deploy spike STA-136 (DP2) settles the Encore path.
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). A workstation `encore deploy` stays denied (`guard-bash` and settings): Encore deploys run from a CI workflow, staging on a merge to main and production behind the owner's Environment approval, once a repository ships an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -72,7 +72,7 @@ In Infisical `/ci` (CI/CD):
 - `HEROUI_AUTH_TOKEN` - HeroUI Pro CI/CD token for the Quality Gate install (ADR 0310)
 - `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0310)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
-- `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
+- `ENCORE_API_KEY` - Encore deployment from CI, once a repository ships an Encore app (ADR 0468)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
 ## 3. The secrets inbox (secret-manager flow, ADR 0257)

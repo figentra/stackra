@@ -50,8 +50,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
-- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
+- `pnpm-workspace.yaml` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
+- `turbo.jsonc` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
 - `.agents/rules/*` - Only one agent at a time
 
 ### Communication

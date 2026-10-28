@@ -38,6 +38,12 @@ Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boun
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
+Deploys (owner decision 2026-10-28, ADR 0468): agents develop and deploy end to end. Dev and staging deploys and
+prereleases run without the owner; production (a deploy, promote, rollback or package release) runs in CI and waits on
+the owner's one GitHub Environment approval, which an agent may start. Secret values stay with the owner, main changes
+only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
+and settings edits listed on STA-1395, the guard still asks before staging deploys.
+
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
 ## Repository rules
@@ -93,8 +99,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
-- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
+- `pnpm-workspace.yaml` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
+- `turbo.jsonc` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
 - `.agents/rules/*` - Only one agent at a time
 
 ##### Communication
@@ -561,7 +567,7 @@ agent's raw `infisical run` asks the owner (ADR 0293). A new flow that needs a t
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` and settings until the deploy spike STA-136 (DP2) settles the Encore path.
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). A workstation `encore deploy` stays denied (`guard-bash` and settings): Encore deploys run from a CI workflow, staging on a merge to main and production behind the owner's Environment approval, once a repository ships an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -584,7 +590,7 @@ In Infisical `/ci` (CI/CD):
 - `HEROUI_AUTH_TOKEN` - HeroUI Pro CI/CD token for the Quality Gate install (ADR 0310)
 - `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0310)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
-- `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
+- `ENCORE_API_KEY` - Encore deployment from CI, once a repository ships an Encore app (ADR 0468)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
 #### 3. The secrets inbox (secret-manager flow, ADR 0257)
