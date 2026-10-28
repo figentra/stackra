@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -49,12 +49,17 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   every lane it has. Terms go through `searchWordsOf` before they reach a driver (they land in a tsquery). The line
   form is `SEARCH_SYNONYM_LINE`; the settings schema and `searchSynonymsOf` both read it.
 - Automatic indexing goes through `@stackra/outbox` only (`registerSearchableModels`); outbox must never depend on
-  search. `SEARCHABLE_MODELS` stays internal.
+  search. `SEARCHABLE_MODELS` and `SEARCH_RELATIONS` stay internal.
+- A dotted facet path's related models come from the facet and the relation decorators (`searchRelationsOf`), never a
+  hand list: `registerSearchableModels` watches each with `RelatedChangeService`, which finds the parents through the
+  ORM relation path under row-level security. Both consumers skip an update that writes no field the document reads
+  (`changeTouches`); a field that decides presence (`SEARCH_PRESENCE_FIELDS`) is never skipped. Add such a field
+  there, never in a consumer.
 - Semantic indexing (`@Searchable({ semantic: true })`) goes through `SemanticChangeService` only: it is
   `Lifetime.Transient` so boot never builds the `Embedder`; keep it so. `semanticPassageOf` runs the `ai: never` guard
   (ADR 0380) on every row before any text reaches the embedder; never embed a field around it. Passage ids are
   `<Model>:<key>`, metadata `{ source: "search", model }`, scope from the row's own `scopeId`/`scopePath`, never input.
-- Drivers deal in ids and documents; only `SearchIndex`, `SearchableChangeService` and `SemanticChangeService` (one row load and populate) touch the ORM. Isolation is the database's: never add a
+- Drivers deal in ids and documents; only `SearchIndex`, `SearchableChangeService`, `RelatedChangeService` and `SemanticChangeService` (row loads and populate) touch the ORM. Isolation is the database's: never add a
   scope filter in application code (ADR 0327 d9). The one exception is an engine that keeps its own copy of the
   documents (`SearchDriver.isolatesScopes` false: memory, the Pro engines): each `SearchDocument` carries its row's
   `scope` (from `scopeId`/`scopePath`, never input) and `SearchIndex` passes the session's `app.scope_paths` as

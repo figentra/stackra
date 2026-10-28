@@ -128,6 +128,12 @@ provider, which ADR 0380 forbids for that class. The reader puts the data class'
 facet (`options.dataClass`). `SearchableOptions` in `@stackra/model` has no `semantic` field yet, so the check refuses
 nothing until it does.
 
+`searchable_columns_drift` (`checkSearchableDrift`, full pass only, data-layer gap se10) refuses a model whose
+`@Searchable` text fields (in order: position is their weight) or filters (in any order) differ from the latest
+`t.searchable({ text, filters })` literals of its table in the member's own migrations (`readSearchableColumns`, a text
+scan; `memberId` and `member_id` agree). The fix is a migration with the facet's fields, then
+`stackra search:reindex <Model>`. A table no migration gives search columns is not judged.
+
 Shell slots (ADR 0438, stackra-03): a shell package declares `export const X = defineSlot<Props>({ key, surface })`
 and a product UI package fills it with `export const Y = fillSlot(X, Component, { surface })` (both `@stackra/panel`).
 Gen lists `slots` and `fills` in the manifest for the OS registry and refuses, on the full run, a fill whose slot no

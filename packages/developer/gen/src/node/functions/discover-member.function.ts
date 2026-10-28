@@ -5,7 +5,8 @@
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
- *          found for that port, and the writes that skip the unit of work (`readNativeWrites`, stackra-262): the
+ *          found for that port, the writes that skip the unit of work (`readNativeWrites`, stackra-262) and the
+ *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10): the
  *          `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
@@ -38,6 +39,7 @@ import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
 import { readNativeWrites } from "#node/functions/read-native-writes.function";
+import { readSearchableColumns } from "#node/functions/read-searchable-columns.function";
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readServiceCatalogues } from "#node/functions/read-service-catalogues.function";
@@ -121,6 +123,8 @@ export async function discoverMember(
     const i18nReferences = readI18nReferences(facts.root);
     // Writes that skip the unit of work, refused on an encrypted model (stackra-262).
     const nativeWrites = readNativeWrites(facts.root);
+    // The search columns each migration declares, refused when a facet drifts from them (data-layer gap se10).
+    const searchableColumns = readSearchableColumns(facts.root, facts.layout, facts.member);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
@@ -220,6 +224,7 @@ export async function discoverMember(
       ...(packageCatalogues.length > 0 ? { packageCatalogues } : {}),
       ...(i18nReferences.length > 0 ? { i18nReferences } : {}),
       ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
+      ...(searchableColumns.length > 0 ? { searchableColumns } : {}),
       errors: [...reader.errors],
     };
   } finally {

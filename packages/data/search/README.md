@@ -39,6 +39,7 @@ one vector store (ADR 0465): `@stackra/ai` reads and writes through it and keeps
 | `./node`      | `PgvectorVectorIndexDriver`                                           | the pgvector `VectorIndex`: cosine distance, scope-filtered        |
 | `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
 | `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
+| `./node`      | `RelatedChangeService`                                                | re-indexes the parents of a changed related row                    |
 | `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`      |
 | `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes           |
 | `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on        |
@@ -85,8 +86,16 @@ the populated relation) and each filter field's values. `index` populates the re
 Gen's wiring calls `registerSearchableModels([Product, Article])` for a service's `@Searchable` models: from then on
 every committed row change reaches `SearchableChangeService` through `@stackra/outbox`, which loads the row in its scope
 and indexes it, or removes its document when the row is deleted or no longer visible. Delivery is at least once and
-idempotent. A change of a related model a dotted path reads (`variants.sku`) does not re-index the parent: its writer
-still calls `index`.
+idempotent. The relay hands it each run of one model's changes at once (`consumeMany`): one `$in` load and one
+`index` call, and an update that writes none of the facet's fields (nor `deletedAt`, `archivedAt`, `scopeId`,
+`scopePath`) is skipped.
+
+A dotted path (`variants.sku`) reaches a related model: `registerSearchableModels` reads each relation hop from the
+facet and the relation decorators (`searchRelationsOf`) and watches the related model with `RelatedChangeService`. A
+committed `Variant` change then finds its `Product`s through the relation path (`{ variants: { $in: ids } }`, under
+row-level security) and re-indexes them in one call. An update of a field the parent does not read, other than a
+relation field, is skipped. A deleted one-to-many child no longer joins to its parent, so that parent is refreshed by
+its own next change or a reindex; the parent's semantic passages are not re-embedded from a child change.
 
 ## The columns
 
@@ -274,8 +283,8 @@ A failed probe never throws; its detail names the error type only.
 
 - Phrase synonyms (`t shirt` for `tee`) and one-way synonyms (`tv => television`): sets are single words and
   equivalences.
-- Re-indexing a parent when a related row its facet reads changes: the writer calls `index` for it; `reindex`
-  backfills.
+- Re-indexing a parent after a related one-to-many row is deleted, and re-embedding a semantic parent after a related
+  row changes: the parent's own next change or `reindex` does it.
 - The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
   the palette UI and the public search API of ADR 0221 are later work.
 - Meilisearch and OpenSearch drivers: Pro (`@stackra-pro/search-meilisearch`, `@stackra-pro/search-opensearch`,

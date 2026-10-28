@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/search (the Postgres search driver, the pgvector
  *          `VectorIndex` driver, the `t.searchable(...)` migration macro with its argument type, and automatic indexing
  *          from the outbox: `registerSearchableModels` and its change consumers `SearchableChangeService` and, for a
- *          `semantic: true` model, `SemanticChangeService`), the index registry `SearchIndexRegistry` with the reindex
+ *          `semantic: true` model, `SemanticChangeService`, and for a model a dotted facet path walks to,
+ *          `RelatedChangeService`), the index registry `SearchIndexRegistry` with the reindex
  *          jobs `ReindexSearchAction` and `ReindexSemanticAction`, and the `search:reindex`/`search:status` runner
  *          (`searchReindex`, `searchStatus`) the CLI loads, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: all of it reaches Postgres through
@@ -25,6 +26,7 @@ export { searchReindex } from "#node/functions/search-reindex.function";
 export { searchStatus } from "#node/functions/search-status.function";
 export { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 export { ReindexSearchOutput } from "#node/schemas/reindex-search-output.schema";
+export { RelatedChangeService } from "#node/services/related-change.service";
 export { SearchIndexRegistry } from "#node/services/search-index-registry.service";
 export { SearchableChangeService } from "#node/services/searchable-change.service";
 export { SemanticChangeService } from "#node/services/semantic-change.service";

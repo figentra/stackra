@@ -20,7 +20,8 @@
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
- *           (`checkSemanticSearch`, STA-1251), an encryption mismatch or a write past the unit of work on an encrypted
+ *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
+ *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
  *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
@@ -44,6 +45,7 @@ import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
+import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
@@ -143,6 +145,7 @@ export function generateMember(
     ...checkI18n(ir),
     ...checkConventions(ir, manifest),
     ...checkSemanticSearch(ir),
+    ...checkSearchableDrift(ir),
     ...checkEncryptedFields(ir),
     ...checkModelScope(ir),
     ...checkQueryCache(ir),

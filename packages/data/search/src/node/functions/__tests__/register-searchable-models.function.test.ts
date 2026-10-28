@@ -1,20 +1,24 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `registerSearchableModels`: a `@Searchable` model is recorded by class name and its rows are
- *          watched with `SearchableChangeService`, a `semantic: true` model's also with `SemanticChangeService`;
+ *          watched with `SearchableChangeService`, a `semantic: true` model's also with `SemanticChangeService`, and
+ *          a model a dotted path walks to with `RelatedChangeService`;
  *          registering it again changes nothing; a model without the facet and a second class of the same name are
  *          refused, and a refused batch records nothing.
  * Boundary: test only; the outbox's `registerChangeConsumers` is mocked, so the outbox's registry stays untouched.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 5); STA-1326.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decision 5); STA-1326; data-layer gap se4.
  */
-import { Model, Searchable } from "@stackra/model";
+import { Collection, ManyToOne, Model, OneToMany, Searchable } from "@stackra/model";
+import type { Ref } from "@stackra/model";
 import { registerChangeConsumers } from "@stackra/outbox";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { SEARCH_RELATIONS } from "#node/constants/search-relations.constant";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 import { registerSearchableModels } from "#node/functions/register-searchable-models.function";
+import { RelatedChangeService } from "#node/services/related-change.service";
 import { SearchableChangeService } from "#node/services/searchable-change.service";
 import { SemanticChangeService } from "#node/services/semantic-change.service";
 
@@ -45,8 +49,20 @@ class Plain extends Model.with() {}
 })
 class CaseNote extends Model.with() {}
 
+class Variant extends Model.with() {
+  @ManyToOne(() => Product)
+  product!: Ref<Product>;
+}
+
+@Searchable({ text: ["title", "variants.sku"] })
+class Product extends Model.with() {
+  @OneToMany(() => Variant, (variant) => variant.product)
+  variants = new Collection<Variant>(this);
+}
+
 afterEach(() => {
   SEARCHABLE_MODELS.clear();
+  SEARCH_RELATIONS.clear();
   vi.mocked(registerChangeConsumers).mockClear();
 });
 
@@ -65,6 +81,17 @@ describe("registerSearchableModels", () => {
       [CaseNote, SearchableChangeService],
       [CaseNote, SemanticChangeService],
     ]);
+  });
+
+  it("watches each model a dotted path walks to with RelatedChangeService, once", () => {
+    registerSearchableModels([Product]);
+    registerSearchableModels([Product]);
+    expect(registerChangeConsumers).toHaveBeenCalledWith([
+      [Product, SearchableChangeService],
+      [Variant, RelatedChangeService],
+    ]);
+    expect(SEARCH_RELATIONS.get("Variant")).toHaveLength(1);
+    expect(SEARCH_RELATIONS.get("Variant")?.[0]?.via).toEqual(["variants"]);
   });
 
   it("refuses a model without @Searchable and a second class of one name, recording nothing", () => {

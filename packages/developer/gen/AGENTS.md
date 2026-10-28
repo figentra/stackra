@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262); ADR 0238 (the Encore database and the boot's url, replicas and timeouts, stackra-250).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); data-layer gap se10 (`searchable_columns_drift`, stackra-273); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262); ADR 0238 (the Encore database and the boot's url, replicas and timeouts, stackra-250).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -261,6 +261,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `@Searchable` text path that ends at a field whose `@Classify` facet's `options.dataClass.ai` is `never`. The reader
   fills `options.dataClass` from the `DataClass({...})` from `@stackra/*` the class's chain extends (`dataClassOf`).
   A package model's field is not followed.
+- `checkSearchableDrift` (core, full pass only, data-layer gap se10): `searchable_columns_drift`, an own model's
+  `@Searchable` text (in order) or filters (as a set) differing from the latest `t.searchable` literals of its table
+  (`MemberIR.searchableColumns`, `readSearchableColumns`, a text scan of the member's own migrations; paths compared in
+  snake case). A table with no literals is not judged.
 - The reader: `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
   without a SCREAMING_SNAKE literal) and `partner_mismatch` for `Resource`, `Factory`, `StateMachine` and `Facts`
   (same-stem subject; `CrudService` keeps its own subject, as many services name a domain word).

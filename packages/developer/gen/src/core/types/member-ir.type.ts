@@ -146,6 +146,19 @@ export interface MemberIR {
   }[];
 
   /**
+   * Every `t.searchable({ text, filters })` call in the member's own migrations, in apply order, with the table it
+   * gives search columns and that table's module; `checkSearchableDrift` refuses a `@Searchable` facet that differs
+   * from the latest one (`searchable_columns_drift`). Absent when none (data-layer gap se10).
+   */
+  readonly searchableColumns?: readonly {
+    readonly file: string;
+    readonly module: string;
+    readonly table: string;
+    readonly text: readonly string[];
+    readonly filters: readonly string[];
+  }[];
+
+  /**
    * Every `I18n.<namespace>.<path>` chain in the member's own files that import `#stackra/i18n`, as path segments
    * with its place; a key no merged catalogue ships is refused (`i18n_key_missing`). Absent when none (STA-1298).
    */

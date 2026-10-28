@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: `PostgresSearchDriver` (the template wiring's `postgres`
  *          candidate), `PgvectorVectorIndexDriver`, `SearchableMacro` (the template migrations' `t.searchable(...)`),
- *          and gen's `registerSearchableModels` with its `SearchableChangeService` and `SemanticChangeService` are its only values, and the macro's
+ *          and gen's `registerSearchableModels` with its `SearchableChangeService`, `SemanticChangeService` and `RelatedChangeService` are its only values, and the macro's
  *          argument type resolves.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -24,6 +24,7 @@ describe("@stackra/search/node", () => {
       "ReindexSearchInput",
       "ReindexSearchOutput",
       "ReindexSemanticAction",
+      "RelatedChangeService",
       "SearchIndexRegistry",
       "SearchableChangeService",
       "SearchableMacro",
