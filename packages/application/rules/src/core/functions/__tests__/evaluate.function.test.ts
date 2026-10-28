@@ -18,7 +18,7 @@ import { type FactSource, FieldType, Operator } from "#contracts/index";
 import { ConditionInvalidError } from "#core/errors/condition-invalid.error";
 import { evaluate } from "#core/functions/evaluate.function";
 import type { Condition } from "#core/types/condition.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 import { Rules } from "#core/values/rules.value";
 
 /** A label key. */
@@ -53,7 +53,7 @@ const RULES = Rules.create({ key: "shop.discount", sources: [CART, CUSTOMER] });
 const NOW = new Date("2026-10-25T12:00:00Z");
 
 /** The facts every case reads. */
-const FACTS: Facts = {
+const FACTS: RuleFacts = {
   cart: { total: Money.of("120.00", "USD"), items: 3, skus: ["sku_a", "sku_b"] },
   customer: {
     email: "sam@acme.com",

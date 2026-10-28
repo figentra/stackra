@@ -19,7 +19,7 @@ import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
 import { Database, registerModelPartners } from "@stackra/database";
 import { NotFoundError } from "@stackra/errors";
 import type { QueueService } from "@stackra/queue";
-import { type Condition, type Facts, Rules } from "@stackra/rules";
+import { type Condition, type RuleFacts, Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import type { RuleSetService } from "@stackra/rules/node";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -110,7 +110,7 @@ function setup(options: {
     ),
     facts: vi.fn(
       async (ids: readonly string[]) =>
-        new Map<string, Facts>(
+        new Map<string, RuleFacts>(
           ids.flatMap((id) =>
             spent[id] === undefined ? [] : [[id, { customer: { spent: spent[id] } }] as const],
           ),

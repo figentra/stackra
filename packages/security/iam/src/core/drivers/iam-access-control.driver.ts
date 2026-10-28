@@ -18,7 +18,7 @@ import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
-import type { Facts } from "@stackra/rules";
+import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
 
 import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
@@ -119,7 +119,7 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     const facts =
       row?.rules === undefined
         ? null
-        : { rules: row.rules, facts: { record: record as Facts[string] } };
+        : { rules: row.rules, facts: { record: record as RuleFacts[string] } };
     const options = scope === undefined ? { record: facts } : { scope, record: facts };
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
   }

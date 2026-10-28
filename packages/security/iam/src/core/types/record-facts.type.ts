@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 4, 6 and 11); ADR 0333 (decision 2: conditions over record attributes).
  */
-import type { Facts, Rules } from "@stackra/rules";
+import type { RuleFacts, Rules } from "@stackra/rules";
 
 /**
  * One record's facts.
@@ -20,7 +20,7 @@ export interface RecordFacts {
   readonly rules: Rules;
 
   /** The record's values. */
-  readonly facts: Facts;
+  readonly facts: RuleFacts;
 
   /** The model's key (`orders.order`), so conditions on its declared dimensions are checked against the projection. */
   readonly model?: string;

@@ -16,7 +16,7 @@ import { evaluate } from "#core/functions/evaluate.function";
 import { factsFrom } from "#core/functions/facts-from.function";
 import { FactProvider } from "#core/ports/fact-provider.port";
 import type { FactSubject } from "#core/types/fact-subject.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 import { Rules } from "#core/values/rules.value";
 
 const VIP = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
@@ -28,9 +28,9 @@ class StubFactProviderDriver extends Driver(FactProvider) {
 
   readonly asked: FactSubject[] = [];
 
-  private readonly facts: Facts[string] | Error;
+  private readonly facts: RuleFacts[string] | Error;
 
-  constructor(key: string, facts: Facts[string] | Error) {
+  constructor(key: string, facts: RuleFacts[string] | Error) {
     super();
     this.source = {
       key,
@@ -39,7 +39,7 @@ class StubFactProviderDriver extends Driver(FactProvider) {
     this.facts = facts;
   }
 
-  override factsOf(subject: FactSubject): Promise<Facts[string]> {
+  override factsOf(subject: FactSubject): Promise<RuleFacts[string]> {
     this.asked.push(subject);
     return this.facts instanceof Error ? Promise.reject(this.facts) : Promise.resolve(this.facts);
   }

@@ -9,7 +9,7 @@
  * Governing contract: ADR 0331 (decision 4); ADR 0332 (decision 5); ADR 0462 (decision 1).
  */
 import { Driver } from "@stackra/container";
-import { FactProvider, type FactSubject, type Facts } from "@stackra/rules";
+import { FactProvider, type FactSubject, type RuleFacts } from "@stackra/rules";
 
 import { SEGMENT_FACTS } from "#core/index";
 import type { SegmentMembershipService } from "#node/services/segment-membership.service";
@@ -41,7 +41,7 @@ export class SegmentFactProviderDriver extends Driver(FactProvider) {
    *
    * @throws Error when the store cannot be reached.
    */
-  override async factsOf(subject: FactSubject): Promise<Facts[string]> {
+  override async factsOf(subject: FactSubject): Promise<RuleFacts[string]> {
     const segments = await this.memberships.segmentsOf(subject);
     return { ids: segments.map((segment) => segment.id) };
   }

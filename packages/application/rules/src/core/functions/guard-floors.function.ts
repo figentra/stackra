@@ -16,7 +16,7 @@ import type { Json } from "@stackra/contracts";
 import type { ResolvedValue } from "@stackra/market-packs";
 
 import { crossedFloor } from "#core/functions/crossed-floor.function";
-import type { Decision } from "#core/types/decision.type";
+import type { RuleDecision } from "#core/types/rule-decision.type";
 import type { FloorValue } from "#core/types/floor-value.type";
 import type { FlooredParam } from "#core/types/floored-param.type";
 import type { Outcome } from "#core/types/outcome.type";
@@ -34,7 +34,7 @@ export function guardFloors(
   rules: Rules,
   outcomes: readonly Outcome[],
   floors: readonly ResolvedValue[],
-): Pick<Decision, "outcomes" | "floored"> {
+): Pick<RuleDecision, "outcomes" | "floored"> {
   const byKey = new Map(floors.map((floor) => [floor.key, floor]));
   const floored: FlooredParam[] = [];
   const guarded = outcomes.map((outcome) => {

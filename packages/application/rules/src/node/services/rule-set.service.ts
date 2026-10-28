@@ -33,11 +33,11 @@ import {
   type Condition,
   decide,
   type DecideOptions,
-  type Decision,
+  type RuleDecision,
   evaluate,
   type EvaluateOptions,
   type Evaluation,
-  type Facts,
+  type RuleFacts,
   type Outcome,
   packRuleSetOf,
   RuleSetChangedError,
@@ -174,7 +174,7 @@ export class RuleSetService extends CrudService<RuleSet> {
   async evaluate(
     ruleSetId: PublicId<"rset">,
     rules: Rules,
-    facts: Facts,
+    facts: RuleFacts,
     options: EvaluateOptions,
   ): Promise<Evaluation> {
     const revision = await this.revision(ruleSetId, options.revision);
@@ -194,9 +194,9 @@ export class RuleSetService extends CrudService<RuleSet> {
   async decide(
     ruleSetId: PublicId<"rset">,
     rules: Rules,
-    facts: Facts,
+    facts: RuleFacts,
     options: DecideOptions,
-  ): Promise<Decision> {
+  ): Promise<RuleDecision> {
     const revision = await this.revision(ruleSetId, options.revision);
     return decide(rules, revision, facts, { ...options, revision: revision.number });
   }

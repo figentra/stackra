@@ -3,13 +3,13 @@
  * Purpose: `OutcomeDispatcher`, one consumer's routing of outcomes to its own handlers: one handler per registered
  *          outcome kind, called in order with each guarded outcome's parameters and the consumer's context.
  * Boundary: a value built with `OutcomeDispatcher.create`, frozen. A missing or extra handler is the consumer's bug and
- *           throws a `TypeError` at module load, so a registered kind is never left unapplied. It takes a `Decision`,
+ *           throws a `TypeError` at module load, so a registered kind is never left unapplied. It takes a `RuleDecision`,
  *           which only `decide` makes, so every dispatched outcome passed the floor guard. The handlers apply; the
  *           engine never does (ADR 0331 decision 9).
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decision 9); ADR 0328 (values are built with `create`); config-model section 4.
  */
-import type { Decision } from "#core/types/decision.type";
+import type { RuleDecision } from "#core/types/rule-decision.type";
 import type { OutcomeHandler } from "#core/types/outcome-handler.type";
 import type { Rules } from "#core/values/rules.value";
 
@@ -61,7 +61,7 @@ export class OutcomeDispatcher<C, R> {
    *
    * @returns what each handler returned, in outcome order; empty for a decision that did not match.
    */
-  async dispatch(decision: Decision, context: C): Promise<R[]> {
+  async dispatch(decision: RuleDecision, context: C): Promise<R[]> {
     const results: R[] = [];
     for (const outcome of decision.outcomes) {
       // reason: `create` proved a handler for every registered kind, and `decide` checked each kind is registered

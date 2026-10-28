@@ -12,8 +12,8 @@
 import { evaluate } from "#core/functions/evaluate.function";
 import { guardFloors } from "#core/functions/guard-floors.function";
 import type { DecideOptions } from "#core/types/decide-options.type";
-import type { Decision } from "#core/types/decision.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleDecision } from "#core/types/rule-decision.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 import type { RuleDocument } from "#core/types/rule-document.type";
 import type { Rules } from "#core/values/rules.value";
 
@@ -29,9 +29,9 @@ import type { Rules } from "#core/values/rules.value";
 export function decide(
   rules: Rules,
   rule: RuleDocument,
-  facts: Facts,
+  facts: RuleFacts,
   options: DecideOptions,
-): Decision {
+): RuleDecision {
   const evaluation = evaluate(rules, rule.condition, facts, {
     now: options.now,
     ...(options.revision === undefined ? {} : { revision: options.revision }),

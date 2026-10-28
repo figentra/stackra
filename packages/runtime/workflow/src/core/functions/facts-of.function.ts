@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0331 (decisions 4 and 6); ADR 0153 (decision 1).
  */
-import type { Facts, FactValue } from "@stackra/rules";
+import type { FactValue, RuleFacts } from "@stackra/rules";
 import { FieldType } from "@stackra/rules/contracts";
 
 import type { BuildingBlock } from "#core/types/building-block.type";
@@ -19,7 +19,7 @@ import type { BuildingBlock } from "#core/types/building-block.type";
  * @example
  * factsOf(ORDER_PAID, { total: 120, paidAt: "2026-10-25T09:00:00Z" }); // { trigger: { total: 120, paidAt: Date } }
  */
-export function factsOf(block: BuildingBlock, payload: unknown): Facts {
+export function factsOf(block: BuildingBlock, payload: unknown): RuleFacts {
   const record =
     typeof payload === "object" && payload !== null && !Array.isArray(payload)
       ? (payload as Readonly<Record<string, unknown>>)

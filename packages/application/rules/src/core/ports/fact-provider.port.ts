@@ -19,7 +19,7 @@ import { Port } from "@stackra/contracts";
 
 import type { FactSource } from "#contracts/index";
 import type { FactSubject } from "#core/types/fact-subject.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 
 /**
  * Supplies one fact source's facts.
@@ -27,7 +27,7 @@ import type { Facts } from "#core/types/facts.type";
  * @example
  * export class SegmentFactProviderDriver extends Driver(FactProvider) {
  *   readonly source = SEGMENT_FACTS;
- *   async factsOf(subject: FactSubject): Promise<Facts[string]> {
+ *   async factsOf(subject: FactSubject): Promise<RuleFacts[string]> {
  *     return { ids: (await this.memberships.segmentsOf(subject)).map((segment) => segment.id) };
  *   }
  * }
@@ -44,5 +44,5 @@ export abstract class FactProvider extends Port {
    *
    * @throws Error when the provider's store cannot be reached; the caller fails closed.
    */
-  abstract factsOf(subject: FactSubject): Promise<Facts[string]>;
+  abstract factsOf(subject: FactSubject): Promise<RuleFacts[string]>;
 }

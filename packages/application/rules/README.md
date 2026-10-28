@@ -31,8 +31,8 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 | `./contracts` | `FIELD_KEY`                                                            | the one key casing (camelCase) every registry tests keys with            |
 | `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition     |
 | `.`           | `evaluate`                                                             | the evaluator: deterministic, explained by tree path                     |
-| `.`           | `Condition`, `Facts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                               |
-| `.`           | `decide`, `Decision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard      |
+| `.`           | `Condition`, `RuleFacts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                               |
+| `.`           | `decide`, `RuleDecision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard      |
 | `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`       | the consumer's handlers per outcome kind                                 |
 | `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                       | default rule sets as a versioned seed document                           |
 | `.`           | `RuleOutcome`, `RuleOutcomeClass`                                      | a declared outcome kind gen lists in the manifest's `outcomes`           |
@@ -235,7 +235,7 @@ const rules = await conditionFields.rulesOf("orders.order"); // the model's Rule
 and no row-level security. A sync is all or nothing for its model; a model with no row refuses every condition
 (`model_unregistered`). Who may call `sync` is the host action's permission.
 
-- The dispatcher needs exactly one handler per registered kind, and takes only a `Decision`.
+- The dispatcher needs exactly one handler per registered kind, and takes only a `RuleDecision`.
 
 ## The AI action permission matrix
 

@@ -21,7 +21,7 @@ import type {
   EvaluationStep,
   FactSubject,
   FactValue,
-  Facts,
+  RuleFacts,
   RuleField,
   RulesOptions,
 } from "#core/index";
@@ -71,7 +71,7 @@ describe("@stackra/rules", () => {
   });
 
   it("types the facts, the options and the result", () => {
-    expectTypeOf<Facts["cart"]>().toEqualTypeOf<
+    expectTypeOf<RuleFacts["cart"]>().toEqualTypeOf<
       Readonly<Record<string, FactValue | null | undefined>>
     >();
     expectTypeOf<EvaluateOptions["now"]>().toEqualTypeOf<Date>();

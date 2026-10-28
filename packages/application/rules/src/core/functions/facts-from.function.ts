@@ -10,7 +10,7 @@
  */
 import type { FactProvider } from "#core/ports/fact-provider.port";
 import type { FactSubject } from "#core/types/fact-subject.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 
 /**
  * The providers' facts for `subject`.
@@ -23,7 +23,7 @@ import type { Facts } from "#core/types/facts.type";
 export async function factsFrom(
   providers: readonly FactProvider[],
   subject: FactSubject,
-): Promise<Facts> {
+): Promise<RuleFacts> {
   const keys = providers.map((provider) => provider.source.key);
   const duplicate = keys.find((key, index) => keys.indexOf(key) !== index);
   if (duplicate !== undefined)

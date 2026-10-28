@@ -19,6 +19,7 @@
  *                     Enforcement); ADR 0331 (decisions 6 and 9); ADR 0327 (decisions 3 and 9); ADR 0105 as amended by
  *                     ADR 0294.
  */
+import { evaluate, type RuleFacts } from "@stackra/rules";
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
@@ -31,7 +32,6 @@ import {
 } from "@stackra/documents";
 import type { PdfEngine } from "@stackra/documents/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
-import { evaluate, type Facts } from "@stackra/rules";
 import type { RuleSetRevision, RuleSetService } from "@stackra/rules/node";
 
 import {
@@ -144,7 +144,7 @@ export class AwardService extends CrudService<Award> {
   async consider(
     scope: ScopeRef,
     recipient: RecipientRef,
-    facts: Facts,
+    facts: RuleFacts,
     options: { readonly period?: string } = {},
   ): Promise<Award[]> {
     const rules = recipientRulesOf(recipient.model);

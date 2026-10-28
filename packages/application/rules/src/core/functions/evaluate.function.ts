@@ -24,7 +24,7 @@ import type { EvaluateOptions } from "#core/types/evaluate-options.type";
 import type { Evaluation } from "#core/types/evaluation.type";
 import type { EvaluationStep } from "#core/types/evaluation-step.type";
 import type { FactValue } from "#core/types/fact-value.type";
-import type { Facts } from "#core/types/facts.type";
+import type { RuleFacts } from "#core/types/rule-facts.type";
 import type { Rules } from "#core/values/rules.value";
 
 /** The mean earth radius (IUGG), in kilometres. */
@@ -225,7 +225,7 @@ function testLeaf(
 export function evaluate(
   rules: Rules,
   condition: Condition,
-  facts: Facts,
+  facts: RuleFacts,
   options: EvaluateOptions,
 ): Evaluation {
   if (!(options.now instanceof Date) || Number.isNaN(options.now.getTime()))

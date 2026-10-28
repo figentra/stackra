@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0332 (decisions 1 to 3); ADR 0331 (decisions 4 and 9).
  */
-import type { Facts, Rules } from "@stackra/rules";
+import type { RuleFacts, Rules } from "@stackra/rules";
 
 /**
  * A model segments may cover.
@@ -20,7 +20,7 @@ import type { Facts, Rules } from "@stackra/rules";
  *
  *   async ids(after: string | null, limit: number): Promise<readonly string[]> { ... }
  *
- *   async facts(ids: readonly string[]): Promise<ReadonlyMap<string, Facts>> { ... }
+ *   async facts(ids: readonly string[]): Promise<ReadonlyMap<string, RuleFacts>> { ... }
  * }
  */
 export interface SegmentSubject {
@@ -31,5 +31,5 @@ export interface SegmentSubject {
   ids(after: string | null, limit: number): Promise<readonly string[]>;
 
   /** The facts of each of `ids` in the running scope, by public id; an id left out is no subject there (deleted). */
-  facts(ids: readonly string[]): Promise<ReadonlyMap<string, Facts>>;
+  facts(ids: readonly string[]): Promise<ReadonlyMap<string, RuleFacts>>;
 }

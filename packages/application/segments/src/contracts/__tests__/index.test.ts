@@ -7,7 +7,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0269; ADR 0294 (decision 15); ADR 0332.
  */
 import type { PublicId } from "@stackra/contracts";
-import type { Facts, Rules } from "@stackra/rules";
+import type { RuleFacts, Rules } from "@stackra/rules";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -29,7 +29,7 @@ describe("@stackra/segments/contracts", () => {
       (after: string | null, limit: number) => Promise<readonly string[]>
     >();
     expectTypeOf<SegmentSubject["facts"]>().toEqualTypeOf<
-      (ids: readonly string[]) => Promise<ReadonlyMap<string, Facts>>
+      (ids: readonly string[]) => Promise<ReadonlyMap<string, RuleFacts>>
     >();
   });
 });
