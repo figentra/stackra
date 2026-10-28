@@ -11,7 +11,7 @@
 # Governing contract: ADR 0453 (decisions 3, 9, 17, chores); ADR 0284 (decision 8); ADR 0289 (RW3); ADR 0173; ADR 0019.
 # Owner: release-operations
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `prod` `/ci` and REGISTRY_SIGNING_KEY from
-#          Infisical `prod` `/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
+#          Infisical `prod` `/ci/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
 #          `registry` environment variable, not a secret). Each secret is fetched right before the step that uses it
 #          and blanked in the smoke step. Without the identity id the job tests, builds, prints a notice and deploys
 #          nothing, so main stays green until the owner has run the runbook.
@@ -46,7 +46,7 @@ jobs:
       url: https://npm.stackra.figentra.com/-/ping
     permissions:
       contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci and /registry
+      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci and /ci/registry
     env:
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_REGISTRY_IDENTITY_ID }}
       INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
@@ -140,7 +140,7 @@ jobs:
           domain: ${{ env.INFISICAL_DOMAIN }}
           project-id: ${{ env.INFISICAL_PROJECT_ID }}
           env-slug: prod
-          secret-path: /registry
+          secret-path: /ci/registry
           secret-name: REGISTRY_SIGNING_KEY
           export-type: env
 
@@ -150,7 +150,7 @@ jobs:
         working-directory: workers/registry
         run: |
           [ -n "${REGISTRY_SIGNING_KEY:-}" ] || {
-            echo "::error title=REGISTRY_SIGNING_KEY::missing in Infisical prod /registry"; exit 1; }
+            echo "::error title=REGISTRY_SIGNING_KEY::missing in Infisical prod /ci/registry"; exit 1; }
           printf '%s' "$REGISTRY_SIGNING_KEY" | pnpm exec wrangler secret put REGISTRY_SIGNING_KEY
 
       # Readiness, not just liveness (STA-268): each attempt prints its status; only the end of the budget fails.
