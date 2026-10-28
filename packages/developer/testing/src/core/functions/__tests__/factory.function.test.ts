@@ -62,6 +62,8 @@ describe(factory, () => {
   });
 
   it("builds a fresh object each time", () => {
+    // `at` reads the clock, so two builds a millisecond apart would differ
+    freezeClock("2026-10-21T09:00:00Z");
     expect(entry.build()).not.toBe(entry.build());
     expect(entry.build()).toEqual(entry.build());
   });
