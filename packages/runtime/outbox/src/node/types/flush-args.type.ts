@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `FlushArgs`, the part of the ORM's flush event the outbox writer reads: the entity manager that flushes and
- *          the change sets it computed (each changed entity, how it changed, the fields written, its primary key).
+ *          the change sets it computed (each changed entity, how it changed, the fields written, its loaded snapshot,
+ *          its primary key).
  * Boundary: a structural type, so this package never imports `@mikro-orm/*` (ADR 0097 decision 2: @stackra/database
  *           is the only importer); MikroORM's `FlushEventArgs` satisfies it, so the writer passes as one of
  *           `DatabaseOptions.subscribers`.
@@ -24,6 +25,8 @@ export interface FlushArgs {
       readonly type: string;
       /** The fields the flush writes, by property name. */
       readonly payload: object;
+      /** The entity as it was loaded, by property name; absent for a created one. */
+      readonly originalEntity?: object;
       /** The entity's primary key, serialised; set once the row is written. */
       getSerializedPrimaryKey: () => string | null;
     }[];

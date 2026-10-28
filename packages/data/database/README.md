@@ -375,6 +375,15 @@ id (a value already set, as by a seed, is kept); on an update `updatedAt` moves 
 themselves. The actor comes from the call's `ContextStorage` through the resolver `connectVisibilityFilter` named; a
 `system` actor or a write outside a call stamps no principal.
 
+## Native writes and the change feed
+
+`increment`, `delete` (soft and archive), `restore`, `repath` and `purge` write with a native statement, which fires no
+flush event. When a `NativeWriteWatcher` is connected (`connectNativeWriteWatcher(writer)`, the boot passes
+@stackra/outbox's `OutboxWriterService`) and it `watches(Model)`, the verb first reads the matching ids, narrows its
+statement to them and reports `{ model, kind, ids, fields }` after it, inside the same transaction, so the outbox change
+feed sees the rows. A model nobody watches is written exactly as before (one statement, no read). Raw SQL a service
+writes itself is never reported.
+
 ## Legal holds
 
 Every delete, purge and retention path consults one `HoldRegistry` (ADR 0134, 2026-10-24 amendment), which the

@@ -4,11 +4,13 @@
  *          @stackra/search keeps its index current and @stackra/segments recomputes membership through it.
  * Boundary: a type only, not a port: several consumers watch one model, so each is its own class, registered against
  *           the model with `registerChangeConsumers` and resolved from the container the relay is connected to.
- *           Delivery is at least once and in the row's scope; `consume` must be idempotent, and a throw makes the relay
- *           retry the change for every consumer of the model.
+ *           Delivery is at least once and in the row's scope, from the consumer's own cursor on the change log;
+ *           `consume` must be idempotent, and a throw makes the relay retry this consumer from its cursor (other
+ *           consumers move on). A consumer with `consumeMany` gets each run of one model's changes in one scope at
+ *           once, coalesced to one change per row (`coalesceChanges`), so it can load and index them in one go.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decision 5: indexing through the outbox, under five seconds of lag); ADR 0078
- *                     (decision 4: every consumer is idempotent).
+ *                     (decision 4: every consumer is idempotent); data-layer gap se3 (batches and coalescing).
  */
 import type { RowChange } from "#contracts/types/row-change.type";
 
@@ -16,4 +18,7 @@ import type { RowChange } from "#contracts/types/row-change.type";
 export interface ChangeConsumer {
   /** Handles one committed change of a model this consumer is registered for. */
   consume: (change: RowChange) => Promise<void>;
+
+  /** Handles a coalesced batch of one model's changes in one scope; when absent, `consume` gets each in order. */
+  consumeMany?: (changes: readonly RowChange[]) => Promise<void>;
 }

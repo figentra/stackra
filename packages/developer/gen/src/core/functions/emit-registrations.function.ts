@@ -5,7 +5,7 @@
  *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
  *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
- *          class it reacts to, the relay listeners, the outbound webhooks, the job actions for the queue
+ *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
  *          and the `@Searchable` models.
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
@@ -18,7 +18,8 @@
  *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
  *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities); ADR 0305 (rule 31: the query
  *                     cache's evictor); STA-1387
- *                     (`registerEventNames` from @stackra/events, below @stackra/actions: no package cycle).
+ *                     (`registerEventNames` from @stackra/events, below @stackra/actions: no package cycle); data-layer gap
+ *                     cdc2 (`@ConsumesChanges` replaces hand `registerChangeConsumers` calls).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -186,6 +187,23 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       .map((declared) => ref({ name: declared.name, from: declared.importPath })),
   );
 
+  // Each `@ConsumesChanges(Model)` (or `([A, B])`) service with the models it watches (data-layer gap cdc2).
+  call(
+    "registerChangeConsumers",
+    "@stackra/outbox",
+    ir.classes.flatMap((declared) =>
+      declared.facets
+        .filter((facet) => facet.name === "ConsumesChanges" && facet.target === "class")
+        .flatMap((facet) => (Array.isArray(facet.options) ? facet.options : [facet.options]))
+        .map((model: unknown) => {
+          if (typeof model !== "object" || model === null || !("$class" in model)) return undefined;
+          const { $class, from } = model as { readonly $class: unknown; readonly from: unknown };
+          if (typeof $class !== "string" || typeof from !== "string") return undefined;
+          return `[${ref({ name: $class, from })}, ${ref({ name: declared.name, from: declared.importPath })}]`;
+        }),
+    ),
+  );
+
   const actionRows = (manifest.actions ?? []) as readonly Entry[];
   const jobs = actionRows
     .filter((entry) => entry["kind"] === "action" && entry["job"] !== undefined)
@@ -296,7 +314,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     from: "stackra.manifest.json and the kind classes under src/",
     purpose:
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
-      "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, jobs, cached queries, " +
+      "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, " +
+      "change consumers, jobs, cached queries, " +
       "connections, webhook events, outbound webhooks, sequences, entitlements and searchable models).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +

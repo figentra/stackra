@@ -65,7 +65,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
 - Stamps (ADR 0133 d7): `StampSubscriber` and `stampFields` are the only writers of `createdBy`/`updatedBy`, and the
   actor is the running call's, never input. A new native update path (`nativeUpdate`, a query-builder update) spreads
-  `stampFields(model, "update")` into its data, as `increment` and `repath` do.
+  `stampFields(model, "update")` into its data, as `increment` and `repath` do, and goes through `CrudService`'s
+  private `watched` (or `report` when its ids are known) so the connected `NativeWriteWatcher` sees its rows
+  (data-layer gap mo10). Never call the watcher for a model it does not `watches`.
 - Delete policies (ADR 0134 d4): `deleteFilters` registers the `deleted` and `archived` filters in both drivers'
   `connect` (keep them the same); `CrudService.delete` picks the policy from the model's traits. A new bulk read that
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.

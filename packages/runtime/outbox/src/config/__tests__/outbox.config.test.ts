@@ -35,6 +35,7 @@ describe("OutboxConfig", () => {
     expect({ ...config }).toEqual(OUTBOX_CONFIG_SCHEMA.parse({}));
     expect(config.driver).toBe("postgres");
     expect(config.batchWindowSeconds).toBe(0);
+    expect(config.changeRetentionDays).toBe(7);
   });
 
   it("takes a runway value and a host override", () => {
@@ -50,6 +51,15 @@ describe("OutboxConfig", () => {
       ConfigInvalidError,
     );
     expect(() => buildConfig(OutboxConfig, { values: { batchWindowSeconds: 1.5 } })).toThrow(
+      ConfigInvalidError,
+    );
+  });
+
+  it("keeps changes 1 to 400 whole days", () => {
+    expect(
+      buildConfig(OutboxConfig, { values: { changeRetentionDays: 30 } }).changeRetentionDays,
+    ).toBe(30);
+    expect(() => buildConfig(OutboxConfig, { values: { changeRetentionDays: 0 } })).toThrow(
       ConfigInvalidError,
     );
   });

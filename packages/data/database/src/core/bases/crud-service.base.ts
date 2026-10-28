@@ -14,7 +14,8 @@
  *           carry none. `update` takes the caller's `expectedVersion`. Database errors stay the
  *           driver's here (a caller may catch `UniqueViolation`); the action's unit of work raises them as refusals.
  *           Native updates (`increment`, `repath`) set the
- *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them. Deletes follow the model's delete policy (ADR 0134 d4): `delete` soft-deletes
+ *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them, and report the rows they
+ *           reach to the connected `NativeWriteWatcher` (the outbox change feed) when it watches the model. Deletes follow the model's delete policy (ADR 0134 d4): `delete` soft-deletes
  *           or archives a `SoftDeletes`/`Archivable` model's rows and hard-deletes any other's, `restore` brings kept
  *           rows back, `forceDelete` and `purge` remove them for good; the drivers' `deleted`/`archived` filters hide
  *           kept rows from every read unless `DeletedReadOptions` asks for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
@@ -24,7 +25,8 @@
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
  *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
- *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals).
+ *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
+ *                     reach the change feed).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -48,6 +50,7 @@ import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
+import { NATIVE_WRITE_HOST } from "#core/constants/native-write-host.constant";
 import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
@@ -61,6 +64,7 @@ import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
+import type { NativeWrite } from "#core/types/native-write.type";
 import type { Repository } from "#core/types/repository.type";
 import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
@@ -175,10 +179,16 @@ export abstract class CrudService<M extends object> extends Service implements R
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
     // raw-sql: `col = col + ?` is the one atomic form; read-modify-write loses concurrent steps. The step is a parameter.
-    return em.nativeUpdate(model, filterOf(where), {
-      ...stampFields(model, "update"),
-      ...nest(field, raw(`${column} + ?`, [by])),
-    } as never);
+    return this.watched("updated", [field], filterOf(where), (filter) =>
+      em.nativeUpdate(
+        model,
+        filter as never,
+        {
+          ...stampFields(model, "update"),
+          ...nest(field, raw(`${column} + ?`, [by])),
+        } as never,
+      ),
+    );
   }
 
   /** Implements `Repository.create`, documented there. */
@@ -214,7 +224,14 @@ export abstract class CrudService<M extends object> extends Service implements R
     const filter = filterOf(where);
     // A purge reaches soft-deleted and archived rows too: it is how they finally go.
     const filters = { deleted: false, archived: false };
-    if (HOLD_HOST.registry === undefined) return em.nativeDelete(model, filter, { filters });
+    if (HOLD_HOST.registry === undefined)
+      return this.watched(
+        "deleted",
+        [],
+        filter,
+        (narrowed) => em.nativeDelete(model, narrowed as never, { filters }),
+        filters,
+      );
     const [key = "id"] = em.getMetadata(model).primaryKeys;
     const linkFields = HOLD_LINK_FIELDS.get(model) ?? [];
     const rows = (await em.find(model, filter, {
@@ -225,9 +242,15 @@ export abstract class CrudService<M extends object> extends Service implements R
     const free = await disposableIds(model, ids, Disposal.Purge, holdLinksOf(model, rows, key));
     if (free.length === 0) return 0;
     // Only the checked ids, so a row inserted after the read is never removed unchecked.
-    return em.nativeDelete(model, { $and: [filter, { [key]: { $in: free } }] } as never, {
-      filters,
-    });
+    const removed = await em.nativeDelete(
+      model,
+      { $and: [filter, { [key]: { $in: free } }] } as never,
+      {
+        filters,
+      },
+    );
+    await this.report({ em, model, kind: "deleted", ids: free, fields: [] });
+    return removed;
   }
 
   /**
@@ -239,10 +262,16 @@ export abstract class CrudService<M extends object> extends Service implements R
     const model = this.model();
     const policy = this.keptPolicy();
     if (policy === undefined) return this.purge(where);
-    return this.em().nativeUpdate(model, filterOf(where), {
-      ...stampFields(model, "update"),
-      [policy.field]: new Date(),
-    } as never);
+    return this.watched("updated", [policy.field], filterOf(where), (filter) =>
+      this.em().nativeUpdate(
+        model,
+        filter as never,
+        {
+          ...stampFields(model, "update"),
+          [policy.field]: new Date(),
+        } as never,
+      ),
+    );
   }
 
   /**
@@ -255,11 +284,19 @@ export abstract class CrudService<M extends object> extends Service implements R
     const policy = this.keptPolicy();
     if (policy === undefined)
       throw new TypeError(`${model.name} is hard-deleted: there is nothing to restore`);
-    return this.em().nativeUpdate(
-      model,
-      { $and: [filterOf(where), { [policy.field]: { $ne: null } }] } as never,
-      { ...stampFields(model, "update"), [policy.field]: null } as never,
-      { filters: { [policy.filter]: false } },
+    const filters = { [policy.filter]: false };
+    return this.watched(
+      "updated",
+      [policy.field],
+      { $and: [filterOf(where), { [policy.field]: { $ne: null } }] },
+      (filter) =>
+        this.em().nativeUpdate(
+          model,
+          filter as never,
+          { ...stampFields(model, "update"), [policy.field]: null } as never,
+          { filters },
+        ),
+      filters,
     );
   }
 
@@ -324,13 +361,19 @@ export abstract class CrudService<M extends object> extends Service implements R
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), "scopePath"));
     // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
-    return em.nativeUpdate(
-      model,
+    return this.watched(
+      "updated",
+      ["scopePath"],
       filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
-      {
-        ...stampFields(model, "update"),
-        scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
-      } as never,
+      (filter) =>
+        em.nativeUpdate(
+          model,
+          filter as never,
+          {
+            ...stampFields(model, "update"),
+            scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
+          } as never,
+        ),
     );
   }
 
@@ -464,5 +507,40 @@ export abstract class CrudService<M extends object> extends Service implements R
       .where((await visibleFilter(model, where)) as QBFilterQuery<M>)
       .execute("get")) as Record<string, unknown> | undefined;
     return Number(row?.["total"] ?? 0);
+  }
+
+  /**
+   * Runs a native write. With a connected watcher that watches the model, it first reads the matching ids (with
+   * `filters`), narrows the statement to them, so a row inserted after the read is never written unreported, and
+   * reports them after it; otherwise it runs the statement on `filter` alone.
+   */
+  private async watched(
+    kind: NativeWrite["kind"],
+    fields: readonly string[],
+    filter: object,
+    write: (filter: object) => Promise<number>,
+    filters?: Readonly<Record<string, boolean>>,
+  ): Promise<number> {
+    const model = this.model();
+    const watcher = NATIVE_WRITE_HOST.watcher;
+    if (watcher === undefined || !watcher.watches(model)) return write(filter);
+    const em = this.em();
+    const [key = "id"] = em.getMetadata(model).primaryKeys;
+    const rows = (await em.find(model, filter as never, {
+      fields: [key] as never,
+      ...(filters === undefined ? {} : { filters }),
+    })) as Record<string, unknown>[];
+    const ids = rows.map((row) => String(row[key]));
+    if (ids.length === 0) return 0;
+    const count = await write({ $and: [filter, { [key]: { $in: ids } }] });
+    await watcher.written({ em, model, kind, ids, fields });
+    return count;
+  }
+
+  /** Reports a native write whose ids are already known to the connected watcher, when it watches the model. */
+  private async report(write: NativeWrite): Promise<void> {
+    const watcher = NATIVE_WRITE_HOST.watcher;
+    if (write.ids.length > 0 && watcher?.watches(write.model) === true)
+      await watcher.written(write);
   }
 }

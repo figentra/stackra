@@ -43,6 +43,7 @@ export { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error
 export { ancestorOf } from "#core/functions/ancestor-of.function";
 export { compileMigration } from "#core/functions/compile-migration.function";
 export { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
+export { connectNativeWriteWatcher } from "#core/functions/connect-native-write-watcher.function";
 export { connectSequenceTimeZone } from "#core/functions/connect-sequence-time-zone.function";
 export { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 export { descendantOf } from "#core/functions/descendant-of.function";
@@ -75,6 +76,8 @@ export type { CompileOptions } from "#core/types/compile-options.type";
 export type { CompiledMigration } from "#core/types/compiled-migration.type";
 export type { CompiledStep } from "#core/types/compiled-step.type";
 export type { DatabaseOptions } from "#core/types/database-options.type";
+export type { NativeWrite } from "#core/types/native-write.type";
+export type { NativeWriteWatcher } from "#core/types/native-write-watcher.type";
 export type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
 export type { GraphOptions } from "#core/types/graph-options.type";
 export type { GraphRow } from "#core/types/graph-row.type";

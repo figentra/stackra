@@ -142,6 +142,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
   `registerEventNames` (imported from @stackra/events, below @stackra/actions, so a package below the outbox needs no
   outbox dependency, STA-1387) and `registerRelays`. Never add a subscription by wire name.
+- Change consumers (data-layer gap cdc2): a service's `@ConsumesChanges(Model)` or `([A, B])` facet carries the
+  models as class values; `emitRegistrations` writes one `registerChangeConsumers` row per model and service. Never
+  emit a pair for a facet whose argument is not a class value.
 - Event wire names (STA-1255, default applied 2026-10-27 after os-100, owner may override): always
   `<module>.<name>.v<n>` from `eventName`. There is no member-level wire name and no service-key prefix; a `name` that
   starts with the module or member key is refused (`event_name_prefixed`, fix: drop the prefix). Never add an option

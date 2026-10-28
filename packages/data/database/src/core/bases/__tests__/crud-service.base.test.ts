@@ -9,7 +9,9 @@
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
- *          parameterised statement and refuses a path that is not `ltree` or a move under itself.
+ *          parameterised statement and refuses a path that is not `ltree` or a move under itself. With a
+ *          `NativeWriteWatcher` connected that watches the model, the native verbs read the matching ids first, narrow
+ *          the statement to them and report them; a model it does not watch is written as before.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
@@ -30,6 +32,8 @@ import { vi } from "vitest";
 import { CrudService } from "#core/bases/crud-service.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
+import { connectNativeWriteWatcher } from "#core/functions/connect-native-write-watcher.function";
+import type { NativeWrite } from "#core/types/native-write.type";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
@@ -558,5 +562,57 @@ describe("CrudService delete policy (ADR 0134 decision 4)", () => {
     expect((em.count.mock.calls[0] as unknown[] | undefined)?.[2]).toEqual({
       filters: { archived: false },
     });
+  });
+});
+
+/** Connects a watcher of `Order` that records what it is told. */
+function watch(watches = true) {
+  const written: Omit<NativeWrite, "em">[] = [];
+  connectNativeWriteWatcher({
+    watches: (model) => watches && model === Order,
+    written: async ({ em: _em, ...write }) => {
+      written.push(write);
+    },
+  });
+  return written;
+}
+
+describe("CrudService native writes with a watcher (data-layer gap mo10)", () => {
+  afterEach(() => {
+    connectNativeWriteWatcher(undefined);
+    connectHoldRegistry(undefined);
+  });
+
+  it("narrows an increment to the ids it read and reports them", async () => {
+    const em = connect();
+    em.find.mockResolvedValueOnce([{ id: "ord_1" }, { id: "ord_2" }] as never);
+    const written = watch();
+    await new OrderService().increment({ status: "paid" }, "hits", 2);
+    expect(em.nativeUpdate.mock.calls[0]?.[1]).toEqual({
+      $and: [{ status: "paid" }, { id: { $in: ["ord_1", "ord_2"] } }],
+    });
+    expect(written).toEqual([
+      { model: Order, kind: "updated", ids: ["ord_1", "ord_2"], fields: ["hits"] },
+    ]);
+  });
+
+  it("reports a purge as deleted rows, held ones left out, and skips a write that matched nothing", async () => {
+    const em = connect();
+    const written = watch();
+    em.find.mockResolvedValueOnce([{ id: "ord_3" }] as never);
+    await new OrderService().purge({ status: "void" });
+    expect(written).toEqual([{ model: Order, kind: "deleted", ids: ["ord_3"], fields: [] }]);
+    em.find.mockResolvedValueOnce([] as never);
+    expect(await new OrderService().purge({ status: "void" })).toBe(0);
+    expect(em.nativeDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes an unwatched model as before, without reading ids", async () => {
+    const em = connect();
+    const written = watch(false);
+    await new OrderService().increment({ status: "paid" }, "hits");
+    expect(em.find).not.toHaveBeenCalled();
+    expect(em.nativeUpdate.mock.calls[0]?.[1]).toEqual({ status: "paid" });
+    expect(written).toEqual([]);
   });
 });

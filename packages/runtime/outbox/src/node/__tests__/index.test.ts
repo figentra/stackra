@@ -13,10 +13,15 @@ import * as node from "#node/index";
 describe("@stackra/outbox/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ChangeFeedService",
       "InboxEventPublisherDriver",
       "InboxService",
+      "MaintainChangeLogAction",
+      "MaintainChangeLogInput",
+      "MaintainChangeLogOutput",
       "OutboxRelayService",
       "OutboxWriterService",
+      "PostgresChangeFeedDriver",
       "PostgresDeviceSequenceStoreDriver",
       "PostgresInboxDriver",
       "PostgresOfflineCapStoreDriver",

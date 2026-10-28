@@ -206,6 +206,7 @@ describe("@stackra/database", () => {
       "ancestorOf",
       "compileMigration",
       "connectHoldRegistry",
+      "connectNativeWriteWatcher",
       "connectSequenceTimeZone",
       "connectVisibilityFilter",
       "descendantOf",

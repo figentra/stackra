@@ -5,17 +5,19 @@ Stackra file contract:
 Purpose: the package's reader guide: the transactional outbox, its relay, the inbox and the drivers.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0078; ADR 0221; ADR 0148; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
+Governing contract: ADR 0078; ADR 0221 (both amended 2026-10-28: the change feed); ADR 0148; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
 -->
 
 Stackra outbox: the answer to "must another service learn of a committed change, even if this process dies after the
-commit?" (ADR 0078). Integration events, and the row changes of watched models, are written to an outbox table in the
-same transaction as the change; a relay publishes them after the commit, one relay per service under a lock, with
-backoff retries and dead letters; the inbox runs each received event once.
+commit?" (ADR 0078). Integration events, and the row changes of watched models, are written in the same transaction as
+the change: events to an outbox table a relay publishes after the commit (one relay per service under a lock, with
+backoff retries and dead letters), row changes to a retained, day-partitioned change log each consumer reads from its
+own cursor; the inbox runs each received event once.
 
 **Tier:** `tier:lib` (`packages/runtime/outbox`). Entries `.`, `./contracts` and `./node`. Depends on
 `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
-`@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/queue`, `@stackra/validation` and zod.
+`@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/model`, `@stackra/queue`, `@stackra/validation`
+and zod.
 
 ## What is here
 
@@ -27,14 +29,21 @@ backoff retries and dead letters; the inbox runs each received event once.
 | `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays; `disconnect()` drops them |
 | `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox           |
 | `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                       |
+| `PostgresChangeFeedDriver`                                             | `./node`      | the default change log: `outbox.changes` and `outbox.change_cursors`           |
+| `ChangeFeedService`                                                    | `./node`      | `replay(Consumer, from?)`, `resume(Consumer)`, `backfill(consumer, Model)`     |
+| `MaintainChangeLogAction`                                              | `./node`      | `change_log.maintain`, daily: next partitions ready, expired ones dropped      |
 | `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                              |
 | `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from |
 | `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`   |
-| `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]`                      |
+| `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]` (gen writes it)      |
+| `ConsumesChanges`                                                      | `.`           | `@ConsumesChanges(Product)` on a consumer service; gen registers the pair      |
+| `coalesceChanges`                                                      | `.`           | one change per row of a run, a later change superseding an earlier one         |
+| `MemoryChangeFeedDriver`                                               | `.`           | the change log of a test or a single process                                   |
 | `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know   |
 | `MemoryOutboxDriver`, `MemoryInboxDriver`                              | `.`           | the stores of a test or a single process                                       |
-| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver` picks both stores; `batchWindowSeconds` (0 to 60)       |
-| `OutboxDriver`, `InboxDriver`, `EventPublisher`                        | `./contracts` | the ports                                                                      |
+| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver`, `batchWindowSeconds` (0-60), `changeRetentionDays`     |
+| `OutboxDriver`, `InboxDriver`, `ChangeFeed`, `EventPublisher`          | `./contracts` | the ports                                                                      |
+| `ChangeRecord`, `ChangeCursor`, `ChangeLogReport`                      | `./contracts` | a retained change, a consumer's place in the log, a maintenance run            |
 | `OutboxMessage`, `EventEnvelope`, `RowChange`, `ChangeConsumer`, enums | `./contracts` | the stored message, the wire form, a row change and what a consumer implements |
 
 ## Writing in the producer's transaction
@@ -87,25 +96,46 @@ relayed and deduplicated unchanged (STA-1380).
 ## Watching rows
 
 ```ts
+export class Product extends Model.with(HasPublicId("prd"), CapturesChanges({ values: true, exclude: ["cost"] })) {}
+
+@ConsumesChanges(Product)
 export class ProductIndexConsumer extends Service implements ChangeConsumer {
   async consume(change: RowChange): Promise<void> {
     if (change.kind === RowChangeKind.Deleted) await this.search.in(Product).remove([change.id]);
     else await this.search.in(Product).index([await this.products.findOneOrFail(change.id)]);
   }
-}
 
-registerChangeConsumers([[Product, ProductIndexConsumer]]);
+  // optional: one call per run of one model's changes in one scope, coalesced to one change per row
+  async consumeMany(changes: readonly RowChange[]): Promise<void> { ... }
+}
 ```
 
-A change names the model, the row's key, how it changed and the fields written; never the values. A consumer is
-idempotent: a throw retries the change for every consumer of the model.
+Gen writes `registerChangeConsumers([[Product, ProductIndexConsumer]])` from the facet; a hand call still works.
+
+- **What is captured.** A model with `CapturesChanges` (from @stackra/model), or one a consumer watches, writes one
+  change per row at commit to `outbox.changes`: the model, the key, the kind and the written fields. With
+  `values: true` it also carries `before` and `after` values of those fields, never of an encrypted, `@Classified` or
+  excluded field, and only JSON values (a relation is left out). `CrudService`'s native verbs (`increment`, `delete`,
+  `restore`, `repath`, `purge`) report their rows through the database's `NativeWriteWatcher` (the writer, connected at
+  boot with `connectNativeWriteWatcher(writer)`), so they reach the log too, fields named but no values. Raw SQL a
+  service writes itself is not seen.
+- **Delivery.** Each consumer has a cursor in `outbox.change_cursors`. A tick reads the log after it (only entries no
+  running transaction can still precede) and hands each run in its row's scope. A throw retries that consumer from its
+  cursor with the relay's backoff and, after the last attempt, stalls it (`outbox.consumer_stalled`, nothing dropped)
+  until `ChangeFeedService.resume` or `replay`; the other consumers move on. A new consumer starts at the log's start,
+  so it reads the retained window; `backfill` hands it older rows by a scan. Consumers stay idempotent.
+- **Retention.** The log keeps `outbox.changeRetentionDays` (7 by default). `change_log.maintain` (02:30 UTC) makes the
+  next three days' partitions and drops older ones whole; rows written before their day's partition existed sit in
+  `outbox.changes_default` and are deleted past the window. Change messages already in `outbox.messages` from before
+  the log still drain the old way.
 
 ## Drivers and tables
 
 - **Postgres** (`./node`, default): `outbox.messages` (migration `outbox.0001_create_messages`, with the `ltree`
-  extension) and `outbox.inbox` (`outbox.0002_create_inbox`). The relay reads messages across scopes, so neither table
+  extension), `outbox.inbox` (`outbox.0002_create_inbox`) and `outbox.changes` with `outbox.change_cursors`
+  (`outbox.0004_create_changes`). The relay reads messages across scopes, so neither table
   has a row-level-security policy; a message's scope is data the relay opens for each delivery.
-- **Memory** (`.`): both stores in process memory, with no transaction.
+- **Memory** (`.`): the three stores in process memory, with no transaction.
 - **Transports**: `InboxEventPublisherDriver` in process; the Encore Pub/Sub and Postgres queue transports between
   services are drivers gen supplies (ADR 0142).
 
@@ -128,6 +158,7 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
 
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.
 - Listing and redriving dead messages, and the retention purge jobs, wait for the scheduler and the console.
+- A `stackra changes:replay|resume|backfill` command and a panel for stalled cursors; `ChangeFeedService` is the API.
 - Publishing both versions of an event until a change's sunset (ADR 0141 note) waits for gen's version table.
 
 ## Consuming another service's events

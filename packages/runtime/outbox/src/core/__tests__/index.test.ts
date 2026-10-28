@@ -16,6 +16,8 @@ describe("@stackra/outbox", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(outbox).sort()).toEqual([
       "BrokerEventPublisherDriver",
+      "ConsumesChanges",
+      "MemoryChangeFeedDriver",
       "MemoryInboxDriver",
       "MemoryOutboxDriver",
       "OutboxConfig",
@@ -23,6 +25,7 @@ describe("@stackra/outbox", () => {
       "OutboxEventOutboxDriver",
       "OutboxOptions",
       "UnknownEventError",
+      "coalesceChanges",
       "registerChangeConsumers",
       "registerEventNames",
       "registerRelays",

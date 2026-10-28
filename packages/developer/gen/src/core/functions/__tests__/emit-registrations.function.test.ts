@@ -256,3 +256,63 @@ describe("emitRegistrations for cached queries (STA-1445)", () => {
     expect(withCache({ ttl: "5m" })).not.toContain("registerCachedQueries");
   });
 });
+
+/** A service of the orders module carrying a `@ConsumesChanges` facet with `options`. */
+function consumer(name: string, options: unknown): DeclaredClass {
+  return {
+    name,
+    kind: "service",
+    module: "orders",
+    file: `src/modules/orders/services/${name}.ts`,
+    importPath: `#modules/orders/services/${name}`,
+    options: {},
+    deps: [],
+    facets: [
+      {
+        name: "ConsumesChanges",
+        kind: "consumes_changes",
+        target: "class",
+        options,
+        from: "@stackra/outbox",
+      },
+    ],
+    methods: ["consume"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
+}
+
+describe("emitRegistrations for change consumers (data-layer gap cdc2)", () => {
+  const product = {
+    $class: "Product",
+    from: "#modules/orders/models/product.model",
+    kind: "model",
+  };
+  const variant = { $class: "Variant", from: "@acme/catalogue-kit", kind: "model" };
+  const content =
+    registrationsOf({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes,
+        consumer("ProductFeedService", product),
+        consumer("CatalogueFeedService", [product, variant]),
+      ],
+    }) ?? "";
+
+  it("pairs each watched model with its @ConsumesChanges service", () => {
+    expect(content).toContain(
+      [
+        "registerChangeConsumers([",
+        "  [Product, ProductFeedService],",
+        "  [Product, CatalogueFeedService],",
+        "  [Variant, CatalogueFeedService],",
+        "]);",
+      ].join("\n"),
+    );
+    expect(content).toMatch(
+      /import \{[^}]*registerChangeConsumers[^}]*\} from "@stackra\/outbox";/,
+    );
+    expect(content).toContain('import { Variant } from "@acme/catalogue-kit";');
+  });
+});

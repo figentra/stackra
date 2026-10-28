@@ -4,7 +4,10 @@
  *          part batch inside the batch window; hands a row
  *          change to each bound consumer of its model in the row's scope (or none) and skips an unbound one; retries a
  *          failed delivery after its backoff and dead-letters (and logs) it after the last attempt; does nothing while
- *          another relay holds the lock; refuses to run before `connect`; `work` ticks until aborted.
+ *          another relay holds the lock; refuses to run before `connect`; `work` ticks until aborted. From the change
+ *          log it hands each bound consumer the changes after its cursor run by run in each run's scope (coalesced to
+ *          `consumeMany` when the consumer has it), saves the cursor, keeps the log, backs a failed consumer off from
+ *          its kept progress and stalls it (logged) after the last attempt, and skips a stalled cursor.
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
@@ -21,6 +24,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { OutboxConfig } from "#config/outbox.config";
 import { EventPublisher, MessageKind, RowChangeKind } from "#contracts/index";
 import type { EventEnvelope, OutboxMessage, RowChange } from "#contracts/index";
+import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";
@@ -66,6 +70,23 @@ class IndexConsumer {
   }
 }
 
+class Order {}
+
+class BatchConsumer {
+  readonly batches: (readonly RowChange[])[] = [];
+
+  failing = false;
+
+  async consume(): Promise<void> {
+    throw new TypeError("consumeMany is used");
+  }
+
+  async consumeMany(changes: readonly RowChange[]): Promise<void> {
+    if (this.failing) throw new TypeError("index down");
+    this.batches.push(changes);
+  }
+}
+
 class UnboundConsumer {
   async consume(): Promise<void> {
     throw new TypeError("never resolved");
@@ -75,6 +96,7 @@ class UnboundConsumer {
 registerChangeConsumers([
   [Product, IndexConsumer],
   [Product, UnboundConsumer],
+  [Order, BatchConsumer],
 ]);
 
 /** An event message due at noon. */
@@ -95,9 +117,11 @@ function eventMessage(fields: Partial<OutboxMessage> = {}): OutboxMessage {
 /** A relay over memory stores, connected to a resolver that binds the logger and the index consumer. */
 function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 0) {
   const store = new MemoryOutboxDriver();
+  const feed = new MemoryChangeFeedDriver();
   const publisher = new RecordingPublisher();
   const logger = new RecordingLogger();
   const consumer = new IndexConsumer();
+  const batch = new BatchConsumer();
   const scopes: (ScopeRef | readonly ScopeRef[])[] = [];
   const database = {
     withScope: async <T>(scope: ScopeRef | readonly ScopeRef[], work: () => Promise<T>) => {
@@ -108,6 +132,7 @@ function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 
   const bound = new Map<AnyClass, object>([
     [Logger, logger],
     [IndexConsumer, consumer],
+    [BatchConsumer, batch],
   ]);
   const resolver: Resolver = {
     has: (type) => bound.has(type),
@@ -115,6 +140,7 @@ function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 
   };
   const relay = new OutboxRelayService(
     store,
+    feed,
     publisher,
     new Locks(lockDriver, clock),
     database,
@@ -122,7 +148,12 @@ function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 
     buildConfig(OutboxConfig, { values: { batchWindowSeconds } }),
   );
   relay.connect(resolver);
-  return { relay, store, publisher, logger, consumer, scopes };
+  return { relay, store, feed, publisher, logger, consumer, batch, scopes };
+}
+
+/** An updated Order change of `id` writing `field`. */
+function order(id: string, field: string): RowChange {
+  return { model: "Order", id, kind: RowChangeKind.Updated, fields: [field] };
 }
 
 describe(OutboxRelayService, () => {
@@ -214,6 +245,7 @@ describe(OutboxRelayService, () => {
   it("refuses to run before connect", async () => {
     const relay = new OutboxRelayService(
       new MemoryOutboxDriver(),
+      new MemoryChangeFeedDriver(),
       new RecordingPublisher(),
       new Locks(new MemoryLockDriver(clock), clock),
       {} as Database,
@@ -234,5 +266,63 @@ describe(OutboxRelayService, () => {
     };
     await relay.work({ signal: controller.signal });
     expect(publisher.published).toHaveLength(1);
+  });
+
+  it("hands each consumer the log after its cursor, run by run in each scope, and keeps the log", async () => {
+    const { relay, feed, consumer, batch, scopes } = relayOf();
+    const product: RowChange = {
+      model: "Product",
+      id: "prd_1",
+      kind: RowChangeKind.Updated,
+      fields: ["name"],
+    };
+    await feed.append([
+      { change: product, meta: {}, occurredAt: NOON, scope: SCOPE },
+      { change: order("ord_1", "total"), meta: {}, occurredAt: NOON, scope: SCOPE },
+      { change: order("ord_1", "status"), meta: {}, occurredAt: NOON, scope: SCOPE },
+      { change: order("ord_2", "total"), meta: {}, occurredAt: NOON },
+    ]);
+    await expect(relay.relay()).resolves.toBe(4);
+    expect(consumer.seen).toEqual([product]);
+    expect(batch.batches).toEqual([
+      [{ ...order("ord_1", "total"), fields: ["total", "status"] }],
+      [order("ord_2", "total")],
+    ]);
+    expect(scopes).toEqual([SCOPE, SCOPE, []]);
+    expect(feed.stored()).toHaveLength(4);
+    await expect(feed.cursor("BatchConsumer")).resolves.toMatchObject({
+      position: feed.stored()[3]?.position,
+      attempts: 0,
+    });
+    await expect(relay.relay()).resolves.toBe(0);
+  });
+
+  it("backs a failed consumer off from its cursor, then stalls it at the last attempt", async () => {
+    const { relay, feed, batch, logger } = relayOf();
+    batch.failing = true;
+    await feed.append([
+      {
+        change: { model: "Order", id: "ord_1", kind: RowChangeKind.Created, fields: [] },
+        meta: {},
+        occurredAt: NOON,
+      },
+    ]);
+    await relay.relay();
+    const retried = await feed.cursor("BatchConsumer");
+    expect(retried).toMatchObject({
+      attempts: 1,
+      lastError: { code: "internal", message: "index down" },
+    });
+    expect(retried?.position).toBeUndefined();
+    expect((retried?.availableAt.getTime() ?? 0) > NOON.getTime()).toBe(true);
+    await feed.save({ consumer: "BatchConsumer", attempts: 9, availableAt: NOON });
+    await relay.relay();
+    await expect(feed.cursor("BatchConsumer")).resolves.toMatchObject({
+      attempts: 10,
+      stalledAt: NOON,
+    });
+    expect(logger.errors).toEqual(["outbox.consumer_stalled"]);
+    batch.failing = false;
+    await expect(relay.relay()).resolves.toBe(0);
   });
 });

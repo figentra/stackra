@@ -56,6 +56,8 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   (stackra-263). The resolver's implementation is @stackra/privacy's; never import it here.
 - `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
+- `changeCaptureOf` is the one place that decides which fields a change may carry a value for: it always drops
+  encrypted and `@Classified` fields. Never let a `CapturesChanges` option bring one back.
 - `@OneToOne` (stackra-260): `(() => T, { onDelete })` on the owning side, `(() => T, (t) => t.back)` on the inverse;
   it records a `RelationDefinition` like `@ManyToOne` and reuses `ManyToOneOptions`.
 
