@@ -17,7 +17,14 @@
  *                     audience); ADR 0331 (decisions 6 and 11).
  */
 import { Driver } from "@stackra/container";
-import { type Actor, ActorKind, Clock, Realm, type ScopeRef } from "@stackra/contracts";
+import {
+  type Actor,
+  ActorKind,
+  Clock,
+  type PublicId,
+  Realm,
+  type ScopeRef,
+} from "@stackra/contracts";
 import { ConditionInvalidError, Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
