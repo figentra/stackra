@@ -38,7 +38,7 @@ export class NativeScaleOptions extends Schema {
     continuous_ascii: SCALE_PROTOCOLS.continuous_ascii,
   };
 
-  /** The scale's protocol, which is also the driver gen selects (`config:nativeScale.protocol`). */
+  /** The scale's protocol, which is also the driver gen selects (`config:native_scale.protocol`). */
   protocol: ScaleProtocolName = "mt_sics";
 
   /** How the module reaches the scale. */

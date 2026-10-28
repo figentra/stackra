@@ -22,8 +22,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./plugin`.
 
 - The port is `@stackra/peripherals/contracts`' `CashDrawer`, unchanged. A new driver name goes into
   `PERIPHERAL_DRIVERS` of `@stackra/peripherals`.
-- A drawer on a receipt printer (Epson, Star, any) is `printer_kick`: it goes through the bound `ReceiptPrinter` with
-  `kickThroughPrinter` and never talks to a printer SDK here. Only a terminal's own drawer port is a family here.
+- A drawer on a receipt printer (Epson, Star, any) is `printer_kick`, @stackra/peripherals' core driver: it goes
+  through the bound `ReceiptPrinter` and never talks to a printer SDK. Only a terminal's own drawer port is a family
+  here.
 - Every kick checks readiness first (ADR 0458 decision 3); a kick is one-way and reports no drawer state.
 - The Kotlin is a thin pass-through (ADR 0458 decision 2): the SDK's own status number and the pulse. Mapping to a
   refusal is the TypeScript driver's, against `CASH_DRAWER_VENDORS`.

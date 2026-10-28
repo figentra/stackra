@@ -3,9 +3,12 @@
  * Purpose: `PrinterKickCashDrawerDriver`, the `CashDrawer` driver that opens the drawer through the receipt printer
  *          it is wired to (`peripherals.drawer: "printer_kick"`): a pulse on `peripherals.drawerPin`.
  * Boundary: it touches no device itself; it asks the bound `ReceiptPrinter`, so it works with whichever printer driver
- *           the wiring picked and refuses exactly as that printer does.
+ *           the wiring picked (ESC/POS on a desktop, a native module package's on an Expo app) and refuses exactly as
+ *           that printer does. It lives in the core entry, which every runtime can load, so desktop and Expo apps share
+ *           this one `printer_kick` driver (ADR 0478 decision 5).
  * Runtime: isomorphic
- * Governing contract: ADR 0253 (decision 4: the drawer kicks through the printer); ADR 0250 (decision 3).
+ * Governing contract: ADR 0253 (decision 4: the drawer kicks through the printer); ADR 0250 (decision 3); ADR 0458
+ *                     (decision 3: a kick checks readiness first); ADR 0478 (decision 5).
  */
 import { Driver } from "@stackra/container";
 import type { CapabilityResult } from "@stackra/platform/contracts";
@@ -43,8 +46,10 @@ export class PrinterKickCashDrawerDriver extends Driver(CashDrawer) {
     return this.printer.probe();
   }
 
-  /** Pulses the configured pin through the printer. */
+  /** Probes the printer, then pulses the configured pin through it only when it is ready (ADR 0458 decision 3). */
   async open(): Promise<CapabilityResult> {
+    const ready = await this.printer.probe();
+    if (!ready.ok) return ready;
     return this.printer.kickDrawer(this.config.drawerPin);
   }
 }

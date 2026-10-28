@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `NativeScaleConfig`: a configuration over `NativeScaleOptions` keyed `nativeScale` (so gen's
- *          selector is `config:nativeScale.protocol`), built with its defaults (no address, so no device), a host
+ * Purpose: unit tests of `NativeScaleConfig`: a configuration over `NativeScaleOptions` keyed `native_scale` (so gen's
+ *          selector is `config:native_scale.protocol`), built with its defaults (no address, so no device), a host
  *          override and a runway values layer, and refusing a protocol, transport, UUID or timeout it does not take.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -25,10 +25,10 @@ class TillNativeScaleConfig extends BaseNativeScaleConfig {
 }
 
 describe("NativeScaleConfig", () => {
-  it("is a configuration keyed nativeScale, an override inheriting the key", () => {
+  it("is a configuration keyed native_scale, an override inheriting the key", () => {
     expect(new NativeScaleConfig()).toBeInstanceOf(Config);
-    expect(configKey(NativeScaleConfig, "nativeScale")).toBe("nativeScale");
-    expect(configKey(TillNativeScaleConfig, "nativeScale")).toBe("nativeScale");
+    expect(configKey(NativeScaleConfig, "native_scale")).toBe("native_scale");
+    expect(configKey(TillNativeScaleConfig, "native_scale")).toBe("native_scale");
   });
 
   it("builds with no scale address", () => {

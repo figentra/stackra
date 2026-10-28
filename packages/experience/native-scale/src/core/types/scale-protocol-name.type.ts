@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ScaleProtocolName`, the scale protocols this package ships a driver for, each a key of
- *          `NativeScaleConfig.protocols` and the driver name gen selects by `config:nativeScale.protocol`:
+ *          `NativeScaleConfig.protocols` and the driver name gen selects by `config:native_scale.protocol`:
  *          `mt_sics` (`MtSicsScaleDriver`) and `continuous_ascii` (`ContinuousAsciiScaleDriver`).
  * Boundary: a type only. A new protocol is a new driver file, a name here and its `SCALE_PROTOCOLS` entry.
  * Runtime: isomorphic

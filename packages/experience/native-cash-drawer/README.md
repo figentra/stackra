@@ -8,17 +8,15 @@ The cash drawer of an Expo app, as one Expo Modules API package (ADR 0478): the 
 call no drawer can honour resolves the typed refusal of `CapabilityResult` (capability `print`, because a drawer opens
 through a printer), never an exception (ADR 0253). The mock is `@stackra/peripherals`' `MemoryCashDrawerDriver`.
 
-**Tier:** `tier:lib` (`packages/experience/native-cash-drawer`). Entries `.` (drivers) and `./plugin` (the config
-plugin, which `app.plugin.js` hands Expo). Depends on `@stackra/native-receipt-printer` (`kickThroughPrinter`),
+**Tier:** `tier:lib` (`packages/experience/native-cash-drawer`). Entry `.` (drivers), plus `app.plugin.js`, which hands
+Expo the built config plugin (`plugin/`, not an export). Depends on
 `@stackra/peripherals` (the port, `PeripheralsConfig`), `@stackra/container` and `@stackra/platform`. `expo` is a peer.
 
 ## What is here
 
-| Entry      | Symbol                                         | Use                                                                                                 |
-| ---------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `.`        | `PrinterKickCashDrawerDriver`                  | `peripherals.drawer: "printer_kick"`: the drawer on the receipt printer (Epson, Star, any)          |
-| `.`        | `SunmiCashDrawerDriver`, `PaxCashDrawerDriver` | `"sunmi"` or `"pax"`: the Android terminal's drawer port (moved from `@stackra/peripherals/native`) |
-| `./plugin` | default export, `CashDrawerPluginProps`        | the config plugin and its options                                                                   |
+| Entry | Symbol                                         | Use                                                                                                 |
+| ----- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `.`   | `SunmiCashDrawerDriver`, `PaxCashDrawerDriver` | `"sunmi"` or `"pax"`: the Android terminal's drawer port (moved from `@stackra/peripherals/native`) |
 
 | Folder                    | Holds                                                                            |
 | ------------------------- | -------------------------------------------------------------------------------- |
@@ -40,10 +38,10 @@ export class PeripheralsConfig extends BasePeripheralsConfig {
 }
 ```
 
-- **`printer_kick`** probes the bound `ReceiptPrinter` and pulses `peripherals.drawerPin` through it only when the
-  printer is ready (ADR 0458 decision 3), with `kickThroughPrinter` from `@stackra/native-receipt-printer`. It works
-  with any printer driver, so it needs no family of its own here. The same name as `@stackra/peripherals/desktop`'s
-  driver, so one runway value serves the desktop and the native targets.
+- **`printer_kick`** is `@stackra/peripherals`' core `PrinterKickCashDrawerDriver`: it probes the bound
+  `ReceiptPrinter` and pulses `peripherals.drawerPin` through it only when the printer is ready (ADR 0458 decision 3).
+  It works with any printer driver (ESC/POS on a desktop, this repository's Epson or Star module on an Expo app), so
+  one driver and one runway value serve both targets and this package needs no copy.
 - **`sunmi`, `pax`** read the status of the printer that drives the drawer port before every kick (Sunmi
   `updatePrinterState()` 1, PAX `getStatus()` 0) and then pulse the port. The pin does not apply.
 - A kick is one-way: success means the SDK took the pulse, not that the drawer opened. No open/closed state is read.
@@ -59,6 +57,5 @@ No vendor binary or source is in this package (ADR 0478 decision 4). Sunmi comes
 ## Testing
 
 The drivers are tested against a stand-in `StackraCashDrawer` module that replays transcribed vendor SDK answers
-(`src/core/__tests__/cash-drawer-sdk.fixture.ts`), and `printer_kick` against the `memory` printer and the Epson driver
-on a stand-in printer module; the plugin's helpers are tested on plain objects. The Kotlin and Swift are checked on the
+(`src/core/__tests__/cash-drawer-sdk.fixture.ts`); the plugin's helpers are tested on plain objects. The Kotlin and Swift are checked on the
 box and on certified models (STA-739). **Certification pending.**

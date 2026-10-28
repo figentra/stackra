@@ -31,6 +31,7 @@ export { MemoryReceiptPrinterDriver } from "#core/drivers/memory-receipt-printer
 export { MemoryScaleDriver } from "#core/drivers/memory-scale.driver";
 export { MemoryScannerScaleDriver } from "#core/drivers/memory-scanner-scale.driver";
 export { MemoryUsedReceiptStoreDriver } from "#core/drivers/memory-used-receipt-store.driver";
+export { PrinterKickCashDrawerDriver } from "#core/drivers/printer-kick-cash-drawer.driver";
 export { EmbeddedValue } from "#core/enums/embedded-value.enum";
 export { LabelPrinterUnavailableError } from "#core/errors/label-printer-unavailable.error";
 export { PrinterUnavailableError } from "#core/errors/printer-unavailable.error";

@@ -57,7 +57,7 @@ Tap to Pay checkout need the mobile SDK; those readers stay server-driven, see d
    (0446 decision 3); the device retrieves, collects and confirms it, and the server captures, cancels and reconciles
    over the Connection. The module never enables the SDK's offline mode and never creates an intent on the device, so
    a payment cannot complete without Stripe. A lost answer is cancel-then-reconcile on the server
-   ([0377](/adr/0377-semi-integrated-card-terminals-ecr-drivers-for-gulf-acquirers-and-the-local-link) decision 2).
+   ([0377](/adr/0377-card-terminals-semi-integrated-over-a-local-link-geidea-network-international-paymob-and-neoleap) decision 2).
 6. **Permissions are the package's config plugin.** `plugin/` adds Bluetooth (always) and location (when in use)
    usage strings, the `bluetooth-central` background mode, and, when the app's runway turns Tap to Pay on, the
    proximity reader entitlement on iOS; on Android the Bluetooth scan and connect, fine location and NFC permissions,

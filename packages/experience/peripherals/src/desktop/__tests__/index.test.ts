@@ -27,7 +27,6 @@ describe("@stackra/peripherals/desktop", () => {
       "PrintKitchenTicketBridge",
       "PrintLabelBridge",
       "PrintReceiptBridge",
-      "PrinterKickCashDrawerDriver",
       "ZplLabelPrinterDriver",
     ]);
   });

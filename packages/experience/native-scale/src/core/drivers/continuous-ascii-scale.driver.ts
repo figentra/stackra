@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ContinuousAsciiScaleDriver`, the `Scale` driver for scales that stream the A&D standard format
- *          (`nativeScale.protocol: "continuous_ascii"`) through the `StackraNativeScale` Expo module over Bluetooth
+ *          (`native_scale.protocol: "continuous_ascii"`) through the `StackraNativeScale` Expo module over Bluetooth
  *          LE, Bluetooth serial or USB serial: `read` answers the next streamed weight (after sending the pack's
  *          `request` command when one is set, for an indicator in command mode), `onWeight` hands every streamed
  *          weight on, and `frame` adds the unit as displayed and the gross or net field.
@@ -41,7 +41,7 @@ type WeightLine = Extract<ScaleLine, { kind: "weight" }>;
  *
  * @example
  * // generated native wiring, ios and android targets
- * { port: Scale, selectedBy: "config:nativeScale.protocol", candidates: { continuous_ascii: () => import("@stackra/native-scale").then((m) => m.ContinuousAsciiScaleDriver) } }
+ * { port: Scale, selectedBy: "config:native_scale.protocol", candidates: { continuous_ascii: () => import("@stackra/native-scale").then((m) => m.ContinuousAsciiScaleDriver) } }
  */
 export class ContinuousAsciiScaleDriver extends Driver(Scale) {
   /** The native scale configuration. */

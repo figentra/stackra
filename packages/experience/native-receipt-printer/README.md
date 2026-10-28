@@ -8,18 +8,17 @@ Swift and Kotlin, one TypeScript driver per vendor behind the unchanged `Receipt
 call no printer can honour resolves the typed refusal of `CapabilityResult` (capability `print`), never an exception
 (ADR 0253). The mock is `@stackra/peripherals`' `MemoryReceiptPrinterDriver`.
 
-**Tier:** `tier:lib` (`packages/experience/native-receipt-printer`). Entries `.` (drivers) and `./plugin` (the config
-plugin, which `app.plugin.js` hands Expo). Depends on `@stackra/peripherals` (the port, `PeripheralsConfig`),
+**Tier:** `tier:lib` (`packages/experience/native-receipt-printer`). Entry `.` (drivers), plus `app.plugin.js`, which hands
+Expo the built config plugin (`plugin/`, not an export). Depends on `@stackra/peripherals` (the port, `PeripheralsConfig`),
 `@stackra/container` (`Driver`) and `@stackra/platform` (capability codes). `expo` is a peer.
 
 ## What is here
 
-| Entry      | Symbol                                                  | Use                                                                                                      |
-| ---------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `.`        | `EpsonReceiptPrinterDriver`, `StarReceiptPrinterDriver` | `peripherals.printer: "epson"` or `"star"`: a network printer, iOS and Android                           |
-| `.`        | `SunmiReceiptPrinterDriver`, `PaxReceiptPrinterDriver`  | `"sunmi"` or `"pax"`: the Android terminal's built-in printer (moved from `@stackra/peripherals/native`) |
-| `.`        | `kickThroughPrinter`                                    | probe, then pulse the drawer pin; used by `@stackra/native-cash-drawer`'s `printer_kick`                 |
-| `./plugin` | default export, `ReceiptPrinterPluginProps`             | the config plugin and its options                                                                        |
+| Entry | Symbol                                                  | Use                                                                                                      |
+| ----- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `.`   | `EpsonReceiptPrinterDriver`, `StarReceiptPrinterDriver` | `peripherals.printer: "epson"` or `"star"`: a network printer, iOS and Android                           |
+| `.`   | `SunmiReceiptPrinterDriver`, `PaxReceiptPrinterDriver`  | `"sunmi"` or `"pax"`: the Android terminal's built-in printer (moved from `@stackra/peripherals/native`) |
+| `.`   | `kickThroughPrinter`                                    | probe, then pulse the drawer pin; used by `@stackra/native-cash-drawer`'s `printer_kick`                 |
 
 | Folder                    | Holds                                                                                                     |
 | ------------------------- | --------------------------------------------------------------------------------------------------------- |

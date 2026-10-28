@@ -39,6 +39,7 @@ describe("@stackra/peripherals", () => {
       "MemoryUsedReceiptStoreDriver",
       "PeripheralsConfig",
       "PeripheralsConfig$",
+      "PrinterKickCashDrawerDriver",
       "PrinterUnavailableError",
       "fitScaleReading",
       "importReceiptPublicKey",

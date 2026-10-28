@@ -42,14 +42,14 @@ The BLE service and characteristics default to the Nordic UART service most BLE 
 
 ## What is here
 
-| Symbol                                                                     | Use                                                                                                           |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `MtSicsScaleDriver`                                                        | `Scale` over MT-SICS: `read` sends `SI`, `onWeight` runs `SIR` and stops with `@`                             |
-| `ContinuousAsciiScaleDriver`                                               | `Scale` over the A&D stream: `read` takes the next line (after `request`, when one is set)                    |
-| `frame()` on both drivers                                                  | the full `ScaleFrame`: grams, value and unit as displayed, stable, net or gross, tare                         |
-| `NativeScaleConfig` (+ `NativeScaleOptions`, `NATIVE_SCALE_CONFIG_SCHEMA`) | the configuration (key `nativeScale`): protocol, transport, address, baud rate, BLE UUIDs, read timeout, pack |
-| `SCALE_PROTOCOLS`                                                          | the shipped protocol pack                                                                                     |
-| `ScaleFrame`, `ScaleProtocol`, `ScaleProtocolName`, `ScaleTransport`       | the types a caller names                                                                                      |
+| Symbol                                                                     | Use                                                                                                            |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `MtSicsScaleDriver`                                                        | `Scale` over MT-SICS: `read` sends `SI`, `onWeight` runs `SIR` and stops with `@`                              |
+| `ContinuousAsciiScaleDriver`                                               | `Scale` over the A&D stream: `read` takes the next line (after `request`, when one is set)                     |
+| `frame()` on both drivers                                                  | the full `ScaleFrame`: grams, value and unit as displayed, stable, net or gross, tare                          |
+| `NativeScaleConfig` (+ `NativeScaleOptions`, `NATIVE_SCALE_CONFIG_SCHEMA`) | the configuration (key `native_scale`): protocol, transport, address, baud rate, BLE UUIDs, read timeout, pack |
+| `SCALE_PROTOCOLS`                                                          | the shipped protocol pack                                                                                      |
+| `ScaleFrame`, `ScaleProtocol`, `ScaleProtocolName`, `ScaleTransport`       | the types a caller names                                                                                       |
 
 ## Use
 
@@ -62,10 +62,10 @@ export class NativeScaleConfig extends BaseNativeScaleConfig {
   override protocol: ScaleProtocolName = "continuous_ascii";
   override transport: ScaleTransport = "usb";
 }
-// runway sets nativeScale.address per device, e.g. "0403:6001".
+// runway sets native_scale.address per device, e.g. "0403:6001".
 
 // generated native wiring
-{ port: Scale, selectedBy: "config:nativeScale.protocol", candidates: {
+{ port: Scale, selectedBy: "config:native_scale.protocol", candidates: {
   mt_sics: () => import("@stackra/native-scale").then((m) => m.MtSicsScaleDriver),
   continuous_ascii: () => import("@stackra/native-scale").then((m) => m.ContinuousAsciiScaleDriver),
 } }

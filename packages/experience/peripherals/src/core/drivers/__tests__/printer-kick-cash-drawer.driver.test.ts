@@ -12,7 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { PeripheralsConfig } from "#config/peripherals.config";
 import { CashDrawer } from "#contracts/ports/cash-drawer.port";
 import { MemoryReceiptPrinterDriver } from "#core/drivers/memory-receipt-printer.driver";
-import { PrinterKickCashDrawerDriver } from "#desktop/drivers/printer-kick-cash-drawer.driver";
+import { PrinterKickCashDrawerDriver } from "#core/drivers/printer-kick-cash-drawer.driver";
 
 describe("PrinterKickCashDrawerDriver", () => {
   it("pulses the configured pin through the printer", async () => {

@@ -12,11 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 import * as entry from "#core/index";
 
 describe("@stackra/native-cash-drawer", () => {
-  it("exports the three drivers", () => {
-    expect(Object.keys(entry).sort()).toEqual([
-      "PaxCashDrawerDriver",
-      "PrinterKickCashDrawerDriver",
-      "SunmiCashDrawerDriver",
-    ]);
+  it("exports the two drivers", () => {
+    expect(Object.keys(entry).sort()).toEqual(["PaxCashDrawerDriver", "SunmiCashDrawerDriver"]);
   });
 });

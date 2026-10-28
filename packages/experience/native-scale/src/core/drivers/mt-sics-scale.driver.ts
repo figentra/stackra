@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MtSicsScaleDriver`, the `Scale` driver for scales that speak Mettler Toledo's MT-SICS
- *          (`nativeScale.protocol: "mt_sics"`) through the `StackraNativeScale` Expo module over Bluetooth LE,
+ *          (`native_scale.protocol: "mt_sics"`) through the `StackraNativeScale` Expo module over Bluetooth LE,
  *          Bluetooth serial or USB serial: `read` sends `SI` and answers the settled or moving net weight, `onWeight`
  *          starts `SIR` for the first listener and sends `@` after the last, and `frame` adds the unit as displayed
  *          and the tare (`TA`) for a legal-for-trade record.
@@ -41,7 +41,7 @@ type WeightLine = Extract<ScaleLine, { kind: "weight" }>;
  *
  * @example
  * // generated native wiring, ios and android targets
- * { port: Scale, selectedBy: "config:nativeScale.protocol", candidates: { mt_sics: () => import("@stackra/native-scale").then((m) => m.MtSicsScaleDriver) } }
+ * { port: Scale, selectedBy: "config:native_scale.protocol", candidates: { mt_sics: () => import("@stackra/native-scale").then((m) => m.MtSicsScaleDriver) } }
  */
 export class MtSicsScaleDriver extends Driver(Scale) {
   /** The native scale configuration. */

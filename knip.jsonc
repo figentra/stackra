@@ -57,8 +57,16 @@
       // module, entries, test setup) imports packages src/ never does, which the member declares for it
       // (generated_dependency_missing); knip reads it when gen has run. vitest.config.ts: the authored test config
       // that merges gen's (stackra-163); named so its @stackra/vitest-config import is always seen (stackra-247).
-      "entry": ["stackra.config.ts", "vitest.config.ts", ".stackra/**/*.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}"],
+      // plugin/: an Expo module package's config plugin (ADR 0478 decision 2), which app.plugin.js loads from dist/,
+      // so knip starts at its source index.
+      "entry": [
+        "stackra.config.ts",
+        "vitest.config.ts",
+        ".stackra/**/*.{ts,tsx}",
+        "plugin/index.ts",
+        "plugin/src/index.ts",
+      ],
+      "project": ["src/**/*.{ts,tsx}", "plugin/**/*.ts"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
     // vite-plugin ships CSS that knip compiles (Tailwind), so its project includes it.

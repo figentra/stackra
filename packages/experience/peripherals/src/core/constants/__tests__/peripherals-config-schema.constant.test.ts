@@ -73,7 +73,7 @@ describe("PERIPHERALS_CONFIG_SCHEMA", () => {
 
   it("refuses what no driver can use", () => {
     for (const values of [
-      { printer: "star" },
+      { printer: "brother" },
       { scanner: "keyboard" },
       { labelPrinter: "epl" },
       { customerDisplay: "pole" },

@@ -75,8 +75,8 @@ describe("PeripheralsConfig", () => {
   });
 
   it("refuses a driver this package does not ship and an address it cannot reach", () => {
-    // @ts-expect-error -- "star" is no driver this package ships; the runtime refusal is the subject
-    expect(() => buildConfig(PeripheralsConfig, { values: { printer: "star" } })).toThrow(
+    // @ts-expect-error -- "brother" is no driver of any package; the runtime refusal is the subject
+    expect(() => buildConfig(PeripheralsConfig, { values: { printer: "brother" } })).toThrow(
       ConfigInvalidError,
     );
     expect(() =>

@@ -19,5 +19,4 @@ export { EcrCardTerminalDriver } from "#desktop/drivers/ecr-card-terminal.driver
 export { EscposKitchenPrinterDriver } from "#desktop/drivers/escpos-kitchen-printer.driver";
 export { HidBarcodeScannerDriver } from "#desktop/drivers/hid-barcode-scanner.driver";
 export { HidBumpBarDriver } from "#desktop/drivers/hid-bump-bar.driver";
-export { PrinterKickCashDrawerDriver } from "#desktop/drivers/printer-kick-cash-drawer.driver";
 export { ZplLabelPrinterDriver } from "#desktop/drivers/zpl-label-printer.driver";

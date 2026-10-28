@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `NativeScaleConfig`, the native scale configuration (key `nativeScale`): the protocol driver gen's wiring
- *          selects by `config:nativeScale.protocol`, the link the module opens and the protocol pack.
- * Boundary: a configuration class over `NativeScaleOptions` with no env map; runway's `config.nativeScale` layer sets
+ * Purpose: `NativeScaleConfig`, the native scale configuration (key `native_scale`): the protocol driver gen's wiring
+ *          selects by `config:native_scale.protocol`, the link the module opens and the protocol pack.
+ * Boundary: a configuration class over `NativeScaleOptions` with no env map; runway's `config.native_scale` layer sets
  *           it per device. A host overrides it as `class NativeScaleConfig extends BaseNativeScaleConfig` with
  *           `override` members only, inheriting the key. The drivers read it when they run.
  * Runtime: isomorphic
