@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/container, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. Nothing named `Injectable`, `Inject`, `defineToken` or
+ * Boundary: names each re-export and declares nothing. `SystemClockDriver` is here because the manifest lists it as
+ *           the `system` Clock candidate, which a host's wiring imports from this entry. Nothing named `Injectable`, `Inject`, `defineToken` or
  *           `Provider` is exported (ADR 0294 decisions 6, 17 and 23).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
@@ -13,6 +14,7 @@ export { Module } from "#core/bases/module.base";
 export { Service } from "#core/bases/service.base";
 export { Lifetime } from "#core/decorators/lifetime.decorator";
 export { Replaces } from "#core/decorators/replaces.decorator";
+export { SystemClockDriver } from "#core/drivers/system-clock.driver";
 export { DecoratorTarget } from "#core/enums/decorator-target.enum";
 export { UnresolvedPortError } from "#core/errors/unresolved-port.error";
 export { createDecorator } from "#core/functions/create-decorator.function";

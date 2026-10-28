@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: every value the template imports from
- *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`, `denyPermission`), the plugin and the memory AccessControl are
- *          exported, nothing else is, and its types resolve.
+ *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`, `denyPermission`), the plugin, the memory AccessControl and
+ *          the recording AuditTrail (the `recording` candidate a wiring imports from the manifest) are exported, nothing else is, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0294 (decision 15).
@@ -27,6 +27,7 @@ describe("@stackra/actions/testing", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "ACTIONS_TESTING_PLUGIN",
       "MemoryAccessControlDriver",
+      "RecordingAuditTrailDriver",
       "denyPermission",
       "extension",
       "fakeActionContext",

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./testing` entry of @stackra/actions (`run`, `fakeActionContext`,
  *          `fakeExtensionContext`, `extension`, the `toHaveAudited` matcher, the testing-module plugin that adds `.withExtensions`
- *          and the "memory" `AccessControl` with its `denyPermission` helper) until
+ *          and the "memory" `AccessControl` with its `denyPermission` helper, and `RecordingAuditTrailDriver`, the
+ *          `recording` `AuditTrail` candidate the manifest lists) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Importing it registers the plugin with the testing module;
  *           `sideEffects` stays `false` because only vitest loads `./testing` and never tree-shakes it. Imports `.`,
@@ -14,6 +15,7 @@
 export { ACTIONS_TESTING_PLUGIN } from "#testing/constants/actions-testing-plugin.constant";
 export { denyPermission } from "#testing/functions/deny-permission.function";
 export { MemoryAccessControlDriver } from "#testing/drivers/memory-access-control.driver";
+export { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 export { extension } from "#testing/functions/extension.function";
 export { fakeActionContext } from "#testing/functions/fake-action-context.function";
 export { fakeExtensionContext } from "#testing/functions/fake-extension-context.function";

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/container` (with
  *          the 2026-10-24 moves: Module and Service here, Port in contracts) and the kind helpers the kind packages
- *          need are exported, nothing else is, nothing retired (`Injectable`, `Inject`, `defineToken`, `Provider`) is,
+ *          need are exported, with `SystemClockDriver` (the `system` Clock candidate a host's wiring imports from its
+ *          manifest), nothing else is, nothing retired (`Injectable`, `Inject`, `defineToken`, `Provider`) is,
  *          every type the template imports resolves, and the package carries no reflect-metadata dependency.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and reads package.json from disk.
  * Runtime: node (vitest)
@@ -84,6 +85,7 @@ describe("@stackra/container", () => {
       "Module",
       "Replaces",
       "Service",
+      "SystemClockDriver",
       "UnresolvedPortError",
       "createDecorator",
       "createKind",
