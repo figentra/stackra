@@ -26,11 +26,13 @@ describe("@stackra/consent", () => {
       "ConsentProofService",
       "ConsentRegime",
       "ConsentStatus",
+      "CfIpcountryRegionSourceDriver",
       "CookieConsentStoreDriver",
       "MemoryConsentProofStoreDriver",
       "MemoryConsentStoreDriver",
       "NoneConsentVerifierDriver",
       "StorageConsentStoreDriver",
+      "consentModeSignals",
       "needsGuardianConsent",
     ]);
   });
@@ -40,6 +42,7 @@ describe("@stackra/consent", () => {
       "ConsentStore",
       "ConsentVerifier",
       "ConsentVerificationMethod",
+      "RegionSource",
       "CONSENT_CONFIG_SCHEMA",
       "CONSENT_RECORD_SCHEMA",
       "CONSENT_STORAGE_KEY",

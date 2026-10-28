@@ -14,16 +14,18 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                          |
-| ------------------------------------ | ---------------------------------------------------- |
-| The configuration (`ConsentConfig`)  | `src/config/consent.config.ts`                       |
-| Its schema and shipped `X$`          | `src/core/schemas/`, `src/core/constants/`           |
-| A port, its enum and the record type | `src/contracts/{ports,enums,types}/`                 |
-| A store driver                       | `src/core/drivers/<name>-consent-store.driver.ts`    |
-| React code                           | `src/react/consent/`                                 |
-| A test helper                        | `src/testing/functions/`                             |
-| A category label                     | `assets/lang/<locale>/consent.json` (en and ar both) |
-| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it       |
+| You are writing…                     | It goes in…                                         |
+| ------------------------------------ | --------------------------------------------------- |
+| The configuration (`ConsentConfig`)  | `src/config/consent.config.ts`                      |
+| Its schema and shipped `X$`          | `src/core/schemas/`, `src/core/constants/`          |
+| A port, its enum and the record type | `src/contracts/{ports,enums,types}/`                |
+| A store driver                       | `src/core/drivers/<name>-consent-store.driver.ts`   |
+| A region source driver               | `src/core/drivers/<name>-region-source.driver.ts`   |
+| A pure read of the ledger            | `src/core/functions/`                               |
+| React code                           | `src/react/consent/`                                |
+| A test helper                        | `src/testing/functions/`                            |
+| A category or regime label           | `assets/lang/<locale>/consent.json` (all 7 locales) |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it      |
 
 ## Entries and barrels
 

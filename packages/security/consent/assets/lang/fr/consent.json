@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Nécessaires",
       "analytics": "Analyse du produit",
-      "crash_replay": "Relectures des plantages"
+      "crash_replay": "Relectures des plantages",
+      "marketing": "Marketing et publicité"
     },
     "consent_verification_method": {
       "card_check": "Vérification par carte",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Consentement préalable (RGPD)",
-      "ccpa": "Droit d’opposition (CCPA)"
+      "ccpa": "Droit d’opposition (CCPA)",
+      "lgpd": "Consentement préalable (LGPD, Brésil)",
+      "pdpl_sa": "Consentement préalable (PDPL, Arabie saoudite)",
+      "pdpl_ae": "Consentement préalable (PDPL, EAU)",
+      "dpdp": "Consentement préalable (DPDP, Inde)"
     },
     "consent_status": {
       "granted": "Accordé",

@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Notwendig",
       "analytics": "Produktanalyse",
-      "crash_replay": "Absturzaufzeichnungen"
+      "crash_replay": "Absturzaufzeichnungen",
+      "marketing": "Marketing und Werbung"
     },
     "consent_verification_method": {
       "card_check": "Kartenprüfung",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Vorherige Einwilligung (DSGVO)",
-      "ccpa": "Widerspruchslösung (CCPA)"
+      "ccpa": "Widerspruchslösung (CCPA)",
+      "lgpd": "Opt-in (LGPD, Brasilien)",
+      "pdpl_sa": "Opt-in (PDPL, Saudi-Arabien)",
+      "pdpl_ae": "Opt-in (PDPL, VAE)",
+      "dpdp": "Opt-in (DPDP, Indien)"
     },
     "consent_status": {
       "granted": "Erteilt",

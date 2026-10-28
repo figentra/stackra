@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Necessary",
       "analytics": "Product analytics",
-      "crash_replay": "Crash replays"
+      "crash_replay": "Crash replays",
+      "marketing": "Marketing and advertising"
     },
     "consent_verification_method": {
       "card_check": "Card check",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Opt-in (GDPR)",
-      "ccpa": "Opt-out (CCPA)"
+      "ccpa": "Opt-out (CCPA)",
+      "lgpd": "Opt-in (LGPD, Brazil)",
+      "pdpl_sa": "Opt-in (PDPL, Saudi Arabia)",
+      "pdpl_ae": "Opt-in (PDPL, UAE)",
+      "dpdp": "Opt-in (DPDP, India)"
     },
     "consent_status": {
       "granted": "Granted",

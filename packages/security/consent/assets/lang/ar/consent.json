@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "ضرورية",
       "analytics": "تحليلات المنتج",
-      "crash_replay": "تسجيلات الأعطال"
+      "crash_replay": "تسجيلات الأعطال",
+      "marketing": "التسويق والإعلانات"
     },
     "consent_verification_method": {
       "card_check": "التحقق بالبطاقة",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "موافقة مسبقة (GDPR)",
-      "ccpa": "حق الرفض (CCPA)"
+      "ccpa": "حق الرفض (CCPA)",
+      "lgpd": "موافقة مسبقة (LGPD، البرازيل)",
+      "pdpl_sa": "موافقة مسبقة (نظام حماية البيانات الشخصية، السعودية)",
+      "pdpl_ae": "موافقة مسبقة (قانون حماية البيانات الشخصية، الإمارات)",
+      "dpdp": "موافقة مسبقة (DPDP، الهند)"
     },
     "consent_status": {
       "granted": "ممنوحة",

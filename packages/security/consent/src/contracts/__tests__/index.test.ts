@@ -20,6 +20,7 @@ describe("@stackra/consent/contracts", () => {
       "ConsentStore",
       "ConsentVerificationMethod",
       "ConsentVerifier",
+      "RegionSource",
     ]);
   });
 

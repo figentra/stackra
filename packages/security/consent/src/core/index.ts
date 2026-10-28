@@ -11,6 +11,7 @@
  */
 export { ConsentConfig } from "#config/consent.config";
 export { CONSENT_CONFIG_SCHEMA as ConsentConfig$ } from "#core/constants/consent-config-schema.constant";
+export { CfIpcountryRegionSourceDriver } from "#core/drivers/cf-ipcountry-region-source.driver";
 export { CookieConsentStoreDriver } from "#core/drivers/cookie-consent-store.driver";
 export { MemoryConsentProofStoreDriver } from "#core/drivers/memory-consent-proof-store.driver";
 export { MemoryConsentStoreDriver } from "#core/drivers/memory-consent-store.driver";
@@ -21,9 +22,11 @@ export { ConsentRegime } from "#core/enums/consent-regime.enum";
 export { ConsentStatus } from "#core/enums/consent-status.enum";
 export { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
 export { ConsentNotVerifiedError } from "#core/errors/consent-not-verified.error";
+export { consentModeSignals } from "#core/functions/consent-mode-signals.function";
 export { needsGuardianConsent } from "#core/functions/needs-guardian-consent.function";
 export { ConsentOptions } from "#core/schemas/consent-options.schema";
 export { ConsentLedger } from "#core/services/consent-ledger.service";
 export { ConsentProofService } from "#core/services/consent-proof.service";
 export type { ConsentCategoryEntry } from "#core/types/consent-category-entry.type";
+export type { ConsentModeSignals } from "#core/types/consent-mode-signals.type";
 export type { TermsDocument } from "#core/types/terms-document.type";

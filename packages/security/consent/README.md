@@ -23,14 +23,17 @@ is an optional peer of `./react`.
 | ------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `.`           | `ConsentConfig`                                                                                     | the configuration (key `consent`): categories, cookie, expiry, policy version, regions                  |
 | `.`           | `ConsentConfig$`                                                                                    | the shipped schema a member's generated override extends                                                |
-| `.`           | `ConsentCategory`                                                                                   | `necessary`, `analytics`, `crash_replay`                                                                |
+| `.`           | `ConsentCategory`                                                                                   | `necessary`, `analytics`, `crash_replay`, `marketing` (ads, pixels, conversions, audiences)             |
 | `.`           | `ConsentStatus`                                                                                     | `granted`, `denied`, `undecided`                                                                        |
-| `.`           | `ConsentRegime`                                                                                     | `gdpr` (opt-in) and `ccpa` (opt-out), per region in `regionDefaults`                                    |
+| `.`           | `ConsentRegime`                                                                                     | `ccpa` (opt-out); `gdpr`, `lgpd`, `pdpl_sa`, `pdpl_ae`, `dpdp` (opt-in), per region in `regionDefaults` |
 | `.`           | `ConsentLedger`                                                                                     | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe`               |
 | `.`           | `CookieConsentStoreDriver`                                                                          | the web store: the one decision cookie                                                                  |
 | `.`           | `StorageConsentStoreDriver`                                                                         | the device store: `consent.decision` in the `prefs` area                                                |
 | `.`           | `MemoryConsentStoreDriver`                                                                          | tests and previews                                                                                      |
 | `./contracts` | `ConsentStore`                                                                                      | the port the drivers implement (`read`, `write`, `clear`)                                               |
+| `./contracts` | `RegionSource`                                                                                      | reads the visitor's region from request headers (`regionOf`), for `setRegion`                           |
+| `.`           | `CfIpcountryRegionSourceDriver`                                                                     | the `cf-ipcountry` region source: Cloudflare's country header; `XX` and `T1` read as unknown            |
+| `.`           | `consentModeSignals`, `ConsentModeSignals`                                                          | Google Consent Mode v2: `ad_*` follow `marketing`, `analytics_storage` follows `analytics`              |
 | `./react`     | `useConsent`                                                                                        | `useConsent(category)` for a banner, `useConsent()` for a settings page                                 |
 | `./testing`   | `fakeConsent`                                                                                       | a real ledger over memory, nothing decided                                                              |
 | `.`           | `ConsentProofService`                                                                               | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`, `evidence`         |
@@ -85,8 +88,23 @@ is never recorded unverified. With no method named, the relationship alone suffi
 1. A required category (`necessary`) is granted, never asked and never stored.
 2. Global Privacy Control refuses every other category.
 3. A stored decision counts when it answers the current `policyVersion` and is younger than `expiryDays`.
-4. Otherwise the visitor's region decides: `ccpa` grants a category marked `defaultGranted`; `gdpr`, or no regime at
-   all, leaves it undecided, which runs nothing.
+4. Otherwise the visitor's region decides: `ccpa` grants a category marked `defaultGranted`; every opt-in regime
+   (`gdpr`, `lgpd`, `pdpl_sa`, `pdpl_ae`, `dpdp`), or no regime at all, leaves it undecided, which runs nothing.
+
+## Region and Consent Mode
+
+Where the request is seen (the edge, a server render), read the region and hand it to the ledger; behind Cloudflare
+the `cf-ipcountry` driver reads the country header:
+
+```ts
+ledger.setRegion(regionSource.regionOf(request.headers)); // "SA", or null for unknown (the `default` regime)
+```
+
+A page that loads Google tags passes the ledger's answer on; anything not granted is `denied`:
+
+```ts
+gtag("consent", "update", consentModeSignals(ledger));
+```
 
 ## Use
 

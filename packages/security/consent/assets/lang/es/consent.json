@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Necesarias",
       "analytics": "Analítica del producto",
-      "crash_replay": "Grabaciones de errores"
+      "crash_replay": "Grabaciones de errores",
+      "marketing": "Marketing y publicidad"
     },
     "consent_verification_method": {
       "card_check": "Verificación con tarjeta",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Consentimiento previo (RGPD)",
-      "ccpa": "Exclusión voluntaria (CCPA)"
+      "ccpa": "Exclusión voluntaria (CCPA)",
+      "lgpd": "Consentimiento previo (LGPD, Brasil)",
+      "pdpl_sa": "Consentimiento previo (PDPL, Arabia Saudí)",
+      "pdpl_ae": "Consentimiento previo (PDPL, EAU)",
+      "dpdp": "Consentimiento previo (DPDP, India)"
     },
     "consent_status": {
       "granted": "Concedido",

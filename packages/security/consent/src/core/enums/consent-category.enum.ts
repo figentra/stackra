@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsentCategory`, what a visitor or user consents to: the categories a `ConsentConfig` lists, the category
- *          that gates analytics (`AnalyticsConfig.consentCategory`) and session replay (`TelemetryConfig.replay`).
+ *          that gates analytics (`AnalyticsConfig.consentCategory`), session replay (`TelemetryConfig.replay`) and
+ *          advertising (pixels, server conversions, audience sync, and the Consent Mode `ad_*` signals).
  * Boundary: an `Enum.of` value plus the type of the same name. An app defines no category enum of its own. The codes
  *           are stored in the decision and label the settings switches through the derived key
  *           `consent::enums.consent_category.<code>` (assets/lang). A new category is a new case here and a new label.
@@ -23,6 +24,8 @@ export const ConsentCategory = Enum.of({
   Analytics: "analytics",
   /** Session replays recorded around a crash or an error. */
   CrashReplay: "crash_replay",
+  /** Advertising: ad pixels, conversions sent to ad platforms, ad audiences and ad personalisation. */
+  Marketing: "marketing",
 });
 
 /** One of the codes above. */

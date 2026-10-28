@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Noodzakelijk",
       "analytics": "Productanalyse",
-      "crash_replay": "Crashopnames"
+      "crash_replay": "Crashopnames",
+      "marketing": "Marketing en advertenties"
     },
     "consent_verification_method": {
       "card_check": "Kaartcontrole",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Voorafgaande toestemming (AVG)",
-      "ccpa": "Afmelden (CCPA)"
+      "ccpa": "Afmelden (CCPA)",
+      "lgpd": "Opt-in (LGPD, Brazilië)",
+      "pdpl_sa": "Opt-in (PDPL, Saoedi-Arabië)",
+      "pdpl_ae": "Opt-in (PDPL, VAE)",
+      "dpdp": "Opt-in (DPDP, India)"
     },
     "consent_status": {
       "granted": "Verleend",

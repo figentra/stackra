@@ -3,7 +3,8 @@
     "consent_category": {
       "necessary": "Necessari",
       "analytics": "Analisi del prodotto",
-      "crash_replay": "Registrazioni degli arresti anomali"
+      "crash_replay": "Registrazioni degli arresti anomali",
+      "marketing": "Marketing e pubblicità"
     },
     "consent_verification_method": {
       "card_check": "Verifica con carta",
@@ -12,7 +13,11 @@
     },
     "consent_regime": {
       "gdpr": "Consenso preventivo (GDPR)",
-      "ccpa": "Diritto di opposizione (CCPA)"
+      "ccpa": "Diritto di opposizione (CCPA)",
+      "lgpd": "Consenso preventivo (LGPD, Brasile)",
+      "pdpl_sa": "Consenso preventivo (PDPL, Arabia Saudita)",
+      "pdpl_ae": "Consenso preventivo (PDPL, EAU)",
+      "dpdp": "Consenso preventivo (DPDP, India)"
     },
     "consent_status": {
       "granted": "Concesso",

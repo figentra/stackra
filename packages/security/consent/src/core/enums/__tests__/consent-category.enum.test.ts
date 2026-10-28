@@ -26,13 +26,21 @@ const labelsOf = (locale: string): Record<string, string> =>
 
 describe("ConsentCategory", () => {
   it("lists the categories in order", () => {
-    expect(Enum.values(ConsentCategory)).toEqual(["necessary", "analytics", "crash_replay"]);
+    expect(Enum.values(ConsentCategory)).toEqual([
+      "necessary",
+      "analytics",
+      "crash_replay",
+      "marketing",
+    ]);
     expect(ConsentCategory.CrashReplay).toBe("crash_replay");
-    expectTypeOf<ConsentCategory>().toEqualTypeOf<"necessary" | "analytics" | "crash_replay">();
+    expect(ConsentCategory.Marketing).toBe("marketing");
+    expectTypeOf<ConsentCategory>().toEqualTypeOf<
+      "necessary" | "analytics" | "crash_replay" | "marketing"
+    >();
   });
 
-  it("labels every code in English and Arabic", () => {
-    for (const labels of [labelsOf("en"), labelsOf("ar")]) {
+  it("labels every code in all seven locales", () => {
+    for (const labels of ["ar", "de", "en", "es", "fr", "it", "nl"].map(labelsOf)) {
       expect(Object.keys(labels).sort()).toEqual([...Enum.values(ConsentCategory)].sort());
     }
   });
