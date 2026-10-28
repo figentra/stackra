@@ -33,6 +33,7 @@ import type {
 describe("@stackra/settings", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(settings).sort()).toEqual([
+      "AccountSettings",
       "MarketPackSettingFloorSourceDriver",
       "MemorySettingEntitlementSourceDriver",
       "MemorySettingFloorSourceDriver",

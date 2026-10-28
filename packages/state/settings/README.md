@@ -15,6 +15,7 @@ Depends on `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@st
 | ------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
 | `.`           | `Settings`, `Setting`                                 | the kind base of a module's group and the field decorator        |
 | `.`           | `SettingScope`, `SettingType`                         | the levels settings names, and the type of a generated key       |
+| `.`           | `AccountSettings`                                     | a person's own account preferences: `locale`, their language     |
 | `.`           | `SettingsReader`                                      | `get(Class)`, and `read(page)` / `write(page, values)` for forms |
 | `.`           | `MemorySettingValueStoreDriver`                       | a store in memory (tests, local runs, a client)                  |
 | `.`           | `settingKeys`, `settingsPage`                         | what a member's generated `#stackra/settings` is built with      |
@@ -95,6 +96,19 @@ node (the running scope session's when none is given), then the user's. An inner
 above locked. The merged values are parsed by the class's generated schema, so every unset field reads its default and
 the result is an instance of the class. With the floor source gen's wiring binds, a field below its market's legal
 floor reads the floor, exactly as `SettingsResolver#get` reads it (ADR 0395).
+
+## The account's language
+
+`AccountSettings` (key `account`, scopes platform and user) holds a person's own preferences on the server. Its
+`locale` is the language they chose in an app, one of `@stackra/i18n`'s locale codes, or `null` for no choice (a
+native app then follows the phone, the web negotiates). An app's `setLocale` writes it at the user's holder, and the
+server's `IdentityResolver` reads it over the identity provider's language for `VerifiedPrincipal.locale`, so emails,
+notifications, the web and the person's other devices use the same language (ADR 0080, 2026-10-29 note).
+
+```ts
+await store.write("account", { user: session.user.id }, { locale: "ar" });
+const { locale } = await this.settings.get(AccountSettings, { user: principal.id });
+```
 
 ## Floors, provenance and revisions
 
