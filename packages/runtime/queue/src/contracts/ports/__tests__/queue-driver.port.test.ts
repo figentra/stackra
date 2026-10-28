@@ -12,6 +12,8 @@ import type { Actor, Duration, PublicId, ScopeRef } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { QueueDriver } from "#contracts/ports/queue-driver.port";
+import type { ChainedJob } from "#contracts/types/chained-job.type";
+import type { JobThrottle } from "#contracts/types/job-throttle.type";
 import type { QueuedJob } from "#contracts/types/queued-job.type";
 
 /** A driver that stores nothing. */
@@ -37,6 +39,18 @@ class NullQueueDriver extends Driver(QueueDriver) {
   async redrive(): Promise<boolean> {
     return false;
   }
+
+  async release(): Promise<void> {}
+
+  async openBatch(): Promise<void> {}
+
+  async settleBatch(): Promise<undefined> {
+    return undefined;
+  }
+
+  async batch(): Promise<undefined> {
+    return undefined;
+  }
 }
 
 describe("QueueDriver", () => {
@@ -57,5 +71,12 @@ describe("QueueDriver", () => {
     expectTypeOf<QueuedJob["scope"]>().toEqualTypeOf<ScopeRef | undefined>();
     expectTypeOf<QueuedJob["lease"]>().toEqualTypeOf<Duration>();
     expectTypeOf<QueuedJob["runAt"]>().toEqualTypeOf<Date>();
+  });
+
+  it("stores how a job is scheduled fairly", () => {
+    expectTypeOf<QueuedJob["priority"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<QueuedJob["scopeConcurrency"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<QueuedJob["throttle"]>().toEqualTypeOf<JobThrottle | undefined>();
+    expectTypeOf<QueuedJob["chain"]>().toEqualTypeOf<readonly ChainedJob[] | undefined>();
   });
 });

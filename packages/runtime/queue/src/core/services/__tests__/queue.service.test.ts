@@ -3,7 +3,9 @@
  * Purpose: unit tests of `QueueService`: `push` stores one waiting run with the action's queue, the caller, the scope,
  *          the Idempotency-Key and a lease of the timeout plus a grace minute; a unique job is queued once per scope
  *          (the scope's id, else the caller's, else platform-wide); a queued call of an action without a `job` option
- *          needs its caller; `deadLetters` and `redrive` reach the driver's dead letters.
+ *          needs its caller; `deadLetters` and `redrive` reach the driver's dead letters; a push's priority overrides
+ *          the action's; `chain` stores the rest of the chain on its first job; `batch` opens a batch, tags its jobs
+ *          and counts a skipped unique job as done; `progress` reads the batch.
  * Boundary: test only; the memory driver and a fixed clock.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decision 1); ADR 0260 (decision 4); ADR 0327 (`ScopeRef`).
@@ -122,5 +124,52 @@ describe(QueueService, () => {
     expect(await queue.redrive(id)).toBe(true);
     expect(await queue.deadLetters()).toEqual([]);
     expect(await driver.reserve(undefined, NOON)).toMatchObject({ id, attempts: 1 });
+  });
+
+  it("stores a push's priority over the action's, and refuses a fractional one", async () => {
+    const { driver, queue } = setup();
+    await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { scope, priority: 7 });
+    expect(await driver.reserve(undefined, NOON)).toMatchObject({ priority: 7 });
+    await expect(
+      queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { priority: 1.5 }),
+    ).rejects.toThrow(RangeError);
+  });
+
+  it("chains runs: the first is queued with the rest of the chain", async () => {
+    const { driver, queue } = setup();
+    const id = await queue.chain(
+      [
+        { type: ExpireUnpaidOrdersAction, input: { batchSize: 1 } },
+        { type: VoidPaymentAction, input: { paymentId: "pay_1" } },
+      ],
+      { scope, origin: caller },
+    );
+    expect(await driver.reserve(undefined, NOON)).toMatchObject({
+      id,
+      key: "order.expire_unpaid",
+      chain: [{ key: "payment.void", input: { paymentId: "pay_1" } }],
+    });
+    await expect(queue.chain([])).rejects.toThrow(TypeError);
+    await expect(
+      queue.chain([{ type: VoidPaymentAction, input: { paymentId: "pay_1" } }]),
+    ).rejects.toThrow(TypeError);
+  });
+
+  it("queues a batch, counting a skipped unique job as done", async () => {
+    const { driver, queue } = setup();
+    const { id, jobs } = await queue.batch(
+      [
+        { type: ExpireUnpaidOrdersAction, input: { batchSize: 1 } },
+        { type: ExpireUnpaidOrdersAction, input: { batchSize: 2 } },
+      ],
+      { scope },
+    );
+    expect(id).toMatch(/^jbt_/);
+    expect(jobs[0]).toMatch(/^job_/);
+    expect(jobs[1]).toBeUndefined();
+    expect(await queue.progress(id)).toEqual({ id, total: 2, done: 1, failed: 0 });
+    expect(await driver.reserve(undefined, NOON)).toMatchObject({ batchId: id });
+    await expect(queue.batch([])).rejects.toThrow(TypeError);
+    expect(await queue.progress("jbt_missing")).toBeUndefined();
   });
 });

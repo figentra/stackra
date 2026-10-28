@@ -13,14 +13,16 @@
  *           dead-lettered at once. Every attempt carries an Idempotency-Key (the queued call's, else one derived from
  *           the job when a store is bound), so an attempt that ran but was not recorded replays instead of running
  *           twice. The timeout aborts the attempt's signal; code that ignores the signal keeps running unobserved.
+ *           A throttle counts in the bound `RateLimitStore` (bucket `queue.throttle:<key>`); a throttled job with no
+ *           store bound fails its attempt rather than run unthrottled.
  * Runtime: node
- * Governing contract: ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0138 (as amended: the pipeline);
+ * Governing contract: ADR 0148 (decisions 1, 2 and 3); ADR 0305 (rules 28 and 30); ADR 0138 (as amended: the pipeline);
  *                     ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0260 (decision 4); ADR 0327
  *                     (decisions 6 and 9: the call's scope, the scope session).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
-import { IdempotencyStore, UnitOfWork } from "@stackra/actions/contracts";
+import { IdempotencyStore, RateLimitStore, UnitOfWork } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
@@ -32,6 +34,7 @@ import type { QueueDriver, JobError, QueuedJob } from "#contracts/index";
 import { JOB_BACKOFF } from "#core/constants/job-backoff.constant";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
+import { buildJob } from "#core/functions/build-job.function";
 import { QUEUE_LOG_EVENTS } from "#core/constants/queue-log-events.constant";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
@@ -102,10 +105,8 @@ export class QueueWorkerService extends Service {
     const runs: JobRun[] = [];
     for (;;) {
       const now = at ?? this.clock.now();
-      // oxlint-disable-next-line no-await-in-loop -- one job at a time, each reserved after the last is recorded
       const job = await this.driver.reserve(queue, now);
       if (job === undefined) return runs;
-      // oxlint-disable-next-line no-await-in-loop -- see above
       runs.push(await this.run(job, now));
     }
   }
@@ -133,13 +134,10 @@ export class QueueWorkerService extends Service {
     while (!signal.aborted) {
       try {
         const now = this.clock.now();
-        // oxlint-disable-next-line no-await-in-loop -- a loop works one job at a time
         const job = await this.driver.reserve(queue, now);
-        // oxlint-disable-next-line no-await-in-loop -- see above
         await (job === undefined ? this.pause(signal) : this.run(job, now));
       } catch (error) {
         this.logger()?.error(QUEUE_LOG_EVENTS.workerFailed, { queue, cause: error });
-        // oxlint-disable-next-line no-await-in-loop -- see above
         await this.pause(signal);
       }
     }
@@ -168,16 +166,89 @@ export class QueueWorkerService extends Service {
     const found = this.resolve(job);
     if ("error" in found) {
       await this.driver.deadLetter(job.id, this.failureOf(found.error));
+      await this.settle(job, true);
       return Object.freeze({ job, outcome: JobOutcome.DeadLettered, error: found.error });
     }
     const { type, plan } = found;
+    let output: unknown;
     try {
-      const output = await this.inScope(job, () => this.attempt(type, plan, job));
+      const retryAt = await this.throttled(job, now);
+      if (retryAt !== undefined) {
+        await this.driver.release(job.id, retryAt);
+        return Object.freeze({ job, outcome: JobOutcome.Throttled, retryAt });
+      }
+      output = await this.inScope(job, () => this.attempt(type, plan, job));
       await this.driver.remove(job.id);
-      return Object.freeze({ job, outcome: JobOutcome.Done, output });
     } catch (error) {
       return this.failed(type, plan, job, now, error);
     }
+    await this.followUp(job);
+    return Object.freeze({ job, outcome: JobOutcome.Done, output });
+  }
+
+  /**
+   * When `job` has a throttle and its bucket has no token free at `now`: the instant the next one is; else takes one.
+   *
+   * @throws TypeError when the job has a throttle and no `RateLimitStore` is bound.
+   */
+  private async throttled(job: QueuedJob, now: Date): Promise<Date | undefined> {
+    const { throttle } = job;
+    if (throttle === undefined) return undefined;
+    const { resolver } = this.connected();
+    if (!resolver.has(RateLimitStore))
+      throw new TypeError(
+        `Job ${job.key} is throttled by "${throttle.key}" but no RateLimitStore is bound`,
+      );
+    const decision = await resolver
+      .get(RateLimitStore)
+      .take(
+        `queue.throttle:${throttle.key}`,
+        { capacity: throttle.perMinute, tokensPerSecond: throttle.perMinute / 60 },
+        now,
+      );
+    return decision.allowed
+      ? undefined
+      : new Date(now.getTime() + Math.max(1, decision.retryAfterMs));
+  }
+
+  /** After `job` is done: queues the next link of its chain, or counts it done in its batch at the chain's end. */
+  private async followUp(job: QueuedJob): Promise<void> {
+    const [link, ...rest] = job.chain ?? [];
+    if (link === undefined) {
+      await this.settle(job, false);
+      return;
+    }
+    const type = JOB_TYPES.byKey.get(link.key);
+    // A key this process does not know is queued on the job's queue, where its worker dead-letters it as unknown.
+    const plan =
+      type === undefined
+        ? {
+            key: link.key,
+            queue: job.queue,
+            unique: false,
+            timeout: JOB_DEFAULTS.timeout,
+            priority: 0,
+          }
+        : readJob(type);
+    const { origin, scope, causedBy } = job;
+    await this.driver.push(
+      buildJob(
+        plan,
+        link.input,
+        {
+          ...(origin === undefined ? {} : { origin }),
+          ...(scope === undefined ? {} : { scope }),
+          ...(causedBy === undefined ? {} : { causedBy }),
+        },
+        this.clock.now(),
+        { ...(job.batchId === undefined ? {} : { batchId: job.batchId }), chain: rest },
+      ),
+    );
+  }
+
+  /** Counts `job` in its batch, as failed for good when `failed`. */
+  private async settle(job: QueuedJob, failed: boolean): Promise<void> {
+    if (job.batchId !== undefined) await this.driver.settleBatch(job.batchId, failed);
   }
 
   /** The action class and plan of `job`, or why there is none. */
@@ -240,10 +311,12 @@ export class QueueWorkerService extends Service {
     }
     if (plan.deadLetter) {
       await this.driver.deadLetter(job.id, failure);
+      await this.settle(job, true);
       await this.afterDeadLetter(type, plan, job);
       return Object.freeze({ job, outcome: JobOutcome.DeadLettered, error });
     }
     await this.driver.remove(job.id);
+    await this.settle(job, true);
     this.logger()?.error(QUEUE_LOG_EVENTS.jobDropped, {
       jobId: job.id,
       key: job.key,

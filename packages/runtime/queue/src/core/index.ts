@@ -34,6 +34,8 @@ export { BrokerOptions } from "#core/schemas/broker-options.schema";
 export { QueueOptions } from "#core/schemas/queue-options.schema";
 export { QueueService } from "#core/services/queue.service";
 export type { BrokerTopic } from "#core/types/broker-topic.type";
+export type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
+export type { JobLink } from "#core/types/job-link.type";
 export type { JobRun } from "#core/types/job-run.type";
 export type { PushOptions } from "#core/types/push-options.type";
 export type { QueueNames } from "#core/types/queue-names.type";

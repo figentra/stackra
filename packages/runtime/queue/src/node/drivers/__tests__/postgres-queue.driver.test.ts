@@ -3,7 +3,9 @@
  * Purpose: unit tests of `PostgresQueueDriver`: one statement per method on the running context's entity manager,
  *          every value a bound parameter (input, origin and failure as JSON), a reservation through `FOR UPDATE SKIP
  *          LOCKED` filtered by queue only when one is named, a unique conflict read as `false`, rows read back into
- *          jobs (scope, origin, keys and failure), and redrive guarded by the unique key.
+ *          jobs (scope, origin, keys and failure), redrive guarded by the unique key, the fair pick (priority, then the
+ *          scope with the fewest running jobs, skipping a scope at its cap), the fairness columns written and read
+ *          back, a throttle release that gives the attempt back, and batches counted in place.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -42,6 +44,11 @@ const ROW = {
   run_at: NOON,
   lease: "PT6M",
   last_error: null,
+  priority: 0,
+  scope_concurrency: null,
+  throttle: null,
+  batch_id: null,
+  chain: null,
 };
 
 /** A database whose entity manager records each statement and answers `rows`. */
@@ -108,7 +115,81 @@ describe(PostgresQueueDriver, () => {
       0,
       NOON,
       "PT6M",
+      0,
+      null,
+      null,
+      null,
+      null,
     ]);
+    expectBound(statements);
+  });
+
+  it("writes and reads back the fairness columns", async () => {
+    const { database, statements } = databaseWith([
+      {
+        ...ROW,
+        priority: 5,
+        scope_concurrency: 2,
+        throttle: { perMinute: 60, key: "stripe" },
+        batch_id: "jbt_1",
+        chain: [{ key: "card.receipt", input: { cardId: "crd_1" } }],
+      },
+    ]);
+    const driver = new PostgresQueueDriver(database);
+    await driver.push({
+      ...job,
+      priority: 5,
+      scopeConcurrency: 2,
+      throttle: { perMinute: 60, key: "stripe" },
+      batchId: "jbt_1",
+      chain: [{ key: "card.receipt", input: { cardId: "crd_1" } }],
+    });
+    expect(statements[0]?.params.slice(-5)).toEqual([
+      5,
+      2,
+      '{"perMinute":60,"key":"stripe"}',
+      "jbt_1",
+      '[{"key":"card.receipt","input":{"cardId":"crd_1"}}]',
+    ]);
+    expect(await driver.reserve(undefined, NOON)).toMatchObject({
+      priority: 5,
+      scopeConcurrency: 2,
+      throttle: { perMinute: 60, key: "stripe" },
+      batchId: "jbt_1",
+      chain: [{ key: "card.receipt", input: { cardId: "crd_1" } }],
+    });
+  });
+
+  it("picks by priority, then the least busy scope, and skips a scope at its cap", async () => {
+    const { database, statements } = databaseWith([]);
+    await new PostgresQueueDriver(database).reserve("delivery", NOON);
+    const sql = statements[0]?.sql ?? "";
+    expect(sql).toContain("cross join lateral");
+    expect(sql).toContain("other.scope_id is not distinct from job.scope_id");
+    expect(sql).toContain("running.load < job.scope_concurrency");
+    expect(sql).toContain("order by job.priority desc, running.load, job.run_at, job.id");
+  });
+
+  it("releases a throttled job with its attempt given back", async () => {
+    const { database, statements } = databaseWith([]);
+    await new PostgresQueueDriver(database).release("job_a", NOON);
+    expect(statements[0]?.sql).toContain("attempts = greatest(attempts - 1, 0)");
+    expect(statements[0]?.params).toEqual([NOON, "job_a"]);
+    expectBound(statements);
+  });
+
+  it("opens, settles and reads a batch with bound values", async () => {
+    const batch = { id: "jbt_1", total: 3, done: 1, failed: 0 };
+    const { database, statements } = databaseWith([batch]);
+    const driver = new PostgresQueueDriver(database);
+    await driver.openBatch({ ...batch, done: 0 });
+    await expect(driver.settleBatch("jbt_1", false)).resolves.toEqual(batch);
+    await driver.settleBatch("jbt_1", true);
+    await expect(driver.batch("jbt_1")).resolves.toEqual(batch);
+    expect(statements[0]?.params).toEqual(["jbt_1", 3, 0, 0]);
+    expect(statements[1]?.sql).toContain("done = done + 1");
+    expect(statements[2]?.sql).toContain("failed = failed + 1");
+    expect(statements[3]?.params).toEqual(["jbt_1"]);
     expectBound(statements);
   });
 
@@ -136,11 +217,11 @@ describe(PostgresQueueDriver, () => {
     });
     await driver.reserve(undefined, NOON);
     const [named, any] = statements;
-    expect(named?.sql).toContain("for update skip locked");
-    expect(named?.sql).toContain("queue = ?");
-    expect(named?.params).toEqual([NOON, "delivery", NOON, NOON]);
-    expect(any?.sql).not.toContain("queue = ?");
-    expect(any?.params).toEqual([NOON, NOON, NOON]);
+    expect(named?.sql).toContain("for update of job skip locked");
+    expect(named?.sql).toContain("job.queue = ?");
+    expect(named?.params).toEqual([NOON, NOON, "delivery", NOON, NOON]);
+    expect(any?.sql).not.toContain("job.queue = ?");
+    expect(any?.params).toEqual([NOON, NOON, NOON, NOON]);
     expectBound(statements);
   });
 

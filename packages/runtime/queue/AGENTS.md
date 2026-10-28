@@ -42,6 +42,11 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 - A driver stores and reserves; it never runs a job, computes a backoff or reads a clock. The worker passes `now` and
   the retry time, so every driver behaves the same. The wait is the contracts `backoffDelay` over `JOB_BACKOFF`;
   never write a backoff formula here (stackra-223).
+- A reservation is fair (ADR 0148 d2): priority, then the scope with the fewest running jobs on the queue, then `runAt`,
+  never past `scopeConcurrency`. Every polled driver passes `runQueueConformance`; a port change adds its case there.
+- The worker owns throttles (`RateLimitStore`), chains (it queues the next link with `buildJob`) and batch settling;
+  a driver only stores them. `JobFairnessOptions` mirrors fields @stackra/actions' `JobOptions` should list; when it
+  does, read them from there and delete the local type.
 - `QueueWorkerService.process` hands a delivered job to `driver.claim` before it runs; a store driver keeps the default
   (the job as it is, already reserved). The `broker` driver holds a claimed job in memory only until the worker records
   its outcome in the same call, so `retry`, `deadLetter` and `remove` must follow its `claim` in one process.

@@ -6,7 +6,9 @@
  *          dead letter is dropped and logged; a queued call runs as its caller under its Idempotency-Key; a job
  *          derives its own key when a store is bound; an attempt past its timeout is aborted and retried; an unknown
  *          key is dead-lettered; a scoped job runs in its scope session with its scope as the call's (`ctx.scope`);
- *          `work` loops until aborted.
+ *          `work` loops until aborted; a throttled job waits for its next token without counting the attempt (and fails
+ *          its attempt when no `RateLimitStore` is bound); a chain runs its links in order; a batch counts done and
+ *          failed jobs.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
  *           only in the timeout test.
  * Runtime: node (vitest)
@@ -17,9 +19,10 @@ import {
   Action,
   type ActionContext,
   MemoryIdempotencyStoreDriver,
+  MemoryRateLimitStoreDriver,
   type Resolver,
 } from "@stackra/actions";
-import { AccessControl, IdempotencyStore } from "@stackra/actions/contracts";
+import { AccessControl, IdempotencyStore, RateLimitStore } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
 import { Database } from "@stackra/database";
@@ -33,6 +36,7 @@ import { JobOutcome } from "#core/enums/job-outcome.enum";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
 import { QueueService } from "#core/services/queue.service";
+import type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
 import { QueueWorkerService } from "#node/services/queue-worker.service";
 
 const NOON = new Date(Date.UTC(2026, 9, 24, 12));
@@ -130,6 +134,22 @@ class VoidPaymentAction extends Action({
   }
 }
 
+// Typed apart until @stackra/actions' `JobOptions` lists the fairness fields (stackra-278 integration ask).
+const THROTTLED_JOB: JobFairnessOptions & { readonly queue: string } = {
+  queue: "payments",
+  throttle: { perMinute: 1, key: "stripe" },
+};
+
+class ChargeCardAction extends Action({
+  key: "card.charge",
+  actors: [ActorKind.System],
+  job: THROTTLED_JOB,
+}) {
+  async handle(input: { cardId: string }): Promise<{ charged: string }> {
+    return { charged: input.cardId };
+  }
+}
+
 const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: "org_1" };
 
 const user: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
@@ -165,6 +185,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
       [PingAction, new PingAction()],
       [HangAction, hang],
       [VoidPaymentAction, voidPayment],
+      [ChargeCardAction, new ChargeCardAction()],
       ...extra,
     ]),
   );
@@ -338,5 +359,49 @@ describe(QueueWorkerService, () => {
   it("refuses to run before it is connected", async () => {
     const worker = new QueueWorkerService(new MemoryQueueDriver(), new FixedClock());
     await expect(worker.drain()).rejects.toThrow(/not connected/);
+  });
+
+  it("throttles a job: the second waits for the next token and its attempt is not counted", async () => {
+    const { driver, queue, worker } = setup([[RateLimitStore, new MemoryRateLimitStoreDriver()]]);
+    await queue.push(ChargeCardAction, { cardId: "crd_1" });
+    await queue.push(ChargeCardAction, { cardId: "crd_2" });
+    const [first, second] = await worker.drain("payments");
+    expect(first?.outcome).toBe(JobOutcome.Done);
+    expect(second?.outcome).toBe(JobOutcome.Throttled);
+    const retryAt = second?.retryAt ?? NOON;
+    expect(retryAt.getTime()).toBeGreaterThan(NOON.getTime());
+    expect(await driver.reserve("payments", retryAt)).toMatchObject({ attempts: 1 });
+  });
+
+  it("fails a throttled attempt when no RateLimitStore is bound", async () => {
+    const { queue, worker } = setup();
+    await queue.push(ChargeCardAction, { cardId: "crd_1" });
+    const [run] = await worker.drain("payments");
+    expect(run?.outcome).toBe(JobOutcome.Retried);
+    expect(String(run?.error)).toMatch(/RateLimitStore/);
+  });
+
+  it("runs a chain's links in order, each once the one before it is done", async () => {
+    const { queue, worker, deliver } = setup();
+    await queue.chain([
+      { type: DeliverMessageAction, input: { messageId: "msg_1" } },
+      { type: DeliverMessageAction, input: { messageId: "msg_2" } },
+    ]);
+    const runs = await worker.drain("delivery");
+    expect(runs.map((run) => [run.outcome, run.output])).toEqual([
+      [JobOutcome.Done, { sent: "msg_1" }],
+      [JobOutcome.Done, { sent: "msg_2" }],
+    ]);
+    expect(deliver.contexts).toHaveLength(2);
+  });
+
+  it("counts a batch's done and failed jobs", async () => {
+    const { queue, worker } = setup();
+    const { id } = await queue.batch([
+      { type: DeliverMessageAction, input: { messageId: "msg_1" } },
+      { type: PingAction, input: {} },
+    ]);
+    await worker.drain();
+    expect(await queue.progress(id)).toEqual({ id, total: 2, done: 1, failed: 1 });
   });
 });

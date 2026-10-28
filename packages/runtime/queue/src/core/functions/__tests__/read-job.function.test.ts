@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readJob`: the template's job option forms read with the defaults applied, the actor kind a
  *          job runs as, the written key registered when gen registered none (and the locked key winning when it did),
- *          and the refusal of a query, an unknown backoff and a dead-letter hook that is not a method.
+ *          the fairness fields (priority, `scopeConcurrency`, `throttle`), and the refusal of a query, an unknown
+ *          backoff, a dead-letter hook that is not a method and a fairness field out of range.
  * Boundary: test only; the actions are the shapes of the template's `job` options.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rules 28 and 30); ADR 0148 (decision 1).
@@ -14,6 +15,50 @@ import { describe, expect, it } from "@stackra/testing";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
 import { readJob } from "#core/functions/read-job.function";
 import { registerJobs } from "#core/functions/register-jobs.function";
+import type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
+
+/** The fair job option of `ChargeCardAction`, typed apart until @stackra/actions' `JobOptions` lists the fields. */
+const FAIR_JOB: JobFairnessOptions & { readonly queue: string } = {
+  queue: "payments",
+  priority: 5,
+  scopeConcurrency: 2,
+  throttle: { perMinute: 60, key: "stripe" },
+};
+
+class ChargeCardAction extends Action({
+  key: "card.charge",
+  actors: [ActorKind.System],
+  job: FAIR_JOB,
+}) {
+  async handle(): Promise<void> {}
+}
+
+// `queue` keeps a common field with `JobOptions`, so the weak-type check accepts the constant.
+const WILD_JOB: JobFairnessOptions & { readonly queue: string } = {
+  queue: "default",
+  scopeConcurrency: 0,
+};
+
+class WildCapAction extends Action({
+  key: "cap.wild",
+  actors: [ActorKind.System],
+  job: WILD_JOB,
+}) {
+  async handle(): Promise<void> {}
+}
+
+const KEYLESS_JOB: JobFairnessOptions & { readonly queue: string } = {
+  queue: "default",
+  throttle: { perMinute: 10, key: "" },
+};
+
+class KeylessThrottleAction extends Action({
+  key: "throttle.keyless",
+  actors: [ActorKind.System],
+  job: KEYLESS_JOB,
+}) {
+  async handle(): Promise<void> {}
+}
 
 class DeliverMessageAction extends Action({
   key: "message.deliver",
@@ -91,7 +136,20 @@ describe(readJob, () => {
       backoff: Backoff.Exponential,
       deadLetter: true,
       onDeadLetter: "markFailed",
+      priority: 0,
     });
+  });
+
+  it("reads the fairness fields", () => {
+    const plan = readJob(ChargeCardAction);
+    expect(plan.priority).toBe(5);
+    expect(plan.scopeConcurrency).toBe(2);
+    expect(plan.throttle).toEqual({ perMinute: 60, key: "stripe" });
+  });
+
+  it("refuses a scope cap below one and a throttle without a key", () => {
+    expect(() => readJob(WildCapAction)).toThrow(RangeError);
+    expect(() => readJob(KeylessThrottleAction)).toThrow(RangeError);
   });
 
   it("registers the written key when gen registered none", () => {

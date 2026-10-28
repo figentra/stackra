@@ -24,6 +24,6 @@ export interface JobRun {
   /** What the attempt threw, when it failed. */
   readonly error?: unknown;
 
-  /** When the next attempt is due, when it is `retried`. */
+  /** When the next attempt is due, when it is `retried` or `throttled`. */
   readonly retryAt?: Date;
 }

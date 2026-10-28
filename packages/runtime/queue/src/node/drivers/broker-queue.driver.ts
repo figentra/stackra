@@ -3,14 +3,15 @@
  * Purpose: the broker driver of the `QueueDriver` port (driver name `broker`): a job is published to its queue's broker
  *          topic (`queue.<queue>`, the Encore Pub/Sub topics `emitEncoreQueues` generates, through the `BrokerPublisher`)
  *          and runs when the generated subscription hands it to `QueueWorkerService.process`. A retry is published again
- *          with its new `runAt`; a dead letter is kept in the service's `queue.jobs` table, where `deadLetters` and
- *          `redrive` find it.
+ *          with its new `runAt` (a throttled job too, with its attempt given back); a dead letter is kept in the
+ *          service's `queue.jobs` table, where `deadLetters` and `redrive` find it, and batches in `queue.job_batches`.
  * Boundary: nothing is polled: `reserve` answers no job, the broker delivers. `claim` marks a delivered job running with
  *           one more attempt and holds it in this process until the worker records its outcome (the subscription
  *           handler runs both in one call); a job delivered before its `runAt` is refused `job_not_due`, so the broker
  *           delivers it again after its own retry backoff. Delivery is at least once: the worker's Idempotency-Key per
  *           job turns a repeat into a replay. A message is the job as JSON (`{ id, body }`); a retry's message id carries
- *           the attempt, so subscribers that deduplicate by id still see it.
+ *           the attempt, so subscribers that deduplicate by id still see it. Priority and `scopeConcurrency` are not
+ *           applied: the broker delivers in its own order (a Pub/Sub subscription's `maxConcurrency` caps a queue).
  * Runtime: node
  * Governing contract: ADR 0148 (decisions 1, 3 and 6: Encore Pub/Sub queues in SaaS, retries, dead letters);
  *                     ADR 0142 (drivers behind ports); ADR 0266 (decision 4.3: encore-pubsub); ADR 0136 (decision 3).
@@ -20,7 +21,7 @@ import type { PublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 
 import { JobStatus, QueueDriver } from "#contracts/index";
-import type { BrokerPublisher, JobError, QueuedJob } from "#contracts/index";
+import type { BrokerPublisher, JobBatch, JobError, QueuedJob } from "#contracts/index";
 import { JobNotDueError } from "#core/errors/job-not-due.error";
 import { PostgresQueueDriver } from "#node/drivers/postgres-queue.driver";
 
@@ -101,6 +102,19 @@ export class BrokerQueueDriver extends Driver(QueueDriver) {
   }
 
   /**
+   * Publishes running job `id` again, waiting until `runAt`, with the attempt its claim took given back.
+   *
+   * @throws TypeError when this process is not running job `id`.
+   */
+  async release(id: PublicId<"job">, runAt: Date): Promise<void> {
+    const job = this.take(id);
+    await this.publish(
+      { ...job, status: JobStatus.Waiting, runAt, attempts: Math.max(0, job.attempts - 1) },
+      `${job.id}:released:${runAt.getTime()}`,
+    );
+  }
+
+  /**
    * Keeps running job `id` in `queue.jobs` as a dead letter, with `error`.
    *
    * @throws TypeError when this process is not running job `id`.
@@ -139,6 +153,21 @@ export class BrokerQueueDriver extends Driver(QueueDriver) {
     );
     await this.store.remove(id);
     return true;
+  }
+
+  /** Stores `batch` in `queue.job_batches`. */
+  openBatch(batch: JobBatch): Promise<void> {
+    return this.store.openBatch(batch);
+  }
+
+  /** Counts one job of batch `id` in `queue.job_batches`. */
+  settleBatch(id: string, failed: boolean): Promise<JobBatch | undefined> {
+    return this.store.settleBatch(id, failed);
+  }
+
+  /** Batch `id` from `queue.job_batches`. */
+  batch(id: string): Promise<JobBatch | undefined> {
+    return this.store.batch(id);
   }
 
   /** Hands `job` to its queue's topic under message id `messageId`. */

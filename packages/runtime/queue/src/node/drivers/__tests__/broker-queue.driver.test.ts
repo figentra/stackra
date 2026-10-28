@@ -95,6 +95,34 @@ describe(BrokerQueueDriver, () => {
     );
   });
 
+  it("publishes a throttled job again with its attempt given back", async () => {
+    const { broker, driver } = setup();
+    await driver.claim(job, NOON);
+    const later = new Date(NOON.getTime() + 1000);
+    await driver.release("job_a", later);
+    const [message] = broker.published.get("queue.delivery") ?? [];
+    expect(message?.id).toBe(`job_a:released:${later.getTime()}`);
+    expect(message?.body).toMatchObject({
+      status: JobStatus.Waiting,
+      attempts: 0,
+      runAt: later.toISOString(),
+    });
+  });
+
+  it("keeps batches in the store", async () => {
+    const { driver } = setup();
+    const batch = { id: "jbt_1", total: 2, done: 1, failed: 0 };
+    const open = vi.spyOn(PostgresQueueDriver.prototype, "openBatch").mockResolvedValue();
+    const settle = vi.spyOn(PostgresQueueDriver.prototype, "settleBatch").mockResolvedValue(batch);
+    const read = vi.spyOn(PostgresQueueDriver.prototype, "batch").mockResolvedValue(batch);
+    await driver.openBatch({ ...batch, done: 0 });
+    await expect(driver.settleBatch("jbt_1", false)).resolves.toBe(batch);
+    await expect(driver.batch("jbt_1")).resolves.toBe(batch);
+    expect(open).toHaveBeenCalledWith({ ...batch, done: 0 });
+    expect(settle).toHaveBeenCalledWith("jbt_1", false);
+    expect(read).toHaveBeenCalledWith("jbt_1");
+  });
+
   it("forgets a finished job and deletes one it does not run from the store", async () => {
     const { store, driver } = setup();
     await driver.claim(job, NOON);

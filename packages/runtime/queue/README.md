@@ -22,7 +22,7 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | --------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
 | `Backoff`                                           | `.`           | the `backoff` of a `job` option or a workflow step's `retry`: exponential (default), linear, fixed |
 | `queues`, `QueueNames`                              | `.`           | `export const Queues = queues([...] as const)`, the enum gen writes into `#stackra/queues`         |
-| `QueueService`                                      | `.`           | `push(Action, input, options)`, `deadLetters(queue?)`, `redrive(id)`                               |
+| `QueueService`                                      | `.`           | `push`, `chain(links)`, `batch(links)`, `progress(batchId)`, `deadLetters(queue?)`, `redrive(id)`  |
 | `QueueJobDispatcherDriver`                          | `.`           | the `JobDispatcher` driver behind `ctx.dispatch(Action, input)`                                    |
 | `registerJobs`                                      | `.`           | gen's entry registers the job actions with their locked keys                                       |
 | `JOB_BACKOFF`                                       | `.`           | a job's waits (10 s base, half again, 1 h cap) for `backoffDelay`                                  |
@@ -33,9 +33,11 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `BrokerQueueDriver`                                 | `./node`      | the `broker` driver: jobs ride the generated Pub/Sub topics, dead letters stay in `queue.jobs`     |
 | `QueueOptions`, `MemoryQueueDriver`                 | `.`           | the shape of `QueueConfig`; the driver for tests and a single process                              |
 | `QueueDriver`, `QueuedJob`, `JobError`, `JobStatus` | `./contracts` | the port a driver implements and the stored job                                                    |
+| `JobBatch`, `JobThrottle`, `ChainedJob`             | `./contracts` | a batch's progress, a job's throttle, a chain link still to run                                    |
 | `QueueWorkerService`                                | `./node`      | `connect(container)`, then `work(queue, { signal, concurrency })`, `drain()`, `process(job)`       |
 | `PostgresQueueDriver`                               | `./node`      | the default driver: `queue.jobs`, reserved with `FOR UPDATE SKIP LOCKED`                           |
 | `drainQueue`, `runJob`, `toDeadLetter`              | `./testing`   | run due jobs; run one job to its end; assert a dead letter                                         |
+| `runQueueConformance`, `QUEUE_CONFORMANCE_CASES`    | `./testing`   | the `QueueDriver` conformance suite every driver passes                                            |
 
 `Backoff` is the @stackra/contracts enum, re-exported here; the wait is the contracts `backoffDelay` over
 `JOB_BACKOFF` (stackra-223), with the values the queue's own formula had.
@@ -77,6 +79,30 @@ export class DeliverMessageAction extends Action({
 - Every attempt carries an Idempotency-Key (the queued call's, else `job:<id>` when an idempotency store is bound), so an
   attempt that ran but was not recorded replays instead of running twice.
 
+## Fair queues, throttles, batches and chains
+
+ADR 0148 decision 2: one scope must not starve the others.
+
+- **Priority.** `job.priority` (a whole number, `0` by default; `push(..., { priority })` overrides it per push). Higher
+  runs first among the due jobs of a queue.
+- **Fairness.** Among jobs of equal priority, a reservation picks the scope (`ScopeRef.id`, platform jobs share one)
+  with the fewest jobs running on that queue, then the oldest `runAt`.
+- **Per-scope cap.** `job.scopeConcurrency: n` never runs more than `n` jobs of the action's queue and one scope at once.
+- **Throttle.** `job.throttle: { perMinute, key }` takes one token from the bound `RateLimitStore` (bucket
+  `queue.throttle:<key>`, shared by every job naming the key) before each attempt; with none free the job waits for the
+  next token (`JobOutcome.Throttled`) and the attempt is not counted. A throttled job with no store bound fails its
+  attempt rather than run unthrottled.
+- **Chains.** `queue.chain([{ type, input }, ...], options)` queues the first link; each next link is queued once the
+  one before it is done. A link that fails for good stops the chain, and its dead letter keeps the rest, so a redrive
+  resumes it.
+- **Batches.** `queue.batch([{ type, input }, ...], options)` opens a batch (`jbt_…`) and tags its jobs; each job's final
+  outcome counts as done or failed, and `queue.progress(id)` answers `{ total, done, failed }`. A unique job skipped at
+  push counts as done.
+
+`priority`, `scopeConcurrency` and `throttle` are read from the `job` option, but @stackra/actions' `JobOptions` does
+not list them yet: pass them through a constant typed `JobOptions & JobFairnessOptions` until it does. The broker
+driver keeps batches but applies neither priority nor the cap: the broker delivers in its own order.
+
 ## Queued calls, scopes and the scheduler
 
 `QueueService.push(Action, input, { origin, scope, idempotencyKey, causedBy })` is the one way in. A transport that
@@ -102,9 +128,12 @@ none is due. Redrive a dead letter with `queue.redrive(id)`; it runs again with 
 
 ## Drivers
 
-- **Postgres** (`./node`, default): rows of `queue.jobs`, created by this package's migration `queue.0001_create_jobs`.
-  A reservation is one `UPDATE … WHERE id = (SELECT … FOR UPDATE SKIP LOCKED LIMIT 1)`; a unique job's conflict is the
-  partial unique index on `unique_key`. A push inside an action's transaction commits with it.
+- **Postgres** (`./node`, default): rows of `queue.jobs`, created by this package's migrations `queue.0001_create_jobs`
+  and `queue.0002_add_job_fairness` (which also creates `queue.job_batches`). A reservation is one
+  `UPDATE … WHERE id = (SELECT … FOR UPDATE OF job SKIP LOCKED LIMIT 1)` ordered by priority, the scope's running count
+  (a lateral count) and `run_at`; a unique job's conflict is the partial unique index on `unique_key`. A push inside an
+  action's transaction commits with it. Two workers reserving at the same instant may each let one job past a scope's
+  cap.
 - **Memory** (`.`): jobs in process memory, the input stored as JSON as Postgres stores it.
 - **Broker** (`./node`, `queue.driver: broker`): for SaaS on Encore Pub/Sub. A push publishes the job through the
   `BrokerPublisher` to `queue.<queue>`, the topic `emitEncoreQueues` generates for each job queue, and the generated
@@ -140,8 +169,11 @@ const job = await runJob(DeliverMessageAction, { messageId, html, text });
 expect(job).toDeadLetter({ attempts: 6 });
 ```
 
-`drainQueue` runs every job due now; `runJob` runs one job's attempts without waiting for the backoff. Both act on the
-testing app compiled last, through its own queue driver.
+`drainQueue` runs every job due now; `runJob` runs one job's attempts without waiting for the backoff or a throttle. Both
+act on the testing app compiled last, through its own queue driver.
+
+A driver proves the port with `runQueueConformance(() => driver)`, expecting no mismatches; a broker-delivered driver
+skips the cases that reserve (`{ skip: [...] }`).
 
 ## Broker publisher
 

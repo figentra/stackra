@@ -1,18 +1,22 @@
 /**
  * Stackra file contract:
  * Purpose: `QueuedJob`, one stored job as a `QueueDriver` keeps it: which action runs with which input, on which queue,
- *          for whom and in which scope, when it is due, how many attempts it has had and how its last one failed.
+ *          for whom and in which scope, when it is due, how many attempts it has had and how its last one failed, and
+ *          how it is scheduled fairly: its priority, the cap on running jobs of its scope, its throttle, its batch and
+ *          the rest of its chain.
  * Boundary: a type only; `QueueService` builds it and a driver stores it as it is. The input is JSON-serialisable (the
  *           action's input fields), never a class instance. The origin is the verified caller whose call queued the job
  *           and the scope is the authenticated scope the job runs in, never request input.
  * Runtime: isomorphic
- * Governing contract: ADR 0148 (decision 1); ADR 0305 (rule 28: the job's name is the action's key); ADR 0098 (the
+ * Governing contract: ADR 0148 (decisions 1 and 2: priority, batches, chains, fair queues); ADR 0305 (rule 28: the job's name is the action's key); ADR 0098 (the
  *                     typed actor); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`).
  */
 import type { Actor, Duration, PublicId, ScopeRef } from "@stackra/contracts";
 
 import type { JobStatus } from "#contracts/enums/job-status.enum";
+import type { ChainedJob } from "#contracts/types/chained-job.type";
 import type { JobError } from "#contracts/types/job-error.type";
+import type { JobThrottle } from "#contracts/types/job-throttle.type";
 
 /** A stored job. */
 export interface QueuedJob {
@@ -57,4 +61,19 @@ export interface QueuedJob {
 
   /** How its last attempt failed. */
   readonly lastError?: JobError;
+
+  /** Higher runs first among due jobs of a queue; `0` when absent. */
+  readonly priority?: number;
+
+  /** The most jobs of its queue and scope that run at once; no cap when absent. */
+  readonly scopeConcurrency?: number;
+
+  /** How often jobs sharing its throttle key may start. */
+  readonly throttle?: JobThrottle;
+
+  /** The batch it was queued in. */
+  readonly batchId?: string;
+
+  /** The links queued after it is done, in order. */
+  readonly chain?: readonly ChainedJob[];
 }

@@ -42,12 +42,11 @@ export async function runJob<C extends AnyClass<Action>>(
   const runs: JobRun[] = [];
   let at: Date | undefined;
   for (;;) {
-    // oxlint-disable-next-line no-await-in-loop -- each attempt runs at the time the one before scheduled it
     const mine = (await current.worker.drain(undefined, at)).filter((run) => run.job.id === id);
     runs.push(...mine);
     const last = mine.at(-1);
     if (last === undefined) throw new Error(`Job ${id} of ${type.name} was not reserved`);
-    if (last.outcome !== JobOutcome.Retried)
+    if (last.outcome !== JobOutcome.Retried && last.outcome !== JobOutcome.Throttled)
       return Object.freeze({
         id,
         outcome: last.outcome,

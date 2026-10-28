@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `JobOutcome`, how one attempt of a job ended: done, retried later, dead-lettered after the last attempt, or
- *          dropped after the last attempt of a job without a dead letter.
+ * Purpose: `JobOutcome`, how one attempt of a job ended: done, retried later, dead-lettered after the last attempt,
+ *          dropped after the last attempt of a job without a dead letter, or throttled before it started.
  * Boundary: an `Enum.of` value plus the type of the same name; the `outcome` of each `JobRun` the worker returns and of
  *           the `runJob` result in a test.
  * Runtime: isomorphic
- * Governing contract: ADR 0148 (decision 1: retries and the dead-letter queue); ADR 0294 (decision 16).
+ * Governing contract: ADR 0148 (decision 1: retries and the dead-letter queue; decision 2: throttles); ADR 0294 (decision 16).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -19,6 +19,8 @@ export const JobOutcome = Enum.of({
   DeadLettered: "dead_lettered",
   /** It failed for good and the action keeps no dead letter; the job is removed and the failure logged. */
   Dropped: "dropped",
+  /** Its throttle had no token free; the job waits for the next one and the attempt is not counted. */
+  Throttled: "throttled",
 });
 
 /** One of the codes above. */

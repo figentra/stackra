@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `PushOptions`, the third argument of `QueueService.push`: who queued the job, the scope it runs in, the
- *          Idempotency-Key of a queued call, and the call that caused it.
+ *          Idempotency-Key of a queued call, the call that caused it, and a priority that overrides the action's.
  * Boundary: a type only. `origin` is the verified caller and `scope` the authenticated scope, never request input. A
  *           queued call of an action without a `job` option needs `origin`: it runs as that caller.
  * Runtime: isomorphic
@@ -23,4 +23,7 @@ export interface PushOptions {
 
   /** The id of the call that queues the job, kept with it for tracing. */
   readonly causedBy?: string;
+
+  /** Higher runs first among due jobs of its queue, a whole number; the action's `job.priority` when absent. */
+  readonly priority?: number;
 }

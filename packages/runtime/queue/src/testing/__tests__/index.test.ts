@@ -14,9 +14,11 @@ import * as testing from "#testing/index";
 describe("@stackra/queue/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
+      "QUEUE_CONFORMANCE_CASES",
       "QUEUE_TESTING_PLUGIN",
       "drainQueue",
       "runJob",
+      "runQueueConformance",
       "toDeadLetter",
     ]);
   });

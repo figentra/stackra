@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `JobPlan`, how the queue runs one action: its job key, whether it declares a `job` option, the actor kind a
  *          job of it runs as, and its queue, uniqueness, timeout, retries, backoff and dead letter with the defaults
- *          applied.
+ *          applied, and its fairness: priority, per-scope running cap and throttle.
  * Boundary: a type only, internal to this package; `readJob` builds it from the action's recorded options.
  * Runtime: isomorphic
- * Governing contract: ADR 0305 (rules 28 and 30); ADR 0148 (decision 1).
+ * Governing contract: ADR 0305 (rules 28 and 30); ADR 0148 (decisions 1 and 2).
  */
 import type { ActorKind, Backoff, Duration } from "@stackra/contracts";
+
+import type { JobThrottle } from "#contracts/index";
 
 /** The job settings of one action. */
 export interface JobPlan {
@@ -40,4 +42,13 @@ export interface JobPlan {
 
   /** The action's method called once after a dead letter. */
   readonly onDeadLetter?: string;
+
+  /** Higher runs first among due jobs of its queue. */
+  readonly priority: number;
+
+  /** The most jobs of its queue and one scope that run at once. */
+  readonly scopeConcurrency?: number;
+
+  /** How often its jobs may start. */
+  readonly throttle?: JobThrottle;
 }
