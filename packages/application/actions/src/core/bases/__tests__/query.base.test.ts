@@ -3,7 +3,7 @@
  * Purpose: unit and type tests of `Query`: the called form records the `query` kind with `tool` on by default, keeps
  *          constructor dependencies, takes a cache profile and a `GET` override, and refuses a non-GET endpoint, a bad
  *          cache duration, a `per` outside `CacheScope` or a non-class in `invalidateOn`; records a replica and refuses a malformed one; records `reads` and refuses a value
- *          other than primary or replica; a bare
+ *          other than primary or replica; records `analytics` (true or an AnalyticsEvent) and refuses another class; a bare
  *          `extends Query` fails to compile.
  * Boundary: test only; the options are the template's KPI and storefront queries.
  * Runtime: node (vitest)
@@ -12,7 +12,7 @@
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, HttpMethod } from "@stackra/contracts";
-import { DomainEvent } from "@stackra/events";
+import { AnalyticsEvent, DomainEvent } from "@stackra/events";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Query } from "#core/bases/query.base";
@@ -122,6 +122,15 @@ describe("Query", () => {
       reads: "replica",
     });
     expect(() => Query({ ...base, reads: "secondary" as "replica" })).toThrow(/reads/);
+  });
+
+  it("records analytics and refuses a class that is not an AnalyticsEvent (STA-1512)", () => {
+    class OrdersViewed extends AnalyticsEvent({ name: "orders.viewed" }) {}
+    expect(kindOf(Query({ ...base, analytics: true }))?.options).toMatchObject({ analytics: true });
+    expect(kindOf(Query({ ...base, analytics: OrdersViewed }))?.options).toMatchObject({
+      analytics: OrdersViewed,
+    });
+    expect(() => Query({ ...base, analytics: OrderPaid as never })).toThrow(/AnalyticsEvent/);
   });
 
   it("is called only", () => {

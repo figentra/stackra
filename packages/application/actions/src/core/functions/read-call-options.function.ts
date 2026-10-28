@@ -2,18 +2,20 @@
  * Stackra file contract:
  * Purpose: `readCallOptions`, the checks `Action({...})` and `Query({...})` share: the key's shape, the actors, the
  *          version, the area, the endpoint override (a query reads with `GET`, an action never does), the
- *          interceptors and an explicit `tool: true` without an agent actor.
+ *          interceptors, an explicit `tool: true` without an agent actor, and `analytics` (`true` or an
+ *          `AnalyticsEvent` class).
  * Boundary: runs once per declared class, when its module loads, and throws a `TypeError` or `RangeError` naming the
  *           option; gen repeats the same checks from source (STA-340). Returns the shared fields with their defaults.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 21); ADR 0305 (rules 28 and 30: `tool_without_agent_actor`); ADR 0138
- *                     (as amended).
+ *                     (as amended); STA-1512 (`analytics`).
  */
-import type { AnyClass } from "@stackra/container";
+import { type AnyClass, kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, Enum, HttpMethod } from "@stackra/contracts";
 
 import { Interceptor } from "#core/bases/interceptor.base";
 import { CALL_KEY_PATTERN } from "#core/constants/call-key-pattern.constant";
+import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 
 /** The options both kinds share, as written. */
@@ -25,6 +27,7 @@ interface SharedOptions {
   readonly interceptors?: readonly AnyClass<Interceptor>[];
   readonly endpoint?: EndpointOptions | false;
   readonly tool?: boolean;
+  readonly analytics?: CallAnalytics;
 }
 
 /**
@@ -90,6 +93,15 @@ export function readCallOptions(
   )
     throw new TypeError(
       `${base}({ tool: true }) needs an agent among its actors (${options.key}): tool_without_agent_actor`,
+    );
+  const { analytics } = options;
+  if (
+    analytics !== undefined &&
+    analytics !== true &&
+    kindOf(analytics as unknown as AnyClass)?.kind !== "analytics_event"
+  )
+    throw new TypeError(
+      `${base}({ analytics }) is true or a class that extends AnalyticsEvent (${options.key})`,
     );
   return { version, area, interceptors: Object.freeze([...interceptors]) };
 }

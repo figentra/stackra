@@ -74,6 +74,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `reads: "replica"` routes only a query's `handle` (inside the cache step) through `ReplicaReads`; an action never
   reads a replica. The window opens after the unit of work committed (never for a refusal or a replay), keyed by
   (scope, actor); `lastWriteAt` is caller-sent and may only keep reads on the primary, never move them off it.
+- `analytics` writes `AnalyticsTracked` only after `ctx.consent()` grants `analytics` (never on an unverified
+  snapshot), only an `AnalyticsEvent`'s declared fields leave, and it never fails or refuses the call: a misfit is a
+  warning. A success's event is in the unit of work like the meter; a refusal's after, like the audit.
 - A raw-body query output is `rawBody(...)`; the transport keys on the `~raw` marker, never on the field names.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 - Event ids come from `@stackra/contracts`' `mintPublicId("evt")`; never add a local minter (STA-1380).

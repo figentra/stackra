@@ -24,7 +24,9 @@
  *          the `Tracer` span per call (ADR 0147, STA-1513): its name, the attribute names with no input values, the
  *          outcome of a success, a refusal and a bug, a proposal's span, and no span without a bound tracer; and
  *          `reads: "replica"` (STA-1504): on the replica outside the window, on the primary after the caller's own
- *          committed write or a carried `lastWriteAt`, never for a refused write or another caller's write.
+ *          committed write or a carried `lastWriteAt`, never for a refused write or another caller's write; and
+ *          `analytics` (STA-1512): `action.called` in the unit of work and after a refusal, a declared AnalyticsEvent
+ *          with only its fields, a query's event, nothing without granted consent, a skipped misfit, no replay event.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -58,7 +60,7 @@ import {
   RateLimitedError,
   Refusal,
 } from "@stackra/errors";
-import { DomainEvent, IntegrationEvent } from "@stackra/events";
+import { AnalyticsEvent, DomainEvent, IntegrationEvent } from "@stackra/events";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it, onTestFinished } from "@stackra/testing";
@@ -122,6 +124,7 @@ import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
+import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { registerActions } from "#core/functions/register-actions.function";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
@@ -2250,5 +2253,143 @@ describe("ActionPipeline replica reads (STA-1504)", () => {
   it("reads the primary when no ReplicaReads is bound", async () => {
     const { pipeline } = setup([[VisitsQuery, new VisitsQuery()]]);
     await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
+  });
+});
+
+/** A server-side analytics event that declares one field. */
+class LeadSubmitted extends AnalyticsEvent({ name: "lead.submitted" }) {
+  leadId!: string;
+}
+
+registerSchemas([[LeadSubmitted, z.object({ leadId: z.string() })]]);
+
+/** An action that tracks the generic event and can be refused. */
+class SubmitLeadAction extends Action({
+  key: "lead.submit",
+  actors: [ActorKind.User],
+  analytics: true,
+}) {
+  refuse = false;
+
+  async handle(): Promise<{ leadId: string }> {
+    log.push("handle");
+    if (this.refuse) throw OutOfStockError.create();
+    return { leadId: "led_1" };
+  }
+}
+
+/** An action that tracks a declared analytics event from its output. */
+class CaptureLeadAction extends Action({
+  key: "lead.capture",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
+  analytics: LeadSubmitted,
+}) {
+  output: object = { leadId: "led_2", email: "a@example.com" };
+
+  async handle(): Promise<object> {
+    return this.output;
+  }
+}
+
+/** A query that tracks the generic event. */
+class LeadsQuery extends Query({
+  key: "lead.list",
+  actors: [ActorKind.User],
+  analytics: true,
+}) {
+  async handle(): Promise<string[]> {
+    return [];
+  }
+}
+
+/** A pipeline with the outbox, the consent check and the analytics callers bound. */
+function withAnalytics() {
+  const outbox = new Outbox();
+  const submit = new SubmitLeadAction();
+  const capture = new CaptureLeadAction();
+  const { pipeline, lines } = setup([
+    [EventOutbox, outbox],
+    [ConsentCheck, new RecordingConsentCheck()],
+    [SubmitLeadAction, submit],
+    [CaptureLeadAction, capture],
+    [LeadsQuery, new LeadsQuery()],
+  ]);
+  const tracked = () =>
+    outbox.written.map((record) => record.event).filter((event) => event instanceof AnalyticsTracked);
+  return { pipeline, outbox, submit, capture, lines, tracked };
+}
+
+const GRANTED = { actor: customer, scope: SCOPE, consentSnapshot: "good", locale: "ar-SA" } as const;
+
+describe("ActionPipeline analytics (STA-1512)", () => {
+  it("writes action.called in the unit of work with the consent subject, user and call ids", async () => {
+    const { pipeline, tracked } = withAnalytics();
+    await pipeline.execute(SubmitLeadAction, {}, { ...GRANTED, callId: "call_1" });
+    expect(log.indexOf("outbox")).toBeLessThan(log.indexOf("commit"));
+    expect(tracked()).toEqual([
+      expect.objectContaining({
+        name: "action.called",
+        properties: { key: "lead.submit", outcome: "ok", durationMs: expect.any(Number) },
+        anonymousId: "anon_1",
+        userId: "usr_1",
+        callId: "call_1",
+        key: "lead.submit",
+        locale: "ar-SA",
+        scopeId: SCOPE.id,
+        occurredAt: NOW.toISOString(),
+        eventId: expect.stringMatching(/^evt_/),
+      }),
+    ]);
+  });
+
+  it("writes action.called with the refusal code after a refused call", async () => {
+    const { pipeline, submit, tracked } = withAnalytics();
+    submit.refuse = true;
+    await expect(pipeline.execute(SubmitLeadAction, {}, GRANTED)).rejects.toBeInstanceOf(
+      OutOfStockError,
+    );
+    expect(tracked()).toEqual([
+      expect.objectContaining({
+        properties: expect.objectContaining({ outcome: "refused", code: "out_of_stock" }),
+      }),
+    ]);
+  });
+
+  it("writes a declared AnalyticsEvent with only its declared fields", async () => {
+    const { pipeline, tracked } = withAnalytics();
+    await pipeline.execute(CaptureLeadAction, {}, GRANTED);
+    expect(tracked()).toEqual([
+      expect.objectContaining({ name: "lead.submitted", properties: { leadId: "led_2" } }),
+    ]);
+  });
+
+  it("skips a declared event the output does not fit, with a warning, and keeps the call", async () => {
+    const { pipeline, capture, tracked } = withAnalytics();
+    capture.output = { other: true };
+    await expect(pipeline.execute(CaptureLeadAction, {}, GRANTED)).resolves.toEqual({
+      other: true,
+    });
+    expect(tracked()).toEqual([]);
+  });
+
+  it("tracks nothing again for an idempotent replay", async () => {
+    const { pipeline, tracked } = withAnalytics();
+    await pipeline.execute(CaptureLeadAction, {}, { ...GRANTED, idempotencyKey: "k1" });
+    await pipeline.execute(CaptureLeadAction, {}, { ...GRANTED, idempotencyKey: "k1" });
+    expect(tracked()).toHaveLength(1);
+  });
+
+  it("writes a query's event after it answers", async () => {
+    const { pipeline, tracked } = withAnalytics();
+    await pipeline.execute(LeadsQuery, {}, GRANTED);
+    expect(tracked()).toEqual([expect.objectContaining({ key: "lead.list" })]);
+  });
+
+  it("writes nothing without a snapshot that grants analytics", async () => {
+    const { pipeline, tracked } = withAnalytics();
+    await pipeline.execute(SubmitLeadAction, {}, { actor: customer });
+    await pipeline.execute(SubmitLeadAction, {}, { actor: customer, consentSnapshot: "forged" });
+    expect(tracked()).toEqual([]);
   });
 });

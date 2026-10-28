@@ -15,7 +15,8 @@
  *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456), and
  *          the visitor's consent (`ctx.consent()`: the call's signed snapshot verified once through `ConsentCheck`;
  *          ADR 0472), and a `reads: "replica"` query's `handle` on a replica outside the caller's read-your-writes
- *          window (`ReplicaReads`, opened by each committed action). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
+ *          window (`ReplicaReads`, opened by each committed action), and a call's `analytics` event
+ *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
@@ -46,12 +47,13 @@
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
  *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
  *                     never a refusal by itself); ADR 0147 (decision 3: the span attributes, no values) and ADR 0184
- *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504.
+ *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504; ADR 0216
+ *                     (decision 1: analytics is its own stream), STA-1512.
  */
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
-  type ActorKind,
+  ActorKind,
   type ApiArea,
   type AssuranceLevel,
   Clock,
@@ -71,7 +73,7 @@ import {
 } from "@stackra/errors";
 import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
-import { duration, validate } from "@stackra/validation";
+import { duration, schemaOf, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
@@ -107,8 +109,11 @@ import type { Action } from "#core/bases/action.base";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Query } from "#core/bases/query.base";
+import { ACTION_CALLED_EVENT } from "#core/constants/action-called-event.constant";
 import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constant";
+import { ANALYTICS_CONSENT_CATEGORY } from "#core/constants/analytics-consent-category.constant";
+import { ANALYTICS_SKIPPED } from "#core/constants/analytics-skipped.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
@@ -120,6 +125,7 @@ import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
+import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
@@ -134,6 +140,7 @@ import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { ActionRegistration } from "#core/types/action-registration.type";
+import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { CallInput } from "#core/types/call-input.type";
 import type { CallOptions } from "#core/types/call-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
@@ -163,6 +170,7 @@ interface Recorded {
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
+  readonly analytics?: CallAnalytics;
 }
 
 /** What one call accumulates while it runs. */
@@ -176,6 +184,10 @@ interface CallState {
   readonly audit: Record<string, Json>;
   /** Set once the success entry was written inside the unit of work, so the outer audit does not write it again. */
   audited: boolean;
+  /** Set once the call's analytics event was written inside the unit of work, so the outer step does not write it. */
+  tracked: boolean;
+  /** When the call started, by `performance.now()`, for the generic analytics event's duration. */
+  readonly startedMs: number;
 }
 
 /** Everything one call carries through the steps. */
@@ -233,7 +245,9 @@ export class ActionPipeline {
     const call = this.prepare(type, request);
     const work = () =>
       this.traced(call, call.kind, () =>
-        this.audited(call, () => this.ordered(call, () => this.steps(call, input))),
+        this.audited(call, () =>
+          this.analyzed(call, () => this.ordered(call, () => this.steps(call, input))),
+        ),
       );
     const storage = this.optional(ContextStorage);
     return (await (storage === undefined ? work() : storage.run(call.ctx, work))) as OutputOf<
@@ -345,6 +359,8 @@ export class ActionPipeline {
       afterCommit: [],
       audit: {},
       audited: false,
+      tracked: false,
+      startedMs: globalThis.performance.now(),
     };
     const ctx = this.contextOf(descriptor, request, at, state);
     return { type, kind: record.kind, options, registration, descriptor, request, at, state, ctx };
@@ -608,6 +624,10 @@ export class ActionPipeline {
     const run = async () => {
       const output = await reviewed();
       if (meter !== undefined) await this.metered(call, meter, input);
+      if (call.options.analytics !== undefined) {
+        await this.track(call, "ok", input, output);
+        call.state.tracked = true;
+      }
       const trail = this.optional(AuditTrail);
       if (trail !== undefined) {
         await trail.record(this.auditEntry(call, "ok"));
@@ -782,6 +802,104 @@ export class ActionPipeline {
         },
       },
     ]);
+  }
+
+  /**
+   * Runs `work` and writes the call's analytics event for what the unit of work did not: a successful query (no unit of
+   * work) and, for `analytics: true`, a refusal (its writes rolled back, so the event is written after). An idempotent
+   * replay tracks nothing: the first call did. Calls that declare no `analytics` run as they are.
+   */
+  private async analyzed(call: Call, work: () => Promise<unknown>): Promise<unknown> {
+    if (call.options.analytics === undefined) return work();
+    try {
+      const output = await work();
+      if (call.kind === "query") await this.track(call, "ok", undefined, output);
+      return output;
+    } catch (error) {
+      if (isRefusal(error) && call.options.analytics === true)
+        await this.track(call, "refused", undefined, undefined, error.code);
+      throw error;
+    }
+  }
+
+  /**
+   * Writes one `analytics.tracked` event through the outbox when the call's consent grants `analytics` (ADR 0472):
+   * `action.called` with the key, outcome, refusal code, duration and origin, or the declared `AnalyticsEvent`'s
+   * fields read from the output, then the input (its schema keeps only its declared fields). Output that does not
+   * fit the event's schema skips the event with a warning: analytics never fails a call.
+   */
+  private async track(
+    call: Call,
+    outcome: "ok" | "refused",
+    input: unknown,
+    output: unknown,
+    code?: string,
+  ): Promise<void> {
+    const { descriptor, at, ctx, options } = call;
+    const declared = options.analytics;
+    if (declared === undefined) return;
+    const consent = await ctx.consent();
+    if (!consent.verified || !consent.granted.includes(ANALYTICS_CONSENT_CATEGORY)) return;
+    let name = ACTION_CALLED_EVENT;
+    let properties: Record<string, unknown> = {
+      key: descriptor.key,
+      outcome,
+      ...(code === undefined ? {} : { code }),
+      durationMs: Math.round(globalThis.performance.now() - call.state.startedMs),
+      ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin.kind }),
+    };
+    if (declared !== true) {
+      const fields = { ...this.objectOf(input), ...this.objectOf(output) };
+      const parsed = schemaOf(declared).safeParse(fields);
+      if (!parsed.success) {
+        this.optional(Logger)?.warn(ANALYTICS_SKIPPED, {
+          key: descriptor.key,
+          callId: descriptor.callId,
+          event: declared.name,
+        });
+        return;
+      }
+      // Action() and Query() refused any class that is not an AnalyticsEvent, so its kind record names it.
+      const record = kindOf(declared as unknown as AnyClass)?.options as
+        | { readonly name?: string }
+        | undefined;
+      name = record?.name ?? declared.name;
+      properties = parsed.data as Record<string, unknown>;
+    }
+    const { actor } = descriptor;
+    await this.required(
+      EventOutbox,
+      `${descriptor.key} declares analytics; bind the EventOutbox (install @stackra/outbox)`,
+    ).write([
+      {
+        event: AnalyticsTracked.create({
+          eventId: mintPublicId("evt"),
+          name,
+          properties,
+          occurredAt: at.toISOString(),
+          anonymousId: consent.subject,
+          ...(actor.kind === ActorKind.User ? { userId: actor.id } : {}),
+          callId: descriptor.callId,
+          key: descriptor.key,
+          locale: ctx.locale,
+          ...(descriptor.scope === undefined ? {} : { scopeId: descriptor.scope.id }),
+        }),
+        meta: {
+          id: mintPublicId("evt"),
+          occurredAt: at,
+          ...(descriptor.scopeId === undefined ? {} : { scopeId: descriptor.scopeId }),
+          actor,
+          correlationId: descriptor.callId,
+        },
+      },
+    ]);
+  }
+
+  /** `value`'s own fields when it is a plain object, else none. */
+  private objectOf(value: unknown): Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
   }
 
   /**

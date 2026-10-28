@@ -25,6 +25,7 @@ export default {
     contracts: "src/contracts/index.ts",
     react: "src/react/index.ts",
     native: "src/native/index.ts",
+    node: "src/node/index.ts",
     testing: "src/testing/index.ts",
   }),
 };

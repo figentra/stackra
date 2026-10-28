@@ -39,6 +39,7 @@ export { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-requir
 export { InputInvalidError } from "#core/errors/input-invalid.error";
 export { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 export { AuditEntryRecorded } from "#core/events/audit-entry-recorded.event";
+export { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 export { UsageRecorded } from "#core/events/usage-recorded.event";
 export { approverRefusal } from "#core/functions/approver-refusal.function";
 export { connectExtensions } from "#core/functions/connect-extensions.function";
@@ -64,6 +65,7 @@ export type { ActionRegistration } from "#core/types/action-registration.type";
 export type { AfterSlot } from "#core/types/after-slot.type";
 export type { AnySlot } from "#core/types/any-slot.type";
 export type { BeforeSlot } from "#core/types/before-slot.type";
+export type { CallAnalytics } from "#core/types/call-analytics.type";
 export type { CallInput } from "#core/types/call-input.type";
 export type { CallOptions } from "#core/types/call-options.type";
 export type { EndpointOptions } from "#core/types/endpoint-options.type";

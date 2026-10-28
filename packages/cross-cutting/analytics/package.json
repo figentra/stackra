@@ -2,7 +2,7 @@
   "name": "@stackra/analytics",
   "version": "0.0.0",
   "private": false,
-  "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook and the fakeAnalytics test helper",
+  "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook, the fakeAnalytics test helper, and in ./node the relay that sends the action pipeline's server-side analytics.tracked events to the destinations",
   "keywords": [
     "analytics",
     "consent",
@@ -54,6 +54,11 @@
       "./src/native/*.ts",
       "./src/native/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -82,6 +87,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -114,6 +124,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/consent": "workspace:*",
     "@stackra/container": "workspace:*",

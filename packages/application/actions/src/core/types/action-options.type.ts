@@ -5,7 +5,7 @@
  *          (`endpoint`, `tool`, `intent`, `job`, `offline`), its effect tags (`effects`), the client rule code it accepts (`accepts`), whether it
  *          changes structural configuration (`structural`), the meter it feeds (`meter`), whether it always needs an
  *          approval gate (`approval`), the assurance level it needs (`stepUp`) and the statement timeout of its unit of
- *          work (`timeout`).
+ *          work (`timeout`), and the analytics event each call writes (`analytics`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -14,7 +14,7 @@
  *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
  *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2); ADR 0360 (decision 4:
  *                     the tool default); ADR 0099 (decision 2: effect tags); ADR 0397 as amended by STA-813
- *                     (`approval`); ADR 0406 (`stepUp`).
+ *                     (`approval`); ADR 0406 (`stepUp`); STA-1512 (`analytics`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/contracts";
@@ -26,6 +26,7 @@ import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
+import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
@@ -106,4 +107,10 @@ export interface ActionOptions {
    * longer or must fail faster than the configured session timeout (`DatabaseConfig.timeouts.statement`).
    */
   readonly timeout?: Duration;
+
+  /**
+   * The analytics event each call writes as `analytics.tracked.v1` when its consent grants `analytics`: `true` for
+   * `action.called` (every outcome), or an `AnalyticsEvent` class (a successful call only, in its unit of work).
+   */
+  readonly analytics?: CallAnalytics;
 }

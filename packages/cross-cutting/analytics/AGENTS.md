@@ -2,7 +2,7 @@
 
 Product analytics delivery behind consent, with a bounded pre-consent queue (ADR 0298). Member at
 `packages/cross-cutting/analytics` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./react`, `./native`, `./testing`.
+`./contracts`, `./node`, `./react`, `./native`, `./testing`.
 
 ## Where code goes
 
@@ -22,6 +22,7 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 | React code                            | `src/react/analytics/`, `src/react/autocapture/`            |
 | A native hook                         | `src/native/analytics/`                                     |
 | A built-in analytics event            | `src/core/analytics/<name>.analytics-event.ts`              |
+| The server relay listener             | `src/node/listeners/`                                       |
 | A test helper                         | `src/testing/`, `src/testing/functions/`                    |
 | A test                                | `__tests__/<name>.<kind>.test.ts(x)` beside it              |
 
@@ -61,6 +62,10 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
   never add them back here.
 - Production code never imports `./testing`; a driver a host can select ships in `.` (or `./native`).
 - `AnalyticsEvent` belongs to `@stackra/events`; never redefine it here.
+- Server analytics (`./node`): `RelayTrackedAnalyticsListener` sends `@stackra/actions`' `AnalyticsTracked` as it is,
+  minus `denyProperties`. Consent was decided by the pipeline when the event was written (a verified snapshot granting
+  `analytics`); the relay never sends anything the event does not hold and never retries itself (the outbox does).
+  Only `./node` imports `@stackra/actions`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

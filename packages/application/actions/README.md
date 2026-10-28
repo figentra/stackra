@@ -160,6 +160,16 @@ which gen calls for every query with `invalidateOn`) forgets every entry of the 
 whichever scope node wrote it; `handle` still runs in the call's own context. With no `Cache` bound the step does not
 run. Answers are stored as they are, so a network cache driver keeps plain data only (a `Date` comes back a string).
 
+An action or query that declares `analytics` writes one `analytics.tracked.v1` event (`AnalyticsTracked`) through the
+`EventOutbox`, the analytics stream of ADR 0216 decision 1, and `@stackra/analytics/node`'s
+`RelayTrackedAnalyticsListener` sends it to the server destinations as an `AnalyticsDelivery`. `analytics: true` writes
+`action.called` with the key, outcome (`ok`, or `refused` with its code), duration and origin; `analytics: LeadSubmitted`
+(an `AnalyticsEvent` class) writes that event on success with only its declared fields, read from the output, then the
+input. An action's success writes it in its unit of work (a rollback tracks nothing); a refusal and a query write it
+after the call; an idempotent replay writes none. It is written only when `ctx.consent()` is verified and grants
+`analytics` (ADR 0472): the consent subject is the event's anonymous id, a user actor's id its user id. Output that does
+not fit the event's schema skips it with an `actions.analytics_skipped` warning; analytics never fails a call.
+
 A query that declares `reads: "replica"` runs its `handle` on a database read replica through the `ReplicaReads` port
 (`DatabaseReplicaReadsDriver` of `@stackra/database`, over `Database.onReplica`); the default `"primary"` never does,
 and neither does any query with no `ReplicaReads` bound. Read-your-writes: each committed action records its writer

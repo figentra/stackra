@@ -3,7 +3,7 @@
  * Purpose: `QueryOptions`, what `Query({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the API area, interceptors, the surfaces (`endpoint`, `tool`, `intent`), the `cache` profile and the
  *          offline `replica`, and `reads`: whether `handle` reads a database replica (with the caller's read-your-writes
- *          window kept by `ReplicaReads`).
+ *          window kept by `ReplicaReads`), and the analytics event each call writes (`analytics`).
  * Boundary: a type only. A query changes no state, so it takes no preconditions, idempotency, job or offline option;
  *           `tool` is on by default (queries are MCP tools under the caller's permissions).
  * Runtime: isomorphic
@@ -14,6 +14,7 @@ import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
 
 import type { Interceptor } from "#core/bases/interceptor.base";
+import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { QueryCache } from "#core/types/query-cache.type";
 import type { QueryReplica } from "#core/types/query-replica.type";
@@ -59,4 +60,10 @@ export interface QueryOptions {
    * offline `replica` above.
    */
   readonly reads?: "primary" | "replica";
+
+  /**
+   * The analytics event each call writes as `analytics.tracked.v1` when its consent grants `analytics`: `true` for
+   * `action.called` (every outcome), or an `AnalyticsEvent` class (a successful call only).
+   */
+  readonly analytics?: CallAnalytics;
 }

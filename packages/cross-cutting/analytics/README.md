@@ -31,6 +31,7 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `.`           | `PageViewed`, `ScreenViewed`, `ElementClicked`                                                     | the built-in auto-capture events `page.viewed`, `screen.viewed`, `element.clicked`     |
 | `./react`     | `useAutocapture`                                                                                   | page views per path and `data-track` clicks, as the capture switches allow             |
 | `./native`    | `useScreenViews`                                                                                   | screen views per focused route, while `autocapturePageviews` is on                     |
+| `./node`      | `RelayTrackedAnalyticsListener`                                                                    | sends the pipeline's server-side `analytics.tracked.v1` events to the bound driver     |
 | `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                    |
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
 | `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event    |
@@ -171,6 +172,15 @@ tracks `element.clicked` for a click inside an element marked `data-track="check
 digits, `.`, `_`, `-`) and the path leave, never the element's text or values. Taps are not auto-captured on native;
 track them explicitly. Every auto-captured event goes through the client like any other, so consent, sampling and
 destinations apply. Web vitals and session replay are not analytics: `TelemetryConfig` (@stackra/logger) owns them.
+
+## Server analytics
+
+An action or query that declares `analytics` (`Action({ analytics: true })` or `analytics: LeadSubmitted`, see
+`@stackra/actions`) writes `analytics.tracked.v1` through the outbox when the call's verified consent snapshot grants
+`analytics` (ADR 0472). `RelayTrackedAnalyticsListener` (`./node`, subscribed by its event type) sends each one to the
+bound `AnalyticsDriver` as a track delivery: the event's id, name and properties minus `denyProperties`, the consent
+subject as `anonymousId`, the user id for a user actor, the call id as `sessionId` (a server call has no visit) and the
+locale in the context. A rejection from the driver is retried by the outbox relay. Sampling does not apply here.
 
 ## Not here yet
 
