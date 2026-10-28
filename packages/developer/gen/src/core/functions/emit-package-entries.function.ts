@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitPackageEntries`, a package's entry barrels (`.stackra/entry/{index,contracts,node,react,native,
  *          testing}.ts`, which package.json `exports` point at): named re-exports of every export of the entry's
- *          folders, plus the shipped `X$` of the shapes, enums, configs, actions and queries declared there, and the
+ *          folders, plus the shipped `X$` of the shapes, enums, configs, actions and queries declared there (in a
+ *          module `schemaModules` gives a schemas file), and the
  *          generated `<Key>Module` in `node` when the package authors none, and in `node` each module's entity
  *          schemas (`<MODULE>_ENTITIES`) for the host to register.
  * Boundary: pure. `.` holds `src/config` and `src/core`; `node` holds `src/node` except `database/factories` and
@@ -17,6 +18,7 @@ import { entitiesName } from "#core/functions/entities-name.function";
 import { entryOf } from "#core/functions/entry-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { schemaModules } from "#core/functions/schema-modules.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -54,9 +56,11 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
   if (ir.layout !== "package") return [];
   const lines = new Map<string, string[]>(ENTRIES.map(([entry]) => [entry, []]));
   const schemaNames = new Map<string, Map<string, string[]>>();
+  // Only a module gen writes a schemas file for ships its `X$` (an enum-only member gets none).
+  const written = new Set(schemaModules(ir));
   const addSchema = (file: string, module: string, name: string): void => {
     const entry = entryOf(file);
-    if (entry === undefined) return;
+    if (entry === undefined || !written.has(module)) return;
     const byModule = schemaNames.get(entry) ?? new Map<string, string[]>();
     byModule.set(module, [...(byModule.get(module) ?? []), `${name}$`]);
     schemaNames.set(entry, byModule);

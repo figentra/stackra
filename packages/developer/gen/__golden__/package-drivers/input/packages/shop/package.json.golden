@@ -20,7 +20,8 @@
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/validation": "workspace:*",
-    "@stackra/vitest-config": "workspace:*"
+    "@stackra/vitest-config": "workspace:*",
+    "zod": "catalog:"
   },
   "imports": {
     "#config/*": ["./src/config/*.ts", "./src/config/*.tsx"],

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `writeFixtureMember`, a real member on disk for discovery tests: package.json with its `imports` map and
- *          the `@stackra/*` dependencies generated files import, a
+ *          the `@stackra/*` dependencies generated files import (and zod, which a schemas file imports), a
  *          tsconfig with decorators on, `stackra.config.ts`, the given source files, and local stand-in packages
  *          (`@stackra/actions`, `@stackra/events`, `@stackra/outbox`) for the kind bases and types whose packages are
  *          not gen's dependencies, with `ReplicaPage` (ADR 0338) for a replica query's output, `Listener` and the
@@ -96,7 +96,9 @@ export function writeFixtureMember(name: string, files: Readonly<Record<string, 
           "tsdown-config",
           "validation",
           "vitest-config",
-        ].map((name) => [`@stackra/${name}`, "workspace:*"]),
+        ]
+          .map((name) => [`@stackra/${name}`, "workspace:*"])
+          .concat([["zod", "catalog:"]]),
       ),
       imports: Object.fromEntries(
         folders.map((folder) => [

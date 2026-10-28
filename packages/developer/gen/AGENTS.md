@@ -55,7 +55,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   app gets its clients; an app reads the producer from the repo's `services/` too (STA-1293).
 - Undeclared packages (STA-1293, STA-1296): `undeclaredPackages` refuses any generated file importing a `@stackra/*`
   package missing from `ir.packages` (clients and schemas first, then every other file as
-  `generated_dependency_missing`). When a target starts importing a new platform package, expect members to need that
+  `generated_dependency_missing`); a schemas file is also held to `zod`. `schemaModules` writes no schemas file for a
+  member with nothing to register (only enums, configs, or shapes whose `X$` the member ships), so an enum-only
+  package needs no zod; the registrations and entry barrels read the same list. When a target starts importing a new platform package, expect members to need that
   dependency, and update the fixtures (`GENERATED_IMPORTS`, `writeFixtureMember`'s package.json) in the same change.
 - Client modules and permissions (STA-1296): `emitClients` writes a `moduleRef` class per manifest module and a
   `permissionsRef` class per Permissions class (the manifest's permission `class`, else derived from the key). Service

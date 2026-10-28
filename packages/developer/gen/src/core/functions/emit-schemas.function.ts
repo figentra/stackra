@@ -6,7 +6,7 @@
  *          schema, one `registerSchemas` call linking each class to its `X$` (gap G1), and beside it one
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
- *           collides. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
+ *           collides; zod is imported only when the file builds a schema. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
  *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
@@ -309,7 +309,6 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
 export function emitSchemas(ir: MemberIR, module: string): string {
   const imports: Imports = new Map();
   const context: Context = { module, imports, declared: new Set() };
-  use(imports, "zod", "z");
   const body: string[] = [];
   for (const declaration of ir.enums.filter((candidate) => candidate.module === module)) {
     body.push(
@@ -403,6 +402,8 @@ export function emitSchemas(ir: MemberIR, module: string): string {
     for (const name of ["Assert", "Fields", "Same"])
       use(imports, "@stackra/validation", name, true);
   }
+  // zod only when the file builds a schema: a file of change registrations alone needs none.
+  if (/\bz\./.test(body.join("\n"))) use(imports, "zod", "z");
   const header = generatedHeader({
     from: `the shape classes of module ${module}`,
     purpose:

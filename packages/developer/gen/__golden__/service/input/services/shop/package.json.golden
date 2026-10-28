@@ -22,7 +22,8 @@
     "@stackra/validation": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
     "@stackra/model": "workspace:*",
-    "@stackra/database": "workspace:*"
+    "@stackra/database": "workspace:*",
+    "zod": "catalog:"
   },
   "imports": {
     "#config/*": ["./src/config/*.ts", "./src/config/*.tsx"],

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `schemaModules`: every module with a shape, an enum, an action, a query or a config gets a
- *          schemas file, sorted, each once.
+ *          schemas file, sorted, each once, when the member has a shape to register; a member whose shapes all ship
+ *          their own `X$`, or that has only enums and configs, gets none.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); registry v3.1 gap G1.
@@ -21,5 +22,18 @@ describe("schemaModules", () => {
 
   it("lists none for a member without shapes, enums, actions, queries or configs", () => {
     expect(schemaModules(WEB_APP_IR)).toEqual([]);
+  });
+
+  it("lists none for a member with only enums and configs, or shapes that ship their own X$", () => {
+    expect(schemaModules({ ...COMMERCE_IR, shapes: [] })).toEqual([]);
+    const shipped = COMMERCE_IR.shapes.map((shape) => ({
+      file: shape.file,
+      importPath: shape.importPath,
+      folder: "modules",
+      names: [{ name: `${shape.name}$`, typeOnly: false }],
+    }));
+    expect(schemaModules({ ...COMMERCE_IR, files: [...COMMERCE_IR.files, ...shipped] })).toEqual(
+      [],
+    );
   });
 });

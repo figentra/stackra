@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `GENERATED_IMPORTS`, the `@stackra/*` packages gen's emitters can import (wiring driver entries, tool
- *          configs, the test setup, entries), declared by a fixture IR so the undeclared-package check on every
+ *          configs, the test setup, entries) and `zod`, which a schemas file imports, declared by a fixture IR so the undeclared-package check on every
  *          generated file stays quiet in tests that are not about it (STA-1296).
  * Boundary: test data only. `@stackra/database` and `@stackra/i18n` are left out: declaring them changes what gen
  *           writes (the database testing import, the i18n target). `@stackra/clients` stays: its testing import in the
@@ -10,7 +10,7 @@
  * Governing contract: ADR 0022 (test placement); STA-1293 (undeclared packages refused).
  */
 
-/** Every `@stackra/*` package a generated file may import, but database and i18n. */
+/** Every `@stackra/*` package a generated file may import, but database and i18n, and zod. */
 export const GENERATED_IMPORTS: readonly string[] = [
   "actions",
   "app",
@@ -44,4 +44,6 @@ export const GENERATED_IMPORTS: readonly string[] = [
   "versioning",
   "vitest-config",
   "webhooks",
-].map((name) => `@stackra/${name}`);
+]
+  .map((name) => `@stackra/${name}`)
+  .concat("zod");

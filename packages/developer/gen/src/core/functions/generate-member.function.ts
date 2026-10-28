@@ -15,7 +15,7 @@
  *           file at all, so a broken run never leaves half an output behind. Two narrower passes break cycles between
  *           services: the manifest pass (the manifest alone, not blocked by a consumed workspace service whose
  *           manifest is still to come) and the clients pass (the client files alone, from the producers' manifests). A client or schema file that imports
- *           a `@stackra/*` package the member does not declare is refused (`client_dependency_missing`,
+ *           a `@stackra/*` package (a schema file also zod) the member does not declare is refused (`client_dependency_missing`,
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
@@ -147,7 +147,8 @@ export function generateMember(
     path: `.stackra/gen/schemas/${module}.ts`,
     content: emitSchemas(ir, module),
   }));
-  const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing");
+  // A schemas file also imports zod, which a member with schemas to compile declares (most enum-only ones have none).
+  const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing", ["zod"]);
   if (missing.length > 0) return { files: [], errors: missing, manifest };
   files.push(...schemas);
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
