@@ -28,6 +28,9 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `./contracts` | `AnalyticsDeliveryKind`                                                                            | `track`, `identify`, `group`: what a delivery asks the destination to do               |
 | `./contracts` | `AnalyticsIdentity`                                                                                | the port that keeps the visitor's identity after consent (`AnalyticsIdentityRecord`)   |
 | `.`           | `MemoryAnalyticsIdentityDriver`, `CookieAnalyticsIdentityDriver`, `StorageAnalyticsIdentityDriver` | identity drivers `memory` (default, one launch), `cookie` (web), `storage` (device)    |
+| `.`           | `PageViewed`, `ScreenViewed`, `ElementClicked`                                                     | the built-in auto-capture events `page.viewed`, `screen.viewed`, `element.clicked`     |
+| `./react`     | `useAutocapture`                                                                                   | page views per path and `data-track` clicks, as the capture switches allow             |
+| `./native`    | `useScreenViews`                                                                                   | screen views per focused route, while `autocapturePageviews` is on                     |
 | `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                    |
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
 | `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event    |
@@ -159,10 +162,19 @@ origin) wins over it. The driver posts to `<origin>/batch/` with plain `fetch`, 
 events carry `$process_person_profile: true`. On a phone, take the driver
 from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or when `AppState` goes to `background`.
 
+## Auto-capture
+
+With `autocapturePageviews` on, the app shell calls `useAutocapture(useLocation().pathname)` on the web, which tracks
+`page.viewed` with the path (never the query or hash) once per path change, and `useScreenViews(routeName)` on a phone,
+which tracks `screen.viewed` with the route name (never its params). With `autocaptureClicks` on, `useAutocapture` also
+tracks `element.clicked` for a click inside an element marked `data-track="checkout.pay"`: only that name (letters,
+digits, `.`, `_`, `-`) and the path leave, never the element's text or values. Taps are not auto-captured on native;
+track them explicitly. Every auto-captured event goes through the client like any other, so consent, sampling and
+destinations apply. Web vitals and session replay are not analytics: `TelemetryConfig` (@stackra/logger) owns them.
+
 ## Not here yet
 
-The capture switches (`autocapturePageviews`, `autocaptureClicks`, `webVitals`, `sessionReplay`) are not read by the
-PostHog driver yet: it sends only the events tracked through `AnalyticsClient`. Nothing sets `screen`, `appVersion`
-or `region` in the envelope yet. Hashing the user id per destination belongs to the destination drivers (stackra-412). The container-backed
-`AnalyticsDriverLookup` that hands named instances to the client is not built yet, so only the `default` destination
-sends in a host today.
+Nothing sets `context.screen`, `appVersion` or `region` in the envelope yet. @stackra/navigation does not call the
+auto-capture hooks yet: the app shell calls them. The container-backed `AnalyticsDriverLookup` that hands named
+instances to the client is not built yet, so only the `default` destination sends in a host today. Hashing the user
+id per destination belongs to the destination drivers (stackra-412).

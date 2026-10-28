@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ANALYTICS_CONFIG_SCHEMA`, the zod schema this package ships for `AnalyticsConfig` (exported as
  *          `AnalyticsConfig$`): the driver, the consent category that gates delivery, the bound of the pre-consent
- *          queue, the capture switches a vendor driver reads, the ingest origin, the deny list, the PostHog key
+ *          queue, the auto-capture switches (page or screen views and `data-track` clicks; web vitals
+ *          and replay are `TelemetryConfig`'s only, stackra-409), the ingest origin, the deny list, the PostHog key
  *          and host, the identity driver, cookie name and
  *          lifetime (identity stitching), and the delivery engine: flush size and window, bounded retry, buffer bound,
  *          sampling (global and per event) and the offline queue; and the destinations (stackra-407): named driver
@@ -71,8 +72,6 @@ export const ANALYTICS_CONFIG_SCHEMA = z.object({
   queueLimit: z.number().int().min(0).max(1000).default(100),
   autocapturePageviews: z.boolean().default(false),
   autocaptureClicks: z.boolean().default(false),
-  webVitals: z.boolean().default(false),
-  sessionReplay: z.boolean().default(false),
   cookieless: z.boolean().default(true),
   ingestOrigin: z.union([z.literal(""), z.url({ protocol: /^https?$/ })]).default(""),
   denyProperties: z.array(z.string().min(1)).default(() => []),

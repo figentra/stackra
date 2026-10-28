@@ -22,8 +22,6 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
       queueLimit: 100,
       autocapturePageviews: false,
       autocaptureClicks: false,
-      webVitals: false,
-      sessionReplay: false,
       cookieless: true,
       ingestOrigin: "",
       denyProperties: [],

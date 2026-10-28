@@ -66,7 +66,14 @@ budgets, no Lighthouse path.
 
 `TelemetryConfig` holds no DSN and no error sampling (ADR 0465): `SentryConfig` of `@stackra/errors` is the one Sentry
 source (`dsnSecret`, `sampleRate`), and a client reporter reads both there. `errors.enabled` and `errors.nativeCrashes`
-stay here. Migrating: move a `logger.telemetry.dsn` value to the secret `SentryConfig.dsnSecret` names and
+stay here.
+
+`TelemetryConfig` is the one owner of web vitals (`vitals.enabled`) and session replay (`replay`, gated by its
+`consent` category). `AnalyticsConfig` (@stackra/analytics) dropped its `webVitals` and `sessionReplay` switches
+(stackra-409): move a `analytics.webVitals: true` value to `logger.telemetry.vitals.enabled` and an
+`analytics.sessionReplay` value to `logger.telemetry.replay`; a leftover value is dropped by the analytics schema.
+
+Migrating: move a `logger.telemetry.dsn` value to the secret `SentryConfig.dsnSecret` names and
 `errors.sampleRate` to `errors.sentry.sampleRate`; a leftover value is dropped by the schema.
 
 ## OTLP

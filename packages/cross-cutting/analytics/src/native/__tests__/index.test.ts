@@ -16,7 +16,7 @@ vi.mock("react-native", () => ({
 }));
 
 describe("@stackra/analytics/native", () => {
-  it("exports exactly the native PostHog driver", () => {
-    expect(Object.keys(native)).toEqual(["PosthogAnalyticsDriver"]);
+  it("exports exactly the native PostHog driver and the screen view hook", () => {
+    expect(Object.keys(native).sort()).toEqual(["PosthogAnalyticsDriver", "useScreenViews"]);
   });
 });

@@ -9,7 +9,8 @@
  *           merges the base value explicitly. `replay.consent` is a consent category code (`crash_replay`), kept a
  *           string because consent sits above this package. The Sentry DSN and the share of errors reported are not here:
  *           `SentryConfig` of @stackra/errors is their one source (ADR 0465), and the client's reporter reads them
- *           there; this class only switches reporting on and adds what Sentry's config has no field for.
+ *           there; this class only switches reporting on and adds what Sentry's config has no field for. It is the
+ *           one owner of web vitals and session replay: `AnalyticsConfig` has no such switch (stackra-409).
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (telemetry); ADR 0183 (budgets with numbers); ADR 0071 (privacy); ADR 0294 (decisions
  *                     19 and 26); ADR 0465 (one Sentry config).

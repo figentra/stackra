@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `AnalyticsOptions`, the shape of `AnalyticsConfig`: which driver sends, which consent category gates it,
- *          how many events may wait for a decision, what a vendor driver captures on its own, where it sends, which
+ *          how many events may wait for a decision, what is captured automatically, where it sends, which
  *          property names never leave the device, the PostHog project key and host the `posthog` driver sends to, and
  *          where and how long the visitor's identity is kept after consent, and
  *          how the delivery engine batches, retries, samples and keeps events offline, and the destinations: named
@@ -9,7 +9,8 @@
  * Boundary: a shape class; it registers this package's own schema (`ANALYTICS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(AnalyticsConfig)` validates with no generated file. The defaults send
  *           nothing anywhere: the `none` driver, gated by `analytics`, nothing captured automatically, no cookies.
- *           The capture switches, the ingest origin and the PostHog key and host are read by vendor drivers only. The
+ *           The capture switches are read by the auto-capture hooks; the ingest origin and the PostHog key and host by
+ *           vendor drivers only; web vitals and replay are `TelemetryConfig`'s (@stackra/logger), never here. The
  *           PostHog key is public; the host feeds it from its env configuration (`analyticsPosthogKey`), so this
  *           shape has no env map.
  * Runtime: isomorphic
@@ -136,17 +137,11 @@ export class AnalyticsOptions extends Schema {
   /** Named driver instances, instance name to driver name (`{ segment: "segment" }`), that destinations send to. */
   drivers: Record<string, DriverName<AnalyticsDriver>> = {};
 
-  /** A vendor driver records a page (or screen) view per navigation. */
+  /** `useAutocapture` (web) and `useScreenViews` (native) track a `page.viewed` or `screen.viewed` per navigation. */
   autocapturePageviews = false;
 
-  /** A vendor driver records clicks (or taps) without an explicit event. */
+  /** `useAutocapture` tracks an `element.clicked` for a click inside an element with a `data-track` name (web). */
   autocaptureClicks = false;
-
-  /** A vendor driver sends field web vitals with the page view. */
-  webVitals = false;
-
-  /** A vendor driver records session replays. */
-  sessionReplay = false;
 
   /** A vendor driver runs without cookies until consent is granted. */
   cookieless = true;

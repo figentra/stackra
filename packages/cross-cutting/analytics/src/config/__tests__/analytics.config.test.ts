@@ -27,11 +27,7 @@ class WebAnalyticsConfig extends BaseAnalyticsConfig {
 
   override autocapturePageviews = true;
 
-  override autocaptureClicks = false;
-
-  override webVitals = true;
-
-  override sessionReplay = false;
+  override autocaptureClicks = true;
 
   override cookieless = true;
 
@@ -73,11 +69,11 @@ describe("AnalyticsConfig", () => {
 
   it("applies the template's overrides", () => {
     const web = buildConfig(WebAnalyticsConfig);
-    expect(web.webVitals).toBe(true);
+    expect(web.autocaptureClicks).toBe(true);
     expect(web.denyProperties).toEqual(["email", "phone"]);
     const signedIn = buildConfig(ConsoleAnalyticsConfig);
     expect(signedIn.autocapturePageviews).toBe(true);
-    expect(signedIn.webVitals).toBe(false);
+    expect(signedIn.autocaptureClicks).toBe(false);
     expect(signedIn.queueLimit).toBe(100);
   });
 
@@ -87,7 +83,12 @@ describe("AnalyticsConfig", () => {
     });
     expect(config.driver).toBe("memory");
     expect(config.queueLimit).toBe(20);
-    expect(config.webVitals).toBe(true);
+    expect(config.autocaptureClicks).toBe(true);
+  });
+
+  it("has no vitals or replay switch: TelemetryConfig owns them", () => {
+    expect("webVitals" in buildConfig(AnalyticsConfig)).toBe(false);
+    expect("sessionReplay" in buildConfig(AnalyticsConfig)).toBe(false);
   });
 
   it("refuses gating analytics by the necessary category", () => {

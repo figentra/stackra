@@ -22,13 +22,16 @@ describe("@stackra/analytics", () => {
       "AnalyticsOptions",
       "AnalyticsState",
       "CookieAnalyticsIdentityDriver",
+      "ElementClicked",
       "MemoryAnalyticsDriver",
       "MemoryAnalyticsIdentityDriver",
       "MemoryAnalyticsOfflineQueueDriver",
       "NoneAnalyticsDriver",
       "NoneAnalyticsDriverLookupDriver",
       "NoneAnalyticsOfflineQueueDriver",
+      "PageViewed",
       "PosthogAnalyticsDriver",
+      "ScreenViewed",
       "StorageAnalyticsIdentityDriver",
       "StorageAnalyticsOfflineQueueDriver",
     ]);
@@ -46,6 +49,8 @@ describe("@stackra/analytics", () => {
       "AnalyticsOfflineQueue",
       "ANALYTICS_DELIVERY_SCHEMA",
       "sampleScore",
+      "pagePath",
+      "TRACK_NAME_PATTERN",
     ]) {
       expect(name in analytics).toBe(false);
     }

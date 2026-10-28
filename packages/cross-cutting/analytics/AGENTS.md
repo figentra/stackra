@@ -19,7 +19,9 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 | A React Native driver                 | `src/native/drivers/<name>-analytics.driver.ts`             |
 | The delivery service                  | `src/core/services/analytics-client.service.ts`             |
 | The delivery id maker                 | `src/core/functions/analytics-id.function.ts`               |
-| React code                            | `src/react/analytics/`                                      |
+| React code                            | `src/react/analytics/`, `src/react/autocapture/`            |
+| A native hook                         | `src/native/analytics/`                                     |
+| A built-in analytics event            | `src/core/analytics/<name>.analytics-event.ts`              |
 | A test helper                         | `src/testing/`, `src/testing/functions/`                    |
 | A test                                | `__tests__/<name>.<kind>.test.ts(x)` beside it              |
 
@@ -54,6 +56,9 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
   queue, buffer and retries; never let one lane's consent or failure reach another. Every lane shares the event id
   and visitor ids. The identity store follows `consentCategory` only. `include`/`exclude` route tracked events only;
   `identify` and `group` go to every granted lane.
+- Auto-capture (stackra-409) sends a path without query or hash, a route name without params, and a `data-track`
+  name only; never read element text, values or other attributes. Web vitals and replay belong to `TelemetryConfig`;
+  never add them back here.
 - Production code never imports `./testing`; a driver a host can select ships in `.` (or `./native`).
 - `AnalyticsEvent` belongs to `@stackra/events`; never redefine it here.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

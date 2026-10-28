@@ -13,7 +13,7 @@ import * as react from "#react/index";
 
 describe("@stackra/analytics/react", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(react).sort()).toEqual(["useAnalytics"]);
+    expect(Object.keys(react).sort()).toEqual(["useAnalytics", "useAutocapture"]);
   });
 
   it("returns the analytics client", () => {
