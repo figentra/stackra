@@ -76,6 +76,12 @@
     "#worker/*": [
       "./src/worker/*",
       "./src/worker/*.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
     ]
   },
   "exports": {

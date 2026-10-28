@@ -53,6 +53,12 @@
       "./src/metro-transformer/*",
       "./src/metro-transformer/*.ts",
       "./src/metro-transformer/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
     ]
   },
   "exports": {

@@ -30,6 +30,12 @@
       "./src/*",
       "./src/*.ts",
       "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
     ]
   },
   "scripts": {

@@ -44,6 +44,12 @@
       "./src/react/*.ts",
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
     ]
   },
   "exports": {

@@ -65,6 +65,12 @@
       "./src/native/*.ts",
       "./src/native/*.tsx",
       "./src/native/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
     ]
   },
   "exports": {
