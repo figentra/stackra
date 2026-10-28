@@ -3275,6 +3275,9 @@ importers:
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
