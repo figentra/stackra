@@ -171,6 +171,7 @@ describe("emitSchemas", () => {
       'import { InvoiceIssuedChange } from "#modules/billing/events/invoice-issued.change";',
     );
     expect(billing).toContain("registerChanges([\n  [InvoiceIssued, InvoiceIssuedChange],\n]);");
+    expect(billing).toContain("], { replace: false });");
     expect(orders).not.toContain("registerChanges");
   });
 

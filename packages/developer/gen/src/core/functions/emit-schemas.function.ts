@@ -365,10 +365,13 @@ export function emitSchemas(ir: MemberIR, module: string): string {
   if (registered.length > 0) {
     use(imports, "@stackra/validation", "registerSchemas");
     body.push(
-      "/** Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1). */",
+      "/**",
+      " * Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1); a schema the class's own",
+      " * package already registered (its shipped `X$`, STA-1284) is kept.",
+      " */",
       "registerSchemas([",
       ...registered.map((shape) => `  [${shape.name}, ${shape.name}$],`),
-      "]);",
+      "], { replace: false });",
       "",
     );
   }

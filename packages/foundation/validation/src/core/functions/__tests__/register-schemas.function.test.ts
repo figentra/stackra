@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `registerSchemas`: it links each class to its schema, a second registration replaces the
- *          first, and a subclass is not linked by its parent's registration.
+ *          first unless `replace: false`, and a subclass is not linked by its parent's registration.
  * Boundary: test only; reads back through `schemaOf`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); registry v3.1 gap G1.
@@ -38,6 +38,22 @@ describe("registerSchemas", () => {
     const reloaded = z.object({ quantity: z.number().int().min(1).max(99) });
     registerSchemas([[RequestedLine, reloaded]]);
     expect(schemaOf(RequestedLine)).toBe(reloaded);
+  });
+
+  it("keeps a registered schema when called with replace: false", () => {
+    class ShippedLine extends Schema {
+      quantity = 1;
+    }
+    const shipped = z.object({ quantity: z.number().int().min(1).max(9) });
+    registerSchemas([[ShippedLine, shipped]]);
+    registerSchemas([[ShippedLine, z.object({ quantity: z.number() })]], { replace: false });
+    expect(schemaOf(ShippedLine)).toBe(shipped);
+    const fresh = z.object({ quantity: z.number() });
+    class GeneratedLine extends Schema {
+      quantity = 1;
+    }
+    registerSchemas([[GeneratedLine, fresh]], { replace: false });
+    expect(schemaOf(GeneratedLine)).toBe(fresh);
   });
 
   it("does not link a subclass through its parent", () => {
