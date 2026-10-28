@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `sameJson(left, right)`, whether two JSON values are equal: by value, object keys in any order.
- * Boundary: internal; pure. `diffTheme` reads it.
+ * Boundary: internal; pure. `diffSiteTheme` reads it.
  * Runtime: isomorphic
  * Governing contract: ADR 0270 (decision 2).
  */

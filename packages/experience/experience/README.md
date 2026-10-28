@@ -27,9 +27,9 @@ only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export
 | `.`           | `registeredBlocks`                                                                                                 | a read-only copy of the registered block classes by key, for the builder                                       |
 | `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`                                                     | the document validator every renderer runs first, and its refusals                                             |
 | `.`           | `validateDocument`, `blockKinds`                                                                                   | the server-side validator: every problem of a document against its kind                                        |
-| `.`           | `commitTheme`, `rollbackTheme`, `diffTheme`, `validateTheme`                                                       | section-based themes with numbered revisions, rollback and a reviewed diff                                     |
+| `.`           | `commitSiteTheme`, `rollbackSiteTheme`, `diffSiteTheme`, `validateSiteTheme`                                                       | section-based themes with numbered revisions, rollback and a reviewed diff                                     |
 | `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`                                                         | types                                                                                                          |
-| `.`           | `Theme`, `ThemeRevision`, `ThemeChange`, `ThemeDiff`, `ValidateDocumentOptions`                                    | types                                                                                                          |
+| `.`           | `SiteTheme`, `SiteThemeRevision`, `SiteThemeChange`, `SiteThemeDiff`, `ValidateDocumentOptions`                                    | types                                                                                                          |
 | `./contracts` | `Renderer`                                                                                                         | the port; drivers `react` and `native`                                                                         |
 | `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext`                                                | the document format, read by the builder and collaboration                                                     |
 | `./contracts` | `ExperienceKind`, `DocumentProblem`                                                                                | the document kinds (page, screen, form, email template, print document, theme section) and a validator problem |
@@ -143,10 +143,10 @@ data })` that writes every prop and data value through `escapeHtml`. Unlike the 
 
 ## Themes
 
-A theme is named sections, each a theme-section document, and its settings as JSON. `commitTheme` appends a numbered,
-frozen revision; `rollbackTheme(history, n, change)` appends a new revision with revision `n`'s content and
-`restores: n`, so nothing is ever removed and a rollback can itself be rolled back; `diffTheme` names the section and
-setting keys that changed, for the reviewed diff; `validateTheme` checks every section. The experience service stores
+A theme is named sections, each a theme-section document, and its settings as JSON. `commitSiteTheme` appends a numbered,
+frozen revision; `rollbackSiteTheme(history, n, change)` appends a new revision with revision `n`'s content and
+`restores: n`, so nothing is ever removed and a rollback can itself be rolled back; `diffSiteTheme` names the section and
+setting keys that changed, for the reviewed diff; `validateSiteTheme` checks every section. The experience service stores
 the history.
 
 ## Rendering

@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `validateTheme`: each section is checked as a theme-section document, problems carry the
+ * Purpose: unit tests of `validateSiteTheme`: each section is checked as a theme-section document, problems carry the
  *          section key in their path, and a theme of fitting blocks passes.
  * Boundary: test only; schemas registered by hand.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0270 (decision 6).
+ * Governing contract: ADR 0022; ADR 0270 (decision 6); STA-1383 (renamed SiteTheme so Theme means design tokens).
  */
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
@@ -13,7 +13,7 @@ import { z } from "zod";
 import { ExperienceKind } from "#contracts/enums/experience-kind.enum";
 import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import { validateTheme } from "#core/functions/validate-theme.function";
+import { validateSiteTheme } from "#core/functions/validate-site-theme.function";
 import type { BlockClass } from "#core/types/block-class.type";
 
 class HeaderBlock extends Block({
@@ -36,10 +36,10 @@ const blocks = new Map<string, BlockClass>([
   ["web.hero", HeroBlock],
 ]);
 
-describe("validateTheme", () => {
+describe("validateSiteTheme", () => {
   it("checks each section as a theme section, in key order", () => {
     expect(
-      validateTheme(
+      validateSiteTheme(
         {
           sections: { header: { block: "theme.header" }, banner: { block: "web.hero" } },
           settings: {},
@@ -48,7 +48,7 @@ describe("validateTheme", () => {
       ),
     ).toEqual([{ path: "banner:0", code: "kind_not_allowed", block: "web.hero" }]);
     expect(
-      validateTheme({ sections: { header: { block: "theme.header" } }, settings: {} }, blocks),
+      validateSiteTheme({ sections: { header: { block: "theme.header" } }, settings: {} }, blocks),
     ).toEqual([]);
   });
 });

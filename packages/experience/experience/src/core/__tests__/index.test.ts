@@ -18,10 +18,10 @@ import type {
   BlockEntry,
   BlockOptions,
   ResolvedNode,
-  Theme,
-  ThemeChange,
-  ThemeDiff,
-  ThemeRevision,
+  SiteTheme,
+  SiteThemeChange,
+  SiteThemeDiff,
+  SiteThemeRevision,
   ValidateDocumentOptions,
 } from "#core/index";
 
@@ -33,14 +33,14 @@ describe("@stackra/experience", () => {
       "InvalidDocumentError",
       "UnknownBlockError",
       "blockKinds",
-      "commitTheme",
-      "diffTheme",
+      "commitSiteTheme",
+      "diffSiteTheme",
       "registerBlocks",
       "registeredBlocks",
       "resolveDocument",
-      "rollbackTheme",
+      "rollbackSiteTheme",
       "validateDocument",
-      "validateTheme",
+      "validateSiteTheme",
     ]);
   });
 
@@ -55,9 +55,9 @@ describe("@stackra/experience", () => {
     expectTypeOf<BlockOptions["kinds"]>().toEqualTypeOf<readonly ExperienceKind[] | undefined>();
     expectTypeOf<ValidateDocumentOptions["kind"]>().toEqualTypeOf<ExperienceKind>();
     expectTypeOf(core.validateDocument).returns.toEqualTypeOf<DocumentProblem[]>();
-    expectTypeOf(core.commitTheme).returns.toEqualTypeOf<readonly ThemeRevision[]>();
-    expectTypeOf(core.rollbackTheme).parameter(2).toEqualTypeOf<ThemeChange>();
-    expectTypeOf(core.diffTheme).returns.toEqualTypeOf<ThemeDiff>();
-    expectTypeOf<ThemeRevision["theme"]>().toEqualTypeOf<Theme>();
+    expectTypeOf(core.commitSiteTheme).returns.toEqualTypeOf<readonly SiteThemeRevision[]>();
+    expectTypeOf(core.rollbackSiteTheme).parameter(2).toEqualTypeOf<SiteThemeChange>();
+    expectTypeOf(core.diffSiteTheme).returns.toEqualTypeOf<SiteThemeDiff>();
+    expectTypeOf<SiteThemeRevision["theme"]>().toEqualTypeOf<SiteTheme>();
   });
 });

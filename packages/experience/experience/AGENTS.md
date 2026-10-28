@@ -29,7 +29,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./ed
 - `resolveDocument` checks the whole tree before a driver draws anything; drivers never draw an unchecked node.
 - `validateDocument` is the server-side check: it needs no component and never throws on the document, which is
   untrusted. A block fits only the `ExperienceKind`s it declares (a page and a screen by default).
-- Theme revisions are append-only: a rollback is a new revision, never an edit or a removal.
+- SiteTheme revisions are append-only: a rollback is a new revision, never an edit or a removal.
 - `./contracts` stays a leaf: the builder and collaboration read `DocumentNode` from it without a renderer.
 - `BLOCK_ENTRIES` stays internal; the only way out is `registeredBlocks()`, a copy without the components.
 - The web and native drawings are separate code on `@stackra/ui` and `@stackra/ui/native` (ADR 0112 X9); keep them in
