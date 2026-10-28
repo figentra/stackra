@@ -1,0 +1,78 @@
+---
+title: "0472 — Server-side consent: a signed, short-lived consent snapshot travels with server calls"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0472 (Accepted 2026-10-28, owner decision 3 of the data-layer questionnaire), amending ADR 0298 decision 6 so that a signed, short-lived `ConsentSnapshot` of the visitor's decision travels with API calls and analytics ingest batches, and every server-side analytics, conversion or audience send checks it. Boundary: decision text only, as a new ADR file; the code is batch stackra-404 (`@stackra/consent`, `@stackra/actions`), and the senders that depend on it are stackra-410, stackra-412, stackra-415 and stackra-419; the forward Note on ADR 0298, the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0134, 0138, 0141, 0189, 0297, 0298; notes handover/gap-analysis/data-layer (analytics-tracking.md gap 4, DECISIONS.md 3). */}
+
+<Note>
+  Reserved number: 0472, assigned to batch stackra-424 (STA-1526) for the data-layer wave 1 round
+  of 2026-10-28. It is accepted before the 0.1.0 publish (owner decision 23).
+</Note>
+
+## Context
+
+ADR [0298](/adr/0298-consent-and-analytics) decision 6 keeps consent state only in the browser: the banner and the
+stored decision are rendered and read on the client, and the server never sees them. That was enough while every
+analytics event left from the browser. It is not enough for sends that start on a server: server analytics written by
+an action, conversion APIs (Meta CAPI, TikTok, Snap, Google Ads) fed from `order.placed`, a first-party ingest Worker
+that fans out to destinations, and audience sync from segments. Today the `ConversionEvent` contract says consent "is
+the caller's", so none of these has a lawful consent check, and the gap analysis marked every server-to-server send as
+blocked on this ADR. `ConsentProofService` exists for durable, person-level evidence (a guardian's or a subject's
+proof), which is a different job from carrying a visitor's current cookie choice. The owner answered on 2026-10-28
+(data-layer decision 3): yes, through its own ADR, accepted before 0.1.0.
+
+## Decision
+
+1. **The browser decision stays the source; the server receives a signed copy.** The banner, the decision cookie and
+   Global Privacy Control are still read on the client, as 0298 decisions 1 to 5 say. When a decision is made or
+   changes, and before the copy expires, the client asks the consent endpoint for a `ConsentSnapshot` of the stored
+   decision. The server signs it and returns it in the response body. Native apps do the same from their consent store.
+2. **A snapshot is short-lived, signed and bound.** It carries the policy version, the categories granted and refused,
+   the regime and region that applied, whether Global Privacy Control was sent, the time decided, the time issued, the
+   expiry, a key id and a subject: the analytics anonymous id when analytics was granted, the principal when signed
+   in, otherwise a random id. It is signed through the `Signer` port of `@stackra/contracts`, so a Worker can verify it
+   with the public key alone. Its lifetime is a consent setting (default 24 hours); it never outlives the decision
+   cookie or a policy version change.
+3. **It travels with server calls.** The client sends the snapshot in the `Stackra-Consent` request header on API
+   calls and in the envelope of analytics ingest batches. The action pipeline verifies it and exposes the verified
+   categories as `ctx.consent`, read-only; this adds no pipeline step ([0138](/adr/0138-pipeline-order-is-fixed)) and
+   never refuses a call by itself.
+4. **Every server-side send checks it, and missing means refused.** A server analytics event, a conversion, an
+   ingest fan-out or a per-visitor audience push runs only when a verified snapshot grants the destination's consent
+   category. A missing, expired, wrongly signed or outdated-policy snapshot, or one that records Global Privacy
+   Control, counts as refused, as 0298 decision 1 does in the browser. Events derived from a server call (a
+   `ConversionEvent`, a server analytics event) carry the snapshot's id and categories in their envelope, so a
+   later relay checks the same decision and an audit can show it.
+5. **Person-level evidence stays with `ConsentProofService`.** A send that needs durable consent tied to a person
+   (an audience upload keyed by email or phone, a guardian's approval) checks the person's stored proof, not a
+   snapshot. A snapshot is not stored as evidence and holds no personal data beyond its subject id.
+6. **0298 decision 6 is amended, not dropped.** The server still never renders the banner state, and no GET response
+   for an HTML page sets a cookie ([0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)):
+   the consent endpoint is an API call and returns the snapshot in its body.
+
+## Consequences
+
+- Server analytics, conversion APIs, the ingest Worker and audience sync can ship, each gated by the same decision
+  the visitor made in the browser.
+- A server send for a visitor whose client never asked for a snapshot (an old client, a blocked request) is refused,
+  so server-side counts can be lower than browser counts.
+- A changed decision reaches the server at the next snapshot; until then the older snapshot holds, at most for its
+  lifetime. A refusal after acceptance is fetched at once, so withdrawal is not delayed by the lifetime.
+- `@stackra/consent` gains the snapshot type, the issuing endpoint and a verifier; key rotation follows the `Signer`
+  driver's key ids.
+
+## Enforcement
+
+planned — `@stackra/consent` tests for signing, expiry, policy version, Global Privacy Control and subject binding, and
+a test that a missing or invalid snapshot reads as refused (stackra-404); tests in each server sender that nothing is
+sent without a granting snapshot (stackra-410, stackra-412, stackra-415, stackra-419). Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0298](/adr/0298-consent-and-analytics) (decision 6: consent state also reaches the server as
+a signed snapshot; the forward note on 0298 is added by the integration batch). Related:
+[0134](/adr/0134-data-invariants-classification-and-delete-lifecycle),
+[0141](/adr/0141-integration-event-names-and-envelope), [0189](/adr/0189-privacy-operations-and-data-retention).
+Sources: owner answers to the data-layer questionnaire, 2026-10-28 (decision 3, split from stackra-404); notes
+`handover/gap-analysis/data-layer/analytics-tracking.md` (gap 4); Linear STA-1526.
