@@ -17,6 +17,12 @@ describe("driverName", () => {
     expect(driverName("memory-loyalty-ledger.driver.ts", "LoyaltyLedger")).toBe("memory");
   });
 
+  it("strips a `<X>Driver` port's name without its `Driver`", () => {
+    expect(driverName("src/node/drivers/postgres-queue.driver.ts", "QueueDriver")).toBe("postgres");
+    expect(driverName("memory-schedule.driver.ts", "ScheduleDriver")).toBe("memory");
+    expect(driverName("memory.driver.ts", "Driver")).toBe("memory");
+  });
+
   it("keeps a stem that does not end in the port name", () => {
     expect(driverName("src/core/drivers/resend.driver.ts", "MailTransport")).toBe("resend");
     expect(driverName("loyalty-ledger.driver.ts", "LoyaltyLedger")).toBe("loyalty-ledger");

@@ -91,8 +91,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/icons": "workspace:*",
-    "@tanstack/hotkeys": "catalog:frontend",
-    "zod": "catalog:"
+    "@tanstack/hotkeys": "catalog:frontend"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

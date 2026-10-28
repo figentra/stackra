@@ -108,8 +108,7 @@
     "@stackra/errors": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/scheduler": "workspace:*",
-    "@stackra/scope": "workspace:*",
-    "zod": "catalog:"
+    "@stackra/scope": "workspace:*"
   },
   "devDependencies": {
     "@stackra/config": "workspace:*",

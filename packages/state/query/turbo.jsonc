@@ -5,4 +5,8 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:state", "runtime:isomorphic", "runtime:node"],
+  "tasks": {
+    // Type-aware lint reads @stackra/testing's built types (dist/index.mjs), so it waits for that build.
+    "lint": { "dependsOn": ["@stackra/testing#build"] },
+  },
 }

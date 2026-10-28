@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `denyPermission` and the plugin's "memory" `AccessControl`: `.useDrivers("memory")` binds the
- *          memory driver (no override, no iam), a denial refuses that permission until restored, and the helper throws
- *          when the app did not take the memory driver.
+ *          memory driver (no override, no iam), the package's own tests get it without asking, a denial refuses that
+ *          permission until restored, and the helper throws when the app did not take the memory driver.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3).
@@ -50,10 +50,9 @@ describe(denyPermission, () => {
     await expect(access.require(update)).resolves.toBeUndefined();
   });
 
-  it("leaves AccessControl unbound when the test picks no memory driver", async () => {
+  it("binds the memory AccessControl in the package's own tests without useDrivers (ADR 0266)", async () => {
     const app = await createTestingModule(DenyFixtureModule).compile();
-    expect(app.has(AccessControl)).toBe(false);
-    expect(() => denyPermission("catalogue.product.update")).toThrow(/useDrivers\("memory"\)/);
+    expect(app.get(AccessControl)).toBeInstanceOf(MemoryAccessControlDriver);
   });
 
   it("refuses an app whose AccessControl is overridden", async () => {

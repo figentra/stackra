@@ -4809,9 +4809,6 @@ importers:
       '@tanstack/hotkeys':
         specifier: catalog:frontend
         version: 0.11.0
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -7509,9 +7506,6 @@ importers:
       '@stackra/scope':
         specifier: workspace:*
         version: link:../scope
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
     devDependencies:
       '@stackra/config':
         specifier: workspace:*

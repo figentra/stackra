@@ -54,6 +54,7 @@ describe("discoverMember", async () => {
         "@stackra/tsdown-config",
         "@stackra/validation",
         "@stackra/vitest-config",
+        "zod",
       ],
     });
     expect(ir.rootModule).toEqual({ name: "ShopModule", from: "#node/shop.module" });
