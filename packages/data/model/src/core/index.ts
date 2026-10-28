@@ -20,6 +20,7 @@ export { DocumentNumber } from "#core/decorators/document-number.decorator";
 export { Index } from "#core/decorators/index.decorator";
 export { ManyToMany } from "#core/decorators/many-to-many.decorator";
 export { ManyToOne } from "#core/decorators/many-to-one.decorator";
+export { OneToOne } from "#core/decorators/one-to-one.decorator";
 export { Meter } from "#core/decorators/meter.decorator";
 export { OneToMany } from "#core/decorators/one-to-many.decorator";
 export { Searchable } from "#core/decorators/searchable.decorator";

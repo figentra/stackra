@@ -15,6 +15,7 @@ export const SHAPE_DECORATORS: readonly string[] = Object.freeze([
   "Hidden",
   "Int",
   "List",
+  "Lowercase",
   "ManyToMany",
   "ManyToOne",
   "Num",

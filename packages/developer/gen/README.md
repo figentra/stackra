@@ -90,6 +90,10 @@ edges (`empty_module`, `sibling_not_exported`, `module_cycle`), `migration_numbe
 still writes the manifest; the reader's (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch`) refuse
 both.
 
+`@Lowercase` compiles to `.toLowerCase()` after `.trim()`; a `@Hidden` field is left out of `X$`, `X$Check` (omitted
+like a relation) and the manifest's JSON Schema, so it never reaches an action output, OpenAPI or a tool schema
+(stackra-260). `@Visible({ audience })` is read by no target yet.
+
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
 `@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder

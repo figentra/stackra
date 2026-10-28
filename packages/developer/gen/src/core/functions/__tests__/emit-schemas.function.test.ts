@@ -195,6 +195,50 @@ describe("emitSchemas", () => {
     expect(orders).not.toContain("registerChanges");
   });
 
+  it("lowercases a @Lowercase field and leaves a @Hidden field off the wire", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "ApiKey",
+          kind: "model",
+          module: "orders",
+          file: "src/modules/orders/models/api-key.model.ts",
+          importPath: "#modules/orders/models/api-key.model",
+          fields: [
+            {
+              name: "email",
+              optional: false,
+              nullable: false,
+              type: { kind: "string" },
+              rules: [
+                { name: "Trim", options: {} },
+                { name: "Lowercase", options: {} },
+              ],
+            },
+            {
+              name: "tokenHash",
+              optional: false,
+              nullable: false,
+              type: { kind: "string" },
+              rules: [],
+              hidden: true,
+            },
+          ],
+          relations: [],
+        },
+      ],
+      enums: [],
+      classes: [],
+    };
+    const content = emitSchemas(ir, "orders");
+    expect(content).toContain("  email: z.string().trim().toLowerCase(),");
+    expect(content).not.toContain("tokenHash: z.");
+    expect(content).toContain(
+      'export type ApiKey$Check = Assert<Same<z.output<typeof ApiKey$>, Omit<Fields<ApiKey>, "tokenHash">>>;',
+    );
+  });
+
   it("decodes a translated field through Translated.of and an upload through Upload.schema", () => {
     const ir: MemberIR = {
       ...COMMERCE_IR,

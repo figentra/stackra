@@ -14,6 +14,7 @@
 export { Schema } from "#core/bases/schema.base";
 export { IdentifierCheck } from "#core/enums/identifier-check.enum";
 export { OneTimeCodeResult } from "#core/enums/one-time-code-result.enum";
+export { OutputAudience } from "#core/enums/output-audience.enum";
 export { Page } from "#core/constants/page.constant";
 export { ACTOR_SCHEMA as Actor$ } from "#core/constants/actor-schema.constant";
 export { ADDRESS_SCHEMA as Address$ } from "#core/constants/address-schema.constant";
@@ -25,12 +26,15 @@ export { SIGNATURE_SCHEMA as Signature$ } from "#core/constants/signature-schema
 export { SIGNER_PUBLIC_KEY_SCHEMA as SignerPublicKey$ } from "#core/constants/signer-public-key-schema.constant";
 export { Classified } from "#core/decorators/classified.decorator";
 export { Field } from "#core/decorators/field.decorator";
+export { Hidden } from "#core/decorators/hidden.decorator";
 export { Int } from "#core/decorators/int.decorator";
 export { List } from "#core/decorators/list.decorator";
+export { Lowercase } from "#core/decorators/lowercase.decorator";
 export { Num } from "#core/decorators/num.decorator";
 export { Renamed } from "#core/decorators/renamed.decorator";
 export { Str } from "#core/decorators/str.decorator";
 export { Trim } from "#core/decorators/trim.decorator";
+export { Visible } from "#core/decorators/visible.decorator";
 export { address } from "#core/functions/address.function";
 export { checkIdentifier } from "#core/functions/check-identifier.function";
 export { constantTimeEqual } from "#core/functions/constant-time-equal.function";
@@ -74,3 +78,4 @@ export type { TranslatedStrings } from "#core/types/translated-strings.type";
 export type { Fields } from "#core/types/fields.type";
 export type { Same } from "#core/types/same.type";
 export type { ShapeClass } from "#core/types/shape-class.type";
+export type { VisibleOptions } from "#core/types/visible-options.type";

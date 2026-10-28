@@ -41,6 +41,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
   `NationalIdFormats$`), never cast. National-ID kinds (`national_id`, `residence_permit`) are pack keys of
   `identity.national_ids`, never code. This package cannot import `@stackra/market-packs` (it depends on us).
 - One-time codes store a peppered HMAC only; never log or return a code after issue, never compare with `===`.
+- Serializers and transforms (stackra-260, ADR 0294 R6): `@Hidden` and `@Lowercase` are bare and record `true`;
+  `@Visible({ audience })` records `OutputAudience` codes (checked when applied). Gen honours `@Hidden` (no `X$` key)
+  and compiles `@Lowercase`; the per-audience serializer reading `@Visible` is not built yet.
 
 ## Rules that fail the build
 

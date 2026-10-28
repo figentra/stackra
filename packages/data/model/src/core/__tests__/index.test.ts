@@ -136,6 +136,7 @@ describe("@stackra/model", () => {
       "MoneySchema",
       "OnDelete",
       "OneToMany",
+      "OneToOne",
       "Partitioned",
       "PrivilegedDataClass",
       "PublicIdType",

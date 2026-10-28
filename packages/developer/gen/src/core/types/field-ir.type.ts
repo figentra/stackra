@@ -36,4 +36,7 @@ export interface FieldIR {
 
   /** The `DataClassification` code `@Classified(...)` gives the field (`personal`), when it has one (stackra-262). */
   readonly classified?: string;
+
+  /** `@Hidden`: the field never goes out on the wire, so `X$` and the manifest's JSON Schema leave it out (stackra-260). */
+  readonly hidden?: true;
 }

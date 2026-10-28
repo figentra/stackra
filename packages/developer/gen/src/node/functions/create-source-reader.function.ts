@@ -135,7 +135,7 @@ const STEM_PARTNERED: Readonly<Record<string, string>> = {
 };
 
 /** The constraint decorators, which the shape compiler applies itself. */
-const RULES = new Set(["Str", "Int", "Num", "List", "Trim"]);
+const RULES = new Set(["Str", "Int", "Num", "List", "Trim", "Lowercase"]);
 
 /** The relation decorators of a model field, with the relation kind each declares. */
 const RELATION_KINDS: Readonly<Record<string, RelationIR["kind"]>> = {
@@ -1601,6 +1601,7 @@ export function createSourceReader(
       ...(initial !== undefined ? { default: initial } : {}),
       ...(typeof renamedTo === "string" ? { renamed: renamedTo } : {}),
       ...(classified === undefined ? {} : { classified }),
+      ...(decorators.some((use) => use.name === "Hidden") ? { hidden: true as const } : {}),
     };
     if (!quiet && type.kind !== "hatch")
       checkRules(field, declaration.name ?? declaration, subject);

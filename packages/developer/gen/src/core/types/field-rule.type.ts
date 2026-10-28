@@ -11,7 +11,7 @@
 /** One field rule. */
 export interface FieldRule {
   /** The decorator name. */
-  readonly name: "Str" | "Int" | "Num" | "List" | "Trim";
+  readonly name: "Str" | "Int" | "Num" | "List" | "Trim" | "Lowercase";
 
   /** Its options (`{ min: 1, max: 120 }`); `{}` when it takes none. */
   readonly options: Readonly<Record<string, unknown>>;

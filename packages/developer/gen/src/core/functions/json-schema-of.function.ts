@@ -6,7 +6,7 @@
  *          A `Translated` field is a locale-to-text map (`@Str` rules on each text) and an `Upload<Bucket>` field the
  *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`). A field typed with a package's shipped
  *          `X$` is `{ "x-stackra-schema": "<specifier>#X$" }` (STA-1290).
- * Boundary: pure. A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
+ * Boundary: pure. A `@Hidden` field is left out (stackra-260). A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
  *           wire surface); `buildManifest` leaves configs out.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10 and 26; amendment 2026-10-26: a bare `PublicId` is any prefix, a union
@@ -208,7 +208,11 @@ export function jsonSchemaOf(shape: ShapeIR, shapes: readonly ShapeIR[]): Json {
         ? shapes.find((other) => other.name === base.name && other.module === base.module)
         : undefined;
   }
-  for (const link of chain) for (const field of link.fields) fields.set(field.name, field);
+  for (const link of chain)
+    for (const field of link.fields)
+      // A `@Hidden` field is not on the wire (stackra-260).
+      if (field.hidden === true) fields.delete(field.name);
+      else fields.set(field.name, field);
   const properties: JsonObject = {};
   const required: string[] = [];
   for (const field of fields.values()) {

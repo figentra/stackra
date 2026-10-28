@@ -6,7 +6,8 @@
  *          schema (none when the member ships that `X$` itself), one `registerSchemas` call linking each class to its `X$` (gap G1), and beside it one
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
- *           collides; zod is imported only when the file builds a schema. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
+ *           collides; zod is imported only when the file builds a schema. A `@Hidden` field is left out of `X$` and of `X$Check` (stackra-260); `@Lowercase` compiles to
+ *           `.toLowerCase()` after `.trim()`. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
  *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
@@ -90,7 +91,8 @@ function zodOf(
   switch (type.kind) {
     case "string": {
       const trim = rules.some((rule) => rule.name === "Trim") ? ".trim()" : "";
-      return `z.string()${trim}${calls(rules, "Str", { min: "min", max: "max", pattern: "regex" })}`;
+      const lower = rules.some((rule) => rule.name === "Lowercase") ? ".toLowerCase()" : "";
+      return `z.string()${trim}${lower}${calls(rules, "Str", { min: "min", max: "max", pattern: "regex" })}`;
     }
     case "number": {
       return rules.some((rule) => rule.name === "Int")
@@ -252,12 +254,15 @@ function ordered(shapes: readonly ShapeIR[], module: string): ShapeIR[] {
 /** The `X$` declaration of one shape and its `X$Check`. */
 function shapeOf(context: Context, shape: ShapeIR): string[] {
   const lines = [`/** ${shape.kind} \`${shape.name}\` (${shape.file}). */`];
-  const body = shape.fields.map((field) => `  ${field.name}: ${fieldOf(context, field)},`);
+  // A `@Hidden` field never goes out on the wire: no `X$` key, and `X$Check` omits it like a relation (stackra-260).
+  const wire = shape.fields.filter((field) => field.hidden !== true);
+  const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
+  const body = wire.map((field) => `  ${field.name}: ${fieldOf(context, field)},`);
   const base = shape.base;
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;
     use(context.imports, base.from, `${base.name}$ as ${alias}`);
-    const overrides = shape.fields.map((field) => {
+    const overrides = wire.map((field) => {
       if (field.default === undefined) return `  ${field.name}: ${alias}.shape.${field.name},`;
       for (const [name, from] of field.default.imports) use(context.imports, from, name);
       return `  ${field.name}: ${alias}.shape.${field.name}.default(${field.default.code}),`;
@@ -287,9 +292,10 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
     lines.push(`export const ${shape.name}$ = ${alias}.schema${derived}.extend({`, ...body, "});");
   } else lines.push(`export const ${shape.name}$ = z.object({`, ...body, "});");
   context.declared.add(shape.name);
+  const omitted = [...shape.relations, ...hidden];
   const fields =
-    shape.relations.length > 0
-      ? `Omit<Fields<${shape.name}>, ${shape.relations.map((name) => JSON.stringify(name)).join(" | ")}>`
+    omitted.length > 0
+      ? `Omit<Fields<${shape.name}>, ${omitted.map((name) => JSON.stringify(name)).join(" | ")}>`
       : `Fields<${shape.name}>`;
   lines.push(
     `export type ${shape.name}$Check = Assert<Same<z.output<typeof ${shape.name}$>, ${fields}>>;`,
