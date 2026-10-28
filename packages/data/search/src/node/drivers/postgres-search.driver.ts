@@ -6,7 +6,7 @@
  *          similarity of the phrase to the folded `search_text`). Facets count the filter values of the rows either lane
  *          matches (every indexed row holding the filters when there are no words), each row once per value.
  * Boundary: raw SQL on the running context's entity manager, so it joins the caller's transaction and scope session:
- *           row-level security decides the rows, and the request's record-visibility subquery narrows both lanes
+ *           row-level security decides the rows (so `isolatesScopes` is true and no `scopePaths` arrive), and the request's record-visibility subquery narrows both lanes
  *           before they rank or count. A word's alternatives (its Arabic spelling when Arabizi, its synonyms) apply in
  *           both lanes: they join its prefix as an OR group in full-text, and in trigram each alternative gives one more
  *           phrase (the word swapped for it), matched as an OR and ranked by the best (at most `MAX_PHRASES` phrases).
@@ -143,6 +143,9 @@ function textIn(field: SearchDocument["fields"][number], locale: string | undefi
  * await database.withScope(scope, () => search.in(Product).page("linen", { limit: 20 }));
  */
 export class PostgresSearchDriver extends Driver(SearchDriver) {
+  /** Row-level security on the indexed table isolates scopes, so a request carries no `scopePaths`. */
+  override readonly isolatesScopes = true;
+
   /** The connected database. */
   private readonly database: Database;
 

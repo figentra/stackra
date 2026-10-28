@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: `SEARCH_CONFORMANCE_CASES`, the rules of the `SearchDriver` port as runnable cases: every word required,
  *          word prefixes, alternatives, exact filters, offset and limit, facet counts, re-indexing replaces, removal,
- *          and refusing record visibility an engine cannot apply.
+ *          refusing record visibility an engine cannot apply, and scope isolation of matches and facet counts.
  * Boundary: test code only, in the `./testing` entry, vendor-neutral. A case gets a fresh driver and its own table,
  *           indexes `SEARCH_CONFORMANCE_DOCUMENTS` there first, and returns the rules missed. Ranking order between
- *           matching rows is the engine's, so cases compare id sets, never order.
+ *           matching rows is the engine's, so cases compare id sets, never order. The scope cases index three more
+ *           documents (two scopes and a subtree) and pass for a driver whose `isolatesScopes` is true, whose isolation
+ *           is the database's row-level security, covered by the RLS suite.
  * Runtime: isomorphic
- * Governing contract: ADR 0089 (decision 5); ADR 0221 (decisions 1, 7 and 9); ADR 0333 (amendment); ADR 0403; ADR 0404.
+ * Governing contract: ADR 0089 (decisions 5 and 6); ADR 0221 (decisions 1, 7 and 9); ADR 0333 (amendment); ADR 0403; ADR 0404.
  */
-import type { SearchFacets } from "#contracts/index";
+import type { SearchDocument, SearchFacets } from "#contracts/index";
 import type { SearchConformanceCase } from "#testing/search-conformance-case.type";
 
 /** The mismatch of an id answer against the expected set; empty when equal. */
@@ -28,6 +30,28 @@ function sameIds(label: string, got: readonly string[], want: readonly string[])
 
 /** A plain search with no filters over the first page. */
 const page = (words: readonly string[]) => ({ words, filters: {}, offset: 0, limit: 10 });
+
+/** Documents of scopes `platform.a` (and its child `platform.a.shop`) and `platform.b`, all matching "orbit". */
+const SCOPED_DOCUMENTS = [
+  {
+    id: "s1",
+    fields: ["orbit lamp"],
+    filters: { color: ["red"] },
+    scope: { id: "scp_a", path: "platform.a" },
+  },
+  {
+    id: "s2",
+    fields: ["orbit chair"],
+    filters: { color: ["red"] },
+    scope: { id: "scp_a_shop", path: "platform.a.shop" },
+  },
+  {
+    id: "s3",
+    fields: ["orbit desk"],
+    filters: { color: ["blue"] },
+    scope: { id: "scp_b", path: "platform.b" },
+  },
+] as const satisfies readonly SearchDocument[];
 
 /** Every case, in run order. */
 export const SEARCH_CONFORMANCE_CASES: readonly SearchConformanceCase[] = [
@@ -160,6 +184,56 @@ export const SEARCH_CONFORMANCE_CASES: readonly SearchConformanceCase[] = [
           // refused, as the port asks of an engine that cannot apply it
         }
       return missed;
+    },
+  },
+  {
+    id: "scope.isolated",
+    run: async (driver, table) => {
+      if (driver.isolatesScopes) return [];
+      await driver.index(table, SCOPED_DOCUMENTS);
+      const orbit = page(["orbit"]);
+      return [
+        ...sameIds(
+          "orbit in platform.a",
+          await driver.search(table, { ...orbit, scopePaths: ["platform.a"] }),
+          ["s1", "s2"],
+        ),
+        ...sameIds(
+          "orbit in platform.b",
+          await driver.search(table, { ...orbit, scopePaths: ["platform.b"] }),
+          ["s3"],
+        ),
+        ...sameIds(
+          "orbit with no scope granted",
+          await driver.search(table, { ...orbit, scopePaths: [] }),
+          [],
+        ),
+        ...sameIds(
+          "shirt (unscoped rows) in platform.b",
+          await driver.search(table, { ...page(["shirt"]), scopePaths: ["platform.b"] }),
+          ["p1", "p2", "p3"],
+        ),
+      ];
+    },
+  },
+  {
+    id: "facets.scoped",
+    run: async (driver, table) => {
+      if (driver.isolatesScopes) return [];
+      await driver.index(table, SCOPED_DOCUMENTS);
+      const want: SearchFacets = { color: { blue: 1 } };
+      const got = await driver.facets(table, {
+        words: ["orbit"],
+        filters: {},
+        paths: ["color"],
+        limit: 10,
+        scopePaths: ["platform.b"],
+      });
+      return JSON.stringify(got) === JSON.stringify(want)
+        ? []
+        : [
+            `facets orbit by color in platform.b: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`,
+          ];
     },
   },
 ];

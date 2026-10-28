@@ -12,12 +12,16 @@
  *           they are ranked or counted (a facet count never includes a row the caller may not see). An Arabizi word
  *           also matches its Arabic spelling unless the read turns `arabizi` off, and a word in one of the index's synonym sets (`search.synonyms`, read per
  *           call through the `SettingsReader` `Search` passes, in the read's language or every language) also matches
- *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team.
+ *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team. Each
+ *           document carries its row's scope; for an engine that does not isolate scopes in the database, every read
+ *           also carries the scope paths of the session (`app.scope_paths`, read from the database, never input), so
+ *           pages and facet counts never cross scopes.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
- *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch).
+ *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
+ *                     every query scoped).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -25,6 +29,7 @@ import type { Database, TablePage } from "@stackra/database";
 import { Classify, Searchable, SearchSnippet, Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 import type { SettingsReader } from "@stackra/settings";
+import { z } from "zod";
 
 import type { SearchDriver, SearchFacets, SearchTable } from "#contracts/index";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
@@ -37,6 +42,9 @@ import { SearchSettings } from "#core/search.settings";
 import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
+
+/** The session's granted scope paths, `null` outside a scope session. */
+const SCOPE_PATHS = z.array(z.object({ paths: z.string().nullable() }));
 
 /** Rows per read when none is asked for. */
 const DEFAULT_LIMIT = 20;
@@ -155,6 +163,7 @@ export class SearchIndex<M extends object> {
     this.checkFilters([...options.paths, ...Object.keys(filters)]);
     const visible = await visibleKeysQuery(this.model);
     const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
+    const scopePaths = await this.scopePaths();
     return this.driver.facets(this.shape().table, {
       words,
       filters,
@@ -162,6 +171,7 @@ export class SearchIndex<M extends object> {
       limit,
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
       ...(visible === undefined ? {} : { visible }),
+      ...(scopePaths === undefined ? {} : { scopePaths }),
     });
   }
 
@@ -261,6 +271,7 @@ export class SearchIndex<M extends object> {
     const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     if (words.length === 0) return { items: [], hasMore: false };
     const visible = await visibleKeysQuery(this.model);
+    const scopePaths = await this.scopePaths();
     const { table, key } = this.shape();
     const ids = await this.driver.search(table, {
       words,
@@ -269,11 +280,30 @@ export class SearchIndex<M extends object> {
       limit: limit + 1,
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
       ...(visible === undefined ? {} : { visible }),
+      ...(scopePaths === undefined ? {} : { scopePaths }),
     });
     const items = await this.load(ids.slice(0, limit), key, options.populate);
     return ids.length > limit
       ? { items, hasMore: true, nextCursor: String(offset + limit) }
       : { items, hasMore: false };
+  }
+
+  /**
+   * The scope paths of the running scope session, for an engine that does not isolate scopes in the database:
+   * `undefined` for an engine that does, or outside a scope session (a platform read); `[]` when the session was
+   * granted no scope.
+   */
+  private async scopePaths(): Promise<readonly string[] | undefined> {
+    if (this.driver.isolatesScopes) return undefined;
+    // raw-sql: the scope session lives in transaction settings, which only `current_setting` reads
+    const [row] = SCOPE_PATHS.parse(
+      await this.database
+        .em()
+        .execute("select current_setting('app.scope_paths', true) as paths", []),
+    );
+    const paths = row?.paths ?? null;
+    if (paths === null) return undefined;
+    return paths === "" ? [] : paths.split("|");
   }
 
   /**

@@ -6,7 +6,9 @@
  *          carries its Arabic alternative unless the read turns Arabizi off (STA-1251), a word of one of the index's synonym sets (settings data, per language)
  *          finds the rows of the other words, record visibility reaches the driver before ranking and before facet
  *          counting, facets count filter values over the matches (or every row for an empty phrase), and a privileged
- *          field is excerpted only for the record's team.
+ *          field is excerpted only for the record's team; a document carries its row's scope, and a read on an engine
+ *          that does not isolate scopes carries the session's granted paths (none outside a scope session, none at all
+ *          when the session holds an empty grant), while one on an engine that does carries none.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
@@ -64,12 +66,13 @@ const META = {
 /** A primary key filter as the index writes it. */
 type KeyFilter = { readonly id?: { readonly $in?: readonly string[]; readonly $gt?: string } };
 
-/** A database whose entity manager reads `rows`, with the populate calls recorded. */
-function databaseOver(rows: readonly Product[]) {
+/** A database whose entity manager reads `rows` in a session granted `scopePaths`, with the populate calls recorded. */
+function databaseOver(rows: readonly Product[], scopePaths: string | null = null) {
   const populate = vi.fn(async (_rows: readonly Product[], _hints: readonly string[]) => undefined);
   const em = {
     getMetadata: () => META,
     populate,
+    execute: async () => [{ paths: scopePaths }],
     find: async (_model: unknown, where: KeyFilter, options: { readonly limit?: number } = {}) => {
       const { $in, $gt } = where.id ?? {};
       const found = rows
@@ -118,6 +121,39 @@ describe(SearchIndex, () => {
       "7abibi": ["حبيبي"],
       tunic: ["shirt"],
     });
+  });
+
+  it("stores the row's scope and reads only the session's scopes on an engine outside the database", async () => {
+    const scoped = [
+      productWith({ id: "prd_a", title: "Orbit Lamp", status: "active" }),
+      productWith({ id: "prd_b", title: "Orbit Desk", status: "draft" }),
+    ];
+    Object.assign(scoped[0] ?? {}, { scopeId: "scp_a", scopePath: "platform.a" });
+    Object.assign(scoped[1] ?? {}, { scopeId: "scp_b", scopePath: "platform.b" });
+    const driver = new MemorySearchDriver();
+    const index = vi.spyOn(driver, "index");
+    const { database } = databaseOver(scoped, "platform.a");
+    const products = new SearchIndex(driver, database, Product);
+    await products.index(scoped);
+    expect(index.mock.calls[0]?.[1][0]?.scope).toEqual({ id: "scp_a", path: "platform.a" });
+    expect(await products.find("orbit")).toEqual([scoped[0]]);
+    expect(await products.facets("orbit", { paths: ["status"] })).toEqual({
+      status: { active: 1 },
+    });
+    const none = new SearchIndex(driver, databaseOver(scoped, "").database, Product);
+    expect(await none.find("orbit")).toEqual([]);
+  });
+
+  it("passes no scope paths to an engine that isolates scopes in the database", async () => {
+    class IsolatingDriver extends MemorySearchDriver {
+      override readonly isolatesScopes = true;
+    }
+    const driver = new IsolatingDriver();
+    const search = vi.spyOn(driver, "search");
+    const products = new SearchIndex(driver, databaseOver(ROWS, "platform.a").database, Product);
+    await products.index(ROWS);
+    await products.find("shirt");
+    expect(search.mock.calls[0]?.[1].scopePaths).toBeUndefined();
   });
 
   it("refuses a model without @Searchable", () => {
@@ -234,6 +270,7 @@ describe("SearchIndex Arabizi, visibility and snippets", () => {
     const em = {
       getMetadata: () => ({ ...META, tableName: "memos" }),
       populate: async () => undefined,
+      execute: async () => [{ paths: null }],
       find: async (_model: unknown, where: KeyFilter) =>
         MEMOS.filter((memo) => where.id?.$in?.includes(memo.id) ?? true),
     };

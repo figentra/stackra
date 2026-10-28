@@ -22,6 +22,14 @@ class LeakyDriver extends MemorySearchDriver {
   }
 }
 
+/** A memory driver that ignores `scopePaths`, as an engine without a scope field would. */
+class UnscopedDriver extends MemorySearchDriver {
+  override async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
+    const { scopePaths: _scopePaths, ...rest } = request;
+    return super.search(table, rest);
+  }
+}
+
 describe("runSearchConformance", () => {
   it("passes the memory driver on every case", async () => {
     const results = await runSearchConformance(() => new MemorySearchDriver());
@@ -37,6 +45,14 @@ describe("runSearchConformance", () => {
     expect(refused?.mismatches).toEqual([
       "search: a request carrying visibility was answered, not refused",
     ]);
+  });
+
+  it("reports a driver that answers across scopes", async () => {
+    const results = await runSearchConformance(() => new UnscopedDriver());
+    const isolated = results.find((result) => result.caseId === "scope.isolated");
+    expect(isolated?.mismatches.length).toBeGreaterThan(0);
+    const facets = results.find((result) => result.caseId === "facets.scoped");
+    expect(facets?.mismatches).toEqual([]);
   });
 
   it("skips the refusal case for a driver that applies visibility", async () => {

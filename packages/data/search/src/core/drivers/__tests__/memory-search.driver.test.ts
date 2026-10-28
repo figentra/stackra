@@ -149,3 +149,39 @@ describe("MemorySearchDriver alternatives and visibility", () => {
     ).rejects.toThrow(TypeError);
   });
 });
+
+describe("MemorySearchDriver scopes", () => {
+  it("answers only the documents within the request's scope paths, and unscoped ones", async () => {
+    const driver = new MemorySearchDriver();
+    await driver.index(PRODUCTS, [
+      {
+        id: "prd_a",
+        fields: ["orbit lamp"],
+        filters: { status: ["active"] },
+        scope: { id: "scp_a", path: "platform.a" },
+      },
+      {
+        id: "prd_ab",
+        fields: ["orbit chair"],
+        filters: { status: ["active"] },
+        scope: { id: "scp_ab", path: "platform.ab" },
+      },
+      { id: "prd_global", fields: ["orbit poster"], filters: { status: ["draft"] } },
+    ]);
+    expect(
+      await driver.search(PRODUCTS, request(["orbit"], { scopePaths: ["platform.a"] })),
+    ).toEqual(["prd_a", "prd_global"]);
+    expect(await driver.search(PRODUCTS, request(["orbit"], { scopePaths: [] }))).toEqual([
+      "prd_global",
+    ]);
+    expect(
+      await driver.facets(PRODUCTS, {
+        words: ["orbit"],
+        filters: {},
+        paths: ["status"],
+        limit: 10,
+        scopePaths: ["platform.ab"],
+      }),
+    ).toEqual({ status: { active: 1, draft: 1 } });
+  });
+});

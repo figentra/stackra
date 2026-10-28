@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchRequest`, what `Search` asks a driver: the normalised words of the phrase, the exact filter values,
- *          and the slice of the ranked result.
+ *          the slice of the ranked result, and the scope paths the session may read.
  * Boundary: a type only. Every word must match (as a word prefix, or as text for a fuzzy engine), itself or one of its
  *           alternatives; every filter must hold its value among its stored values; only visible rows are ranked.
- *           `words` is never empty and its words are distinct.
+ *           `words` is never empty and its words are distinct. `scopePaths` comes from the scope session
+ *           (`app.scope_paths`), never from input.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
- *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language).
+ *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language); ADR 0089 (decision 6: every query
+ *                     scoped); ADR 0327 (decision 9).
  */
 import type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
 
@@ -38,4 +40,13 @@ export interface SearchRequest {
    * cannot apply it refuses the request rather than rank rows the caller may not see.
    */
   readonly visible?: { readonly sql: string; readonly params: readonly unknown[] };
+
+  /**
+   * The scope paths the session was granted, for an engine that does not isolate scopes in the database
+   * (`SearchDriver.isolatesScopes` false): only a document whose scope path is one of them or below one counts, and
+   * a document without a scope always counts. Absent when the session holds no scope (a platform read) or the engine
+   * isolates scopes itself (Postgres row-level security); empty when the session was granted none, so no scoped
+   * document counts.
+   */
+  readonly scopePaths?: readonly string[];
 }

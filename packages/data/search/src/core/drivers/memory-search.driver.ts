@@ -6,10 +6,12 @@
  *           matches a document when it starts one of its words (weighted by the field's position, as Postgres weighs
  *           A to D) or, failing that, appears inside its text (weighted lowest), so a SKU fragment still finds its row.
  *           Ties rank by id. A word also matches as any of its alternatives. It refuses a request that
- *           carries record visibility, which it cannot apply. It sees every document it was given: row-level security applies only when the rows are
- *           loaded afterwards. Nothing survives a restart, so `reindex` refills it.
+ *           carries record visibility, which it cannot apply. It keeps every document it was given, with its scope, and
+ *           answers only the documents within a request's `scopePaths` (and those without a scope), so its matches,
+ *           pages and facet counts never cross scopes. Nothing survives a restart, so `reindex` refills it.
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (decisions 1 and 9); ADR 0266 (memory drivers first); ADR 0294 (decision 16).
+ * Governing contract: ADR 0221 (decisions 1 and 9); ADR 0266 (memory drivers first); ADR 0294 (decision 16); ADR 0089
+ *                     (decision 6: every query scoped).
  */
 import { Driver } from "@stackra/container";
 
@@ -23,11 +25,18 @@ import type {
 } from "#contracts/index";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 
-/** One stored document: each field's words, all its text, and its filter values. */
+/** One stored document: each field's words, all its text, its filter values and its scope path. */
 interface StoredDocument {
   readonly fields: readonly (readonly string[])[];
   readonly text: string;
   readonly filters: SearchDocument["filters"];
+  readonly scopePath: string | undefined;
+}
+
+/** Whether a document under `path` (none for an unscoped row) is within one of `paths` (no limit when absent). */
+function inScope(path: string | undefined, paths: readonly string[] | undefined): boolean {
+  if (paths === undefined || path === undefined) return true;
+  return paths.some((granted) => path === granted || path.startsWith(`${granted}.`));
 }
 
 /** The score of a word that starts a word of field 0, 1, 2 and 3 or later; a word only inside the text scores 1. */
@@ -120,6 +129,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
         fields,
         text: fields.flat().join(" "),
         filters: document.filters,
+        scopePath: document.scope?.path,
       });
     }
   }
@@ -151,6 +161,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
       readonly document: StoredDocument;
     }[] = [];
     for (const [id, document] of this.tables.get(keyOf(table)) ?? []) {
+      if (!inScope(document.scopePath, request.scopePaths)) continue;
       if (!filters.every(([path, value]) => document.filters[path]?.includes(value) === true))
         continue;
       if (request.words.length === 0) {

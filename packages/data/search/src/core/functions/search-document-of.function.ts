@@ -1,16 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `searchDocumentOf`, the document of one loaded row: the normalised words of each `@Searchable` text field
- *          (one string per locale for a translated field) and the values of each filter field.
+ *          (one string per locale for a translated field), the values of each filter field, and the row's scope.
  * Boundary: pure over the row it is given. A path walks the row's own fields and its populated relations: a collection
  *           or array spreads into its items, a reference unwraps. A `Translated` field gives one text per stored
  *           locale (`.in(locale)` for each value, so a value missing a locale falls back as it reads); a field the
  *           model's `Translatable` trait names counts as translated even while it still holds the plain locale map a
  *           factory gave it. A rich-text value gives its `text` leaves. Filters keep strings, numbers and booleans, and
- *           a date as its ISO 8601 string; other values are not filterable and are left out.
+ *           a date as its ISO 8601 string; other values are not filterable and are left out. The scope is the row's own
+ *           `scopeId` and `scopePath` when both are strings, else absent.
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (decisions 1 to 3); ADR 0162 (decision 2: per-locale values); ADR 0294 (decision 6).
+ * Governing contract: ADR 0221 (decisions 1 to 3); ADR 0162 (decision 2: per-locale values); ADR 0294 (decision 6);
+ *                     ADR 0089 (decision 6); ADR 0327 (a scope is an id and an `ltree` path).
  */
+import type { PublicId } from "@stackra/contracts";
 import { Collection, Translated, traitsOf } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 
@@ -107,11 +110,18 @@ export function searchDocumentOf(
   id: string,
   facet: SearchableOptions,
 ): SearchDocument {
+  const { scopeId, scopePath } = row as {
+    readonly scopeId?: unknown;
+    readonly scopePath?: unknown;
+  };
   return {
     id,
     fields: facet.text.map((path) => textOf(valuesAt(row, path))),
     filters: Object.fromEntries(
       (facet.filters ?? []).map((path) => [path, filterValuesOf(valuesAt(row, path))]),
     ),
+    ...(typeof scopeId === "string" && typeof scopePath === "string"
+      ? { scope: { id: scopeId as PublicId<"scp">, path: scopePath } }
+      : {}),
   };
 }

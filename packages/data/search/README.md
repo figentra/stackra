@@ -206,6 +206,17 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
   (`new Map([[Product, { status: ProductStatus.Active }]])`), since each model lists its own filter paths; a model with
   no entry is read unfiltered.
 
+## Scopes on engines outside the database
+
+Postgres keeps the index in the model's own table, so row-level security isolates scopes and `PostgresSearchDriver`
+declares `isolatesScopes: true`. An engine that keeps its own copy (memory, the Pro Meilisearch and OpenSearch drivers)
+cannot rely on that: every `SearchDocument` carries its row's `scope` (`scopeId` and `scopePath`, never input), and
+`SearchIndex` adds the session's granted paths (`current_setting('app.scope_paths')`) to every ranked read and facet
+count as `SearchRequest.scopePaths`. The driver answers only documents whose scope path is one of them or below one
+(and unscoped documents), so pages, `hasMore`, facet counts and the existence of a match never cross scopes (ADR 0089
+d6). Outside a scope session no paths are passed (a platform read); an empty grant passes `[]`, which admits no scoped
+document.
+
 ## Driver conformance
 
 Every `SearchDriver` passes one suite (ADR 0089 d5), published from `./testing` so a driver outside this package,
@@ -220,8 +231,11 @@ expect(results.flatMap((result) => result.mismatches)).toEqual([]);
 
 Each case gets a fresh driver and its own table (`conformance_<case>`), seeded with `SEARCH_CONFORMANCE_DOCUMENTS`,
 and checks one rule: every word required, word prefixes, alternatives, exact filters, offset and limit, facet counts
-(with and without words), re-indexing replaces, removal (an unknown id included), and refusing `visible` unless the
-driver says `appliesVisibility: true`. Ranking between matches is the engine's, so cases compare id sets. The suite
+(with and without words), re-indexing replaces, removal (an unknown id included), refusing `visible` unless the
+driver says `appliesVisibility: true`, and scope isolation (`scope.isolated`, `facets.scoped`): a request's
+`scopePaths` admits only documents of those scopes or below them, plus unscoped ones. A driver whose
+`isolatesScopes` is true (Postgres, under row-level security) passes the scope cases by declaration; its isolation is
+the RLS suite's. Ranking between matches is the engine's, so cases compare id sets. The suite
 uses no test framework and never throws for a miss: a thrown error becomes that case's mismatch.
 
 ## Health check

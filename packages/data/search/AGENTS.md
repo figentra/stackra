@@ -55,7 +55,11 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   (ADR 0380) on every row before any text reaches the embedder; never embed a field around it. Passage ids are
   `<Model>:<key>`, metadata `{ source: "search", model }`, scope from the row's own `scopeId`/`scopePath`, never input.
 - Drivers deal in ids and documents; only `SearchIndex`, `SearchableChangeService` and `SemanticChangeService` (one row load and populate) touch the ORM. Isolation is the database's: never add a
-  scope filter in application code (ADR 0327 d9).
+  scope filter in application code (ADR 0327 d9). The one exception is an engine that keeps its own copy of the
+  documents (`SearchDriver.isolatesScopes` false: memory, the Pro engines): each `SearchDocument` carries its row's
+  `scope` (from `scopeId`/`scopePath`, never input) and `SearchIndex` passes the session's `app.scope_paths` as
+  `SearchRequest.scopePaths`, which the driver must apply to matches and facet counts (ADR 0089 d6). Postgres sets
+  `isolatesScopes` true and gets none.
 - Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the

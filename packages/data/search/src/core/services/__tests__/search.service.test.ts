@@ -82,6 +82,8 @@ describe("Search.across", () => {
         properties: { id: { kind: "scalar", fieldNames: ["id"] } },
       }),
       populate: async () => undefined,
+      // outside a scope session: no granted paths
+      execute: async () => [{ paths: null }],
       find: async (model: unknown, where: { id?: { $in?: readonly string[] } }) =>
         ROWS.filter(
           (row) =>
