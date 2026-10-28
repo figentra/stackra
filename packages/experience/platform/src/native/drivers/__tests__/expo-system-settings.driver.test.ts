@@ -3,8 +3,8 @@
  * Purpose: unit tests of `ExpoSystemSettingsDriver`: tracking reads through expo-tracking-transparency on iOS, reads
  *          `denied` on iOS without it and `null` elsewhere, prompts only when undecided; Low Power Mode follows
  *          expo-battery; background refresh maps expo-background-task's status; an expensive connection follows
- *          NetInfo; the settings deep link opens.
- * Boundary: test only; react-native and NetInfo are mocked, and the Expo libraries are handed over as fakes.
+ *          NetInfo; the settings deep link opens; constructed bare, it reads through the Expo libraries it imports.
+ * Boundary: test only; react-native, NetInfo and the Expo libraries are mocked, and a subclass also hands fakes in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0250 (2026-10-29 note); ADR 0071 (decision 4).
  */
@@ -24,6 +24,18 @@ const mocks = vi.hoisted(() => ({
 vi.mock("react-native", () => ({
   Linking: { openSettings: mocks.openSettings },
   Platform: mocks.os,
+}));
+vi.mock("expo-tracking-transparency", () => ({
+  getTrackingPermissionsAsync: async () => ({ granted: true, status: "granted" }),
+  requestTrackingPermissionsAsync: async () => ({ granted: true, status: "granted" }),
+}));
+vi.mock("expo-battery", () => ({
+  isLowPowerModeEnabledAsync: async () => false,
+  addLowPowerModeListener: () => ({ remove: () => undefined }),
+}));
+vi.mock("expo-background-task", () => ({
+  BackgroundTaskStatus: { Restricted: 1, Available: 2 },
+  getStatusAsync: async () => 2,
 }));
 vi.mock("@react-native-community/netinfo", () => ({
   addEventListener: (listener: (typeof mocks.netInfo)[number]) => {
@@ -51,6 +63,13 @@ beforeEach(() => {
 });
 
 describe("ExpoSystemSettingsDriver", () => {
+  it("reads through the Expo libraries it imports when constructed bare", async () => {
+    const settings = new ExpoSystemSettingsDriver();
+    expect(await settings.tracking()).toBe("granted");
+    expect(await settings.backgroundRefresh()).toBe("granted");
+    expect(settings.lowPowerMode.get()).toBe(false);
+  });
+
   it("reads tracking through expo-tracking-transparency and prompts only when undecided", async () => {
     const request = vi.fn(async () => ({ granted: true, status: "granted" }));
     const settings = driverWith({

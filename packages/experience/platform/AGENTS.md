@@ -43,8 +43,8 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
   customer display is a tenant setting; `DesktopConfig.kioskOnLaunch` is only the launch default.
 - `SystemSettings` is a port of its own (not a `Platform` facet): it reads what the phone's settings decide (ATT, Low
   Power Mode, an expensive connection, background refresh) and links to the OS settings; never add an in-app override
-  of a system-owned setting. Its Expo driver takes the Expo libraries from the host's subclass (`modules`), never by
-  import, until the catalog carries them.
+  of a system-owned setting. Its Expo driver imports expo-tracking-transparency, expo-battery,
+  expo-background-task and NetInfo (optional peers, catalog:mobile); `modules` stays protected only so tests hand fakes in.
 - A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
   options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error

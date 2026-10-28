@@ -107,9 +107,10 @@ if ((await settings.backgroundRefresh()) === "denied")
   showRefreshHint(() => settings.openSettings());
 ```
 
-- `ExpoSystemSettingsDriver` (`./native`) is abstract: the app's subclass declares `modules`, the Expo libraries it ships
-  (expo-tracking-transparency, expo-battery, expo-background-task, each `null` when absent), because an Expo module
-  must be the app's own dependency. On iOS an app without expo-tracking-transparency reads tracking as `denied`.
+- `ExpoSystemSettingsDriver` (`./native`) is concrete: it imports expo-tracking-transparency, expo-battery and
+  expo-background-task (and NetInfo) itself. They are optional peers, so the app adds them to its own dependencies (an
+  Expo module links only from the app). A test subclass replaces `modules` with fakes; a `null` module reads as absent,
+  so tracking on iOS reads `denied`.
 - `MemorySystemSettingsDriver` (`.`) is the web, desktop and test driver: no controls (`null`), nothing saving.
 - `createNotificationChannels(push.androidChannels, translate)` (`./native`) creates one Android channel per
   notification category, named in the phone's language; the push context calls it at launch, before the permission

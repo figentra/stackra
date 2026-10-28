@@ -1,10 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `ExpoSystemModules`, the Expo libraries `ExpoSystemSettingsDriver` reads the system settings through, as
- *          the host app's subclass hands them over: expo-tracking-transparency, expo-battery and expo-background-task.
- * Boundary: a type only, the slice of each library the driver calls, so this package needs none of them installed; the
- *           app depends on the ones it uses (an Expo module must be the app's own dependency to be linked). `null`
- *           means the app does not ship that library.
+ * Purpose: `ExpoSystemModules`, the Expo libraries `ExpoSystemSettingsDriver` reads the system settings through, : expo-tracking-transparency, expo-battery and expo-background-task, which the driver imports
+ *          and a test subclass replaces with fakes.
+ * Boundary: a type only, the slice of each library the driver calls. `null` reads that library as absent.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0478 (Expo's own libraries, no hand-written native code).
  */
@@ -21,14 +19,12 @@ interface ExpoPermissionResponse {
  * The Expo libraries the system settings are read through.
  *
  * @example
- * import * as BackgroundTask from "expo-background-task";
- * import * as Battery from "expo-battery";
- * import * as TrackingTransparency from "expo-tracking-transparency";
- *
- * const modules: ExpoSystemModules = { trackingTransparency: TrackingTransparency, battery: Battery, backgroundTask: BackgroundTask };
+ * class FakeSystemSettings extends ExpoSystemSettingsDriver {
+ *   protected override readonly modules: ExpoSystemModules = { trackingTransparency: null, battery: null, backgroundTask: null };
+ * }
  */
 export interface ExpoSystemModules {
-  /** expo-tracking-transparency; `null` when the app does not track, which on iOS reads as tracking refused. */
+  /** expo-tracking-transparency; `null` reads as absent, which on iOS is tracking refused. */
   readonly trackingTransparency: {
     /** Where App Tracking Transparency stands. */
     readonly getTrackingPermissionsAsync: () => Promise<ExpoPermissionResponse>;

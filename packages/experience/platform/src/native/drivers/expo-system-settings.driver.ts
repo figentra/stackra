@@ -4,16 +4,19 @@
  *          Transparency through expo-tracking-transparency, Low Power Mode through expo-battery, background refresh
  *          through expo-background-task, an expensive connection from NetInfo, and the settings deep link from React
  *          Native's `Linking`.
- * Boundary: device only, and abstract: the host app subclasses it and declares `modules` (the Expo libraries it
- *           ships), because those libraries are the app's own dependencies; the constructor takes nothing. On iOS an
- *           app without expo-tracking-transparency reads tracking as `denied`, since tracking needs the prompt's yes
- *           (ADR 0071 decision 4). NetInfo's `isConnectionExpensive` covers metered and cellular connections; it is
+ * Boundary: device only, and concrete: it imports expo-tracking-transparency, expo-battery and expo-background-task
+ *           itself (optional peers the app adds to its own dependencies, so they link); the constructor takes nothing.
+ *           `modules` is protected so a test subclass hands fakes in, and a `null` library reads as absent: tracking
+ *           on iOS reads `denied`, since tracking needs the prompt's yes (ADR 0071 decision 4). NetInfo's `isConnectionExpensive` covers metered and cellular connections; it is
  *           read live. Low Power Mode starts listening on first read.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0071 (decision 4: ATT); ADR 0298 (2026-10-29 note); ADR 0478.
  */
 import { addEventListener } from "@react-native-community/netinfo";
 import { Driver } from "@stackra/container";
+import * as BackgroundTask from "expo-background-task";
+import * as Battery from "expo-battery";
+import * as TrackingTransparency from "expo-tracking-transparency";
 import { Linking, Platform as Os } from "react-native";
 
 import { SystemSettings } from "#contracts/ports/system-settings.port";
@@ -24,27 +27,22 @@ import type { LiveValue } from "#core/types/live-value.type";
 import { expoPermission } from "#native/functions/expo-permission.function";
 import type { ExpoSystemModules } from "#native/types/expo-system-modules.type";
 
-/** expo-background-task's `BackgroundTaskStatus.Available`. */
-const BACKGROUND_AVAILABLE = 2;
-
 /**
  * The system settings on a phone.
  *
  * @example
- * import * as BackgroundTask from "expo-background-task";
- * import * as Battery from "expo-battery";
- * import * as TrackingTransparency from "expo-tracking-transparency";
- *
- * export class AppSystemSettingsDriver extends ExpoSystemSettingsDriver {
- *   protected readonly modules = { trackingTransparency: TrackingTransparency, battery: Battery, backgroundTask: BackgroundTask };
- * }
+ * { provide: SystemSettings, useClass: ExpoSystemSettingsDriver }
  */
-export abstract class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
+export class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
   /** An expensive connection, from NetInfo. */
   readonly expensiveNetwork: ReadonlySignal<boolean>;
 
-  /** The Expo libraries the app ships; declared by the host's subclass. */
-  protected abstract readonly modules: ExpoSystemModules;
+  /** The Expo libraries the settings are read through; a test subclass replaces them. */
+  protected readonly modules: ExpoSystemModules = {
+    trackingTransparency: TrackingTransparency,
+    battery: Battery,
+    backgroundTask: BackgroundTask,
+  };
 
   /** Low Power Mode, once something has read it. */
   private lowPower: LiveValue<boolean> | undefined;
@@ -57,7 +55,7 @@ export abstract class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
     this.expensiveNetwork = expensive;
   }
 
-  /** Low Power Mode from expo-battery; off when the app does not ship it. */
+  /** Low Power Mode from expo-battery; off when the library is absent. */
   get lowPowerMode(): ReadonlySignal<boolean> {
     if (this.lowPower !== undefined) return this.lowPower;
     const lowPower = liveValue(false);
@@ -88,11 +86,13 @@ export abstract class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
     return expoPermission(await module.requestTrackingPermissionsAsync());
   }
 
-  /** Whether the OS lets this app refresh in the background; `null` when the app does not ship expo-background-task. */
+  /** Whether the OS lets this app refresh in the background; `null` when expo-background-task is absent. */
   async backgroundRefresh(): Promise<PermissionStatus | null> {
     const module = this.modules.backgroundTask;
     if (module === null) return null;
-    return (await module.getStatusAsync()) === BACKGROUND_AVAILABLE ? "granted" : "denied";
+    return (await module.getStatusAsync()) === BackgroundTask.BackgroundTaskStatus.Available
+      ? "granted"
+      : "denied";
   }
 
   /** Opens this app's page in the OS settings. */

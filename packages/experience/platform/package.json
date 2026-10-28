@@ -188,10 +188,13 @@
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
     "electron": "catalog:desktop",
+    "expo-background-task": "catalog:mobile",
+    "expo-battery": "catalog:mobile",
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
+    "expo-tracking-transparency": "catalog:mobile",
     "fake-indexeddb": "catalog:quality",
     "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
@@ -206,10 +209,13 @@
   "peerDependencies": {
     "@react-native-community/netinfo": "catalog:mobile",
     "electron": "catalog:desktop",
+    "expo-background-task": "catalog:mobile",
+    "expo-battery": "catalog:mobile",
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
+    "expo-tracking-transparency": "catalog:mobile",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile"
   },
@@ -218,6 +224,12 @@
       "optional": true
     },
     "electron": {
+      "optional": true
+    },
+    "expo-background-task": {
+      "optional": true
+    },
+    "expo-battery": {
       "optional": true
     },
     "expo-camera": {
@@ -230,6 +242,9 @@
       "optional": true
     },
     "expo-notifications": {
+      "optional": true
+    },
+    "expo-tracking-transparency": {
       "optional": true
     },
     "react-native": {
