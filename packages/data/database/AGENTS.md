@@ -48,6 +48,9 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - Trees (`HasTree`, mo16): `TreeSubscriber` and `CrudService.move` are the only writers of `treePath`, and `move` is
   the only way to change `parentId` on an existing row (it rewrites the subtree through the private `rewritePrefix`,
   shared with `repath`). A new write path that could set `parentId` refuses it, as `refuseSystemFields` does.
+- Metadata (`HasMetadata`, mo18): `checkMetadata` is the one bound check (string values, 16 KB of UTF-8 JSON), run
+  by `MetadataSubscriber` and by `CrudService.refuseSystemFields`, which every write passes. A new native write path
+  that can set `metadata` calls it too.
 - A table count (`tableCount`, ADR 0307 r12) reads through the same filter as its page and calls the builder's
   `applyFilters()` so hidden rows stay hidden. Keep `Count.Estimated` bounded: the exact part stops at
   `BULK_LIMITS.countCap` plus one row, and past it only `explain` (never `explain analyze`) runs. Never estimate from

@@ -600,6 +600,42 @@ describe(compileMigration, () => {
     );
   });
 
+  it("writes the metadata column of a HasMetadata model, with the GIN index only when asked", () => {
+    class CreateCustomersMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("customers", (t: Blueprint) => {
+          t.hasPublicId("cus");
+          t.metadata();
+        });
+        schema.create("leads", (t: Blueprint) => {
+          t.hasPublicId("led");
+          t.metadata({ index: true });
+        });
+      }
+    }
+    const sql = compileMigration(CreateCustomersMigration, { schema: "crm" })
+      .steps.flatMap((step) => step.sql)
+      .join("\n");
+    expect(sql).toContain(`"metadata" jsonb default '{}'::jsonb not null`);
+    expect(sql).not.toContain('"idx_customers_metadata"');
+    expect(sql).toContain(
+      'create index "idx_leads_metadata" on "crm"."leads" using gin ("metadata")',
+    );
+
+    class MetadataLeadsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("contacts", (t: Blueprint) => {
+          t.metadata({ index: true });
+        });
+      }
+    }
+    expect(
+      compileMigration(MetadataLeadsMigration, { schema: "crm" })
+        .steps.flatMap((step) => step.sql)
+        .join("\n"),
+    ).toContain('create index concurrently "idx_contacts_metadata"');
+  });
+
   it("writes the tree columns and the GiST index of a HasTree model, online on an existing table", () => {
     class CreateCategoriesMigration extends Migration {
       up(schema: SchemaBuilder): void {

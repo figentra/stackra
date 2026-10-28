@@ -14,7 +14,7 @@
  * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
  *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
  *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links);
- *                     ADR 0321 (`HasTree`: `t.tree()`).
+ *                     ADR 0321 (`HasTree`: `t.tree()`; `HasMetadata`: `t.metadata()`).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
@@ -323,6 +323,22 @@ export class BlueprintRecord {
     const index = this.index([path.name]).using("gist");
     if (!this.creating) index.concurrently();
     return new ColumnGroupRecord([parent, path]);
+  }
+
+  /** Implements `Blueprint.metadata`, documented there. */
+  metadata(options: { readonly index?: boolean } = {}): ColumnGroupRecord {
+    const metadata = this.add(
+      new ColumnRecord("metadata", "jsonb", {
+        nullability: "not null",
+        comment: "String keys to string values, at most 16 KB; never a secret or classified data.",
+        defaultSql: "'{}'::jsonb",
+      }),
+    );
+    if (options.index === true) {
+      const index = this.index([metadata.name]).using("gin");
+      if (!this.creating) index.concurrently();
+    }
+    return new ColumnGroupRecord([metadata]);
   }
 
   /** Implements `Blueprint.appendOnly`, documented there. */

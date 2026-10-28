@@ -283,6 +283,24 @@ await categories.move(shoes.id, sale.id); // the subtree moves in one statement
   under itself. Both records must be visible to the caller.
 - A record's id is its path label, so it must be an `ltree` label; every `HasPublicId` id is.
 
+### Metadata (`HasMetadata`)
+
+`HasMetadata` (exported here, ADR 0321 d4) adds a bounded `metadata` bag to a model: string keys to string values, at
+most 16 KB of JSON (UTF-8) a record. Its migration writes `t.metadata()` (`metadata jsonb not null default '{}'`), or
+`t.metadata({ index: true })` with the GIN index that filtering on it needs; the boot passes `new MetadataSubscriber()`.
+
+```ts
+export class Customer extends Model.with(HasPublicId("cus"), HasMetadata) {}
+await customers.update({ id }, { metadata: { crmId: "0031x00000AbC" } });
+await customers.find(jsonContains("metadata", { crmId: "0031x00000AbC" })); // needs t.metadata({ index: true })
+```
+
+- A write whose metadata is not a plain object, holds a value that is not a string, or exceeds 16 KB is refused with
+  `MetadataInvalidError` (`metadata_invalid`, reason `not_object`, `value_not_string` or `too_large`): by
+  `MetadataSubscriber` at flush and by `CrudService` on every write, its native `updateWhere` among them.
+- Metadata never holds a secret, classified data, code or logic; a typed value the tenant defines is a custom field
+  (ADR 0116). `HasOwner`, the owner or assignee of a record, is `@stackra/iam`'s (`./node`, with `t.owner()`).
+
 ## Gapless sequences
 
 Invoices, receipts and filings take numbers with no gaps that are never reused (ADR 0342). A module declares a series

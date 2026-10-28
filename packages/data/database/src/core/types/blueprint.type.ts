@@ -109,6 +109,12 @@ export interface Blueprint {
   tree: () => ColumnGroup;
 
   /**
+   * The `HasMetadata` trait: `metadata jsonb not null default '{}'`. With `index: true`, the GIN index
+   * `idx_<table>_metadata` that filtering on it needs, built online on an existing table.
+   */
+  metadata: (options?: { readonly index?: boolean }) => ColumnGroup;
+
+  /**
    * The `AppendOnly` trait: revokes `UPDATE` on the table from `public` and the migrating role (the service's own,
    * which owns its tables), so no session of the service can change a row; inserts, reads and deletes (retention,
    * erasure) stay. On a created or an existing table; the inverse grants `UPDATE` back to the migrating role.

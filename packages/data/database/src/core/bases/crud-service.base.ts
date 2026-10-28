@@ -33,7 +33,7 @@
  *           statement with stamps and a change report (a flush when it sets an encrypted field), `deleteWhere` is
  *           `delete`; `each`/`chunk` walk by keyset and `page` reads a numbered page with its total. No write takes a
  *           system field (`SYSTEM_FIELDS` of the model's traits) from its caller: `SystemFieldWriteError`, except the
- *           id of a new row.
+ *           id of a new row. A `HasMetadata` model's `metadata` is checked on every write (`MetadataInvalidError`).
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
@@ -43,7 +43,8 @@
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
  *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields);
- *                     mo16 (`HasTree` reads and `move`); ca5 (the `Cached` entity cache on `findOne` by id).
+ *                     mo16 (`HasTree` reads and `move`); ca5 (the `Cached` entity cache on `findOne` by id); mo18
+ *                     (`HasMetadata` bound).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -79,6 +80,8 @@ import { entityCacheOf } from "#core/functions/entity-cache-of.function";
 import { filterCondition } from "#core/functions/filter-condition.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
+import { checkMetadata } from "#core/functions/check-metadata.function";
+import { hasMetadata } from "#core/functions/has-metadata.function";
 import { isAppendOnly } from "#core/functions/is-append-only.function";
 import { isTree } from "#core/functions/is-tree.function";
 import { modelOf } from "#core/functions/model-of.function";
@@ -842,9 +845,10 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /**
    * Refuses `operation` when `data` sets one of the model's system fields (`SYSTEM_FIELDS` of its traits) outside
-   * `allowed`.
+   * `allowed`, and checks the metadata of a `HasMetadata` model.
    *
    * @throws SystemFieldWriteError naming the first such field.
+   * @throws MetadataInvalidError when `data` sets metadata that is not a bounded string bag.
    */
   private refuseSystemFields(
     operation: string,
@@ -859,6 +863,9 @@ export abstract class CrudService<M extends object> extends Service implements R
     // A tree node changes parent only through `move`, which rewrites its subtree's paths with it.
     if (given.has("parentId") && TREE_MOVES.has(operation) && isTree(model))
       throw SystemFieldWriteError.create({ model: model.name, field: "parentId", operation });
+    // Every write passes here, `updateWhere`'s native statement among them, which no subscriber sees.
+    if (given.has("metadata") && hasMetadata(model))
+      checkMetadata(model.name, (data as { metadata?: unknown }).metadata);
   }
 
   /** The keep-the-row policy of the model: its filter and field, or `undefined` for a hard delete. */

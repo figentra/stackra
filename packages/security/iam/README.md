@@ -43,10 +43,28 @@ rule ("VIP customers cannot cancel") is a `@stackra/rules` condition that the op
 | `.`           | `PolicySnapshotIntakeService`, `PolicySnapshotEvent`                                    | the body of the listener that stores the IAM service's snapshot events        |
 | `./node`      | `registerVisibility`, `VisibilityRegistration`                                          | what gen's entry tells the query filter about each declaring model            |
 | `./node`      | `ExistenceQueryService`                                                                 | the existence-only query: which records match, as id-and-model hits only      |
+| `./node`      | `HasOwner`, `OwnerMacro`                                                                | the owner/assignee trait (`ownerId`) and its column macro `t.owner()`         |
 | `./contracts` | `PolicySnapshot`, `Grant`, `DenyRule`, `VisibilityRule`, `Audience`, `Capability`       | the policy as data                                                            |
 | `./contracts` | `Audience$`                                                                             | the shipped schema of `Audience`, for a shape field (scope or role)           |
 | `./react`     | `usePermission`                                                                         | `const can = usePermission(); can(OrderPermissions.create)`                   |
 | `./testing`   | `actors`, `IAM_TESTING_PLUGIN`                                                          | test callers; the plugin that opens the memory policy                         |
+
+## Owned records (`HasOwner`)
+
+`HasOwner` (ADR 0321 d4) gives a model `ownerId`, the public id of the principal who owns or is assigned the record,
+null while unassigned. Its migration writes `t.owner()` (`owner_id varchar(33)`, nullable and indexed, no foreign key).
+It is not a system field: an assignment is an ordinary write that the model's permissions and policy govern.
+
+```ts
+export class Ticket extends Model.with(HasPublicId("tkt"), HasOwner) {}
+const mine = await tickets.find({ ownerId: actor.id }); // "my records", by the index
+// owner-based policy: only the owner may update
+export class TicketPolicy extends Policy<Ticket> {
+  update(actor: Actor, ticket: Ticket): Decision {
+    return ticket.ownerId === actor.id ? Decision.Abstain : Decision.Deny;
+  }
+}
+```
 
 ## Declaring access
 

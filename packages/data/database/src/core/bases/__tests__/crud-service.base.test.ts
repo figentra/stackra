@@ -49,6 +49,8 @@ import { connectHoldRegistry } from "#core/functions/connect-hold-registry.funct
 import { connectNativeWriteWatcher } from "#core/functions/connect-native-write-watcher.function";
 import type { NativeWrite } from "#core/types/native-write.type";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
+import { MetadataInvalidError } from "#core/errors/metadata-invalid.error";
+import { HasMetadata } from "#core/traits/has-metadata.trait";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
@@ -99,7 +101,12 @@ class Invoice extends Model.with(HasPublicId("inv"), Timestamps, UserStamps, Ver
 
 class InvoiceService extends CrudService<Invoice> {}
 
+class Customer extends Model.with(HasPublicId("cus"), HasMetadata) {}
+
+class CustomerService extends CrudService<Customer> {}
+
 registerModelPartners([
+  [CustomerService, Customer],
   [OrderService, Order],
   [LedgerEntryService, LedgerEntry],
   [ContactService, Contact],
@@ -999,5 +1006,22 @@ describe("CrudService system fields (stackra-287)", () => {
     expect(await refusal(() => new OrderService().updateWhere({}, { createdAt: new Date() }))).toBe(
       undefined,
     );
+  });
+});
+
+describe("CrudService metadata (stackra-294)", () => {
+  it("refuses metadata that is not a bounded string bag on every write, the native updateWhere among them", async () => {
+    connect();
+    const service = new CustomerService();
+    const bad = { metadata: { count: 3 } } as never;
+    for (const call of [
+      () => service.create(bad),
+      () => service.insert(bad),
+      () => service.update({ id: "cus_1" }, bad),
+      () => service.updateWhere({}, bad),
+    ])
+      await expect(Promise.resolve().then(call)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, MetadataInvalidError),
+      );
   });
 });

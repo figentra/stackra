@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: the visibility filter driver, `registerVisibility` and the
- *          existence-only query service are exported, nothing else is, the registry and `whereOf` stay internal, and the public type resolves.
+ *          existence-only query service, `HasOwner` and `OwnerMacro` are exported, nothing else is, the registry and `whereOf` stay internal, and the public type resolves.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0333 (decision 4); STA-933.
@@ -18,7 +18,9 @@ describe("@stackra/iam/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "ExistenceQueryService",
+      "HasOwner",
       "IamVisibilityFilterDriver",
+      "OwnerMacro",
       "PostgresPolicySnapshotStoreDriver",
       "registerVisibility",
     ]);
