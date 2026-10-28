@@ -66,6 +66,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Stamps (ADR 0133 d7): `StampSubscriber` and `stampFields` are the only writers of `createdBy`/`updatedBy`, and the
   actor is the running call's, never input. A new native update path (`nativeUpdate`, a query-builder update) spreads
   `stampFields(model, "update")` into its data, as `increment` and `repath` do.
+- Delete policies (ADR 0134 d4): `deleteFilters` registers the `deleted` and `archived` filters in both drivers'
+  `connect` (keep them the same); `CrudService.delete` picks the policy from the model's traits. A new bulk read that
+  must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.
 - Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
   `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
   A refusal carries the constraint name, never a row value.

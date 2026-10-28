@@ -291,6 +291,7 @@ describe(compileMigration, () => {
           const t = blueprint as WithMacros;
           t.hasPublicId("acc");
           t.softDeletes();
+          t.archivable();
           t.string("member_id", 64).notNull().comment("The member.");
           t.dataClassification("classification").notNull().comment("How sensitive it is.");
           t.integer("points").notNull().default(0).comment("Points held.");
@@ -309,6 +310,7 @@ describe(compileMigration, () => {
       '"double_points" integer generated always as (points * 2) stored not null',
     );
     expect(step?.sql[1]).toContain('"search_vector" tsvector null');
+    expect(step?.sql[1]).toContain('"archived_at" timestamptz null');
     expect(step?.sql).toContain(
       'create unique index "idx_accounts_member_id" on "loyalty"."accounts" ("member_id") where deleted_at is null',
     );

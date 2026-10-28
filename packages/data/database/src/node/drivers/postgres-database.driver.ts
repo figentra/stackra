@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
  *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions
- *          (with an optional statement timeout), starts every session with the configured timeouts, sets the scope
+ *          (with an optional statement timeout), starts every session with the configured timeouts, registers the
+ *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
@@ -22,6 +23,7 @@ import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
+import { deleteFilters } from "#core/functions/delete-filters.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
@@ -56,6 +58,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    * @throws Error when Postgres refuses the connection or an entity schema is invalid.
    */
   static async connect(options: DatabaseOptions): Promise<PostgresDatabaseDriver> {
+    const entities = [...(options.entities ?? REGISTERED_ENTITIES)];
     const orm = await MikroORM.init({
       clientUrl: sessionTimeoutsUrl(options.url, options.timeouts),
       ...(options.replicas === undefined || options.replicas.length === 0
@@ -66,7 +69,8 @@ export class PostgresDatabaseDriver extends Driver(Database) {
             })),
           }),
       preferReadReplicas: false,
-      entities: [...(options.entities ?? REGISTERED_ENTITIES)],
+      entities,
+      filters: deleteFilters(entities),
       subscribers: [...(options.subscribers ?? [])],
       namingStrategy: StackraNamingStrategy,
       discovery: { inferDefaultValues: false },

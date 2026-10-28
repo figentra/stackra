@@ -296,6 +296,22 @@ With a driver bound, `CrudService`'s `find`, `findOne`, `findOneOrFail`, `count`
 `GraphQuery`'s source rows, AND its conditions into their filter for the running call's actor (`undefined` outside a
 call; the driver decides what that sees). Without one, reads are unchanged. Writes and `purge` carry no conditions.
 
+## Delete policies
+
+A model's traits choose its delete policy (ADR 0134 decision 4), and `CrudService` applies it:
+
+| Model                             | `delete(where)`             | Reads                           | Back             |
+| --------------------------------- | --------------------------- | ------------------------------- | ---------------- |
+| `SoftDeletes` (`t.softDeletes()`) | sets `deletedAt` (stamped)  | hidden by the `deleted` filter  | `restore(where)` |
+| `Archivable` (`t.archivable()`)   | sets `archivedAt` (stamped) | hidden by the `archived` filter | `restore(where)` |
+| neither                           | hard delete through `purge` | —                               | —                |
+
+The drivers register both filters at `connect`, on by default and limited to the entities with the trait. A read
+reaches hidden rows with `{ withDeleted: true }` or `{ onlyDeleted: true }` (`withArchived`, `onlyArchived` for
+archived rows), on `find`, `findOne`, `findOneOrFail` and `count`. `forceDelete(where)` and `purge(where)` remove
+rows for good, kept ones included, and a legal hold still protects them. A soft delete or an archive is an update,
+not a disposal. A unique index on a soft-deleted table says `.where("deleted_at is null")`.
+
 ## Concurrency and database errors
 
 A `Versioned` model's `version` is the ORM's version property, so a unit of work that flushes a row someone else

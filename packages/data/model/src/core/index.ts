@@ -44,6 +44,7 @@ export { HasCorrections } from "#core/traits/has-corrections.trait";
 export { HasEncryptedFields } from "#core/traits/has-encrypted-fields.trait";
 export { HasPublicId } from "#core/traits/has-public-id.trait";
 export { SoftDeletes } from "#core/traits/soft-deletes.trait";
+export { Archivable } from "#core/traits/archivable.trait";
 export { Taggable } from "#core/traits/taggable.trait";
 export { Timestamps } from "#core/traits/timestamps.trait";
 export { Translatable } from "#core/traits/translatable.trait";

@@ -113,6 +113,7 @@ describe("@stackra/model", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "AiAudience",
       "AppendOnly",
+      "Archivable",
       "Classify",
       "Collection",
       "Commentable",

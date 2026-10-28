@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `CrudService`: the model comes from the registered partner (and an unregistered service
+ * Purpose: unit tests of `CrudService` (with the delete policy: soft delete, archive, restore, force delete and the
+ *          hidden-row read options): the model comes from the registered partner (and an unregistered service
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
  *          `update` assigns (now, in its own transaction, with `requiresNew`), `lock` reads again under a pessimistic
@@ -22,7 +23,7 @@ import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { ActorKind, Realm, SortDirection } from "@stackra/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
-import { HasPublicId, Model } from "@stackra/model";
+import { Archivable, HasPublicId, Model, SoftDeletes } from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -332,9 +333,11 @@ describe("CrudService.purge with legal holds", () => {
     connectHoldRegistry(holds);
     expect(await new OrderService().purge({ status: "paid" })).toBe(2);
     expect(asked).toEqual([[Order, ["ord_1", "ord_2"], Disposal.Purge]]);
-    expect(em.nativeDelete).toHaveBeenCalledWith(Order, {
-      $and: [{ status: "paid" }, { id: { $in: ["ord_1"] } }],
-    });
+    expect(em.nativeDelete).toHaveBeenCalledWith(
+      Order,
+      { $and: [{ status: "paid" }, { id: { $in: ["ord_1"] } }] },
+      { filters: { deleted: false, archived: false } },
+    );
   });
 
   it("reads the registered subject links and sends them with the ids (STA-1241)", async () => {
@@ -351,7 +354,10 @@ describe("CrudService.purge with legal holds", () => {
     } finally {
       registerHoldLinks([[Order, []]]);
     }
-    expect(em.find.mock.calls[0]?.[2]).toEqual({ fields: ["id", "customerId"] });
+    expect(em.find.mock.calls[0]?.[2]).toEqual({
+      fields: ["id", "customerId"],
+      filters: { deleted: false, archived: false },
+    });
     expect(asked).toEqual([
       [Order, ["ord_1", "ord_2"], Disposal.Purge, { ord_1: { customerId: "per_7" } }],
     ]);
@@ -450,5 +456,62 @@ describe("CrudService.repath", () => {
   ])("refuses %s", async (_name, from, to) => {
     connect();
     await expect(new OrderService().repath(from, to)).rejects.toThrow(TypeError);
+  });
+});
+
+describe("CrudService delete policy (ADR 0134 decision 4)", () => {
+  class Note extends Model.with(HasPublicId("not"), SoftDeletes) {}
+
+  class Project extends Model.with(HasPublicId("prj"), Archivable) {}
+
+  class NoteService extends CrudService<Note> {}
+
+  class ProjectService extends CrudService<Project> {}
+
+  registerModelPartners([
+    [NoteService, Note],
+    [ProjectService, Project],
+  ]);
+
+  it("soft-deletes a SoftDeletes model, archives an Archivable one, hard-deletes any other", async () => {
+    const em = connect();
+    await new NoteService().delete({ id: "not_1" });
+    expect(em.nativeUpdate.mock.calls[0]?.[0]).toBe(Note);
+    expect(em.nativeUpdate.mock.calls[0]?.[2]).toMatchObject({ deletedAt: expect.any(Date) });
+    await new ProjectService().delete({ id: "prj_1" });
+    expect(em.nativeUpdate.mock.calls[1]?.[2]).toMatchObject({ archivedAt: expect.any(Date) });
+    await new OrderService().delete({ id: "ord_1" });
+    expect(em.nativeDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores kept rows with the filter off, and refuses a hard-deleted model", async () => {
+    const em = connect();
+    await new NoteService().restore({ id: "not_1" });
+    expect(em.nativeUpdate.mock.calls[0]?.[1]).toEqual({
+      $and: [{ id: "not_1" }, { deletedAt: { $ne: null } }],
+    });
+    expect(em.nativeUpdate.mock.calls[0]?.[2]).toMatchObject({ deletedAt: null });
+    expect(em.nativeUpdate.mock.calls[0]?.[3]).toEqual({ filters: { deleted: false } });
+    expect(() => new OrderService().restore({ id: "ord_1" })).toThrow(TypeError);
+    await new NoteService().forceDelete({ id: "not_1" });
+    expect((em.nativeDelete.mock.calls[0] as unknown[] | undefined)?.[2]).toEqual({
+      filters: { deleted: false, archived: false },
+    });
+  });
+
+  it("reads deleted or archived rows only when asked", async () => {
+    const em = connect();
+    await new NoteService().find({ id: "not_1" }, { limit: 1 });
+    expect(em.find.mock.calls[0]?.[2]).toEqual({ limit: 1 });
+    await new NoteService().find({ id: "not_1" }, { withDeleted: true });
+    expect(em.find.mock.calls[1]?.[2]).toEqual({ filters: { deleted: false } });
+    await new NoteService().find({ id: "not_1" }, { onlyDeleted: true });
+    expect(em.find.mock.calls[2]?.[1]).toEqual({
+      $and: [{ id: "not_1" }, { deletedAt: { $ne: null } }],
+    });
+    await new ProjectService().count({}, { withArchived: true });
+    expect((em.count.mock.calls[0] as unknown[] | undefined)?.[2]).toEqual({
+      filters: { archived: false },
+    });
   });
 });

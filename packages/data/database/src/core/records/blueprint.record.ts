@@ -278,6 +278,15 @@ export class BlueprintRecord {
     return new ColumnGroupRecord([this.add(deletedAt)]);
   }
 
+  /** Implements `Blueprint.archivable`, documented there. */
+  archivable(): ColumnGroupRecord {
+    const archivedAt = new ColumnRecord("archived_at", "timestamptz", {
+      nullability: "null",
+      comment: "When the row was archived; null while it is active.",
+    });
+    return new ColumnGroupRecord([this.add(archivedAt)]);
+  }
+
   /** Implements `Blueprint.translatable`, documented there. */
   translatable(fields: readonly string[]): ColumnGroupRecord {
     if (fields.length === 0) throw new TypeError("translatable needs at least one field");

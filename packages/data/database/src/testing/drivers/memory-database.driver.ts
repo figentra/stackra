@@ -33,6 +33,7 @@ import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
+import { deleteFilters } from "#core/functions/delete-filters.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
@@ -73,6 +74,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       // PGlite reads an in-memory data directory from the database name.
       dbName: "memory://",
       entities: [...REGISTERED_ENTITIES],
+      filters: deleteFilters(REGISTERED_ENTITIES),
       namingStrategy: StackraNamingStrategy,
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,

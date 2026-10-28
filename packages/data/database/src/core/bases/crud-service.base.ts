@@ -13,7 +13,10 @@
  *           carry none. `update` takes the caller's `expectedVersion`. Database errors stay the
  *           driver's here (a caller may catch `UniqueViolation`); the action's unit of work raises them as refusals.
  *           Native updates (`increment`, `repath`) set the
- *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
+ *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them. Deletes follow the model's delete policy (ADR 0134 d4): `delete` soft-deletes
+ *           or archives a `SoftDeletes`/`Archivable` model's rows and hard-deletes any other's, `restore` brings kept
+ *           rows back, `forceDelete` and `purge` remove them for good; the drivers' `deleted`/`archived` filters hide
+ *           kept rows from every read unless `DeletedReadOptions` asks for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
@@ -25,6 +28,7 @@
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
   EntityData,
+  FilterQuery,
   FindOneOptions,
   FindOptions,
   Loaded,
@@ -36,7 +40,9 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
+import { traitsOf } from "@stackra/model";
 
+import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
 import { LTREE_PATH } from "#core/constants/ltree-path.constant";
@@ -55,6 +61,7 @@ import type { Repository } from "#core/types/repository.type";
 import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
+import type { DeletedReadOptions } from "#core/types/deleted-read-options.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import type { UpdateOptions } from "#core/types/update-options.type";
 import { Disposal } from "#contracts/enums/disposal.enum";
@@ -83,22 +90,22 @@ function nest(path: string, value: unknown): Record<string, unknown> {
  * }
  */
 export abstract class CrudService<M extends object> extends Service implements Repository<M> {
-  /** Implements `Repository.find`, documented there. */
+  /** Implements `Repository.find`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. */
   async find<H extends string = never>(
     where: Where<M>,
-    options?: FindOptions<M, H>,
+    options?: FindOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>[]> {
-    const model = this.model();
-    return this.em().find(model, await visibleFilter(model, where), options);
+    const [filter, rest] = await this.readOf(where, options);
+    return this.em().find(this.model(), filter, rest);
   }
 
-  /** Implements `Repository.findOne`, documented there. */
+  /** Implements `Repository.findOne`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. */
   async findOne<H extends string = never>(
     where: Where<M>,
-    options?: FindOneOptions<M, H>,
+    options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
-    const model = this.model();
-    return this.em().findOne(model, await visibleFilter(model, where), options);
+    const [filter, rest] = await this.readOf(where, options);
+    return this.em().findOne(this.model(), filter, rest);
   }
 
   /**
@@ -108,19 +115,21 @@ export abstract class CrudService<M extends object> extends Service implements R
    */
   async findOneOrFail<H extends string = never>(
     where: Where<M>,
-    options?: FindOneOptions<M, H>,
+    options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
-    const model = this.model();
-    return this.em().findOneOrFail(model, await visibleFilter(model, where), {
-      ...options,
+    const [filter, rest] = await this.readOf(where, options);
+    return this.em().findOneOrFail(this.model(), filter, {
+      ...rest,
       failHandler: () => NotFoundError.create(),
     });
   }
 
-  /** Implements `Repository.count`, documented there. */
-  async count(where: Where<M> = {} as Where<M>): Promise<number> {
-    const model = this.model();
-    return this.em().count(model, await visibleFilter(model, where));
+  /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
+  async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
+    const [filter, rest] = await this.readOf(where, options);
+    return rest === undefined
+      ? this.em().count(this.model(), filter)
+      : this.em().count(this.model(), filter, rest);
   }
 
   /** Implements `Repository.sum`, documented there. */
@@ -195,17 +204,60 @@ export abstract class CrudService<M extends object> extends Service implements R
     const em = this.em();
     const model = this.model();
     const filter = filterOf(where);
-    if (HOLD_HOST.registry === undefined) return em.nativeDelete(model, filter);
+    // A purge reaches soft-deleted and archived rows too: it is how they finally go.
+    const filters = { deleted: false, archived: false };
+    if (HOLD_HOST.registry === undefined) return em.nativeDelete(model, filter, { filters });
     const [key = "id"] = em.getMetadata(model).primaryKeys;
     const linkFields = HOLD_LINK_FIELDS.get(model) ?? [];
     const rows = (await em.find(model, filter, {
       fields: [key, ...linkFields] as never,
+      filters,
     })) as Record<string, unknown>[];
     const ids = rows.map((row) => String(row[key]));
     const free = await disposableIds(model, ids, Disposal.Purge, holdLinksOf(model, rows, key));
     if (free.length === 0) return 0;
     // Only the checked ids, so a row inserted after the read is never removed unchecked.
-    return em.nativeDelete(model, { $and: [filter, { [key]: { $in: free } }] } as never);
+    return em.nativeDelete(model, { $and: [filter, { [key]: { $in: free } }] } as never, {
+      filters,
+    });
+  }
+
+  /**
+   * Deletes the rows matching `where` by the model's delete policy (ADR 0134 decision 4) and returns how many: a
+   * `SoftDeletes` model sets `deletedAt`, an `Archivable` one `archivedAt` (both stamped, one statement, live rows
+   * only), and any other model is hard-deleted through `purge`, so a legal hold still protects its rows.
+   */
+  delete(where: Where<M>): Promise<number> {
+    const model = this.model();
+    const policy = this.keptPolicy();
+    if (policy === undefined) return this.purge(where);
+    return this.em().nativeUpdate(model, filterOf(where), {
+      ...stampFields(model, "update"),
+      [policy.field]: new Date(),
+    } as never);
+  }
+
+  /**
+   * Brings back the soft-deleted (or archived) rows matching `where` and returns how many.
+   *
+   * @throws TypeError for a model whose delete policy keeps no row (neither `SoftDeletes` nor `Archivable`).
+   */
+  restore(where: Where<M>): Promise<number> {
+    const model = this.model();
+    const policy = this.keptPolicy();
+    if (policy === undefined)
+      throw new TypeError(`${model.name} is hard-deleted: there is nothing to restore`);
+    return this.em().nativeUpdate(
+      model,
+      { $and: [filterOf(where), { [policy.field]: { $ne: null } }] } as never,
+      { ...stampFields(model, "update"), [policy.field]: null } as never,
+      { filters: { [policy.filter]: false } },
+    );
+  }
+
+  /** Removes the rows matching `where` for good, soft-deleted or archived ones included; a legal hold still applies. */
+  forceDelete(where: Where<M>): Promise<number> {
+    return this.purge(where);
   }
 
   /**
@@ -336,6 +388,47 @@ export abstract class CrudService<M extends object> extends Service implements R
     if (expected === undefined) return;
     if ((row as { version?: unknown }).version !== expected)
       throw StaleVersionError.create({ model: this.model().name });
+  }
+
+  /** The keep-the-row policy of the model: its filter and field, or `undefined` for a hard delete. */
+  private keptPolicy(): { readonly filter: string; readonly field: string } | undefined {
+    const names = new Set(traitsOf(this.model()).map((trait) => trait.name));
+    // SoftDeletes wins when a model has both: a delete is the shorter-lived one.
+    for (const [filter, { trait, field }] of Object.entries(DELETE_FILTERS))
+      if (names.has(trait)) return { filter, field };
+    return undefined;
+  }
+
+  /** The filter and the ORM options of a read, with the delete filters a `DeletedReadOptions` turns off. */
+  private async readOf<O extends { readonly filters?: unknown }>(
+    where: Where<M>,
+    options: (O & DeletedReadOptions) | undefined,
+  ): Promise<[FilterQuery<M>, O | undefined]> {
+    const visible = await visibleFilter(this.model(), where);
+    if (options === undefined) return [visible, undefined];
+    const { withDeleted, onlyDeleted, withArchived, onlyArchived, ...rest } = options;
+    const off: Record<string, false> = {};
+    const only: object[] = [];
+    for (const [name, include, alone] of [
+      ["deleted", withDeleted, onlyDeleted],
+      ["archived", withArchived, onlyArchived],
+    ] as const) {
+      if (include !== true && alone !== true) continue;
+      off[name] = false;
+      if (alone === true) only.push({ [DELETE_FILTERS[name].field]: { $ne: null } });
+    }
+    if (Object.keys(off).length === 0) return [visible, rest as unknown as O];
+    const held = rest.filters;
+    const filters =
+      held === false
+        ? false
+        : typeof held === "object" && held !== null && !Array.isArray(held)
+          ? { ...held, ...off }
+          : off;
+    return [
+      (only.length === 0 ? visible : { $and: [visible, ...only] }) as FilterQuery<M>,
+      { ...rest, filters } as unknown as O,
+    ];
   }
 
   /** One aggregate of `field`'s column over the visible rows matching `where`, as a number (0 for no row). */

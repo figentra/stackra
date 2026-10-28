@@ -94,6 +94,9 @@ export interface Blueprint {
   /** The `SoftDeletes` trait: `deleted_at timestamptz`, nullable. */
   softDeletes: () => ColumnGroup;
 
+  /** The `Archivable` trait: `archived_at timestamptz`, nullable. */
+  archivable: () => ColumnGroup;
+
   /** `Translated` fields: one `jsonb` locale map per field. */
   translatable: (fields: readonly string[]) => ColumnGroup;
 
