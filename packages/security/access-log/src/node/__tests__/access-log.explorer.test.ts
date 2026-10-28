@@ -110,7 +110,8 @@ async function boot(): Promise<{ container: Container; sink: MemoryAccessLogSink
 
 /** Guards the access-log wiring, since an unlogged read is a silent audit gap. */
 describe("AccessLogExplorer", () => {
-  it("wraps exactly what gen discovers", async () => {
+  // discoverWithGen compiles the member with TypeScript (9 s on CI), so this test gets gen's own 30 s budget.
+  it("wraps exactly what gen discovers", { timeout: 30_000 }, async () => {
     const { container } = await boot();
     const discovered = await discoverWithGen(FixtureModule, AccessLogged);
     expect(container.get(AccessLogExplorer).targets()).toEqual(
