@@ -33,6 +33,7 @@ describe("@stackra/actions/testing", () => {
       "extension",
       "fakeActionContext",
       "fakeExtensionContext",
+      "grantedConsent",
       "run",
       "toHaveAudited",
     ]);
