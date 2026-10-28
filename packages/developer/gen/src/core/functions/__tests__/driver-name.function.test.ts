@@ -23,8 +23,15 @@ describe("driverName", () => {
     expect(driverName("memory.driver.ts", "Driver")).toBe("memory");
   });
 
+  it("snake-cases a name of two words, as the configs spell it", () => {
+    expect(driverName("printer-kick-cash-drawer.driver.ts", "CashDrawer")).toBe("printer_kick");
+    expect(driverName("broadcast-channel-realtime.driver.ts", "RealtimeDriver")).toBe(
+      "broadcast_channel",
+    );
+  });
+
   it("keeps a stem that does not end in the port name", () => {
     expect(driverName("src/core/drivers/resend.driver.ts", "MailTransport")).toBe("resend");
-    expect(driverName("loyalty-ledger.driver.ts", "LoyaltyLedger")).toBe("loyalty-ledger");
+    expect(driverName("loyalty-ledger.driver.ts", "LoyaltyLedger")).toBe("loyalty_ledger");
   });
 });
