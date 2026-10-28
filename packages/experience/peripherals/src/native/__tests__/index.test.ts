@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./native` entry: the Sunmi, PAX and iMin drivers the till's generated
- *          native wiring imports, and nothing else; the Sunmi and PAX printers live in @stackra/native-receipt-printer.
+ *          native wiring imports, and nothing else; the Sunmi and PAX printers and drawers live in
+ *          @stackra/native-receipt-printer and @stackra/native-cash-drawer.
  * Boundary: test only; imports the stand-in barrel through its `#native` alias with no Expo modules registry present,
  *           so an eager native lookup would break the test.
  * Runtime: node (vitest)
@@ -18,9 +19,7 @@ describe("@stackra/peripherals/native", () => {
       "IminCashDrawerDriver",
       "IminReceiptPrinterDriver",
       "PaxBarcodeScannerDriver",
-      "PaxCashDrawerDriver",
       "SunmiBarcodeScannerDriver",
-      "SunmiCashDrawerDriver",
     ]);
   });
 });

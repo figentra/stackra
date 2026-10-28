@@ -50,7 +50,7 @@ scales, label-scale sync and drive-through lanes. Member at
   the scanner through `before-input-event`.
 - ADR 0478: native code lives only in one Expo module package per capability (`@stackra/native-receipt-printer`,
   `@stackra/native-cash-drawer`, ...), which implements this package's ports and adds its driver names to
-  `PERIPHERAL_DRIVERS` here. Write no new `./native` driver; the Sunmi and PAX receipt printers already moved.
+  `PERIPHERAL_DRIVERS` here. Write no new `./native` driver; the Sunmi and PAX receipt printers and cash drawers already moved.
 - `./native` (ADR 0442 decision 4): a Sunmi, PAX or iMin driver reads its family's Expo module (`StackraSunmi`,
   `StackraPax`, `StackraImin`) from `globalThis.expo.modules` when it runs and imports no native package. The module
   passes the vendor SDK through unmapped; its Kotlin lives in the till app's `src/native-sources/<family>/` (ADR 0345

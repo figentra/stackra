@@ -25,7 +25,7 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `./contracts` | `ReceiptPrinter`, `CashDrawer`, `BarcodeScanner`, `Scale`; `Receipt`, `PrintedReceipt`, `DrawerPin`, `ScaleReading`                                                                                          | the ports, injected by type (from here only)                                              |
 | `./desktop`   | `PrintReceiptBridge`                                                                                                                                                                                         | `peripherals.receipt.print`, the renderer's only way to the printer                       |
 | `./desktop`   | `EscposReceiptPrinterDriver`, `PrinterKickCashDrawerDriver`, `HidBarcodeScannerDriver`                                                                                                                       | the main-process drivers `escpos`, `printer_kick` and `hid`                               |
-| `./native`    | `IminReceiptPrinterDriver`, `PaxCashDrawerDriver`, `SunmiBarcodeScannerDriver` and the others not yet moved (see below)                                                                                      | the Android till drivers `sunmi`, `pax` and `imin` (ADR 0442; certification pending)      |
+| `./native`    | `IminReceiptPrinterDriver`, `IminCashDrawerDriver`, `SunmiBarcodeScannerDriver` and the others not yet moved (see below)                                                                                     | the Android till drivers `sunmi`, `pax` and `imin` (ADR 0442; certification pending)      |
 | `./contracts` | `LabelPrinter`, `CustomerDisplay`, `CardTerminal`; `LabelFormat`, `TerminalState`; `Label`, `RasterImage`, `PrintedLabel`, `CustomerDisplayView`, `CustomerDisplayLine`, `TerminalPairing`, `PairedTerminal` | the ports of ADR 0339 decision 1 and their types                                          |
 | `.`           | `MemoryLabelPrinterDriver`, `MemoryCustomerDisplayDriver`, `MemoryCardTerminalDriver`                                                                                                                        | the `memory` candidates of the three new ports                                            |
 | `.`           | `ChannelCustomerDisplayDriver`, `listenCustomerDisplay`, `CUSTOMER_DISPLAY_CHANNEL`                                                                                                                          | the `channel` customer display: the till posts views, the display window listens          |
@@ -190,18 +190,19 @@ parseGs1ElementString("]e00109501101530003" + "3103001250");
 
 > **Moving out (ADR 0478 decision 5).** Native drivers now live in one Expo module package per capability, beside
 > this package. `SunmiReceiptPrinterDriver` and `PaxReceiptPrinterDriver` moved to `@stackra/native-receipt-printer`
-> (same driver names `sunmi` and `pax`, with `epson` and `star`); import them from there. The drawer and scanner
-> drivers follow with `@stackra/native-cash-drawer` and the scanner package; iMin follows when its packages take it.
+> (same driver names `sunmi` and `pax`, with `epson` and `star`), and `SunmiCashDrawerDriver` and `PaxCashDrawerDriver`
+> to `@stackra/native-cash-drawer` (same names, with a native `printer_kick`); import them from there. The scanner
+> drivers follow with the scanner package; iMin follows when its packages take it.
 
 The `./native` entry holds the drivers of the Android till on Sunmi, PAX and iMin terminals (ADR 0442 decision 4), one
 vendor ADR each (0458 Sunmi, 0459 PAX, 0460 iMin). Each family drives the terminal's built-in printer, the drawer on
 its drawer port and its built-in scanner behind the existing ports; the ports do not change.
 
-| Driver name | `ReceiptPrinter`           | `CashDrawer`            | `BarcodeScanner`            | Expo module    |
-| ----------- | -------------------------- | ----------------------- | --------------------------- | -------------- |
-| `sunmi`     | moved (below)              | `SunmiCashDrawerDriver` | `SunmiBarcodeScannerDriver` | `StackraSunmi` |
-| `pax`       | moved (below)              | `PaxCashDrawerDriver`   | `PaxBarcodeScannerDriver`   | `StackraPax`   |
-| `imin`      | `IminReceiptPrinterDriver` | `IminCashDrawerDriver`  | `IminBarcodeScannerDriver`  | `StackraImin`  |
+| Driver name | `ReceiptPrinter`           | `CashDrawer`           | `BarcodeScanner`            | Expo module    |
+| ----------- | -------------------------- | ---------------------- | --------------------------- | -------------- |
+| `sunmi`     | moved (below)              | moved (below)          | `SunmiBarcodeScannerDriver` | `StackraSunmi` |
+| `pax`       | moved (below)              | moved (below)          | `PaxBarcodeScannerDriver`   | `StackraPax`   |
+| `imin`      | `IminReceiptPrinterDriver` | `IminCashDrawerDriver` | `IminBarcodeScannerDriver`  | `StackraImin`  |
 
 ```ts
 export class PeripheralsConfig extends BasePeripheralsConfig {

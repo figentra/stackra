@@ -84,7 +84,10 @@ export class PeripheralsOptions extends Schema {
    */
   printer: DriverName<ReceiptPrinter> = "memory";
 
-  /** The cash drawer driver: `printer_kick` (through the printer), `sunmi`, `pax`, `imin` or `memory`. */
+  /**
+   * The cash drawer driver: `printer_kick` (through the printer), `sunmi`, `pax`, `imin` or `memory`. The native cash
+   * drawer package (`@stackra/native-cash-drawer`) ships `sunmi`, `pax` and a native `printer_kick`.
+   */
   drawer: DriverName<CashDrawer> = "memory";
 
   /** The barcode scanner driver: `hid` (keyboard wedge, desktop), `sunmi`, `pax`, `imin` or `memory`. */
