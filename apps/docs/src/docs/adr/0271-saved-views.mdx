@@ -4,6 +4,13 @@ description: "Accepted, amended by 0307 · 2026-10-21"
 ---
 
 <Note>
+  Amended 2026-10-28 (STA-1478) by [0470](/adr/0470-reports-v2-a-report-kind-server-grouping-and-pivots-and-report-definitions-as-data): decision 1 is confirmed as the grouping rule, and a
+  view's group-by and aggregates run on the server. The consequence "there is no report builder to
+  build" is withdrawn: report definitions saved as data over declared dimensions and measures are
+  allowed. A view may target a `Report` key, and decision 4's `@Report` is the `Report` kind.
+</Note>
+
+<Note>
   Amended 2026-10-23 (STA-406), by
   [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). Personal and
   tenant-shared views follow rule 9: a view stores only declared keys, `.renamed()` migrates them,

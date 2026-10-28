@@ -1,0 +1,92 @@
+---
+title: "0470 — Reports v2: a Report kind, server grouping and pivots, and report definitions as data"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0470 (Accepted 2026-10-28, owner decision 13 of the data-layer questionnaire), replacing the `@Report` decorator with a `Report` kind base, bringing in server-side grouping, totals and pivots over declared dimensions and measures, allowing report definitions saved as data, and settling the grouping conflict between ADR 0307 rule 13 and ADR 0271 decision 1. Boundary: decision text only; the code is batches stackra-389 to stackra-398 (`@stackra/reports`, `@stackra/gen`, `@stackra/panel`, `@stackra/database`); the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0154, 0160, 0163, 0227, 0270, 0271, 0294, 0307, 0341, 0359; notes handover/gap-analysis/data-layer (reporting.md gap 1, DECISIONS.md 13). */}
+
+<Note>
+  Reserved number: 0470, assigned to batch stackra-380 (STA-1478) for the data-layer wave 1 round
+  of 2026-10-28.
+</Note>
+
+## Context
+
+ADR [0163](/adr/0163-reports-exports-imports-and-declared-read-models) promises a module `@Report` query compiled to
+SQL and `@Report` widgets. Nothing was built, and v3 replaces decorators with kinds declared by their base class
+([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)), so the accepted text names a form the
+programming model forbids. ADR [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+decision 10 and ADR [0271](/adr/0271-saved-views) say there is no report builder and "no tenant SQL or pivot engine".
+Two ADRs also disagree on grouping: 0271 decision 1 puts group-by and aggregates in a saved view, while
+[0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) rule 13 leaves grouping and
+summaries out of v3.1 tables ([0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+decision 14 already reopened it without a design). Today the panel's `groupRows` groups and totals in memory over the
+rows loaded, so subtotals on a paged list are wrong for the full set. The owner answered on 2026-10-28 (data-layer
+decision 13): reports v2 yes, group-by belongs to views, drop 0307 rule 13. ADR
+[0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step) still holds: a tenant never writes SQL or code.
+
+## Decision
+
+1. **A report is a `Report` kind, not a decorator.** `class OrderSales extends Report<Order>({ key, dimensions,
+   measures, defaultFilter, permissions })` lives in a module's `reports/` group and in the `@stackra/reports` package
+   (data category). Its source is a model, a `Projection` or an `Indexer` target
+   ([0471](/adr/0471-read-side-one-indexer-kind-no-materialised-views-over-scoped-data-and-no-event-sourcing-by-default)).
+   Gen records each report in `stackra.manifest.json` under `reports` and emits one generated `Query` per report, so
+   REST, MCP and the panel read the same contract. `@Report` is retired.
+2. **Dimensions and measures are a closed, typed vocabulary.**
+   - A dimension is a declared field path of the source, optionally across a `Link<T>` relation, with an optional time
+     grain (hour, day, week, month, quarter, year) bucketed in the scope's time zone.
+   - A measure is one of `count`, `countDistinct`, `sum`, `avg`, `min`, `max`, or a formula over other measures of the
+     same report from a closed grammar (arithmetic and ratio only). Each measure names its metric class
+     (`MoneyMetric`, ...), and a money measure keeps the mixed-currency guard.
+   - Nothing outside the declaration can be grouped, filtered or measured.
+3. **Grouping, totals and pivots run on the server.** A `ReportRequest` (dimensions, measures, filters, sort, limit,
+   cursor, pivot axes) is compiled by `ReportCompiler` into one parameterised statement through the ORM query builder.
+   It applies `visibleFilter` and row-level security, resolves every path through `columnOf`, runs on the read replica
+   by default, and carries a statement timeout and a row cap. The `ReportResult` holds groups, subtotals, grand totals
+   and a pivot matrix. This is a pivot over declared dimensions and measures, not a pivot engine over arbitrary
+   tables, and it adds no raw SQL at runtime ([0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions)).
+4. **Group-by and aggregates belong to views (0271 decision 1).** A saved view's grouping, sub-grouping and totals are
+   served by decision 3, never computed in the browser over a loaded page. ADR 0307 rule 13 no longer excludes
+   grouping and summaries; reordering and custom column renderers stay out as that rule says. `groupRows` stays only
+   for an inline relation table that is fully loaded. A view may target a `Report` key as well as a resource.
+5. **Report definitions are data.** A user may save a `ReportDefinition`: a report key, the chosen dimensions and
+   measures, filters, sort, pivot axes and a display (table, pivot or a registered chart type). It is stored in the
+   `reports` module, shared personally, by role or for the whole scope under the `reports.definition.share`
+   permission, and validated against the manifest on every save and every run; a definition naming an undeclared key
+   is refused. The editor over definitions is a document kind on `@stackra/builder` or inline editing on the view. It
+   never accepts SQL, code or an expression outside the closed grammar, so 0154 stands.
+6. **Columns carry visibility.** A dimension or measure may carry a permission and a data class
+   ([0341](/adr/0341-product-defined-data-classes-and-the-privileged-class)). The compiler drops or masks what the caller may not
+   see, and the validator refuses a shared definition that would expose it to its audience.
+7. **Exports and schedules run as the reader.** A report or view export is the queued export of 0163 decision 4, and
+   a scheduled report runs as its subscriber, permissions re-checked at run time.
+8. **One engine now.** The compiler targets Postgres. A `ReportEngine` port may put other engines behind
+   configuration later; adding one is decided by the warehouse and analytics batches, not by this ADR. 0163 decision 5
+   is not changed here.
+
+## Consequences
+
+- A module ships its reports as code and a scope builds its own over them, without either writing SQL.
+- Subtotals on a paged list become correct, and the panel can draw grouping without the page-limited helper.
+- The two `Aggregate` enums merge into the database one, extended; the panel enum goes.
+- `@stackra/reports` is a new package; gen gains a `reports` manifest section and a query emitter per report.
+- A renamed or removed dimension or measure breaks the definitions and views that name it; the validator must report
+  them, as 0271 already requires for fields.
+- Reports run on the replica, so a report may trail a write by the replica's lag.
+
+## Enforcement
+
+planned — gen refuses a `Report` whose dimension or measure names an undeclared path or a measure outside the closed
+set (stackra-389); `ReportCompiler` tests assert one statement, `visibleFilter` and row-level security applied, the
+timeout, the row cap and the mixed-currency guard (stackra-390); the definition validator refuses undeclared keys and
+shares that expose a restricted column (stackra-395, stackra-396). Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0163](/adr/0163-reports-exports-imports-and-declared-read-models) (decisions 1 and 2: the
+`@Report` decorator), [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+(decision 10), [0271](/adr/0271-saved-views) (the consequence "no report builder") and
+[0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (rule 13, grouping and
+summaries); each carries a note dated 2026-10-28. Sources: owner answers to the data-layer questionnaire, 2026-10-28
+(decision 13); notes `handover/gap-analysis/data-layer/reporting.md` (gaps 1 to 8, 11, 15); Linear STA-1478.
