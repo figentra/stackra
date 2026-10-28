@@ -5,7 +5,7 @@
  *          (`runTransaction`: statement and lock timeouts, isolation, read-only, retry), starts every session with the configured timeouts, sizes the pool, registers the
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
- *          runtime handed it one.
+ *          runtime handed it one. The ORM's result cache is `EntityResultCacheAdapter`, the store of `Cached` models.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
  *           fork). `connect` makes it `Database.current()` until `close`. Reads stay on the primary
@@ -29,6 +29,7 @@ import { poolConfig } from "#core/functions/pool-config.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
+import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
 import type { DatabaseOptions } from "#core/types/database-options.type";
@@ -76,6 +77,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       entities,
       filters: deleteFilters(entities),
       subscribers: [...(options.subscribers ?? [])],
+      resultCache: { adapter: EntityResultCacheAdapter },
       namingStrategy: StackraNamingStrategy,
       discovery: { inferDefaultValues: false },
       allowGlobalContext: false,

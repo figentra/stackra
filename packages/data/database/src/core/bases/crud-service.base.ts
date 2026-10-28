@@ -13,7 +13,9 @@
  *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock: exclusive or shared, waiting,
  *           `nowait` or `skipLocked`) ANDs in the bound
  *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
- *           carry none. `update` takes the caller's `expectedVersion`. Database errors stay the
+ *           carry none. A `Cached` model's `findOne`/`findOneOrFail` by `{ id }`
+ *           alone, outside a transaction, reads through the shared entity cache (`entityCacheOf`), evicted on change by
+ *           `CacheInvalidationService`. `update` takes the caller's `expectedVersion`. Database errors stay the
  *           driver's here (a caller may catch `UniqueViolation`); the action's unit of work raises them as refusals.
  *           Native updates (`increment`, `repath`) set the
  *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them, and report the rows they
@@ -41,7 +43,7 @@
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
  *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields);
- *                     mo16 (`HasTree` reads and `move`).
+ *                     mo16 (`HasTree` reads and `move`); ca5 (the `Cached` entity cache on `findOne` by id).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -73,6 +75,7 @@ import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 import { callTimeZone } from "#core/functions/call-time-zone.function";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
+import { entityCacheOf } from "#core/functions/entity-cache-of.function";
 import { filterCondition } from "#core/functions/filter-condition.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
@@ -149,17 +152,22 @@ export abstract class CrudService<M extends object> extends Service implements R
     return this.em().find(this.model(), filter, rest);
   }
 
-  /** Implements `Repository.findOne`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. */
+  /**
+   * Implements `Repository.findOne`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. A
+   * `Cached` model's read by `{ id }` alone, outside a transaction, is answered from the entity cache (`entityCacheOf`).
+   */
   async findOne<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
     const [filter, rest] = await this.readOf(where, options);
-    return this.em().findOne(this.model(), filter, rest);
+    const em = this.em();
+    const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
+    return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
   }
 
   /**
-   * Implements `Repository.findOneOrFail`, documented there.
+   * Implements `Repository.findOneOrFail`, documented there; served by the entity cache as `findOne` is.
    *
    * @throws NotFoundError when no row matches, or none the caller may see.
    */
@@ -168,8 +176,11 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
     const [filter, rest] = await this.readOf(where, options);
-    return this.em().findOneOrFail(this.model(), filter, {
+    const em = this.em();
+    const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
+    return em.findOneOrFail(this.model(), filter, {
       ...rest,
+      ...(cache === undefined ? {} : { cache }),
       failHandler: () => NotFoundError.create(),
     });
   }

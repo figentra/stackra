@@ -78,9 +78,11 @@ export { ValidateOnFlushSubscriber } from "#core/orm/validate-on-flush.subscribe
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
 export { DatabaseConfigOptions } from "#core/schemas/database-config-options.schema";
+export { CacheInvalidationService } from "#core/services/cache-invalidation.service";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
 export type { Blueprint } from "#core/types/blueprint.type";
+export type { ChangedRow } from "#core/types/changed-row.type";
 export type { ColumnChange } from "#core/types/column-change.type";
 export type { ColumnDefinition } from "#core/types/column-definition.type";
 export type { ColumnGroup } from "#core/types/column-group.type";

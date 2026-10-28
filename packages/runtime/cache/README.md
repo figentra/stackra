@@ -66,8 +66,12 @@ ctx.afterCommit(() => this.cache.forget(CacheKey.of(Product, product.id)));
 - `remember` runs one load per key at a time: concurrent callers share it. A rejected load stores nothing. A load that a
   `put` or `forget` overtakes still answers its callers but is not stored, so a read that began before a change never
   caches the old value again.
-- A cached **read** is the query's `cache:` option (ADR 0305 rule 31), not this port. There is no `@Cached` and no
-  `ctx.cache`.
+- A cached **read** is the query's `cache:` option (ADR 0305 rule 31), not this port. A row read by its id is cached
+  by the model trait `Cached({ ttl })` (@stackra/model, served by @stackra/database's `CrudService`). There is no
+  `@Cached` decorator and no `ctx.cache`.
+- Row changes evict without an action: @stackra/database's `CacheInvalidationService`, an outbox change consumer,
+  forgets `CacheKey.of(Model, id)` in the shared namespace after every committed change of a `Cached` model's row, so
+  a shared-namespace entry keyed under the row goes with it.
 
 ## Tags
 

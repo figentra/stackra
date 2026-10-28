@@ -43,6 +43,8 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   `unwrap()`.
 - Never import @stackra/database (it depends on this package); a factory meets `Attributes<M>` through the
   `RelationSource` brand.
+- `Cached({ ttl })` is a marker read by `cacheTtlOf`, which refuses a model that also has encrypted fields (a shared
+  cache would hold their plaintext); keep that refusal when either trait changes.
 - Never import @stackra/rules or @stackra/iam either (both reach this package): `@Visibility` names attributes and
   relations only, and the rules, their evaluation and the query filter are IAM's (ADR 0333).
 - `SYSTEM_FIELDS` (stackra-287) is the one list of system-written fields, keyed by trait name; a new trait that adds

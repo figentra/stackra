@@ -180,6 +180,7 @@ describe("@stackra/database", () => {
       "Aggregate",
       "AppendOnlySubscriber",
       "AppendOnlyWriteError",
+      "CacheInvalidationService",
       "ConstraintViolatedError",
       "Count",
       "CrudService",

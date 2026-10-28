@@ -73,6 +73,12 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
   `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
+- Entity cache (data-layer gap ca5): `entityCacheOf` decides every cached read and `EntityResultCacheAdapter` is the
+  only store (MikroORM's result cache over the bound `Cache`, in the shared namespace through `SHARED_CACHE_CONTEXT`).
+  Only a `{ id }` read with no option, no visibility condition and no transaction is cached, keyed by
+  `CacheKey.of(Model, id, scopeId, scopeNodeId)` so `CacheKey.of(Model, id)` covers every scope's entry; a new cached
+  read keeps all four conditions. `CacheInvalidationService` stays a `ChangeConsumer` by shape: never import
+  @stackra/outbox (it depends on this package). A cache failure never fails a read.
 - Stamps (ADR 0133 d7): `StampSubscriber` and `stampFields` are the only writers of `createdBy`/`updatedBy`, and the
   actor is the running call's, never input. A new native update path (`nativeUpdate`, a query-builder update) spreads
   `stampFields(model, "update")` into its data, as `increment` and `repath` do, and goes through `CrudService`'s

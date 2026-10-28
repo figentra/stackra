@@ -529,6 +529,18 @@ statement to them and reports `{ model, kind, ids, fields }` after it, inside th
 feed sees the rows. A model nobody watches is written exactly as before (one statement, no read). Raw SQL a service
 writes itself is never reported.
 
+## Entity cache
+
+A model with `Cached({ ttl })` (@stackra/model) is read through the shared `Cache` by `findOne` and `findOneOrFail`
+when the read is `{ id }` alone, with no option, no visibility condition and no running transaction (a writer always
+reads the row fresh). The entry sits in the shared cache namespace under
+`CacheKey.of(Model, id, scopeId, scopeNodeId)` for `ttl`, through MikroORM's result cache
+(`EntityResultCacheAdapter`, set by `PostgresDatabaseDriver`), so a hit is hydrated into the unit of work like a read. A
+miss is remembered too. A cache outage reads the database. `CacheInvalidationService` is the outbox change consumer that
+forgets `CacheKey.of(Model, id)` after every committed change of the row, from any writer; gen registers it against each
+`Cached` model with `registerChangeConsumers`. A `Cached` model may not have encrypted fields. Lists and filtered reads
+stay on the database (cache them with a query's `cache` option).
+
 ## Legal holds
 
 Every delete, purge and retention path consults one `HoldRegistry` (ADR 0134, 2026-10-24 amendment), which the
