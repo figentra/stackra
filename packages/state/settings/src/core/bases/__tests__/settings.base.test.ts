@@ -93,7 +93,7 @@ describe("Settings", () => {
 
   it("declares no rule by default and returns the overridden ones", () => {
     class EmptySettings extends Settings({ scopes: [SettingScope.User] }) {}
-    expect(new EmptySettings().rules({} as SettingsRules<EmptySettings>)).toEqual([]);
+    expect(new EmptySettings().rules({} as SettingsRules<never>)).toEqual([]);
     const rule: SettingsRule = { kind: "less_than", a: "tiers.silverFrom", b: "tiers.goldFrom" };
     const r = { lessThan: () => rule } as unknown as SettingsRules<LoyaltyKitSettings>;
     expect(new LoyaltyKitSettings().rules(r)).toEqual([rule]);

@@ -35,13 +35,16 @@ export interface Route<O extends RouteOptions = RouteOptions> {
   readonly "~layoutData": OptionsLayoutData<O>;
 
   /** What the page shows; a redirect (`ctx.redirect`) or a thrown `ctx.notFound()` instead of data. */
-  loader: (ctx: RouteContext<this>) => unknown;
+  // oxlint-disable-next-line typescript/method-signature-style -- an author overrides it as a class method (`override loader(ctx)`), which a property signature refuses
+  loader(ctx: RouteContext<this>): unknown;
 
   /** Handles the page's form: field errors, data for the page, or a redirect. */
-  submit: (ctx: RouteContext<this>) => unknown;
+  // oxlint-disable-next-line typescript/method-signature-style -- an author overrides it as a class method, which a property signature refuses
+  submit(ctx: RouteContext<this>): unknown;
 
   /** The head that depends on the loader's data, over the static `seo`. */
-  meta: (ctx: MetaContext<this>) => Seo;
+  // oxlint-disable-next-line typescript/method-signature-style -- an author overrides it as a class method, which a property signature refuses
+  meta(ctx: MetaContext<this>): Seo;
 }
 
 /**

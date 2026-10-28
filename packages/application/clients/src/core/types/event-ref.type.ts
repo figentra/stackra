@@ -23,7 +23,8 @@ export type EventRef<S extends ZodType = ZodType> = (abstract new () => ShapeIns
   readonly payload: S;
 
   /** Builds a frozen occurrence from the payload, checked by the payload schema (a consumer's inbox calls it). */
-  create: (values: input<S>) => ShapeInstance<output<S>>;
+  // oxlint-disable-next-line typescript/method-signature-style -- a ref of one payload is listed where any ref is taken (`invalidateOn`); only its own inbox calls `create`, with its own payload
+  create(values: input<S>): ShapeInstance<output<S>>;
 
   /** The broadcast channel pattern (`principal.{principalId}.messages`), when the producer declared one. */
   readonly channel?: string;

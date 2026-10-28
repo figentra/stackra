@@ -19,7 +19,8 @@ export interface ImportTarget<T> {
   readonly schema: ZodType<T>;
 
   /** Writes one batch and returns each written record's key and before-image. */
-  upsert: (records: readonly T[]) => Promise<readonly ImportChange[]>;
+  // oxlint-disable-next-line typescript/method-signature-style -- a model's target is passed where any target is taken (`SheetImport<unknown>`); the runner only passes records its own `schema` parsed
+  upsert(records: readonly T[]): Promise<readonly ImportChange[]>;
 
   /** Reverts the changes of one batch. */
   revert: (changes: readonly ImportChange[]) => Promise<void>;

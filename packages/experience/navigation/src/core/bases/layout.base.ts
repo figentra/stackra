@@ -27,7 +27,8 @@ export interface Layout<O extends LayoutOptions = LayoutOptions> {
   readonly "~options": O;
 
   /** What every child shares; a redirect instead of data sends the visitor elsewhere before any child loads. */
-  loader: (ctx: RouteContext<this>) => unknown;
+  // oxlint-disable-next-line typescript/method-signature-style -- an author overrides it as a class method (`override loader(ctx)`), which a property signature refuses
+  loader(ctx: RouteContext<this>): unknown;
 }
 
 /**
