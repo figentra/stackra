@@ -35,7 +35,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 
 ## This package
 
-- A new capability: a `Capability` case, a facet on `Platform` with its type, a row in `CAPABILITY_FACETS`, and an
+- A new capability: a `PlatformCapability` case, a facet on `Platform` with its type, a row in `CAPABILITY_FACETS`, and an
   implementation in the memory, web (and so desktop) and Expo drivers. A code used only to refuse a peripheral or a
   window call (`print`, `serial`, `card_terminal`, `window`) needs the case only.
 - `KioskMode` and `SecondScreen` are ports of their own (not `Platform` facets): main-process mechanisms with Electron
@@ -58,7 +58,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 
 | Data                   | Where                              | Handling                                                         |
 | ---------------------- | ---------------------------------- | ---------------------------------------------------------------- |
-| Push tokens            | `PushTransport.register()`         | Per-device addresses; handed to the devices module, never logged |
+| Push tokens            | `PlatformPushTransport.register()`         | Per-device addresses; handed to the devices module, never logged |
 | Shared payloads        | IndexedDB `share_inbox`            | On the device only; read once by the share page                  |
 | Picked folder paths    | the app disk (`platform/folders/`) | On the user's machine only                                       |
 | `TURNSTILE_SECRET_KEY` | `SecretStore`                      | Read by name, sent only to Cloudflare, never logged              |

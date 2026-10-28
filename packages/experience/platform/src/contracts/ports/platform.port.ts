@@ -5,7 +5,7 @@
  *          capability, and a call the target or device cannot honour resolves a typed refusal instead of throwing.
  * Boundary: an abstract class that is its own token, keyed `platform.Platform`; a driver per target implements it
  *           with `extends Driver(Platform)` (memory, web, Electron). This leaf entry imports nothing else from the
- *           package, so `has` takes a capability code as a string: a `Capability` value from `.` is one.
+ *           package, so `has` takes a capability code as a string: a `PlatformCapability` value from `.` is one.
  * Runtime: isomorphic
  * Governing contract: ADR 0250 (decisions 1 to 3); ADR 0281 (decision 2: the capability matrix); ADR 0294 (decisions
  *                     15, 16 and 17); registry A3 (`Platform` from `./contracts` only).
@@ -27,7 +27,7 @@ import type { ShareTargetCapability } from "#contracts/types/share-target-capabi
  *
  * @example
  * const platform = useContainer().get(Platform);
- * if (platform.has(Capability.LocalNotifications)) await platform.notifications.requestPermission();
+ * if (platform.has(PlatformCapability.LocalNotifications)) await platform.notifications.requestPermission();
  * const isOnline = useSignal(platform.network.isOnline);
  */
 export abstract class Platform extends Port {
@@ -61,6 +61,6 @@ export abstract class Platform extends Port {
   /** The install prompt (capability `install_prompt`). */
   abstract readonly install: InstallCapability;
 
-  /** Whether the target offers `capability` (a `Capability` code) at all; a device may still lack it at run time. */
+  /** Whether the target offers `capability` (a `PlatformCapability` code) at all; a device may still lack it at run time. */
   abstract has(capability: string): boolean;
 }

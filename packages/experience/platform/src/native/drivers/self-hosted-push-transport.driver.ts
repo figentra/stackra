@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `SelfHostedPushTransportDriver` (`platform.push.provider: "self_hosted"`), the `PushTransport` driver for
+ * Purpose: `SelfHostedPushTransportDriver` (`platform.push.provider: "self_hosted"`), the `PlatformPushTransport` driver for
  *          an app that sends pushes through its own APNs and FCM credentials instead of Expo's service: the
  *          permission through expo-notifications and the native device token.
  * Boundary: device only. The provider is `apns` on iOS and `fcm` on Android, so the notifications service knows which
@@ -14,11 +14,11 @@ import * as Notifications from "expo-notifications";
 import { Linking } from "react-native";
 
 import type { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { PushRegistration } from "#contracts/types/push-registration.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 import { readPushPermission } from "#native/functions/read-push-permission.function";
 import { requestPushPermission } from "#native/functions/request-push-permission.function";
@@ -29,7 +29,7 @@ import { requestPushPermission } from "#native/functions/request-push-permission
  * @example
  * const registration = await transport.register(); // { ok: true, data: { provider: "fcm", token: "..." } }
  */
-export class SelfHostedPushTransportDriver extends Driver(PushTransport) {
+export class SelfHostedPushTransportDriver extends Driver(PlatformPushTransport) {
   /** The push configuration (`iosProvisional`). */
   private readonly config: PushConfig;
 
@@ -59,7 +59,7 @@ export class SelfHostedPushTransportDriver extends Driver(PushTransport) {
   /** The native device token, once the permission is granted. */
   async register(): Promise<CapabilityResult<PushRegistration>> {
     if ((await readPushPermission()) !== "granted")
-      return refuse(Capability.Push, "permission_denied");
+      return refuse(PlatformCapability.Push, "permission_denied");
     const token = await Notifications.getDevicePushTokenAsync();
     return {
       ok: true,

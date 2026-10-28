@@ -13,7 +13,7 @@
  *                     (decision 1).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import type { PeripheralsConfig } from "#config/peripherals.config";
@@ -46,14 +46,14 @@ export class EscposKitchenPrinterDriver extends Driver(KitchenPrinter) {
   /** Opens the connection to `station`'s printer and sends nothing. */
   async probe(station: string): Promise<CapabilityResult> {
     const printer = this.printerOf(station);
-    if (printer === undefined) return refuse(Capability.Print, "unavailable");
+    if (printer === undefined) return refuse(PlatformCapability.Print, "unavailable");
     return this.send(printer.address, new Uint8Array(0));
   }
 
   /** Prints the ticket on its station's printer, cuts, and beeps. */
   async print(ticket: KitchenTicket): Promise<CapabilityResult<PrintedReceipt>> {
     const printer = this.printerOf(ticket.station);
-    if (printer === undefined) return refuse(Capability.Print, "unavailable");
+    if (printer === undefined) return refuse(PlatformCapability.Print, "unavailable");
     const sent = await this.send(printer.address, escposKitchenTicket(ticket, printer.buzz));
     if (!sent.ok) return sent;
     return { ok: true, data: { printer: printer.name, orderId: ticket.orderId } };
@@ -76,7 +76,7 @@ export class EscposKitchenPrinterDriver extends Driver(KitchenPrinter) {
     } catch (error) {
       const code = (error as { readonly code?: unknown }).code;
       return refuse(
-        Capability.Print,
+        PlatformCapability.Print,
         code === "EACCES" || code === "EPERM" ? "permission_denied" : "unavailable",
       );
     }

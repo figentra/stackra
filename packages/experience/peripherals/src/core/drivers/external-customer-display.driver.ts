@@ -13,7 +13,7 @@
  *                     (decision 3).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { CustomerDisplay } from "#contracts/ports/customer-display.port";
@@ -56,13 +56,13 @@ export class ExternalCustomerDisplayDriver extends Driver(CustomerDisplay) {
     const module = (globalThis as ExpoGlobal).expo?.modules?.["StackraCustomerDisplay"] as
       | CustomerDisplayNativeModule
       | undefined;
-    if (module === undefined) return refuse(Capability.Window, "unavailable");
+    if (module === undefined) return refuse(PlatformCapability.Window, "unavailable");
     try {
-      if (!(await module.isAvailable())) return refuse(Capability.Window, "unavailable");
+      if (!(await module.isAvailable())) return refuse(PlatformCapability.Window, "unavailable");
       await work(module);
       return { ok: true, data: undefined };
     } catch {
-      return refuse(Capability.Window, "unavailable");
+      return refuse(PlatformCapability.Window, "unavailable");
     }
   }
 }

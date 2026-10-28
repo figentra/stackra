@@ -17,7 +17,7 @@ import { vi } from "vitest";
 import { WebPlatformDriver } from "#browser/drivers/web-platform.driver";
 import { Platform } from "#contracts/ports/platform.port";
 import { putSharedPayload } from "#core/functions/put-shared-payload.function";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 
 /** Defines `value` as `navigator[name]` for one test. */
 function stubNavigator(name: string, value: unknown): void {
@@ -33,7 +33,7 @@ describe("WebPlatformDriver", () => {
   it("is a Platform whose online state follows the browser", () => {
     const platform = new WebPlatformDriver();
     expect(platform).toBeInstanceOf(Platform);
-    expect(platform.has(Capability.Network)).toBe(true);
+    expect(platform.has(PlatformCapability.Network)).toBe(true);
     window.dispatchEvent(new Event("offline"));
     expect(platform.network.isOnline.get()).toBe(false);
     window.dispatchEvent(new Event("online"));
@@ -43,8 +43,8 @@ describe("WebPlatformDriver", () => {
   it("offers only the network during a server render", () => {
     vi.stubGlobal("window", undefined);
     const platform = new WebPlatformDriver();
-    expect(platform.has(Capability.Network)).toBe(true);
-    expect(platform.has(Capability.Share)).toBe(false);
+    expect(platform.has(PlatformCapability.Network)).toBe(true);
+    expect(platform.has(PlatformCapability.Share)).toBe(false);
   });
 
   it("asks for the notification permission and refuses a denial", async () => {
@@ -122,7 +122,7 @@ describe("WebPlatformDriver", () => {
     let consumer: ((params: { files: { getFile(): Promise<File> }[] }) => void) | undefined;
     vi.stubGlobal("launchQueue", { setConsumer: (next: typeof consumer) => (consumer = next) });
     const platform = new WebPlatformDriver();
-    expect(platform.has(Capability.FileHandling)).toBe(true);
+    expect(platform.has(PlatformCapability.FileHandling)).toBe(true);
     const file = new File(["png"], "photo.png");
     consumer?.({ files: [{ getFile: async () => file }] });
     await vi.waitFor(() => expect(platform.fileHandling.launched.get()).toEqual([file]));

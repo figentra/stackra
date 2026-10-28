@@ -10,7 +10,7 @@
  *                     STA-965.
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { LabelScale } from "#contracts/ports/label-scale.port";
@@ -40,7 +40,7 @@ export class MemoryLabelScaleDriver extends Driver(LabelScale) {
 
   /** Answers unless `scale` is offline. */
   async probe(scale: string): Promise<CapabilityResult> {
-    if (this.offline.has(scale)) return refuse(Capability.Network, "unavailable");
+    if (this.offline.has(scale)) return refuse(PlatformCapability.Network, "unavailable");
     return { ok: true, data: undefined };
   }
 
@@ -49,7 +49,7 @@ export class MemoryLabelScaleDriver extends Driver(LabelScale) {
     scale: string,
     items: readonly LabelScaleItem[],
   ): Promise<CapabilityResult<readonly string[]>> {
-    if (this.offline.has(scale)) return refuse(Capability.Network, "unavailable");
+    if (this.offline.has(scale)) return refuse(PlatformCapability.Network, "unavailable");
     const held = this.scales.get(scale) ?? new Map<string, LabelScaleItem>();
     for (const item of items) held.set(item.itemCode, item);
     this.scales.set(scale, held);
@@ -58,7 +58,7 @@ export class MemoryLabelScaleDriver extends Driver(LabelScale) {
 
   /** Removes the items with `itemCodes` from `scale`. */
   async remove(scale: string, itemCodes: readonly string[]): Promise<CapabilityResult> {
-    if (this.offline.has(scale)) return refuse(Capability.Network, "unavailable");
+    if (this.offline.has(scale)) return refuse(PlatformCapability.Network, "unavailable");
     for (const itemCode of itemCodes) this.scales.get(scale)?.delete(itemCode);
     return { ok: true, data: undefined };
   }

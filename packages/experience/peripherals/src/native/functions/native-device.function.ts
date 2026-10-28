@@ -20,7 +20,7 @@ interface ExpoGlobal {
  *
  * @example
  * const module = nativeDevice(POS_DEVICE_FAMILIES.sunmi);
- * if (module === undefined) return refuse(Capability.Print, "unavailable");
+ * if (module === undefined) return refuse(PlatformCapability.Print, "unavailable");
  */
 export function nativeDevice(family: PosDeviceFamily): PosDeviceNativeModule | undefined {
   return (globalThis as ExpoGlobal).expo?.modules?.[family.module] as

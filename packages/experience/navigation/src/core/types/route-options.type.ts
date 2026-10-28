@@ -10,7 +10,7 @@
  */
 import type { AnyClass } from "@stackra/container";
 import type { FlagRef } from "@stackra/feature-flags";
-import type { Capability } from "@stackra/platform";
+import type { PlatformCapability } from "@stackra/platform";
 import type { Seo } from "@stackra/seo";
 import type { Schema } from "@stackra/validation";
 
@@ -44,8 +44,8 @@ export interface RouteOptions {
   /** Hides the route and every entry point to it while the flag is off. */
   readonly flag?: FlagRef;
 
-  /** Capabilities the route needs: `{ scanner: Capability.Required }` fails gen for a target without the scanner. */
-  readonly capability?: Partial<Record<Capability, Capability>>;
+  /** Capabilities the route needs: `{ scanner: PlatformCapability.Required }` fails gen for a target without the scanner. */
+  readonly capability?: Partial<Record<PlatformCapability, PlatformCapability>>;
 
   /** The HTTP status the page answers with (`404` for a catch-all). */
   readonly status?: number;

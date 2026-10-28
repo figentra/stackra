@@ -10,15 +10,15 @@
  * Governing contract: ADR 0250 (decisions 2 and 3); ADR 0281 (decision 2); ADR 0251 (decision 3: context isolation,
  *                     only the preload's API).
  */
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { WebPlatformDriver } from "#browser/drivers/web-platform.driver";
 
 /** What the desktop shell adds to the web set. */
 const DESKTOP: ReadonlySet<string> = new Set([
-  Capability.Window,
-  Capability.Tray,
-  Capability.Updates,
-  Capability.FilesSave,
+  PlatformCapability.Window,
+  PlatformCapability.Tray,
+  PlatformCapability.Updates,
+  PlatformCapability.FilesSave,
 ]);
 
 /**

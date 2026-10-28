@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `MemoryPushTransportDriver`, the `PushTransport` driver that registers nothing real: the `memory` candidate
+ * Purpose: `MemoryPushTransportDriver`, the `PlatformPushTransport` driver that registers nothing real: the `memory` candidate
  *          (`platform.push.provider: "memory"`), the driver of tests, of a dev build without push credentials and of
  *          the testing module.
  * Boundary: no device is touched. The permission starts at `prompt`, a request grants it unless a test set `denied`,
@@ -11,11 +11,11 @@
  */
 import { Driver } from "@stackra/container";
 
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { PushRegistration } from "#contracts/types/push-registration.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 
 /**
@@ -26,7 +26,7 @@ import { refuse } from "#core/functions/refuse.function";
  * push.status = "denied";
  * await push.register(); // { ok: false, error: { code: "permission_denied", capability: "push" } }
  */
-export class MemoryPushTransportDriver extends Driver(PushTransport) {
+export class MemoryPushTransportDriver extends Driver(PlatformPushTransport) {
   /** Where the permission stands; a test sets it directly. */
   status: PermissionStatus = "prompt";
 
@@ -51,7 +51,7 @@ export class MemoryPushTransportDriver extends Driver(PushTransport) {
 
   /** The fixed `memory` token once granted. */
   async register(): Promise<CapabilityResult<PushRegistration>> {
-    if (this.status !== "granted") return refuse(Capability.Push, "permission_denied");
+    if (this.status !== "granted") return refuse(PlatformCapability.Push, "permission_denied");
     return { ok: true, data: { provider: "memory", token: "memory" } };
   }
 }

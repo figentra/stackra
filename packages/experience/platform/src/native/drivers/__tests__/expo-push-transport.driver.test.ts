@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import { ExpoPushTransportDriver } from "#native/drivers/expo-push-transport.driver";
 
 const mocks = vi.hoisted(() => ({
@@ -41,7 +41,7 @@ describe("ExpoPushTransportDriver", () => {
   it("refuses to register without the permission", async () => {
     mocks.getPermissionsAsync.mockResolvedValue({ granted: false, status: "undetermined" });
     const transport = new ExpoPushTransportDriver(buildConfig(PushConfig));
-    expect(transport).toBeInstanceOf(PushTransport);
+    expect(transport).toBeInstanceOf(PlatformPushTransport);
     expect(await transport.permission()).toBe("prompt");
     expect(await transport.register()).toEqual({
       ok: false,

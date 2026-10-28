@@ -8,7 +8,7 @@
  * Governing contract: ADR 0339 (decision 1); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { CustomerDisplay } from "#contracts/ports/customer-display.port";
@@ -35,13 +35,13 @@ export class MemoryCustomerDisplayDriver extends Driver(CustomerDisplay) {
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Window, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Window, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Shows `view` and records it. */
   async show(view: CustomerDisplayView): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Window, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Window, "unavailable");
     this.current = view;
     this.shown.push(view);
     return { ok: true, data: undefined };
@@ -49,7 +49,7 @@ export class MemoryCustomerDisplayDriver extends Driver(CustomerDisplay) {
 
   /** Clears the display. */
   async clear(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Window, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Window, "unavailable");
     this.current = null;
     return { ok: true, data: undefined };
   }

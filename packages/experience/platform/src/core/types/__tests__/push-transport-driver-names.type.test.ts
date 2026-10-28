@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: type tests of the `PushTransport` `DriverRegistry` entry: `DriverName<PushTransport>` is exactly the
+ * Purpose: type tests of the `PlatformPushTransport` `DriverRegistry` entry: `DriverName<PlatformPushTransport>` is exactly the
  *          package's four driver names.
  * Boundary: test only; types only.
  * Runtime: node (vitest)
@@ -10,11 +10,11 @@ import "#core/types/push-transport-driver-names.type";
 import type { DriverName } from "@stackra/container";
 import { describe, expectTypeOf, it } from "@stackra/testing";
 
-import type { PushTransport } from "#contracts/ports/push-transport.port";
+import type { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 
-describe("DriverRegistry: platform.PushTransport", () => {
-  it("narrows DriverName<PushTransport> to the package's drivers", () => {
-    expectTypeOf<DriverName<PushTransport>>().toEqualTypeOf<
+describe("DriverRegistry: platform.PlatformPushTransport", () => {
+  it("narrows DriverName<PlatformPushTransport> to the package's drivers", () => {
+    expectTypeOf<DriverName<PlatformPushTransport>>().toEqualTypeOf<
       "memory" | "web" | "expo" | "self_hosted"
     >();
   });

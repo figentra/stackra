@@ -23,7 +23,7 @@ export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.d
 export { MemorySecondScreenDriver } from "#core/drivers/memory-second-screen.driver";
 export { CachePreset } from "#core/enums/cache-preset.enum";
 export { CacheStrategy } from "#core/enums/cache-strategy.enum";
-export { Capability } from "#core/enums/capability.enum";
+export { PlatformCapability } from "#core/enums/platform-capability.enum";
 export { DesktopMode } from "#core/enums/desktop-mode.enum";
 export { FileLaunchType } from "#core/enums/file-launch-type.enum";
 export { InstallMoment } from "#core/enums/install-moment.enum";

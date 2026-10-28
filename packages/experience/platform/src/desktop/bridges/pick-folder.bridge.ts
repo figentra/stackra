@@ -13,7 +13,7 @@
 import type { FileSystem } from "@stackra/filesystem/contracts";
 import type { OpenDialogOptions } from "electron";
 
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
 import type { PickFolderInput } from "#desktop/types/pick-folder-input.type";
 import type { PickFolderOutput } from "#desktop/types/pick-folder-output.type";
@@ -30,7 +30,7 @@ const PURPOSE = /^[a-z][a-z0-9_]*$/;
  */
 export class PickFolderBridge extends Bridge({
   key: "files.pick_folder",
-  capability: Capability.FilesSave,
+  capability: PlatformCapability.FilesSave,
 }) {
   /** The app's own disk (`ElectronFileSystemDriver`). */
   private readonly files: FileSystem;

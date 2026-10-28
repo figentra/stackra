@@ -9,7 +9,7 @@
  *                     drivers); ADR 0449 (decision 1).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
@@ -34,13 +34,13 @@ export class MemoryKitchenPrinterDriver extends Driver(KitchenPrinter) {
 
   /** Answers while present, for any station. */
   async probe(_station: string): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Records the ticket. */
   async print(ticket: KitchenTicket): Promise<CapabilityResult<PrintedReceipt>> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     this.printed.push(ticket);
     return { ok: true, data: { printer: "memory", orderId: ticket.orderId } };
   }

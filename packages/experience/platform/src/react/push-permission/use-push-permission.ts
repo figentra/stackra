@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `usePushPermission()`, the push permission for the settings switch: where it stands, a request, and a way
- *          to the OS settings; `null` on a target that binds no `PushTransport`, so the switch is not rendered.
+ *          to the OS settings; `null` on a target that binds no `PlatformPushTransport`, so the switch is not rendered.
  * Boundary: reads the permission once on mount and after each request; it never registers the device (the push
  *           context does). A permission changed in the OS settings shows after the next mount.
  * Runtime: isomorphic
@@ -10,7 +10,7 @@
 import { useContainer } from "@stackra/container/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { PushPermission } from "#react/push-permission/push-permission.type";
 
@@ -23,7 +23,7 @@ import type { PushPermission } from "#react/push-permission/push-permission.type
  */
 export function usePushPermission(): PushPermission | null {
   const container = useContainer();
-  const transport = container.has(PushTransport) ? container.get(PushTransport) : null;
+  const transport = container.has(PlatformPushTransport) ? container.get(PlatformPushTransport) : null;
   const [status, setStatus] = useState<PermissionStatus>("prompt");
 
   useEffect(() => {

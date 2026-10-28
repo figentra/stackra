@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: it exports the three ports (`CaptchaVerifier`,
- *          `Platform`, `PushTransport`, which the generated wiring imports) and the types their signatures name.
+ *          `Platform`, `PlatformPushTransport`, which the generated wiring imports) and the types their signatures name.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias. Type exports are checked by type.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); registry A3 (`Platform` here only).
@@ -24,7 +24,7 @@ describe("@stackra/platform/contracts", () => {
       "CaptchaVerifier",
       "KioskMode",
       "Platform",
-      "PushTransport",
+      "PlatformPushTransport",
       "SecondScreen",
     ]);
   });

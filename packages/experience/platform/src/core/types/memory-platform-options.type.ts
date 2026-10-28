@@ -10,15 +10,15 @@
  */
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { SharedPayload } from "#contracts/types/shared-payload.type";
-import type { Capability } from "#core/enums/capability.enum";
+import type { PlatformCapability } from "#core/enums/platform-capability.enum";
 
 /** The settings of a memory platform. */
 export interface MemoryPlatformOptions {
   /** Exactly the capabilities offered; network only when absent. */
-  readonly capabilities?: readonly Capability[];
+  readonly capabilities?: readonly PlatformCapability[];
 
   /** The permission each capability answers with; `prompt` when absent. */
-  readonly permissions?: Readonly<Partial<Record<Capability, PermissionStatus>>>;
+  readonly permissions?: Readonly<Partial<Record<PlatformCapability, PermissionStatus>>>;
 
   /** Online state; offers `network`. */
   readonly network?: { readonly isOnline?: boolean };

@@ -16,10 +16,10 @@
  * Governing contract: ADR 0377 (decisions 1 and 2); ADR 0339 (decision 1 and open question 1); ADR 0253 (decisions 2
  *                     to 4).
  */
+import { PlatformCapability } from "@stackra/platform";
 import type { Socket } from "node:net";
 
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { TerminalState } from "#contracts/enums/terminal-state.enum";
@@ -88,21 +88,21 @@ export class EcrCardTerminalDriver extends Driver(CardTerminal) {
   /** Pairs to the terminal at `pairing.address` once a connection opens. */
   async pair(pairing: TerminalPairing): Promise<CapabilityResult<PairedTerminal>> {
     if (pairing.address === null || !pairing.address.startsWith("tcp://"))
-      return refuse(Capability.CardTerminal, "unavailable");
+      return refuse(PlatformCapability.CardTerminal, "unavailable");
     this.close();
     this.paired = pairing;
     try {
       await this.connect();
     } catch {
       this.paired = null;
-      return refuse(Capability.CardTerminal, "unavailable");
+      return refuse(PlatformCapability.CardTerminal, "unavailable");
     }
     return this.status();
   }
 
   /** Busy while an exchange runs; otherwise ready when a connection opens, offline when it does not. */
   async status(): Promise<CapabilityResult<PairedTerminal>> {
-    if (this.paired === null) return refuse(Capability.CardTerminal, "unavailable");
+    if (this.paired === null) return refuse(PlatformCapability.CardTerminal, "unavailable");
     const { terminalId, provider } = this.paired;
     let state: TerminalState = TerminalState.Busy;
     if (this.running === 0) {

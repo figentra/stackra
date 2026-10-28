@@ -14,7 +14,7 @@ import { vi } from "vitest";
 
 import { WebPushTransportDriver } from "#browser/drivers/web-push-transport.driver";
 import { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 
 /** A push manager that records the subscribe call. */
 function stubPush(existing: object | null = null) {
@@ -45,7 +45,7 @@ afterEach(() => {
 describe("WebPushTransportDriver", () => {
   it("refuses where the browser has no Web Push", async () => {
     const transport = new WebPushTransportDriver(buildConfig(PushConfig));
-    expect(transport).toBeInstanceOf(PushTransport);
+    expect(transport).toBeInstanceOf(PlatformPushTransport);
     expect(await transport.register()).toEqual({
       ok: false,
       error: { code: "unavailable", capability: "push" },

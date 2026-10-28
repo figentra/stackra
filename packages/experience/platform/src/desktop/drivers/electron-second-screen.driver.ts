@@ -17,7 +17,7 @@ import type { BrowserWindow } from "electron";
 
 import { SecondScreen } from "#contracts/ports/second-screen.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 
 /**
@@ -37,7 +37,7 @@ export class ElectronSecondScreenDriver extends Driver(SecondScreen) {
     const primary = screen.getPrimaryDisplay();
     return screen.getAllDisplays().some((display) => display.id !== primary.id)
       ? { ok: true, data: undefined }
-      : refuse(Capability.Window, "unavailable");
+      : refuse(PlatformCapability.Window, "unavailable");
   }
 
   /**
@@ -53,7 +53,7 @@ export class ElectronSecondScreenDriver extends Driver(SecondScreen) {
     const external = screen.getAllDisplays().find((display) => display.id !== primary.id);
     const main = BrowserWindow.getAllWindows().find((window) => window !== this.window);
     const base = main?.webContents.getURL() ?? "";
-    if (external === undefined || base === "") return refuse(Capability.Window, "unavailable");
+    if (external === undefined || base === "") return refuse(PlatformCapability.Window, "unavailable");
     const url = new URL(route, base).href;
     if (this.window === undefined || this.window.isDestroyed()) {
       const { x, y, width, height } = external.bounds;

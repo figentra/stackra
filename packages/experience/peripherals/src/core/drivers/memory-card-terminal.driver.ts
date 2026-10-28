@@ -9,7 +9,7 @@
  * Governing contract: ADR 0339 (decision 1 and open question 1); ADR 0266 (memory drivers first); ADR 0269.
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { TerminalState } from "#contracts/enums/terminal-state.enum";
@@ -38,14 +38,14 @@ export class MemoryCardTerminalDriver extends Driver(CardTerminal) {
 
   /** Pairs while reachable. */
   async pair(pairing: TerminalPairing): Promise<CapabilityResult<PairedTerminal>> {
-    if (!this.isReachable) return refuse(Capability.CardTerminal, "unavailable");
+    if (!this.isReachable) return refuse(PlatformCapability.CardTerminal, "unavailable");
     this.paired = pairing;
     return this.status();
   }
 
   /** The paired terminal and `state`. */
   async status(): Promise<CapabilityResult<PairedTerminal>> {
-    if (this.paired === null) return refuse(Capability.CardTerminal, "unavailable");
+    if (this.paired === null) return refuse(PlatformCapability.CardTerminal, "unavailable");
     const { terminalId, provider } = this.paired;
     return { ok: true, data: { terminalId, provider, state: this.state } };
   }

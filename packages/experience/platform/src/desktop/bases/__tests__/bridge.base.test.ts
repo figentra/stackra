@@ -9,13 +9,13 @@
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
 
 /** A bridge with one dependency. */
 class EchoBridge extends Bridge({
   key: "echo.say",
-  capability: Capability.Window,
+  capability: PlatformCapability.Window,
 }) {
   readonly prefix: string;
 

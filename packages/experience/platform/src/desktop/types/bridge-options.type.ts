@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 20, as amended); ADR 0251 (decisions 1 and 2).
  */
-import type { Capability } from "#core/enums/capability.enum";
+import type { PlatformCapability } from "#core/enums/platform-capability.enum";
 
 /** The options of a bridge class. */
 export interface BridgeOptions {
@@ -16,5 +16,5 @@ export interface BridgeOptions {
   readonly key: string;
 
   /** The capability the bridge provides; the renderer's driver offers it only where the bridge is wired. */
-  readonly capability?: Capability;
+  readonly capability?: PlatformCapability;
 }

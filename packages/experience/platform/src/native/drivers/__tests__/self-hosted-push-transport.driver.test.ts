@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import { SelfHostedPushTransportDriver } from "#native/drivers/self-hosted-push-transport.driver";
 
 const mocks = vi.hoisted(() => ({
@@ -35,7 +35,7 @@ describe("SelfHostedPushTransportDriver", () => {
   it("refuses to register without the permission", async () => {
     mocks.getPermissionsAsync.mockResolvedValue({ granted: false, status: "denied" });
     const transport = new SelfHostedPushTransportDriver(buildConfig(PushConfig));
-    expect(transport).toBeInstanceOf(PushTransport);
+    expect(transport).toBeInstanceOf(PlatformPushTransport);
     expect((await transport.register()).ok).toBe(false);
   });
 

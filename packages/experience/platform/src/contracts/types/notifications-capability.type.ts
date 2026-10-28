@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `NotificationsCapability`, the `notifications` facet (capability `local_notifications`): ask for the
  *          permission and show a notification while the app runs (ADR 0255 decision 3). Remote push is the
- *          `PushTransport` port.
+ *          `PlatformPushTransport` port.
  * Boundary: a type only. Both calls resolve a `CapabilityResult`: a target without notifications or a refused
  *           permission is a typed refusal, never an exception.
  * Runtime: isomorphic

@@ -13,7 +13,7 @@ import "#core/types/push-transport-driver-names.type";
 import type { DriverName } from "@stackra/container";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
-import type { PushTransport } from "#contracts/ports/push-transport.port";
+import type { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import { PUSH_CONFIG_SCHEMA } from "#core/constants/push-config-schema.constant";
 import type { NotificationImportance } from "#core/enums/notification-importance.enum";
 import { PromptMoment } from "#core/enums/prompt-moment.enum";
@@ -23,7 +23,7 @@ import { PromptMoment } from "#core/enums/prompt-moment.enum";
  *
  * @example
  * export class PushConfig extends BasePushConfig {
- *   override provider: DriverName<PushTransport> = "expo";
+ *   override provider: DriverName<PlatformPushTransport> = "expo";
  *   override askOn: PromptMoment = PromptMoment.FirstSession;
  * }
  */
@@ -52,7 +52,7 @@ export class PushOptions extends Schema {
   }[] = [];
 
   /** The push transport driver; `memory` registers nothing real. */
-  provider: DriverName<PushTransport> = "memory";
+  provider: DriverName<PlatformPushTransport> = "memory";
 
   /** Show a banner for a notification that arrives while the app is open. */
   foregroundBanner = true;

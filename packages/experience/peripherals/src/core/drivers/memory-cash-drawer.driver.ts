@@ -8,7 +8,7 @@
  * Governing contract: ADR 0253 (decision 4); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { CashDrawer } from "#contracts/ports/cash-drawer.port";
@@ -31,13 +31,13 @@ export class MemoryCashDrawerDriver extends Driver(CashDrawer) {
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Counts the open. */
   async open(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     this.opened += 1;
     return { ok: true, data: undefined };
   }

@@ -9,7 +9,7 @@
  * Governing contract: ADR 0251 (decisions 1 to 3, as amended by 0294); ADR 0253 (decision 4); ADR 0250 (decision 3);
  *                     registry A13 (the Bridge kind from @stackra/platform).
  */
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import { Bridge } from "@stackra/platform/desktop";
 
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
@@ -36,7 +36,7 @@ const MAX_LINE = 256;
  */
 export class PrintReceiptBridge extends Bridge({
   key: "receipt.print",
-  capability: Capability.Print,
+  capability: PlatformCapability.Print,
 }) {
   /** The printer the wiring binds (`peripherals.printer`). */
   private readonly printer: ReceiptPrinter;

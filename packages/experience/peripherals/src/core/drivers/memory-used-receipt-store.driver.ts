@@ -9,7 +9,7 @@
  * Governing contract: ADR 0429 (decision 3); ADR 0449 (decision 4); ADR 0266 (memory drivers first); ADR 0269.
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { UsedReceiptStore } from "#contracts/ports/used-receipt-store.port";
@@ -35,7 +35,7 @@ export class MemoryUsedReceiptStoreDriver extends Driver(UsedReceiptStore) {
 
   /** Marks the receipt used; true the first time. */
   async claim(receiptId: string, _until: Date): Promise<CapabilityResult<boolean>> {
-    if (!this.isPresent) return refuse(Capability.Network, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Network, "unavailable");
     if (this.used.has(receiptId)) return { ok: true, data: false };
     this.used.add(receiptId);
     if (this.used.size > REMEMBERED) this.used.delete(this.used.values().next().value as string);
@@ -44,7 +44,7 @@ export class MemoryUsedReceiptStoreDriver extends Driver(UsedReceiptStore) {
 
   /** Forgets the receipt. */
   async release(receiptId: string): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Network, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Network, "unavailable");
     this.used.delete(receiptId);
     return { ok: true, data: undefined };
   }

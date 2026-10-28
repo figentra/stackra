@@ -12,7 +12,7 @@ import type { CapabilityRefusal } from "@stackra/platform/contracts";
  * The failed result of a call to `capability`.
  *
  * @example
- * if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+ * if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
  */
 export function refuse(
   capability: string,

@@ -10,7 +10,7 @@
  * Governing contract: ADR 0460 (iMin SDK); ADR 0442 (decision 4); ADR 0253 (decision 4); ADR 0250 (decision 3).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
@@ -30,7 +30,7 @@ export class IminBarcodeScannerDriver extends Driver(BarcodeScanner) {
   /** Answers while the app links the module. */
   async probe(): Promise<CapabilityResult> {
     if (nativeDevice(POS_DEVICE_FAMILIES.imin) === undefined)
-      return refuse(Capability.Scanner, "unavailable");
+      return refuse(PlatformCapability.Scanner, "unavailable");
     return { ok: true, data: undefined };
   }
 

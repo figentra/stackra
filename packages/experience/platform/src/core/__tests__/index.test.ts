@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every symbol the template and its generated samples import from
- *          `@stackra/platform` (the config vocabulary, `Capability`, the configurations and `PushConfig$`), the kiosk launch step, the
- *          shipped schemas of the other two configurations, the memory drivers, and not `Platform` (registry A3).
+ *          `@stackra/platform` (the config vocabulary, `PlatformCapability`, the configurations and `PushConfig$`),
+ *          the kiosk launch step, the shipped schemas of the other two configurations, the memory drivers, and not `Platform` (registry A3).
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); the STA-348 registry row.
@@ -17,7 +17,6 @@ describe("@stackra/platform", () => {
       [
         "CachePreset",
         "CacheStrategy",
-        "Capability",
         "DesktopConfig",
         "DesktopConfig$",
         "DesktopMode",
@@ -34,6 +33,7 @@ describe("@stackra/platform", () => {
         "NotificationImportance",
         "OverlayAnchor",
         "OverlayStyle",
+        "PlatformCapability",
         "PromptMoment",
         "PushConfig",
         "PushConfig$",

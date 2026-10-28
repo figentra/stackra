@@ -11,15 +11,15 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { CAPABILITY_FACETS } from "#core/constants/capability-facets.constant";
 import { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 
 describe("CAPABILITY_FACETS", () => {
   it("covers every facet of the port with a capability code", () => {
     const platform = new MemoryPlatformDriver();
     for (const [facet, capability] of Object.entries(CAPABILITY_FACETS)) {
       expect(platform).toHaveProperty(facet);
-      expect(Enum.values(Capability)).toContain(capability);
-      expect([Capability.Required, Capability.Optional]).not.toContain(capability);
+      expect(Enum.values(PlatformCapability)).toContain(capability);
+      expect([PlatformCapability.Required, PlatformCapability.Optional]).not.toContain(capability);
     }
     expect(CAPABILITY_FACETS.notifications).toBe("local_notifications");
   });

@@ -11,7 +11,7 @@ import { Driver } from "@stackra/container";
 
 import { SecondScreen } from "#contracts/ports/second-screen.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 
 /**
@@ -31,7 +31,7 @@ export class MemorySecondScreenDriver extends Driver(SecondScreen) {
 
   /** Answers while a display is connected. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.hasDisplay) return refuse(Capability.Window, "unavailable");
+    if (!this.hasDisplay) return refuse(PlatformCapability.Window, "unavailable");
     return { ok: true, data: undefined };
   }
 
@@ -43,7 +43,7 @@ export class MemorySecondScreenDriver extends Driver(SecondScreen) {
   async open(route: string): Promise<CapabilityResult> {
     if (!route.startsWith("/") || route.startsWith("//"))
       throw new TypeError(`SecondScreen.open needs a path of the app, got "${route}"`);
-    if (!this.hasDisplay) return refuse(Capability.Window, "unavailable");
+    if (!this.hasDisplay) return refuse(PlatformCapability.Window, "unavailable");
     this.route = route;
     return { ok: true, data: undefined };
   }

@@ -12,7 +12,7 @@ import type { CapabilityRefusal } from "#contracts/types/capability-refusal.type
  * The failed result of a call to `capability`.
  *
  * @example
- * if (!("Notification" in globalThis)) return refuse(Capability.LocalNotifications, "unavailable");
+ * if (!("Notification" in globalThis)) return refuse(PlatformCapability.LocalNotifications, "unavailable");
  */
 export function refuse(
   capability: string,

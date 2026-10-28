@@ -9,7 +9,7 @@
  */
 import type { SecondScreen } from "#contracts/ports/second-screen.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
 import type { ShowSecondScreenInput } from "#desktop/types/show-second-screen-input.type";
 
@@ -25,7 +25,7 @@ const ROUTE = /^\/(?!\/)[^\s\\]{0,255}$/;
  */
 export class ShowSecondScreenBridge extends Bridge({
   key: "screen.second",
-  capability: Capability.Window,
+  capability: PlatformCapability.Window,
 }) {
   /** The bound second screen. */
   private readonly screen: SecondScreen;

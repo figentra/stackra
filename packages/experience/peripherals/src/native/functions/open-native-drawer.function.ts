@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0442 (decision 4); ADR 0458, ADR 0459, ADR 0460; ADR 0253 (decision 4).
  */
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { refuse } from "#core/functions/refuse.function";
@@ -28,6 +28,6 @@ export async function openNativeDrawer(family: PosDeviceFamily): Promise<Capabil
     await nativeDevice(family)?.openDrawer();
     return { ok: true, data: undefined };
   } catch {
-    return refuse(Capability.Print, "unavailable");
+    return refuse(PlatformCapability.Print, "unavailable");
   }
 }

@@ -18,7 +18,7 @@ describe("PushOptions", () => {
     expect(schemaOf(PushOptions)).toBe(PUSH_CONFIG_SCHEMA);
   });
 
-  it("types provider by the PushTransport driver names", () => {
+  it("types provider by the PlatformPushTransport driver names", () => {
     expectTypeOf<PushOptions["provider"]>().toEqualTypeOf<
       "memory" | "web" | "expo" | "self_hosted"
     >();

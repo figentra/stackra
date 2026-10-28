@@ -9,7 +9,7 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { fakePlatform } from "#testing/functions/fake-platform.function";
 
 describe("fakePlatform", () => {
@@ -26,8 +26,8 @@ describe("fakePlatform", () => {
       fakePlatform({ scanner: { isAvailable: true, permission: "granted" } }).scanner.permission,
     ).toBe("granted");
     const refusing = fakePlatform({
-      capabilities: [Capability.LocalNotifications],
-      permissions: { [Capability.LocalNotifications]: "denied" },
+      capabilities: [PlatformCapability.LocalNotifications],
+      permissions: { [PlatformCapability.LocalNotifications]: "denied" },
     });
     const granted = await refusing.notifications.requestPermission();
     expect(granted.ok || granted.error.code).toBe("permission_denied");

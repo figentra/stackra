@@ -11,7 +11,7 @@
  *                     STA-965.
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { DriveThroughLane } from "#contracts/ports/drive-through-lane.port";
@@ -46,20 +46,20 @@ export class MemoryDriveThroughLaneDriver extends Driver(DriveThroughLane) {
 
   /** Answers unless `lane` is offline. */
   async probe(lane: string): Promise<CapabilityResult> {
-    if (this.offline.has(lane)) return refuse(Capability.Window, "unavailable");
+    if (this.offline.has(lane)) return refuse(PlatformCapability.Window, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Records `view` as what `lane`'s board shows. */
   async confirm(lane: string, view: CustomerDisplayView): Promise<CapabilityResult> {
-    if (this.offline.has(lane)) return refuse(Capability.Window, "unavailable");
+    if (this.offline.has(lane)) return refuse(PlatformCapability.Window, "unavailable");
     this.boards.set(lane, view);
     return { ok: true, data: undefined };
   }
 
   /** Clears `lane`'s board. */
   async clear(lane: string): Promise<CapabilityResult> {
-    if (this.offline.has(lane)) return refuse(Capability.Window, "unavailable");
+    if (this.offline.has(lane)) return refuse(PlatformCapability.Window, "unavailable");
     this.boards.delete(lane);
     return { ok: true, data: undefined };
   }

@@ -10,7 +10,7 @@
  * Governing contract: ADR 0429 (decision 1); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { AccessController } from "#contracts/ports/access-controller.port";
@@ -37,7 +37,7 @@ export class MemoryAccessControllerDriver extends Driver(AccessController) {
   /** Answers while connected. */
   async probe(): Promise<CapabilityResult> {
     // A gate controller hangs off a serial or relay line, the nearest capability the platform names.
-    if (!this.isConnected) return refuse(Capability.Serial, "unavailable");
+    if (!this.isConnected) return refuse(PlatformCapability.Serial, "unavailable");
     return { ok: true, data: undefined };
   }
 
@@ -49,7 +49,7 @@ export class MemoryAccessControllerDriver extends Driver(AccessController) {
 
   /** Counts one opening while connected. */
   async open(): Promise<CapabilityResult> {
-    if (!this.isConnected) return refuse(Capability.Serial, "unavailable");
+    if (!this.isConnected) return refuse(PlatformCapability.Serial, "unavailable");
     this.opened += 1;
     return { ok: true, data: undefined };
   }

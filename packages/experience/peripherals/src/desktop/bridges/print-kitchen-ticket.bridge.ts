@@ -11,7 +11,7 @@
  * Governing contract: ADR 0251 (decisions 1 to 3, as amended by 0294); ADR 0339 (decision 2); ADR 0250 (decision 3);
  *                     ADR 0449 (decision 1); registry A13 (the Bridge kind from @stackra/platform).
  */
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import { Bridge } from "@stackra/platform/desktop";
 
 import type { KitchenPrinter } from "#contracts/ports/kitchen-printer.port";
@@ -48,7 +48,7 @@ function isId(value: unknown): value is string {
  */
 export class PrintKitchenTicketBridge extends Bridge({
   key: "kitchen.print",
-  capability: Capability.Print,
+  capability: PlatformCapability.Print,
 }) {
   /** The kitchen printers the wiring binds (`peripherals.kitchenPrinter`). */
   private readonly printer: KitchenPrinter;

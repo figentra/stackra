@@ -15,7 +15,7 @@ import type { PermissionStatus } from "#contracts/types/permission-status.type";
  * Where the push permission stands on this device.
  *
  * @example
- * if ((await readPushPermission()) !== "granted") return refuse(Capability.Push, "permission_denied");
+ * if ((await readPushPermission()) !== "granted") return refuse(PlatformCapability.Push, "permission_denied");
  */
 export async function readPushPermission(): Promise<PermissionStatus> {
   const settings = await Notifications.getPermissionsAsync();

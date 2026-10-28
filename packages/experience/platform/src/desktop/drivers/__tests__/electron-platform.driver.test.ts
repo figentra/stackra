@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { WebPlatformDriver } from "#browser/drivers/web-platform.driver";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { ElectronPlatformDriver } from "#desktop/drivers/electron-platform.driver";
 
 afterEach(() => {
@@ -22,20 +22,20 @@ describe("ElectronPlatformDriver", () => {
   it("offers the web set only when opened without the preload", () => {
     const platform = new ElectronPlatformDriver();
     expect(platform).toBeInstanceOf(WebPlatformDriver);
-    expect(platform.has(Capability.Network)).toBe(true);
-    expect(platform.has(Capability.Tray)).toBe(false);
+    expect(platform.has(PlatformCapability.Network)).toBe(true);
+    expect(platform.has(PlatformCapability.Tray)).toBe(false);
   });
 
   it("adds the desktop capabilities under the preload", () => {
     vi.stubGlobal("stackra", { invoke: vi.fn(), on: vi.fn() });
     const platform = new ElectronPlatformDriver();
     for (const capability of [
-      Capability.Window,
-      Capability.Tray,
-      Capability.Updates,
-      Capability.FilesSave,
+      PlatformCapability.Window,
+      PlatformCapability.Tray,
+      PlatformCapability.Updates,
+      PlatformCapability.FilesSave,
     ])
       expect(platform.has(capability)).toBe(true);
-    expect(platform.has(Capability.Bluetooth)).toBe(false);
+    expect(platform.has(PlatformCapability.Bluetooth)).toBe(false);
   });
 });

@@ -1,18 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `Capability`: its codes in source order, a case read by name, and the type of one code.
+ * Purpose: unit tests of `PlatformCapability`: its codes in source order, a case read by name, and the type of one code.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 16: the Enum row).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 16: the Enum row);
+ *                     STA-1383 (package-qualified: iam owns Capability).
  */
 import { Enum } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 
-describe("Capability", () => {
+describe("PlatformCapability", () => {
   it("lists its codes in source order", () => {
-    expect(Enum.values(Capability)).toEqual([
+    expect(Enum.values(PlatformCapability)).toEqual([
       "network",
       "local_notifications",
       "push",
@@ -41,9 +42,9 @@ describe("Capability", () => {
   });
 
   it("reads a case by name and types it as a code", () => {
-    expect(Capability.Network).toBe("network");
-    expectTypeOf(Capability.Network).toEqualTypeOf<"network">();
-    expectTypeOf<Capability>().toEqualTypeOf<
+    expect(PlatformCapability.Network).toBe("network");
+    expectTypeOf(PlatformCapability.Network).toEqualTypeOf<"network">();
+    expectTypeOf<PlatformCapability>().toEqualTypeOf<
       | "network"
       | "local_notifications"
       | "push"
@@ -72,6 +73,6 @@ describe("Capability", () => {
   });
 
   it("is frozen", () => {
-    expect(Object.isFrozen(Capability)).toBe(true);
+    expect(Object.isFrozen(PlatformCapability)).toBe(true);
   });
 });

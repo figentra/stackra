@@ -26,7 +26,7 @@ import type { ShareCapability } from "#contracts/types/share-capability.type";
 import type { ShareData } from "#contracts/types/share-data.type";
 import type { SharedPayload } from "#contracts/types/shared-payload.type";
 import type { ShareTargetCapability } from "#contracts/types/share-target-capability.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { liveValue } from "#core/functions/live-value.function";
 import { refuse } from "#core/functions/refuse.function";
 import type { LiveValue } from "#core/types/live-value.type";
@@ -77,7 +77,7 @@ export class MemoryPlatformDriver extends Driver(Platform) {
   readonly install: InstallCapability & { readonly canPrompt: LiveValue<boolean> };
 
   /** The capability codes offered. */
-  private readonly offered = new Set<string>([Capability.Network]);
+  private readonly offered = new Set<string>([PlatformCapability.Network]);
 
   /** The permission each capability answers with; `prompt` when absent. */
   private readonly permissions = new Map<string, PermissionStatus>();
@@ -105,21 +105,21 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.notifications = {
       sent,
       get permission() {
-        return permissionOf(Capability.LocalNotifications);
+        return permissionOf(PlatformCapability.LocalNotifications);
       },
       requestPermission: async () => {
-        if (!this.has(Capability.LocalNotifications))
-          return refuse(Capability.LocalNotifications, "unavailable");
-        if (permissionOf(Capability.LocalNotifications) === "denied")
-          return refuse(Capability.LocalNotifications, "permission_denied");
-        this.permissions.set(Capability.LocalNotifications, "granted");
+        if (!this.has(PlatformCapability.LocalNotifications))
+          return refuse(PlatformCapability.LocalNotifications, "unavailable");
+        if (permissionOf(PlatformCapability.LocalNotifications) === "denied")
+          return refuse(PlatformCapability.LocalNotifications, "permission_denied");
+        this.permissions.set(PlatformCapability.LocalNotifications, "granted");
         return DONE;
       },
       notify: async (title, options = {}) => {
-        if (!this.has(Capability.LocalNotifications))
-          return refuse(Capability.LocalNotifications, "unavailable");
-        if (permissionOf(Capability.LocalNotifications) !== "granted")
-          return refuse(Capability.LocalNotifications, "permission_denied");
+        if (!this.has(PlatformCapability.LocalNotifications))
+          return refuse(PlatformCapability.LocalNotifications, "unavailable");
+        if (permissionOf(PlatformCapability.LocalNotifications) !== "granted")
+          return refuse(PlatformCapability.LocalNotifications, "permission_denied");
         sent.push({ title, ...options });
         return DONE;
       },
@@ -133,19 +133,19 @@ export class MemoryPlatformDriver extends Driver(Platform) {
       handOver(props.onBarcode);
       return null;
     }
-    const isCameraPresent = (): boolean => this.has(Capability.Scanner) && this.cameraPresent;
+    const isCameraPresent = (): boolean => this.has(PlatformCapability.Scanner) && this.cameraPresent;
     this.scanner = {
       View: MemoryScannerView,
       get isAvailable() {
         return isCameraPresent();
       },
       get permission() {
-        return permissionOf(Capability.Scanner);
+        return permissionOf(PlatformCapability.Scanner);
       },
       requestPermission: async () => {
         const next: PermissionStatus =
-          isCameraPresent() && permissionOf(Capability.Scanner) !== "denied" ? "granted" : "denied";
-        this.permissions.set(Capability.Scanner, next);
+          isCameraPresent() && permissionOf(PlatformCapability.Scanner) !== "denied" ? "granted" : "denied";
+        this.permissions.set(PlatformCapability.Scanner, next);
         return next;
       },
       emit: (code) => {
@@ -169,12 +169,12 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.badge = {
       count,
       set: async (value) => {
-        if (!this.has(Capability.Badge)) return refuse(Capability.Badge, "unavailable");
+        if (!this.has(PlatformCapability.Badge)) return refuse(PlatformCapability.Badge, "unavailable");
         count.set(value);
         return DONE;
       },
       clear: async () => {
-        if (!this.has(Capability.Badge)) return refuse(Capability.Badge, "unavailable");
+        if (!this.has(PlatformCapability.Badge)) return refuse(PlatformCapability.Badge, "unavailable");
         count.set(0);
         return DONE;
       },
@@ -183,7 +183,7 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.share = {
       shared,
       share: async (data) => {
-        if (!this.has(Capability.Share)) return refuse(Capability.Share, "unavailable");
+        if (!this.has(PlatformCapability.Share)) return refuse(PlatformCapability.Share, "unavailable");
         shared.push(data);
         return { ok: true, data: true };
       },
@@ -192,7 +192,7 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.haptics = {
       impacts,
       impact: async (strength = "medium") => {
-        if (!this.has(Capability.Haptics)) return refuse(Capability.Haptics, "unavailable");
+        if (!this.has(PlatformCapability.Haptics)) return refuse(PlatformCapability.Haptics, "unavailable");
         impacts.push(strength);
         return DONE;
       },
@@ -202,8 +202,8 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.install = {
       canPrompt,
       prompt: async () => {
-        if (!this.has(Capability.InstallPrompt) || !canPrompt.get())
-          return refuse(Capability.InstallPrompt, "unavailable");
+        if (!this.has(PlatformCapability.InstallPrompt) || !canPrompt.get())
+          return refuse(PlatformCapability.InstallPrompt, "unavailable");
         canPrompt.set(false);
         return { ok: true, data: true };
       },
@@ -219,7 +219,7 @@ export class MemoryPlatformDriver extends Driver(Platform) {
    * Applies `options` and returns this platform, for chaining.
    *
    * @example
-   * fakePlatform({ capabilities: [Capability.LocalNotifications], permissions: { local_notifications: "denied" } });
+   * fakePlatform({ capabilities: [PlatformCapability.LocalNotifications], permissions: { local_notifications: "denied" } });
    */
   configure(options: MemoryPlatformOptions): this {
     if (options.capabilities !== undefined) {
@@ -229,25 +229,25 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     for (const [capability, status] of Object.entries(options.permissions ?? {}))
       if (status !== undefined) this.permissions.set(capability, status);
     if (options.network !== undefined) {
-      this.offered.add(Capability.Network);
+      this.offered.add(PlatformCapability.Network);
       this.network.isOnline.set(options.network.isOnline ?? true);
     }
     if (options.scanner !== undefined) {
-      this.offered.add(Capability.Scanner);
+      this.offered.add(PlatformCapability.Scanner);
       this.cameraPresent = options.scanner.isAvailable ?? true;
       if (options.scanner.permission !== undefined)
-        this.permissions.set(Capability.Scanner, options.scanner.permission);
+        this.permissions.set(PlatformCapability.Scanner, options.scanner.permission);
     }
     if (options.launchedFiles !== undefined) {
-      this.offered.add(Capability.FileHandling);
+      this.offered.add(PlatformCapability.FileHandling);
       this.fileHandling.launched.set(options.launchedFiles);
     }
     if (options.shared !== undefined) {
-      this.offered.add(Capability.ShareTarget);
+      this.offered.add(PlatformCapability.ShareTarget);
       for (const [id, payload] of Object.entries(options.shared)) this.inbox.set(id, payload);
     }
     if (options.canInstall !== undefined) {
-      this.offered.add(Capability.InstallPrompt);
+      this.offered.add(PlatformCapability.InstallPrompt);
       this.install.canPrompt.set(options.canInstall);
     }
     return this;

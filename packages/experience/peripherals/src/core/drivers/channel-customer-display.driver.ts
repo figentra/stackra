@@ -11,7 +11,7 @@
  *                     (decision 3).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { CustomerDisplay } from "#contracts/ports/customer-display.port";
@@ -33,7 +33,7 @@ export class ChannelCustomerDisplayDriver extends Driver(CustomerDisplay) {
 
   /** Answers where a broadcast channel exists. */
   async probe(): Promise<CapabilityResult> {
-    if (typeof BroadcastChannel === "undefined") return refuse(Capability.Window, "unavailable");
+    if (typeof BroadcastChannel === "undefined") return refuse(PlatformCapability.Window, "unavailable");
     return { ok: true, data: undefined };
   }
 
@@ -55,7 +55,7 @@ export class ChannelCustomerDisplayDriver extends Driver(CustomerDisplay) {
 
   /** Posts `message`, or refuses with no channel. */
   private post(message: CustomerDisplayMessage): CapabilityResult {
-    if (typeof BroadcastChannel === "undefined") return refuse(Capability.Window, "unavailable");
+    if (typeof BroadcastChannel === "undefined") return refuse(PlatformCapability.Window, "unavailable");
     this.channel ??= new BroadcastChannel(CUSTOMER_DISPLAY_CHANNEL);
     this.channel.postMessage(message);
     return { ok: true, data: undefined };

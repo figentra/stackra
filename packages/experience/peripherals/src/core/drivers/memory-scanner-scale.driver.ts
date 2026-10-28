@@ -11,7 +11,7 @@
  *                     STA-965.
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { ScannerScale } from "#contracts/ports/scanner-scale.port";
@@ -51,19 +51,19 @@ export class MemoryScannerScaleDriver extends Driver(ScannerScale) {
 
   /** Answers while a scale is set. */
   async probe(): Promise<CapabilityResult> {
-    if (this.current === null) return refuse(Capability.Serial, "unavailable");
+    if (this.current === null) return refuse(PlatformCapability.Serial, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** The net weight now. */
   async read(): Promise<CapabilityResult<ScaleReading>> {
-    if (this.current === null) return refuse(Capability.Serial, "unavailable");
+    if (this.current === null) return refuse(PlatformCapability.Serial, "unavailable");
     return { ok: true, data: this.net(this.current) };
   }
 
   /** Makes what lies on the scale now read as zero. */
   async zero(): Promise<CapabilityResult> {
-    if (this.current === null) return refuse(Capability.Serial, "unavailable");
+    if (this.current === null) return refuse(PlatformCapability.Serial, "unavailable");
     this.zeroGrams = this.current.grams;
     return { ok: true, data: undefined };
   }

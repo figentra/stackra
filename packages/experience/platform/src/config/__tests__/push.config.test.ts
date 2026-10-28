@@ -13,14 +13,14 @@ import type { DriverName } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { PushConfig as BasePushConfig } from "#config/push.config";
-import type { PushTransport } from "#contracts/ports/push-transport.port";
+import type { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import { PUSH_CONFIG_SCHEMA } from "#core/constants/push-config-schema.constant";
 import { NotificationImportance } from "#core/enums/notification-importance.enum";
 import { PromptMoment } from "#core/enums/prompt-moment.enum";
 
 /** The template's override: the base's name, the package class aliased. */
 class PushConfig extends BasePushConfig {
-  override provider: DriverName<PushTransport> = "expo";
+  override provider: DriverName<PlatformPushTransport> = "expo";
 
   override retries = 3;
 

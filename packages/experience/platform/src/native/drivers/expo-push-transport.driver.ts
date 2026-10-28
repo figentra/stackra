@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ExpoPushTransportDriver` (`platform.push.provider: "expo"`), the `PushTransport` driver that registers
+ * Purpose: `ExpoPushTransportDriver` (`platform.push.provider: "expo"`), the `PlatformPushTransport` driver that registers
  *          the device with Expo's push service: the permission through expo-notifications and an Expo push token for
  *          the app's EAS project.
  * Boundary: device only. The project id comes from the build's EAS config (`easConfig.projectId`, or
@@ -15,11 +15,11 @@ import * as Notifications from "expo-notifications";
 import { Linking } from "react-native";
 
 import type { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { PushRegistration } from "#contracts/types/push-registration.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 import { readPushPermission } from "#native/functions/read-push-permission.function";
 import { requestPushPermission } from "#native/functions/request-push-permission.function";
@@ -29,9 +29,9 @@ import { requestPushPermission } from "#native/functions/request-push-permission
  *
  * @example
  * // generated wiring, expo target
- * { port: PushTransport, selectedBy: "config:platform.push.provider", candidates: { expo: () => import("@stackra/platform/native").then((m) => m.ExpoPushTransportDriver) } }
+ * { port: PlatformPushTransport, selectedBy: "config:platform.push.provider", candidates: { expo: () => import("@stackra/platform/native").then((m) => m.ExpoPushTransportDriver) } }
  */
-export class ExpoPushTransportDriver extends Driver(PushTransport) {
+export class ExpoPushTransportDriver extends Driver(PlatformPushTransport) {
   /** The push configuration (`iosProvisional`). */
   private readonly config: PushConfig;
 
@@ -61,7 +61,7 @@ export class ExpoPushTransportDriver extends Driver(PushTransport) {
   /** The Expo push token, once the permission is granted. */
   async register(): Promise<CapabilityResult<PushRegistration>> {
     if ((await readPushPermission()) !== "granted")
-      return refuse(Capability.Push, "permission_denied");
+      return refuse(PlatformCapability.Push, "permission_denied");
     const extra = Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined;
     const projectId = Constants.easConfig?.projectId ?? extra?.eas?.projectId;
     const token = await Notifications.getExpoPushTokenAsync(

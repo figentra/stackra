@@ -8,7 +8,7 @@
  * Governing contract: ADR 0253 (decision 4); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
@@ -31,7 +31,7 @@ export class MemoryBarcodeScannerDriver extends Driver(BarcodeScanner) {
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Scanner, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Scanner, "unavailable");
     return { ok: true, data: undefined };
   }
 

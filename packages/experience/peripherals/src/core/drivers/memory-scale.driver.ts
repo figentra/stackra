@@ -10,7 +10,7 @@
  * Governing contract: ADR 0253 (decisions 1 to 3); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { Scale } from "#contracts/ports/scale.port";
@@ -46,13 +46,13 @@ export class MemoryScaleDriver extends Driver(Scale) {
 
   /** Answers while a scale is set. */
   async probe(): Promise<CapabilityResult> {
-    if (this.reading === null) return refuse(Capability.Serial, "unavailable");
+    if (this.reading === null) return refuse(PlatformCapability.Serial, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** The reading set now. */
   async read(): Promise<CapabilityResult<ScaleReading>> {
-    if (this.reading === null) return refuse(Capability.Serial, "unavailable");
+    if (this.reading === null) return refuse(PlatformCapability.Serial, "unavailable");
     return { ok: true, data: this.reading };
   }
 

@@ -26,7 +26,7 @@ import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { ScannerCapability } from "#contracts/types/scanner-capability.type";
 import type { ShareCapability } from "#contracts/types/share-capability.type";
 import type { ShareTargetCapability } from "#contracts/types/share-target-capability.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 import { takeSharedPayload } from "#core/functions/take-shared-payload.function";
 import { WebScannerView } from "#browser/components/web-scanner-view";
@@ -57,25 +57,25 @@ const VIBRATION = { light: 10, medium: 20, heavy: 40 } as const;
 
 /** How each capability is detected; a code with no row is not offered. */
 const DETECT: Readonly<Record<string, () => boolean>> = {
-  [Capability.Network]: () => true,
-  [Capability.LocalNotifications]: () => "Notification" in globalThis,
-  [Capability.Push]: () => "PushManager" in globalThis && "serviceWorker" in navigator,
-  [Capability.Badge]: () => "setAppBadge" in navigator,
-  [Capability.Clipboard]: () => "clipboard" in navigator,
-  [Capability.FilesSave]: () => "showSaveFilePicker" in globalThis,
-  [Capability.Print]: () => typeof globalThis.print === "function",
-  [Capability.Updates]: () => "serviceWorker" in navigator,
-  [Capability.FileHandling]: () => "launchQueue" in globalThis,
-  [Capability.ShareTarget]: () => "serviceWorker" in navigator && "indexedDB" in globalThis,
-  [Capability.Share]: () => "share" in navigator,
-  [Capability.Haptics]: () => "vibrate" in navigator,
-  [Capability.InstallPrompt]: () => "onbeforeinstallprompt" in globalThis,
-  [Capability.Scanner]: () => "BarcodeDetector" in globalThis && "mediaDevices" in navigator,
-  [Capability.Camera]: () => "mediaDevices" in navigator,
-  [Capability.Microphone]: () => "mediaDevices" in navigator,
-  [Capability.Usb]: () => "usb" in navigator,
-  [Capability.Bluetooth]: () => "bluetooth" in navigator,
-  [Capability.Serial]: () => "serial" in navigator,
+  [PlatformCapability.Network]: () => true,
+  [PlatformCapability.LocalNotifications]: () => "Notification" in globalThis,
+  [PlatformCapability.Push]: () => "PushManager" in globalThis && "serviceWorker" in navigator,
+  [PlatformCapability.Badge]: () => "setAppBadge" in navigator,
+  [PlatformCapability.Clipboard]: () => "clipboard" in navigator,
+  [PlatformCapability.FilesSave]: () => "showSaveFilePicker" in globalThis,
+  [PlatformCapability.Print]: () => typeof globalThis.print === "function",
+  [PlatformCapability.Updates]: () => "serviceWorker" in navigator,
+  [PlatformCapability.FileHandling]: () => "launchQueue" in globalThis,
+  [PlatformCapability.ShareTarget]: () => "serviceWorker" in navigator && "indexedDB" in globalThis,
+  [PlatformCapability.Share]: () => "share" in navigator,
+  [PlatformCapability.Haptics]: () => "vibrate" in navigator,
+  [PlatformCapability.InstallPrompt]: () => "onbeforeinstallprompt" in globalThis,
+  [PlatformCapability.Scanner]: () => "BarcodeDetector" in globalThis && "mediaDevices" in navigator,
+  [PlatformCapability.Camera]: () => "mediaDevices" in navigator,
+  [PlatformCapability.Microphone]: () => "mediaDevices" in navigator,
+  [PlatformCapability.Usb]: () => "usb" in navigator,
+  [PlatformCapability.Bluetooth]: () => "bluetooth" in navigator,
+  [PlatformCapability.Serial]: () => "serial" in navigator,
 };
 
 /**
@@ -160,18 +160,18 @@ export class WebPlatformDriver extends Driver(Platform) {
         return browserPermission();
       },
       requestPermission: async () => {
-        if (!this.has(Capability.LocalNotifications))
-          return refuse(Capability.LocalNotifications, "unavailable");
+        if (!this.has(PlatformCapability.LocalNotifications))
+          return refuse(PlatformCapability.LocalNotifications, "unavailable");
         const status = browserPermission(await Notification.requestPermission());
         return status === "granted"
           ? DONE
-          : refuse(Capability.LocalNotifications, "permission_denied");
+          : refuse(PlatformCapability.LocalNotifications, "permission_denied");
       },
       notify: async (title, options = {}) => {
-        if (!this.has(Capability.LocalNotifications))
-          return refuse(Capability.LocalNotifications, "unavailable");
+        if (!this.has(PlatformCapability.LocalNotifications))
+          return refuse(PlatformCapability.LocalNotifications, "unavailable");
         if (browserPermission() !== "granted")
-          return refuse(Capability.LocalNotifications, "permission_denied");
+          return refuse(PlatformCapability.LocalNotifications, "permission_denied");
         // Chrome on Android shows notifications only through the service worker.
         const registration = await navigator.serviceWorker?.getRegistration();
         if (registration === undefined) void new Notification(title, options);
@@ -180,7 +180,7 @@ export class WebPlatformDriver extends Driver(Platform) {
       },
     };
 
-    const hasScanner = (): boolean => this.has(Capability.Scanner);
+    const hasScanner = (): boolean => this.has(PlatformCapability.Scanner);
     this.scanner = {
       View: WebScannerView,
       get isAvailable() {
@@ -206,18 +206,18 @@ export class WebPlatformDriver extends Driver(Platform) {
 
     this.shareTarget = {
       take: (id) =>
-        this.has(Capability.ShareTarget) ? takeSharedPayload(id) : Promise.resolve(null),
+        this.has(PlatformCapability.ShareTarget) ? takeSharedPayload(id) : Promise.resolve(null),
     };
 
     const badging = (inBrowser ? navigator : {}) as BrowserExtras;
     this.badge = {
       set: async (count) => {
-        if (badging.setAppBadge === undefined) return refuse(Capability.Badge, "unavailable");
+        if (badging.setAppBadge === undefined) return refuse(PlatformCapability.Badge, "unavailable");
         await (count === 0 ? badging.clearAppBadge?.() : badging.setAppBadge(count));
         return DONE;
       },
       clear: async () => {
-        if (badging.clearAppBadge === undefined) return refuse(Capability.Badge, "unavailable");
+        if (badging.clearAppBadge === undefined) return refuse(PlatformCapability.Badge, "unavailable");
         await badging.clearAppBadge();
         return DONE;
       },
@@ -225,11 +225,11 @@ export class WebPlatformDriver extends Driver(Platform) {
 
     this.share = {
       share: async ({ files, ...rest }) => {
-        if (!this.has(Capability.Share)) return refuse(Capability.Share, "unavailable");
+        if (!this.has(PlatformCapability.Share)) return refuse(PlatformCapability.Share, "unavailable");
         const data: globalThis.ShareData =
           files === undefined ? rest : { ...rest, files: [...files] };
         if (files !== undefined && navigator.canShare?.(data) === false)
-          return refuse(Capability.Share, "unavailable");
+          return refuse(PlatformCapability.Share, "unavailable");
         try {
           await navigator.share(data);
           return { ok: true, data: true };
@@ -237,7 +237,7 @@ export class WebPlatformDriver extends Driver(Platform) {
           if (error instanceof DOMException && error.name === "AbortError")
             return { ok: true, data: false };
           if (error instanceof DOMException && error.name === "NotAllowedError")
-            return refuse(Capability.Share, "permission_denied");
+            return refuse(PlatformCapability.Share, "permission_denied");
           throw error;
         }
       },
@@ -245,16 +245,16 @@ export class WebPlatformDriver extends Driver(Platform) {
 
     this.haptics = {
       impact: async (strength = "medium") =>
-        this.has(Capability.Haptics) && navigator.vibrate(VIBRATION[strength])
+        this.has(PlatformCapability.Haptics) && navigator.vibrate(VIBRATION[strength])
           ? DONE
-          : refuse(Capability.Haptics, "unavailable"),
+          : refuse(PlatformCapability.Haptics, "unavailable"),
     };
 
     this.install = {
       canPrompt,
       prompt: async () => {
         const event = deferred;
-        if (event === undefined) return refuse(Capability.InstallPrompt, "unavailable");
+        if (event === undefined) return refuse(PlatformCapability.InstallPrompt, "unavailable");
         deferred = undefined;
         canPrompt.set(false);
         await event.prompt();
@@ -265,7 +265,7 @@ export class WebPlatformDriver extends Driver(Platform) {
 
   /** Whether this browser has the API behind `capability`; always for `network`. */
   has(capability: string): boolean {
-    if (typeof window === "undefined") return capability === Capability.Network;
+    if (typeof window === "undefined") return capability === PlatformCapability.Network;
     return DETECT[capability]?.() ?? false;
   }
 }

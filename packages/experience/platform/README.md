@@ -3,7 +3,7 @@
 Stackra platform: what the running target offers (ADR 0250). One `Platform` port answers `has(capability)` and hands
 out one facet per capability (`network`, `notifications`, `scanner`, `fileHandling`, `shareTarget`, `badge`, `share`,
 `haptics`, `install`); a call the target or device cannot honour resolves a typed refusal (`unavailable`,
-`permission_denied`), never an exception. The package also owns remote push (`PushTransport`), the server-side captcha
+`permission_denied`), never an exception. The package also owns remote push (`PlatformPushTransport`), the server-side captcha
 check (`CaptchaVerifier`), the desktop, PWA and push configurations, the `Bridge` kind of the Electron main process and
 the service-worker handlers. It absorbs the retired `network` and `pwa` packages.
 
@@ -17,11 +17,11 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 
 | Entry         | Symbol                                                                                                                                                                                                                          | Use                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `.`           | `Capability`                                                                                                                                                                                                                    | capability codes for `platform.has(...)`; `Required`/`Optional` levels      |
+| `.`           | `PlatformCapability`                                                                                                                                                                                                                    | capability codes for `platform.has(...)`; `Required`/`Optional` levels      |
 | `.`           | `DesktopConfig`, `PwaConfig`, `PushConfig` (+ `DesktopConfig$`, `PwaConfig$`, `PushConfig$`)                                                                                                                                    | the three configurations (`platform.desktop`, `.pwa`, `.push`)              |
 | `.`           | `CachePreset`, `CacheStrategy`, `DesktopMode`, `FileLaunchType`, `InstallMoment`, `InstallPrompt`, `NotificationImportance`, `OverlayAnchor`, `OverlayStyle`, `PromptMoment`, `TrayClickAction`, `UpdateStrategy`, `WindowKind` | the configurations' vocabulary                                              |
 | `.`           | `MemoryPlatformDriver`, `MemoryPushTransportDriver`, `MemoryCaptchaVerifierDriver`                                                                                                                                              | the `memory` candidates: tests, server renders, local runs                  |
-| `./contracts` | `Platform`, `PushTransport`, `CaptchaVerifier` and their signature types                                                                                                                                                        | the ports, injected by type (`Platform` from here only)                     |
+| `./contracts` | `Platform`, `PlatformPushTransport`, `CaptchaVerifier` and their signature types                                                                                                                                                        | the ports, injected by type (`Platform` from here only)                     |
 | `./browser`   | `WebPlatformDriver`, `WebPushTransportDriver`                                                                                                                                                                                   | web and PWA                                                                 |
 | `./desktop`   | `Bridge`, `PickFolderBridge`, `ElectronPlatformDriver`                                                                                                                                                                          | the bridge kind, the folder picker (main), the renderer driver              |
 | `./contracts` | `KioskMode`, `SecondScreen`                                                                                                                                                                                                     | kiosk mode and the second-display window (the customer display)             |
@@ -38,7 +38,7 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 ## Using it
 
 ```ts
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import { useCapability, usePlatform } from "@stackra/platform/react";
 import { useSignal } from "@stackra/state/react";
 
@@ -48,7 +48,7 @@ const isOnline = useSignal(platform.network.isOnline);
 const granted = await platform.notifications.requestPermission();
 if (!granted.ok) toast.warning(t(I18n.console.capabilities[granted.error.code]));
 
-const scanner = useCapability("scanner", { required: true }); // the route declared `scanner: Capability.Required`
+const scanner = useCapability("scanner", { required: true }); // the route declared `scanner: PlatformCapability.Required`
 if (!scanner.isAvailable) return { kind: "unavailable" };
 ```
 
@@ -60,7 +60,7 @@ A bridge is the only path from the Electron renderer to main:
 ```ts
 import { Bridge } from "@stackra/platform/desktop";
 
-export class ExportCsvBridge extends Bridge({ key: "exports.save_csv", capability: Capability.FilesSave }) {
+export class ExportCsvBridge extends Bridge({ key: "exports.save_csv", capability: PlatformCapability.FilesSave }) {
   constructor(files: FileSystem) { ... }
   async handle(input: ExportCsvInput): Promise<ExportCsvOutput> { ... } // validate the input: it comes from the renderer
 }

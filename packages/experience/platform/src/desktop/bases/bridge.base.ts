@@ -25,7 +25,7 @@ export type Bridge = BridgeBase;
  * The bridge kind base.
  *
  * @example
- * export class PickFolderBridge extends Bridge({ key: "files.pick_folder", capability: Capability.FilesSave }) {
+ * export class PickFolderBridge extends Bridge({ key: "files.pick_folder", capability: PlatformCapability.FilesSave }) {
  *   constructor(files: FileSystem) { ... }
  *   async handle(input: PickFolderInput): Promise<PickFolderOutput> { ... }
  * }

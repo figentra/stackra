@@ -8,7 +8,7 @@
  * Governing contract: ADR 0253 (decision 4); ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
@@ -37,20 +37,20 @@ export class MemoryReceiptPrinterDriver extends Driver(ReceiptPrinter) {
 
   /** Answers while present. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Records the receipt. */
   async print(receipt: Receipt): Promise<CapabilityResult<PrintedReceipt>> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     this.printed.push(receipt);
     return { ok: true, data: { printer: "memory", orderId: receipt.orderId } };
   }
 
   /** Records the pulse. */
   async kickDrawer(pin: DrawerPin): Promise<CapabilityResult> {
-    if (!this.isPresent) return refuse(Capability.Print, "unavailable");
+    if (!this.isPresent) return refuse(PlatformCapability.Print, "unavailable");
     this.kicks.push(pin);
     return { ok: true, data: undefined };
   }

@@ -9,7 +9,7 @@
  */
 import type { KioskMode } from "#contracts/ports/kiosk-mode.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { Bridge } from "#desktop/bases/bridge.base";
 import type { SetKioskModeInput } from "#desktop/types/set-kiosk-mode-input.type";
 
@@ -22,7 +22,7 @@ import type { SetKioskModeInput } from "#desktop/types/set-kiosk-mode-input.type
  */
 export class SetKioskModeBridge extends Bridge({
   key: "kiosk.set",
-  capability: Capability.Window,
+  capability: PlatformCapability.Window,
 }) {
   /** The bound kiosk mode. */
   private readonly kiosk: KioskMode;

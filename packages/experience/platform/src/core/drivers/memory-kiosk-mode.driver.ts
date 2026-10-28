@@ -11,7 +11,7 @@ import { Driver } from "@stackra/container";
 
 import { KioskMode } from "#contracts/ports/kiosk-mode.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 
 /**
@@ -31,20 +31,20 @@ export class MemoryKioskModeDriver extends Driver(KioskMode) {
 
   /** Answers while supported. */
   async probe(): Promise<CapabilityResult> {
-    if (!this.isSupported) return refuse(Capability.Window, "unavailable");
+    if (!this.isSupported) return refuse(PlatformCapability.Window, "unavailable");
     return { ok: true, data: undefined };
   }
 
   /** Turns kiosk mode on. */
   async enter(): Promise<CapabilityResult> {
-    if (!this.isSupported) return refuse(Capability.Window, "unavailable");
+    if (!this.isSupported) return refuse(PlatformCapability.Window, "unavailable");
     this.active = true;
     return { ok: true, data: undefined };
   }
 
   /** Turns kiosk mode off. */
   async exit(): Promise<CapabilityResult> {
-    if (!this.isSupported) return refuse(Capability.Window, "unavailable");
+    if (!this.isSupported) return refuse(PlatformCapability.Window, "unavailable");
     this.active = false;
     return { ok: true, data: undefined };
   }

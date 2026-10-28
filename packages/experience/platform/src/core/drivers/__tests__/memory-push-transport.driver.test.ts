@@ -8,13 +8,13 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";
 
 describe("MemoryPushTransportDriver", () => {
   it("grants a prompt and registers the memory token", async () => {
     const push = new MemoryPushTransportDriver();
-    expect(push).toBeInstanceOf(PushTransport);
+    expect(push).toBeInstanceOf(PlatformPushTransport);
     expect(await push.permission()).toBe("prompt");
     expect(await push.requestPermission()).toBe("granted");
     expect(await push.register()).toEqual({

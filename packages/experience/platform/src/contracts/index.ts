@@ -10,7 +10,7 @@
 export { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
 export { KioskMode } from "#contracts/ports/kiosk-mode.port";
 export { Platform } from "#contracts/ports/platform.port";
-export { PushTransport } from "#contracts/ports/push-transport.port";
+export { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 export { SecondScreen } from "#contracts/ports/second-screen.port";
 export type { BadgeCapability } from "#contracts/types/badge-capability.type";
 export type { BarcodeFormat } from "#contracts/types/barcode-format.type";

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `WebPushTransportDriver`, the `PushTransport` driver of the PWA (`platform.push.provider: "web"`): the
+ * Purpose: `WebPushTransportDriver`, the `PlatformPushTransport` driver of the PWA (`platform.push.provider: "web"`): the
  *          notification permission and a Web Push subscription made with the app's VAPID public key, returned as
  *          JSON for the devices module (ADR 0255 decision 3).
  * Boundary: browser only; it reuses an existing subscription. A browser without Web Push (iOS outside an installed
@@ -12,11 +12,11 @@
 import { Driver } from "@stackra/container";
 
 import type { PushConfig } from "#config/push.config";
-import { PushTransport } from "#contracts/ports/push-transport.port";
+import { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 import type { CapabilityResult } from "#contracts/types/capability-result.type";
 import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { PushRegistration } from "#contracts/types/push-registration.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 import { browserPermission } from "#browser/functions/browser-permission.function";
 import { urlBase64ToBytes } from "#browser/functions/url-base64-to-bytes.function";
@@ -27,7 +27,7 @@ import { urlBase64ToBytes } from "#browser/functions/url-base64-to-bytes.functio
  * @example
  * const registration = await transport.register(); // { ok: true, data: { provider: "web_push", token: "{...}" } }
  */
-export class WebPushTransportDriver extends Driver(PushTransport) {
+export class WebPushTransportDriver extends Driver(PlatformPushTransport) {
   /** The push configuration (`vapidPublicKey`). */
   private readonly config: PushConfig;
 
@@ -60,8 +60,8 @@ export class WebPushTransportDriver extends Driver(PushTransport) {
    */
   async register(): Promise<CapabilityResult<PushRegistration>> {
     if (!("PushManager" in globalThis) || !("serviceWorker" in navigator))
-      return refuse(Capability.Push, "unavailable");
-    if (browserPermission() !== "granted") return refuse(Capability.Push, "permission_denied");
+      return refuse(PlatformCapability.Push, "unavailable");
+    if (browserPermission() !== "granted") return refuse(PlatformCapability.Push, "permission_denied");
     if (this.config.vapidPublicKey === "")
       throw new TypeError(
         "platform.push.vapidPublicKey is empty: the web transport cannot subscribe",

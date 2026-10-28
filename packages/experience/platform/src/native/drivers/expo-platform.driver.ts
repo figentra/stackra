@@ -34,7 +34,7 @@ import type { PermissionStatus } from "#contracts/types/permission-status.type";
 import type { ScannerCapability } from "#contracts/types/scanner-capability.type";
 import type { ShareCapability } from "#contracts/types/share-capability.type";
 import type { ShareTargetCapability } from "#contracts/types/share-target-capability.type";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { refuse } from "#core/functions/refuse.function";
 import { ExpoScannerView } from "#native/components/expo-scanner-view";
 import { expoPermission } from "#native/functions/expo-permission.function";
@@ -45,14 +45,14 @@ const DONE: CapabilityResult = Object.freeze({ ok: true, data: undefined });
 
 /** What a phone offers; a code outside this set answers false. */
 const OFFERED: ReadonlySet<string> = new Set([
-  Capability.Network,
-  Capability.LocalNotifications,
-  Capability.Push,
-  Capability.Badge,
-  Capability.Share,
-  Capability.Haptics,
-  Capability.Scanner,
-  Capability.Camera,
+  PlatformCapability.Network,
+  PlatformCapability.LocalNotifications,
+  PlatformCapability.Push,
+  PlatformCapability.Badge,
+  PlatformCapability.Share,
+  PlatformCapability.Haptics,
+  PlatformCapability.Scanner,
+  PlatformCapability.Camera,
 ]);
 
 /** The expo-haptics style of each strength. */
@@ -138,11 +138,11 @@ export class ExpoPlatformDriver extends Driver(Platform) {
         notifications = await readPushPermission();
         return notifications === "granted"
           ? DONE
-          : refuse(Capability.LocalNotifications, "permission_denied");
+          : refuse(PlatformCapability.LocalNotifications, "permission_denied");
       },
       notify: async (title, options = {}) => {
         if ((await readPushPermission()) !== "granted")
-          return refuse(Capability.LocalNotifications, "permission_denied");
+          return refuse(PlatformCapability.LocalNotifications, "permission_denied");
         await Notifications.scheduleNotificationAsync({
           ...(options.tag === undefined ? {} : { identifier: options.tag }),
           content: { title, ...(options.body === undefined ? {} : { body: options.body }) },
@@ -174,16 +174,16 @@ export class ExpoPlatformDriver extends Driver(Platform) {
       set: async (count) =>
         (await Notifications.setBadgeCountAsync(count))
           ? DONE
-          : refuse(Capability.Badge, "unavailable"),
+          : refuse(PlatformCapability.Badge, "unavailable"),
       clear: async () =>
         (await Notifications.setBadgeCountAsync(0))
           ? DONE
-          : refuse(Capability.Badge, "unavailable"),
+          : refuse(PlatformCapability.Badge, "unavailable"),
     };
 
     this.share = {
       share: async ({ title, text, url, files }) => {
-        if (files !== undefined && files.length > 0) return refuse(Capability.Share, "unavailable");
+        if (files !== undefined && files.length > 0) return refuse(PlatformCapability.Share, "unavailable");
         // iOS takes the link as its own field; Android has only the message.
         const content =
           Os.OS === "ios"
@@ -203,7 +203,7 @@ export class ExpoPlatformDriver extends Driver(Platform) {
 
     this.install = {
       canPrompt: signal(false),
-      prompt: async () => refuse(Capability.InstallPrompt, "unavailable"),
+      prompt: async () => refuse(PlatformCapability.InstallPrompt, "unavailable"),
     };
   }
 

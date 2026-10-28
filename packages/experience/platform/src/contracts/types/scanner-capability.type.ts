@@ -3,7 +3,7 @@
  * Purpose: `ScannerCapability`, the `scanner` facet: whether this device has a usable camera now, its permission, a
  *          way to ask for it, and the camera view component that decodes barcodes (`ScannerView` renders it).
  * Boundary: a type only. The view is the driver's component, so a page never imports a camera module; offering the
- *           port (`platform.has(Capability.Scanner)`) and having a camera now (`isAvailable`) are separate: a
+ *           port (`platform.has(PlatformCapability.Scanner)`) and having a camera now (`isAvailable`) are separate: a
  *           simulator offers the port and has no camera.
  * Runtime: isomorphic
  * Governing contract: ADR 0250 (decision 2); ADR 0253.

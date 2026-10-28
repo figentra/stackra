@@ -11,7 +11,7 @@
  * Governing contract: ADR 0251 (decisions 1 to 3); ADR 0339 (decisions 1, 2 and 5); ADR 0250 (decision 3); registry
  *                     A13 (the Bridge kind from @stackra/platform).
  */
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import { Bridge } from "@stackra/platform/desktop";
 
 import { LabelFormat } from "#contracts/enums/label-format.enum";
@@ -44,7 +44,7 @@ const SAFE_ZPL = /^\s*\^XA(?:(?!\^XA|\^J|~)[\s\S])*\^XZ\s*$/;
  */
 export class PrintLabelBridge extends Bridge({
   key: "label.print",
-  capability: Capability.Print,
+  capability: PlatformCapability.Print,
 }) {
   /** The label printer the wiring binds (`peripherals.labelPrinter`). */
   private readonly printer: LabelPrinter;

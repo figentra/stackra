@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the `PushTransport` port: how this device receives remote pushes: its push permission, a way to ask for it
+ * Purpose: the `PlatformPushTransport` port: how this device receives remote pushes: its push permission, a way to ask for it
  *          or open the OS settings, and the registration that yields the device's push address. Config
  *          `platform.push.provider` picks the driver (`expo`, `self_hosted`, `web`, `memory`).
- * Boundary: an abstract class that is its own token, keyed `platform.PushTransport`. Registering the address with the
+ * Boundary: an abstract class that is its own token, keyed `platform.PlatformPushTransport`. Registering the address with the
  *           devices module and re-registering on a tenant or locale switch is the push context's job; this port only
  *           yields the address. A target with no push binds no driver, so `usePushPermission()` returns `null`.
  * Runtime: isomorphic
- * Governing contract: ADR 0255 (decision 3: push per platform); ADR 0235 (devices); ADR 0294 (decisions 4, 15 and 16).
+ * Governing contract: ADR 0255 (decision 3: push per platform); ADR 0235 (devices); ADR 0294 (decisions 4, 15 and 16);
+ *                     STA-1383 (package-qualified: notifications owns PushTransport, the server send).
  */
 import { Port } from "@stackra/contracts";
 
@@ -22,9 +23,9 @@ import type { PushRegistration } from "#contracts/types/push-registration.type";
  * const registration = await transport.register();
  * if (registration.ok) await devices.register.queue({ token: registration.data.token });
  */
-export abstract class PushTransport extends Port {
-  /** Type-only port key, so `DriverName<PushTransport>` narrows to this port's drivers. */
-  declare readonly "~key": "platform.PushTransport";
+export abstract class PlatformPushTransport extends Port {
+  /** Type-only port key, so `DriverName<PlatformPushTransport>` narrows to this port's drivers. */
+  declare readonly "~key": "platform.PlatformPushTransport";
 
   /** Where the push permission stands now. */
   abstract permission(): Promise<PermissionStatus>;

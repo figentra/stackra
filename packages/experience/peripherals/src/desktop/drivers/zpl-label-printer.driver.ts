@@ -11,7 +11,7 @@
  *                     main).
  */
 import { Driver } from "@stackra/container";
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import type { PeripheralsConfig } from "#config/peripherals.config";
@@ -64,14 +64,14 @@ export class ZplLabelPrinterDriver extends Driver(LabelPrinter) {
   /** Sends `bytes` to the configured address, as a result. */
   private async send(bytes: Uint8Array): Promise<CapabilityResult> {
     const address = this.config.labelPrinterAddress;
-    if (address === "") return refuse(Capability.Print, "unavailable");
+    if (address === "") return refuse(PlatformCapability.Print, "unavailable");
     try {
       await sendToPrinter(address, bytes);
       return { ok: true, data: undefined };
     } catch (error) {
       const code = (error as { readonly code?: unknown }).code;
       return refuse(
-        Capability.Print,
+        PlatformCapability.Print,
         code === "EACCES" || code === "EPERM" ? "permission_denied" : "unavailable",
       );
     }

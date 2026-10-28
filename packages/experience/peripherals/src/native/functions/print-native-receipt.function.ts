@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0442 (decision 4); ADR 0458, ADR 0459, ADR 0460; ADR 0253 (decision 4).
  */
-import { Capability } from "@stackra/platform";
+import { PlatformCapability } from "@stackra/platform";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import type { PrintedReceipt } from "#contracts/types/printed-receipt.type";
@@ -38,6 +38,6 @@ export async function printNativeReceipt(
     await nativeDevice(family)?.printLines(receipt.lines.map((line) => line.replace(CONTROL, "")));
     return { ok: true, data: { printer: family.name, orderId: receipt.orderId } };
   } catch {
-    return refuse(Capability.Print, "unavailable");
+    return refuse(PlatformCapability.Print, "unavailable");
   }
 }

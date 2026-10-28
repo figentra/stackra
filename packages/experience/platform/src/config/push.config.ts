@@ -19,7 +19,7 @@ import { PushOptions } from "#core/schemas/push-options.schema";
  * import { PushConfig as BasePushConfig } from "@stackra/platform";
  *
  * export class PushConfig extends BasePushConfig {
- *   override provider: DriverName<PushTransport> = "expo";
+ *   override provider: DriverName<PlatformPushTransport> = "expo";
  *   override askOn: PromptMoment = PromptMoment.FirstSession;
  * }
  */

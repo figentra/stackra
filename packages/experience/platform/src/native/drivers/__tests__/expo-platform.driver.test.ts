@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { Platform } from "#contracts/ports/platform.port";
-import { Capability } from "#core/enums/capability.enum";
+import { PlatformCapability } from "#core/enums/platform-capability.enum";
 import { ExpoPlatformDriver } from "#native/drivers/expo-platform.driver";
 
 const mocks = vi.hoisted(() => ({
@@ -76,17 +76,17 @@ describe("ExpoPlatformDriver", () => {
     const platform = new ExpoPlatformDriver();
     expect(platform).toBeInstanceOf(Platform);
     for (const code of [
-      Capability.Network,
-      Capability.Haptics,
-      Capability.Scanner,
-      Capability.Share,
+      PlatformCapability.Network,
+      PlatformCapability.Haptics,
+      PlatformCapability.Scanner,
+      PlatformCapability.Share,
     ])
       expect(platform.has(code)).toBe(true);
     for (const code of [
-      Capability.FileHandling,
-      Capability.ShareTarget,
-      Capability.InstallPrompt,
-      Capability.Tray,
+      PlatformCapability.FileHandling,
+      PlatformCapability.ShareTarget,
+      PlatformCapability.InstallPrompt,
+      PlatformCapability.Tray,
     ])
       expect(platform.has(code)).toBe(false);
   });
