@@ -13,28 +13,22 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decisions 2, 5 and 8); ADR 0253 (decisions 3 and 4); ADR 0250 (decision 3).
  */
-import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { Scale } from "@stackra/peripherals/contracts";
 import type { ScaleReading } from "@stackra/peripherals/contracts";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
-import type { NativeScaleConfig } from "#config/native-scale.config";
+import { ProtocolScaleDriver } from "#core/drivers/protocol-scale.driver";
 import { connectScale } from "#core/functions/connect-scale.function";
 import { isTareOrFault } from "#core/functions/is-tare-or-fault.function";
-import { isWeightOrFault } from "#core/functions/is-weight-or-fault.function";
 import { listenScaleLines } from "#core/functions/listen-scale-lines.function";
 import { nativeScaleModule } from "#core/functions/native-scale-module.function";
 import { parseMtSicsLine } from "#core/functions/parse-mt-sics-line.function";
-import { refuse } from "#core/functions/refuse.function";
 import { requestScaleLine } from "#core/functions/request-scale-line.function";
 import { sendScaleCommand } from "#core/functions/send-scale-command.function";
 import { weightToReading } from "#core/functions/weight-to-reading.function";
 import type { ScaleFrame } from "#core/types/scale-frame.type";
 import type { ScaleLine } from "#core/types/scale-line.type";
-
-/** A weight line. */
-type WeightLine = Extract<ScaleLine, { kind: "weight" }>;
+import type { ScaleProtocol } from "#core/types/scale-protocol.type";
 
 /**
  * An MT-SICS scale.
@@ -43,40 +37,15 @@ type WeightLine = Extract<ScaleLine, { kind: "weight" }>;
  * // generated native wiring, ios and android targets
  * { port: Scale, selectedBy: "config:native_scale.protocol", candidates: { mt_sics: () => import("@stackra/native-scale").then((m) => m.MtSicsScaleDriver) } }
  */
-export class MtSicsScaleDriver extends Driver(Scale) {
-  /** The native scale configuration. */
-  private readonly config: NativeScaleConfig;
-
+export class MtSicsScaleDriver extends ProtocolScaleDriver {
   /** How many `onWeight` listeners are running. */
   private streams = 0;
-
-  /**
-   * @param config - the native scale configuration.
-   */
-  constructor(config: NativeScaleConfig) {
-    super();
-    this.config = config;
-  }
-
-  /** Answers when the link to the scale is open or opens now. */
-  async probe(): Promise<CapabilityResult> {
-    const linked = await connectScale(this.config);
-    if (!linked.ok) return linked;
-    return { ok: true, data: undefined };
-  }
-
-  /** The net weight now, settled or not. */
-  async read(): Promise<CapabilityResult<ScaleReading>> {
-    const weight = await this.weigh();
-    if (!weight.ok) return weight;
-    return { ok: true, data: weightToReading(weight.data) };
-  }
 
   /** The full reading: the net weight in grams and as displayed, the stable flag and the tare. */
   async frame(): Promise<CapabilityResult<ScaleFrame>> {
     const linked = await connectScale(this.config);
     if (!linked.ok) return linked;
-    const protocol = this.config.protocols.mt_sics;
+    const protocol = this.protocol();
     let tareGrams: number | null = null;
     if (protocol.tareQuery !== "") {
       const tare = await requestScaleLine(linked.data, {
@@ -93,22 +62,12 @@ export class MtSicsScaleDriver extends Driver(Scale) {
     }
     const weight = await this.weigh();
     if (!weight.ok) return weight;
-    return {
-      ok: true,
-      data: {
-        grams: weight.data.grams,
-        value: weight.data.value,
-        unit: weight.data.unit,
-        isStable: weight.data.isStable,
-        isNet: tareGrams === null ? null : tareGrams > 0,
-        tareGrams,
-      },
-    };
+    return this.toFrame(weight.data, tareGrams === null ? null : tareGrams > 0, tareGrams);
   }
 
   /** Streams each reading from `SIR` until the returned function stops it. */
   onWeight(listener: (reading: ScaleReading) => void): () => void {
-    const protocol = this.config.protocols.mt_sics;
+    const protocol = this.protocol();
     const stop = listenScaleLines(nativeScaleModule(), protocol.terminator, (text) => {
       const line = parseMtSicsLine(text);
       if (line?.kind === "weight") listener(weightToReading(line));
@@ -127,19 +86,18 @@ export class MtSicsScaleDriver extends Driver(Scale) {
     };
   }
 
-  /** One weight line: requested with `SI`, or the next streamed line while `SIR` runs. */
-  private async weigh(): Promise<CapabilityResult<WeightLine>> {
-    const linked = await connectScale(this.config);
-    if (!linked.ok) return linked;
-    const protocol = this.config.protocols.mt_sics;
-    const line = await requestScaleLine(linked.data, {
-      command: this.streams > 0 ? "" : protocol.request,
-      terminator: protocol.terminator,
-      parse: parseMtSicsLine,
-      accept: isWeightOrFault,
-      timeout: Duration.toMilliseconds(this.config.readTimeout),
-    });
-    if (line === null || line.kind === "fault") return refuse("unavailable");
-    return { ok: true, data: line };
+  /** The MT-SICS commands and terminator. */
+  protected override protocol(): ScaleProtocol {
+    return this.config.protocols.mt_sics;
+  }
+
+  /** One MT-SICS answer line. */
+  protected override parse(text: string): ScaleLine | null {
+    return parseMtSicsLine(text);
+  }
+
+  /** `SI`, or nothing while `SIR` runs, so a read takes the next streamed line instead of cancelling the stream. */
+  protected override weighCommand(): string {
+    return this.streams > 0 ? "" : this.protocol().request;
   }
 }

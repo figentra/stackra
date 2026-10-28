@@ -65,6 +65,9 @@
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
+    },
+    "./app.plugin.js": {
+      "default": "./app.plugin.js"
     }
   },
   "publishConfig": {
