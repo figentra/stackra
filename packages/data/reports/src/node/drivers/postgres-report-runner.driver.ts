@@ -117,13 +117,14 @@ export class PostgresReportRunnerDriver extends Driver(ReportRunner) {
     const visible = await visibleKeysQuery(model);
     if (visible !== undefined)
       conditions.push({
-        sql: `${column(meta.primaryKeys[0] ?? "id")} in (${visible.sql})`,
+        sql: `(${column(meta.primaryKeys[0] ?? "id")} in (${visible.sql}))`,
         params: visible.params,
       });
     qb.select(plan.selects.map(fragment) as never);
     if (conditions.length > 0)
       qb.where(
-        conditions.map((condition) => `(${condition.sql})`).join(" and "),
+        // plan.where is already its parenthesised conditions ANDed.
+        conditions.map((condition) => condition.sql).join(" and "),
         conditions.flatMap((condition) => [...condition.params]),
       );
     if (plan.groupBy !== undefined) qb.groupBy(fragment(plan.groupBy) as never);
