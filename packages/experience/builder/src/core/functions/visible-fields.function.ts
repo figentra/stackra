@@ -16,10 +16,10 @@ import { FormFieldType } from "#contracts/index";
 import { answerSchema } from "#core/functions/answer-schema.function";
 import { formRules } from "#core/functions/form-rules.function";
 import type { FormDocument } from "#core/types/form-document.type";
-import type { FormField } from "#core/types/form-field.type";
+import type { FormDocumentField } from "#core/types/form-document-field.type";
 
 /** The fact an answer gives, or `undefined` when it does not pass its field's check or is not testable. */
-function factOf(field: FormField, answer: Json | undefined): FactValue | undefined {
+function factOf(field: FormDocumentField, answer: Json | undefined): FactValue | undefined {
   if (answer === undefined || !answerSchema(field).safeParse(answer).success) return undefined;
   switch (field.type) {
     case FormFieldType.Money:
@@ -43,7 +43,7 @@ export function visibleFields(
   form: FormDocument,
   answers: Readonly<Record<string, Json>>,
   now: Date,
-): FormField[] {
+): FormDocumentField[] {
   const facts: Record<string, FactValue | undefined> = {};
   for (const step of form.steps)
     for (const field of step.fields) facts[field.key] = factOf(field, answers[field.key]);

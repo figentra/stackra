@@ -12,7 +12,7 @@
 import { z } from "zod";
 
 import { FormFieldType } from "#contracts/index";
-import type { FormField } from "#core/types/form-field.type";
+import type { FormDocumentField } from "#core/types/form-document-field.type";
 
 /**
  * The schema of an answer to `field`.
@@ -20,7 +20,7 @@ import type { FormField } from "#core/types/form-field.type";
  * @example
  * answerSchema({ key: "seats", type: FormFieldType.Number, label, required: true, min: 1 }).safeParse(0).success; // false
  */
-export function answerSchema(field: FormField): z.ZodType {
+export function answerSchema(field: FormDocumentField): z.ZodType {
   const options = Object.keys(field.options ?? {}) as [string, ...string[]];
   const text = (limit: number) =>
     z

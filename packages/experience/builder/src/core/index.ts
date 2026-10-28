@@ -31,7 +31,7 @@ export { inspectorFieldsOf } from "#core/functions/inspector-fields-of.function"
 export { parseDocumentNode } from "#core/functions/parse-document-node.function";
 export { visibleFields } from "#core/functions/visible-fields.function";
 export type { FormDocument } from "#core/types/form-document.type";
-export type { FormField } from "#core/types/form-field.type";
-export type { FormStep } from "#core/types/form-step.type";
+export type { FormDocumentField } from "#core/types/form-document-field.type";
+export type { FormDocumentStep } from "#core/types/form-document-step.type";
 export { DocumentEditor } from "#core/values/document-editor.value";
 export { Editor } from "#core/values/editor.value";

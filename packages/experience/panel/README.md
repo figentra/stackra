@@ -36,7 +36,7 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                         | shell slots a product fills (ADR 0438)                         |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                     |
 | `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                       | saved views with grouping, sub-grouping, totals and sharing    |
-| `.`        | `visibleFields`                                                                                                                                                             | the form fields a display mode shows                           |
+| `.`        | `fieldsForMode`                                                                                                                                                             | the form fields a display mode shows                           |
 | `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                            | the one line editor of a `LineEntry` slot; inert contributions |
 | `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                  | the panel frame and its trail (navigation's, re-exported)      |
 | `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the pages `toPanel` and `toResource` render   |
@@ -115,7 +115,7 @@ totals sends its own totals.
 
 ## Display modes
 
-`visibleFields(fields, mode)` shows every form element in developer mode and only the essential ones in normal mode
+`fieldsForMode(fields, mode)` shows every form element in developer mode and only the essential ones in normal mode
 (`FormField.from(key, { essential: true })`, or `.essential()` in a `form(f)` member); a repeater, grid or step stays
 when a field inside it is essential. A mode is display only (ADR 0359 decision 2): a hidden field keeps its value, and
 nothing about what the viewer may do changes. The switch is `@stackra/ui`'s `ModeSwitch`.

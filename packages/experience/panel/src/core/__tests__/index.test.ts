@@ -73,6 +73,7 @@ describe("@stackra/panel", () => {
       "describeResource",
       "describeWidget",
       "document",
+      "fieldsForMode",
       "fillSlot",
       "groupRows",
       "lineEditorOf",
@@ -82,7 +83,6 @@ describe("@stackra/panel", () => {
       "resolvePlacements",
       "resource",
       "slots",
-      "visibleFields",
       "widget",
     ]);
   });

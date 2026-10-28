@@ -68,7 +68,7 @@ export { registerWidgets } from "#core/functions/register-widgets.function";
 export { resolvePlacements } from "#core/functions/resolve-placements.function";
 export { resource } from "#core/functions/resource.function";
 export { slots } from "#core/functions/slots.function";
-export { visibleFields } from "#core/functions/visible-fields.function";
+export { fieldsForMode } from "#core/functions/fields-for-mode.function";
 export { widget } from "#core/functions/widget.function";
 export { CountMetric } from "#core/schemas/count-metric.schema";
 export { MoneyMetric } from "#core/schemas/money-metric.schema";

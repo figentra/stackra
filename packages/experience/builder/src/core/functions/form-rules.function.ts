@@ -15,10 +15,10 @@ import { type FactField, FieldType } from "@stackra/rules/contracts";
 
 import { FormFieldType } from "#contracts/index";
 import type { FormDocument } from "#core/types/form-document.type";
-import type { FormField } from "#core/types/form-field.type";
+import type { FormDocumentField } from "#core/types/form-document-field.type";
 
 /** The fact a field becomes, or `undefined` for a field no condition may test. */
-function factOf(field: FormField): FactField | undefined {
+function factOf(field: FormDocumentField): FactField | undefined {
   const label = field.label as FactField["label"];
   switch (field.type) {
     case FormFieldType.Number:

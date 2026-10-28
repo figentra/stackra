@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `visibleFields(fields, mode)`, the form elements a display mode shows: every one in developer mode; in
+ * Purpose: `fieldsForMode(fields, mode)`, the form elements a display mode shows: every one in developer mode; in
  *          normal mode only the fields marked essential, with a repeater, grid or step kept when a field inside it is.
  * Boundary: pure. A mode is display only: a hidden field keeps its value or default, and nothing here grants or denies
  *           an action; the form still submits what the action's input needs.
  * Runtime: isomorphic
- * Governing contract: ADR 0359 (decisions 1 and 2).
+ * Governing contract: ADR 0359 (decisions 1 and 2);
+ *                     STA-1383 (renamed from visibleFields, which is builder's respondent check).
  */
 import type { DisplayMode } from "@stackra/ui/contracts";
 
@@ -43,9 +44,9 @@ function essentialOf(node: FieldNode): FieldNode | undefined {
  * The elements of `fields` shown in `mode`.
  *
  * @example
- * visibleFields(form.fields, "normal"); // the essential fields only
+ * fieldsForMode(form.fields, "normal"); // the essential fields only
  */
-export function visibleFields(
+export function fieldsForMode(
   fields: readonly FieldNode[],
   mode: DisplayMode,
 ): readonly FieldNode[] {

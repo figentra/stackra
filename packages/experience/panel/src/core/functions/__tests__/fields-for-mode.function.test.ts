@@ -1,16 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `visibleFields`: developer mode shows every element as given; normal mode keeps essential
+ * Purpose: unit tests of `fieldsForMode`: developer mode shows every element as given; normal mode keeps essential
  *          fields and uploads, a repeater with an essential field inside, and grids and steps cut to their essential
  *          fields, dropping those left empty.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0359 (decisions 1 and 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0359 (decisions 1 and 2);
+ *                     STA-1383 (renamed from visibleFields, which is builder's respondent check).
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { FormField } from "#core/constants/form-field.constant";
-import { visibleFields } from "#core/functions/visible-fields.function";
+import { fieldsForMode } from "#core/functions/fields-for-mode.function";
 
 class AttachAction {}
 
@@ -28,13 +29,13 @@ const fields = [
   ]),
 ];
 
-describe("visibleFields", () => {
+describe("fieldsForMode", () => {
   it("shows every element in developer mode", () => {
-    expect(visibleFields(fields, "developer")).toBe(fields);
+    expect(fieldsForMode(fields, "developer")).toBe(fields);
   });
 
   it("shows only what is essential in normal mode", () => {
-    expect(visibleFields(fields, "normal")).toEqual([
+    expect(fieldsForMode(fields, "normal")).toEqual([
       { kind: "value", key: "title", essential: true },
       { kind: "upload", key: "image", action: AttachAction, essential: true },
       fields[3],
