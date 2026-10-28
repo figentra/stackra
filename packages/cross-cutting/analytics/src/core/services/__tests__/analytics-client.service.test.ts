@@ -4,8 +4,10 @@
  *          queue is sent in order on acceptance with each event's capture time, discarded unsent on refusal, holds at
  *          most `queueLimit` events (keeping the earliest), and Global Privacy Control counts as a refusal; plus the
  *          payload rules (declared fields only, the deny list removed), the refusal of a non-analytics event, a
- *          driver failure kept from the caller, the ledger watched only while events wait, and the envelope v2 ids
- *          and context (event id per event, visitor and session ids made only after consent and kept for the launch).
+ *          driver failure kept from the caller, the ledger watched only while events wait or an identity is kept, the
+ *          envelope v2 ids and context (event id per event, visitor and session ids made only after consent and kept
+ *          for the launch), and identity stitching (identify, group, reset, the anonymous id kept only after consent,
+ *          restored on a new launch and forgotten on withdrawal).
  * Boundary: test only; registers each event's zod schema the way gen does; the memory driver records what left.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1, 2 and 5); ADR 0305 (rule 20).
@@ -26,10 +28,13 @@ import { vi } from "vitest";
 import { z } from "zod";
 
 import { AnalyticsConfig } from "#config/analytics.config";
+import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsIdentityRecord } from "#contracts/types/analytics-identity-record.type";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 import { AnalyticsClient } from "#core/services/analytics-client.service";
 import { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
+import { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
 
 /** The template's contact-page event. */
 class LeadSubmitted extends AnalyticsEvent({ name: "lead.submitted" }) {
@@ -247,7 +252,7 @@ describe("AnalyticsClient", () => {
     expect(driver.delivered()[0]?.context).toEqual({ library: { name: "@stackra/analytics" } });
   });
 
-  it("watches the ledger only while events wait", () => {
+  it("watches the ledger while events wait, then only while it keeps an identity", () => {
     const { client, ledger } = setUp();
     const subscribe = ledger.subscribe;
     let watching = 0;
@@ -263,6 +268,125 @@ describe("AnalyticsClient", () => {
     client.track(LeadSubmitted.create({ plan: "team" }));
     expect(watching).toBe(1);
     ledger.set(ConsentCategory.Analytics, true);
+    // The queue's watch ends; the identity guard starts, so a later refusal forgets the visitor.
+    expect(watching).toBe(1);
+    ledger.set(ConsentCategory.Analytics, false);
     expect(watching).toBe(0);
+  });
+});
+
+/** A client with a memory identity store the test reads. */
+function withIdentity(kept: AnalyticsIdentityRecord | null = null) {
+  const identity = new MemoryAnalyticsIdentityDriver();
+  if (kept !== null) identity.write(kept);
+  const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
+  const driver = new MemoryAnalyticsDriver();
+  const client = new AnalyticsClient(buildConfig(AnalyticsConfig), driver, ledger, identity);
+  return { client, driver, ledger, identity };
+}
+
+describe("AnalyticsClient identity (stackra-405)", () => {
+  it("keeps nothing before consent and the anonymous id once granted", () => {
+    const { client, ledger, identity, driver } = withIdentity();
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(identity.read()).toBeNull();
+    ledger.set(ConsentCategory.Analytics, true);
+    expect(identity.read()).toEqual({ anonymousId: driver.delivered()[0]?.anonymousId });
+  });
+
+  it("restores the kept anonymous id on a new launch", () => {
+    const { client, ledger, driver } = withIdentity({ anonymousId: "anon_kept" });
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(driver.delivered()[0]?.anonymousId).toBe("anon_kept");
+  });
+
+  it("never reads the kept id while undecided or refused", () => {
+    const { client, ledger, driver, identity } = withIdentity({ anonymousId: "anon_kept" });
+    ledger.set(ConsentCategory.Analytics, false);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(driver.delivered()).toEqual([]);
+    expect(identity.read()).toBeNull();
+  });
+
+  it("identifies: an identify delivery, then events as the user, kept with the anonymous id", () => {
+    const { client, ledger, driver, identity } = withIdentity();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    client.identify("usr_1");
+    client.identify("usr_1");
+    client.track(LeadSubmitted.create({ plan: "team" }));
+    const [before, link, after] = driver.delivered();
+    expect(driver.delivered()).toHaveLength(3);
+    expect(before?.userId).toBeUndefined();
+    expect(link).toMatchObject({
+      kind: AnalyticsDeliveryKind.Identify,
+      name: "identify",
+      userId: "usr_1",
+    });
+    expect(link?.anonymousId).toBe(before?.anonymousId);
+    expect(after).toMatchObject({ kind: AnalyticsDeliveryKind.Track, userId: "usr_1" });
+    expect(identity.read()).toEqual({ anonymousId: before?.anonymousId, userId: "usr_1" });
+  });
+
+  it("queues identify and group with the events until the visitor decides", () => {
+    const { client, ledger, driver } = withIdentity();
+    client.identify("usr_1");
+    client.group("scope", "scp_1");
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(driver.delivered()).toEqual([]);
+    ledger.set(ConsentCategory.Analytics, true);
+    expect(driver.delivered().map((delivery) => delivery.kind)).toEqual([
+      AnalyticsDeliveryKind.Identify,
+      AnalyticsDeliveryKind.Group,
+      AnalyticsDeliveryKind.Track,
+    ]);
+    expect(driver.delivered()[1]).toMatchObject({
+      properties: { type: "scope", id: "scp_1" },
+      groups: { scope: "scp_1" },
+    });
+    expect(driver.delivered()[2]?.groups).toEqual({ scope: "scp_1" });
+  });
+
+  it("replaces a group of the same type and ignores a repeat", () => {
+    const { client, ledger, driver } = withIdentity();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.group("scope", "scp_1");
+    client.group("scope", "scp_1");
+    client.group("scope", "scp_2");
+    expect(driver.delivered()).toHaveLength(2);
+    expect(driver.delivered()[1]?.groups).toEqual({ scope: "scp_2" });
+  });
+
+  it("resets on sign-out: a new anonymous visitor and session, no user, nothing kept", () => {
+    const { client, ledger, driver, identity } = withIdentity();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.identify("usr_1");
+    client.group("scope", "scp_1");
+    const first = driver.delivered()[0];
+    client.reset();
+    expect(identity.read()).toBeNull();
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    const after = driver.delivered().at(-1);
+    expect(after?.anonymousId).not.toBe(first?.anonymousId);
+    expect(after?.sessionId).not.toBe(first?.sessionId);
+    expect(after?.userId).toBeUndefined();
+    expect(after?.groups).toBeUndefined();
+  });
+
+  it("forgets the kept identity as soon as consent is withdrawn", () => {
+    const { client, ledger, identity } = withIdentity();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.identify("usr_1");
+    expect(identity.read()).not.toBeNull();
+    ledger.set(ConsentCategory.Analytics, false);
+    expect(identity.read()).toBeNull();
+  });
+
+  it("refuses an empty user id or group", () => {
+    const { client } = withIdentity();
+    expect(() => client.identify("")).toThrow(RangeError);
+    expect(() => client.group("", "scp_1")).toThrow(RangeError);
+    expect(() => client.group("scope", "")).toThrow(RangeError);
   });
 });

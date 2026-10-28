@@ -14,6 +14,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { AnalyticsConfig } from "#config/analytics.config";
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
 
 const BaseAnalyticsConfig = AnalyticsConfig;
@@ -63,6 +64,8 @@ describe("AnalyticsConfig", () => {
     const config = buildConfig(AnalyticsConfig);
     expectTypeOf(config.driver).toEqualTypeOf<DriverName<AnalyticsDriver>>();
     expectTypeOf(config.consentCategory).toEqualTypeOf<ConsentCategory>();
+    expectTypeOf(config.identityDriver).toEqualTypeOf<DriverName<AnalyticsIdentity>>();
+    expect(config.identityDriver).toBe("memory");
     expect({ ...config }).toEqual(ANALYTICS_CONFIG_SCHEMA.parse({}));
     expect(config.driver).toBe("none");
     expect(Object.isFrozen(config)).toBe(true);

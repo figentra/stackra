@@ -6,33 +6,36 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 
 **Tier:** `tier:lib` (`packages/cross-cutting/analytics`). Entries `.`, `./contracts`, `./react`, `./native` and
 `./testing`. Depends on `@stackra/config`, `@stackra/consent`, `@stackra/container`, `@stackra/contracts`,
-`@stackra/events`, `@stackra/validation` and zod; React is an optional peer of `./react`, React Native of `./native`. The event base, `AnalyticsEvent`, lives in
+`@stackra/events`, `@stackra/storage`, `@stackra/validation` and zod; React is an optional peer of `./react`, React Native of `./native`. The event base, `AnalyticsEvent`, lives in
 `@stackra/events`; this package delivers it.
 
 ## What is here
 
-| Entry         | Symbol                   | Use                                                                                    |
-| ------------- | ------------------------ | -------------------------------------------------------------------------------------- |
-| `.`           | `AnalyticsConfig`        | the configuration (key `analytics`): driver, gating category, queue bound, deny list   |
-| `.`           | `AnalyticsConfig$`       | the shipped schema a member's generated override extends                               |
-| `.`           | `AnalyticsOptions`       | the configuration's shape                                                              |
-| `.`           | `AnalyticsClient`        | the service that delivers: `track(event)`, `state`                                     |
-| `.`           | `AnalyticsState`         | `opted_in`, `opted_out`, `pending`                                                     |
-| `.`           | `NoneAnalyticsDriver`    | the default driver: sends nothing                                                      |
-| `.`           | `MemoryAnalyticsDriver`  | the `memory` driver: keeps what it is sent                                             |
-| `.`           | `PosthogAnalyticsDriver` | the `posthog` driver: one batch capture request per send, plain `fetch`                |
-| `./contracts` | `AnalyticsDriver`        | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type   |
-| `./contracts` | `AnalyticsContext`       | where a delivery was captured: library, page path or screen, locale, version, region   |
-| `./react`     | `useAnalytics`           | the client of the nearest container                                                    |
-| `./native`    | `PosthogAnalyticsDriver` | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
-| `./testing`   | `fakeAnalytics`          | a real client over memory and its own consent ledger, recording every tracked event    |
-| `./testing`   | `AnalyticsFake`          | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`       |
+| Entry         | Symbol                                                                                             | Use                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `.`           | `AnalyticsConfig`                                                                                  | the configuration (key `analytics`): driver, gating category, queue bound, deny list   |
+| `.`           | `AnalyticsConfig$`                                                                                 | the shipped schema a member's generated override extends                               |
+| `.`           | `AnalyticsOptions`                                                                                 | the configuration's shape                                                              |
+| `.`           | `AnalyticsClient`                                                                                  | the service that delivers: `track(event)`, `identify`, `group`, `reset`, `state`       |
+| `.`           | `AnalyticsState`                                                                                   | `opted_in`, `opted_out`, `pending`                                                     |
+| `.`           | `NoneAnalyticsDriver`                                                                              | the default driver: sends nothing                                                      |
+| `.`           | `MemoryAnalyticsDriver`                                                                            | the `memory` driver: keeps what it is sent                                             |
+| `.`           | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver: one batch capture request per send, plain `fetch`                |
+| `./contracts` | `AnalyticsDriver`                                                                                  | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type   |
+| `./contracts` | `AnalyticsContext`                                                                                 | where a delivery was captured: library, page path or screen, locale, version, region   |
+| `./contracts` | `AnalyticsDeliveryKind`                                                                            | `track`, `identify`, `group`: what a delivery asks the destination to do               |
+| `./contracts` | `AnalyticsIdentity`                                                                                | the port that keeps the visitor's identity after consent (`AnalyticsIdentityRecord`)   |
+| `.`           | `MemoryAnalyticsIdentityDriver`, `CookieAnalyticsIdentityDriver`, `StorageAnalyticsIdentityDriver` | identity drivers `memory` (default, one launch), `cookie` (web), `storage` (device)    |
+| `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                    |
+| `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
+| `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event    |
+| `./testing`   | `AnalyticsFake`                                                                                    | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`       |
 
 ## The rules, in order
 
 1. `track(event)` takes an instance of an `AnalyticsEvent({ name })` class; anything else is a `TypeError`.
 2. Only the fields the event's schema declares leave the device, minus the names in `denyProperties`, inside the
-   envelope below. No identity beyond its anonymous ids is attached.
+   envelope below. No identity beyond the anonymous ids, the user's public id and the group ids is attached.
 3. The category in `consentCategory` decides, through `ConsentLedger`: granted sends at once (after anything that
    waited), refused drops, undecided queues.
 4. The queue holds at most `queueLimit` events. A full queue drops the newest, so the first view survives.
@@ -49,12 +52,28 @@ Every `AnalyticsDelivery` a driver receives carries:
 | `name`        | the locked event name, such as `lead.submitted`                                                    |
 | `properties`  | the schema-declared fields minus `denyProperties`                                                  |
 | `occurredAt`  | the capture time, ISO 8601                                                                         |
-| `anonymousId` | `anon_...`, made after consent, held in memory for this launch, never stored                       |
-| `userId`      | the signed-in user's id once the host identifies the visitor (not set yet: `identify` is to come)  |
+| `anonymousId` | `anon_...`, made after consent; kept by the identity driver only while consent holds               |
+| `kind`        | `track` (also when absent), `identify` or `group`                                                  |
+| `userId`      | the signed-in user's public id once the host calls `identify`                                      |
+| `groups`      | group type to id, once the host calls `group` (for example `scope` to the scope's public id)       |
 | `sessionId`   | `ses_...`, made after consent, one per launch                                                      |
 | `context`     | `AnalyticsContext`: `library`, and when known `page.path` (no query), `screen`, `locale`, `region` |
 
 A driver sends these ids and never makes its own.
+
+## Identity
+
+`identify(userId)` after sign-in links the anonymous visitor to the user's public id (never an email or a phone):
+an `identify` delivery tells the destinations, and every later event carries `userId`. `group(type, id)` puts the
+visitor in a group, one per type. `reset()` on sign-out forgets the user and the groups and starts a new anonymous
+visitor and session. Both calls are deliveries of their own kind, so they wait for consent and are dropped on refusal
+like events.
+
+The anonymous id survives a reload only through the identity driver (`identityDriver`): `memory` keeps nothing past
+the launch (the default), `cookie` keeps one first-party cookie (`identityCookieName`, `identityExpiryDays`) and
+`storage` the device's `prefs` area. The client writes it only while the category is granted and removes it as soon as
+it is refused or on `reset`; the session id is never kept, and the user id and groups are not restored (call
+`identify` and `group` again after sign-in). A destination that must not see the raw user id hashes it.
 
 ## Use
 
@@ -90,12 +109,14 @@ expect(analytics.delivered()).toEqual([]); // nobody accepted yet
 Set `driver: "posthog"` and feed `posthogKey` (the public `phc_...` project key) from the host's env configuration;
 `posthogHost` defaults to `https://eu.i.posthog.com`, and a non-empty `ingestOrigin` (a reverse proxy on the site's own
 origin) wins over it. The driver posts to `<origin>/batch/` with plain `fetch`, no SDK. It maps the envelope:
-`anonymousId` is the `distinct_id`, `sessionId` the `$session_id`, `eventId` the `$insert_id` and `context.page.path` the
-`$pathname`; every event carries `$process_person_profile: false`. On a phone, take the driver
+`userId` (once identified) or else `anonymousId` is the `distinct_id`, `sessionId` the `$session_id`, `eventId` the
+`$insert_id`, `context.page.path` the `$pathname` and `groups` the `$groups`; an `identify` delivery is `$identify` with
+`$anon_distinct_id` (PostHog merges the two) and a `group` delivery is `$groupidentify`. Only an identified visitor's
+events carry `$process_person_profile: true`. On a phone, take the driver
 from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or when `AppState` goes to `background`.
 
 ## Not here yet
 
 The capture switches (`autocapturePageviews`, `autocaptureClicks`, `webVitals`, `sessionReplay`) are not read by the
-PostHog driver yet: it sends only the events tracked through `AnalyticsClient`. Nothing sets `userId`, `screen`,
-`appVersion` or `region` in the envelope yet; identity (`identify`, `reset`) and a stored `anonymousId` come next.
+PostHog driver yet: it sends only the events tracked through `AnalyticsClient`. Nothing sets `screen`, `appVersion`
+or `region` in the envelope yet. Hashing the user id per destination belongs to the destinations (stackra-407, 412).

@@ -12,9 +12,12 @@
  */
 export { AnalyticsConfig } from "#config/analytics.config";
 export { ANALYTICS_CONFIG_SCHEMA as AnalyticsConfig$ } from "#core/constants/analytics-config-schema.constant";
+export { CookieAnalyticsIdentityDriver } from "#core/drivers/cookie-analytics-identity.driver";
 export { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
+export { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
 export { NoneAnalyticsDriver } from "#core/drivers/none-analytics.driver";
 export { PosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
+export { StorageAnalyticsIdentityDriver } from "#core/drivers/storage-analytics-identity.driver";
 export { AnalyticsState } from "#core/enums/analytics-state.enum";
 export { AnalyticsOptions } from "#core/schemas/analytics-options.schema";
 export { AnalyticsClient } from "#core/services/analytics-client.service";

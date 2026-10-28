@@ -27,6 +27,9 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
       denyProperties: [],
       posthogKey: null,
       posthogHost: "https://eu.i.posthog.com",
+      identityDriver: "memory",
+      identityCookieName: "stk_aid",
+      identityExpiryDays: 365,
     });
   });
 
@@ -61,6 +64,9 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     ["a script URL as the ingest origin", { ingestOrigin: "javascript:alert(1)" }],
     ["an empty deny name", { denyProperties: [""] }],
     ["a PostHog host that is not a URL", { posthogHost: "posthog" }],
+    ["an unknown identity driver", { identityDriver: "localStorage" }],
+    ["an identity cookie name with a space", { identityCookieName: "my id" }],
+    ["an identity kept past 400 days", { identityExpiryDays: 401 }],
   ])("refuses %s", (_case, values) => {
     expect(ANALYTICS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

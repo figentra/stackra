@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `posthog` `AnalyticsDriver`: the batch request it sends (endpoint, key, events in order
- *          with their capture time, no person profile), the envelope ids and page path mapped to PostHog, the ingest
+ *          with their capture time, no person profile before identify), the envelope ids and page path mapped to PostHog,
+ *          the user, groups, `$identify` and `$groupidentify` of identity stitching, the ingest
  *          origin preferred over the host, no request for an empty list, and the errors for a missing key and an
  *          error status.
  * Boundary: test only; `fetch` is stubbed, no network.
@@ -14,6 +15,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { AnalyticsConfig } from "#config/analytics.config";
+import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import { PosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
 
@@ -92,6 +94,44 @@ describe("PosthogAnalyticsDriver", () => {
       $pathname: "/pricing",
     });
     expect(second.properties).not.toHaveProperty("$pathname");
+  });
+
+  it("sends an identified visitor's events as the user, with groups and a person profile", async () => {
+    const fetch = answer();
+    await new PosthogAnalyticsDriver(config).send([
+      { ...delivery("a.one"), userId: "usr_1", groups: { scope: "scp_1" } },
+    ]);
+    expect(request(fetch).body.batch[0].properties).toMatchObject({
+      distinct_id: "usr_1",
+      $groups: { scope: "scp_1" },
+      $process_person_profile: true,
+    });
+  });
+
+  it("maps identify to $identify and group to $groupidentify", async () => {
+    const fetch = answer();
+    await new PosthogAnalyticsDriver(config).send([
+      { ...delivery("identify"), kind: AnalyticsDeliveryKind.Identify, userId: "usr_1" },
+      {
+        ...delivery("group", { type: "scope", id: "scp_1" }),
+        kind: AnalyticsDeliveryKind.Group,
+        userId: "usr_1",
+        groups: { scope: "scp_1" },
+      },
+    ]);
+    const [identify, group] = request(fetch).body.batch;
+    expect(identify).toMatchObject({
+      event: "$identify",
+      properties: {
+        distinct_id: "usr_1",
+        $anon_distinct_id: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+      },
+    });
+    expect(group).toMatchObject({
+      event: "$groupidentify",
+      properties: { distinct_id: "usr_1", $group_type: "scope", $group_key: "scp_1" },
+    });
+    expect(group.properties).not.toHaveProperty("type");
   });
 
   it("sends to the ingest origin when one is set", async () => {

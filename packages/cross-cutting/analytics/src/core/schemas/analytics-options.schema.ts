@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `AnalyticsOptions`, the shape of `AnalyticsConfig`: which driver sends, which consent category gates it,
  *          how many events may wait for a decision, what a vendor driver captures on its own, where it sends, which
- *          property names never leave the device, and the PostHog project key and host the `posthog` driver sends to.
+ *          property names never leave the device, the PostHog project key and host the `posthog` driver sends to, and
+ *          where and how long the visitor's identity is kept after consent.
  * Boundary: a shape class; it registers this package's own schema (`ANALYTICS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(AnalyticsConfig)` validates with no generated file. The defaults send
  *           nothing anywhere: the `none` driver, gated by `analytics`, nothing captured automatically, no cookies.
@@ -17,6 +18,7 @@ import type { DriverName } from "@stackra/container";
 import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
 
 /**
@@ -35,6 +37,13 @@ export class AnalyticsOptions extends Schema {
     max: 1000,
   })
   queueLimit = 100;
+
+  /** How long the visitor's identity is kept by the `cookie` or `storage` identity driver, in days (1 to 400). */
+  @Int({
+    min: 1,
+    max: 400,
+  })
+  identityExpiryDays = 365;
 
   /** The registered `AnalyticsDriver` that sends; `none` sends nothing, `memory` keeps events, `posthog` sends there. */
   driver: DriverName<AnalyticsDriver> = "none";
@@ -68,6 +77,15 @@ export class AnalyticsOptions extends Schema {
 
   /** The PostHog host the `posthog` driver sends to when `ingestOrigin` is empty. */
   posthogHost = "https://eu.i.posthog.com";
+
+  /**
+   * The registered `AnalyticsIdentity` that keeps the visitor's identity after consent: `memory` (nothing outlives the
+   * launch), `cookie` (the web) or `storage` (a device).
+   */
+  identityDriver: DriverName<AnalyticsIdentity> = "memory";
+
+  /** The first-party cookie the `cookie` identity driver keeps the identity in. */
+  identityCookieName = "stk_aid";
 }
 
 registerSchemas([[AnalyticsOptions, ANALYTICS_CONFIG_SCHEMA]]);

@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `ANALYTICS_CONFIG_SCHEMA`, the zod schema this package ships for `AnalyticsConfig` (exported as
  *          `AnalyticsConfig$`): the driver, the consent category that gates delivery, the bound of the pre-consent
- *          queue, the capture switches a vendor driver reads, the ingest origin, the deny list and the PostHog key
- *          and host.
+ *          queue, the capture switches a vendor driver reads, the ingest origin, the deny list, the PostHog key
+ *          and host, and the identity driver, cookie name and lifetime (identity stitching).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `AnalyticsConfig$` extends it
  *           (`AnalyticsConfig$.shape.driver.unwrap().default(...)`). The rules sit on the fields: the gating category
  *           is never `necessary` (that would send without asking), the queue holds 0 to 1,000 events, the ingest
- *           origin is empty or an http(s) URL, and the PostHog host is an http(s) URL. The driver names are the shipped drivers. The defaults equal
+ *           origin is empty or an http(s) URL, and the PostHog host is an http(s) URL. The driver names are the shipped drivers;
+ *           the identity cookie name is a cookie token and the identity lives 1 to 400 days. The defaults equal
  *           `AnalyticsOptions`' initializers (tested).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0298 (decisions 1 and 5).
@@ -16,6 +17,9 @@
 import { ConsentCategory } from "@stackra/consent";
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
+
+/** An RFC 6265 cookie-name token: no separators, spaces or controls. */
+const COOKIE_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
 // shortcut: authored until gen compiles this package's AnalyticsOptions into #stackra/schemas; replace with STA-339.
 /** The shipped `AnalyticsConfig$`. */
@@ -37,4 +41,7 @@ export const ANALYTICS_CONFIG_SCHEMA = z.object({
   denyProperties: z.array(z.string().min(1)).default(() => []),
   posthogKey: z.string().nullable().default(null),
   posthogHost: z.url({ protocol: /^https?$/ }).default("https://eu.i.posthog.com"),
+  identityDriver: z.enum(["memory", "cookie", "storage"]).default("memory"),
+  identityCookieName: z.string().regex(COOKIE_NAME).default("stk_aid"),
+  identityExpiryDays: z.number().int().min(1).max(400).default(365),
 });

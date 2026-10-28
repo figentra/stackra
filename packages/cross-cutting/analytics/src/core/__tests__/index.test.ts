@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the values the template imports from `@stackra/analytics`
  *          (`AnalyticsConfig`, `AnalyticsConfig$`, and the `posthog`, `none` and `memory` drivers from the gen wiring)
- *          are exported, with the client, the state and the options shape; the port and the internals are not.
+ *          are exported, with the client, the state, the options shape and the `memory`, `cookie` and `storage`
+ *          identity drivers; the port and the internals are not.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -20,14 +21,23 @@ describe("@stackra/analytics", () => {
       "AnalyticsConfig$",
       "AnalyticsOptions",
       "AnalyticsState",
+      "CookieAnalyticsIdentityDriver",
       "MemoryAnalyticsDriver",
+      "MemoryAnalyticsIdentityDriver",
       "NoneAnalyticsDriver",
       "PosthogAnalyticsDriver",
+      "StorageAnalyticsIdentityDriver",
     ]);
   });
 
   it("keeps the port and the internals out of the entry", () => {
-    for (const name of ["AnalyticsDriver", "ANALYTICS_CONFIG_SCHEMA"]) {
+    for (const name of [
+      "AnalyticsDriver",
+      "AnalyticsIdentity",
+      "ANALYTICS_CONFIG_SCHEMA",
+      "ANALYTICS_IDENTITY_SCHEMA",
+      "parseAnalyticsIdentity",
+    ]) {
       expect(name in analytics).toBe(false);
     }
   });
