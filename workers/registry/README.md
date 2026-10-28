@@ -217,9 +217,9 @@ Restrict the `registry` environment to `main`. The Infisical identity trusts Git
 repository's immutable form, `repo:figentra@314302700/stackra@1425140001:environment:registry` (the plain
 `repo:figentra/stackra:...` form is refused), and reads `prod` `/ci` (`CLOUDFLARE_API_TOKEN`) and `prod` `/ci/registry`
 (`REGISTRY_SIGNING_KEY`). The Cloudflare token in `/ci` needs D1, Workers R2 Storage, Workers KV Storage and Workers
-Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain `npm.stackra.figentra.com` must leave the npflared
-`npm-registry` Worker first
-(decision 17), or `wrangler deploy` refuses the route.
+Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain
+`npm.stackra.figentra.com` must leave the npflared `npm-registry` Worker first (decision 17), or `wrangler deploy`
+refuses the route.
 
 ### 2. Signing key
 
