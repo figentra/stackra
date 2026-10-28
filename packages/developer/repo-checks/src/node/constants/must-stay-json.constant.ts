@@ -33,6 +33,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "VS Code reads these fixed names (JSONC inside)",
   ],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
+  [
+    /(^|\/)expo-module\.config\.json$/,
+    "Expo autolinking reads this fixed name as strict JSON (ADR 0478)",
+  ],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/^\.github\/rulesets\/[\w-]+\.json$/, "GitHub REST ruleset payload (PUT …/rulesets/<id>)"],
   [
