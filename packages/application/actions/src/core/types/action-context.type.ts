@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ActionContext`, the second parameter of an action's `handle`: the query context plus what a write needs:
  *          the Idempotency-Key, work after commit, audit fields, a workflow behind the same key, a workflow signal,
- *          a queued job and an integration event that no model owns (`publish`, ADR 0456 decision 2).
+ *          a queued job, an integration event that no model owns (`publish`, ADR 0456 decision 2) and the record
+ *          version the client last read (`expectedVersion`, from If-Match).
  * Boundary: a type only; the pipeline builds it per call. `run` and `signal` reach `WorkflowRunner`, `dispatch` reaches
  *           `JobDispatcher`, `publish` reaches `EventOutbox`; calling one in an app that does not bind its port is an error
  *           naming the package. An event a model owns is recorded on the model (`record(event)`), never published here. External calls
@@ -22,6 +23,12 @@ import type { QueryContext } from "#core/types/query-context.type";
 export interface ActionContext extends QueryContext {
   /** The supplied or derived Idempotency-Key; `undefined` when the call has none. */
   readonly idempotencyKey: string | undefined;
+
+  /**
+   * The version of the record the client last read (`If-Match`), to hand to `CrudService.update(where, data,
+   * { expectedVersion })`, which refuses a row that moved on with `stale_version` (409). Absent when none was sent.
+   */
+  readonly expectedVersion?: number;
 
   /**
    * Runs `work` once the call's transaction has committed, in call order; never for a refused or failed call. A

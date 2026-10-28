@@ -66,6 +66,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Stamps (ADR 0133 d7): `StampSubscriber` and `stampFields` are the only writers of `createdBy`/`updatedBy`, and the
   actor is the running call's, never input. A new native update path (`nativeUpdate`, a query-builder update) spreads
   `stampFields(model, "update")` into its data, as `increment` and `repath` do.
+- Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
+  `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
+  A refusal carries the constraint name, never a row value.
 - Collations: `schema.createCollation(name, locale)` creates an ICU collation in the module schema and
   `.collate(name)` names it on a text column; the locale is the migration's literal, never chosen in this package.
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other

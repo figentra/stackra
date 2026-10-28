@@ -174,11 +174,13 @@ describe("@stackra/database", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(database).sort()).toEqual([
       "Aggregate",
+      "ConstraintViolatedError",
       "CrudService",
       "Database",
       "DatabaseConfig",
       "DatabaseConfig$",
       "DatabaseConfigOptions",
+      "DuplicateRecordError",
       "EntitySchema",
       "Extension",
       "GraphQuery",
@@ -196,7 +198,9 @@ describe("@stackra/database", () => {
       "SequenceNumberOutOfOrderError",
       "SequenceService",
       "StackraNamingStrategy",
+      "StaleVersionError",
       "StampSubscriber",
+      "TransactionConflictError",
       "UniqueViolation",
       "ancestorOf",
       "compileMigration",
@@ -217,6 +221,7 @@ describe("@stackra/database", () => {
       "repositoryOf",
       "sql",
       "table",
+      "translateDbError",
       "visibleKeysQuery",
     ]);
     for (const internal of [

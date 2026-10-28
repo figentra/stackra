@@ -75,4 +75,10 @@ export interface CallOptions {
    * credential, never from input. Absent for an internal call (a job, a workflow step).
    */
   readonly origin?: CallOrigin;
+
+  /**
+   * The record version the client last read, from the `If-Match` header (or a `version` field the transport lifts out
+   * of the input); the action's `ctx.expectedVersion`. Absent when the client sent none.
+   */
+  readonly expectedVersion?: number;
 }

@@ -296,6 +296,26 @@ With a driver bound, `CrudService`'s `find`, `findOne`, `findOneOrFail`, `count`
 `GraphQuery`'s source rows, AND its conditions into their filter for the running call's actor (`undefined` outside a
 call; the driver decides what that sees). Without one, reads are unchanged. Writes and `purge` carry no conditions.
 
+## Concurrency and database errors
+
+A `Versioned` model's `version` is the ORM's version property, so a unit of work that flushes a row someone else
+changed fails. `CrudService.update(where, data, { expectedVersion })` refuses earlier, before anything changes, when
+the row is no longer at the version the client read; an action passes `ctx.expectedVersion`, which the transport
+fills from `If-Match`.
+
+`DatabaseUnitOfWorkDriver` raises what leaves an action's transaction as a refusal (`translateDbError`, exported for a
+module's own transaction):
+
+| Database error                                                                            | Refusal                    | Status         |
+| ----------------------------------------------------------------------------------------- | -------------------------- | -------------- |
+| Optimistic lock (version mismatch)                                                        | `StaleVersionError`        | 409            |
+| Unique violation (`23505`)                                                                | `DuplicateRecordError`     | 409            |
+| Foreign key, check, not null (`23503`, `23514`, `23502`)                                  | `ConstraintViolatedError`  | 400            |
+| Serialization, deadlock, lock not available, timeout (`40001`, `40P01`, `55P03`, `57014`) | `TransactionConflictError` | 503, retryable |
+
+Inside `handle`, the driver's own error still arrives first, so a service that treats a `UniqueViolation` as "already
+there" keeps catching it. The refusal names the constraint, never a value.
+
 ## Stamps
 
 `StampSubscriber` (from `.`, passed in `DatabaseOptions.subscribers` by the boot) fills the `Timestamps` and

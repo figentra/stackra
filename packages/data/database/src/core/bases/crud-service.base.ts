@@ -10,14 +10,17 @@
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
  *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock) ANDs in the bound
  *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
- *           carry none. Native updates (`increment`, `repath`) set the
+ *           carry none. `update` takes the caller's `expectedVersion`. Database errors stay the
+ *           driver's here (a caller may catch `UniqueViolation`); the action's unit of work raises them as refusals.
+ *           Native updates (`increment`, `repath`) set the
  *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
- *                     atomic increment, `update` with `requiresNew`).
+ *                     atomic increment, `update` with `requiresNew`);
+ *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -44,6 +47,7 @@ import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
+import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
@@ -52,6 +56,7 @@ import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
+import type { UpdateOptions } from "#core/types/update-options.type";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
@@ -206,11 +211,14 @@ export abstract class CrudService<M extends object> extends Service implements R
   /**
    * Changes the one row matching `where`; written when the caller's unit of work commits. With `requiresNew` it is read,
    * changed and written now in a transaction of its own that commits even if the caller's rolls back (an attempt
-   * counter kept across a failed delivery), as `insert` does.
+   * counter kept across a failed delivery), as `insert` does. With `expectedVersion` (a `Versioned` model), a row at
+   * another version is refused before anything changes; the ORM's own version check at flush catches a change made
+   * after this read, which the unit of work raises as the same refusal.
    *
    * @throws NotFoundError when no row matches.
+   * @throws StaleVersionError when the row's version is not `expectedVersion`.
    */
-  async update(where: Where<M>, data: EntityData<M>, options: TransactionOptions = {}): Promise<M> {
+  async update(where: Where<M>, data: EntityData<M>, options: UpdateOptions = {}): Promise<M> {
     if (options.requiresNew === true) {
       const model = this.model();
       const filter = await visibleFilter(model, where);
@@ -219,6 +227,7 @@ export abstract class CrudService<M extends object> extends Service implements R
           const row = await em.findOneOrFail(model, filter, {
             failHandler: () => NotFoundError.create(),
           });
+          this.checkVersion(row, options.expectedVersion);
           em.assign(row as M, data as never);
           await em.flush();
           return row as M;
@@ -227,6 +236,7 @@ export abstract class CrudService<M extends object> extends Service implements R
       );
     }
     const row = await this.findOneOrFail(where);
+    this.checkVersion(row, options.expectedVersion);
     // reason: assign types its data as MikroORM's DTO union; EntityData<M> is what callers hold and assign takes
     this.em().assign(row as M, data as never);
     return row as M;
@@ -315,6 +325,17 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** The model this service is typed against. */
   protected model(): AnyClass<M> {
     return modelOf<M>(this.constructor);
+  }
+
+  /**
+   * Refuses `row` when the caller expected another version.
+   *
+   * @throws StaleVersionError when `expected` is given and the row's `version` differs.
+   */
+  private checkVersion(row: object, expected: number | undefined): void {
+    if (expected === undefined) return;
+    if ((row as { version?: unknown }).version !== expected)
+      throw StaleVersionError.create({ model: this.model().name });
   }
 
   /** One aggregate of `field`'s column over the visible rows matching `where`, as a number (0 for no row). */

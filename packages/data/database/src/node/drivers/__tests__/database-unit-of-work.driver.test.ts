@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DatabaseUnitOfWorkDriver`: it is the actions `UnitOfWork`, and its transaction is the
- *          connected database's, with the action's timeout.
+ *          connected database's, with the action's timeout, and a database error leaves as its refusal.
  * Boundary: test only; the database is a stand-in that records its transactions.
  * Runtime: node (vitest)
  * Governing contract: ADR 0136 (decision 2); ADR 0142; ADR 0022; ADR 0269.
@@ -9,9 +9,11 @@
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { UnitOfWork } from "@stackra/actions/contracts";
 import { Duration } from "@stackra/contracts";
+import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { DuplicateRecordError } from "#core/errors/duplicate-record.error";
 import { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
 import { Database } from "#core/ports/database.port";
 
@@ -52,6 +54,16 @@ describe(DatabaseUnitOfWorkDriver, () => {
     expect(await unit.transaction(async () => "done")).toBe("done");
     expect(database.transactions).toBe(1);
     expect(database.options).toEqual([{}]);
+  });
+
+  it("raises a database error that leaves the transaction as its refusal", async () => {
+    ACTIVE_DATABASE.current = new RecordingDatabase();
+    const unique = Object.assign(new Error("duplicate key"), { code: "23505", constraint: "uq_a" });
+    await expect(
+      new DatabaseUnitOfWorkDriver().transaction(async () => {
+        throw unique;
+      }),
+    ).rejects.toSatisfy((error: unknown) => isRefusal(error, DuplicateRecordError));
   });
 
   it("passes the action's timeout to the transaction", async () => {

@@ -29,6 +29,7 @@ import { vi } from "vitest";
 import { CrudService } from "#core/bases/crud-service.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
+import { StaleVersionError } from "#core/errors/stale-version.error";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
@@ -194,6 +195,23 @@ describe(CrudService, () => {
     expect(em.flush).toHaveBeenCalledTimes(2);
     const updated = await service.update({ id: "ord_1" }, { status: "cancelled" });
     expect(updated.status).toBe("cancelled");
+  });
+
+  it("refuses an update whose expected version the row moved past, before changing it", async () => {
+    const em = connect();
+    const service = new OrderService();
+    em.findOneOrFail.mockResolvedValueOnce(Object.assign(new Order(), { version: 3 }));
+    await expect(
+      service.update({ id: "ord_1" }, { status: "cancelled" }, { expectedVersion: 2 }),
+    ).rejects.toSatisfy((error: unknown) => isRefusal(error, StaleVersionError));
+    expect(em.assign).not.toHaveBeenCalled();
+    em.findOneOrFail.mockResolvedValueOnce(Object.assign(new Order(), { version: 3 }));
+    const updated = await service.update(
+      { id: "ord_1" },
+      { status: "paid" },
+      { expectedVersion: 3 },
+    );
+    expect(updated.status).toBe("paid");
   });
 
   it("reads one table page by cursor, the sort then the primary key", async () => {

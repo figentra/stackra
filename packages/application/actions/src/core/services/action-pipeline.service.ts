@@ -771,6 +771,9 @@ export class ActionPipeline {
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {
       ...query,
+      ...(request.expectedVersion === undefined
+        ? {}
+        : { expectedVersion: request.expectedVersion }),
       get idempotencyKey() {
         return state.idempotencyKey;
       },

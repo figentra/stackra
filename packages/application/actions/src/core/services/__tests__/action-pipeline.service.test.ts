@@ -267,6 +267,7 @@ class InspectAction extends Action({
       // oxlint-disable-next-line no-self-compare -- reason: two calls, asserting the clock is fixed for the call
       sameNow: ctx.now().getTime() === ctx.now().getTime(),
       key: ctx.key,
+      expectedVersion: ctx.expectedVersion,
       locale: ctx.locale,
       timeZone: ctx.timeZone,
       currency: ctx.currency,
@@ -802,12 +803,14 @@ describe(ActionPipeline, () => {
         timeZone: "Asia/Riyadh",
         currency: "SAR",
         market: "sa",
+        expectedVersion: 4,
       },
     );
     expect(output).toEqual({
       now: NOW,
       sameNow: true,
       key: "order.inspect",
+      expectedVersion: 4,
       locale: "ar-SA",
       timeZone: "Asia/Riyadh",
       currency: "SAR",
@@ -830,6 +833,7 @@ describe(ActionPipeline, () => {
       scope?: ScopeRef;
     };
     expect(defaults.scope).toBeUndefined();
+    expect((defaults as { expectedVersion?: number }).expectedVersion).toBeUndefined();
     expect(access.calls[1]).not.toHaveProperty("scope");
     expect(defaults).toMatchObject({
       locale: "en",
