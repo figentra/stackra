@@ -1,20 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: test config of @stackra/privacy: the decorators vitest preset (for the legacy
- *          decorators of @stackra/validation and @stackra/workflow) plus the shared coverage gate.
- *          `test` runs the unit tier (`<subject>.test.ts` in `__tests__/`); the infixed tiers (`.int`, `.contract`,
- *          `.e2e`, `.load`) run under their own tasks.
- * Boundary: test configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
+ * Purpose: test config of @stackra/privacy: gen's `./.stackra/vitest.config` (the decorators preset for the legacy
+ *          decorators of @stackra/validation and @stackra/workflow, the coverage gate, the unit tier and the
+ *          generated setup) plus this package's own include and the shared coverage gate. `test` runs the unit tier
+ *          (`<subject>.test.ts` in `__tests__/`); the infixed tiers (`.int`, `.contract`, `.e2e`, `.load`) run under
+ *          their own tasks.
+ * Boundary: test configuration only; merges gen's `./.stackra/vitest.config` under this package's own include and
+ *           coverage, so gen keeps this file and writes no root shim (ADR 0295 decision 5; STA-1296, STA-1299,
+ *           stackra-247).
  * Runtime: node
  * Governing contract: ADR 0182 (test tiers and coverage); ADR 0022 (test placement).
  */
 import { withCoverage } from "@stackra/vitest-config/coverage";
-import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";
 import { defineConfig, mergeConfig } from "vitest/config";
 
-// shortcut: authored until gen writes the tool configs into `.stackra/`; delete it with STA-339.
+import generated from "./.stackra/vitest.config";
+
 export default mergeConfig(
-  stackraVitestDecorators,
+  generated,
   defineConfig(
     withCoverage({
       test: {

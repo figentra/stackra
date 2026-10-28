@@ -106,6 +106,8 @@
     "@stackra/events": "workspace:*",
     "@stackra/filesystem": "workspace:*",
     "@stackra/iam": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/validation": "workspace:*",
     "@stackra/workflow": "workspace:*",
     "zod": "catalog:"

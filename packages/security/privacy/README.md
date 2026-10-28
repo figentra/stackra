@@ -12,7 +12,9 @@ a receipt (ADR 0189 decisions 2 and 4).
 **Tier:** `tier:lib` (`packages/security/privacy`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on
 `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/data-transfer` (the zip
 writer), `@stackra/database` (holds and repositories), `@stackra/events`, `@stackra/filesystem` (the export disk),
-`@stackra/validation` and `@stackra/workflow`.
+`@stackra/iam` (the job permissions), `@stackra/queue` and `@stackra/scheduler` (imported by gen's generated
+registrations of the erase and export jobs, so declared for them: `generated_dependency_missing`), `@stackra/validation`
+and `@stackra/workflow`.
 
 ## Use
 
