@@ -164,13 +164,13 @@ jobs:
           for path in /-/ping /-/npm/v1/keys; do
             url="${REGISTRY_URL}${path}"
             ok=""
-            for attempt in $(seq 1 12); do
+            for attempt in $(seq 1 60); do
               code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "$url" || true)"
               if [ "$code" = 200 ]; then ok=1; echo "::notice title=Ready::$url answered 200 on attempt $attempt"; break; fi
-              echo "not serving yet: $url answered ${code:-nothing} (attempt $attempt of 12)"
+              echo "not serving yet: $url answered ${code:-nothing} (attempt $attempt of 60)"
               sleep 10
             done
-            [ -n "$ok" ] || { echo "::error title=Smoke test failed::$url did not answer 200 within two minutes"; exit 1; }
+            [ -n "$ok" ] || { echo "::error title=Smoke test failed::$url did not answer 200 within ten minutes (a new custom domain takes a few minutes for its certificate)"; exit 1; }
           done
           curl --silent --fail "${REGISTRY_URL}/-/npm/v1/keys" | jq -e '.keys | length > 0' > /dev/null || {
             echo "::error title=No signing key::/-/npm/v1/keys lists no key"; exit 1; }
