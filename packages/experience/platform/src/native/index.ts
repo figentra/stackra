@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./native` entry of @stackra/platform (`ExpoPlatformDriver`,
- *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`), what gen lists as candidates for the Expo target, until
+ *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`, `ExpoSystemSettingsDriver` for the host to
+ *          subclass, and `createNotificationChannels` for the push context), what gen lists as candidates for the Expo target, until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Loaded on a device only; the permission helpers stay internal.
  * Runtime: react-native
@@ -11,3 +12,6 @@
 export { ExpoPlatformDriver } from "#native/drivers/expo-platform.driver";
 export { ExpoPushTransportDriver } from "#native/drivers/expo-push-transport.driver";
 export { SelfHostedPushTransportDriver } from "#native/drivers/self-hosted-push-transport.driver";
+export { ExpoSystemSettingsDriver } from "#native/drivers/expo-system-settings.driver";
+export { createNotificationChannels } from "#native/functions/create-notification-channels.function";
+export type { ExpoSystemModules } from "#native/types/expo-system-modules.type";

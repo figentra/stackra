@@ -4,14 +4,15 @@
  *          client's stored decision, re-applies the ledger's rules to it, and signs a short-lived `ConsentSnapshot`.
  * Boundary: a singleton service over `ConsentConfig` and the `Signer` port. It never trusts the client's grants: the
  *           record is parsed at the boundary, a record for another policy version or past its expiry grants nothing
- *           optional, Global Privacy Control refuses every optional category, a category the configuration does not
+ *           optional, Global Privacy Control refuses every optional category, an App Tracking Transparency refusal
+ *           refuses `marketing`, a category the configuration does not
  *           list is ignored, and before a decision the region's regime applies (opt-out grants `defaultGranted`).
  *           The snapshot lives `snapshotLifetimeMinutes`, never past the decision's own expiry. It stores nothing,
  *           and a snapshot is never evidence (`ConsentProofService` keeps person-level proof). The HTTP route that
  *           calls it is the host's (an action on the consent endpoint). It runs on a server or a Worker; the private
  *           key stays with the `Signer` driver.
  * Runtime: isomorphic
- * Governing contract: ADR 0472 (decisions 1, 2, 5 and 6); ADR 0298 (decisions 1 to 4); ADR 0416.
+ * Governing contract: ADR 0472 (decisions 1, 2, 5 and 6); ADR 0298 (decisions 1 to 4, 2026-10-29 note); ADR 0416.
  */
 import { Service } from "@stackra/container";
 import { mintPublicId } from "@stackra/contracts";
@@ -65,9 +66,12 @@ export class ConsentSnapshotIssuer extends Service {
     const regime = this.regime(request.region);
     for (const entry of this.config.categories) {
       const choice = record?.categories[entry.category];
+      const refusedByPhone =
+        request.appTrackingDenied === true && entry.category === ConsentCategory.Marketing;
       const allowed =
         entry.required ||
         (!request.globalPrivacyControl &&
+          !refusedByPhone &&
           (choice ?? (regime === ConsentRegime.Ccpa && entry.defaultGranted)));
       (allowed ? granted : refused).push(entry.category);
     }

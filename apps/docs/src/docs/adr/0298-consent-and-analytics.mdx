@@ -1,6 +1,6 @@
 ---
 title: "0298 — Consent and analytics: decline by default, Global Privacy Control refuses, and a bounded queue for events before a decision"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-29 (STA-1536)"
 ---
 
 <Note>
@@ -10,6 +10,14 @@ description: "Accepted · 2026-10-22"
   stored on the client, but a signed, short-lived `ConsentSnapshot` of it travels with API calls in
   the `Stackra-Consent` header and with ingest batches; the action pipeline exposes it as
   `ctx.consent()`, and every server-side send treats a missing or invalid snapshot as refused.
+</Note>
+
+<Note>
+  Amended 2026-10-29 (STA-1536, stackra-433): on a phone, App Tracking Transparency joins Global
+  Privacy Control as a system signal. When ATT is not granted on iOS (ADR 0071 decision 4), the
+  `ConsentLedger` reads `marketing` as refused whatever the stored choice says, keeps that choice
+  for when the person allows tracking in the OS settings, and the consent snapshot request carries
+  `appTrackingDenied` so the server refuses `marketing` too. The app offers no in-app override.
 </Note>
 
 ## Context

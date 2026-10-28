@@ -93,6 +93,28 @@ await window.stackra.invoke("platform.screen.second", { route: null }); // close
   `BrowserWindow` options of any configured window, which the shell spreads under its own `webPreferences`. It locks
   that one window; `KioskMode` locks the whole app (ADR 0449 decision 5).
 
+## Follow the system (STA-1536)
+
+A native app follows what the phone's own settings decide and offers no in-app override of them (owner decision
+2026-10-29). `SystemSettings` (`./contracts`) reads them; the person changes them in the OS settings.
+
+```ts
+const settings = useContainer().get(SystemSettings);
+const tracking = await settings.tracking(); // App Tracking Transparency; null off iOS
+ledger.setAppTrackingDenied(tracking !== null && tracking !== "granted"); // no marketing without ATT
+const saving = useSignal(settings.lowPowerMode) || useSignal(settings.expensiveNetwork); // defer prefetch and media
+if ((await settings.backgroundRefresh()) === "denied")
+  showRefreshHint(() => settings.openSettings());
+```
+
+- `ExpoSystemSettingsDriver` (`./native`) is abstract: the app's subclass declares `modules`, the Expo libraries it ships
+  (expo-tracking-transparency, expo-battery, expo-background-task, each `null` when absent), because an Expo module
+  must be the app's own dependency. On iOS an app without expo-tracking-transparency reads tracking as `denied`.
+- `MemorySystemSettingsDriver` (`.`) is the web, desktop and test driver: no controls (`null`), nothing saving.
+- `createNotificationChannels(push.androidChannels, translate)` (`./native`) creates one Android channel per
+  notification category, named in the phone's language; the push context calls it at launch, before the permission
+  prompt, and again when the language changes. A push names its channel with `OutboundPush.channelId`.
+
 ## Testing
 
 ```ts

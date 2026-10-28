@@ -152,6 +152,7 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
           body: push.body,
           data: push.data ?? {},
           ttl: push.ttlSeconds,
+          ...(push.channelId === undefined ? {} : { channelId: push.channelId }),
         },
       ],
     );

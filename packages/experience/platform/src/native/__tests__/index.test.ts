@@ -11,7 +11,7 @@ import { vi } from "vitest";
 
 import * as native from "#native/index";
 
-vi.mock("expo-notifications", () => ({}));
+vi.mock("expo-notifications", () => ({ AndroidImportance: {} }));
 vi.mock("expo-constants", () => ({ default: {} }));
 vi.mock("react-native", () => ({ Linking: {}, Platform: {}, Share: {} }));
 vi.mock("@react-native-community/netinfo", () => ({ addEventListener: () => () => undefined }));
@@ -21,11 +21,13 @@ vi.mock("expo-haptics", () => ({
 }));
 
 describe("@stackra/platform/native", () => {
-  it("exports exactly the Expo platform driver and the Expo and self-hosted push transports", () => {
+  it("exports exactly the Expo drivers, the self-hosted push transport and the channel creator", () => {
     expect(Object.keys(native).sort()).toEqual([
       "ExpoPlatformDriver",
       "ExpoPushTransportDriver",
+      "ExpoSystemSettingsDriver",
       "SelfHostedPushTransportDriver",
+      "createNotificationChannels",
     ]);
   });
 });

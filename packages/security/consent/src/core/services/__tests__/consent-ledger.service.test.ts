@@ -3,7 +3,8 @@
  * Purpose: unit tests of `ConsentLedger`, the rules of ADR 0298: decline by default, a required category is granted
  *          and cannot be refused, Global Privacy Control refuses, a decision for another policy version or past its
  *          expiry reads as undecided, a region's opt-out regime grants a `defaultGranted` category, every change
- *          is written to the store and announced, and the snapshot request carries the record as kept (ADR 0472).
+ *          is written to the store and announced, and the snapshot request carries the record as kept (ADR 0472); an
+ *          App Tracking Transparency refusal refuses marketing only.
  * Boundary: test only; the store is the memory driver, time is frozen and the navigator stubbed per test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1 to 4).
@@ -186,6 +187,25 @@ describe("ConsentLedger", () => {
       ledger.set(ConsentCategory.Analytics, true);
       expect(ledger.isGranted(ConsentCategory.Analytics)).toBe(false);
       expect(ledger.status(ConsentCategory.Necessary)).toBe(ConsentStatus.Granted);
+    });
+  });
+
+  describe("App Tracking Transparency", () => {
+    it("refuses marketing while the phone refuses tracking, and keeps the choice for later", () => {
+      const { ledger } = ledgerWith();
+      ledger.set(ConsentCategory.Marketing, true);
+      ledger.set(ConsentCategory.Analytics, true);
+      const revision = ledger.revision;
+      ledger.setAppTrackingDenied(true);
+      expect(ledger.revision).toBe(revision + 1);
+      expect(ledger.status(ConsentCategory.Marketing)).toBe(ConsentStatus.Denied);
+      expect(ledger.isGranted(ConsentCategory.Analytics)).toBe(true);
+      expect(ledger.snapshotRequest().appTrackingDenied).toBe(true);
+      ledger.setAppTrackingDenied(true);
+      expect(ledger.revision).toBe(revision + 1);
+      ledger.setAppTrackingDenied(false);
+      expect(ledger.isGranted(ConsentCategory.Marketing)).toBe(true);
+      expect("appTrackingDenied" in ledger.snapshotRequest()).toBe(false);
     });
   });
 

@@ -93,8 +93,12 @@ is never recorded unverified. With no method named, the relationship alone suffi
 
 1. A required category (`necessary`) is granted, never asked and never stored.
 2. Global Privacy Control refuses every other category.
-3. A stored decision counts when it answers the current `policyVersion` and is younger than `expiryDays`.
-4. Otherwise the visitor's region decides: `ccpa` grants a category marked `defaultGranted`; every opt-in regime
+3. On a phone, an App Tracking Transparency refusal refuses `marketing` (ADR 0298, 2026-10-29 note). The host reads
+   it from `SystemSettings.tracking()` (`@stackra/platform`) and calls `ledger.setAppTrackingDenied(...)` at launch
+   and on each return to the foreground; the stored choice is kept for when the person allows tracking, and the
+   snapshot request carries `appTrackingDenied` so the server refuses marketing too.
+4. A stored decision counts when it answers the current `policyVersion` and is younger than `expiryDays`.
+5. Otherwise the visitor's region decides: `ccpa` grants a category marked `defaultGranted`; every opt-in regime
    (`gdpr`, `lgpd`, `pdpl_sa`, `pdpl_ae`, `dpdp`), or no regime at all, leaves it undecided, which runs nothing.
 
 ## Region and Consent Mode

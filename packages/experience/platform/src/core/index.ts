@@ -21,6 +21,7 @@ export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
 export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";
 export { MemorySecondScreenDriver } from "#core/drivers/memory-second-screen.driver";
+export { MemorySystemSettingsDriver } from "#core/drivers/memory-system-settings.driver";
 export { CachePreset } from "#core/enums/cache-preset.enum";
 export { CacheStrategy } from "#core/enums/cache-strategy.enum";
 export { PlatformCapability } from "#core/enums/platform-capability.enum";

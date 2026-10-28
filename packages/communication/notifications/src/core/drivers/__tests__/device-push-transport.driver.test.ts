@@ -3,7 +3,8 @@
  * Purpose: unit tests of `DevicePushTransportDriver`: an Expo push returns its ticket id; `DeviceNotRegistered` revokes
  *          the token; a Web Push goes encrypted with a VAPID header to the endpoint and a 410 revokes the subscription;
  *          a non-https endpoint is refused; a logged key sends nothing; Expo receipts revoke gone devices; with an outbox
- *          each sent, revoked or refused push records one `DeliveryRecorded` (stackra-207).
+ *          each sent, revoked or refused push records one `DeliveryRecorded` (stackra-207); an Expo push names its
+ *          Android channel when it has one.
  * Boundary: test only; the Expo client is `fakeIntegrationApi` over a test Integration, `fetch` is stubbed, the VAPID
  *           keys are generated here.
  * Runtime: node (vitest)
@@ -88,11 +89,15 @@ async function keys() {
 /** The driver with an Expo client answering `ticket`. */
 async function driverWith(ticket: unknown, outbox?: OutboxFake) {
   const expo = new ExpoIntegration();
+  const bodies: unknown[] = [];
   Object.defineProperty(expo, "api", {
     value: fakeIntegrationApi(ExpoIntegration, (r) =>
       r
         .post("/--/api/v2/push/send")
-        .returns(() => ({ data: [ticket] }))
+        .returns((_params, request) => {
+          bodies.push(request.body);
+          return { data: [ticket] };
+        })
         .post("/--/api/v2/push/getReceipts")
         .returns(() => ({
           data: {
@@ -111,6 +116,7 @@ async function driverWith(ticket: unknown, outbox?: OutboxFake) {
     })(secrets, tokens, log, new FixedClock(), outbox),
     tokens,
     log,
+    bodies,
     p256dh,
     auth,
   };
@@ -140,6 +146,31 @@ describe("DevicePushTransportDriver", () => {
     const gone = await driverWith({ status: "error", details: { error: "DeviceNotRegistered" } });
     await expect(gone.driver.send(push, "k2")).resolves.toEqual({ status: "revoked" });
     expect(gone.tokens.revoked).toEqual([push.target]);
+  });
+
+  it("names the Android channel of the push's category only when given", async () => {
+    const { driver, bodies } = await driverWith({ status: "ok", id: "ticket-1" });
+    const push = {
+      target: { kind: "expo", token: "ExponentPushToken[x]" },
+      title: "T",
+      body: "B",
+      ttlSeconds: 60,
+    } as const;
+    await driver.send({ ...push, channelId: "marketing" }, "k1");
+    await driver.send(push, "k2");
+    expect(bodies).toEqual([
+      [
+        {
+          to: "ExponentPushToken[x]",
+          title: "T",
+          body: "B",
+          data: {},
+          ttl: 60,
+          channelId: "marketing",
+        },
+      ],
+      [{ to: "ExponentPushToken[x]", title: "T", body: "B", data: {}, ttl: 60 }],
+    ]);
   });
 
   it("sends an encrypted Web Push with VAPID and revokes on 410", async () => {

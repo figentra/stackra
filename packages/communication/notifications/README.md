@@ -217,6 +217,8 @@ export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
 
 - Every connection transport sends once per idempotency key through `SendLog` (keys and provider ids only).
 - A device the push service reports gone is revoked through `PushTokenStore`; `receipts` reads Expo receipts.
+- An Expo push names its Android channel when `OutboundPush.channelId` is set: the notification's category code, one
+  of the app's `PushConfig.androidChannels` ids, so the person mutes a category in the system settings (STA-1536).
 - The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
   `WEB_PUSH_VAPID_SUBJECT`.
 

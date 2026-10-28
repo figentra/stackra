@@ -12,6 +12,7 @@ export { KioskMode } from "#contracts/ports/kiosk-mode.port";
 export { Platform } from "#contracts/ports/platform.port";
 export { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 export { SecondScreen } from "#contracts/ports/second-screen.port";
+export { SystemSettings } from "#contracts/ports/system-settings.port";
 export type { BadgeCapability } from "#contracts/types/badge-capability.type";
 export type { BarcodeFormat } from "#contracts/types/barcode-format.type";
 export type { CapabilityRefusal } from "#contracts/types/capability-refusal.type";

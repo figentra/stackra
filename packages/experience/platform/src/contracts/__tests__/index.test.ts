@@ -19,13 +19,14 @@ import type {
 } from "#contracts/index";
 
 describe("@stackra/platform/contracts", () => {
-  it("exports exactly the five ports at run time", () => {
+  it("exports exactly the six ports at run time", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "CaptchaVerifier",
       "KioskMode",
       "Platform",
       "PlatformPushTransport",
       "SecondScreen",
+      "SystemSettings",
     ]);
   });
 

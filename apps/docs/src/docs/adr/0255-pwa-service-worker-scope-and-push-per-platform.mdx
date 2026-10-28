@@ -1,6 +1,6 @@
 ---
 title: "0255 — PWA: vite-plugin-pwa, service worker scope and push strategy per platform"
-description: "Accepted, amended by 0325 · 2026-10-20 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0325 · 2026-10-20 · amended 2026-10-24 (STA-428) · amended 2026-10-29 (STA-1536)"
 ---
 
 <Note>
@@ -11,6 +11,14 @@ description: "Accepted, amended by 0325 · 2026-10-20 · amended 2026-10-24 (STA
   `clientsClaim` takes the open pages; navigations are network-first, the worker checks its host, a
   kill-switch `sw.js` can retire an installed worker, and an end-to-end test deploys twice (0325
   rules 15 to 19 and 25 to 26). Decision 4, the offline shell, stands.
+</Note>
+
+<Note>
+  Amended 2026-10-29 (STA-1536, stackra-433): on Android each notification category has its own
+  channel (`PushConfig.androidChannels`, created by `createNotificationChannels` in the phone's
+  language before the first permission prompt), and a push names its channel
+  (`OutboundPush.channelId`), so the person mutes or changes a category in the system settings.
+  Decision 3 stands.
 </Note>
 
 <Note>

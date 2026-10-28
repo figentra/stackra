@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ConsentSnapshotIssuer`: it re-applies the ledger's rules to the client's record (required
  *          granted, stored choices kept, unlisted categories ignored, an outdated, expired or malformed record grants
  *          nothing optional, the opt-out regime grants `defaultGranted` before a decision, Global Privacy Control
- *          refuses every optional category), caps the lifetime at the decision's expiry, binds the subject by ADR 0472
+ *          refuses every optional category, an App Tracking Transparency refusal refuses marketing), caps the lifetime at the decision's expiry, binds the subject by ADR 0472
  *          decision 2, and signs a token the verifier accepts.
  * Boundary: test only; time is frozen and the signer is a fresh in-memory key.
  * Runtime: node (vitest)
@@ -150,6 +150,16 @@ describe("ConsentSnapshotIssuer", () => {
     );
     expect(snapshot.granted).toEqual(["necessary"]);
     expect(snapshot.globalPrivacyControl).toBe(true);
+  });
+
+  it("refuses marketing only when the phone refuses tracking", async () => {
+    freezeClock("2026-10-28T09:00:00Z");
+    const { issuer } = await issuerWith();
+    const { snapshot } = await issuer.issue(
+      requestOf({ analytics: true, marketing: true }, { appTrackingDenied: true }),
+    );
+    expect(snapshot.granted).toEqual(["necessary", "analytics"]);
+    expect(snapshot.refused).toEqual(["marketing"]);
   });
 
   it("never outlives the decision", async () => {

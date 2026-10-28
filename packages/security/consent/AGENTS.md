@@ -49,7 +49,7 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 
 - The rules live in `ConsentLedger` only; a driver stores and never decides.
 - Never grant anything optional before a decision unless the region's regime is opt-out and the category says
-  `defaultGranted`. Global Privacy Control always refuses. Loosening either is a privacy change and needs review.
+  `defaultGranted`. Global Privacy Control always refuses, and an App Tracking Transparency refusal always refuses `marketing`. Loosening either is a privacy change and needs review.
 - A stored value is untrusted: read it through `parseConsentRecord`, which never throws.
 - Consent state is decided on the client: `useConsent` shows no decision state in a server render; nothing here sets a
   cookie on the server. The server sees it only as a signed snapshot (ADR 0472): `ConsentSnapshotIssuer` re-applies

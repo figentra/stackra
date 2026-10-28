@@ -30,6 +30,7 @@ describe("@stackra/platform", () => {
         "MemoryPlatformDriver",
         "MemoryPushTransportDriver",
         "MemorySecondScreenDriver",
+        "MemorySystemSettingsDriver",
         "NotificationImportance",
         "OverlayAnchor",
         "OverlayStyle",

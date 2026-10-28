@@ -1,6 +1,6 @@
 ---
 title: "0250 — @stackra/platform: capability ports, drivers, capability gate and the client-manifest capability section"
-description: "Accepted, amended by 0334 · 2026-10-20"
+description: "Accepted, amended by 0334 · 2026-10-20 · amended 2026-10-29 (STA-1536)"
 ---
 
 <Note>
@@ -9,6 +9,15 @@ description: "Accepted, amended by 0334 · 2026-10-20"
   capability list is fixed (haptics, install prompt, share, clipboard, camera, notifications,
   badging and file handling), and each capability is feature-detected and degrades per target.
   Decisions 1 to 4 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-29 (STA-1536, stackra-433): a native app follows the phone's system-owned settings
+  with no in-app override. The `SystemSettings` port (`./contracts`, its own port, not a `Platform`
+  facet) reads App Tracking Transparency, Low Power Mode, an expensive (metered or Low Data)
+  connection and Background App Refresh, and opens this app's page in the OS settings; a control the
+  target lacks reads `null`. Drivers: memory (web, desktop, tests) and an abstract Expo driver whose
+  host subclass declares the Expo libraries it ships. Decisions 1 to 4 stand.
 </Note>
 
 <Note>
