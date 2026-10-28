@@ -19,6 +19,7 @@ describe("@stackra/loyalty-kit/node", () => {
       "AccountFrozen",
       "AccountNotes",
       "AccountService",
+      "AppendOnlyLedgerEntriesMigration",
       "ConfirmRedemptionAction",
       "ConfirmRedemptionInput",
       "ConfirmRedemptionOutput",

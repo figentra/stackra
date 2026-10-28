@@ -85,7 +85,8 @@ so a chain whose oldest links the retention job purged still verifies from its o
 
 In Postgres there is one chain per tenant: `access_log.access_log_entries` is tenant-owned (`BelongsToTenant` and
 `t.belongsToTenant()` from `@stackra/tenancy`), the unique `(tenant_id, sequence)` index keeps it linear, and a trigger
-refuses every UPDATE. The driver writes in a transaction of its own (a rolled-back read keeps its record) inside
+refuses every UPDATE; migration 0003 also revokes `UPDATE` on both log tables from the service's role
+(`t.appendOnly()`, STA-1413). The driver writes in a transaction of its own (a rolled-back read keeps its record) inside
 `withTenant(record.actor, ...)`; a writer that loses the race to the head reads the new head and retries, up to five
 times. A call in no tenant cannot be stored there and is reported as `access_log_write_failed`.
 

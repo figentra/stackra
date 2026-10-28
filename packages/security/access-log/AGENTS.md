@@ -42,6 +42,8 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 - The write audit (`PostgresAuditTrailDriver`, `AuditLogEntry`, `AuditQuery`) is its own chain beside the access
   chain: build links only with `linkAuditEntry`, verify only with `findAuditChainBreak`, and never fail a call in no
   tenant (log `audit_write_skipped`). The table reuses migration 0001's `refuse_update()` trigger function.
+- Both log models are `AppendOnly`: migration 0003 revokes `UPDATE` on their tables with `t.appendOnly()`, under the
+  triggers. A new append-only table states `t.appendOnly()` in its own migration (gen refuses `append_only_not_revoked`).
 - The `outbox` sink sends `AccessRecorded` events to the audit service, which chains them; it never chains itself.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 

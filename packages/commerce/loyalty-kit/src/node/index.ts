@@ -22,6 +22,7 @@ export { FreezeAccountAction } from "#node/actions/freeze-account.action";
 export { RedeemPointsAction } from "#node/actions/redeem-points.action";
 export { CreateLoyaltyTablesMigration } from "#node/database/migrations/0001-create-loyalty-tables.migration";
 export { LedgerEntriesAccountIdIndexMigration } from "#node/database/migrations/0002-ledger-entries-account-id-index.migration";
+export { AppendOnlyLedgerEntriesMigration } from "#node/database/migrations/0003-append-only-ledger-entries.migration";
 export { PartiesLoyaltyMembersDriver } from "#node/drivers/parties-loyalty-members.driver";
 export { PostgresLoyaltyLedgerDriver } from "#node/drivers/postgres-loyalty-ledger.driver";
 export { ThresholdLoyaltyTierPolicyDriver } from "#node/drivers/threshold-loyalty-tier-policy.driver";

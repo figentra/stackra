@@ -54,7 +54,8 @@ the `VectorIndex` (both from `@stackra/search/contracts`) for the top-k hits in 
 
 **One vector store (ADR 0465).** Every embedding lives in `search.vector_items` behind `VectorIndex`; this package
 keeps no vector table. Migration `ai.0002_drop_embeddings` drops `ai.embeddings` and the `Embedding` model is gone
-(nothing ever wrote it). Conversation memory, when it lands, upserts through `VectorIndex` with
+(nothing ever wrote it). Migration `ai.0003_append_only_ai_tables` revokes `UPDATE` on `ai.messages`, `ai.steps`
+and `ai.tool_calls`, the tables of the `AppendOnly` models (`t.appendOnly()`, STA-1413). Conversation memory, when it lands, upserts through `VectorIndex` with
 `{ conversationId, messageId, embedder, contentHash }` as item metadata and the caller's scope; the message text stays
 sealed in `ai.messages`, so a memory item's `text` is the passage the model may see back, nothing more.
 

@@ -68,6 +68,9 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   are rate-card and entitlement data.
 - One vector store (ADR 0465): embed and recall through `VectorIndex` and `Embedder` of `@stackra/search/contracts`.
   Never add a vector column or embeddings table here; `ai.embeddings` was dropped by migration 0002.
+- `Message`, `RunStep` and `ToolCall` are `AppendOnly`: migration 0003 revokes `UPDATE` on `ai.messages`, `ai.steps`
+  and `ai.tool_calls` (`t.appendOnly()`). Never update one of their rows; a new append-only table states
+  `t.appendOnly()` in its own migration (gen refuses `append_only_not_revoked`).
 - `AgentRuntime` takes `AiMeter` and `DiscoveryService` by constructor type: it meters every settled loop (before the
   output check, since the tokens were spent) and runs `getAll(GuardrailLayer)` on the prompt (before anything is
   stored) and on the final answer. Store only the guarded text.
