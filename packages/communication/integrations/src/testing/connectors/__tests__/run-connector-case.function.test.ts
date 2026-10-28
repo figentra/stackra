@@ -37,6 +37,9 @@ class RestShelf implements Shelf {
   }
 }
 
+/** Builds the sample driver as a `Shelf`, so a case may name the contract's optional `archive`. */
+const restShelf = (api: IntegrationApi): Shelf => new RestShelf(api);
+
 const RESTOCK = { method: "restock", args: ["TEE", 5] } as const;
 const READ = { method: "GET", path: "/items/TEE", answer: { available: 5 } } as const;
 
@@ -57,30 +60,26 @@ const CASE: ConnectorCase<Shelf> = {
 
 describe(runConnectorCase, () => {
   it("passes a driver that matches its recording", async () => {
-    await expect(runConnectorCase((api) => new RestShelf(api), CASE)).resolves.toEqual([
-      undefined,
-      5,
-      undefined,
-    ]);
+    await expect(runConnectorCase(restShelf, CASE)).resolves.toEqual([undefined, 5, undefined]);
   });
 
   it("fails a different result, a missing refusal and a missing method", async () => {
     await expect(
-      runConnectorCase((api) => new RestShelf(api), {
+      runConnectorCase(restShelf, {
         ...CASE,
         steps: [RESTOCK, { method: "stock", args: ["TEE"], result: 6 }],
         exchanges: CASE.exchanges.slice(0, 2),
       }),
     ).rejects.toThrow(/"restock", step 2 \(stock\): the result differs/);
     await expect(
-      runConnectorCase((api) => new RestShelf(api), {
+      runConnectorCase(restShelf, {
         ...CASE,
         steps: [{ method: "stock", args: ["TEE"], refusal: { status: 404 } }],
         exchanges: [READ],
       }),
     ).rejects.toThrow(/was not refused/);
     await expect(
-      runConnectorCase((api) => new RestShelf(api), {
+      runConnectorCase(restShelf, {
         ...CASE,
         steps: [{ method: "archive", args: ["TEE"] }],
         exchanges: [],
@@ -90,7 +89,7 @@ describe(runConnectorCase, () => {
 
   it("fails when a recorded call is never made", async () => {
     await expect(
-      runConnectorCase((api) => new RestShelf(api), { ...CASE, steps: CASE.steps.slice(0, 1) }),
+      runConnectorCase(restShelf, { ...CASE, steps: CASE.steps.slice(0, 1) }),
     ).rejects.toThrow(/was not finished/);
   });
 });

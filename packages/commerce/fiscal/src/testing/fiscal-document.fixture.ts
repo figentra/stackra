@@ -11,6 +11,7 @@ import { Money } from "@stackra/money";
 
 import { FiscalDocumentKind } from "#contracts/enums/fiscal-document-kind.enum";
 import { PartyKind } from "#contracts/enums/party-kind.enum";
+import type { FiscalAddress } from "#contracts/types/fiscal-address.type";
 import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
 
 /**
@@ -21,7 +22,7 @@ import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
  */
 export function fiscalDocument(overrides: Partial<FiscalDocument> = {}): FiscalDocument {
   const eur = (minor: number) => Money.ofMinor(minor, "EUR");
-  const address = {
+  const address: FiscalAddress = {
     street: "Main Street",
     buildingNumber: "1",
     district: "Centre",

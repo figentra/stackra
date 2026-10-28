@@ -48,7 +48,7 @@ afterEach(() => clearPersonalData());
 
 describe("SubjectExportService", () => {
   it("collects every registered model, empty ones too, with declared fields only", async () => {
-    registerPersonalData([CustomerPersonalData, AddressPersonalData]);
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData]);
     const store = new MemoryPersonalDataStoreDriver();
     store.put(Customer, [
       { id: "cus_1", userId: SUBJECT, name: "Lina", phone: null, tier: "gold" },
@@ -63,8 +63,8 @@ describe("SubjectExportService", () => {
       subject: SUBJECT,
       generatedAt: "2026-10-28T10:00:00.000Z",
       sections: [
-        { kind: "Customer", records: [{ id: "cus_1", fields: { name: "Lina", phone: null } }] },
-        { kind: "Address", records: [] },
+        { kind: "crm.customer", records: [{ id: "cus_1", fields: { name: "Lina", phone: null } }] },
+        { kind: "crm.address", records: [] },
       ],
     });
     expect(Address).toBeDefined();
@@ -81,7 +81,7 @@ describe("SubjectExportService", () => {
     const link = await service.archive({
       subject: SUBJECT,
       generatedAt: AT.toISOString(),
-      sections: [{ kind: "Customer", records: [{ id: "cus_1", fields: { name: "Lina" } }] }],
+      sections: [{ kind: "crm.customer", records: [{ id: "cus_1", fields: { name: "Lina" } }] }],
     });
 
     expect(link.path).toMatch(/^privacy\/exports\/[0-9a-f-]{36}\.zip$/);

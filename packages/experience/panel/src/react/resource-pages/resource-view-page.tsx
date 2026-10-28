@@ -105,7 +105,7 @@ export function ResourceViewPage({ resource, id }: ResourceViewPageProps): React
   const actions = useResourceActions(resource, tree);
   const { answer } = useRecord(resource, id);
   const title = t(resourceLabel(resource.key, "title"));
-  if (answer.isPending) return <PageSkeleton />;
+  if (answer.isPending) return <PageSkeleton loadingLabel={title} />;
   if (answer.error !== null || typeof answer.data !== "object" || answer.data === null)
     return (
       <ErrorState

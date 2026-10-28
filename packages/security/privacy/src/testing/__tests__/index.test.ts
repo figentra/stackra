@@ -21,6 +21,6 @@ describe("@stackra/privacy/testing", () => {
     expect(salts).toBeInstanceOf(SubjectSaltStore);
     await expect(salts.destroy("usr_1")).resolves.toBe(true);
     await expect(salts.destroy("usr_1")).resolves.toBe(false);
-    expect(salts.calls("destroy")).toEqual([["usr_1"], ["usr_1"]]);
+    expect(salts.calls("destroy")).toEqual(["usr_1", "usr_1"]);
   });
 });

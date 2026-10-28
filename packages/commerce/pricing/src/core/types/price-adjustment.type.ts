@@ -6,8 +6,8 @@
  *           code). A graduated base price is scaled as a total and takes no point.
  * Runtime: isomorphic
  * Governing contract: ADR 0244 (decisions 2 and 6); the RES-169 answer (channel markup).
-import type { Rounding } from "@stackra/contracts";
  */
+import type { Rounding } from "@stackra/contracts";
 
 import type { PricePoint } from "#core/values/price-point.value";
 

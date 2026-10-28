@@ -53,15 +53,16 @@ function OptionsField({
 }): ReactElement {
   // shortcut: the first 100 options only; page through the query when a picker needs more.
   const answer = useQuery(query, { limit: 100 } as never);
-  const items = ((answer.data as { readonly items?: readonly object[] } | undefined)?.items ??
-    []) as Record<string, unknown>[];
+  const items =
+    (answer.data as { readonly items?: readonly { readonly id: string }[] } | undefined)?.items ??
+    [];
   return (
     <Field.ComboBox
       name={name}
       label={label}
       items={items}
       itemKey="id"
-      itemLabel={(item) => String(valueAt(item, labelPath) ?? item["id"])}
+      itemLabel={(item) => String(valueAt(item, labelPath) ?? item.id)}
     />
   );
 }

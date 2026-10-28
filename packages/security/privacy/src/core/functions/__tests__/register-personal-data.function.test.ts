@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `registerPersonalData` and `personalDataDeclarations`: registration keeps order and one
- *          entry per class, refuses a class of another kind, and resolves each declaration's model, kind and fields.
+ *          entry per class, refuses a class of another kind and a module key that is not snake_case, and resolves each
+ *          declaration's model, model key and fields.
  * Boundary: test only; clears the registry after each case.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; STA-1375.
@@ -21,23 +22,28 @@ afterEach(() => clearPersonalData());
 
 describe("registerPersonalData", () => {
   it("registers in order, once per class, and resolves each declaration", () => {
-    registerPersonalData([CustomerPersonalData, AddressPersonalData, CustomerPersonalData]);
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData, CustomerPersonalData]);
     expect(personalDataDeclarations()).toEqual([
       {
-        kind: "Customer",
+        kind: "crm.customer",
         model: Customer,
         subject: "userId",
         fields: { name: "shred", phone: "anonymise" },
       },
-      { kind: "Address", model: Address, subject: "userId", fields: { line: "delete" } },
+      { kind: "crm.address", model: Address, subject: "userId", fields: { line: "delete" } },
     ]);
   });
 
   it("refuses a class that is not a declaration", () => {
     class NotADeclaration {}
-    expect(() => registerPersonalData([NotADeclaration as unknown as PersonalDataClass])).toThrow(
-      TypeError,
-    );
+    expect(() =>
+      registerPersonalData("crm", [NotADeclaration as unknown as PersonalDataClass]),
+    ).toThrow(TypeError);
+    expect(personalDataDeclarations()).toEqual([]);
+  });
+
+  it("refuses a module key that is not snake_case", () => {
+    expect(() => registerPersonalData("Crm.x", [CustomerPersonalData])).toThrow(TypeError);
     expect(personalDataDeclarations()).toEqual([]);
   });
 });

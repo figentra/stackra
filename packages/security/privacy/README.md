@@ -27,7 +27,7 @@ export class CustomerPersonalData extends PersonalData({
     phone: ErasureMethod.Anonymise, // set to null; the row stays
   },
 }) {}
-registerPersonalData([CustomerPersonalData]); // shortcut until gen registers privacy/ groups (STA-339)
+registerPersonalData("crm", [CustomerPersonalData]); // shortcut until gen registers privacy/ groups (STA-339)
 
 // the host's request flow, after verifying the person
 const { url, expiresAt } = await pipeline.execute(
@@ -95,4 +95,4 @@ export class PrivacyConfig extends BasePrivacyConfig {
 
 - `Retention({ model, keep, basis })` and the shared prune job (the P1 row of the gap analysis).
 - `useDataRequests`, a request inbox UI and the identity check of the requester; the request flow is the host's.
-- The model key in receipts: until gen exposes locked model keys (STA-339), `kind` is the model's class name.
+- The locked model key in receipts: until gen exposes locked model keys (STA-339), `kind` is the module key given to `registerPersonalData` and the model's class name in snake_case (`crm.customer`).

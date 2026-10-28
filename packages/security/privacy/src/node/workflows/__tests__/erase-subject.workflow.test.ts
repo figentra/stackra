@@ -84,7 +84,7 @@ afterEach(() => {
 
 describe("EraseSubjectWorkflow", () => {
   it("deletes, anonymises, shreds the key and issues the receipt", async () => {
-    registerPersonalData([CustomerPersonalData, AddressPersonalData]);
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData]);
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
@@ -98,14 +98,14 @@ describe("EraseSubjectWorkflow", () => {
       { id: "cus_1", name: "sealed:1", phone: null },
       { id: "cus_2", name: "sealed:2", phone: null },
     ]);
-    expect(salts.calls("destroy")).toEqual([[SUBJECT]]);
+    expect(salts.calls("destroy")).toEqual([SUBJECT]);
     expect(output).toBeInstanceOf(EraseSubjectOutput);
     expect({ ...output }).toEqual({
       erasureId: "era_1",
       subject: SUBJECT,
       erased: [
-        { kind: "Customer", method: "anonymise", count: 2 },
-        { kind: "Address", method: "delete", count: 2 },
+        { kind: "crm.customer", method: "anonymise", count: 2 },
+        { kind: "crm.address", method: "delete", count: 2 },
       ],
       kept: [],
       shredded: true,
@@ -116,7 +116,7 @@ describe("EraseSubjectWorkflow", () => {
   });
 
   it("keeps held rows and the key when a held row has shredded fields", async () => {
-    registerPersonalData([CustomerPersonalData, AddressPersonalData]);
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData]);
     connectHoldRegistry(new ListHoldRegistryDriver(["cus_2", "adr_2"]));
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
@@ -131,17 +131,17 @@ describe("EraseSubjectWorkflow", () => {
     expect(salts.calls("destroy")).toEqual([]);
     expect(output.shredded).toBe(false);
     expect(output.erased).toEqual([
-      { kind: "Customer", method: "anonymise", count: 1 },
-      { kind: "Address", method: "delete", count: 1 },
+      { kind: "crm.customer", method: "anonymise", count: 1 },
+      { kind: "crm.address", method: "delete", count: 1 },
     ]);
     expect(output.kept).toEqual([
-      { kind: "Customer", reason: "hold", count: 1 },
-      { kind: "Address", reason: "hold", count: 1 },
+      { kind: "crm.customer", reason: "hold", count: 1 },
+      { kind: "crm.address", reason: "hold", count: 1 },
     ]);
   });
 
   it("still shreds when only rows without shredded fields are held", async () => {
-    registerPersonalData([AddressPersonalData]);
+    registerPersonalData("crm", [AddressPersonalData]);
     connectHoldRegistry(new ListHoldRegistryDriver(["adr_1"]));
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
@@ -151,11 +151,11 @@ describe("EraseSubjectWorkflow", () => {
     });
 
     expect(output.shredded).toBe(true);
-    expect(output.kept).toEqual([{ kind: "Address", reason: "hold", count: 1 }]);
+    expect(output.kept).toEqual([{ kind: "crm.address", reason: "hold", count: 1 }]);
   });
 
   it("acks the waiting service with what it kept", async () => {
-    registerPersonalData([AddressPersonalData]);
+    registerPersonalData("crm", [AddressPersonalData]);
     connectHoldRegistry(new ListHoldRegistryDriver(["adr_1"]));
 
     const { events } = await runAll(
@@ -166,7 +166,7 @@ describe("EraseSubjectWorkflow", () => {
     const ack = events.find((event) => event instanceof ServiceAcked) as ServiceAcked | undefined;
     expect(ack?.subject).toBe("era_4");
     expect(ack?.service).toBe("commerce");
-    expect(ack?.kept).toEqual([{ kind: "Address", reason: "hold", count: 1 }]);
+    expect(ack?.kept).toEqual([{ kind: "crm.address", reason: "hold", count: 1 }]);
   });
 
   it("declares the steps in order and no undo", () => {

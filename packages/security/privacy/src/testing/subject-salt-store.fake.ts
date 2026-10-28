@@ -15,7 +15,7 @@ import { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port";
  *
  * @example
  * const salts = SubjectSaltStoreFake.holding(["usr_1"]);
- * expect(salts.calls("destroy")).toEqual([["usr_1"]]);
+ * expect(salts.calls("destroy")).toEqual(["usr_1"]);
  */
 export class SubjectSaltStoreFake extends Fake.of(SubjectSaltStore) {
   /** The subjects that still hold a salt. */
@@ -36,7 +36,7 @@ export class SubjectSaltStoreFake extends Fake.of(SubjectSaltStore) {
 
   /** Records the call; true when the subject held a salt. */
   destroy(subject: string): Promise<boolean> {
-    this.record("destroy", [subject]);
+    this.record("destroy", subject);
     return Promise.resolve(this.subjects.delete(subject));
   }
 }

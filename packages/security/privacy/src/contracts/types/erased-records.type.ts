@@ -11,7 +11,7 @@ import type { ErasureMethod } from "#contracts/enums/erasure-method.enum";
 
 /** Rows of one model an erasure disposed of. */
 export interface ErasedRecords {
-  /** The declaration's kind name (the model's name). */
+  /** The model key of the rows (`crm.customer`). */
   readonly kind: string;
 
   /** `delete` when the rows were deleted, `anonymise` when edited, `shred` when only the key covers them. */

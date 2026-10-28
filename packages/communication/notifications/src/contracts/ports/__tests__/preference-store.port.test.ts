@@ -27,7 +27,7 @@ class AllowAllPreferenceStoreDriver extends Driver(PreferenceStore) {
 
 describe("PreferenceStore", () => {
   it("is a port a driver implements", async () => {
-    const store = new AllowAllPreferenceStoreDriver();
+    const store: PreferenceStore = new AllowAllPreferenceStoreDriver();
     expect(store).toBeInstanceOf(PreferenceStore);
     expect(store).toBeInstanceOf(Port);
     await expect(store.allows(USER, "marketing", NotificationChannel.Mail)).resolves.toBe(true);

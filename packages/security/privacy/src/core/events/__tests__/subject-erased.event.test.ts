@@ -15,8 +15,8 @@ import { SubjectErased } from "#core/events/subject-erased.event";
 const RECEIPT = {
   erasureId: "era_1",
   subject: "usr_1",
-  erased: [{ kind: "Address", method: "delete" as const, count: 2 }],
-  kept: [{ kind: "Customer", reason: "hold" as const, count: 1 }],
+  erased: [{ kind: "crm.address", method: "delete" as const, count: 2 }],
+  kept: [{ kind: "crm.customer", reason: "hold" as const, count: 1 }],
   shredded: false,
   at: "2026-10-28T00:00:00.000Z",
 };
@@ -35,7 +35,7 @@ describe("SubjectErased", () => {
     expect(() =>
       SubjectErased.create({
         ...RECEIPT,
-        erased: [{ kind: "Address", method: "burn" as never, count: 1 }],
+        erased: [{ kind: "crm.address", method: "burn" as never, count: 1 }],
       }),
     ).toThrow();
   });

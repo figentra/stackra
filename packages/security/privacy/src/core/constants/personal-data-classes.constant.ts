@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `PERSONAL_DATA_CLASSES`, the registered personal-data declarations, in registration order.
+ * Purpose: `PERSONAL_DATA_CLASSES`, the registered personal-data declarations, in registration order, each with the
+ *          key of the module that registered it.
  * Boundary: process-wide state written only by `registerPersonalData` and read only by `personalDataDeclarations`;
  *           the stand-in for the table gen writes from the `privacy/` groups (STA-339).
  * Runtime: isomorphic
@@ -8,5 +9,5 @@
  */
 import type { PersonalDataClass } from "#core/types/personal-data-class.type";
 
-/** Every registered declaration class. */
-export const PERSONAL_DATA_CLASSES = new Set<PersonalDataClass>();
+/** Every registered declaration class, mapped to its module key. */
+export const PERSONAL_DATA_CLASSES = new Map<PersonalDataClass, string>();

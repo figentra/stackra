@@ -39,10 +39,7 @@ export async function runConnectorCase<C>(
       throw new TypeError(`${where}: the driver has no such method`);
     let result: unknown;
     try {
-      result = await (method as (...args: readonly unknown[]) => Promise<unknown>).apply(
-        driver,
-        step.args as readonly unknown[],
-      );
+      result = (await Reflect.apply(method, driver, step.args as readonly unknown[])) as unknown;
     } catch (error) {
       if (step.refusal !== undefined && ProviderRefusedError.is(error, step.refusal)) {
         results.push(undefined);

@@ -10,7 +10,7 @@ import type { SubjectRecord } from "#contracts/types/subject-record.type";
 
 /** One model's part of an export. */
 export interface SubjectExportSection {
-  /** The declaration's kind name (the model's name). */
+  /** The model key of the records (`crm.customer`). */
   readonly kind: string;
 
   /** The subject's rows of that model. */

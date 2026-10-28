@@ -110,7 +110,8 @@ function EditForm({
 }): ReactElement {
   const { t } = useTranslation();
   const { id: recordId, answer } = useRecord(resource, id);
-  if (answer.isPending) return <PageSkeleton />;
+  if (answer.isPending)
+    return <PageSkeleton loadingLabel={t(resourceLabel(resource.key, "title"))} />;
   if (answer.error !== null || typeof answer.data !== "object" || answer.data === null)
     return (
       <ErrorState

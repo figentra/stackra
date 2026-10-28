@@ -27,8 +27,8 @@ describe("@stackra/integrations/testing", () => {
       "replayIntegrationApi",
       "runAccountingCase",
       "runConnectorCase",
-      "runFulfilmentCase",
       "runEdiCase",
+      "runFulfilmentCase",
     ]);
     expect(testing.INTEGRATIONS_TESTING_PLUGIN.name).toBe("@stackra/integrations");
   });
