@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `Container`: it builds bindings from a generated-style wiring table with no reflect-metadata,
  *          selects drivers by override, test choice, config or single candidate, fails a boot without a driver with
- *          `UnresolvedPortError`, resolves named instances, honours the three lifetimes, replaces, merges wirings,
+ *          `UnresolvedPortError` (and with a TypeError naming a candidate whose import gives no class), resolves named instances, honours the three lifetimes, replaces, merges wirings,
  *          boots only the chosen roots eagerly, runs Explorers once, shuts instances down on close, and lists the
  *          contributions to an extension point with `getAll` (the multi-binding), and lists its bindings by name for
  *          tooling with `bindings()`.
@@ -259,6 +259,23 @@ describe("Container", () => {
       expect(failure).toBeInstanceOf(Error);
       expect((failure as UnresolvedPortError).port).toBe(Members);
       expect((failure as UnresolvedPortError).name).toBe("UnresolvedPortError");
+    });
+
+    it("names the driver and its port when a candidate's import gives no class", async () => {
+      const wiring = points({
+        drivers: [
+          {
+            port: Ledger,
+            key: "points.Ledger",
+            candidates: {
+              memory: () => Promise.resolve(undefined as unknown as typeof MemoryLedgerDriver),
+            },
+          },
+        ],
+      });
+      await expect(Container.create([wiring])).rejects.toThrow(
+        /The "memory" driver of Ledger \(points\.Ledger\) loaded undefined/,
+      );
     });
 
     it("boots when an override fills the port", async () => {

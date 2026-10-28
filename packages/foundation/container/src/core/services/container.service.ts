@@ -9,7 +9,8 @@
  * Boundary: classes (and `named(Port, "x")`) are the only tokens; no reflect-metadata, no `design:paramtypes`, no
  *           string token (ADR 0227 2026-10-24 note). Config values are not layered here: @stackra/config builds the
  *           config instances and passes them as overrides. A port nobody binds fails `create` with
- *           `UnresolvedPortError`, so a missing driver is a boot failure, never a runtime `undefined`. A contribution
+ *           `UnresolvedPortError`, so a missing driver is a boot failure, never a runtime `undefined`; a candidate whose
+ *           lazy import gives no class fails it with a TypeError naming the driver and its port. A contribution
  *           is found by subclassing its base, which is still a class token: no string, no array token, no new
  *           wiring section (ADR 0457).
  * Runtime: isomorphic
@@ -92,6 +93,25 @@ const isNamed = (token: Token): token is NamedToken => typeof token === "object"
 /** A token as an error message names it. */
 const nameOf = (token: Token) =>
   isNamed(token) ? `named(${token.port.name}, "${token.name}")` : token.name;
+
+/**
+ * The class a driver candidate's lazy import gives, or a TypeError naming the driver and its port when it gives none
+ * (the entry does not export the class the wiring names, or a circular import left it undefined).
+ */
+async function loadedClass(
+  driver: MergedDriver,
+  name: string,
+  load: () => Promise<AnyClass<Port>>,
+): Promise<AnyClass<Port>> {
+  const type: unknown = await load();
+  if (typeof type !== "function")
+    throw new TypeError(
+      `The "${name}" driver of ${driver.port.name}${driver.key === undefined ? "" : ` (${driver.key})`} loaded ` +
+        `${String(type)}: the entry its wiring imports does not export that class, or a circular import left it ` +
+        "undefined",
+    );
+  return type as AnyClass<Port>;
+}
 
 /** Merges wirings in order; a later wiring (the host's) wins over an earlier one (a dependency's). */
 function mergeWirings(wirings: readonly Wiring[], overrides: ReadonlyMap<Token, object>): Graph {
@@ -433,7 +453,10 @@ export class Container {
       const name = this.chooseDriver(driver, choice);
       const load = driver.candidates[name];
       if (load !== undefined)
-        graph.loaded.set(driver.port, this.recipeFor(await load(), driver.deps[name]));
+        graph.loaded.set(
+          driver.port,
+          this.recipeFor(await loadedClass(driver, name, load), driver.deps[name]),
+        );
     }
     for (const driver of graph.drivers.values()) {
       if (driver.named === undefined) continue;
@@ -449,7 +472,13 @@ export class Container {
             driver.port,
             `${driver.named} names ${JSON.stringify(name)} for "${instance}", which is not one of its drivers (${Object.keys(driver.candidates).join(", ")})`,
           );
-        graph.loaded.set(token, this.recipeFor(await load(), driver.deps[name as string]));
+        graph.loaded.set(
+          token,
+          this.recipeFor(
+            await loadedClass(driver, name as string, load),
+            driver.deps[name as string],
+          ),
+        );
       }
     }
   }
