@@ -3,23 +3,25 @@
  * Purpose: `cloudflareCoreStack(args)`, the Cloudflare half of the core Pulumi stack in one call: every zone the root
  *          runway names (imported, with its records, Worker domains and SaaS fallback origin), the runway edge on each
  *          edge zone with any storefront's waiting rooms and per-shopper limits, a named tunnel per machine on the dev
- *          zone, the Access gate, the R2 buckets and the OS edge Worker's KV, routes, rollout and origin locks. Returns
- *          every
- *          resource it declared, so the stacks repository exports the ids it needs.
+ *          zone, the Access gate, the R2 buckets, the OS edge Worker's KV, routes, rollout and origin locks, and the
+ *          Workers KV namespace of each environment on the `workers` cache driver (`workersCacheNamespaces`). Returns
+ *          every resource it declared, so the stacks repository exports the ids it needs.
  * Boundary: the program body only. The stacks repository (`figentra/infra`) owns `Pulumi.yaml`, the stack config and
  *           the state; the owner runs `pulumi up` there, and agents only preview (ADR 0171). The account and zone ids
  *           come from the root runway (`providers.cloudflare`), resolved through `ref:`; nothing here reads a secret.
  * Runtime: node
  * Governing contract: ADR 0171 (decisions 2, 6 and 7), ADR 0175, ADR 0290 (decisions 1 to 6, 11, 13 and 15), ADR 0026,
  *                     ADR 0284 (decision 9), ADR 0217 (decision 3), ADR 0325 (rule 24), ADR 0402 (storefront edge),
- *                     ADR 0437 (the edge Worker).
+ *                     ADR 0437 (the edge Worker), ADR 0296 (decisions 1 and 2: the cache namespaces).
  */
+import * as cloudflare from "@pulumi/cloudflare";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
 import { ZONE_OPTIONS_SCHEMA } from "#core/constants/zone-options-schema.constant";
 import { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-invalid.error";
 import { parseEdge } from "#core/functions/parse-edge.function";
 import { tunnelIngress } from "#core/functions/tunnel-ingress.function";
+import { workersCacheNamespaces } from "#core/functions/workers-cache-namespaces.function";
 import { zoneOf } from "#core/functions/zone-of.function";
 import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
@@ -65,6 +67,7 @@ export function cloudflareCoreStack(args: {
   access: ReturnType<typeof accessGate> | undefined;
   buckets: Record<string, ReturnType<typeof r2Bucket>>;
   edgeWorker: ReturnType<typeof edgeWorker> | undefined;
+  caches: Record<string, cloudflare.WorkersKvNamespace>;
 } {
   const { root, stack, ports = {}, storefront = {} } = args;
   const provider = root.providers?.cloudflare;
@@ -190,5 +193,14 @@ export function cloudflareCoreStack(args: {
           ),
           worker: stack.edgeWorker,
         });
-  return { zones, tunnels, access, buckets, edgeWorker: edgeWorkerResources };
+  const caches = Object.fromEntries(
+    Object.entries(workersCacheNamespaces(root)).map(
+      ([environment, title]) =>
+        [
+          environment,
+          new cloudflare.WorkersKvNamespace(`kv-${title}`, { accountId, title }),
+        ] as const,
+    ),
+  );
+  return { zones, tunnels, access, buckets, edgeWorker: edgeWorkerResources, caches };
 }

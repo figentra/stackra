@@ -37,6 +37,10 @@ program) and `./testing` (Pulumi's mocks).
   (`SLOW_QUERY_MS` only fills what the runway leaves out, `false` turns them off). All flags go in one
   `databaseFlags` list; never set a second one.
 
+- The shared cache is Memorystore for Valkey reached only through Private Service Connect: never give it a public
+  address, never turn transit encryption off, and never add persistence (it is a cache). Node types, shards, replicas,
+  eviction and sign-in are runway values; `MEMORYSTORE_NODE_TYPES` lists the node types the runway may name.
+
 ## PII
 
 None. The programs hold project ids, resource names and IAM bindings; no person's data, and no address for alerts

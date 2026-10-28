@@ -5,7 +5,8 @@
  *          a passed data key encrypts it after the Cloud SQL agent is granted the key; a server without a VPC is
  *          reachable only over TLS through the connector; pgaudit sets its flags and routes its entries into a log bucket
  *          in the region, and is absent when off; the slow-statement flags follow `slowQueryMs`; no database means no
- *          instance.
+ *          instance; a Valkey cache becomes a Memorystore instance on the VPC with its connection policy, encrypted in
+ *          transit with IAM sign-in, and stands without a database.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
@@ -38,6 +39,18 @@ const PRODUCTION: GcpRuntimeConfig = {
     slowQueryMs: 1000,
     network: "ref:gcp.network.prod",
   },
+  cache: null,
+};
+
+/** The shared Valkey cache production declares in the cache tests. */
+const CACHE: NonNullable<GcpRuntimeConfig["cache"]> = {
+  node: "STANDARD_SMALL",
+  shards: 1,
+  replicas: 1,
+  eviction: "allkeys-lru",
+  auth: "iam",
+  network: "ref:gcp.network.prod",
+  subnet: "ref:gcp.subnet.prod",
 };
 
 describe("gcpRuntime", () => {
@@ -190,6 +203,72 @@ describe("gcpRuntime", () => {
     const runtime = gcpRuntime({ ...PRODUCTION, database: null });
     const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
     expect(types).not.toContain("DatabaseInstance");
-    expect(runtime).toEqual({ databaseInstance: null, databaseConnection: null });
+    expect(runtime).toEqual({
+      databaseInstance: null,
+      databaseConnection: null,
+      cacheInstance: null,
+      cacheEndpoint: null,
+    });
+  });
+
+  it("puts the Valkey cache on the VPC, encrypted in transit with IAM sign-in, after its connection policy", async () => {
+    const engine = await mockPulumi({
+      gcp: {
+        network: { prod: "projects/acme-prod/global/networks/main" },
+        subnet: { prod: "projects/acme-prod/regions/me-central2/subnetworks/psc" },
+      },
+    });
+    const runtime = gcpRuntime({ ...PRODUCTION, cache: CACHE });
+
+    expect(
+      (await engine.find("ServiceConnectionPolicy", "acme-production-cache-psc")).inputs,
+    ).toMatchObject({
+      project: "acme-prod",
+      location: "me-central2",
+      serviceClass: "gcp-memorystore",
+      network: "projects/acme-prod/global/networks/main",
+      pscConfig: { subnetworks: ["projects/acme-prod/regions/me-central2/subnetworks/psc"] },
+    });
+    expect((await engine.find("Instance", "acme-production-cache")).inputs).toMatchObject({
+      project: "acme-prod",
+      location: "me-central2",
+      instanceId: "acme-production-cache",
+      nodeType: "STANDARD_SMALL",
+      shardCount: 1,
+      replicaCount: 1,
+      mode: "CLUSTER_DISABLED",
+      zoneDistributionConfig: { mode: "MULTI_ZONE" },
+      transitEncryptionMode: "SERVER_AUTHENTICATION",
+      authorizationMode: "IAM_AUTH",
+      deletionProtectionEnabled: true,
+      engineConfigs: { "maxmemory-policy": "allkeys-lru" },
+      desiredAutoCreatedEndpoints: [
+        { network: "projects/acme-prod/global/networks/main", projectId: "acme-prod" },
+      ],
+    });
+    expect(runtime.cacheInstance).not.toBeNull();
+  });
+
+  it("runs a cluster past one shard, uses the VPC's own policy without a subnet, and stands without a database", async () => {
+    const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+    const runtime = gcpRuntime({
+      ...PRODUCTION,
+      database: null,
+      cache: { ...CACHE, shards: 3, replicas: 0, eviction: null, auth: "none", subnet: null },
+    });
+
+    const inputs = (await engine.find("Instance", "acme-production-cache")).inputs;
+    expect(inputs).toMatchObject({
+      mode: "CLUSTER",
+      shardCount: 3,
+      zoneDistributionConfig: { mode: "SINGLE_ZONE" },
+      authorizationMode: "AUTH_DISABLED",
+    });
+    expect(inputs["engineConfigs"]).toBeUndefined();
+    const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
+    expect(types).not.toContain("ServiceConnectionPolicy");
+    expect(types).not.toContain("DatabaseInstance");
+    expect(runtime.databaseInstance).toBeNull();
+    expect(runtime.cacheInstance).not.toBeNull();
   });
 });

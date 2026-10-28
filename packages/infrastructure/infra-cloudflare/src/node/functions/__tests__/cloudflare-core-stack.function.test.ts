@@ -6,7 +6,8 @@
  *          with the resolved identity provider, and the Turborepo cache bucket expires; a runway without a Cloudflare
  *          account, and a stack zone the runway does not name, fail before any resource is declared; a storefront on an
  *          edge zone gets its waiting rooms and hot-item limits, one on a non-edge zone or naming a foreign host fails;
- *          the edge Worker lands on the runway zones, and a route zone or origin host outside them fails.
+ *          the edge Worker lands on the runway zones, and a route zone or origin host outside them fails; an environment
+ *          on the `workers` cache driver gets its KV namespace, and none is declared otherwise.
  * Boundary: test only; Pulumi under mocks with an in-memory stack config, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 6 and 7), ADR 0290 (decisions 1 to 6 and 15),
@@ -111,6 +112,7 @@ describe("cloudflareCoreStack", () => {
     expect(core.tunnels).toEqual({});
     expect(core.access).toBeUndefined();
     expect(core.buckets).toEqual({});
+    expect(core.caches).toEqual({});
     expect(Object.keys(core.zones)).toEqual(["figentra.com", "figentra.cloud"]);
   });
 
@@ -177,6 +179,27 @@ describe("cloudflareCoreStack", () => {
       },
     });
     expect(core.edgeWorker?.originPulls).toHaveLength(1);
+  });
+
+  it("declares the KV namespace of each environment on the workers cache driver", async () => {
+    const onWorkers = rootRunway({
+      providers: root.providers,
+      edge: TEMPLATE_EDGE,
+      environments: {
+        production: {
+          defaults: { service: { config: { cache: { driver: "workers" } } } },
+        },
+      },
+    });
+    const core = cloudflareCoreStack({ root: onWorkers, stack: parseCloudflareStack({}) });
+    await settled(core);
+
+    expect(Object.keys(core.caches)).toEqual(["production"]);
+    expect(
+      inputsByName(declared, "cloudflare:index/workersKvNamespace:WorkersKvNamespace"),
+    ).toEqual({
+      "kv-figentra-production-cache": { accountId: "acc-1", title: "figentra-production-cache" },
+    });
   });
 
   it("refuses an edge Worker route or origin outside the runway zones", () => {

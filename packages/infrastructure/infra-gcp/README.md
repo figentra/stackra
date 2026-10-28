@@ -17,7 +17,7 @@ job, driven by `stackra runway infra` (ADR 0354 decision 5).
 | `.`         | `gcpBaselineConfig(root, env, origins)`                                                                     | one environment's typed config, plain JSON (gen writes it to a file)                                        |
 | `.`         | `gcpRuntimeConfig(root, env, dedicated?)`, `serviceAccountId`, `GcpHealthIndicatorDriver`, `InfraGcpConfig` | the runtime config (Cloud SQL); the 30-character guard; the health driver; its target is `config.infra_gcp` |
 | `./node`    | `gcpBaseline(config)`                                                                                       | the environment stack                                                                                       |
-| `./node`    | `gcpRuntime(config, { keyId? })`                                                                            | the runtime stack: Cloud SQL Postgres with backups, recovery and pgaudit                                    |
+| `./node`    | `gcpRuntime(config, { keyId? })`                                                                            | the runtime stack: Cloud SQL Postgres with backups, recovery and pgaudit; the shared Valkey cache           |
 | `./node`    | `resolveRef(value)`                                                                                         | a `ref:<path>` value read from the stack config                                                             |
 | `./testing` | `mockPulumi(config?)`, `outputOf(output)`                                                                   | Pulumi's mocks and an output reader, for tests of a composed program                                        |
 
@@ -119,6 +119,27 @@ slow statements from `DatabaseConfig.queries.slow` (`@stackra/database`); `pg_st
 2026-10-29) is a migration's `schema.createExtension`, not a flag here. AWS is not configured: Encore Cloud owns the RDS
 parameter group.
 
+A shared Valkey cache (`shared.cache.engine: valkey`, the same key the AWS runtime reads) becomes a Memorystore for
+Valkey instance `<prefix>-cache` in the deployment's region, reached only through Private Service Connect on
+`shared.network.vpc` (required; give the network as `projects/<project>/global/networks/<name>`). Transit encryption is
+always on; clients sign in with an IAM token unless `auth: none`. One shard runs it with cluster mode off; more turn it
+on. A replica spreads the nodes across zones. Name `subnet` to create the VPC's `gcp-memorystore` connection policy in
+this stack; leave it out where the VPC already has one (a VPC holds one per region). `gcpRuntime` exports
+`cacheInstance` and `cacheEndpoint` (the discovery `host:port`), which the stacks repository turns into the
+`CACHE_VALKEY_URL` secret.
+
+```yaml
+shared:
+  cache:
+    engine: valkey
+    node: STANDARD_SMALL # SHARED_CORE_NANO (default), STANDARD_SMALL, HIGHMEM_MEDIUM, HIGHMEM_XLARGE
+    shards: 1
+    replicas: 1
+    eviction: allkeys-lru # any Valkey maxmemory-policy; the engine's default when absent
+    auth: iam # or none
+    subnet: ref:gcp.subnet.prod # creates the gcp-memorystore connection policy
+```
+
 The stack exports `egressIps` (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the
 deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self links the network's Cloud NAT takes as
 `natIps` with `natIpAllocateOption: MANUAL_ONLY`).
@@ -134,13 +155,18 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 - Run `create extension pg_stat_statements` where you want statement statistics (or let a migration do it).
 - Run `create extension pgaudit` in each database once the flag is on, and set `pgaudit.log = 'write'` on the roles
   people sign in with (`alter role ... set pgaudit.log`), so their writes are audited and the app's are not.
+- Enable the Memorystore and Network Connectivity APIs where a Valkey cache is declared, and grant each service's
+  account `roles/memorystore.dbConnectionUser` when the cache signs in with IAM.
 - Point the deploy job's auth step at `workloadIdentityProvider` and `infraServiceAccount`.
 - Enable the Compute Engine API where `egress` is set, send `egressIps` to each partner that allow-lists our calls, and
   give `egressAddresses` to the network's Cloud NAT. Release an address by hand only once no partner lists it.
 
 ## Not here
 
-The network (the Cloud Router and Cloud NAT that send egress from the reserved addresses), caches and queues belong to
+The `@stackra/cache` `valkey` driver reads a password URL (`CACHE_VALKEY_URL`); it does not yet mint the hourly IAM
+token an `auth: iam` instance needs, so a service on it uses `auth: none` until it does. Member-dedicated caches
+(`requires.<name>` with `engine: valkey`) are AWS-only so far. The network (the Cloud Router and Cloud NAT that send
+egress from the reserved addresses) and queues belong to
 the runtime stack, and the GCP compute runtime is not decided (ADR 0354 open question 1); the database server is
 `gcpRuntime`'s. Its `databaseConnection` output is what the Cloud SQL connector dials, the GCP connection path of
 ADR 0473 decision 1; the connector itself runs in the service process, so nothing more is created here. There is no GCP state backend: the stack state stays in the AWS state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and

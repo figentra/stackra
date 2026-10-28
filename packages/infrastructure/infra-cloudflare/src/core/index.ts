@@ -5,7 +5,8 @@
  *          the stack config and of a storefront's campaign settings, the tunnel ingress, rate-limit and per-shopper
  *          limit planners, the dev-port reader), the edge Worker's KV keys and signing-key slots, the Cloudflare for
  *          SaaS custom-hostname and regional-hostname calls the OS tenancy service makes, the login directory Worker's
- *          handler and its KV bulk calls, their enums, error and types.
+ *          handler and its KV bulk calls, the cache namespaces the `workers` cache driver needs, their enums, error and
+ *          types.
  *          Also the package's `HealthIndicator` driver (`CloudflareHealthIndicatorDriver`) and its target, `InfraCloudflareConfig`.
  * Boundary: names each re-export and declares nothing. The zod schemas and the managed ruleset ids stay internal; the
  *           Pulumi programs are `./node`'s, because Pulumi runs under Node only.
@@ -36,6 +37,7 @@ export { regionalHostnameRequest } from "#core/functions/regional-hostname-reque
 export { shopperLimitRules } from "#core/functions/shopper-limit-rules.function";
 export { signingKeySlots } from "#core/functions/signing-key-slots.function";
 export { tunnelIngress } from "#core/functions/tunnel-ingress.function";
+export { workersCacheNamespaces } from "#core/functions/workers-cache-namespaces.function";
 export type { CloudflareApiRequest } from "#core/types/cloudflare-api-request.type";
 export type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 export type { EdgeKvKeyParts } from "#core/types/edge-kv-key-parts.type";

@@ -5,18 +5,20 @@
  *          region, point-in-time recovery when the runway asks, a standby when highly available, a private IP on the
  *          runway's VPC (else reachable only through the Cloud SQL connector over TLS), deletion protection, the
  *          deployment's data key when one is passed, and pgaudit (unless the runway turns it off): the Cloud SQL flags
- *          and a sink routing the server's pgaudit entries into a log bucket in its region, kept the runway's days; and
+ *          and a sink routing the server's pgaudit entries into a log bucket in its region, kept the runway's days;
  *          the slow-statement log (unless the runway turns it off): `log_min_duration_statement` and `auto_explain`
- *          from `slowQueryMs`, so the server logs each slow statement with its plan.
+ *          from `slowQueryMs`, so the server logs each slow statement with its plan; and its shared Memorystore for
+ *          Valkey cache when the runway declares one (`valkeyCache`).
  * Boundary: creates resources only through Pulumi; agents preview or run it under mocks, never `pulumi up`. The
  *           backup location is the instance's own region, so a backup never leaves the jurisdiction (ADR 0186). The
  *           data key comes from the foundation stack (`dataKeyId`); the Cloud SQL service agent is granted it here.
- *           Database users, caches and queues are not here, nor `create extension pgaudit` and per-role
+ *           Database users, member-dedicated caches and queues are not here, nor `create extension pgaudit` and per-role
  *           `pgaudit.log`, which run inside the database. Switching pgaudit on restarts the server once.
  * Runtime: node
  * Governing contract: ADR 0186 (decisions 1 and 4), ADR 0238, ADR 0354 (open question 1, database only), ADR 0401,
  *                     ADR 0212 (decisions 5 and 6: pgaudit, kept hot thirteen months), ADR 0227 (pgaudit, not CDC),
- *                     data-layer gap scale-performance 7 (STA-1400: the slow-statement log).
+ *                     data-layer gap scale-performance 7 (STA-1400: the slow-statement log); ADR 0296 (decisions 1 and
+ *                     5: the shared Valkey cache).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as gcp from "@pulumi/gcp";
@@ -26,6 +28,7 @@ import type { GcpRuntimeConfig } from "#core/types/gcp-runtime-config.type";
 import { cloudProjectOf } from "#node/functions/cloud-project-of.function";
 import { projectProvider } from "#node/functions/project-provider.function";
 import { resolveRef } from "#node/functions/resolve-ref.function";
+import { valkeyCache } from "#node/functions/valkey-cache.function";
 import type { GcpRuntimeOutputs } from "#node/types/gcp-runtime-outputs.type";
 
 /**
@@ -50,7 +53,20 @@ export function gcpRuntime(
     { parent: group },
   );
   const scoped = { parent: group, provider };
-  if (database === null) return { databaseInstance: null, databaseConnection: null };
+  const cache =
+    config.cache === null
+      ? null
+      : valkeyCache(
+          config.cache,
+          { prefix, project: cloud.id, region, labels: config.labels },
+          scoped,
+        );
+  const cacheOutputs = {
+    cacheInstance: cache?.instance.name ?? null,
+    cacheEndpoint: cache?.endpoint ?? null,
+  };
+  if (database === null)
+    return { databaseInstance: null, databaseConnection: null, ...cacheOutputs };
 
   const grants: pulumi.Resource[] = [];
   if (options.keyId !== undefined) {
@@ -153,5 +169,9 @@ export function gcpRuntime(
       { ...scoped, dependsOn: [bucket] },
     );
   }
-  return { databaseInstance: instance.name, databaseConnection: instance.connectionName };
+  return {
+    databaseInstance: instance.name,
+    databaseConnection: instance.connectionName,
+    ...cacheOutputs,
+  };
 }

@@ -4,7 +4,8 @@
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
  *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
  *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
- *          database server, its backups, pgaudit and slow-statement threshold, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
+ *          database server, its backups, pgaudit and slow-statement threshold, the shared Valkey cache, network (its
+ *          VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -15,9 +16,12 @@
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
  *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
  *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses), ADR 0188
- *                     (decision 3: backups kept 35 days or less, or crypto-shredded), ADR 0212 (decision 5: pgaudit), data-layer gap
- *                     scale-performance 7 (`slowQueryMs`, STA-1400).
+ *                     (decision 3: backups kept 35 days or less, or crypto-shredded), ADR 0212 (decision 5: pgaudit),
+ *                     data-layer gap scale-performance 7 (`slowQueryMs`, STA-1400), ADR 0296 (decisions 1 and 5: the
+ *                     shared Valkey cache).
  */
+import { Enum } from "@stackra/contracts";
+import { CacheEviction } from "@stackra/runway";
 import { z } from "zod";
 
 import { PGAUDIT_CLASSES } from "#core/constants/pgaudit-classes.constant";
@@ -110,6 +114,22 @@ const PGAUDIT = z.union([
   }),
 ]);
 
+/**
+ * The environment's shared cache. Only `engine: valkey` on GCP becomes a Memorystore for Valkey instance; its node type,
+ * shards, replicas per shard, eviction policy, sign-in (`iam`, the default, or `none`) and the subnet its Private
+ * Service Connect policy reserves addresses in (absent when the VPC already has a `gcp-memorystore` policy).
+ */
+const CACHE = z.looseObject({
+  engine: z.string().optional(),
+  // Every environment is parsed here, an AWS one too, whose `node` is an ElastiCache type: gcpRuntimeConfig checks it.
+  node: z.string().min(1).optional(),
+  shards: z.int().min(1).max(250).optional(),
+  replicas: z.int().min(0).max(5).optional(),
+  eviction: z.enum(Enum.values(CacheEviction) as [CacheEviction, ...CacheEviction[]]).optional(),
+  auth: z.enum(["iam", "none"]).optional(),
+  subnet: z.string().min(1).optional(),
+});
+
 /** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
@@ -139,6 +159,7 @@ const ENVIRONMENT = z.looseObject({
           slowQueryMs: z.union([z.literal(false), z.int().min(10).max(600_000)]).optional(),
         })
         .optional(),
+      cache: CACHE.optional(),
       network: z
         .looseObject({
           vpc: z.string().min(1).optional(),

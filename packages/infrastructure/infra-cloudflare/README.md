@@ -31,6 +31,7 @@ Agents never run `pulumi` and never call Cloudflare. The programs run in the pri
 | `.`      | `regionalHostnameRequest(call)`                                          | keep a scope's custom hostname in one region (data localisation)                 |
 | `.`      | `loginDirectoryHandler(options)`                                         | the login directory Worker's handler: an identifier to its regions               |
 | `.`      | `loginDirectoryKvRequest(call)`                                          | a region's KV bulk put or delete of its directory rows                           |
+| `.`      | `workersCacheNamespaces(root)`                                           | the KV namespace title of each environment on the `workers` cache driver         |
 | `.`      | `CloudflareHealthIndicatorDriver`, `InfraCloudflareConfig`               | the health driver: an edge host answers; its target is `config.infra_cloudflare` |
 | `.`      | `ZonePlan`, `WafMode`, `BotMode`, `OriginLock`, `CustomHostnameState`    | enums                                                                            |
 | `.`      | `CloudflareConfigInvalidError`                                           | every input failure, with each path                                              |
@@ -145,6 +146,11 @@ export const tunnelIds = Object.fromEntries(
 | `accessGate`     | GitHub-organisation, service-token and bypass policies; applications over `*.<dev zone>`, the operator URIs and the bypassed paths; one service token per machine                         |
 | `r2Bucket`       | the bucket and, with `expireDays`, a lifecycle rule deleting older objects                                                                                                                |
 | `edgeWorker`     | KV namespaces; Worker routes; the gradual deployment; per origin a tunnel (mTLS: authenticated origin pulls on its zone) and an Access app admitting the Worker's token                   |
+
+`cloudflareCoreStack` also declares a Workers KV namespace, `<project>-<environment>-cache`, for each environment
+whose `defaults.service.config.cache.driver` is `workers` (the `@stackra/cache` driver that stores entries in Workers
+KV), and returns them as `caches` by environment. Bind its id to the Worker under the name `cache.workers.binding`
+(default `CACHE`) in the Worker's deploy.
 
 The edge by plan:
 
@@ -282,6 +288,8 @@ These touch accounts, purchases or secrets, so the owner does them; nothing here
 - The KSA TLS answer (ADR 0437 decision 12): the option is built, the decision is counsel's and infrastructure's.
 - The login directory Worker member, its region list and key bindings, and the regions' KV-scoped API tokens are the
   OS's and the owner's; `loginDirectoryWorker` is not part of `cloudflareCoreStack` yet (a stack composes it).
+- A cache namespace for a member that picks the `workers` cache driver in its own runway while its environment's
+  default is another; the stack reads the root runway only. Binding the namespace to a Worker is the Worker's deploy.
 - Tenant handles in the directory (OS-30) are tenancy's; hostnames come from the edge KV `host:` rows.
 
 - The Turborepo cache Worker and the preview router Worker are Worker members deployed by wrangler from CI (ADR 0289

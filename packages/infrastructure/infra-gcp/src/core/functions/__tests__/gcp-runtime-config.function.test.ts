@@ -3,8 +3,10 @@
  * Purpose: unit tests of `gcpRuntimeConfig`: production's Postgres server in KSA with a standby, 35 daily backups and
  *          seven days of point-in-time recovery on its VPC; staging's with Cloud SQL's default backups and no recovery
  *          window; a dedicated tenant's in its own project; pgaudit on by default, sized by the runway or off on
- *          `false`, an unknown class refused; the slow-statement threshold (one second, the runway's, or off); no server where the runway declares none; a server without a tier or
- *          version refused.
+ *          `false`, an unknown class refused; the slow-statement threshold (one second, the runway's, or off); no
+ *          server where the runway declares none; a server without a tier or version refused; a Valkey cache sized by
+ *          the runway with defaults filled, none for another engine, and one with an unknown node type or no VPC
+ *          refused.
  * Boundary: test only; roots are built through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
@@ -98,5 +100,73 @@ describe("gcpRuntimeConfig", () => {
       at(draft, "environments", "staging", "shared").database = { backups: { pitr: true } };
     });
     expect(() => gcpRuntimeConfig(partial, "staging")).toThrow(RunwayInvalidError);
+  });
+
+  it("sizes the shared Valkey cache from the runway and fills the defaults", () => {
+    const sized = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared").cache = {
+        engine: "valkey",
+        node: "STANDARD_SMALL",
+        shards: 3,
+        replicas: 1,
+        eviction: "allkeys-lru",
+        subnet: "ref:gcp.subnet.prod",
+      };
+      at(draft, "environments", "staging", "shared").cache = { engine: "valkey" };
+      at(draft, "environments", "staging", "shared").network = { vpc: "ref:gcp.network.nonprod" };
+    });
+
+    expect(gcpRuntimeConfig(sized, "production").cache).toEqual({
+      node: "STANDARD_SMALL",
+      shards: 3,
+      replicas: 1,
+      eviction: "allkeys-lru",
+      auth: "iam",
+      network: "ref:gcp.network.prod",
+      subnet: "ref:gcp.subnet.prod",
+    });
+    expect(gcpRuntimeConfig(sized, "staging").cache).toEqual({
+      node: "SHARED_CORE_NANO",
+      shards: 1,
+      replicas: 0,
+      eviction: null,
+      auth: "iam",
+      network: "ref:gcp.network.nonprod",
+      subnet: null,
+    });
+  });
+
+  it("gives no cache without a valkey engine, and keeps the cache when the runway declares no database", () => {
+    expect(gcpRuntimeConfig(gcpRoot(), "production").cache).toBeNull();
+    const cacheOnly = gcpRoot((draft) => {
+      const shared = at(draft, "environments", "production", "shared");
+      delete shared.database;
+      shared.cache = { engine: "valkey" };
+    });
+    const config = gcpRuntimeConfig(cacheOnly, "production");
+    expect(config.database).toBeNull();
+    expect(config.cache?.node).toBe("SHARED_CORE_NANO");
+    const other = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared").cache = { engine: "memcached" };
+    });
+    expect(gcpRuntimeConfig(other, "production").cache).toBeNull();
+  });
+
+  it("refuses a Valkey cache with a node type Memorystore lacks or no VPC to reach it on", () => {
+    const aws = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared").cache = {
+        engine: "valkey",
+        node: "cache.t4g.small",
+      };
+    });
+    expect(() => gcpRuntimeConfig(aws, "production")).toThrow(
+      /environments\.production\.shared\.cache\.node/,
+    );
+    const noVpc = gcpRoot((draft) => {
+      at(draft, "environments", "staging", "shared").cache = { engine: "valkey" };
+    });
+    expect(() => gcpRuntimeConfig(noVpc, "staging")).toThrow(
+      /environments\.staging\.shared\.network\.vpc/,
+    );
   });
 });
