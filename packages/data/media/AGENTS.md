@@ -45,8 +45,7 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 - `Upload.schema` is the wire schema gen writes for every `Upload<Bucket>` field (gen's `upload` kind, STA-1218), and
   gen's JSON Schema mirrors it (`{ id: "upl_…" }`). Change the token's wire form only together with gen's
   `jsonSchemaOf`.
-- A host binds `MediaLibrary` with `FileSystem`, `MediaConfig` and `Clock`. Gen's `PLATFORM_BINDINGS` row still names
-  `MediaDisk` until the gen package follows (handed to the integration batch); until then a host binds it itself. Its
+- Gen binds `MediaLibrary` with `FileSystem`, `MediaConfig` and `Clock` (its `PLATFORM_BINDINGS` row, ADR 0465). Its
   `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297) and `FileSystem`'s from
   `@stackra/filesystem`'s: `memory` for each, so `.useDrivers("memory")` binds it. A host that injects `MediaLibrary`
   declares `@stackra/filesystem` too (gen refuses otherwise, `generated_dependency_missing`).

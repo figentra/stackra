@@ -275,37 +275,14 @@ describe("emitWiring", () => {
     expect(content).not.toContain('"locking.LockDriver": ');
   });
 
-  it("binds MediaLibrary over the media disk table and a media config row (STA-1297)", () => {
+  it("binds MediaLibrary over the filesystem disk table and a media config row (STA-1297, ADR 0465)", () => {
     const media: MemberIR["dependencies"][number] = {
       package: "@stackra/media",
       manifest: {
         member: "media",
         package: "@stackra/media",
         version: "0.1.0",
-        drivers: [
-          {
-            port: "MediaDisk",
-            key: "media.MediaDisk",
-            candidates: ["memory", "s3"],
-            selectedBy: "config:media.disk",
-            classes: {
-              memory: {
-                class: "MemoryMediaDiskDriver",
-                from: "@stackra/media",
-                deps: [
-                  { class: { name: "FilesystemConfig", from: "@stackra/filesystem" } },
-                  { class: { name: "Clock", from: "@stackra/contracts" } },
-                ],
-              },
-              s3: {
-                class: "S3MediaDiskDriver",
-                from: "@stackra/media/node",
-                deps: [{ class: { name: "FilesystemConfig", from: "@stackra/filesystem" } }],
-              },
-            },
-            config: { class: "MediaConfig", from: "@stackra/media" },
-          },
-        ],
+        config: [{ key: "media", class: "MediaConfig", from: "@stackra/media" }],
       },
     };
     const filesystem: MemberIR["dependencies"][number] = {
@@ -315,6 +292,30 @@ describe("emitWiring", () => {
         package: "@stackra/filesystem",
         version: "0.1.0",
         config: [{ key: "filesystem", class: "FilesystemConfig", from: "@stackra/filesystem" }],
+        drivers: [
+          {
+            port: "FileSystem",
+            key: "filesystem.FileSystem",
+            candidates: ["memory", "s3"],
+            selectedBy: "config:filesystem.disk",
+            classes: {
+              memory: {
+                class: "MemoryFileSystemDriver",
+                from: "@stackra/filesystem",
+                deps: [
+                  { class: { name: "FilesystemConfig", from: "@stackra/filesystem" } },
+                  { class: { name: "Clock", from: "@stackra/contracts" } },
+                ],
+              },
+              s3: {
+                class: "S3FileSystemDriver",
+                from: "@stackra/filesystem/node",
+                deps: [{ class: { name: "FilesystemConfig", from: "@stackra/filesystem" } }],
+              },
+            },
+            config: { class: "FilesystemConfig", from: "@stackra/filesystem" },
+          },
+        ],
       },
     };
     const content = emitWiring({
@@ -339,15 +340,16 @@ describe("emitWiring", () => {
       dependencies: [...BILLING_IR.dependencies, media, filesystem],
     });
     for (const line of [
-      '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [MediaDisk, MediaConfig, Clock] },',
-      '      key: "media.MediaDisk",',
-      '        "memory": () => import("@stackra/media").then((m) => m.MemoryMediaDiskDriver),',
+      '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [FileSystem, MediaConfig, Clock] },',
+      '      key: "filesystem.FileSystem",',
+      '        "memory": () => import("@stackra/filesystem").then((m) => m.MemoryFileSystemDriver),',
       '      deps: { "memory": [FilesystemConfig, Clock], "s3": [FilesystemConfig] },',
       '    { key: "media", provide: MediaConfig },',
       '    { key: "filesystem", provide: FilesystemConfig },',
     ])
       expect(content).toContain(line);
     expect(content.match(/provide: MediaConfig/g)).toHaveLength(1);
+    expect(content.match(/provide: FilesystemConfig/g)).toHaveLength(1);
   });
 
   it("writes a package config row only for a class the package's manifest lists (STA-1308)", () => {

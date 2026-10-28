@@ -202,9 +202,8 @@ const foreign = await fakeUpload(app, null, { mediaType: MediaType.Png }); // re
 ```
 
 A service that injects `MediaLibrary` gets it bound over the memory `FileSystem` disk under `.useDrivers("memory")`
-(STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since media stores on its disk. Until gen's
-`PLATFORM_BINDINGS` row names `FileSystem` instead of `MediaDisk` (a follow-up for the gen package), a host binds
-`MediaLibrary` with `deps: [FileSystem, MediaConfig, Clock]` itself.
+(STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since media stores on its disk. Gen's
+`PLATFORM_BINDINGS` row binds it with `deps: [FileSystem, MediaConfig, Clock]` (ADR 0465).
 
 `fakeUpload` goes through `createUpload` and the memory disk's `receive`, so the bucket's rules apply as in production.
 In a browser test, the `memory` uploader returns a fresh token for every file and records it in `uploads`.

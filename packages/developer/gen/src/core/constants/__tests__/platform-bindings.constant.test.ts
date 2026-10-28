@@ -3,8 +3,8 @@
  * Purpose: unit tests of `PLATFORM_BINDINGS`: each platform service gen binds is keyed `<package>#<Class>` and lists
  *          its constructor tokens in parameter order (`RequestContext`, `IntegrationRuntime`, `Locks`,
  *          `WebhookReceiver`, `SequenceService`, the settings reader and resolver, and `RuleSetService`, whose one
- *          token is the per-model `repositoryOf(Revision)`, and `MediaLibrary` over the media disk, its config and the
- *          clock, STA-1297); the map is frozen.
+ *          token is the per-model `repositoryOf(Revision)`, and `MediaLibrary` over the `FileSystem` disk, its config
+ *          and the clock, STA-1297, ADR 0465); the map is frozen.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0263; ADR 0136; ADR 0308; ADR 0224; ADR 0331.
@@ -44,7 +44,7 @@ describe("PLATFORM_BINDINGS", () => {
       "Clock",
     ]);
     expect(PLATFORM_BINDINGS["@stackra/media#MediaLibrary"]?.map(nameOf)).toEqual([
-      "MediaDisk",
+      "FileSystem",
       "MediaConfig",
       "Clock",
     ]);

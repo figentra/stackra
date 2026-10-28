@@ -414,7 +414,7 @@ subscriber; the wiring binds `SequenceService`, and `SettingsReader` with the ma
 A service that injects `RuleSetService` (`@stackra/rules/node`) gets the rules node without wiring it by hand: the
 wiring binds it over `repositoryOf(Revision)` (content's revisions table) and the registrations write
 `registerModelPartners([[RuleSetService, RuleSet]])`; the `RuleSet` and `Revision` entities come from the hosted
-packages' entity lists. `MediaLibrary` is bound the same way over the media disk and `MediaConfig`.
+packages' entity lists. `MediaLibrary` is bound the same way over the `FileSystem` disk and `MediaConfig` (ADR 0465).
 
 The wiring's driver tables hold the member's own drivers and, for every port its bindings reach (directly, through a
 platform binding or through another driver's constructor), the declared package's table from that package's
