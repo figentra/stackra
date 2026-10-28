@@ -2,8 +2,8 @@
 // Purpose: unused files/exports/dependencies detection. Runs in `pnpm verify`. Workspace globs for members that do
 //          not exist yet are listed on purpose: knip prints a hint, not a failure, and the entry is right the day
 //          the member lands.
-//          Unused catalog entries are errors (stackra-235, rule-gap B-10). Unlisted dependencies in gen output are
-//          not reported (stackra-247, see `ignoreIssues`).
+//          Unused catalog entries are errors (stackra-235, rule-gap B-10). Unlisted dependencies and duplicate
+//          exports in gen output are not reported (stackra-247, STA-1299, see `ignoreIssues`).
 // Owner: release-operations · Secrets: forbidden
 {
   "$schema": "./node_modules/knip/schema.json",
@@ -207,14 +207,16 @@
   // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
   // dist/ is build output (the tooling presets ship tsc-emitted JS and .d.ts); knip checks the src it is built from.
   "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**", "**/dist/**"],
-  // Unlisted dependencies in gen's output only (stackra-247, ADR 0295 decision 5, ADR 0261): the wiring lists every
-  // driver of each package port a member's bindings reach, with that driver's constructor tokens, so it names the
-  // driver's own library (MikroORM from @mikro-orm/postgresql for @stackra/database's postgres driver, the Valkey and
-  // S3 clients) in members that only pick a driver by config. The member does not use that library, the package that
-  // owns the driver declares it, and gen's generated_dependency_missing already holds every @stackra/* import there.
-  // The files stay entries, so the packages they do use still count; only the `unlisted` report is skipped.
+  // Unlisted dependencies in gen's output only (stackra-247, ADR 0295 decision 5, ADR 0261): gen's
+  // generated_dependency_missing and schema_dependency_missing already hold every @stackra/* (and a schemas file's
+  // zod) import there, and the wiring leaves out a driver's constructor tokens from a library the member does not
+  // declare (MikroORM of @stackra/database's postgres driver). The files stay entries, so the packages they do use
+  // still count; only the `unlisted` report is skipped.
+  // Duplicate exports in gen's output only (STA-1299): a schemas file exports a config's schema under the config's
+  // name too (`RateLimitConfig$` beside `RateLimitOptions$`), the name a host's config override and the generated
+  // entry barrels import; the two names are one schema by design.
   "ignoreIssues": {
-    "**/.stackra/**": ["unlisted"],
+    "**/.stackra/**": ["unlisted", "duplicates"],
   },
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
