@@ -239,6 +239,8 @@ describe("@stackra/database", () => {
       "runTransaction",
       "sqlStateOf",
       "retryDelay",
+      "rowKey",
+      "BULK_LIMITS",
       "TRANSACTION_RETRY",
       "HOLD_HOST",
       "HOLD_LINK_FIELDS",

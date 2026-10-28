@@ -84,6 +84,42 @@ with columns from gen's `table(...)` constants (ADR 0160).
 - `update(where, data, { requiresNew: true })` writes now in a transaction of its own that commits even if the
   caller's rolls back (an attempt counter kept across a failed delivery), as `insert` does.
 
+### Bulk verbs and the offset page
+
+```ts
+await products.insertMany(rows); // one flush, batched inserts
+const { created, updated } = await products.upsert(rows, { by: ["scopeId", "sku"] });
+await orders.updateWhere(
+  { status: OrderStatus.Pending, createdAt: { $lt: cutoff } },
+  { status: OrderStatus.Void },
+);
+await sessions.deleteWhere({ expiresAt: { $lt: now } });
+for await (const order of orders.each({ status: OrderStatus.Paid }, { batch: 1000 }))
+  await reindex(order);
+const page = await orders.page({
+  page: 2,
+  perPage: 50,
+  sort: { key: "createdAt", direction: SortDirection.Desc },
+});
+```
+
+Every bulk verb writes what the flush path writes: stamps, encrypted fields sealed, and a change record on the feed.
+
+| Verb                       | How it writes                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `insertMany(rows)`         | creates every row and flushes once in a savepoint (`requiresNew` for its own transaction); the ORM batches the inserts    |
+| `upsert(rows, { by })`     | reads stored rows by the `by` values (kept rows too), assigns the matches, creates the rest, flushes once; returns counts |
+| `updateWhere(where, data)` | one native statement with the stamps (and `version + 1` on a `Versioned` model), reported to the change feed              |
+| `deleteWhere(where)`       | `delete`: soft delete, archive or a hold-aware hard delete by the model's policy                                          |
+| `each` / `chunk(where)`    | keyset reads of `batch` rows (500, at most 10,000) by the primary key; visibility and delete filters apply                |
+| `page(input, { where })`   | an offset page (`perPage` 1 to 500) with `total` and `pages`; sorts as `table` does                                       |
+
+`updateWhere` that sets a field the model encrypts runs through the unit of work in batches instead, because a native
+statement would store it in clear. `upsert` refuses a row without a `by` value and a key named twice; a concurrent
+insert of the same key fails the flush with the unique violation (a retryable `conflict` at the action boundary), so
+wrap an import in `retry`. `AppendOnly` models refuse `upsert`, `updateWhere` and `deleteWhere`. Use `table` (cursor)
+for long lists and `page` only where a pager needs page numbers.
+
 ### Reads on a replica
 
 ```ts

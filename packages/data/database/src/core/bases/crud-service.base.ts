@@ -21,15 +21,20 @@
  *           rows back, `forceDelete` and `purge` remove them for good; the drivers' `deleted`/`archived` filters hide
  *           kept rows from every read unless `DeletedReadOptions` asks for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves. An
- *           `AppendOnly` model's rows are never changed: `update`, `increment`, `delete`, `restore` and `repath` refuse
- *           with `AppendOnlyWriteError`; `purge` and `forceDelete` (retention, erasure) still remove them.
+ *           `AppendOnly` model's rows are never changed: `update`, `updateWhere`, `upsert`, `increment`, `delete`,
+ *           `deleteWhere`, `restore` and `repath` refuse with `AppendOnlyWriteError`; `purge` and `forceDelete`
+ *           (retention, erasure) still remove them. The bulk verbs match the flush path: `insertMany` and `upsert` write
+ *           through one flush (stamps, encryption and change records from the subscribers), `updateWhere` is one native
+ *           statement with stamps and a change report (a flush when it sets an encrypted field), `deleteWhere` is
+ *           `delete`; `each`/`chunk` walk by keyset and `page` reads a numbered page with its total.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
  *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
- *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options).
+ *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
+ *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -47,8 +52,9 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
-import { traitsOf } from "@stackra/model";
+import { encryptedFieldsOf, traitsOf } from "@stackra/model";
 
+import { BULK_LIMITS } from "#core/constants/bulk-limits.constant";
 import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
@@ -64,12 +70,17 @@ import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { isAppendOnly } from "#core/functions/is-append-only.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { rowKey } from "#core/functions/row-key.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { watchedNativeWrite } from "#core/functions/watched-native-write.function";
 import { Database } from "#core/ports/database.port";
+import type { EachOptions } from "#core/types/each-options.type";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
+import type { OffsetPage } from "#core/types/offset-page.type";
+import type { PageOptions } from "#core/types/page-options.type";
+import type { PageQuery } from "#core/types/page-query.type";
 import type { NativeWrite } from "#core/types/native-write.type";
 import type { Repository } from "#core/types/repository.type";
 import type { TableOptions } from "#core/types/table-options.type";
@@ -80,6 +91,8 @@ import type { LockOptions } from "#core/types/lock-options.type";
 import type { TableSort } from "#core/types/table-sort.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import type { UpdateOptions } from "#core/types/update-options.type";
+import type { UpsertOptions } from "#core/types/upsert-options.type";
+import type { UpsertResult } from "#core/types/upsert-result.type";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
@@ -225,19 +238,202 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /** Implements `Repository.insert`, documented there. */
   insert(data: RequiredEntityData<M>, options: TransactionOptions = {}): Promise<M> {
-    return this.em().transactional(
-      async (em) => {
-        const row = em.create(this.model(), data);
-        await em.flush();
-        return row;
-      },
-      {
-        propagation:
-          options.requiresNew === true
-            ? TransactionPropagation.REQUIRES_NEW
-            : TransactionPropagation.NESTED,
-      },
+    return this.writeNow(options, async (em) => {
+      const row = em.create(this.model(), data);
+      await em.flush();
+      return row;
+    });
+  }
+
+  /**
+   * Implements `Repository.insertMany`, documented there: every row is created in the unit of work and flushed at once
+   * in a savepoint (or its own transaction), so the ORM batches the insert statements and the flush subscribers stamp,
+   * seal the encrypted fields and record each row's change, as for `insert`.
+   */
+  async insertMany(
+    rows: readonly RequiredEntityData<M>[],
+    options: TransactionOptions = {},
+  ): Promise<M[]> {
+    if (rows.length === 0) return [];
+    return this.writeNow(options, async (em) => {
+      const created = rows.map((data) => em.create(this.model(), data));
+      await em.flush();
+      return created;
+    });
+  }
+
+  /**
+   * Implements `Repository.upsert`, documented there. The stored rows are read by `by` in batches (soft-deleted and
+   * archived ones too, which a unique index still covers), the matches are assigned and the rest created, and one flush
+   * writes them in a savepoint (or its own transaction): the flush subscribers stamp, seal and record each change, and
+   * a `Versioned` row raises its version. A row inserted by another transaction between the read and the flush fails
+   * the flush with the unique violation (a retryable conflict for the caller).
+   *
+   * @throws TypeError when `by` is empty, a row lacks a `by` value, or two rows share one key.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model, whose rows are never changed.
+   */
+  async upsert(
+    rows: readonly RequiredEntityData<M>[],
+    options: UpsertOptions,
+  ): Promise<UpsertResult<M>> {
+    const { by } = options;
+    if (by.length === 0) throw new TypeError("upsert matches rows by at least one field");
+    this.refuseAppendOnly("upsert");
+    const keys = rows.map((row, index) => {
+      const key = rowKey(row, by);
+      if (key === undefined)
+        throw new TypeError(`upsert row ${index} has no value for every field of ${by.join(", ")}`);
+      return key;
+    });
+    if (new Set(keys).size !== keys.length)
+      throw new TypeError(`upsert names one ${by.join(", ")} key twice`);
+    if (rows.length === 0) return { rows: [], created: 0, updated: 0 };
+    const model = this.model();
+    return this.writeNow(options, async (em) => {
+      const stored = new Map<string, M>();
+      for (let start = 0; start < rows.length; start += BULK_LIMITS.batch) {
+        const slice = rows.slice(start, start + BULK_LIMITS.batch);
+        const found = await em.find(
+          model,
+          {
+            $or: slice.map((row) =>
+              Object.fromEntries(
+                by.map((field) => [field, (row as Record<string, unknown>)[field]]),
+              ),
+            ),
+          } as never,
+          { filters: { deleted: false, archived: false } },
+        );
+        for (const row of found) stored.set(rowKey(row, by) ?? "", row as M);
+      }
+      let created = 0;
+      const written = rows.map((data, index) => {
+        const match = stored.get(keys[index] ?? "");
+        if (match !== undefined) return em.assign(match, data as never) as M;
+        created += 1;
+        return em.create(model, data);
+      });
+      await em.flush();
+      return { rows: written, created, updated: rows.length - created };
+    });
+  }
+
+  /**
+   * Implements `Repository.updateWhere`, documented there. One statement sets `data` and the stamps on every matching
+   * row (raising `version` on a `Versioned` model) and reports the rows to the change feed. When `data` sets a field
+   * the model encrypts, the rows are read in batches, assigned and flushed instead, so the encrypted-fields subscriber
+   * seals the value: a native statement would store it in clear.
+   *
+   * @returns how many rows changed.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model.
+   */
+  async updateWhere(where: Where<M>, data: EntityData<M>): Promise<number> {
+    this.refuseAppendOnly("updateWhere");
+    const fields = Object.keys(data);
+    if (fields.length === 0) return 0;
+    const model = this.model();
+    const sealed = new Set(encryptedFieldsOf(model));
+    if (fields.some((field) => sealed.has(field))) return this.updateEach(where, data);
+    const em = this.em();
+    const versioned = traitsOf(model).some((trait) => trait.name === "versioned");
+    const version = versioned
+      ? // raw-sql: `version = version + 1`, the optimistic lock's step, which a native statement must take itself
+        { version: raw(`${quoteIdentifier(columnOf(em.getMetadata(model), "version"))} + 1`) }
+      : {};
+    return this.watched("updated", fields, filterOf(where), (filter) =>
+      em.nativeUpdate(
+        model,
+        filter as never,
+        { ...data, ...stampFields(model, "update"), ...version } as never,
+      ),
     );
+  }
+
+  /** Implements `Repository.deleteWhere`, documented there: `delete` by its policy, under the bulk verbs' name. */
+  deleteWhere(where: Where<M>): Promise<number> {
+    return this.delete(where);
+  }
+
+  /**
+   * Implements `Repository.chunk`, documented there: keyset reads by the primary key, each of `batch` rows, through
+   * `find`, so visibility and the delete filters apply.
+   *
+   * @yields each batch of matching rows, in primary-key order; the last one may be short.
+   * @throws TypeError when `batch` is not a whole number from 1 to 10,000, or the model has a composite primary key.
+   */
+  async *chunk(
+    where: Where<M> = {} as Where<M>,
+    options: EachOptions = {},
+  ): AsyncGenerator<M[], void, undefined> {
+    const { batch = BULK_LIMITS.batch, ...hidden } = options;
+    if (!Number.isInteger(batch) || batch < 1 || batch > BULK_LIMITS.maxBatch)
+      throw new TypeError(
+        `a batch is a whole number from 1 to ${BULK_LIMITS.maxBatch}, got ${batch}`,
+      );
+    const keys = this.em().getMetadata(this.model()).primaryKeys;
+    const [key] = keys;
+    if (key === undefined || keys.length !== 1)
+      throw new TypeError(`${this.model().name} has no single-column primary key to walk by`);
+    let after: unknown;
+    for (;;) {
+      const page = (
+        after === undefined ? where : { $and: [filterOf(where), { [key]: { $gt: after } }] }
+      ) as Where<M>;
+      const rows = (await this.find(page, {
+        ...hidden,
+        orderBy: { [key]: SortDirection.Asc },
+        limit: batch,
+      } as never)) as M[];
+      if (rows.length === 0) return;
+      yield rows;
+      if (rows.length < batch) return;
+      after = (rows.at(-1) as Record<string, unknown>)[key];
+    }
+  }
+
+  /**
+   * Implements `Repository.each`, documented there: the rows of `chunk`, one at a time.
+   *
+   * @yields each matching row, in primary-key order.
+   */
+  async *each(
+    where: Where<M> = {} as Where<M>,
+    options: EachOptions = {},
+  ): AsyncGenerator<M, void, undefined> {
+    for await (const rows of this.chunk(where, options)) yield* rows;
+  }
+
+  /**
+   * Implements `Repository.page`, documented there.
+   *
+   * @throws TableFilterInvalidError when `page` is not a whole number from 1, `perPage` not one from 1 to 500, or the
+   *         sort takes more than three keys.
+   */
+  async page<H extends string = never>(
+    input: PageQuery,
+    options: PageOptions<M, H> = {},
+  ): Promise<OffsetPage<Loaded<M, H>>> {
+    const { page, perPage } = input;
+    if (!Number.isInteger(page) || page < 1)
+      throw TableFilterInvalidError.create({
+        key: "page",
+        reason: "a page is a whole number from 1",
+      });
+    if (!Number.isInteger(perPage) || perPage < 1 || perPage > BULK_LIMITS.maxPerPage)
+      throw TableFilterInvalidError.create({
+        key: "perPage",
+        reason: `a page holds 1 to ${BULK_LIMITS.maxPerPage} rows`,
+      });
+    const { where = {} as Where<M>, populate, ...hidden } = options;
+    const [filter, rest] = await this.readOf<FindOptions<M, H>>(where, {
+      ...hidden,
+      ...(populate === undefined ? {} : { populate }),
+      orderBy: this.orderOf(input.sort),
+      limit: perPage,
+      offset: (page - 1) * perPage,
+    });
+    const [items, total] = await this.em().findAndCount(this.model(), filter, rest);
+    return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
   }
 
   /**
@@ -426,25 +622,14 @@ export abstract class CrudService<M extends object> extends Service implements R
   ): Promise<TablePage<Loaded<M, H>>> {
     const em = this.em();
     const model = this.model();
-    const [primary = "id"] = em.getMetadata(model).primaryKeys;
-    const sorts: readonly TableSort[] =
-      input.sort === undefined ? [] : "key" in input.sort ? [input.sort] : input.sort;
-    if (sorts.length > MAX_SORT_KEYS)
-      throw TableFilterInvalidError.create({
-        key: sorts.map((sort) => sort.key).join(","),
-        reason: `a sort takes at most ${MAX_SORT_KEYS} keys`,
-      });
-    const direction = sorts[0]?.direction ?? SortDirection.Desc;
+    const orderBy = this.orderOf(input.sort);
     const filters = Object.entries(input.filter ?? {})
       .filter(([, value]) => value !== undefined)
       .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
     const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
     const cursor = await em.findByCursor(model, {
       where: { $and: [visible, ...filters] } as Where<M>,
-      orderBy: [
-        ...sorts.map((sort) => nest(sort.key, sort.direction)),
-        ...(sorts.some((sort) => sort.key === primary) ? [] : [{ [primary]: direction }]),
-      ] as NonNullable<FindOptions<M>["orderBy"]>,
+      orderBy,
       first: input.limit,
       ...(input.cursor === undefined ? {} : { after: input.cursor }),
       ...(options.populate === undefined ? {} : { populate: options.populate }),
@@ -474,6 +659,57 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** The model this service is typed against. */
   protected model(): AnyClass<M> {
     return modelOf<M>(this.constructor);
+  }
+
+  /**
+   * The order of a table or page read: the sort's keys (up to three), then the primary key in the first key's direction
+   * (newest first with no sort), so ties page stably.
+   *
+   * @throws TableFilterInvalidError for more than three sort keys.
+   */
+  private orderOf(
+    sort: TableSort | readonly TableSort[] | undefined,
+  ): NonNullable<FindOptions<M>["orderBy"]> {
+    const [primary = "id"] = this.em().getMetadata(this.model()).primaryKeys;
+    const sorts: readonly TableSort[] = sort === undefined ? [] : "key" in sort ? [sort] : sort;
+    if (sorts.length > MAX_SORT_KEYS)
+      throw TableFilterInvalidError.create({
+        key: sorts.map((entry) => entry.key).join(","),
+        reason: `a sort takes at most ${MAX_SORT_KEYS} keys`,
+      });
+    const direction = sorts[0]?.direction ?? SortDirection.Desc;
+    return [
+      ...sorts.map((entry) => nest(entry.key, entry.direction)),
+      ...(sorts.some((entry) => entry.key === primary) ? [] : [{ [primary]: direction }]),
+    ] as NonNullable<FindOptions<M>["orderBy"]>;
+  }
+
+  /** Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. */
+  private writeNow<T>(
+    options: Pick<TransactionOptions, "requiresNew">,
+    work: (em: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return this.em().transactional((em) => work(em as EntityManager), {
+      propagation:
+        options.requiresNew === true
+          ? TransactionPropagation.REQUIRES_NEW
+          : TransactionPropagation.NESTED,
+    });
+  }
+
+  /**
+   * `updateWhere` through the unit of work, for data that sets an encrypted field: each batch of matching rows is
+   * assigned and flushed, so the flush subscribers seal, stamp and record it.
+   */
+  private async updateEach(where: Where<M>, data: EntityData<M>): Promise<number> {
+    let changed = 0;
+    for await (const rows of this.chunk(where)) {
+      const em = this.em();
+      for (const row of rows) em.assign(row, data as never);
+      await em.flush();
+      changed += rows.length;
+    }
+    return changed;
   }
 
   /**

@@ -80,6 +80,10 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   retry reruns the whole work for `40001`/`40P01` only (`TRANSACTION_RETRY`); never retry a savepoint, and never add a
   retry loop around a single statement. A row lock's mode comes from `LockOptions` (`shared`, `nowait`, `skipLocked`);
   a queue claims rows with `lock(where, { skipLocked: true })`, not raw `SKIP LOCKED`.
+- Bulk verbs (stackra-280): `insertMany` and `upsert` write through one flush so the subscribers stamp, seal and
+  record; `updateWhere` goes through `watched` with `stampFields` (and the `version` step), and falls back to the unit
+  of work when it sets an encrypted field. Never add a bulk path that skips one of the three; never `em.upsert` or
+  `em.insertMany` (no flush events fire). `each`/`chunk` walk by keyset, never by offset; `page` is the only offset read.
 - Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
   `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
   A refusal carries the constraint name, never a row value.

@@ -26,7 +26,14 @@ import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { ActorKind, Realm, SortDirection } from "@stackra/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
-import { AppendOnly, Archivable, HasPublicId, Model, SoftDeletes } from "@stackra/model";
+import {
+  AppendOnly,
+  Archivable,
+  HasEncryptedFields,
+  HasPublicId,
+  Model,
+  SoftDeletes,
+} from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -37,6 +44,7 @@ import { connectNativeWriteWatcher } from "#core/functions/connect-native-write-
 import type { NativeWrite } from "#core/types/native-write.type";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { StaleVersionError } from "#core/errors/stale-version.error";
+import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
@@ -71,9 +79,16 @@ class LedgerEntryService extends CrudService<LedgerEntry> {}
 /** Whether `error` is the append-only refusal. */
 const refused = (error: unknown): boolean => isRefusal(error, AppendOnlyWriteError);
 
+class Contact extends Model.with(HasPublicId("con"), HasEncryptedFields("email")) {
+  email: string | null = null;
+}
+
+class ContactService extends CrudService<Contact> {}
+
 registerModelPartners([
   [OrderService, Order],
   [LedgerEntryService, LedgerEntry],
+  [ContactService, Contact],
 ]);
 
 const metadata = {
@@ -101,6 +116,7 @@ function fakeEm() {
     findOne: vi.fn(async () => null),
     findOneOrFail: vi.fn(async (..._args: unknown[]) => new Order()),
     count: vi.fn(async () => 3),
+    findAndCount: vi.fn(async (..._args: unknown[]) => [[new Order()], 41] as [unknown[], number]),
     create: vi.fn((_model: unknown, data: object) => Object.assign(new Order(), data)),
     flush: vi.fn(async () => undefined),
     assign: vi.fn((row: object, data: object) => Object.assign(row, data)),
@@ -667,5 +683,138 @@ describe("CrudService native writes with a watcher (data-layer gap mo10)", () =>
     expect(em.find).not.toHaveBeenCalled();
     expect(em.nativeUpdate.mock.calls[0]?.[1]).toEqual({ status: "paid" });
     expect(written).toEqual([]);
+  });
+});
+
+describe("CrudService bulk verbs and the offset page (stackra-280)", () => {
+  afterEach(() => {
+    connectNativeWriteWatcher(undefined);
+  });
+
+  it("inserts many rows in one flush inside a savepoint, and nothing for no rows", async () => {
+    const em = connect();
+    const rows = await new OrderService().insertMany([{ status: "paid" }, { status: "pending" }]);
+    expect(rows.map((row) => row.status)).toEqual(["paid", "pending"]);
+    expect(em.create).toHaveBeenCalledTimes(2);
+    expect(em.flush).toHaveBeenCalledTimes(1);
+    expect(em.transactional.mock.calls[0]?.[1]).toEqual({
+      propagation: TransactionPropagation.NESTED,
+    });
+    await new OrderService().insertMany([], { requiresNew: true });
+    expect(em.transactional).toHaveBeenCalledTimes(1);
+  });
+
+  it("upserts by key: matches change, the rest are created, in input order", async () => {
+    const em = connect();
+    const stored = Object.assign(new Order(), { id: "ord_1", status: "pending" });
+    em.find.mockResolvedValueOnce([stored]);
+    const result = await new OrderService().upsert(
+      [
+        { id: "ord_2", status: "new" },
+        { id: "ord_1", status: "paid" },
+      ],
+      { by: ["id"], requiresNew: true },
+    );
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ $or: [{ id: "ord_2" }, { id: "ord_1" }] });
+    expect(em.find.mock.calls[0]?.[2]).toEqual({ filters: { deleted: false, archived: false } });
+    expect(result.created).toBe(1);
+    expect(result.updated).toBe(1);
+    expect(result.rows[1]).toBe(stored);
+    expect(stored.status).toBe("paid");
+    expect(em.flush).toHaveBeenCalledTimes(1);
+    expect(em.transactional.mock.calls[0]?.[1]).toEqual({
+      propagation: TransactionPropagation.REQUIRES_NEW,
+    });
+  });
+
+  it("refuses an upsert with no key, a row without one, a repeated key, or an append-only model", async () => {
+    connect();
+    const service = new OrderService();
+    await expect(service.upsert([{ status: "x" }], { by: [] })).rejects.toThrow(TypeError);
+    await expect(service.upsert([{ status: "x" }], { by: ["id"] })).rejects.toThrow(TypeError);
+    await expect(
+      service.upsert([{ id: "ord_1" }, { id: "ord_1" }] as never, { by: ["id"] }),
+    ).rejects.toThrow(TypeError);
+    await expect(new LedgerEntryService().upsert([], { by: ["id"] })).rejects.toSatisfy(refused);
+  });
+
+  it("updates where in one stamped statement and reports the rows it reached", async () => {
+    const em = connect();
+    em.find.mockResolvedValueOnce([{ id: "ord_1" }] as never);
+    const written = watch();
+    expect(await new OrderService().updateWhere({ status: "pending" }, { status: "void" })).toBe(4);
+    expect(em.nativeUpdate.mock.calls[0]?.[1]).toEqual({
+      $and: [{ status: "pending" }, { id: { $in: ["ord_1"] } }],
+    });
+    expect(em.nativeUpdate.mock.calls[0]?.[2]).toEqual({ status: "void" });
+    expect(written).toEqual([
+      { model: Order, kind: "updated", ids: ["ord_1"], fields: ["status"] },
+    ]);
+    expect(await new OrderService().updateWhere({ status: "pending" }, {})).toBe(0);
+    await expect(new LedgerEntryService().updateWhere({}, {})).rejects.toSatisfy(refused);
+    await expect(new LedgerEntryService().deleteWhere({})).rejects.toSatisfy(refused);
+  });
+
+  it("updates an encrypted field through the unit of work, never a native statement", async () => {
+    const em = connect();
+    const row = Object.assign(new Contact(), { id: "con_1" });
+    em.find.mockResolvedValueOnce([row]);
+    expect(await new ContactService().updateWhere({ id: "con_1" }, { email: "a@b.c" })).toBe(1);
+    expect(row.email).toBe("a@b.c");
+    expect(em.flush).toHaveBeenCalledTimes(1);
+    expect(em.nativeUpdate).not.toHaveBeenCalled();
+  });
+
+  it("deletes where by the delete policy", async () => {
+    const em = connect();
+    expect(await new OrderService().deleteWhere({ status: "void" })).toBe(2);
+    expect(em.nativeDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("walks by keyset in batches, and stops on a short batch", async () => {
+    const em = connect();
+    const first = [{ id: "ord_1" }, { id: "ord_2" }].map((row) => Object.assign(new Order(), row));
+    const last = [Object.assign(new Order(), { id: "ord_3" })];
+    em.find.mockResolvedValueOnce(first).mockResolvedValueOnce(last);
+    const seen: string[] = [];
+    for await (const order of new OrderService().each({ status: "paid" }, { batch: 2 }))
+      seen.push(order.id);
+    expect(seen).toEqual(["ord_1", "ord_2", "ord_3"]);
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ status: "paid" });
+    expect(em.find.mock.calls[0]?.[2]).toEqual({ orderBy: { id: SortDirection.Asc }, limit: 2 });
+    expect(em.find.mock.calls[1]?.[1]).toEqual({
+      $and: [{ status: "paid" }, { id: { $gt: "ord_2" } }],
+    });
+    expect(em.find).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses a batch outside 1 to 10,000", async () => {
+    connect();
+    for (const batch of [0, 1.5, 10_001])
+      await expect(new OrderService().chunk({}, { batch }).next()).rejects.toThrow(TypeError);
+  });
+
+  it("reads a numbered page with its total, and refuses a bad page or size", async () => {
+    const em = connect();
+    const page = await new OrderService().page(
+      { page: 3, perPage: 20, sort: { key: "createdAt", direction: SortDirection.Asc } },
+      { where: { status: "paid" }, withDeleted: true },
+    );
+    expect(page).toMatchObject({ total: 41, page: 3, perPage: 20, pages: 3 });
+    expect(em.findAndCount.mock.calls[0]?.[1]).toEqual({ status: "paid" });
+    expect(em.findAndCount.mock.calls[0]?.[2]).toEqual({
+      orderBy: [{ createdAt: SortDirection.Asc }, { id: SortDirection.Asc }],
+      limit: 20,
+      offset: 40,
+      filters: { deleted: false },
+    });
+    for (const input of [
+      { page: 0, perPage: 20 },
+      { page: 1, perPage: 0 },
+      { page: 1, perPage: 501 },
+    ])
+      await expect(new OrderService().page(input)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, TableFilterInvalidError),
+      );
   });
 });
