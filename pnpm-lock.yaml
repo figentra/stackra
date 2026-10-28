@@ -2576,6 +2576,9 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -2588,6 +2591,12 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../model
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@electric-sql/pglite':
         specifier: 'catalog:'
@@ -3468,6 +3477,9 @@ importers:
 
   packages/developer/coding-standard:
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../testing
@@ -3713,6 +3725,9 @@ importers:
         specifier: 'catalog:'
         version: 2.9.1
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -3752,6 +3767,9 @@ importers:
 
   packages/developer/runway:
     dependencies:
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../runtime/app
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
@@ -3950,6 +3968,9 @@ importers:
         specifier: catalog:frontend
         version: 2.0.0(supports-color@10.2.2)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(workbox-build@7.4.1(supports-color@10.2.2))(workbox-window@7.4.1)
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../testing
@@ -5283,6 +5304,9 @@ importers:
 
   packages/foundation/support:
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -5326,6 +5350,9 @@ importers:
         specifier: workspace:*
         version: link:../errors
     devDependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -5927,6 +5954,9 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -5987,6 +6017,12 @@ importers:
       '@stackra/navigation':
         specifier: workspace:*
         version: link:../../experience/navigation
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -7214,6 +7250,76 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3(@noble/hashes@1.8.0))(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/security/privacy:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/data-transfer':
+        specifier: workspace:*
+        version: link:../../data/data-transfer
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
+      '@stackra/filesystem':
+        specifier: workspace:*
+        version: link:../../data/filesystem
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      '@stackra/workflow':
+        specifier: workspace:*
+        version: link:../../runtime/workflow
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3(@noble/hashes@1.8.0))(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/security/scope:
     dependencies:
       '@stackra/config':
@@ -7392,6 +7498,9 @@ importers:
 
   packages/state/coordinator:
     dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
