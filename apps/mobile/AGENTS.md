@@ -22,6 +22,9 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 - The app root boots the container (`src/boot/create-app-container.function.ts`, overrides until gen writes the wiring)
   behind the splash and mounts `ContainerProvider`, then `I18nProvider` (the phone's language and region formats, and
   `setLocale`, which saves the account's `account.locale`).
+- Native permission strings and the Expo libraries' native settings go in `app.json` through each library's config
+  plugin (`NSUserTrackingUsageDescription` through expo-tracking-transparency, the camera through expo-camera, the
+  per-app languages through expo-localization); never hand-edit `ios/` or `android/` (ADR 0478).
 - The app root is `DesignSystemProvider` from `@stackra/ui/native` (it renders `HeroUINativeProvider`), inside `GestureHandlerRootView` and `SafeAreaProvider`; read the scheme and direction with `useDesignSystem()`.
 
 ## Tasks

@@ -34,7 +34,29 @@
             "backgroundColor": "#0B0D0F"
           }
         }
-      ]
+      ],
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true,
+          "supportedLocales": { "ios": ["en", "ar"], "android": ["en", "ar"] }
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Allow Stackra to use your activity in other companies' apps and websites to measure its marketing. Without it, no marketing tracking runs."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Stackra uses the camera to scan barcodes and QR codes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }
