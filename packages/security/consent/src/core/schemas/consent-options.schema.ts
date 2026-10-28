@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsentOptions`, the shape of `ConsentConfig`: the categories a visitor decides on, where and how long the
- *          decision is kept, the policy version that invalidates old decisions, the regime per region and whether a
- *          device app asks on its first launch.
+ *          decision is kept, the policy version that invalidates old decisions, the regime per region, whether a
+ *          device app asks on its first launch, and the signed snapshot's lifetime and clock skew (ADR 0472).
  * Boundary: a shape class; it registers this package's own schema (`CONSENT_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(ConsentConfig)` validates with no generated file. The defaults decline: only
  *           `necessary` is listed and no region has a regime.
  * Runtime: isomorphic
- * Governing contract: ADR 0298 (decisions 1, 3 and 4); ADR 0294 (decisions 19 and 26).
+ * Governing contract: ADR 0298 (decisions 1, 3 and 4); ADR 0294 (decisions 19 and 26); ADR 0472 (decision 2).
  */
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
@@ -43,6 +43,20 @@ export class ConsentOptions extends Schema {
     max: 400,
   })
   expiryDays = 180;
+
+  /** How long a signed consent snapshot counts, in minutes (5 to 10080); never past the decision's own expiry. */
+  @Int({
+    min: 5,
+    max: 10_080,
+  })
+  snapshotLifetimeMinutes = 1440;
+
+  /** How far a snapshot's issue time may lie in the verifier's future, in seconds (0 to 300). */
+  @Int({
+    min: 0,
+    max: 300,
+  })
+  snapshotClockSkewSeconds = 60;
 
   /** The cookie that holds the decision on the web; the only cookie set before a decision. */
   cookieName = "consent";

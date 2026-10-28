@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `fakeActionContext(overrides?)`, the context a unit test hands a service or extension that takes an
  *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work, `audit` fields and
- *          `publish`ed events are recorded, and `period`, `startOfDay` and `now` work on a clock frozen at creation.
+ *          `publish`ed events are recorded, `period`, `startOfDay` and `now` work on a clock frozen at creation, and
+ *          `consent()` reads as refused (`missing`) unless the test passes its own (see `grantedConsent`).
  * Boundary: test only. `run`, `signal`, `dispatch` and `replica` reject with a message unless the test passes its own;
  *           a test that needs the real steps uses `run(...)` instead. Overrides replace members whole.
  * Runtime: node
@@ -11,6 +12,7 @@
 import type { Json } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
 
+import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import type { ActionContext, PeriodInput } from "#core/index";
 import { periodOf } from "#core/functions/period-of.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
@@ -61,6 +63,8 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
     signal: missing("signal"),
     dispatch: missing("dispatch"),
     replica: missing("replica"),
+    consent: async () =>
+      Object.freeze({ verified: false as const, refusal: ConsentRefusal.Missing, granted: [] }),
     ...overrides,
     recorded: Object.freeze({ authorized, afterCommit, audit, published }),
   });

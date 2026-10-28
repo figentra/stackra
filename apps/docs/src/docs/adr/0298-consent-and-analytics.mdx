@@ -3,6 +3,15 @@ title: "0298 — Consent and analytics: decline by default, Global Privacy Contr
 description: "Accepted · 2026-10-22"
 ---
 
+<Note>
+  Amended 2026-10-28 (STA-1506, stackra-404) by
+  [0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls):
+  decision 6 no longer keeps consent state only in the browser. The decision is still made and
+  stored on the client, but a signed, short-lived `ConsentSnapshot` of it travels with API calls in
+  the `Stackra-Consent` header and with ingest batches; the action pipeline exposes it as
+  `ctx.consent()`, and every server-side send treats a missing or invalid snapshot as refused.
+</Note>
+
 ## Context
 
 A web surface that sets a non-essential cookie or sends an analytics event needs the visitor's decision first, and the rules

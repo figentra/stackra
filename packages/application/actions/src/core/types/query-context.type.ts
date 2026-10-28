@@ -3,16 +3,19 @@
  * Purpose: `QueryContext`, the second parameter of a query's `handle`: the call context plus the record check
  *          (`authorize`), the reporting helpers (`period`, `startOfDay`) a read needs, the verified device the call
  *          came from (`deviceId`), the caller's verified assurance (`assurance`, STA-814), the sandbox flag and the
- *          network client (`sandbox`, `client`, STA-1248) and a replica query's answer (`replica`).
+ *          network client (`sandbox`, `client`, STA-1248), the visitor's verified consent (`consent`, ADR 0472) and a
+ *          replica query's answer (`replica`).
  * Boundary: a type only; the pipeline builds it per call. A query has no transaction, no `afterCommit`, no audit and
  *           no Idempotency-Key, so none is here. `ActionContext` extends it.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 1); ADR 0294 (decision 16: input and output are the types of `handle`); ADR
  *                     0138 (as amended: the record policy runs inside `handle` through `ctx.authorize`); ADR 0338
- *                     (decisions 3 and 4: replicas; the device's last acknowledged sequence).
+ *                     (decisions 3 and 4: replicas; the device's last acknowledged sequence); ADR 0472 (decision 3:
+ *                     `ctx.consent`, read-only, never a refusal by itself).
  */
 import type { CallAssurance } from "#contracts/types/call-assurance.type";
 import type { CallClient } from "#contracts/types/call-client.type";
+import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { ExtensionContext } from "#core/types/extension-context.type";
 import type { Period } from "#core/types/period.type";
@@ -52,6 +55,14 @@ export interface QueryContext extends ExtensionContext {
    * too. Personal data: hash or truncate it before keeping it.
    */
   readonly client?: CallClient;
+
+  /**
+   * The visitor's consent as the call's signed snapshot proves it, verified through `ConsentCheck` on the first read
+   * and kept for the call. A missing, invalid, expired or outdated snapshot, or no bound check, reads as refused
+   * (`verified: false`, nothing granted). A server-side send (analytics, a conversion, an audience push) runs only
+   * when `granted` holds its category; reading it never refuses the call.
+   */
+  consent: () => Promise<CallConsent>;
 
   /**
    * A replica query's answer: the changes since the cursor the client sent (the input's `cursor`), or, on a first fill

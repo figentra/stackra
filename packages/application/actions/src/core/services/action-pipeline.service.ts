@@ -12,7 +12,9 @@
  *          carries the caller's verified assurance (`ctx.assurance`), the sandbox flag (`ctx.sandbox`, also on the
  *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248),
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
- *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456).
+ *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456), and
+ *          the visitor's consent (`ctx.consent()`: the call's signed snapshot verified once through `ConsentCheck`;
+ *          ADR 0472).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -40,7 +42,8 @@
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
- *                     2026-10-28: the query cache step, STA-1445).
+ *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
+ *                     never a refusal by itself).
  */
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
@@ -66,10 +69,12 @@ import { EventOutbox } from "@stackra/events/contracts";
 import { duration, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
+import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
+import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
 import { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
 import { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
@@ -88,6 +93,7 @@ import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
+import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
@@ -785,6 +791,7 @@ export class ActionPipeline {
     state: CallState,
   ): QueryContext | ActionContext {
     const timeZone = request.timeZone ?? CALL_DEFAULTS.timeZone;
+    let consent: Promise<CallConsent> | undefined;
     const query: QueryContext = {
       callId: descriptor.callId,
       key: descriptor.key,
@@ -806,6 +813,10 @@ export class ActionPipeline {
       ...(request.assurance === undefined ? {} : { assurance: request.assurance }),
       ...(descriptor.sandbox === true ? { sandbox: true as const } : {}),
       ...(request.client === undefined ? {} : { client: request.client }),
+      consent: () => {
+        consent ??= this.consentOf(descriptor, request.consentSnapshot);
+        return consent;
+      },
       replica: (fill: (bounds: ReplicaBounds) => Promise<readonly ReplicaRow[]>, slice?: string) =>
         new ReplicaFeed(
           this.required(
@@ -860,6 +871,22 @@ export class ActionPipeline {
       publish: (event: Event) => this.published(descriptor, at, event),
     };
     return Object.freeze(action);
+  }
+
+  /**
+   * The call's consent (ADR 0472): refused as `missing` without a snapshot and `unchecked` without a bound
+   * `ConsentCheck`; otherwise the check's answer. Never a refusal of the call.
+   */
+  private async consentOf(
+    descriptor: CallDescriptor,
+    snapshot: string | undefined,
+  ): Promise<CallConsent> {
+    if (snapshot === undefined || snapshot === "")
+      return Object.freeze({ verified: false, refusal: ConsentRefusal.Missing, granted: [] });
+    const check = this.optional(ConsentCheck);
+    if (check === undefined)
+      return Object.freeze({ verified: false, refusal: ConsentRefusal.Unchecked, granted: [] });
+    return check.check(snapshot, descriptor);
   }
 
   /** The bound instance of `port`. */

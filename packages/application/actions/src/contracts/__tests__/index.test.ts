@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the twenty-one ports of the pipeline's steps and stores and
- *          the `ReviewReason`, `Effect`, `ApproverRefusal` and `CallOriginKind` enums are exported, nothing else is as a value,
+ * Purpose: the consumer contract of the `./contracts` entry: the twenty-two ports (with `ConsentCheck`) of the pipeline's steps and stores and
+ *          the `ReviewReason`, `Effect`, `ApproverRefusal`, `CallOriginKind` and `ConsentRefusal` enums are exported, nothing else is as a value,
  *          and the exchanged types resolve (`AssuranceLevel` is @stackra/contracts', STA-1383).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
-import type { Actor, AssuranceLevel, Json } from "@stackra/contracts";
+import { type Actor, type AssuranceLevel, Enum, type Json } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -15,6 +15,7 @@ import type {
   AuditEntry,
   CallAssurance,
   CallClient,
+  CallConsent,
   CallDescriptor,
   CallOrigin,
   CallOriginKind,
@@ -30,6 +31,7 @@ import type {
   ReviewItem,
   ReviewReason,
 } from "#contracts/index";
+import { ConsentRefusal } from "#contracts/index";
 
 describe("@stackra/actions/contracts", () => {
   it("exports exactly its ports and its enum", () => {
@@ -39,6 +41,8 @@ describe("@stackra/actions/contracts", () => {
       "ApproverRefusal",
       "AuditTrail",
       "CallOriginKind",
+      "ConsentCheck",
+      "ConsentRefusal",
       "ContextStorage",
       "DeviceSequenceStore",
       "Effect",
@@ -84,5 +88,24 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<CallAssurance["authTime"]>().toEqualTypeOf<Date | undefined>();
     expectTypeOf<CallClient["userAgent"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<CallDescriptor["sandbox"]>().toEqualTypeOf<true | undefined>();
+    expectTypeOf<CallConsent["granted"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<Extract<CallConsent, { verified: true }>["expiresAt"]>().toEqualTypeOf<Date>();
+    expectTypeOf<
+      Extract<CallConsent, { verified: false }>["refusal"]
+    >().toEqualTypeOf<ConsentRefusal>();
+  });
+
+  it("names the consent refusal codes (ADR 0472)", () => {
+    expect([...Enum.values(ConsentRefusal)].sort()).toEqual([
+      "bad_signature",
+      "expired",
+      "global_privacy_control",
+      "malformed",
+      "missing",
+      "not_yet_valid",
+      "policy_outdated",
+      "unchecked",
+      "untrusted_key",
+    ]);
   });
 });

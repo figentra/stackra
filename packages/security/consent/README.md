@@ -1,10 +1,10 @@
 <!--
 Stackra file contract:
 Purpose: the README of @stackra/consent: visitor consent, server consent proofs, consent for another and its
-         verification method, the entries and how a host uses them.
+         verification method, the signed consent snapshot that reaches the server, the entries and how a host uses them.
 Boundary: documentation only; the rules for agents are in AGENTS.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0298; ADR 0454; OS-284; STA-1323.
+Governing contract: ADR 0298; ADR 0454; ADR 0472; OS-284; STA-1323.
 -->
 
 # @stackra/consent
@@ -14,36 +14,42 @@ Global Privacy Control has refused, and the decision is stored with the policy v
 asks again.
 
 **Tier:** `tier:lib` (`packages/security/consent`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
-`@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/storage`, `@stackra/validation` and zod; React
+`@stackra/actions` (its `./contracts` only: the `ConsentCheck` port), `@stackra/config`, `@stackra/container`,
+`@stackra/contracts`, `@stackra/storage`, `@stackra/support`, `@stackra/validation` and zod; React
 is an optional peer of `./react`.
 
 ## What is here
 
-| Entry         | Symbol                                                                                              | Use                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `.`           | `ConsentConfig`                                                                                     | the configuration (key `consent`): categories, cookie, expiry, policy version, regions                  |
-| `.`           | `ConsentConfig$`                                                                                    | the shipped schema a member's generated override extends                                                |
-| `.`           | `ConsentCategory`                                                                                   | `necessary`, `analytics`, `crash_replay`, `marketing` (ads, pixels, conversions, audiences)             |
-| `.`           | `ConsentStatus`                                                                                     | `granted`, `denied`, `undecided`                                                                        |
-| `.`           | `ConsentRegime`                                                                                     | `ccpa` (opt-out); `gdpr`, `lgpd`, `pdpl_sa`, `pdpl_ae`, `dpdp` (opt-in), per region in `regionDefaults` |
-| `.`           | `ConsentLedger`                                                                                     | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe`               |
-| `.`           | `CookieConsentStoreDriver`                                                                          | the web store: the one decision cookie                                                                  |
-| `.`           | `StorageConsentStoreDriver`                                                                         | the device store: `consent.decision` in the `prefs` area                                                |
-| `.`           | `MemoryConsentStoreDriver`                                                                          | tests and previews                                                                                      |
-| `./contracts` | `ConsentStore`                                                                                      | the port the drivers implement (`read`, `write`, `clear`)                                               |
-| `./contracts` | `RegionSource`                                                                                      | reads the visitor's region from request headers (`regionOf`), for `setRegion`                           |
-| `.`           | `CfIpcountryRegionSourceDriver`                                                                     | the `cf-ipcountry` region source: Cloudflare's country header; `XX` and `T1` read as unknown            |
-| `.`           | `consentModeSignals`, `ConsentModeSignals`                                                          | Google Consent Mode v2: `ad_*` follow `marketing`, `analytics_storage` follows `analytics`              |
-| `./react`     | `useConsent`                                                                                        | `useConsent(category)` for a banner, `useConsent()` for a settings page                                 |
-| `./testing`   | `fakeConsent`                                                                                       | a real ledger over memory, nothing decided                                                              |
-| `.`           | `ConsentProofService`                                                                               | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`, `evidence`         |
-| `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError`                    | the memory proof store, a versioned document, the refusal                                               |
-| `.`           | `needsGuardianConsent`                                                                              | whether a birth date is below an age of consent (the age is market-pack data)                           |
-| `.`           | `NoneConsentVerifierDriver`, `ConsentNotVerifiedError`                                              | the default verifier (fails every method closed); the refusal of a failed verification                  |
-| `./contracts` | `ConsentVerifier`, `ConsentVerificationMethod`, `ConsentVerificationRequest`, `ConsentVerification` | the verification method port, its methods (card check, signed form, guardian login), request and answer |
-| `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                                             | the append-only proof store; who may consent for whom                                                   |
-| `./ui`        | `ConsentBanner`, `ConsentPreferences`                                                               | the cookie banner (accept all, reject all, manage) and the category switches                            |
-| `./ui`        | `LegalPage`, `TermsPrompt`                                                                          | one legal text (plain paragraphs); versioned terms acceptance                                           |
+| Entry         | Symbol                                                                                              | Use                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `.`           | `ConsentConfig`                                                                                     | the configuration (key `consent`): categories, cookie, expiry, policy version, regions                       |
+| `.`           | `ConsentConfig$`                                                                                    | the shipped schema a member's generated override extends                                                     |
+| `.`           | `ConsentCategory`                                                                                   | `necessary`, `analytics`, `crash_replay`, `marketing` (ads, pixels, conversions, audiences)                  |
+| `.`           | `ConsentStatus`                                                                                     | `granted`, `denied`, `undecided`                                                                             |
+| `.`           | `ConsentRegime`                                                                                     | `ccpa` (opt-out); `gdpr`, `lgpd`, `pdpl_sa`, `pdpl_ae`, `dpdp` (opt-in), per region in `regionDefaults`      |
+| `.`           | `ConsentLedger`                                                                                     | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe`, `snapshotRequest` |
+| `.`           | `CookieConsentStoreDriver`                                                                          | the web store: the one decision cookie                                                                       |
+| `.`           | `StorageConsentStoreDriver`                                                                         | the device store: `consent.decision` in the `prefs` area                                                     |
+| `.`           | `MemoryConsentStoreDriver`                                                                          | tests and previews                                                                                           |
+| `./contracts` | `ConsentStore`                                                                                      | the port the drivers implement (`read`, `write`, `clear`)                                                    |
+| `./contracts` | `RegionSource`                                                                                      | reads the visitor's region from request headers (`regionOf`), for `setRegion`                                |
+| `.`           | `CfIpcountryRegionSourceDriver`                                                                     | the `cf-ipcountry` region source: Cloudflare's country header; `XX` and `T1` read as unknown                 |
+| `.`           | `consentModeSignals`, `ConsentModeSignals`                                                          | Google Consent Mode v2: `ad_*` follow `marketing`, `analytics_storage` follows `analytics`                   |
+| `./react`     | `useConsent`                                                                                        | `useConsent(category)` for a banner, `useConsent()` for a settings page                                      |
+| `./testing`   | `fakeConsent`                                                                                       | a real ledger over memory, nothing decided                                                                   |
+| `.`           | `ConsentProofService`                                                                               | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`, `evidence`              |
+| `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError`                    | the memory proof store, a versioned document, the refusal                                                    |
+| `.`           | `needsGuardianConsent`                                                                              | whether a birth date is below an age of consent (the age is market-pack data)                                |
+| `.`           | `NoneConsentVerifierDriver`, `ConsentNotVerifiedError`                                              | the default verifier (fails every method closed); the refusal of a failed verification                       |
+| `./contracts` | `ConsentVerifier`, `ConsentVerificationMethod`, `ConsentVerificationRequest`, `ConsentVerification` | the verification method port, its methods (card check, signed form, guardian login), request and answer      |
+| `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                                             | the append-only proof store; who may consent for whom                                                        |
+| `.`           | `ConsentSnapshotIssuer`, `IssuedConsentSnapshot`                                                    | the server half of the consent endpoint: re-applies the rules to the client's record, signs a snapshot       |
+| `.`           | `ConsentSnapshotVerifier`                                                                           | checks a snapshot token: key, signature, lifetime, policy version, Global Privacy Control                    |
+| `.`           | `SnapshotConsentCheckDriver`                                                                        | the `ConsentCheck` driver of `@stackra/actions`: `ctx.consent()` verifies the call's snapshot                |
+| `.`           | `SignerConsentSnapshotKeysDriver`, `StaticConsentSnapshotKeysDriver`                                | trusted keys: the bound `Signer`'s own, or a fixed list (a Worker, a key rotation)                           |
+| `./contracts` | `ConsentSnapshot`, `ConsentSnapshotRequest`, `ConsentSnapshotKeys`, `CONSENT_SNAPSHOT_HEADER`       | the signed payload, what the client sends to get one, the trusted-keys port, the `Stackra-Consent` header    |
+| `./ui`        | `ConsentBanner`, `ConsentPreferences`                                                               | the cookie banner (accept all, reject all, manage) and the category switches                                 |
+| `./ui`        | `LegalPage`, `TermsPrompt`                                                                          | one legal text (plain paragraphs); versioned terms acceptance                                                |
 
 ## Terms, proofs and consent for another
 
@@ -105,6 +111,30 @@ A page that loads Google tags passes the ledger's answer on; anything not grante
 ```ts
 gtag("consent", "update", consentModeSignals(ledger));
 ```
+
+## The consent snapshot (ADR 0472)
+
+The decision still lives in the browser, but sends that start on a server (server analytics, conversion APIs, the
+ingest Worker, audience sync) need it too. The client asks the consent endpoint for a signed, short-lived copy and sends
+it with every API call in the `Stackra-Consent` header (`CONSENT_SNAPSHOT_HEADER`):
+
+```ts
+// client: when the decision changes, and before the copy expires
+const request = ledger.snapshotRequest(anonymousId); // the stored record as kept, GPC, the region
+// server: the consent endpoint
+const { token, snapshot } = await issuer.issue(request, signedInUserId);
+```
+
+The issuer trusts nothing the client says: it parses the record, applies the rules below (an outdated or expired
+decision grants nothing optional, GPC refuses every optional category, an unlisted category is ignored), binds the
+subject (the anonymous id when analytics is granted, else the principal, else a random id) and signs through the
+`Signer` port. A snapshot lives `snapshotLifetimeMinutes` (default a day), never past the decision's expiry.
+
+On the server, bind `SnapshotConsentCheckDriver` for the `ConsentCheck` port of `@stackra/actions` and a
+`ConsentSnapshotKeys` driver; a handler reads `await ctx.consent()`. A missing, malformed, untrusted, wrongly signed,
+not yet valid (beyond `snapshotClockSkewSeconds`), expired or outdated snapshot, or one that records GPC, reads as
+refused with nothing granted. Reading it never refuses the call; a sender checks `granted.includes(category)`.
+Person-level evidence (an audience upload keyed by email, a guardian's approval) stays with `ConsentProofService`.
 
 ## Use
 

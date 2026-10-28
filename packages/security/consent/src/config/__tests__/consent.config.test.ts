@@ -72,6 +72,8 @@ describe("ConsentConfig", () => {
       policyVersion: "1",
       regionDefaults: {},
       askOnFirstLaunch: false,
+      snapshotLifetimeMinutes: 1440,
+      snapshotClockSkewSeconds: 60,
     });
   });
 
@@ -83,6 +85,8 @@ describe("ConsentConfig", () => {
     expectTypeOf(config.policyVersion).toEqualTypeOf<string>();
     expectTypeOf(config.regionDefaults).toEqualTypeOf<Record<string, ConsentRegime>>();
     expectTypeOf(config.askOnFirstLaunch).toEqualTypeOf<boolean>();
+    expectTypeOf(config.snapshotLifetimeMinutes).toEqualTypeOf<number>();
+    expectTypeOf(config.snapshotClockSkewSeconds).toEqualTypeOf<number>();
   });
 
   it("derives the key consent, for the base and for a host override", () => {

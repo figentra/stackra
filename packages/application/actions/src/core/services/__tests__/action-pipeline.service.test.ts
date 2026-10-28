@@ -19,7 +19,8 @@
  *          on the descriptor, the audit entry and the context, and `ctx.publish` of an integration event without a
  *          model inside the unit of work (ADR 0456); and the query cache step (STA-1445): a hit inside the
  *          interceptors, keys per principal, scope node and site, the shared namespace with `handle` in the call's
- *          context, and no step without a bound `Cache`.
+ *          context, and no step without a bound `Cache`; and `ctx.consent()` (ADR 0472): refused without a snapshot or
+ *          a bound `ConsentCheck`, the check's answer otherwise, verified once per call, never refusing the call.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -62,6 +63,7 @@ import {
   AccessControl,
   ApprovalGate,
   AuditTrail,
+  ConsentCheck,
   ContextStorage,
   DeviceSequenceStore,
   EntitlementCheck,
@@ -80,7 +82,14 @@ import {
   UnitOfWork,
   WorkflowRunner,
 } from "#contracts/index";
-import type { AuditEntry, CallAssurance, CallDescriptor, CallOrigin } from "#contracts/index";
+import type {
+  AuditEntry,
+  CallAssurance,
+  CallConsent,
+  CallDescriptor,
+  CallOrigin,
+} from "#contracts/index";
+import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
@@ -1939,5 +1948,82 @@ describe("ActionPipeline query cache (STA-1445)", () => {
     await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
     await pipeline.execute(CountQuery, { range: "7d" }, { actor: customer });
     expect(count.runs).toBe(2);
+  });
+});
+
+/** A query that reads the call's consent twice. */
+class ConsentQuery extends Query({
+  key: "call.consent",
+  actors: [ActorKind.User],
+}) {
+  async handle(_input: object, ctx: QueryContext): Promise<CallConsent> {
+    await ctx.consent();
+    return ctx.consent();
+  }
+}
+
+/** A consent check that grants analytics to the snapshot `good` and records what it saw. */
+class RecordingConsentCheck extends Driver(ConsentCheck) {
+  readonly seen: (readonly [string, string])[] = [];
+
+  async check(snapshot: string, call: CallDescriptor): Promise<CallConsent> {
+    this.seen.push([snapshot, call.key]);
+    if (snapshot !== "good")
+      return { verified: false, refusal: ConsentRefusal.BadSignature, granted: [] };
+    return {
+      verified: true,
+      snapshotId: "csn_1",
+      subject: "anon_1",
+      granted: ["necessary", "analytics"],
+      expiresAt: new Date("2026-10-25T10:00:00.000Z"),
+    };
+  }
+}
+
+describe("ActionPipeline consent (ADR 0472)", () => {
+  it("reads as refused (missing) when the call carries no snapshot", async () => {
+    const check = new RecordingConsentCheck();
+    const { pipeline } = setup([
+      [ConsentQuery, new ConsentQuery()],
+      [ConsentCheck, check],
+    ]);
+    const consent = await pipeline.execute(ConsentQuery, {}, { actor: customer });
+    expect(consent).toEqual({ verified: false, refusal: ConsentRefusal.Missing, granted: [] });
+    expect(check.seen).toEqual([]);
+  });
+
+  it("reads as refused (unchecked) when no ConsentCheck is bound", async () => {
+    const { pipeline } = setup([[ConsentQuery, new ConsentQuery()]]);
+    const consent = await pipeline.execute(
+      ConsentQuery,
+      {},
+      { actor: customer, consentSnapshot: "good" },
+    );
+    expect(consent).toEqual({ verified: false, refusal: ConsentRefusal.Unchecked, granted: [] });
+  });
+
+  it("verifies the snapshot once per call and hands over the check's answer", async () => {
+    const check = new RecordingConsentCheck();
+    const { pipeline } = setup([
+      [ConsentQuery, new ConsentQuery()],
+      [ConsentCheck, check],
+    ]);
+    const consent = await pipeline.execute(
+      ConsentQuery,
+      {},
+      { actor: customer, consentSnapshot: "good" },
+    );
+    expect(consent).toMatchObject({ verified: true, granted: ["necessary", "analytics"] });
+    expect(check.seen).toEqual([["good", "call.consent"]]);
+  });
+
+  it("never refuses the call over a bad snapshot", async () => {
+    const { pipeline } = setup([
+      [ConsentQuery, new ConsentQuery()],
+      [ConsentCheck, new RecordingConsentCheck()],
+    ]);
+    await expect(
+      pipeline.execute(ConsentQuery, {}, { actor: customer, consentSnapshot: "forged" }),
+    ).resolves.toEqual({ verified: false, refusal: ConsentRefusal.BadSignature, granted: [] });
   });
 });

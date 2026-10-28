@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: every value the template imports from
- *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `run`, `toHaveAudited`, `denyPermission`, `expectScopeCacheSafe`), the plugin, the memory AccessControl and
+ *          `@stackra/actions/testing` (`extension`, `fakeActionContext`, `fakeExtensionContext`, `grantedConsent`, `run`, `toHaveAudited`, `denyPermission`, `expectScopeCacheSafe`), the plugin, the memory AccessControl and
  *          the recording AuditTrail (the `recording` candidate a wiring imports from the manifest) are exported, nothing else is, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
  * Runtime: node (vitest)

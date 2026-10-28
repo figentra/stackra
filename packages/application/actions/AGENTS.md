@@ -61,6 +61,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   `ctx.client` only: never put it on `CallDescriptor`, an audit entry or a log line (STA-1248).
 - `origin` on `CallOptions` (a `CallOrigin`) comes from the verified credential, never from input; it rides on the
   descriptor (so the audit entry has it) and `ctx.origin`. A new `CallOriginKind` is an ADR change (ADR 0456).
+- `consentSnapshot` on `CallOptions` is the `Stackra-Consent` header as sent, never trusted: only `ctx.consent()`
+  reads it, through `ConsentCheck`, once per call. Consent is never a pipeline step and never refuses a call; a missing
+  snapshot or an unbound check reads as refused with nothing granted (ADR 0472). Never log the snapshot.
 - `ctx.publish(event)` is only for an integration event no model owns; a model's event is recorded on the model. It
   writes through `EventOutbox` at once, so it belongs in `handle` (inside the unit of work), never in `afterCommit`.
 - A replica change reaches readers at its scope node or above it; only `cascade: true` also reaches the readers below

@@ -1,20 +1,22 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsentLedger`, the one place consent is decided and read: the status of each category for the current
- *          visitor, the writes that change it, and the subscription `useConsent` and the analytics package watch.
+ *          visitor, the writes that change it, the subscription `useConsent` and the analytics package watch, and the
+ *          request a client sends for a signed consent snapshot (`snapshotRequest`, ADR 0472).
  * Boundary: a singleton service over the selected `ConsentStore`. The order of the rules is fixed: a required
  *           category is granted; Global Privacy Control refuses every other one; then the stored decision, when it
  *           answers the current policy version and has not expired; then the regime of the visitor's region (opt-out
  *           grants a `defaultGranted` category), and otherwise undecided, which runs nothing. A category the
  *           configuration does not list follows the same rules as an optional one. It never sends anything itself.
  * Runtime: isomorphic
- * Governing contract: ADR 0298 (decisions 1 to 4 and 6); ADR 0294 (decisions 16 and 17).
+ * Governing contract: ADR 0298 (decisions 1 to 4 and 6); ADR 0294 (decisions 16 and 17); ADR 0472 (decision 1).
  */
 import { Service } from "@stackra/container";
 
 import type { ConsentConfig } from "#config/consent.config";
 import type { ConsentStore } from "#contracts/ports/consent-store.port";
 import type { ConsentRecord } from "#contracts/types/consent-record.type";
+import type { ConsentSnapshotRequest } from "#contracts/types/consent-snapshot-request.type";
 import type { ConsentCategory } from "#core/enums/consent-category.enum";
 import { ConsentRegime } from "#core/enums/consent-regime.enum";
 import { ConsentStatus } from "#core/enums/consent-status.enum";
@@ -130,6 +132,20 @@ export class ConsentLedger extends Service {
     if (region === this.region) return;
     this.region = region;
     this.notify();
+  }
+
+  /**
+   * What the client sends the consent endpoint to get a signed `ConsentSnapshot` (ADR 0472 decision 1): the stored
+   * decision as kept, Global Privacy Control, the region, and `subject` (the analytics anonymous id) when given. The
+   * server re-applies these rules; nothing here is trusted there.
+   */
+  snapshotRequest(subject?: string): ConsentSnapshotRequest {
+    return Object.freeze({
+      record: this.store.read(),
+      globalPrivacyControl: hasGlobalPrivacyControl(),
+      region: this.region,
+      ...(subject === undefined ? {} : { subject }),
+    });
   }
 
   /** The stored decision when it answers the current policy version and has not expired, else `null`. */

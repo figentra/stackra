@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ConsentLedger`, the rules of ADR 0298: decline by default, a required category is granted
  *          and cannot be refused, Global Privacy Control refuses, a decision for another policy version or past its
- *          expiry reads as undecided, a region's opt-out regime grants a `defaultGranted` category, and every change
- *          is written to the store and announced.
+ *          expiry reads as undecided, a region's opt-out regime grants a `defaultGranted` category, every change
+ *          is written to the store and announced, and the snapshot request carries the record as kept (ADR 0472).
  * Boundary: test only; the store is the memory driver, time is frozen and the navigator stubbed per test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1 to 4).
@@ -204,6 +204,29 @@ describe("ConsentLedger", () => {
       stop();
       ledger.set(ConsentCategory.Analytics, false);
       expect(listener).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe("snapshotRequest (ADR 0472)", () => {
+    it("hands over the stored record, the region and the subject as kept", () => {
+      freezeClock("2026-10-28T09:00:00Z");
+      const { ledger, store } = ledgerWith();
+      store.write(recordOf({ analytics: true }));
+      ledger.setRegion("SA");
+      expect(ledger.snapshotRequest("anon_1")).toEqual({
+        record: recordOf({ analytics: true }),
+        globalPrivacyControl: false,
+        region: "SA",
+        subject: "anon_1",
+      });
+    });
+
+    it("sends no record before a decision and reports Global Privacy Control", () => {
+      vi.stubGlobal("navigator", { globalPrivacyControl: true });
+      const { ledger } = ledgerWith();
+      const request = ledger.snapshotRequest();
+      expect(request).toEqual({ record: null, globalPrivacyControl: true, region: null });
+      expect("subject" in request).toBe(false);
     });
   });
 });

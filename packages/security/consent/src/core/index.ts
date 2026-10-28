@@ -4,8 +4,8 @@
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `ConsentStore` and `ConsentRecord` are not here: they are
  *           exported from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its
- *           generated name (`ConsentConfig$`). The record schema, its parser, the Global Privacy Control read and the
- *           storage key stay internal.
+ *           generated name (`ConsentConfig$`). The record and snapshot schemas, the record parser, the snapshot codec,
+ *           the Global Privacy Control read and the storage key stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
@@ -16,6 +16,9 @@ export { CookieConsentStoreDriver } from "#core/drivers/cookie-consent-store.dri
 export { MemoryConsentProofStoreDriver } from "#core/drivers/memory-consent-proof-store.driver";
 export { MemoryConsentStoreDriver } from "#core/drivers/memory-consent-store.driver";
 export { NoneConsentVerifierDriver } from "#core/drivers/none-consent-verifier.driver";
+export { SignerConsentSnapshotKeysDriver } from "#core/drivers/signer-consent-snapshot-keys.driver";
+export { SnapshotConsentCheckDriver } from "#core/drivers/snapshot-consent-check.driver";
+export { StaticConsentSnapshotKeysDriver } from "#core/drivers/static-consent-snapshot-keys.driver";
 export { StorageConsentStoreDriver } from "#core/drivers/storage-consent-store.driver";
 export { ConsentCategory } from "#core/enums/consent-category.enum";
 export { ConsentRegime } from "#core/enums/consent-regime.enum";
@@ -27,6 +30,9 @@ export { needsGuardianConsent } from "#core/functions/needs-guardian-consent.fun
 export { ConsentOptions } from "#core/schemas/consent-options.schema";
 export { ConsentLedger } from "#core/services/consent-ledger.service";
 export { ConsentProofService } from "#core/services/consent-proof.service";
+export { ConsentSnapshotIssuer } from "#core/services/consent-snapshot-issuer.service";
+export { ConsentSnapshotVerifier } from "#core/services/consent-snapshot-verifier.service";
 export type { ConsentCategoryEntry } from "#core/types/consent-category-entry.type";
 export type { ConsentModeSignals } from "#core/types/consent-mode-signals.type";
+export type { IssuedConsentSnapshot } from "#core/types/issued-consent-snapshot.type";
 export type { TermsDocument } from "#core/types/terms-document.type";

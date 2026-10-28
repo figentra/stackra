@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `CONSENT_CONFIG_SCHEMA`: the declining defaults, the field rules (a required category is
- *          granted by default, a category appears once, a cookie-name token, 1 to 400 days, a known regime), and no
+ *          granted by default, a category appears once, a cookie-name token, 1 to 400 days, a known regime, a snapshot lifetime of 5 minutes to 7 days and a skew of at most 5 minutes), and no
  *          object-level refinement, so a member's generated schema can `.extend` it.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -30,6 +30,8 @@ describe("CONSENT_CONFIG_SCHEMA", () => {
       policyVersion: "1",
       regionDefaults: {},
       askOnFirstLaunch: false,
+      snapshotLifetimeMinutes: 1440,
+      snapshotClockSkewSeconds: 60,
     });
   });
 
@@ -55,6 +57,9 @@ describe("CONSENT_CONFIG_SCHEMA", () => {
     ["a fractional expiry", { expiryDays: 1.5 }],
     ["an expiry past 400 days", { expiryDays: 401 }],
     ["an empty region code", { regionDefaults: { "": "gdpr" } }],
+    ["a snapshot shorter than 5 minutes", { snapshotLifetimeMinutes: 4 }],
+    ["a snapshot longer than 7 days", { snapshotLifetimeMinutes: 10_081 }],
+    ["a clock skew past 5 minutes", { snapshotClockSkewSeconds: 301 }],
   ])("refuses %s", (_case, values) => {
     expect(CONSENT_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

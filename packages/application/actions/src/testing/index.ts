@@ -21,6 +21,7 @@ export { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trai
 export { extension } from "#testing/functions/extension.function";
 export { fakeActionContext } from "#testing/functions/fake-action-context.function";
 export { fakeExtensionContext } from "#testing/functions/fake-extension-context.function";
+export { grantedConsent } from "#testing/functions/granted-consent.function";
 export { run } from "#testing/functions/run.function";
 export { toHaveAudited } from "#testing/matchers/to-have-audited.matcher";
 export type { AuditExpectation } from "#testing/types/audit-expectation.type";
