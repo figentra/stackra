@@ -169,6 +169,19 @@
       // the override runs the preset's own copy (Babel 7) and the app declares none.
       "ignoreDependencies": ["expo-updates", "@babel/plugin-transform-flow-strip-types"],
     },
+    // @stackra/app: imported only by gen's `.stackra/entry/<runtime>.ts` (generated_dependency_missing without it).
+    // shortcut: CI's knip runs without gen, so the .stackra entry is absent; drop this block once knip runs after gen
+    // (the same shortcut as the packages blocks above).
+    "apps/playground": {
+      "entry": [
+        "src/main.{ts,tsx}",
+        "src/*.module.ts",
+        "src/components/*/index.ts",
+        ".stackra/**/*.{ts,tsx}",
+      ],
+      "project": ["src/**/*.{ts,tsx,css}"],
+      "ignoreDependencies": ["@stackra/app"],
+    },
     "workers/*": {
       "project": ["src/**/*.ts"],
     },
