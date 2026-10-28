@@ -5,7 +5,7 @@
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
  *          `update` assigns (now, in its own transaction, with `requiresNew`), `lock` reads again under a pessimistic
- *          write lock, `increment` adds in one parameterised statement, `table` builds the cursor read (a multi-key sort, operator filters, a refused fourth key or unknown operator), `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
+ *          write lock (shared, nowait or skip-locked on request), `increment` adds in one parameterised statement, `table` builds the cursor read (a multi-key sort, operator filters, a refused fourth key or unknown operator), `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
@@ -56,7 +56,6 @@ class Order extends Model.with(HasPublicId("ord")) {
 }
 
 // The generated `[OptionalProps]` augmentation: fields with initializers may be left out of `create`.
-// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 interface Order {
   [OptionalProps]?: "id" | "status" | "createdAt";
 }
@@ -462,6 +461,31 @@ describe("CrudService row lock, increment and update requiresNew (STA-1239)", ()
     expect(options.lockMode).toBe(LockMode.PESSIMISTIC_WRITE);
     expect(options.refresh).toBe(true);
     expect(isRefusal(options.failHandler(), NotFoundError)).toBe(true);
+  });
+
+  it("takes a shared, nowait or skip-locked lock, and refuses nowait with skipLocked (stackra-279)", async () => {
+    const em = connect();
+    const service = new OrderService();
+    await service.lock({ id: "ord_1" }, { shared: true });
+    await service.lock({ id: "ord_1" }, { nowait: true });
+    await service.lock({ id: "ord_1" }, { nowait: true, shared: true });
+    const modes = em.findOneOrFail.mock.calls.map(
+      (call) => (call[2] as { lockMode: LockMode }).lockMode,
+    );
+    expect(modes).toEqual([
+      LockMode.PESSIMISTIC_READ,
+      LockMode.PESSIMISTIC_WRITE_OR_FAIL,
+      LockMode.PESSIMISTIC_READ_OR_FAIL,
+    ]);
+    expect(await service.lock({ status: "pending" }, { skipLocked: true })).toBeNull();
+    await service.lock({ status: "pending" }, { skipLocked: true, shared: true });
+    expect(em.findOne.mock.calls.map((call) => (call as unknown[])[2])).toEqual([
+      { lockMode: LockMode.PESSIMISTIC_PARTIAL_WRITE, refresh: true },
+      { lockMode: LockMode.PESSIMISTIC_PARTIAL_READ, refresh: true },
+    ]);
+    expect(() => service.lock({ id: "ord_1" }, { nowait: true, skipLocked: true })).toThrow(
+      TypeError,
+    );
   });
 
   it("increments a field in one statement, the step a parameter", async () => {

@@ -1,16 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: `Repository<M>`, the reads and writes of one model a class injects as `repositoryOf(M)` when it needs no
- *          service methods: find, count, sum and count-distinct, lock a row, increment atomically, create in the unit of work, insert
+ *          service methods: find, count, sum and count-distinct, lock a row (shared, nowait or skip-locked), increment atomically, create in the unit of work, insert
  *          now (for a dedup row), and purge.
  * Boundary: a type only; every `CrudService<M>` is one too. Writes made with `create` flush with the caller's unit of
  *           work; `insert` flushes at once in a savepoint (or its own transaction), so a `UniqueViolation` surfaces at
  *           the call and the caller's transaction stays usable.
  * Runtime: node
- * Governing contract: ADR 0097 (decision 5.3: the CRUD API); ADR 0105 as amended by ADR 0294; ADR 0136.
+ * Governing contract: ADR 0097 (decision 5.3: the CRUD API); ADR 0105 as amended by ADR 0294; ADR 0136; data-layer gap mo6 (stackra-279: lock options).
  */
 import type { FindOneOptions, FindOptions, Loaded, RequiredEntityData } from "@mikro-orm/core";
 
+import type { LockOptions } from "#core/types/lock-options.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import type { Where } from "#contracts/types/where.type";
 
@@ -54,13 +55,19 @@ export interface Repository<M extends object> {
   countDistinct: (field: string, where?: Where<M>) => Promise<number>;
 
   /**
-   * The one row matching `where`, read again and locked (`select ... for update`) until the running transaction ends,
-   * so a second caller waits for the first: a single-flight token refresh locks the connection row, then re-checks
-   * the expiry it reads before refreshing.
+   * The one row matching `where`, read again and locked until the running transaction ends, so a second caller waits
+   * for the first: a single-flight token refresh locks the connection row, then re-checks the expiry it reads before
+   * refreshing. The lock is exclusive (`for update`) unless `shared` (`for share`). With `nowait` a held row fails at
+   * once (`55P03`); with `skipLocked` a held row is passed over and the first free match is locked, or null comes back
+   * when every match is held (a work-queue claim).
    *
-   * @throws NotFoundError (a `not_found` refusal) when there is none; an error when no transaction is running.
+   * @throws NotFoundError (a `not_found` refusal) when there is none (never with `skipLocked`); an error when no
+   *         transaction is running; a `TypeError` for `nowait` with `skipLocked`.
    */
-  lock: (where: Where<M>) => Promise<M>;
+  lock: {
+    (where: Where<M>, options?: LockOptions & { readonly skipLocked?: false }): Promise<M>;
+    (where: Where<M>, options: LockOptions): Promise<M | null>;
+  };
 
   /**
    * Adds `by` (default 1, negative to decrease) to a numeric field (`hits`, or an embedded `total.minor`) of every row

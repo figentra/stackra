@@ -17,6 +17,7 @@ import { OptimisticLockError } from "@mikro-orm/core";
 import { ConstraintViolatedError } from "#core/errors/constraint-violated.error";
 import { DuplicateRecordError } from "#core/errors/duplicate-record.error";
 import { StaleVersionError } from "#core/errors/stale-version.error";
+import { sqlStateOf } from "#core/functions/sql-state-of.function";
 import { TransactionConflictError } from "#core/errors/transaction-conflict.error";
 
 /** The SQLSTATEs a concurrent transaction causes, which a retry may get past. */
@@ -50,7 +51,7 @@ export function translateDbError(error: unknown): unknown {
     const entity = error.getEntity() as object | undefined;
     return StaleVersionError.create({ model: entity?.constructor.name ?? "" }, { cause: error });
   }
-  const state = fieldOf(error, "sqlState") ?? fieldOf(error, "code");
+  const state = sqlStateOf(error);
   if (state === undefined) return error;
   if (state === "23505")
     return DuplicateRecordError.create(

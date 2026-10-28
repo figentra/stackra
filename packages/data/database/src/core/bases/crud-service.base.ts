@@ -9,7 +9,8 @@
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
- *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock) ANDs in the bound
+ *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock: exclusive or shared, waiting,
+ *           `nowait` or `skipLocked`) ANDs in the bound
  *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
  *           carry none. `update` takes the caller's `expectedVersion`. Database errors stay the
  *           driver's here (a caller may catch `UniqueViolation`); the action's unit of work raises them as refusals.
@@ -28,7 +29,7 @@
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
  *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
- *                     reach the change feed); mo3 (`AppendOnly` enforced).
+ *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -75,6 +76,7 @@ import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
 import type { DeletedReadOptions } from "#core/types/deleted-read-options.type";
+import type { LockOptions } from "#core/types/lock-options.type";
 import type { TableSort } from "#core/types/table-sort.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import type { UpdateOptions } from "#core/types/update-options.type";
@@ -160,17 +162,35 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * Implements `Repository.lock`, documented there.
+   * Implements `Repository.lock`, documented there: exclusive (`for update`) unless `shared` (`for share`), and waiting
+   * for a held row unless `nowait` (fail at once) or `skipLocked` (take the next free match, or null).
    *
-   * @throws NotFoundError when no row matches, or none the caller may see.
+   * @throws NotFoundError when no row matches, or none the caller may see (not with `skipLocked`, which returns null).
+   * @throws TypeError when both `nowait` and `skipLocked` are given.
    * @throws ValidationError (MikroORM) when no transaction is running.
    */
-  lock(where: Where<M>): Promise<M> {
+  lock(where: Where<M>, options?: LockOptions & { readonly skipLocked?: false }): Promise<M>;
+
+  lock(where: Where<M>, options: LockOptions): Promise<M | null>;
+
+  lock(where: Where<M>, options: LockOptions = {}): Promise<M | null> {
+    const { shared = false, nowait = false, skipLocked = false } = options;
+    if (nowait && skipLocked)
+      throw new TypeError("a lock either fails at once (nowait) or skips held rows (skipLocked)");
+    const lockMode = skipLocked
+      ? shared
+        ? LockMode.PESSIMISTIC_PARTIAL_READ
+        : LockMode.PESSIMISTIC_PARTIAL_WRITE
+      : nowait
+        ? shared
+          ? LockMode.PESSIMISTIC_READ_OR_FAIL
+          : LockMode.PESSIMISTIC_WRITE_OR_FAIL
+        : shared
+          ? LockMode.PESSIMISTIC_READ
+          : LockMode.PESSIMISTIC_WRITE;
     // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it.
-    return this.findOneOrFail(where, {
-      lockMode: LockMode.PESSIMISTIC_WRITE,
-      refresh: true,
-    }) as Promise<M>;
+    if (skipLocked) return this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>;
+    return this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>;
   }
 
   /**

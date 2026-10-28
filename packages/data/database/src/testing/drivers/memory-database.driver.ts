@@ -24,7 +24,7 @@ import { citext } from "@electric-sql/pglite/contrib/citext";
 import { ltree } from "@electric-sql/pglite/contrib/ltree";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
-import { RequestContext, TransactionContext, TransactionPropagation } from "@mikro-orm/core";
+import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/pglite";
 import type { PgliteConnection } from "@mikro-orm/pglite";
 import type { EntityManager } from "@mikro-orm/postgresql";
@@ -37,7 +37,7 @@ import { deleteFilters } from "#core/functions/delete-filters.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
-import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
+import { runTransaction } from "#core/functions/run-transaction.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 
@@ -100,18 +100,14 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return ((context as unknown) ?? root.fork()) as EntityManager;
   }
 
-  /** Implements `Database.transaction`, documented there. */
+  /**
+   * Implements `Database.transaction`, documented there, through `runTransaction`.
+   *
+   * @throws TypeError when `isolation`, `readOnly` or `retry` is asked inside a running transaction without
+   *         `requiresNew`.
+   */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
-    const { timeout } = options;
-    return this.em().transactional(
-      async () => {
-        if (timeout !== undefined)
-          // raw-sql: the same transaction-local statement timeout PostgresDatabaseDriver sets
-          await this.em().execute(`set local statement_timeout = ${timeoutMilliseconds(timeout)}`);
-        return work();
-      },
-      options.requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {},
-    );
+    return runTransaction(this.em(), work, options);
   }
 
   /**

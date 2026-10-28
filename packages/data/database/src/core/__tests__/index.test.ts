@@ -75,7 +75,6 @@ class Order extends Model.with(HasPublicId("ord"), Timestamps) {
 }
 
 // The generated `[OptionalProps]` augmentation, as `.stackra/gen/entities/orders.ts` writes it.
-// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 interface Order {
   [OptionalProps]?: "id" | "createdAt" | "updatedAt" | "status" | "totalMinor" | "paidAt";
 }
@@ -91,7 +90,6 @@ class OrderLine extends Model.with(HasPublicId("oln")) {
   quantity = 1;
 }
 
-// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 interface OrderLine {
   [OptionalProps]?: "id" | "quantity";
 }
@@ -187,6 +185,7 @@ describe("@stackra/database", () => {
       "Extension",
       "GraphQuery",
       "HoldSubscriber",
+      "Isolation",
       "Macro",
       "Migration",
       "MixedCurrencyError",
@@ -237,6 +236,10 @@ describe("@stackra/database", () => {
       "modelOf",
       "SEQUENCE_REGISTRY",
       "VISIBILITY_HOST",
+      "runTransaction",
+      "sqlStateOf",
+      "retryDelay",
+      "TRANSACTION_RETRY",
       "HOLD_HOST",
       "HOLD_LINK_FIELDS",
       "holdLinksOf",

@@ -75,6 +75,11 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.
 - Partitions: `maintainPartitions` is the only code that creates, detaches or drops a partition, and it asks the
   `HoldRegistry` before dropping one. Never drop `<table>_default`, and never convert an existing table in a migration.
+- Transactions (stackra-279): both drivers' `transaction` is `runTransaction` (keep it that way); `isolation`,
+  `readOnly` and `retry` are refused inside a running transaction without `requiresNew`, never silently dropped. A
+  retry reruns the whole work for `40001`/`40P01` only (`TRANSACTION_RETRY`); never retry a savepoint, and never add a
+  retry loop around a single statement. A row lock's mode comes from `LockOptions` (`shared`, `nowait`, `skipLocked`);
+  a queue claims rows with `lock(where, { skipLocked: true })`, not raw `SKIP LOCKED`.
 - Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
   `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
   A refusal carries the constraint name, never a row value.

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
  *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions
- *          (with an optional statement timeout), starts every session with the configured timeouts, sizes the pool, registers the
+ *          (`runTransaction`: statement and lock timeouts, isolation, read-only, retry), starts every session with the configured timeouts, sizes the pool, registers the
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one.
@@ -13,9 +13,10 @@
  *           primary's transaction.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
- *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool).
+ *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool);
+ *                     data-layer gap mo6 (stackra-279: transaction options).
  */
-import { RequestContext, TransactionContext, TransactionPropagation } from "@mikro-orm/core";
+import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
@@ -27,7 +28,7 @@ import { deleteFilters } from "#core/functions/delete-filters.function";
 import { poolConfig } from "#core/functions/pool-config.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
-import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
+import { runTransaction } from "#core/functions/run-transaction.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
 import type { DatabaseOptions } from "#core/types/database-options.type";
@@ -93,18 +94,14 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     return (context as EntityManager | undefined) ?? root.fork();
   }
 
-  /** Implements `Database.transaction`, documented there. */
+  /**
+   * Implements `Database.transaction`, documented there, through `runTransaction`.
+   *
+   * @throws TypeError when `isolation`, `readOnly` or `retry` is asked inside a running transaction without
+   *         `requiresNew`.
+   */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
-    const { timeout } = options;
-    return this.em().transactional(
-      async () => {
-        if (timeout !== undefined)
-          // raw-sql: a transaction-local statement timeout, a whole number of milliseconds from the caller's Duration
-          await this.em().execute(`set local statement_timeout = ${timeoutMilliseconds(timeout)}`);
-        return work();
-      },
-      options.requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {},
-    );
+    return runTransaction(this.em(), work, options);
   }
 
   /**

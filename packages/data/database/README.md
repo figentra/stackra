@@ -76,6 +76,9 @@ with columns from gen's `table(...)` constants (ADR 0160).
   (`usage.countDistinct("subjectId", { meterId })`).
 - `lock(where)` reads the row again under `select ... for update`, held until the transaction ends, so a second caller
   waits: a single-flight token refresh locks the connection row, then re-checks the expiry. It needs a transaction.
+  `lock(where, { shared: true })` takes `for share`; `{ nowait: true }` fails at once on a held row (`55P03`, raised as
+  the retryable `transaction_conflict`); `{ skipLocked: true }` locks the first free match and returns `null` when
+  every match is held, the claim step of a work queue. `nowait` and `skipLocked` exclude each other.
 - `increment(where, field, by = 1)` adds to a numeric field in one statement (`col = col + ?`), so concurrent hits
   never lose a count; it returns the rows changed.
 - `update(where, data, { requiresNew: true })` writes now in a transaction of its own that commits even if the
@@ -374,6 +377,30 @@ module's own transaction):
 | Unique violation (`23505`)                                                                | `DuplicateRecordError`     | 409            |
 | Foreign key, check, not null (`23503`, `23514`, `23502`)                                  | `ConstraintViolatedError`  | 400            |
 | Serialization, deadlock, lock not available, timeout (`40001`, `40P01`, `55P03`, `57014`) | `TransactionConflictError` | 503, retryable |
+
+### Transaction options
+
+```ts
+await database.transaction(() => seats.book(showId, seat), {
+  isolation: Isolation.Serializable,
+  retry: 3,
+  lockTimeout: Duration.seconds(2),
+});
+```
+
+| Option        | Effect                                                                                             | Inside a running transaction |
+| ------------- | -------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `requiresNew` | a transaction of its own that commits even if the caller's rolls back                              | starts one                   |
+| `timeout`     | `set local statement_timeout`                                                                      | yes, until the outermost end |
+| `lockTimeout` | `set local lock_timeout`: a lock wait longer than this fails with `55P03`                          | yes, until the outermost end |
+| `isolation`   | `Isolation.ReadCommitted` (the default), `RepeatableRead` or `Serializable`                        | refused (`TypeError`)        |
+| `readOnly`    | starts the transaction read-only; a write fails with `25006`                                       | refused (`TypeError`)        |
+| `retry`       | runs the whole work again (0 to 10 times, jittered back-off) after `40001` or `40P01`, then leaves | refused (`TypeError`)        |
+
+`isolation`, `readOnly` and `retry` belong to a transaction's start: a savepoint cannot change them, and a deadlock aborts
+the whole transaction, so inside a running one pass `requiresNew` as well. A retried work must be safe to run again;
+external calls belong in `afterCommit`. A lock-not-available (`55P03`) or statement timeout (`57014`) is never retried
+here. Both drivers run `transaction` through the same `runTransaction`, so the memory driver behaves the same.
 
 Inside `handle`, the driver's own error still arrives first, so a service that treats a `UniqueViolation` as "already
 there" keeps catching it. The refusal names the constraint, never a value.

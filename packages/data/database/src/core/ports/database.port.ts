@@ -45,7 +45,16 @@ export abstract class Database extends Port {
   /** The entity manager of the running transaction or request, else a fresh fork for one call. */
   abstract em(): EntityManager;
 
-  /** Runs `work` in a transaction (a savepoint inside one already running): commits when it resolves. */
+  /**
+   * Runs `work` in a transaction (a savepoint inside one already running): commits when it resolves. A transaction it
+   * starts takes `isolation`, `readOnly` and `retry` (the whole work again after a serialization failure or deadlock);
+   * `timeout` and `lockTimeout` hold until the outermost transaction ends.
+   *
+   * @throws TypeError when `isolation`, `readOnly` or `retry` is asked inside a running transaction without
+   *         `requiresNew`.
+   * @example
+   * await database.transaction(() => seats.book(showId, seat), { isolation: Isolation.Serializable, retry: 3 });
+   */
   abstract transaction<T>(work: () => Promise<T>, options?: TransactionOptions): Promise<T>;
 
   /**
