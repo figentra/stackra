@@ -372,8 +372,11 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
-  /** Implements `Repository.deleteWhere`, documented there: `delete` by its policy, under the bulk verbs' name. */
-  deleteWhere(where: Where<M>): Promise<number> {
+  /**
+   * Implements `Repository.deleteWhere`, documented there: `delete` by its policy, under the bulk verbs' name. Async,
+   * so `delete`'s synchronous append-only refusal arrives as a rejection like the other bulk verbs'.
+   */
+  async deleteWhere(where: Where<M>): Promise<number> {
     return this.delete(where);
   }
 

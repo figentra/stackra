@@ -22,7 +22,7 @@ describe("AppendOnlyLedgerEntriesMigration", () => {
   });
 
   it("grants update back as the inverse", () => {
-    expect(steps.flatMap((step) => step.inverse)).toContain(
+    expect(steps.flatMap((step) => (step.inverse === false ? [] : step.inverse))).toContain(
       'grant update on "loyalty_kit"."ledger_entries" to current_user',
     );
   });

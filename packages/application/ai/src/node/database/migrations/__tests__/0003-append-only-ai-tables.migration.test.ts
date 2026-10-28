@@ -15,7 +15,7 @@ import { AppendOnlyAiTablesMigration } from "#node/database/migrations/0003-appe
 describe("AppendOnlyAiTablesMigration", () => {
   const { steps } = compileMigration(AppendOnlyAiTablesMigration, { schema: "ai" });
   const sql = steps.flatMap((step) => step.sql);
-  const inverse = steps.flatMap((step) => step.inverse);
+  const inverse = steps.flatMap((step) => (step.inverse === false ? [] : step.inverse));
 
   it("revokes update on the three append-only tables, and only those", () => {
     expect(sql).toEqual([

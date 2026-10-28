@@ -14,7 +14,7 @@ import { AppendOnlyLogEntriesMigration } from "#node/database/migrations/0003-ap
 describe("AppendOnlyLogEntriesMigration", () => {
   const { steps } = compileMigration(AppendOnlyLogEntriesMigration, { schema: "access_log" });
   const sql = steps.flatMap((step) => step.sql);
-  const inverse = steps.flatMap((step) => step.inverse);
+  const inverse = steps.flatMap((step) => (step.inverse === false ? [] : step.inverse));
 
   it("revokes update on both log tables", () => {
     expect(sql).toEqual([

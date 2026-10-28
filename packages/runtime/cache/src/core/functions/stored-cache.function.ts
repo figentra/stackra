@@ -269,18 +269,20 @@ export function storedCache(
       const promise = store
         .read(at.scoped)
         .then((entry): T | Promise<T> => {
+          // `fresh` narrows `entry` to undefined when false; the stale check reads the entry as stored.
+          const stored: CacheEntry | undefined = entry;
           if (fresh(entry)) {
             record("hit", key, 1);
             return entry.value as T;
           }
           const servesStale =
-            entry !== undefined &&
+            stored !== undefined &&
             millisecondsOf(options.stale) > 0 &&
-            (entry.staleUntil ?? 0) > clock.now().getTime();
+            (stored.staleUntil ?? 0) > clock.now().getTime();
           if (servesStale) {
             record("stale", key, 1);
             reload(at, ttl, load, options);
-            return entry.value as T;
+            return stored.value as T;
           }
           record("miss", key, 1);
           return fillMiss(at, ttl, load, options, flight);

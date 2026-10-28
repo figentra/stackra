@@ -124,11 +124,11 @@ describe(PosthogProductAnalyticsDriver, () => {
 
   it("refuses a call with no scope, and reads unscoped when the scope property is null", async () => {
     const fetch = answering({ results: [{ count: 1 }, { count: 1 }] });
-    await expect(driverWith(undefined).funnel(funnel)).rejects.toBeInstanceOf(
+    await expect(driverWith({}).funnel(funnel)).rejects.toBeInstanceOf(
       ProductAnalyticsScopeMissingError,
     );
     expect(fetch).not.toHaveBeenCalled();
-    await driverWith(undefined, { scopeProperty: null }).funnel(funnel);
+    await driverWith({}, { scopeProperty: null }).funnel(funnel);
     expect(bodyOf(fetch).query).toMatchObject({ properties: [] });
   });
 
@@ -143,10 +143,10 @@ describe(PosthogProductAnalyticsDriver, () => {
   it("is unavailable when unconfigured, unbound or failing, and never leaks the key", async () => {
     answering({ detail: "boom" }, 503);
     await expect(
-      driverWith(undefined, { projectId: null, scopeProperty: null }).funnel(funnel),
+      driverWith({}, { projectId: null, scopeProperty: null }).funnel(funnel),
     ).rejects.toBeInstanceOf(ProductAnalyticsUnavailableError);
     await expect(
-      driverWith(undefined, { keySecret: "OTHER_KEY", scopeProperty: null }).funnel(funnel),
+      driverWith({}, { keySecret: "OTHER_KEY", scopeProperty: null }).funnel(funnel),
     ).rejects.toMatchObject({ reason: "the key secret OTHER_KEY is not bound" });
     const failure = await driverWith()
       .funnel(funnel)

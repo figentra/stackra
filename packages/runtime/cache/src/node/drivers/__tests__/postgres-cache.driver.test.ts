@@ -133,7 +133,9 @@ function setup(postgres: { schema?: string; sweep?: number } = {}): {
 } {
   const sql = new MapCacheSql();
   const clock = new ManualClock();
-  const config = buildConfig(CacheConfig, { values: { driver: "postgres", postgres } });
+  const config = buildConfig(CacheConfig, {
+    values: { driver: "postgres", postgres: { schema: "cache", sweep: 100, ...postgres } },
+  });
   const cache = new PostgresCacheDriver(
     config,
     sql,

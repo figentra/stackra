@@ -19,11 +19,11 @@ import { CACHE_DRIVERS } from "#core/constants/cache-drivers.constant";
 import { CACHE_LOCK_DRIVERS } from "#core/constants/cache-lock-drivers.constant";
 import { CACHE_METRICS_DRIVERS } from "#core/constants/cache-metrics-drivers.constant";
 import { CACHE_NAMESPACE_DRIVERS } from "#core/constants/cache-namespace-drivers.constant";
-import { DURATION_SCHEMA } from "#core/constants/duration-schema.constant";
+import { CACHE_DURATION_SCHEMA } from "#core/constants/cache-duration-schema.constant";
 import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 
 /** A duration longer than zero: a zero fill wait would make the fill lock lapse at once. */
-const POSITIVE_DURATION = DURATION_SCHEMA.refine(
+const POSITIVE_DURATION = CACHE_DURATION_SCHEMA.refine(
   (duration) => Duration.toMilliseconds(duration) > 0,
   {
     message: "must be longer than zero",
