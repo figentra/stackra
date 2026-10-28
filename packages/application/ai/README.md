@@ -196,6 +196,9 @@ pass, pass with the text redacted, pass with flags, or block. The result is the 
 with its layer, or the first block. Each driver takes its effect per stage (`GuardrailEffect`: `block`, `redact` or
 `flag`) and all its patterns as settings or market-pack data; none is written in code. Every driver extends
 `Driver(GuardrailLayer)`; a service's own layer may extend it too, or be any object of the `Guardrail` shape.
+Each driver's options (`PatternGuardrailOptions`, `PiiGuardrailOptions`, `InjectionGuardrailOptions`,
+`ClassifierGuardrailOptions`) are runtime class tokens: pass an object literal when you construct a layer, or bind
+the token with `useValue` when the container builds it.
 
 `AgentRuntime` runs every bound `GuardrailLayer` (`DiscoveryService.getAll`, wiring order) on the prompt before it is
 stored and on the final answer before it is stored: a redaction is what the conversation keeps and the reply carries,

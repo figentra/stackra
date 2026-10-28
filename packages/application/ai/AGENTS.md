@@ -62,6 +62,8 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
   structural type `runGuardrails` takes. Every pattern, signal, weight, threshold, label and effect comes from
   their options (settings, market packs); national ID formats are `@stackra/validation`'s `IdentifierFormat`s, checked
   with `checkIdentifier`. A reason or flag is a code, never the caught text. Compile patterns in the constructor.
+  Each `*GuardrailOptions` is an abstract class of declared fields, so the constructor parameter is a class token
+  gen accepts (`token_not_a_class` otherwise); keep it a class, add fields with `declare readonly`.
 - `AiMeter` writes `usage.recorded` on `ai.tokens` only (direction in the key, model in `subject`); prices and caps
   are rate-card and entitlement data.
 - One vector store (ADR 0465): embed and recall through `VectorIndex` and `Embedder` of `@stackra/search/contracts`.
