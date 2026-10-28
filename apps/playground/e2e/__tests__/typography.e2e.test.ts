@@ -12,7 +12,7 @@
  */
 // @covers sta-350:FR-020 sta-350:FR-021 sta-350:P-012 sta-350:P-015 sta-350:SC-004
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { STACKRA_THEME } from "@stackra/tokens";
+import { fontStackOf, STACKRA_THEME } from "@stackra/tokens";
 
 const LOCALES = ["en", "ar"] as const;
 
@@ -70,7 +70,7 @@ const expectToken = async (locator: Locator, name: string) => {
   expect(actual.letterSpacing, `${name} letter spacing`).toBeCloseTo(expected.letterSpacing, 1);
   expect(actual.weight, `${name} weight`).toBe(expected.weight);
   expect(firstFamily(actual.family), `${name} family`).toBe(
-    firstFamily(STACKRA_THEME.fontFamily[expected.family]),
+    firstFamily(fontStackOf(STACKRA_THEME, expected.family)),
   );
 };
 
