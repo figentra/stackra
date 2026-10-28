@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "open_settings": "Einstellungen öffnen",
+    "camera": {
+      "why": "Die Kamera scannt Barcodes und macht Fotos.",
+      "blocked": "Der Kamerazugriff ist aus. Schalte ihn in den Einstellungen ein, um zu scannen und Fotos zu machen."
+    },
+    "location": {
+      "why": "Dein Standort findet Geschäfte und Geräte in der Nähe.",
+      "blocked": "Der Standortzugriff ist aus. Schalte ihn in den Einstellungen ein, um Geschäfte und Geräte in der Nähe zu finden."
+    },
+    "photos": {
+      "why": "Mit dem Fotozugriff wählst und speicherst du Bilder.",
+      "blocked": "Der Fotozugriff ist aus. Schalte ihn in den Einstellungen ein, um Bilder zu wählen und zu speichern."
+    },
+    "bluetooth": {
+      "why": "Bluetooth verbindet Drucker, Waagen, Kassenladen und Kartenterminals.",
+      "blocked": "Der Bluetooth-Zugriff ist aus. Schalte ihn in den Einstellungen ein, um deine Geräte zu verbinden."
+    },
+    "microphone": {
+      "why": "Das Mikrofon nimmt Sprachnotizen und Videoton auf.",
+      "blocked": "Der Mikrofonzugriff ist aus. Schalte ihn in den Einstellungen ein, um Ton aufzunehmen."
+    }
+  }
+}

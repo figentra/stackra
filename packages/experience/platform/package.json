@@ -27,6 +27,7 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
@@ -149,7 +150,8 @@
       "@stackra/source": "./src/worker/index.ts",
       "types": "./dist/worker.d.mts",
       "default": "./dist/worker.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",

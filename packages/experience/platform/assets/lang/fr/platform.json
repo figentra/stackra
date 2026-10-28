@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "open_settings": "Ouvrir les réglages",
+    "camera": {
+      "why": "L'appareil photo scanne les codes-barres et prend des photos.",
+      "blocked": "L'accès à l'appareil photo est désactivé. Activez-le dans les Réglages pour scanner et prendre des photos."
+    },
+    "location": {
+      "why": "Votre position trouve les magasins et appareils à proximité.",
+      "blocked": "L'accès à la position est désactivé. Activez-le dans les Réglages pour trouver les magasins et appareils à proximité."
+    },
+    "photos": {
+      "why": "L'accès aux photos vous permet de choisir et d'enregistrer des images.",
+      "blocked": "L'accès aux photos est désactivé. Activez-le dans les Réglages pour choisir et enregistrer des images."
+    },
+    "bluetooth": {
+      "why": "Le Bluetooth connecte imprimantes, balances, tiroirs-caisses et terminaux de paiement.",
+      "blocked": "L'accès au Bluetooth est désactivé. Activez-le dans les Réglages pour connecter vos appareils."
+    },
+    "microphone": {
+      "why": "Le micro enregistre les notes vocales et le son des vidéos.",
+      "blocked": "L'accès au micro est désactivé. Activez-le dans les Réglages pour enregistrer du son."
+    }
+  }
+}

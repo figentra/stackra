@@ -17,6 +17,7 @@ export { KIOSK_CONFIG_SCHEMA as KioskConfig$ } from "#core/constants/kiosk-confi
 export { PUSH_CONFIG_SCHEMA as PushConfig$ } from "#core/constants/push-config-schema.constant";
 export { PWA_CONFIG_SCHEMA as PwaConfig$ } from "#core/constants/pwa-config-schema.constant";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
+export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";
 export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
 export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";

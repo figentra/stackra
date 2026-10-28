@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "open_settings": "Open settings",
+    "camera": {
+      "why": "The camera scans barcodes and takes photos.",
+      "blocked": "Camera access is off. Turn it on in Settings to scan and take photos."
+    },
+    "location": {
+      "why": "Your location finds nearby stores and devices.",
+      "blocked": "Location access is off. Turn it on in Settings to find nearby stores and devices."
+    },
+    "photos": {
+      "why": "Photo access lets you pick and save pictures.",
+      "blocked": "Photo access is off. Turn it on in Settings to pick and save pictures."
+    },
+    "bluetooth": {
+      "why": "Bluetooth connects printers, scales, cash drawers and card readers.",
+      "blocked": "Bluetooth access is off. Turn it on in Settings to connect your devices."
+    },
+    "microphone": {
+      "why": "The microphone records voice notes and video sound.",
+      "blocked": "Microphone access is off. Turn it on in Settings to record sound."
+    }
+  }
+}

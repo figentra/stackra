@@ -116,6 +116,30 @@ if ((await settings.backgroundRefresh()) === "denied")
   notification category, named in the phone's language; the push context calls it at launch, before the permission
   prompt, and again when the language changes. A push names its channel with `OutboundPush.channelId`.
 
+### Device permissions
+
+`DevicePermissions` (`./contracts`) is the one permission helper for camera, location, photos, Bluetooth and
+microphone: `status` reads without prompting, `request` asks and resolves `granted`, `denied` or `blocked` (the OS will
+not ask again), and `openSettings` opens the app's page in the OS settings. The app explains why before it asks, from
+`assets/lang/<locale>/platform.json` (seven locales):
+
+```ts
+const permissions = useContainer().get(DevicePermissions);
+explain(t("platform::permissions.bluetooth.why"));
+if ((await permissions.request("bluetooth")) === "blocked")
+  offer(
+    t("platform::permissions.bluetooth.blocked"),
+    t("platform::permissions.open_settings"),
+    () => permissions.openSettings(),
+  );
+```
+
+- `ExpoDevicePermissionsDriver` (`./native`) is abstract like the settings driver: the app's subclass declares
+  `modules` (expo-camera's `Camera`, expo-location, expo-media-library, each `null` when absent, which reads `denied`).
+  Bluetooth asks through React Native's `PermissionsAndroid` on Android 12 and later; elsewhere it reads `granted`, since
+  iOS asks on first use and older Android grants it at install.
+- `MemoryDevicePermissionsDriver` (`.`) is the web, desktop and test driver: every permission starts `prompt`.
+
 ## Testing
 
 ```ts

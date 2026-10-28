@@ -26,6 +26,7 @@ describe("@stackra/platform", () => {
         "KioskConfig",
         "KioskConfig$",
         "MemoryCaptchaVerifierDriver",
+        "MemoryDevicePermissionsDriver",
         "MemoryKioskModeDriver",
         "MemoryPlatformDriver",
         "MemoryPushTransportDriver",

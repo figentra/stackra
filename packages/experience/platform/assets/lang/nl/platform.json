@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "open_settings": "Instellingen openen",
+    "camera": {
+      "why": "De camera scant barcodes en maakt foto’s.",
+      "blocked": "Cameratoegang staat uit. Zet het aan in Instellingen om te scannen en foto’s te maken."
+    },
+    "location": {
+      "why": "Je locatie vindt winkels en apparaten in de buurt.",
+      "blocked": "Locatietoegang staat uit. Zet het aan in Instellingen om winkels en apparaten in de buurt te vinden."
+    },
+    "photos": {
+      "why": "Met fototoegang kies en bewaar je afbeeldingen.",
+      "blocked": "Fototoegang staat uit. Zet het aan in Instellingen om afbeeldingen te kiezen en te bewaren."
+    },
+    "bluetooth": {
+      "why": "Bluetooth verbindt printers, weegschalen, kassalades en betaalterminals.",
+      "blocked": "Bluetooth-toegang staat uit. Zet het aan in Instellingen om je apparaten te verbinden."
+    },
+    "microphone": {
+      "why": "De microfoon neemt spraaknotities en videogeluid op.",
+      "blocked": "Microfoontoegang staat uit. Zet het aan in Instellingen om geluid op te nemen."
+    }
+  }
+}

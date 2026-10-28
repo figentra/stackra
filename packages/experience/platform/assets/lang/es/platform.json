@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "open_settings": "Abrir ajustes",
+    "camera": {
+      "why": "La cámara escanea códigos de barras y toma fotos.",
+      "blocked": "El acceso a la cámara está desactivado. Actívalo en Ajustes para escanear y tomar fotos."
+    },
+    "location": {
+      "why": "Tu ubicación encuentra tiendas y dispositivos cercanos.",
+      "blocked": "El acceso a la ubicación está desactivado. Actívalo en Ajustes para encontrar tiendas y dispositivos cercanos."
+    },
+    "photos": {
+      "why": "El acceso a las fotos te permite elegir y guardar imágenes.",
+      "blocked": "El acceso a las fotos está desactivado. Actívalo en Ajustes para elegir y guardar imágenes."
+    },
+    "bluetooth": {
+      "why": "Bluetooth conecta impresoras, básculas, cajones de efectivo y lectores de tarjetas.",
+      "blocked": "El acceso a Bluetooth está desactivado. Actívalo en Ajustes para conectar tus dispositivos."
+    },
+    "microphone": {
+      "why": "El micrófono graba notas de voz y el sonido de los vídeos.",
+      "blocked": "El acceso al micrófono está desactivado. Actívalo en Ajustes para grabar sonido."
+    }
+  }
+}
