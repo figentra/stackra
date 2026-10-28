@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useLanguageSwitcher()` and `<LanguageSwitcher />`: under `system` choosing opens the phone's
- *          settings and stores nothing; Android below 13 runs `in_app`; under `in_app` a same-direction change only
- *          calls `setLocale`, a change across right-to-left also flips the layout and reloads, choosing the active
- *          locale does nothing; the component hands its render function the same state.
- * Boundary: test only; renders with react-dom/server, and `react-native` is a recording stand-in.
+ *          settings (Android 13+ its per-app language screen) and stores nothing; Android below 13 runs `in_app`; under `in_app` a same-direction change only
+ *          calls `setLocale`, a change across right-to-left also flips the layout and reloads (expo-updates by
+ *          default), choosing the active locale does nothing; the component hands its render function the same state.
+ * Boundary: test only; renders with react-dom/server, and `react-native` and the Expo libraries are
+ *           recording stand-ins.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0080 (2026-10-29 note).
  */
@@ -29,7 +30,16 @@ const rn = vi.hoisted(() => ({
   I18nManager: { isRTL: false, allowRTL: vi.fn(), forceRTL: vi.fn() },
 }));
 
+const expo = vi.hoisted(() => ({
+  startActivityAsync: vi.fn(async () => undefined),
+  reloadAsync: vi.fn(async () => undefined),
+  constants: { expoConfig: { android: { package: "com.figentra.app" } } },
+}));
+
 vi.mock("react-native", () => rn);
+vi.mock("expo-constants", () => ({ default: expo.constants }));
+vi.mock("expo-intent-launcher", () => ({ startActivityAsync: expo.startActivityAsync }));
+vi.mock("expo-updates", () => ({ reloadAsync: expo.reloadAsync }));
 
 class SystemConfig extends I18nConfig {
   override locales: Locale[] = [Locale.En, Locale.Fr, Locale.Ar];
@@ -44,15 +54,15 @@ function Probe({
   reload,
   onState,
 }: {
-  readonly reload?: () => Promise<void>;
+  readonly reload: (() => Promise<void>) | undefined;
   readonly onState: (state: LanguageSwitcherState) => void;
 }) {
-  onState(useLanguageSwitcher({ reload }));
+  onState(useLanguageSwitcher(reload === undefined ? {} : { reload }));
   return null;
 }
 
 /** The switcher under config `type`, with the locales `setLocale` was called with and the reloads. */
-async function switcher(type: typeof I18nConfig) {
+async function switcher(type: typeof I18nConfig, ownReload = true) {
   const container = await Container.create(
     [{ member: "mobile", config: [{ key: "i18n", provide: I18nConfig, override: type }] }],
     { overrides: new Map([[I18nConfig, buildConfig(type)]]) },
@@ -70,9 +80,13 @@ async function switcher(type: typeof I18nConfig) {
         }}
       >
         <Probe
-          reload={async () => {
-            reloads.push("reload");
-          }}
+          reload={
+            ownReload
+              ? async () => {
+                  reloads.push("reload");
+                }
+              : undefined
+          }
           onState={(state) => states.push(state)}
         />
       </I18nProvider>
@@ -101,6 +115,19 @@ describe("useLanguageSwitcher", () => {
     expect(chosen).toEqual([]);
   });
 
+  it("opens Android's per-app language screen for the package under system on Android 13+", async () => {
+    rn.Platform.OS = "android";
+    rn.Platform.Version = 33;
+    const { state, chosen } = await switcher(SystemConfig);
+    expect(state.mode).toBe("system");
+    await state.choose(Locale.Fr);
+    expect(expo.startActivityAsync).toHaveBeenCalledWith("android.settings.APP_LOCALE_SETTINGS", {
+      data: "package:com.figentra.app",
+    });
+    expect(rn.Linking.openSettings).not.toHaveBeenCalled();
+    expect(chosen).toEqual([]);
+  });
+
   it("runs in_app below Android 13", async () => {
     rn.Platform.OS = "android";
     rn.Platform.Version = 32;
@@ -126,6 +153,13 @@ describe("useLanguageSwitcher", () => {
     expect(rn.I18nManager.allowRTL).toHaveBeenCalledWith(true);
     expect(rn.I18nManager.forceRTL).toHaveBeenCalledWith(true);
     expect(reloads).toEqual(["reload"]);
+    expect(expo.reloadAsync).not.toHaveBeenCalled();
+  });
+
+  it("reloads through expo-updates when no reload is passed", async () => {
+    const { state } = await switcher(InAppConfig, false);
+    await state.choose(Locale.Ar);
+    expect(expo.reloadAsync).toHaveBeenCalledTimes(1);
   });
 
   it("does nothing when the active locale is chosen", async () => {

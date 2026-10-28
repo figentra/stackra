@@ -41,6 +41,7 @@ is an optional peer of `./react` and `./native`, React Native of `./native`.
 | `.`           | `NativeSwitcher`, `nativeSwitcherMode`, `startingLocale`, `matchDeviceLocale`                 | a native app's language owner and first locale (below)                           |
 | `.`           | `regionFormat`, `RegionFormat`, `DeviceRegion`, `StartingLocaleInput`                         | a native app's region formats and time zone (below)                              |
 | `./native`    | `useLanguageSwitcher`, `LanguageSwitcher`                                                     | the native language row, the same in both modes (below)                          |
+| `./native`    | `deviceLanguageTags`, `deviceRegion`                                                          | the phone's languages and region, read from expo-localization (below)            |
 
 ## Configuring a member
 
@@ -139,23 +140,25 @@ setter to `I18nProvider` (native, the console).
 
 ## Native language and region
 
-A native app follows the phone, the way the phone's own apps do (ADR 0080, 2026-10-29 note).
+A native app follows the phone, the way the phone's own apps do (ADR 0080, 2026-10-29 note). `./native` imports
+expo-localization, expo-updates, expo-intent-launcher and expo-constants itself; they are optional peers, so a native
+app adds them to its own dependencies (an Expo module links only from the app).
 
 **Who owns the language: `I18nConfig.nativeSwitcher`.**
 
 - `system` (the default): the phone. The language row opens the phone's language screen for this app (iOS Settings ›
-  App › Language; on Android 13 and later the app's info page, which holds its "App language" row). Android below 13
+  App › Language; on Android 13 and later its per-app language screen, `APP_LOCALE_SETTINGS` for the app's package,
+  opened through expo-intent-launcher). Android below 13
   has no per-app language, so `nativeSwitcherMode` runs `in_app` there.
 - `in_app`: the app. The row lists `I18nConfig.locales` and switches in place; a change across right-to-left flips the
-  layout (`I18nManager.forceRTL`) and reloads (pass expo-updates' `Updates.reloadAsync` as `reload`). Pick it where
+  layout (`I18nManager.forceRTL`) and reloads through expo-updates' `reloadAsync` (a test passes its own `reload`). Pick it where
   the phone is not one person's: tills, kiosks and shared devices, where staff switch the language per customer
   without leaving the app.
 
 ```tsx
 import { LanguageSwitcher } from "@stackra/i18n/native";
-import * as Updates from "expo-updates";
 
-<LanguageSwitcher reload={Updates.reloadAsync}>
+<LanguageSwitcher>
   {(switcher) =>
     switcher.mode === "system" ? (
       <Row
@@ -171,8 +174,8 @@ import * as Updates from "expo-updates";
 </LanguageSwitcher>;
 ```
 
-**The first locale: `startingLocale`.** Under `system` it is the phone's language for this app (expo-localization's
-`getLocales()`, which on iOS starts with the per-app choice) matched against `locales` (`matchDeviceLocale`: exact,
+**The first locale: `startingLocale`.** Under `system` it is the phone's language for this app (`deviceLanguageTags()`
+from `./native`, expo-localization's `getLocales()`, which on iOS starts with the per-app choice) matched against `locales` (`matchDeviceLocale`: exact,
 then the base language, then another region of it), whatever `followDevice` says, since the phone's screen is the
 switcher there. Under `in_app` it is the stored choice, then the phone's language when `followDevice` is on, then
 `defaultLocale`.
@@ -182,12 +185,14 @@ emails, notifications and the web follow the same language.
 
 **Region formats and time zone: `regionFormat`.** Dates, numbers, the clock, the first weekday and units follow the
 phone's region, separate from its language (English text with German dates formats as `en-DE`). Build it from
-expo-localization and hand it to `I18nProvider`'s `region` prop (memoise it); an account's override for business
+`deviceRegion()` (`./native`, read from expo-localization) and hand it to `I18nProvider`'s `region` prop (memoise it); an account's override for business
 documents, or the business's zone where the app declares one (shifts, bookings, reports), is the third argument.
 
 ```ts
-const device = { ...getLocales()[0], ...getCalendars()[0] };
-const region = regionFormat(device, localeFormat(locale), { timeZone: business.timeZone });
+import { deviceLanguageTags, deviceRegion } from "@stackra/i18n/native";
+
+const first = startingLocale({ ...config, mode, deviceTags: deviceLanguageTags(), chosen: stored });
+const region = regionFormat(deviceRegion(), localeFormat(first), { timeZone: business.timeZone });
 ```
 
 `useDateTime` then shows dates in `region.timeZone` unless its options name another.

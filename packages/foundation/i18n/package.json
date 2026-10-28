@@ -127,6 +127,10 @@
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "expo-constants": "catalog:mobile",
+    "expo-intent-launcher": "catalog:mobile",
+    "expo-localization": "catalog:mobile",
+    "expo-updates": "catalog:mobile",
     "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
@@ -138,10 +142,26 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "expo-constants": "catalog:mobile",
+    "expo-intent-launcher": "catalog:mobile",
+    "expo-localization": "catalog:mobile",
+    "expo-updates": "catalog:mobile",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
+    "expo-constants": {
+      "optional": true
+    },
+    "expo-intent-launcher": {
+      "optional": true
+    },
+    "expo-localization": {
+      "optional": true
+    },
+    "expo-updates": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },

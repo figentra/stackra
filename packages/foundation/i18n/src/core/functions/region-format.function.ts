@@ -17,7 +17,7 @@ import type { RegionFormat } from "#core/types/region-format.type";
  * The region formats of a native app.
  *
  * @example
- * const device = { ...getLocales()[0], ...getCalendars()[0] };
+ * const device = deviceRegion(); // @stackra/i18n/native
  * regionFormat(device, localeFormat(Locale.En)); // { region: "DE", hourCycle: "h23", weekStart: 1, ... }
  * regionFormat(device, localeFormat(Locale.En), { timeZone: business.timeZone });
  */

@@ -3,8 +3,8 @@
  * Purpose: `DeviceRegion`, the phone's region settings that `regionFormat` reads: its region, measurement system,
  *          clock, first weekday and time zone, separate from its language.
  * Boundary: a type only, the structural subset of expo-localization's `getLocales()[0]` and `getCalendars()[0]`
- *           merged, so an app passes `{ ...getLocales()[0], ...getCalendars()[0] }` and this package depends on no
- *           Expo library. Every field is `null` where the platform does not say.
+ *           merged; `deviceRegion()` (`./native`) reads it, and the core entry stays free of Expo
+ *           libraries. Every field is `null` where the platform does not say.
  * Runtime: isomorphic
  * Governing contract: ADR 0080 (2026-10-29 note, STA-1534), ADR 0403 (formats per locale), ADR 0478 (Expo libraries).
  */

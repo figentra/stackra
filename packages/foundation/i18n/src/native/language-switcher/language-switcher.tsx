@@ -17,7 +17,7 @@ import { useLanguageSwitcher } from "./use-language-switcher";
  *
  * @throws Error outside an `I18nProvider`.
  * @example
- * <LanguageSwitcher reload={Updates.reloadAsync}>
+ * <LanguageSwitcher>
  *   {(switcher) => <Row label={switcher.endonym(switcher.locale)} onPress={() => switcher.choose(switcher.locale)} />}
  * </LanguageSwitcher>
  */

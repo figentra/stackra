@@ -57,9 +57,9 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
 - A record's per-locale text is `@stackra/model`'s `Translated`, not a catalogue key; do not add a second per-locale
   value type here. Gen's `translated` shape kind (STA-1218) reads `Translated` and `TranslatedStrings` only.
 - Native language and region (ADR 0080, 2026-10-29 note): the pure deciders (`nativeSwitcherMode`, `startingLocale`,
-  `matchDeviceLocale`, `regionFormat`) are in `src/core/`; `src/native/` holds only what imports `react-native`. No Expo
-  library is imported here: an app passes expo-localization's values (`DeviceRegion` is their subset) and
-  expo-updates' reload in. The phone's language screen is opened, never imitated (ADR 0478).
+  `matchDeviceLocale`, `regionFormat`) are in `src/core/`; `src/native/` holds what imports `react-native` and the Expo
+  libraries: expo-localization (`deviceLanguageTags`, `deviceRegion`), expo-updates (the default reload),
+  expo-intent-launcher and expo-constants (Android's per-app language screen), all optional peers. The phone's language screen is opened, never imitated (ADR 0478).
 - `normalizeArabic` is the only Arabic normaliser; callers keep no copy (ADR 0080 note).
 
 ## Rules that fail the build
