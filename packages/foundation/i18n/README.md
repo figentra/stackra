@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the reader guide of @stackra/i18n: locales, configuration, catalogues and keys, formatting, Arabic text, the
-         ports, the remembered choice, and how per-locale record fields reach shapes and the wire.
+         ports, the remembered choice, the native language and region, and how per-locale record fields reach shapes and the wire.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0080; ADR 0162 (decision 2); ADR 0294 (decision 26); STA-1218 (gen's `translated` shape kind).
@@ -13,9 +13,9 @@ Stackra i18n: the locale vocabulary, the i18n configuration every member overrid
 namespaced catalogues with regional overlays, the typed key builder gen calls, and the React provider and formatting
 hooks. It replaces i18next (ADR 0080).
 
-**Tier:** `tier:lib` (`packages/foundation/i18n`). Entries `.` and `./react`. Depends on `@stackra/contracts`,
-`@stackra/config`, `@stackra/money`, `@stackra/validation`, `intl-messageformat` and zod; React is an optional peer
-of `./react`.
+**Tier:** `tier:lib` (`packages/foundation/i18n`). Entries `.`, `./contracts`, `./react` and `./native`. Depends on
+`@stackra/contracts`, `@stackra/config`, `@stackra/money`, `@stackra/validation`, `intl-messageformat` and zod; React
+is an optional peer of `./react` and `./native`, React Native of `./native`.
 
 ## What is here
 
@@ -38,6 +38,9 @@ of `./react`.
 | `./react`     | `useLocaleChoice`                                                                             | the visitor's remembered choice: `chosen`, `choose(code)`                        |
 | `./react`     | `useMoney`, `useNumber`, `useDateTime`                                                        | formatting in the active locale and digits                                       |
 | `./react`     | `I18nProvider`                                                                                | mounted by the generated `Contexts` of `@stackra/app` with locale and catalogues |
+| `.`           | `NativeSwitcher`, `nativeSwitcherMode`, `startingLocale`, `matchDeviceLocale`                 | a native app's language owner and first locale (below)                           |
+| `.`           | `regionFormat`, `RegionFormat`, `DeviceRegion`, `StartingLocaleInput`                         | a native app's region formats and time zone (below)                              |
+| `./native`    | `useLanguageSwitcher`, `LanguageSwitcher`                                                     | the native language row, the same in both modes (below)                          |
 
 ## Configuring a member
 
@@ -133,6 +136,61 @@ The URL alone selects the locale on the web (ADR 0297 decision 4). `useLocaleCho
 named by `cookieName` in the browser only; the server and the first paint see `null`, and nothing reads it to
 redirect. `useLocale().setLocale` rejects on the web (switching is a navigation) and works where the runtime passes a
 setter to `I18nProvider` (native, the console).
+
+## Native language and region
+
+A native app follows the phone, the way the phone's own apps do (ADR 0080, 2026-10-29 note).
+
+**Who owns the language: `I18nConfig.nativeSwitcher`.**
+
+- `system` (the default): the phone. The language row opens the phone's language screen for this app (iOS Settings ›
+  App › Language; on Android 13 and later the app's info page, which holds its "App language" row). Android below 13
+  has no per-app language, so `nativeSwitcherMode` runs `in_app` there.
+- `in_app`: the app. The row lists `I18nConfig.locales` and switches in place; a change across right-to-left flips the
+  layout (`I18nManager.forceRTL`) and reloads (pass expo-updates' `Updates.reloadAsync` as `reload`). Pick it where
+  the phone is not one person's: tills, kiosks and shared devices, where staff switch the language per customer
+  without leaving the app.
+
+```tsx
+import { LanguageSwitcher } from "@stackra/i18n/native";
+import * as Updates from "expo-updates";
+
+<LanguageSwitcher reload={Updates.reloadAsync}>
+  {(switcher) =>
+    switcher.mode === "system" ? (
+      <Row
+        label={switcher.endonym(switcher.locale)}
+        onPress={() => switcher.choose(switcher.locale)}
+      />
+    ) : (
+      switcher.locales.map((code) => (
+        <Row key={code} label={switcher.endonym(code)} onPress={() => switcher.choose(code)} />
+      ))
+    )
+  }
+</LanguageSwitcher>;
+```
+
+**The first locale: `startingLocale`.** Under `system` it is the phone's language for this app (expo-localization's
+`getLocales()`, which on iOS starts with the per-app choice) matched against `locales` (`matchDeviceLocale`: exact,
+then the base language, then another region of it), whatever `followDevice` says, since the phone's screen is the
+switcher there. Under `in_app` it is the stored choice, then the phone's language when `followDevice` is on, then
+`defaultLocale`.
+
+**Saving the choice.** The provider's `setLocale` stores it: the app writes the account's language setting there, so
+emails, notifications and the web follow the same language.
+
+**Region formats and time zone: `regionFormat`.** Dates, numbers, the clock, the first weekday and units follow the
+phone's region, separate from its language (English text with German dates formats as `en-DE`). Build it from
+expo-localization and hand it to `I18nProvider`'s `region` prop (memoise it); an account's override for business
+documents, or the business's zone where the app declares one (shifts, bookings, reports), is the third argument.
+
+```ts
+const device = { ...getLocales()[0], ...getCalendars()[0] };
+const region = regionFormat(device, localeFormat(locale), { timeZone: business.timeZone });
+```
+
+`useDateTime` then shows dates in `region.timeZone` unless its options name another.
 
 Governing ADRs: 0080 (as amended by 0192, 0268, 0305), 0192, 0220, 0231, 0234, 0294 (decisions 15, 19 and 20), 0297
 (decision 4), 0305.

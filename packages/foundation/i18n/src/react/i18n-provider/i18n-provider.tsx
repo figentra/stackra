@@ -5,7 +5,8 @@
  *          hooks read one locale on the server and in the browser or app.
  * Boundary: reads `I18nConfig` from the container of the nearest `ContainerProvider` (`useConfig`), never a static. It
  *           loads nothing: the catalogues arrive merged, and a locale switch is the `setLocale` prop's (absent on the
- *           web, where switching is a navigation).
+ *           web, where switching is a navigation). On native, a `region` replaces the locale's
+ *           formats and adds the phone's region subtag and time zone.
  * Runtime: isomorphic
  * Governing contract: ADR 0080, ADR 0192, ADR 0295 (decision 7), ADR 0297 (decision 4), ADR 0403 (formats).
  */
@@ -15,6 +16,7 @@ import { type ReactNode, useMemo } from "react";
 import { I18nConfig } from "#config/i18n.config";
 import { intlLocale } from "#core/functions/intl-locale.function";
 import { localeFormat } from "#core/functions/locale-format.function";
+import type { LocaleFormat } from "#core/types/locale-format.type";
 
 import { I18nContext } from "./i18n-context";
 import type { I18nProviderProps } from "./i18n-provider-props.type";
@@ -41,19 +43,25 @@ export function I18nProvider({
   locale,
   messages,
   setLocale,
+  region,
   children,
 }: I18nProviderProps): ReactNode {
   const config = useConfig(I18nConfig);
   const state = useMemo<I18nState>(() => {
-    const format = localeFormat(locale, config.formats[locale]);
+    const format: LocaleFormat = region
+      ? { weekStart: region.weekStart, hourCycle: region.hourCycle }
+      : localeFormat(locale, config.formats[locale]);
+    // The phone's region rides on the language: English text with German dates is `en-DE`.
+    const tag = region?.region ? `${locale.split("-")[0]}-${region.region}` : locale;
     return {
       locale,
-      intlLocale: intlLocale(locale, config.numerals, format.hourCycle),
+      intlLocale: intlLocale(tag, config.numerals, format.hourCycle),
       format,
+      timeZone: region?.timeZone ?? null,
       messages,
       config,
       setLocale: setLocale ?? urlSelectsLocale,
     };
-  }, [locale, messages, config, setLocale]);
+  }, [locale, messages, config, setLocale, region]);
   return <I18nContext value={state}>{children}</I18nContext>;
 }

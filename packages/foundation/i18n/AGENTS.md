@@ -6,11 +6,12 @@ Purpose: the agent rules of @stackra/i18n: where code goes, entries and barrels,
          fields included), the rules that fail the build, PII and secrets.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0080; ADR 0162 (decision 2); ADR 0294; STA-1218.
+Governing contract: ADR 0080 (2026-10-29 note); ADR 0162 (decision 2); ADR 0294; STA-1218.
 -->
 
 Locales, the i18n configuration, the ICU engine and the React hooks. Member at `packages/foundation/i18n`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./react`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react` and
+`./native`.
 
 ## Where code goes
 
@@ -23,11 +24,12 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
 | A function, a type                      | `src/core/{functions,types}/`                       |
 | A provider port, or a type it exchanges | `src/contracts/{ports,types}/`                      |
 | React code                              | `src/react/<name>/`                                 |
+| React Native code (the language row)    | `src/native/<name>/`                                |
 | A test                                  | `__tests__/<name>.<kind>.test.ts(x)` beside it      |
 
 ## Entries and barrels
 
-- `src/{core,react}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new public
+- `src/{core,react,native}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new public
   file to its barrel and to that entry's `index.test.ts`.
 - The `.` barrel re-exports `I18nConfig` from the `src/config/` entry folder.
 - `I18nConfig$` mirrors `I18nOptions` by hand until gen compiles this package's schemas; change both together. It
@@ -54,6 +56,10 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
   country types are `@stackra/validation`'s; do not redeclare them.
 - A record's per-locale text is `@stackra/model`'s `Translated`, not a catalogue key; do not add a second per-locale
   value type here. Gen's `translated` shape kind (STA-1218) reads `Translated` and `TranslatedStrings` only.
+- Native language and region (ADR 0080, 2026-10-29 note): the pure deciders (`nativeSwitcherMode`, `startingLocale`,
+  `matchDeviceLocale`, `regionFormat`) are in `src/core/`; `src/native/` holds only what imports `react-native`. No Expo
+  library is imported here: an app passes expo-localization's values (`DeviceRegion` is their subset) and
+  expo-updates' reload in. The phone's language screen is opened, never imitated (ADR 0478).
 - `normalizeArabic` is the only Arabic normaliser; callers keep no copy (ADR 0080 note).
 
 ## Rules that fail the build

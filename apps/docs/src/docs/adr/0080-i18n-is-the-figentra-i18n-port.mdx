@@ -1,7 +1,19 @@
 ---
 title: "0080 — i18n is the ported Figentra i18n package; i18next is dropped"
-description: "Accepted, amended by 0268, 0305 · 2026-10-20 · amended 2026-10-24 (STA-456)"
+description: "Accepted, amended by 0268, 0305 · 2026-10-20 · amended 2026-10-24 (STA-456), 2026-10-29 (STA-1534)"
 ---
+
+<Note>
+  Amended 2026-10-29 (STA-1534, stackra-431): a native app follows the phone's language and region.
+  `I18nConfig.nativeSwitcher` says who owns the language choice: `system` (the default) opens the
+  phone's per-app language screen, and Android below 13 falls back to `in_app`, which switches in
+  place and reloads across right-to-left. Under `system` the phone's language always sets the first
+  locale; under `in_app` the stored choice does, then the phone's with `followDevice`. The choice is
+  stored to the account through the provider's `setLocale`. Region formats (dates, numbers, clock,
+  first weekday, units) and the time zone follow the phone's region, separate from its language,
+  with an account or business override. The `./native` entry holds the switcher; decisions 1 to 5
+  stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-456): `@stackra/i18n` owns the Arabic text normaliser as a pure function

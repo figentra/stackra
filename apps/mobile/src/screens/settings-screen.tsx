@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the Settings tab's screen, the app's settings and the native twin of the playground's Theme Studio:
- *          - Appearance: the colour scheme (System, Light, Dark) and the language with its direction.
+ *          - Appearance: the colour scheme (System, Light, Dark), the app language row that opens the phone's
+ *            language screen for this app (iOS, Android 13 and later), and the language with its direction.
  *          - Theme: a preset; the accent (on or off, a hue strip, its strength and a live swatch); the neutral hue and
  *            tint; the corner radius; the Latin and Arabic faces. Every change restyles the whole app at once.
  *          - Contrast: the main pairs of the theme on screen against WCAG 2.2 AA.
@@ -12,7 +13,7 @@
  *           scheme and the language are the design-system provider's (`useDesignSystem()`), shared with the review
  *           area's display settings, so native headers, the tab bar and the direction follow them too.
  * Runtime: react-native
- * Governing contract: ADR 0320 (the Theme Studio); ADR 0007 (documentation); WCAG 2.2 SC 1.3.1, 1.4.3, 4.1.2, 4.1.3.
+ * Governing contract: ADR 0320 (the Theme Studio); ADR 0080 (2026-10-29 note: the language follows the phone); ADR 0007 (documentation); WCAG 2.2 SC 1.3.1, 1.4.3, 4.1.2, 4.1.3.
  */
 import {
   exportThemeJson,
@@ -26,7 +27,7 @@ import { useDesignSystem } from "@stackra/ui/native";
 import Constants from "expo-constants";
 import { Button, Card, Label, Separator, Slider, Switch, TextArea, TextField } from "heroui-native";
 import { useState, type ReactNode } from "react";
-import { Share, Text, View } from "react-native";
+import { Linking, Platform, Share, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { Screen } from "../components/ui/screen";
@@ -41,6 +42,9 @@ const STRINGS = {
   appearance: "Appearance",
   scheme: "Colour scheme",
   schemes: { system: "System", light: "Light", dark: "Dark" },
+  appLanguage: "App language",
+  appLanguageNote: "Opens this app's page in the phone's Settings, where its language is chosen.",
+  openSettings: "Open Settings",
   language: "Language and direction",
   languages: { en: "English (LTR)", ar: "العربية (RTL)" },
   theme: "Theme",
@@ -85,6 +89,11 @@ const LANGUAGES = [
   { id: "en", label: STRINGS.languages.en },
   { id: "ar", label: STRINGS.languages.ar },
 ] as const;
+
+// shortcut: @stackra/i18n's nativeSwitcherMode (system; Android below 13 has no per-app language screen), inlined
+// until the app mounts I18nProvider with expo-localization; then the row is its <LanguageSwitcher />.
+/** Whether the phone has a language screen for this app. */
+const HAS_SYSTEM_LANGUAGE = Platform.OS !== "android" || Number(Platform.Version) >= 33;
 
 /** The accent the switch turns on when the knobs hold none, as the web studio's. */
 const DEFAULT_ACCENT = { hue: 248, chroma: 0.12 };
@@ -296,6 +305,22 @@ export function SettingsScreen() {
           value={colorScheme}
           onSelect={(id) => setColorScheme(id as (typeof SCHEMES)[number]["id"])}
         />
+        {HAS_SYSTEM_LANGUAGE ? (
+          <View className="gap-2">
+            <View className="flex-row items-center justify-between gap-3">
+              <Label>{STRINGS.appLanguage}</Label>
+              <Button
+                size="sm"
+                variant="secondary"
+                accessibilityHint={STRINGS.appLanguageNote}
+                onPress={() => void Linking.openSettings()}
+              >
+                {STRINGS.openSettings}
+              </Button>
+            </View>
+            <Text className="text-sm text-muted">{STRINGS.appLanguageNote}</Text>
+          </View>
+        ) : null}
         <Choice label={STRINGS.language} options={LANGUAGES} value={locale} onSelect={setLocale} />
       </Section>
 

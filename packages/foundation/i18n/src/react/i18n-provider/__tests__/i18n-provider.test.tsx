@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `I18nProvider`: it renders its children with the active locale's state (config from the
- *          container, the clock- and digit-aware Intl tag, the week start and clock with the configured override), the hooks under it read that state, the default `setLocale` rejects
+ *          container, the clock- and digit-aware Intl tag, the week start and clock with the configured override, a native region's formats and zone), the hooks under it read that state, the default `setLocale` rejects
  *          where the URL selects the locale, and both a missing provider and a missing container fail loudly.
  * Boundary: test only; renders with react-dom/server (no DOM needed).
  * Runtime: node (vitest)
@@ -14,9 +14,11 @@ import { describe, expect, it } from "@stackra/testing";
 import { renderToString } from "react-dom/server";
 
 import { I18nConfig } from "#config/i18n.config";
+import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { Locale } from "#core/enums/locale.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
 import type { LocaleFormat } from "#core/types/locale-format.type";
+import type { RegionFormat } from "#core/types/region-format.type";
 import { I18nProvider } from "#react/i18n-provider/i18n-provider";
 import type { I18nState } from "#react/i18n-provider/i18n-state.type";
 import { useI18nState } from "#react/i18n-provider/use-i18n-state";
@@ -82,6 +84,31 @@ describe("I18nProvider", () => {
     );
     expect(states[0]?.intlLocale).toBe("nl-u-hc-h23-nu-latn");
     expect(states[0]?.format).toEqual({ weekStart: 7, hourCycle: "h23" });
+  });
+
+  it("applies a native region's clock, week start, region subtag and zone over the locale's own", async () => {
+    const states: I18nState[] = [];
+    const region: RegionFormat = {
+      region: "DE",
+      measurementSystem: "metric",
+      timeZone: "Europe/Berlin",
+      weekStart: 1,
+      hourCycle: HourCycle.H23,
+    };
+    renderToString(
+      <ContainerProvider container={await containerWith(DutchClockConfig)}>
+        <I18nProvider locale={Locale.Nl} messages={{}} region={region}>
+          <Probe onState={(state) => states.push(state)} />
+        </I18nProvider>
+        <I18nProvider locale={Locale.Nl} messages={{}}>
+          <Probe onState={(state) => states.push(state)} />
+        </I18nProvider>
+      </ContainerProvider>,
+    );
+    expect(states[0]?.intlLocale).toBe("nl-DE-u-hc-h23-nu-latn");
+    expect(states[0]?.format).toEqual({ weekStart: 1, hourCycle: "h23" });
+    expect(states[0]?.timeZone).toBe("Europe/Berlin");
+    expect(states[1]?.timeZone).toBeNull();
   });
 
   it("rejects setLocale where the URL selects the locale, and uses the given setter otherwise", async () => {

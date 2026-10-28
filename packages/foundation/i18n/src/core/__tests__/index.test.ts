@@ -21,6 +21,7 @@ describe("@stackra/i18n", () => {
       "LengthUnit",
       "Locale",
       "LocaleUrlStrategy",
+      "NativeSwitcher",
       "NumberingSystem",
       "countryName",
       "formatAddress",
@@ -30,8 +31,12 @@ describe("@stackra/i18n", () => {
       "keys",
       "loadMessages",
       "localeFormat",
+      "matchDeviceLocale",
       "mergeCatalogues",
+      "nativeSwitcherMode",
       "normalizeArabic",
+      "regionFormat",
+      "startingLocale",
       "withDigits",
     ]);
   });

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `I18nState`, what `I18nProvider` puts in context for the hooks: the active locale, its catalogues, the
  *          resolved configuration, the locale's week start and clock, the Intl tag with the configured clock and
- *          digits, and the locale setter.
+ *          digits, the zone dates are shown in, and the locale
+ *          setter.
  * Boundary: type only; internal to the `./react` entry.
  * Runtime: isomorphic
  * Governing contract: ADR 0080, ADR 0192.
@@ -22,6 +23,9 @@ export interface I18nState {
 
   /** The active locale's week start and clock: its defaults with the configured override (a date picker reads it). */
   readonly format: LocaleFormat;
+
+  /** The IANA zone dates are shown in (a native app's `region`); `null` is the runtime's zone. */
+  readonly timeZone: string | null;
 
   /** The catalogues of the active locale, merged along its fallback chain. */
   readonly messages: Messages;

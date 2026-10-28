@@ -3,13 +3,13 @@
  * Purpose: `I18nOptions`, the options shape of `I18nConfig`: the shipped locales and the default, the right-to-left
  *          set, each locale's fallback chain, the digits, each locale's week start and clock overrides, how a locale
  *          appears in a URL, and the flags gen and the runtime read (`followDevice`, `scopeChoosesNumerals`,
- *          `failOnMissingLocale`, `cookieName`).
+ *          `failOnMissingLocale`, `cookieName`), and who owns a native app's language choice (`nativeSwitcher`).
  * Boundary: a shape class: fields, types, defaults and field rules only. The defaults are a launch member's (ADR 0080
  *           decision 2: English only, Latin digits); a member lists more locales in its `I18nConfig` override. The
  *           cross-field rules (the default and every fallback are shipped locales) live in `I18nConfig$`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 19), ADR 0080, ADR 0192, ADR 0297 (decision 4), ADR 0305 (conventions 1),
- *                     ADR 0403 (formats per locale).
+ *                     ADR 0403 (formats per locale), ADR 0080 (2026-10-29 note: nativeSwitcher).
  */
 import { Enum } from "@stackra/contracts";
 import { Field, List, Schema, Str } from "@stackra/validation";
@@ -18,6 +18,7 @@ import { z } from "zod";
 import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { Locale } from "#core/enums/locale.enum";
 import { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
+import { NativeSwitcher } from "#core/enums/native-switcher.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
 import type { LocaleFormat } from "#core/types/locale-format.type";
 
@@ -69,6 +70,13 @@ export class I18nOptions extends Schema {
 
   /** A native first launch takes the shipped locale closest to the device's. */
   followDevice = false;
+
+  /**
+   * Who owns a native app's language choice: the phone's per-app language screen (`system`, the default; Android
+   * below 13 falls back to `in_app`) or a list in the app that switches in place (`in_app`: tills, kiosks, shared
+   * devices). The web ignores it.
+   */
+  nativeSwitcher: NativeSwitcher = NativeSwitcher.System;
 
   /** A scope setting may switch Arabic text to Arabic-Indic digits (ADR 0192). */
   scopeChoosesNumerals = false;

@@ -18,6 +18,7 @@ import { z } from "zod";
 import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { Locale } from "#core/enums/locale.enum";
 import { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
+import { NativeSwitcher } from "#core/enums/native-switcher.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
 
 /** One locale code. */
@@ -54,6 +55,7 @@ export const I18nConfig$ = z.object({
     .enum(Enum.values(LocaleUrlStrategy))
     .default(LocaleUrlStrategy.PrefixExceptDefault),
   followDevice: z.boolean().default(false),
+  nativeSwitcher: z.enum(Enum.values(NativeSwitcher)).default(NativeSwitcher.System),
   scopeChoosesNumerals: z.boolean().default(false),
   failOnMissingLocale: z.boolean().default(false),
   cookieName: z

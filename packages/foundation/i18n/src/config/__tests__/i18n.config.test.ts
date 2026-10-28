@@ -55,6 +55,7 @@ describe("I18nConfig", () => {
       formats: {},
       urlStrategy: "prefix_except_default",
       followDevice: false,
+      nativeSwitcher: "system",
       scopeChoosesNumerals: false,
       failOnMissingLocale: false,
       cookieName: "locale",
@@ -131,6 +132,11 @@ describe("I18nConfig", () => {
     });
     expect(I18nConfig$.safeParse({ formats: { en: { weekStart: 8 } } }).success).toBe(false);
     expect(I18nConfig$.safeParse({ formats: { en: { hourCycle: "h24" } } }).success).toBe(false);
+  });
+
+  it("takes the native switcher mode and refuses an unknown one", () => {
+    expect(I18nConfig$.parse({ nativeSwitcher: "in_app" }).nativeSwitcher).toBe("in_app");
+    expect(I18nConfig$.safeParse({ nativeSwitcher: "phone" }).success).toBe(false);
   });
 
   it("allows right-to-left locales the member does not ship", () => {
