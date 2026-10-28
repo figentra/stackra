@@ -4,12 +4,12 @@
  * Purpose: the architecture map generator (STA-1373 part 2): reads every workspace member's package.json `stackra`
  *          field and turbo.jsonc tags (tier, category, runtimes) and the service client call edges of the repo's
  *          `stackra.graph.json` (gen's system graph, ADR 0452), and writes the archify architecture candidate
- *          `architecture-map.yaml` beside this file, deterministically. Run with no flag it writes the candidate and
- *          renders it with the vendored archify skill into `src/assets/architecture-map.html`; `--check` (and
+ *          `apps/docs/scripts/architecture-map/architecture-map.yaml`, deterministically. Run with no flag it writes the candidate and
+ *          renders it with the vendored archify skill into `apps/docs/src/assets/architecture-map.html`; `--check` (and
  *          `architectureMapFindings`, run by `pnpm validate`) fails when the committed candidate differs from what
  *          this script would write now. archify only draws: every rule stays in validate, oxlint, turbo boundaries
  *          and gen.
- * Boundary: reads the workspace, writes only `architecture-map.yaml`, a JSON copy for archify under
+ * Boundary: reads the workspace, writes only `architecture-map.yaml`, a JSON copy and archify's delivery receipt under
  *           node_modules/.cache, and (through archify) the HTML asset. One box per
  *           app, service and worker member; one box per category for library and config tiers; one region per tier.
  * Runtime: node
@@ -17,15 +17,15 @@
  * Owner: release-operations · Secrets: forbidden
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
 import { parse, stringify } from "yaml";
 
-import { stripJsonc } from "../../../../tools/scripts/jsonc.mjs";
-import { readWorkspaceMembers } from "../../../../tools/scripts/package-cycles.mjs";
+import { stripJsonc } from "./jsonc.mjs";
+import { readWorkspaceMembers } from "./package-cycles.mjs";
 
 // oxlint-disable stackra/one-declaration-per-file -- reason: a plain-node script module run by pnpm validate, not member source (like spec-parse.mjs); its tests import these names
 
@@ -35,7 +35,7 @@ export const MAP_SOURCE = "apps/docs/scripts/architecture-map/architecture-map.y
 /** The header of the committed candidate. */
 const MAP_HEADER = `# Stackra file contract:
 # Purpose: the archify architecture candidate of the Stackra architecture map (STA-1373), GENERATED.
-# Boundary: never edit it; run \`node apps/docs/scripts/architecture-map/architecture-map.mjs\` and commit it with
+# Boundary: never edit it; run \`node tools/scripts/architecture-map.mjs\` and commit it with
 #           apps/docs/src/assets/architecture-map.html. pnpm validate fails when it drifts.
 # Runtime: none
 # Governing contract: ADR 0452; STA-1373.
@@ -48,7 +48,7 @@ export const MAP_OUTPUT = "apps/docs/src/assets/architecture-map.html";
 const ARCHIFY = ".agents/skills/archify/bin/archify.mjs";
 
 /** The command that regenerates the map, for findings and docs. */
-export const MAP_COMMAND = "node apps/docs/scripts/architecture-map/architecture-map.mjs";
+export const MAP_COMMAND = "node tools/scripts/architecture-map.mjs";
 
 /** The tiers in drawing order: region label, and whether each member gets its own box (else one per category). */
 const TIERS = [
@@ -58,8 +58,12 @@ const TIERS = [
   { tier: "config", label: "tier:config (one box per category)", perMember: false },
 ];
 
-/** Grid columns; 6 cells of 150px keep the canvas under archify's 1240px readable width. */
-const COLS = 6;
+/** Grid columns and cell width: 4 cells of 220px stay under archify's 1240px readable width; a 200px box keeps ~180px of
+ *  sublabel, enough for the longest runtime list ("browser, isomorphic, node, react-native, worker" needs ~170px). */
+const COLS = 4;
+const CELL_W = 220;
+/** The box size: its cell less a 20px gutter (archify's default box is 130px wide, ~112px of sublabel). */
+const BOX_SIZE = [200, 64];
 
 /** The checks that hold each rule; archify draws, these refuse. */
 const ENFORCEMENT = [
@@ -172,6 +176,7 @@ export function renderArchitectureMap({ members, calls }) {
         tag: perMember ? group[0].name : `${group.length} package${group.length === 1 ? "" : "s"}`,
         row: row + Math.floor(position / COLS),
         col: position % COLS,
+        size: BOX_SIZE,
       });
       ids.push(id);
       for (const member of group) boxOf.set(member.name, id);
@@ -224,7 +229,7 @@ export function renderArchitectureMap({ members, calls }) {
       mode: "grid",
       origin: [40, 80],
       cols: COLS,
-      cellW: 150,
+      cellW: CELL_W,
       cellH: 64,
       gapX: 30,
       gapY: 80,
@@ -259,7 +264,7 @@ export function architectureMapFindings(root) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const root = fileURLToPath(new URL("../../../../", import.meta.url));
+  const root = fileURLToPath(new URL("../../", import.meta.url));
   if (process.argv.includes("--check")) {
     const findings = architectureMapFindings(root);
     for (const { dir, text } of findings) console.error(`${dir}: ${text}`);
@@ -287,5 +292,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ],
     { cwd: root, stdio: "inherit" },
   );
+  // archify writes its delivery receipt (absolute paths, a random id) beside the HTML; keep it out of the served assets.
+  const receipt = join(root, MAP_OUTPUT.replace(/\.html$/, ".delivery.json"));
+  if (existsSync(receipt)) renameSync(receipt, join(outDir, "architecture-map.delivery.json"));
   process.exit(run.status ?? 1);
 }

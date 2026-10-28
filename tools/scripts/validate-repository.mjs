@@ -6,7 +6,7 @@
  *          placement, tier tags, presets, required files, forbidden dependencies, service shape, test placement,
  *          JSON vs JSONC, runway schemas and files, YAML flow maps, imports, the Expo form factor, window sizing and the
  *          lang catalogues). `stackra check --only config,structure,catalogues` runs the same checks. Also runs the
- *          package-cycle check (`package-cycles.mjs`) and the architecture map drift check (apps/docs
+ *          package-cycle check (`package-cycles.mjs`) and the architecture map drift check (`architecture-map.mjs`, its candidate in apps/docs
  *          `scripts/architecture-map`), STA-1373, and the duplicate-export check (`duplicate-exports.mjs`, stackra-224).
  *          Prints the findings as `<dir>: <finding>` and exits 1; prints nothing on success.
  * Boundary: a thin wrapper; the checks themselves are @stackra/repo-checks'.
@@ -17,7 +17,7 @@
  */
 import { fileURLToPath } from "node:url";
 
-import { architectureMapFindings } from "../../apps/docs/scripts/architecture-map/architecture-map.mjs";
+import { architectureMapFindings } from "./architecture-map.mjs";
 import { duplicateExportFindings } from "./duplicate-exports.mjs";
 import { packageCycleFindings } from "./package-cycles.mjs";
 import { checks } from "./repo-checks.mjs";

@@ -33,10 +33,10 @@ Mintlify documentation site. Tier tag `tier:app`.
 
 ## Architecture map (`scripts/architecture-map/`)
 
-- `architecture-map.mjs` generates `architecture-map.yaml` (an archify architecture candidate) from the members'
+- `tools/scripts/architecture-map.mjs` (root script: it needs the root `yaml` and the shared script helpers) generates `architecture-map.yaml` (an archify architecture candidate) from the members'
   `stackra` field, `turbo.jsonc` tags and the root `stackra.graph.json`, and renders `src/assets/architecture-map.html`
   with `.agents/skills/archify`. Both files are generated: never edit them; run
-  `node apps/docs/scripts/architecture-map/architecture-map.mjs` from the root and commit both.
+  `node tools/scripts/architecture-map.mjs` from the root and commit both.
 - `pnpm validate` fails when the committed candidate drifts. Tests are in `tools/scripts/__tests__/architecture-map.test.mjs`
   (node:test, run by `pnpm validate`).
 - The map draws; it never decides. A rule goes in validate, oxlint, turbo boundaries or gen, not in the generator.

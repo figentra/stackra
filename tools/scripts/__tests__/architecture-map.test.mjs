@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: hold the architecture map generator (apps/docs/scripts/architecture-map) to its contract: inputs from the
+ * Purpose: hold the architecture map generator (tools/scripts/architecture-map.mjs) to its contract: inputs from the
  *          `stackra` field and turbo.jsonc tags plus gen's call edges; a deterministic archify candidate (one region
  *          per tier, one box per app, service and worker member, one per library category); the drift check passes
  *          on a freshly written map and fails on the placeholder or a stale one.
@@ -19,7 +19,7 @@ import {
   architectureMapFindings,
   readArchitectureInputs,
   renderArchitectureMap,
-} from "../../../apps/docs/scripts/architecture-map/architecture-map.mjs";
+} from "../architecture-map.mjs";
 
 const write = (root, path, text) => {
   mkdirSync(dirname(join(root, path)), { recursive: true });

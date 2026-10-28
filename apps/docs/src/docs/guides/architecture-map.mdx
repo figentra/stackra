@@ -4,7 +4,7 @@ description: "Every member by tier, category and runtime, and the client calls b
 icon: "network"
 ---
 
-{/* Stackra file contract: Purpose: the architecture map page, embedding the archify rendering of the workspace (tiers, categories, runtimes, service client calls) and saying which check holds each rule. Boundary: shows the generated map; the generator is apps/docs/scripts/architecture-map/architecture-map.mjs and every rule is held by validate, oxlint, turbo boundaries or gen, never by the map. Runtime: docs. Governing contract: ADR 0003; ADR 0452; STA-1373. */}
+{/* Stackra file contract: Purpose: the architecture map page, embedding the archify rendering of the workspace (tiers, categories, runtimes, service client calls) and saying which check holds each rule. Boundary: shows the generated map; the generator is tools/scripts/architecture-map.mjs and every rule is held by validate, oxlint, turbo boundaries or gen, never by the map. Runtime: docs. Governing contract: ADR 0003; ADR 0452; STA-1373. */}
 
 The map is generated, never drawn by hand. It reads each member's `package.json` `stackra` field and `turbo.jsonc`
 tags (tier, category, runtimes) and the client call edges of the repository's `stackra.graph.json` (the system graph
@@ -23,7 +23,7 @@ already hold their direction.
 ## Regenerate it
 
 ```bash
-node apps/docs/scripts/architecture-map/architecture-map.mjs
+node tools/scripts/architecture-map.mjs
 ```
 
 The command writes `apps/docs/scripts/architecture-map/architecture-map.yaml` (the archify candidate, YAML; archify gets a JSON copy) and renders it
