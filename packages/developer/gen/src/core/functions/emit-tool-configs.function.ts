@@ -3,8 +3,8 @@
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
  *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database` or
- *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` so a test file's
- *          top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model; and the root
+ *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` (from
+ *          the working directory, the member root vitest runs in) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model; and the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
  *          (STA-1296).
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
@@ -125,7 +125,6 @@ export function emitToolConfigs(
       boundary: "loaded by Vitest before every test file; a server never loads it.",
       runtime: "node",
     }),
-    ...(container ? ['import { fileURLToPath } from "node:url";', ""] : []),
     // The memory database driver and `app.repository(...)`, when the member runs on the database.
     ...(ir.packages?.includes("@stackra/database") === true
       ? ['import "@stackra/database/testing";']
@@ -140,7 +139,9 @@ export function emitToolConfigs(
     ...(container
       ? [
           "registerWiring(wiring);",
-          'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
+          // The working directory: vitest runs in the member root, and its transform gives `import.meta.url` no
+          // file: scheme here.
+          "await loadMemberSchemas();",
         ]
       : []),
     ...(pairs.length > 0 ? ["registerModelPartners([", ...pairs, "]);"] : []),

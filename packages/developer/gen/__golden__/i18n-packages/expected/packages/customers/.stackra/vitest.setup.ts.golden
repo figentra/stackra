@@ -5,11 +5,9 @@
  * Boundary: loaded by Vitest before every test file; a server never loads it.
  * Runtime: node
  */
-import { fileURLToPath } from "node:url";
-
 import "@stackra/clients/testing";
 import { wiring } from "#stackra/wiring";
 import { loadMemberSchemas, registerWiring } from "@stackra/container/testing";
 
 registerWiring(wiring);
-await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));
+await loadMemberSchemas();

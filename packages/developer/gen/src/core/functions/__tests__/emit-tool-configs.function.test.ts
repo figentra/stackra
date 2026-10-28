@@ -58,9 +58,8 @@ describe("emitToolConfigs", () => {
     );
     expect(setup).toContain('import { registerModelPartners } from "@stackra/database";');
     expect(setup).toContain("registerWiring(wiring);");
-    expect(setup).toContain(
-      'await loadMemberSchemas(fileURLToPath(new URL("..", import.meta.url)));',
-    );
+    expect(setup).toContain("await loadMemberSchemas();");
+    expect(setup).not.toContain("import.meta.url");
     expect(setup).toContain("registerModelPartners([\n  [InvoiceFactory, Invoice],\n]);");
   });
 
