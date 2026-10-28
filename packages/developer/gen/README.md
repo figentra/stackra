@@ -336,7 +336,8 @@ Settings.pick([Settings.orders.customersMayCancel])` compiles to an ordinary `Or
   file and typing `handle` with it; the wire name (`<module>.<name>.v<n>`, ADR 0141) comes from the producer's
   manifest. There is no wire-name subscription: an event the producer does not publish is `client_event_unknown`, and a
   `handle` parameter that is no event class is `listener_handle_signature`. A service consumed only by a listener still
-  gets its client file. The registrations then name the event's wire name (so the inbox rebuilds it) and the pair:
+  gets its client file. The registrations then name the event's wire name (so the inbox rebuilds it) and the pair; both
+  calls come from `@stackra/events` (STA-1387: below `@stackra/actions`, so no member needs the outbox to register):
 
   ```ts
   import type { AppApproved } from "#stackra/clients/developer";

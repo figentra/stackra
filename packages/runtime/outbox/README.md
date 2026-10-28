@@ -28,7 +28,7 @@ backoff retries and dead letters; the inbox runs each received event once.
 | `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox           |
 | `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                       |
 | `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                              |
-| `registerEventNames`                                                   | `.`           | gen's entry registers each integration event's locked wire name                |
+| `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from |
 | `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`   |
 | `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]`                      |
 | `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know   |

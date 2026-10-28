@@ -16,7 +16,8 @@
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
  *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
  *                     (decision 5); ADR 0342 (decision 5: registered sequences); ADR 0260 (decision 4: typed
- *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities).
+ *                     subscriptions by import; a relay is the one all-events listener); ADR 0215 and STA-903 (entitlement rows); ADR 0336 (a model addition module loads its side-table entities); STA-1387
+ *                     (`registerEventNames` from @stackra/events, below @stackra/actions: no package cycle).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -165,7 +166,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     if (entry !== undefined && typeof entry["name"] === "string")
       remote.set(ref(event), `{ type: ${ref(event)}, name: ${JSON.stringify(entry["name"])} }`);
   }
-  call("registerEventNames", "@stackra/outbox", [...events.map(eventRow), ...remote.values()]);
+  call("registerEventNames", "@stackra/events", [...events.map(eventRow), ...remote.values()]);
   call(
     "registerListeners",
     "@stackra/events",

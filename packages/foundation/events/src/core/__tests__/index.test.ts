@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/events`
  *          (`AnalyticsEvent`, `BroadcastAudience`, `DomainEvent`, `IntegrationEvent`, `Listener`, `WebhookEvent`) and
- *          the registry row's runtime (`Event`, `EventBus`, recording, `registerListeners`, `crossRegionRecords`) are
+ *          the registry row's runtime (`Event`, `EventBus`, recording, `registerListeners`, `registerEventNames` and `EVENT_NAMES`, `crossRegionRecords`) are
  *          exported, nothing else is, the `./contracts` symbols are not, and the public types (`ListenerContext`
  *          among them) resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -33,6 +33,7 @@ describe("@stackra/events", () => {
       "AnalyticsEvent",
       "BroadcastAudience",
       "DomainEvent",
+      "EVENT_NAMES",
       "Event",
       "EventBus",
       "IntegrationEvent",
@@ -40,6 +41,7 @@ describe("@stackra/events", () => {
       "WebhookEvent",
       "crossRegionRecords",
       "recordEvent",
+      "registerEventNames",
       "registerListeners",
       "takeRecordedEvents",
     ]);

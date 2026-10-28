@@ -34,6 +34,9 @@ Event and listener kind bases, the in-process bus and the event testing helpers.
 ## This package
 
 - A listener's `retry` is the contracts `RetryPolicy`; never declare a retry type here (stackra-223).
+- `registerEventNames` and `EVENT_NAMES` (the integration events' wire names, both ways) live here, below
+  @stackra/actions, so a package below the outbox registers its events without a package cycle (STA-1387); gen's
+  registrations import them from here and @stackra/outbox re-exports them for its writers and inbox. Keep them here.
 - A subscription is a class, never a wire name: `registerListeners` and `EventBus#subscribe` take any class, so a
   consumed service's generated event class (typed by its payload) stands beside a local one (ADR 0260 decision 4).
 - `connect(container)` and `disconnect()` are called by the generated boot only (ADR 0263); `disconnect` removes the

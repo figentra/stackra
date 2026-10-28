@@ -30,6 +30,7 @@ those import it (ADR 0305 rule 20).
 | `.`           | `EventBus`                                                                     | the in-process bus the unit of work, relay and inbox use            |
 | `.`           | `recordEvent`, `takeRecordedEvents`                                            | recording beside an aggregate, taken at commit                      |
 | `.`           | `registerListeners`                                                            | the event-to-listener pairs gen writes                              |
+| `.`           | `registerEventNames`, `EVENT_NAMES`                                            | the integration events' locked wire names gen writes (STA-1387)     |
 | `.`           | `crossRegionRecords`                                                           | the records of a batch the relay sends to the other regions         |
 | `./contracts` | `EventOutbox`, `EventMeta`, `RecordedEvent`                                    | the outbox port and the occurrence types                            |
 | `./contracts` | `RegionBus`                                                                    | the port that carries platform events to the other regions          |

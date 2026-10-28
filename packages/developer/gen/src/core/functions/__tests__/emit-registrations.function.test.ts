@@ -10,7 +10,7 @@
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
- *                     ADR 0342; ADR 0260 (decision 4).
+ *                     ADR 0342; ADR 0260 (decision 4); STA-1387 (event names from @stackra/events).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -80,6 +80,10 @@ describe("emitRegistrations", () => {
       'registerOutboundWebhooks([\n  { type: InvoiceIssued, name: "billing.invoice.issued.v2" },\n]);',
     );
     expect(billing).toContain('import { registerOutboundWebhooks } from "@stackra/webhooks/node";');
+    // Event names register through @stackra/events, below @stackra/actions, so a package below the outbox needs no
+    // outbox dependency (STA-1387).
+    expect(billing).toMatch(/import \{[^}]*registerEventNames[^}]*\} from "@stackra\/events";/);
+    expect(billing).not.toContain("@stackra/outbox");
   });
 
   it("registers connections, webhook events, sequences and searchable models", () => {
@@ -161,6 +165,7 @@ describe("emitRegistrations for listeners", () => {
       'registerEventNames([\n  { type: OrderPaid, name: "orders.order.paid.v1" },\n]);',
     );
     expect(content).toContain('import { OrderPaid } from "#stackra/clients/commerce";');
+    expect(content).not.toMatch(/import \{[^}]*registerEventNames[^}]*\} from "@stackra\/outbox";/);
   });
 
   it("registers each listener with the event class it imports", () => {
@@ -172,7 +177,9 @@ describe("emitRegistrations for listeners", () => {
         "]);",
       ].join("\n"),
     );
-    expect(content).toContain('import { registerListeners } from "@stackra/events";');
+    expect(content).toContain(
+      'import { registerEventNames, registerListeners } from "@stackra/events";',
+    );
   });
 
   it("registers a relay listener, which takes every envelope", () => {
