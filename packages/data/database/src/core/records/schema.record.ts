@@ -4,12 +4,12 @@
  *          them to steps, one transactional step first and then each online statement as its own step, each with
  *          its derived inverse.
  * Boundary: internal. Raw statements keep the inverse the migration stated; a `CONCURRENTLY` statement becomes its
- *           own non-transactional step. Extensions are the ADR 0160 list only; an ICU collation is created
- *           in the module's schema. A raw `CREATE SEQUENCE` is refused: a document number is a `Sequence` (ADR 0342
- *           d5), and an id is a public id, so no migration needs one.
+ *           own non-transactional step. Extensions are the ADR 0160 list and PostGIS (ADR 0314) only; an ICU
+ *           collation is created in the module's schema. A raw `CREATE SEQUENCE` is refused: a document number is a
+ *           `Sequence` (ADR 0342 d5), and an id is a public id, so no migration needs one.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes); ADR 0160 (approved extensions); ADR
- *                     0342 (decision 5) and ADR 0394 (decision 3: no Postgres sequence).
+ *                     0314 (PostGIS); ADR 0342 (decision 5) and ADR 0394 (decision 3: no Postgres sequence).
  */
 import { Enum } from "@stackra/contracts";
 

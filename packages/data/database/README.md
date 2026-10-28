@@ -106,7 +106,7 @@ export class CreateOrdersMigration extends Migration {
 `compileMigration(Class, { schema, createsSchema, macros })` turns it into ordered SQL steps with dev-only inverses.
 It refuses a column without explicit nullability or a comment, a NOT NULL column added without a default, an index on
 an existing table that is not `concurrently()` (which compiles to its own non-transactional step), a concurrent index on
-a new table, an extension outside ADR 0160's five, and a raw `schema.sql` without its `inverse`. A package's `Macro`
+a new table, an extension outside ADR 0160's five and PostGIS (ADR 0314), and a raw `schema.sql` without its `inverse`. A package's `Macro`
 merges into `Blueprint` (gen writes the type) and is installed by name.
 
 ### Changing a column
