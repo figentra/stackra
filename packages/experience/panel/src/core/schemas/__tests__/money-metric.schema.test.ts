@@ -15,13 +15,13 @@ import { MoneyMetric } from "#core/schemas/money-metric.schema";
 describe("MoneyMetric", () => {
   it("builds from a sum in one currency", () => {
     const metric = MoneyMetric.from(
-      { current: 5_000, previous: 4_000 },
+      { current: 5000, previous: 4000 },
       { currency: "USD", target: 10_000 },
     );
     expect(metric).toBeInstanceOf(MoneyMetric);
     expect(metric).toMatchObject({
-      value: 5_000,
-      previous: 4_000,
+      value: 5000,
+      previous: 4000,
       series: null,
       target: 10_000,
       currency: "USD",

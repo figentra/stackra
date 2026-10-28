@@ -24,7 +24,7 @@ class ProductImagesBucket extends Bucket({
   accept: [MediaType.Jpeg, MediaType.Png, MediaType.Webp],
   variants: {
     card: { width: 600 },
-    zoom: { width: 1_600 },
+    zoom: { width: 1600 },
   },
 }) {}
 
@@ -45,7 +45,7 @@ describe("Bucket", () => {
         visibility: "public",
         maxBytes: 5_000_000,
         accept: ["image/jpeg", "image/png", "image/webp"],
-        variants: { card: { width: 600 }, zoom: { width: 1_600 } },
+        variants: { card: { width: 600 }, zoom: { width: 1600 } },
       },
     });
     expect(new ProductImagesBucket()).toBeInstanceOf(BucketBase);

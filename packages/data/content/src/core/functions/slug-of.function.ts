@@ -32,7 +32,7 @@ export function slugOf(title: string): string {
     .replace(ARABIC_MARKS, "")
     .toLocaleLowerCase("en-US")
     .replace(SEPARATORS, "-")
-    .replace(/^-+|-+$/g, "")
+    .replaceAll(/^-+|-+$/g, "")
     .slice(0, MAX_LENGTH)
     .replace(/-+$/, "");
   if (slug === "") throw new RangeError(`"${title}" has no letter or digit to make a slug of`);

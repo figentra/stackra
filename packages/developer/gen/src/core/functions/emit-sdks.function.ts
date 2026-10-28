@@ -141,17 +141,22 @@ function tsType(node: unknown, named: ReadonlyMap<string, string>): string {
   if (Array.isArray(type))
     return type.map((item) => tsType({ ...node, type: item }, named)).join(" | ");
   switch (type) {
-    case "string":
+    case "string": {
       return "string";
+    }
     case "integer":
-    case "number":
+    case "number": {
       return "number";
-    case "boolean":
+    }
+    case "boolean": {
       return "boolean";
-    case "null":
+    }
+    case "null": {
       return "null";
-    case "array":
+    }
+    case "array": {
       return `Array<${tsType(node["items"], named)}>`;
+    }
     case "object": {
       const properties = isObject(node["properties"]) ? node["properties"] : undefined;
       if (properties === undefined)
@@ -163,8 +168,9 @@ function tsType(node: unknown, named: ReadonlyMap<string, string>): string {
       );
       return `{ ${fields.join("; ")} }`;
     }
-    default:
+    default: {
       return "unknown";
+    }
   }
 }
 

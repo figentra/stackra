@@ -119,7 +119,7 @@ export class FacturXDriver extends Driver(FiscalDriver) {
     const options = parseOptions(FACTUR_X_OPTIONS, context.options, this.key);
     const buyer = document.buyer;
     if (!buyer) throw FiscalDocumentInvalidError.create({ driver: this.key, field: "buyer" });
-    const date = (instant: Date) => zonedTime(instant, options.timeZone).date.replace(/-/g, "");
+    const date = (instant: Date) => zonedTime(instant, options.timeZone).date.replaceAll("-", "");
     const payload = renderXml(
       xmlElement(
         "rsm:CrossIndustryInvoice",
@@ -296,7 +296,7 @@ export class FacturXDriver extends Driver(FiscalDriver) {
     return {
       status: taken ? FiscalRecordStatus.Submitted : FiscalRecordStatus.Rejected,
       authorityReference: null,
-      message: taken ? null : response.body.slice(0, 1_000) || `HTTP ${response.status}`,
+      message: taken ? null : response.body.slice(0, 1000) || `HTTP ${response.status}`,
       payload: null,
     };
   }

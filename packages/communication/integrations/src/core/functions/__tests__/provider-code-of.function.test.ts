@@ -25,7 +25,7 @@ describe("providerCodeOf", () => {
     expect(providerCodeOf({ error: { type: "card_error", code: "card_declined" } })).toBe(
       "card_declined",
     );
-    expect(providerCodeOf({ code: 20003 })).toBe("20003");
+    expect(providerCodeOf({ code: 20_003 })).toBe("20003");
   });
 
   it("takes no sentence and nothing from a non-object", () => {

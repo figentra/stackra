@@ -100,8 +100,8 @@ describe("MarketContext", () => {
     const error: unknown = (() => {
       try {
         return context.packFor({ scope: "xa-one" }, "registration.threshold");
-      } catch (caught) {
-        return caught;
+      } catch (caughtError) {
+        return caughtError;
       }
     })();
     expect(isRefusal(error, SubjectMarketMissingError) && [error.subject, error.ruleKind]).toEqual([

@@ -19,7 +19,7 @@ import type { DisputeCase } from "#testing/dispute-case.type";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 import { runDisputeCase } from "#testing/run-dispute-case.function";
 
-const amount = Money.ofMinor(5_000, "SAR");
+const amount = Money.ofMinor(5000, "SAR");
 
 /** The fake with payment `fake_ord_1` disputed as `dp_1`. */
 async function disputed(): Promise<PaymentGatewayFake> {
@@ -105,7 +105,7 @@ describe("runDisputeCase", () => {
       recorded("read", {
         status: DisputeStatus.Won,
         paymentRef: "pay_9",
-        amount: Money.ofMinor(4_000, "SAR"),
+        amount: Money.ofMinor(4000, "SAR"),
         reason: "not_received",
         respondBy: new Date("2026-11-10T00:00:00Z"),
       }),

@@ -144,7 +144,7 @@ describe("observabilityPlan", () => {
         services: ["commerce"],
         heartbeats: [
           { service: "commerce", kind: HeartbeatKind.Worker, name: "queue", periodSeconds: 60 },
-          { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 3_600 },
+          { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 3600 },
         ],
       },
     );

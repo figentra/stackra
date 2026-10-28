@@ -19,6 +19,8 @@ export function memberPath(key: string): string {
     .replace(/@\d+$/, "")
     .split(".")
     .slice(-2)
-    .map((segment) => segment.replace(/_([a-z0-9])/g, (_, letter: string) => letter.toUpperCase()))
+    .map((segment) =>
+      segment.replaceAll(/_([a-z0-9])/g, (_, letter: string) => letter.toUpperCase()),
+    )
     .join(".");
 }

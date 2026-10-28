@@ -35,7 +35,7 @@ export function renderOpenCode(
   for (const document of documents) {
     const comment = provenanceComment(generator, `${document.kind} "${document.name}"`);
     switch (document.kind) {
-      case "rule":
+      case "rule": {
         if (document.always || document.globs.length > 0) {
           skipped.push({
             kind: document.kind,
@@ -47,10 +47,12 @@ export function renderOpenCode(
         }
         files.push(skillFile(document.name, document.description, comment, document.body));
         break;
-      case "skill":
+      }
+      case "skill": {
         files.push(skillFile(document.name, document.description, comment, document.body));
         break;
-      case "subagent":
+      }
+      case "subagent": {
         files.push({
           path: `agents/${document.name}.md`,
           content: composeMarkdown(
@@ -64,19 +66,22 @@ export function renderOpenCode(
           ),
         });
         break;
-      case "command":
+      }
+      case "command": {
         files.push({
           path: `commands/${document.name}.md`,
           content: composeMarkdown({ description: document.description }, comment, document.body),
         });
         break;
-      case "hook":
+      }
+      case "hook": {
         skipped.push({
           kind: document.kind,
           name: document.name,
           reason: "OpenCode hooks are plugins written in code; it has no hook file",
         });
         break;
+      }
     }
   }
   return { files, skipped };

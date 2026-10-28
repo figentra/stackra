@@ -104,7 +104,7 @@ export function expoConfigOf(
     slug: `${input.project}-${input.app}`,
     ...(identity.scheme === undefined ? {} : { scheme: identity.scheme }),
     // The template line is the native line: an update only reaches binaries built from the same line.
-    runtimeVersion: entry.template.replace(/[^A-Za-z0-9._+-]+/g, "-"),
+    runtimeVersion: entry.template.replaceAll(/[^A-Za-z0-9._+-]+/g, "-"),
     ...(projectId === undefined
       ? {}
       : { updates: { ...blockOf(base["updates"]), url: `https://u.expo.dev/${projectId}` } }),

@@ -44,30 +44,38 @@ export async function authenticBody(
   const recipe = webhooks.recipe ?? {};
   let verified: boolean;
   switch (webhooks.scheme) {
-    case SignatureScheme.Hmac:
+    case SignatureScheme.Hmac: {
       verified =
         webhooks.signature !== undefined &&
         (await verifyHmacWebhook(headers, body, webhooks.signature, secrets, now));
       break;
-    case SignatureScheme.AesGcmBody:
+    }
+    case SignatureScheme.AesGcmBody: {
       return decryptAesGcmBody(request, recipe, secrets);
-    case SignatureScheme.BodyToken:
+    }
+    case SignatureScheme.BodyToken: {
       verified = await verifyBodyToken(request, recipe, secrets);
       break;
-    case SignatureScheme.OrderedFieldHmac:
+    }
+    case SignatureScheme.OrderedFieldHmac: {
       verified = await verifyOrderedFieldHmac(request, recipe, secrets);
       break;
-    case SignatureScheme.KeyedFieldDigest:
+    }
+    case SignatureScheme.KeyedFieldDigest: {
       verified = await verifyKeyedFieldDigest(request, recipe, secrets);
       break;
-    case SignatureScheme.SharedHeader:
+    }
+    case SignatureScheme.SharedHeader: {
       verified = await verifySharedHeader(request, recipe, secrets);
       break;
-    case SignatureScheme.JwtHs256:
+    }
+    case SignatureScheme.JwtHs256: {
       verified = await verifyJwtHs256(request, recipe, secrets, now);
       break;
-    default:
+    }
+    default: {
       verified = await verifyWebhook(headers, body, secrets, now);
+    }
   }
   return verified ? body : undefined;
 }

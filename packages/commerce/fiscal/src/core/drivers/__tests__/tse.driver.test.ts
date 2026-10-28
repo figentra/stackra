@@ -85,7 +85,7 @@ describe("TseDriver#seal", () => {
     const device = tse();
     const note = fiscalDocument({
       kind: FiscalDocumentKind.CreditNote,
-      payments: [{ method: "card", amount: Money.ofMinor(3_500, "USD") }],
+      payments: [{ method: "card", amount: Money.ofMinor(3500, "USD") }],
     });
     const sealed = await new TseDriver(device).seal(note, context);
     expect(sealed.payload).toBe("Beleg^-24.00_-11.00_0.00_0.00_0.00^-35.00:Unbar:USD");

@@ -152,7 +152,7 @@ describe("retry", () => {
     const sent = send(new Request(url, { signal: controller.signal }));
     setTimeout(() => controller.abort(), 5);
     const started = Date.now();
-    const error: unknown = await sent.catch((caught) => caught);
+    const error: unknown = await sent.catch((caughtError) => caughtError);
     expect((error as Error).name).toBe("AbortError");
     expect(Date.now() - started).toBeLessThan(5000);
     expect(bodies).toHaveLength(1);

@@ -11,6 +11,6 @@ import { z } from "zod";
 
 /** The tiers section's shape and defaults. */
 export const LOYALTY_TIER_SETTINGS_SCHEMA = z.object({
-  silverFrom: z.number().int().min(0).default(1_000),
-  goldFrom: z.number().int().min(0).default(5_000),
+  silverFrom: z.number().int().min(0).default(1000),
+  goldFrom: z.number().int().min(0).default(5000),
 });

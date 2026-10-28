@@ -18,7 +18,7 @@ const record: PaymentRecord = {
   reference: "ord_1",
   provider: "fake",
   connectionId: "conn_1",
-  amount: Money.ofMinor(1_000, "SAR"),
+  amount: Money.ofMinor(1000, "SAR"),
   refunded: Money.zero("SAR"),
   status: PaymentStatus.Pending,
   updatedAt: new Date("2026-10-25T00:00:00Z"),

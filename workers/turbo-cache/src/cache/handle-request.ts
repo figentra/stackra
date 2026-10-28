@@ -110,10 +110,12 @@ export async function handleTurboCacheRequest(
         ? new Response(object.body, { status: 200, headers: artifactHeaders(object) })
         : fail(404, "not_found", "Artifact not found");
     }
-    case "PUT":
+    case "PUT": {
       return upload(request, env, settings, key, `${team}/${segment}`);
-    default:
+    }
+    default: {
       return notAllowed("GET, HEAD, PUT");
+    }
   }
 }
 

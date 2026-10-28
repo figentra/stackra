@@ -209,7 +209,7 @@ export class RegistryStore {
 
   /** One page of catalogue rows (limit + 1 rows, so the caller knows whether there is a next page). */
   async catalogue(query: CatalogueQuery): Promise<CatalogueRow[]> {
-    const like = query.q === null ? null : `%${query.q.replace(/[\\%_]/g, "\\$&")}%`;
+    const like = query.q === null ? null : `%${query.q.replaceAll(/[\\%_]/g, "\\$&")}%`;
     const { results } = await this.db
       .prepare(
         `SELECT p.name, p.scope, p.kind, p.modified_at, s.read_rule, t.version AS latest, v.manifest, v.deprecated

@@ -184,8 +184,8 @@ export class SchedulerService extends Service {
       try {
         // oxlint-disable-next-line no-await-in-loop -- one tick a minute, each after the one before
         await this.tick();
-      } catch (cause) {
-        this.logger.error(TICK_FAILED, { cause });
+      } catch (error) {
+        this.logger.error(TICK_FAILED, { cause: error });
       }
       // oxlint-disable-next-line no-await-in-loop -- see above
       await pause(MINUTE - (this.clock.now().getTime() % MINUTE), signal);

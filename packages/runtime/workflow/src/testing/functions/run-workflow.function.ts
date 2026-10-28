@@ -53,9 +53,9 @@ export async function runWorkflow<W extends Workflow>(
   let error: unknown;
   try {
     output = await harness.runner.start(type, input, origin);
-  } catch (caught) {
-    if (!isRefusal(caught)) throw caught;
-    error = caught;
+  } catch (caughtError) {
+    if (!isRefusal(caughtError)) throw caughtError;
+    error = caughtError;
   }
   const run = await harness.runner.last(type);
   if (run === undefined) throw new Error(`${type.name} recorded no run`);

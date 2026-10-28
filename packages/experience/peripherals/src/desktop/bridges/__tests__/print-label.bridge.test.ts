@@ -73,7 +73,7 @@ describe("PrintLabelBridge", () => {
     printer.isPresent = false;
     const error = await new PrintLabelBridge(printer)
       .handle(ZPL)
-      .catch((caught: unknown) => caught);
+      .catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, LabelPrinterUnavailableError)).toBe(true);
   });
 });

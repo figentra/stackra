@@ -50,8 +50,8 @@ describe("readLicence", () => {
     const error: unknown = (() => {
       try {
         return readLicence({ meta: {}, data: { id: "lic" } });
-      } catch (caught) {
-        return caught;
+      } catch (caughtError) {
+        return caughtError;
       }
     })();
     expect(isRefusal(error, LicenceFileInvalidError)).toBe(true);

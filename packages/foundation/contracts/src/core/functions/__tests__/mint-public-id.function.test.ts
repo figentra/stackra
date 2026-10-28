@@ -59,7 +59,7 @@ describe(mintPublicId, () => {
       mintPublicId("evt", later),
       mintPublicId("evt", later),
       mintPublicId("evt", later),
-      mintPublicId("evt", later - 1_000),
+      mintPublicId("evt", later - 1000),
     ];
     expect(new Set(ids).size).toBe(4);
     expect([...ids].sort()).toEqual(ids);

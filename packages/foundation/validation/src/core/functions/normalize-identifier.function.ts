@@ -18,11 +18,11 @@
 export function normalizeIdentifier(value: string): string {
   return (
     value
-      .replace(/[\s-]/g, "")
+      .replaceAll(/[\s-]/g, "")
       // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
-      .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+      .replaceAll(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x06_60))
       // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
-      .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+      .replaceAll(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06_f0))
       .toUpperCase()
   );
 }

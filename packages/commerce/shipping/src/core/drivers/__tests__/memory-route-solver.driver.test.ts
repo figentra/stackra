@@ -49,7 +49,7 @@ describe("MemoryRouteSolverDriver", () => {
           demand: {},
           window: { from: "2026-10-25T07:00:00.000Z", to: "2026-10-25T07:30:00.000Z" },
         },
-        { stopId: "e", location: at, demand: { ambient: 1 }, serviceS: 7_200 },
+        { stopId: "e", location: at, demand: { ambient: 1 }, serviceS: 7200 },
       ],
     });
     expect(plan.unassigned).toEqual(["b", "d"]);
@@ -69,7 +69,7 @@ describe("MemoryRouteSolverDriver", () => {
           },
         ],
         distanceM: 0,
-        durationS: 3_660,
+        durationS: 3660,
       },
       {
         vehicleId: "bike",
@@ -81,7 +81,7 @@ describe("MemoryRouteSolverDriver", () => {
           },
         ],
         distanceM: 0,
-        durationS: 7_200,
+        durationS: 7200,
       },
     ]);
   });

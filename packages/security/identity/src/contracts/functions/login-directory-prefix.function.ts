@@ -19,7 +19,7 @@ const NORMALISE: Readonly<Record<string, (value: string) => string | undefined>>
     return email.length <= 254 && /^[^\s@]+@[^\s@]+$/.test(email) ? email : undefined;
   },
   phone: (value) => {
-    const phone = value.replace(/[\s().-]/g, "");
+    const phone = value.replaceAll(/[\s().-]/g, "");
     return /^\+[1-9]\d{6,14}$/.test(phone) ? phone : undefined;
   },
 };

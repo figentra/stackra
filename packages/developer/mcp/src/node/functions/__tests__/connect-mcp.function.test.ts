@@ -51,15 +51,15 @@ describe("connectMcp", () => {
 
   it("carries a handler's error code and refuses unknown methods by default", async () => {
     const { client } = pair(async () => {
-      throw new McpProtocolError(-32602, "Unknown tool: deploy");
+      throw new McpProtocolError(-32_602, "Unknown tool: deploy");
     });
     await expect(client.request("tools/call")).rejects.toMatchObject({
-      code: -32602,
+      code: -32_602,
       message: "Unknown tool: deploy",
     });
 
     const { client: other } = pair();
-    await expect(other.request("anything")).rejects.toMatchObject({ code: -32601 });
+    await expect(other.request("anything")).rejects.toMatchObject({ code: -32_601 });
   });
 
   it("reassembles a message split across chunks and answers bad JSON with a parse error", async () => {
@@ -74,7 +74,7 @@ describe("connectMcp", () => {
 
     const parseError = nextMessage(output);
     input.write("not json\n");
-    await expect(parseError).resolves.toMatchObject({ id: null, error: { code: -32700 } });
+    await expect(parseError).resolves.toMatchObject({ id: null, error: { code: -32_700 } });
   });
 
   it("fails waiting requests when the other end closes", async () => {

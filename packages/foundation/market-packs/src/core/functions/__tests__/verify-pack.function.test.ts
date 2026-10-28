@@ -34,7 +34,7 @@ async function keyPair(keyId: string) {
 
 /** The rejection reason `promise` fails with. */
 async function reasonOf(promise: Promise<unknown>): Promise<string | undefined> {
-  const error: unknown = await promise.catch((caught: unknown) => caught);
+  const error: unknown = await promise.catch((caughtError: unknown) => caughtError);
   return isRefusal(error, PackRejectedError) ? error.reason : undefined;
 }
 

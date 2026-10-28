@@ -36,14 +36,14 @@ vi.mock("@stackra/ui/react", async () => {
 vi.mock("@stackra/i18n/react", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 /** A day in milliseconds. */
-const DAY = 24 * 60 * 60 * 1_000;
+const DAY = 24 * 60 * 60 * 1000;
 
 /** A gold balance of 1 000 points whose oldest points expire `days` from now. */
 const balance = (days: number) =>
   BalanceView.create({
     memberId: "usr_1",
     tier: LoyaltyTier.Gold,
-    balance: 1_000,
+    balance: 1000,
     nextExpiryAt: new Date(Date.now() + days * DAY),
   });
 

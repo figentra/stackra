@@ -14,8 +14,8 @@ describe(MinorUnitsType, () => {
   const type = new MinorUnitsType();
 
   it("round-trips safe integers", () => {
-    expect(type.convertToDatabaseValue(1_250)).toBe("1250");
-    expect(type.convertToJSValue("1250")).toBe(1_250);
+    expect(type.convertToDatabaseValue(1250)).toBe("1250");
+    expect(type.convertToJSValue("1250")).toBe(1250);
     expect(type.convertToJSValue(-9_007_199_254_740_991n)).toBe(-Number.MAX_SAFE_INTEGER);
     expect(type.convertToJSValue(null)).toBeNull();
   });

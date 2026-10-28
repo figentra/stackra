@@ -38,10 +38,10 @@ const KEY = "secrets-confirm.key";
 /** One path segment as a case-insensitive regex; glob characters become wildcards. */
 function segmentRx(seg) {
   const body = seg
-    .replace(/[.+^$()|\\]/g, "\\$&")
-    .replace(/\*+/g, ".*")
-    .replace(/\?/g, ".")
-    .replace(/\{([^}]*)\}/g, (_, alts) => `(?:${alts.split(",").join("|")})`);
+    .replaceAll(/[.+^$()|\\]/g, "\\$&")
+    .replaceAll(/\*+/g, ".*")
+    .replaceAll("?", ".")
+    .replaceAll(/\{([^}]*)\}/g, (_, alts) => `(?:${alts.split(",").join("|")})`);
   try {
     return new RegExp(`^${body}$`, "i");
   } catch {
@@ -63,7 +63,7 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
   const expanded = p
     .trim()
     .replace(/^~(?=\/|$)/, home)
-    .replace(/\$\{HOME\}|\$HOME(?!\w)/g, home);
+    .replaceAll(/\$\{HOME\}|\$HOME(?!\w)/g, home);
   if (expanded.split("/").some(namesInbox)) return true;
   if (/^[~$]/.test(expanded)) return false; // another user's home or an unknown variable
   if (!expanded.startsWith("/") && !cwd) return false;
@@ -164,7 +164,7 @@ function scanOnce(c, { heredoc = false } = {}) {
     const f = stack.pop();
     if (direct()) {
       const text = literal.slice(f.start);
-      bodies.push(f.kind === "bt" ? text.replace(/\\([`$\\])/g, "$1") : text);
+      bodies.push(f.kind === "bt" ? text.replaceAll(/\\([`$\\])/g, "$1") : text);
     }
   };
   const wordStart = (i) =>
@@ -472,7 +472,7 @@ function writtenFiles(line) {
   return out
     .map((f) =>
       f
-        .replace(/^['"]|['"]$/g, "")
+        .replaceAll(/^['"]|['"]$/g, "")
         .split("/")
         .pop(),
     )
@@ -683,7 +683,7 @@ function splitCommands(c, all) {
  * A double-quoted body as the shell passes it: the backslash before `\`, `"`, `$` and a backtick dropped, so a
  * line quoted inside a quoted line (`sh -c "sh -c \"rm -rf ~\""`) reads as it runs (STA-330 review round 5).
  */
-const doubleQuoted = (text) => text.replace(/\\([\\"$`])/g, "$1");
+const doubleQuoted = (text) => text.replaceAll(/\\([\\"$`])/g, "$1");
 /** Where the `$'…'` body that starts at `j` closes (`\'` escapes a quote), or `c.length`. */
 function ansiEnd(c, j) {
   while (j < c.length && c[j] !== "'") j += c[j] === "\\" ? 2 : 1;
@@ -702,11 +702,11 @@ const ANSI_ESCAPES = {
 };
 /** The text of a `$'…'` body: `\xHH`, `\uHHHH`, `\UHHHHHHHH`, octal, `\cX` and the letter escapes decoded. */
 const ansiC = (s) =>
-  s.replace(
+  s.replaceAll(
     /\\(?:x([0-9a-fA-F]{1,2})|u([0-9a-fA-F]{1,4})|U([0-9a-fA-F]{1,8})|([0-7]{1,3})|c(.)|(.))/gs,
     (_, x, u, big, oct, ctl, ch) => {
       const code = x ?? u ?? big;
-      if (code) return String.fromCodePoint(Math.min(parseInt(code, 16), 0x10ffff));
+      if (code) return String.fromCodePoint(Math.min(parseInt(code, 16), 0x10_ff_ff));
       if (oct) return String.fromCodePoint(parseInt(oct, 8) & 0xff);
       if (ctl) return String.fromCodePoint(ctl.codePointAt(0) & 31);
       return ANSI_ESCAPES[ch] ?? ch;
@@ -1122,15 +1122,15 @@ function output(list, k) {
   else if (name === "printf") {
     const [format = "", ...rest] = args[0] === "--" ? args.slice(1) : args;
     if (format === "-v") return "";
-    const directives = format.replace(/%%/g, "").match(/%./g) ?? [];
+    const directives = format.replaceAll("%%", "").match(/%./g) ?? [];
     if (directives.some((d) => !/^%[sb]$/.test(d)) || rest.length > directives.length) return null;
     text = format
-      .replace(/%%/g, "\0")
-      .replace(/%[sb]/g, () => rest.shift() ?? "")
-      .replace(/\0/g, "%");
+      .replaceAll("%%", "\0")
+      .replaceAll(/%[sb]/g, () => rest.shift() ?? "")
+      .replaceAll("\0", "%");
   } else if ((name === "cat" && !args.length) || name === "tee") return stdin();
   else return null;
-  const plain = text.replace(/\\[nt]/g, "\n");
+  const plain = text.replaceAll(/\\[nt]/g, "\n");
   return /\\/.test(plain) ? null : plain;
 }
 
@@ -1225,7 +1225,7 @@ export function shellInputs(c) {
       // A script file named at run time (`sh "$F"`, `sh $(echo f)`); `$HOME` alone is fine.
       if (flag < 0 && runner !== "$")
         words.forEach((w, j) => {
-          if (dyn[j] && !/^[<>]\(/.test(w) && /[$`]/.test(w.replace(/\$\{?HOME\}?(?!\w)/g, "")))
+          if (dyn[j] && !/^[<>]\(/.test(w) && /[$`]/.test(w.replaceAll(/\$\{?HOME\}?(?!\w)/g, "")))
             opaque = true;
         });
     }
@@ -1273,7 +1273,7 @@ let opaqueDepth = 0;
  * positive: a dangerous command written literally inside real single quotes (`echo '$(git push origin main)'`).
  */
 export function rawSubstitutions(raw) {
-  const c = raw.replace(/\\\n/g, ""); // backslash-newline goes first, quotes or not
+  const c = raw.replaceAll("\\\n", ""); // backslash-newline goes first, quotes or not
   const out = [];
   for (let i = 0; i < c.length; i++) {
     if (c[i] === "\\") i++;

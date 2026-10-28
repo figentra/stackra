@@ -24,7 +24,7 @@ const BATCH: PayInputBatch = {
       employee: "e1",
       kind: PayInputKind.Commission,
       payCode: "COM",
-      amount: Money.ofMinor(50000, "AED"),
+      amount: Money.ofMinor(50_000, "AED"),
     },
   ],
 };

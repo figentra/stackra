@@ -11,7 +11,7 @@ import { changeOf } from "#core/functions/change-of.function";
 
 describe("changeOf", () => {
   it("returns the change ratio or null", () => {
-    expect(changeOf({ value: 5_000, previous: 4_000 })).toBe(0.25);
+    expect(changeOf({ value: 5000, previous: 4000 })).toBe(0.25);
     expect(changeOf({ value: 1, previous: 2 })).toBe(-0.5);
     expect(changeOf({ value: 1, previous: 0 })).toBeNull();
     expect(changeOf({ value: null, previous: 1 })).toBeNull();

@@ -15,7 +15,7 @@ import { FeeSchedule } from "#core/schemas/fee-schedule.schema";
 const base = {
   key: "partner-test",
   currency: "SAR",
-  basisPoints: 1_500,
+  basisPoints: 1500,
   effectiveFrom: "2026-11-01",
 };
 

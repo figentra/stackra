@@ -34,7 +34,7 @@ function listenerFor(tier: LoyaltyTier, policy?: LoyaltyTierPolicy) {
   const accounts = { findOneOrFail: async () => account } as unknown as AccountService;
   const thresholds = new ThresholdLoyaltyTierPolicyDriver(
     fakeSettings([
-      [LoyaltyKitSettings, { expiryMonths: 12, tiers: { silverFrom: 500, goldFrom: 1_500 } }],
+      [LoyaltyKitSettings, { expiryMonths: 12, tiers: { silverFrom: 500, goldFrom: 1500 } }],
     ]),
   );
   return { account, listener: new RecalculateTierListener(accounts, policy ?? thresholds) };
@@ -59,7 +59,7 @@ const ctx = {
 describe("RecalculateTierListener", () => {
   it("promotes to gold when balanceAfter reaches goldFrom, and to silver at silverFrom", async () => {
     const gold = listenerFor(LoyaltyTier.Bronze);
-    await gold.listener.handle(earned(1_600), ctx);
+    await gold.listener.handle(earned(1600), ctx);
     expect(gold.account.tier).toBe(LoyaltyTier.Gold);
 
     const silver = listenerFor(LoyaltyTier.Bronze);
@@ -75,7 +75,7 @@ describe("RecalculateTierListener", () => {
 
   it("applies a host's replacement policy instead of the thresholds, still never demoting", async () => {
     const bronze = listenerFor(LoyaltyTier.Bronze, new AlwaysSilverPolicy());
-    await bronze.listener.handle(earned(1_600), ctx);
+    await bronze.listener.handle(earned(1600), ctx);
     expect(bronze.account.tier).toBe(LoyaltyTier.Silver);
 
     const gold = listenerFor(LoyaltyTier.Gold, new AlwaysSilverPolicy());

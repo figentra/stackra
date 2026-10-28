@@ -11,7 +11,7 @@ import type { ZodType } from "zod";
 
 /** camelCase of a snake_case word. */
 const camel = (word: string): string =>
-  word.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+  word.replaceAll(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
 /**
  * The record id key of `input`, or undefined when the action takes no record.

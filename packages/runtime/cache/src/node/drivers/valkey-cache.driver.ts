@@ -27,7 +27,7 @@ const SCAN_COUNT = 500;
 
 /** `text` with the glob characters of `MATCH` escaped, so it matches only itself. */
 function literal(text: string): string {
-  return text.replace(/[*?[\]\\]/g, "\\$&");
+  return text.replaceAll(/[*?[\]\\]/g, "\\$&");
 }
 
 /**

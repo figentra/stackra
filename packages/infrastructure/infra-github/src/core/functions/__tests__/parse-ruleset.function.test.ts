@@ -40,7 +40,7 @@ const MAIN = {
       parameters: {
         strict_required_status_checks_policy: true,
         do_not_enforce_on_create: false,
-        required_status_checks: [{ context: "Quality Gate", integration_id: 15368 }],
+        required_status_checks: [{ context: "Quality Gate", integration_id: 15_368 }],
       },
     },
   ],

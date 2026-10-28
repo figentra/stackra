@@ -14,7 +14,7 @@ describe("totalOf", () => {
   it("adds the tip to the amount", () => {
     const amount = Money.ofMinor(10_000, "SAR");
     expect(totalOf({ amount }).minor).toBe(10_000);
-    expect(totalOf({ amount, tip: Money.ofMinor(1_500, "SAR") }).minor).toBe(11_500);
+    expect(totalOf({ amount, tip: Money.ofMinor(1500, "SAR") }).minor).toBe(11_500);
   });
 
   it("refuses a tip in another currency", () => {

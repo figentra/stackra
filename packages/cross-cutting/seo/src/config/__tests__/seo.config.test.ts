@@ -24,7 +24,7 @@ class SiteSeoConfig extends BaseSeoConfig {
     "*": { allow: ["/"], disallow: ["/store?q=", "/*?preview="] },
   };
 
-  override sitemapPageSize = 5_000;
+  override sitemapPageSize = 5000;
 
   override noindexParams = ["q"];
 
@@ -75,7 +75,7 @@ describe("SeoConfig", () => {
     expect(config).toBeInstanceOf(SeoConfig);
     expect(config.titleTemplate).toBe("%s · {siteName}");
     expect(config.robots["*"]?.disallow).toEqual(["/store?q=", "/*?preview="]);
-    expect(config.sitemapPageSize).toBe(5_000);
+    expect(config.sitemapPageSize).toBe(5000);
     expect(config.noindexParams).toEqual(["q"]);
     expect(config.consumedSitemaps).toBe(true);
     expectTypeOf(config.og.kinds).toEqualTypeOf<OgKind[]>();
@@ -123,11 +123,11 @@ describe("SeoConfig", () => {
   it("extends like gen's override schema of a member", () => {
     const Member$ = SeoConfig$.extend({
       titleTemplate: SeoConfig$.shape.titleTemplate.unwrap().default("%s · {siteName}"),
-      sitemapPageSize: SeoConfig$.shape.sitemapPageSize.unwrap().default(5_000),
+      sitemapPageSize: SeoConfig$.shape.sitemapPageSize.unwrap().default(5000),
     });
     const parsed = Member$.parse({});
     expect(parsed.titleTemplate).toBe("%s · {siteName}");
-    expect(parsed.sitemapPageSize).toBe(5_000);
+    expect(parsed.sitemapPageSize).toBe(5000);
     expect(parsed.hreflang).toBe(true);
   });
 });

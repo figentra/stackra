@@ -56,7 +56,7 @@ describe("costControls", () => {
     costControls("acme-staging", argsWith("1500.5"), {});
 
     expect((await engine.find("Budget", "acme-staging")).inputs["amount"]).toEqual({
-      specifiedAmount: { currencyCode: "EUR", units: "1500", nanos: 500000000 },
+      specifiedAmount: { currencyCode: "EUR", units: "1500", nanos: 500_000_000 },
     });
   });
 

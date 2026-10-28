@@ -32,8 +32,8 @@ const CURRENCY = {
 
 describe("spellAmount", () => {
   it("spells major and minor units", () => {
-    expect(spellAmount(123550n, CURRENCY, "ar")).toBe("ألف ومائتان وخمسة وثلاثون ريالًا وخمسون هللةً");
-    expect(spellAmount(123550n, CURRENCY, "en")).toBe(
+    expect(spellAmount(123_550n, CURRENCY, "ar")).toBe("ألف ومائتان وخمسة وثلاثون ريالًا وخمسون هللةً");
+    expect(spellAmount(123_550n, CURRENCY, "en")).toBe(
       "one thousand two hundred thirty-five riyals and fifty halalas",
     );
     expect(spellAmount(500n, CURRENCY, "en")).toBe("five riyals");

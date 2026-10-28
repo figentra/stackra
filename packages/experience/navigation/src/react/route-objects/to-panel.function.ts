@@ -25,7 +25,7 @@ export function toPanel(panel: AnyClass): RouteObject {
   const path = kindOf(panel)?.options["path"];
   if (typeof path !== "string") throw new TypeError(`${panel.name} records no path to mount`);
   return {
-    path: `${path.replace(/^\/+|\/+$/g, "")}/*`,
+    path: `${path.replaceAll(/^\/+|\/+$/g, "")}/*`,
     element: createElement(RegisteredRoutePage, { kind: "panel", props: { panel } }),
   };
 }

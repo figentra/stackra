@@ -45,7 +45,7 @@ const commandResult = (args: readonly string[], { exitCode, output }: CommandOut
 /** `value` checked by `schema`, or an invalid-params error. */
 const argumentsOf = <T extends z.ZodType>(schema: T, value: unknown): z.infer<T> => {
   const result = schema.safeParse(value ?? {});
-  if (!result.success) throw new McpProtocolError(-32602, z.prettifyError(result.error));
+  if (!result.success) throw new McpProtocolError(-32_602, z.prettifyError(result.error));
   return result.data;
 };
 
@@ -74,12 +74,12 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
   const callTool = async (params: unknown): Promise<unknown> => {
     const { name, arguments: args } = (params ?? {}) as { name?: unknown; arguments?: unknown };
     if (typeof name !== "string")
-      throw new McpProtocolError(-32602, "tools/call needs a tool name");
+      throw new McpProtocolError(-32_602, "tools/call needs a tool name");
     if (name.startsWith(ENCORE)) {
       const peer = await upstream;
       if (peer === null)
         throw new McpProtocolError(
-          -32602,
+          -32_602,
           `Unknown tool: ${name} (the local Encore MCP is not running)`,
         );
       return peer.request("tools/call", { name: name.slice(ENCORE.length), arguments: args ?? {} });
@@ -120,8 +120,9 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
         argumentsOf(LOCAL_TOOLS[name].input, args);
         return commandResult([name], await run([name]));
       }
-      default:
-        throw new McpProtocolError(-32602, `Unknown tool: ${name}`);
+      default: {
+        throw new McpProtocolError(-32_602, `Unknown tool: ${name}`);
+      }
     }
   };
 
@@ -141,9 +142,10 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
             serverInfo: { name: "stackra", version: options.version },
           };
         }
-        case "ping":
+        case "ping": {
           return {};
-        case "tools/list":
+        }
+        case "tools/list": {
           return {
             tools: [
               ...Object.entries(LOCAL_TOOLS).map(([name, tool]) => ({
@@ -155,11 +157,14 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
               ...(await upstreamTools).map((tool) => ({ ...tool, name: `${ENCORE}${tool.name}` })),
             ],
           };
-        case "tools/call":
+        }
+        case "tools/call": {
           return callTool(params);
-        default:
+        }
+        default: {
           if (method.startsWith("notifications/")) return undefined;
-          throw new McpProtocolError(-32601, `Method not found: ${method}`);
+          throw new McpProtocolError(-32_601, `Method not found: ${method}`);
+        }
       }
     },
   );

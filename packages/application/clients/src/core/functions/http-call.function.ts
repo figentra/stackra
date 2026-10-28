@@ -89,7 +89,7 @@ export async function httpCall(request: ClientRequest, options: HttpCallOptions)
   const { method, path } = request.endpoint;
   const fields: Readonly<Record<string, unknown>> = isRecord(request.input) ? request.input : {};
   const inPath = new Set<string>();
-  const route = path.replace(/:([A-Za-z][A-Za-z0-9]*)/g, (_, name: string) => {
+  const route = path.replaceAll(/:([A-Za-z][A-Za-z0-9]*)/g, (_, name: string) => {
     const value = fields[name];
     if (typeof value !== "string" && typeof value !== "number")
       throw new TypeError(`${request.key} needs "${name}" in its input for ${path}`);

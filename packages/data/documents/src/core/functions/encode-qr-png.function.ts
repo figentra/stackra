@@ -15,15 +15,15 @@ const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 /** The CRC-32 table of the PNG specification. */
 const CRC_TABLE = Array.from({ length: 256 }, (_, index) => {
   let crc = index;
-  for (let bit = 0; bit < 8; bit += 1) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+  for (let bit = 0; bit < 8; bit += 1) crc = crc & 1 ? 0xed_b8_83_20 ^ (crc >>> 1) : crc >>> 1;
   return crc >>> 0;
 });
 
 /** CRC-32 of `bytes`. */
 function crcOf(bytes: Uint8Array): number {
-  let crc = 0xffffffff;
+  let crc = 0xff_ff_ff_ff;
   for (const byte of bytes) crc = (CRC_TABLE[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
+  return (crc ^ 0xff_ff_ff_ff) >>> 0;
 }
 
 /** One PNG chunk: length, type, data, CRC over type and data. */

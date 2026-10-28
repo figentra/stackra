@@ -47,7 +47,7 @@ export function emitEncoreQueues(
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const rows = [...queues].sort().map((queue) => {
     const name = `${kebabCase(ir.member)}-queue-${kebabCase(queue)}`;
-    return { queue, name, topic: camelCase(`queue_${queue.replace(/[^A-Za-z0-9]+/g, "_")}`) };
+    return { queue, name, topic: camelCase(`queue_${queue.replaceAll(/[^A-Za-z0-9]+/g, "_")}`) };
   });
   const header = generatedHeader({
     from: "stackra.manifest.json (the job actions and their queues)",

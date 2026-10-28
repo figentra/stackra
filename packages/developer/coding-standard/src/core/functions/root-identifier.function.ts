@@ -20,18 +20,23 @@ import type { AstNode } from "#core/types/ast-node.type";
  */
 export function rootIdentifier(node: AstNode | null | undefined): string | undefined {
   switch (node?.type) {
-    case "Identifier":
+    case "Identifier": {
       return node.name;
-    case "CallExpression":
+    }
+    case "CallExpression": {
       return rootIdentifier(node.callee);
-    case "MemberExpression":
+    }
+    case "MemberExpression": {
       return rootIdentifier(node.object);
+    }
     case "TSInstantiationExpression":
     case "TSNonNullExpression":
     case "TSAsExpression":
-    case "ParenthesizedExpression":
+    case "ParenthesizedExpression": {
       return rootIdentifier(node.expression);
-    default:
+    }
+    default: {
       return undefined;
+    }
   }
 }

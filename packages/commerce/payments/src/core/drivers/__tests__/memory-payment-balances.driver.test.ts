@@ -16,7 +16,7 @@ import { MemoryPaymentBalancesDriver } from "#core/drivers/memory-payment-balanc
 
 const balance: PaymentBalance = {
   reference: "chk_1",
-  amount: Money.ofMinor(1_000, "SAR"),
+  amount: Money.ofMinor(1000, "SAR"),
   parts: [],
   updatedAt: new Date("2026-10-25T00:00:00Z"),
 };

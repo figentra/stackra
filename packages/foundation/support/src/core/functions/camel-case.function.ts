@@ -16,5 +16,7 @@ import { snakeCase } from "#core/functions/snake-case.function";
  * camelCase("LoyaltyAccount"); // "loyaltyAccount"
  */
 export function camelCase(name: string): string {
-  return snakeCase(name).replace(/_([a-z0-9])/g, (_match, letter: string) => letter.toUpperCase());
+  return snakeCase(name).replaceAll(/_([a-z0-9])/g, (_match, letter: string) =>
+    letter.toUpperCase(),
+  );
 }

@@ -35,10 +35,10 @@ const julianOf = (day: number) => day + 2_440_587.5;
 /** The sun's declination (degrees) and the equation of time (hours) at Julian date `jd`. */
 function sun(jd: number): { readonly declination: number; readonly equation: number } {
   const d = jd - 2_451_545;
-  const g = wrap(357.529 + 0.985_600_28 * d, 360);
-  const q = wrap(280.459 + 0.985_647_36 * d, 360);
+  const g = wrap(357.529 + 0.98560028 * d, 360);
+  const q = wrap(280.459 + 0.98564736 * d, 360);
   const l = wrap(q + 1.915 * sin(g) + 0.02 * sin(2 * g), 360);
-  const e = 23.439 - 0.000_000_36 * d;
+  const e = 23.439 - 0.00000036 * d;
   const ra = wrap(atan2(cos(e) * sin(l), cos(l)) / 15, 24);
   return { declination: asin(sin(e) * sin(l)), equation: q / 15 - ra };
 }

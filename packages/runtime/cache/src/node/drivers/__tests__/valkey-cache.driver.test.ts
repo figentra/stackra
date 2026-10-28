@@ -41,7 +41,7 @@ const matcher = vi.hoisted(() => (glob: string): RegExp => {
       index += 1;
       char = glob.charAt(index);
     }
-    source += char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    source += char.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
   return new RegExp(`^${source}$`);
 });

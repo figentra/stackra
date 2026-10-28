@@ -96,7 +96,7 @@ export async function verifyHmacWebhook(
     id: id ?? "",
   };
   const content = new TextEncoder().encode(
-    recipe.payload.replace(/\{(body|timestamp|id)\}/g, (_, name: string) => values[name] ?? ""),
+    recipe.payload.replaceAll(/\{(body|timestamp|id)\}/g, (_, name: string) => values[name] ?? ""),
   );
   const decode = recipe.encoding === "hex" ? decodeHex : decodeBase64;
   const candidates = parsed.signatures

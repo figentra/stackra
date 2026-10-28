@@ -75,7 +75,7 @@ export const STATUSES = [
 
 /** Problems that stop a spec from being planned; empty means it may be. */
 export function checkSpec(text) {
-  const body = text.replace(/<!--[\s\S]*?-->/g, "");
+  const body = text.replaceAll(/<!--[\s\S]*?-->/g, "");
   const problems = [];
   if (!/^\*\*Clarifications status\*\*:\s*complete\s*$/im.test(body))
     problems.push("`**Clarifications status**` is not `complete` (run /speckit.clarify)");

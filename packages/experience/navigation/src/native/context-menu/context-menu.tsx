@@ -96,9 +96,10 @@ export function ContextMenu<V>({ menu, value, children }: ContextMenuProps<V>): 
             },
           ];
         }
-        case MenuItemKind.Link:
+        case MenuItemKind.Link: {
           return [{ id: `link:${entry.url}`, label: t(entry.label as I18nKey), href: entry.url }];
-        case MenuItemKind.Group:
+        }
+        case MenuItemKind.Group: {
           return [
             {
               id: `group:${entry.label}`,
@@ -106,8 +107,10 @@ export function ContextMenu<V>({ menu, value, children }: ContextMenuProps<V>): 
               items: itemsOf(entry.items, runnerOf),
             },
           ];
-        default:
+        }
+        default: {
           return [];
+        }
       }
     });
 

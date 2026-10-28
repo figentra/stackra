@@ -40,7 +40,7 @@ export function computePartnerPayout(
     throw new RangeError(
       `computePartnerPayout: a fixed fee is a whole number of minor units, got ${fixedMinor}`,
     );
-  const rated = (BigInt(grossMinor) * BigInt(basisPoints) + 5_000n) / 10_000n;
+  const rated = (BigInt(grossMinor) * BigInt(basisPoints) + 5000n) / 10_000n;
   const fee = rated + BigInt(fixedMinor);
   const feeMinor = Number(fee > BigInt(grossMinor) ? BigInt(grossMinor) : fee);
   const { currency } = gross;

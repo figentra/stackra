@@ -26,10 +26,10 @@ const RECEIPT: IconName = "receipt";
 
 class LoyaltyTierSettings extends Schema {
   @Int({ min: 0 })
-  silverFrom = 1_000;
+  silverFrom = 1000;
 
   @Int({ min: 0 })
-  goldFrom = 5_000;
+  goldFrom = 5000;
 }
 
 class LoyaltyKitSettings extends Settings({

@@ -44,9 +44,9 @@ export function checkRunwayFiles(input: {
     let parsed: unknown;
     try {
       parsed = runway.parseRunway(kind, doc.toJS(), file);
-    } catch (thrown) {
-      if (!(thrown instanceof runway.RunwayInvalidError)) throw thrown;
-      for (const { path, message } of thrown.issues)
+    } catch (thrownError) {
+      if (!(thrownError instanceof runway.RunwayInvalidError)) throw thrownError;
+      for (const { path, message } of thrownError.issues)
         out.push(`${file}: ${path || "(document)"}: ${message}`);
       continue;
     }

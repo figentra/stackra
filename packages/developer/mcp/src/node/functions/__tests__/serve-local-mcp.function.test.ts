@@ -93,7 +93,7 @@ describe("serveLocalMcp", () => {
     ]);
     expect(tools[1]?.inputSchema).toMatchObject({ type: "object", required: ["kind", "name"] });
 
-    await expect(client.request("resources/list")).rejects.toMatchObject({ code: -32601 });
+    await expect(client.request("resources/list")).rejects.toMatchObject({ code: -32_601 });
     disconnect();
     await expect(served).resolves.toBeUndefined();
   });
@@ -157,17 +157,17 @@ describe("serveLocalMcp", () => {
     await expect(
       client.request("tools/call", { name: "new", arguments: { kind: "--force", name: "x" } }),
     ).rejects.toMatchObject({
-      code: -32602,
+      code: -32_602,
     });
     await expect(
       client.request("tools/call", { name: "gen", arguments: { extra: 1 } }),
-    ).rejects.toMatchObject({ code: -32602 });
+    ).rejects.toMatchObject({ code: -32_602 });
     await expect(client.request("tools/call", { name: "deploy" })).rejects.toMatchObject({
-      code: -32602,
+      code: -32_602,
     });
     await expect(
       client.request("tools/call", { name: "encore_call_endpoint" }),
-    ).rejects.toMatchObject({ code: -32602 });
+    ).rejects.toMatchObject({ code: -32_602 });
     expect(run).not.toHaveBeenCalled();
     disconnect();
   });

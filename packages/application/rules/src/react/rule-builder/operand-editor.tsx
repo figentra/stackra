@@ -91,24 +91,29 @@ function textsOf(shape: Shape, value: Json | undefined): string[] {
 function valueOf(field: FactField, shape: Shape, texts: readonly string[]): Json {
   const [first = "", second = "", third = ""] = texts;
   switch (shape) {
-    case "many":
+    case "many": {
       return first
         .split(",")
         .map((item) => item.trim())
         .filter((item) => item !== "")
         .map((item) => elementOf(field, item));
-    case "range":
+    }
+    case "range": {
       return [elementOf(field, first), elementOf(field, second)];
-    case "duration":
+    }
+    case "duration": {
       return first.trim();
-    case "circle":
+    }
+    case "circle": {
       return {
         latitude: numberOf(first),
         longitude: numberOf(second),
         radiusKilometres: numberOf(third),
       };
-    default:
+    }
+    default: {
       return elementOf(field, first);
+    }
   }
 }
 

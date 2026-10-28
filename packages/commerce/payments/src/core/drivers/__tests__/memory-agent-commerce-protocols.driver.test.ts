@@ -15,7 +15,7 @@ const confirmation = {
   protocol: "acp",
   agent: "agent_1",
   reference: "cart_1",
-  amount: Money.ofMinor(5_000, "USD"),
+  amount: Money.ofMinor(5000, "USD"),
   confirmedAt: new Date("2026-10-27T10:00:00Z"),
   expiresAt: new Date("2026-10-27T10:15:00Z"),
   method: { provider: "fake", connectionId: "conn_fake", token: "spt_1", merchantInitiated: false },

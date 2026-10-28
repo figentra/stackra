@@ -15,7 +15,7 @@ import { GraduatedPrice } from "#core/values/graduated-price.value";
 const cents = (minor: number) => Money.ofMinor(minor, "USD");
 
 const tiers: PriceTier[] = [
-  { upTo: 1_000, unitPrice: Money.zero("USD") },
+  { upTo: 1000, unitPrice: Money.zero("USD") },
   { upTo: 10_000, unitPrice: cents(2) },
   { upTo: null, unitPrice: cents(1) },
 ];
@@ -84,11 +84,11 @@ describe("GraduatedPrice.of", () => {
 describe("GraduatedPrice#total", () => {
   it("is zero for no units and inside the included band", () => {
     expect(messages.total(0).equals(Money.zero("USD"))).toBe(true);
-    expect(messages.total(1_000).minor).toBe(0);
+    expect(messages.total(1000).minor).toBe(0);
   });
 
   it("prices each unit at the band it falls in", () => {
-    expect(messages.total(1_001).minor).toBe(2);
+    expect(messages.total(1001).minor).toBe(2);
     expect(messages.total(10_000).minor).toBe(18_000);
     expect(messages.total(10_001).minor).toBe(18_001);
     expect(messages.total(12_000).toDecimal()).toBe("200.00");
@@ -104,7 +104,7 @@ describe("GraduatedPrice#total", () => {
   });
 
   it("refuses a total beyond the safe-integer limit", () => {
-    const steep = GraduatedPrice.of([{ upTo: null, unitPrice: cents(1_000) }]);
+    const steep = GraduatedPrice.of([{ upTo: null, unitPrice: cents(1000) }]);
     expect(() => steep.total(Number.MAX_SAFE_INTEGER)).toThrow(RangeError);
   });
 });

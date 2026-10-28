@@ -16,7 +16,7 @@ import { rtpPayload } from "#node/sip/rtp-payload.function";
 import type { UdpPeer } from "#node/sip/udp-peer.type";
 import type { UdpSocket } from "#node/sip/udp-socket.type";
 
-const FAR = { address: "192.0.2.4", port: 30000 };
+const FAR = { address: "192.0.2.4", port: 30_000 };
 
 class FakeSocket implements UdpSocket {
   readonly sent: { data: Uint8Array; port: number; address: string }[] = [];
@@ -39,7 +39,7 @@ class FakeSocket implements UdpSocket {
   }
 
   address(): UdpPeer {
-    return { address: "0.0.0.0", port: 40000 };
+    return { address: "0.0.0.0", port: 40_000 };
   }
 
   close(): void {
@@ -89,7 +89,9 @@ describe("RtpAudioDeviceDriver", () => {
     expect(packets.map((packet) => rtpPayload(packet)?.payloadType)).toEqual([0, 0, 0]);
     expect(packets.map((packet) => (packet[1] ?? 0) >> 7)).toEqual([1, 0, 0]);
     const [first, second] = packets.map(view);
-    expect(((second?.getUint16(2) ?? 0) - (first?.getUint16(2) ?? 0) + 0x10000) % 0x10000).toBe(1);
+    expect(((second?.getUint16(2) ?? 0) - (first?.getUint16(2) ?? 0) + 0x1_00_00) % 0x1_00_00).toBe(
+      1,
+    );
     expect(((second?.getUint32(4) ?? 0) - (first?.getUint32(4) ?? 0) + 2 ** 32) % 2 ** 32).toBe(
       160,
     );
@@ -99,7 +101,7 @@ describe("RtpAudioDeviceDriver", () => {
     const socket = new FakeSocket();
     const device = RtpAudioDeviceDriver.over(socket, FAR, AudioEncoding.Alaw);
     await expect(
-      device.play(chunks(), { encoding: AudioEncoding.Linear16, sampleRate: 16000, channels: 1 }),
+      device.play(chunks(), { encoding: AudioEncoding.Linear16, sampleRate: 16_000, channels: 1 }),
     ).rejects.toThrow(RangeError);
     const capture = device.capture(device.format)[Symbol.asyncIterator]();
     const next = capture.next();

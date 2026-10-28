@@ -28,14 +28,14 @@ const check: FiscalCheck = {
       number: "R-1",
       paidAt: new Date("2026-03-01T10:00:00Z"),
       lines: [widget],
-      payments: [{ method: "card", amount: eur(2_400) }],
+      payments: [{ method: "card", amount: eur(2400) }],
     },
     {
       id: "part-2",
       number: "R-2",
       paidAt: new Date("2026-03-01T10:05:00Z"),
       lines: [book],
-      payments: [{ method: "cash", amount: eur(1_100) }],
+      payments: [{ method: "cash", amount: eur(1100) }],
     },
   ],
 };
@@ -49,8 +49,8 @@ describe("checkDocuments", () => {
       [widget],
       new Date("2026-03-01T10:00:00Z"),
     ]);
-    expect([first?.net.minor, first?.tax.minor, first?.gross.minor]).toEqual([2_000, 400, 2_400]);
-    expect([second?.gross.minor, second?.payments[0]?.method]).toEqual([1_100, "cash"]);
+    expect([first?.net.minor, first?.tax.minor, first?.gross.minor]).toEqual([2000, 400, 2400]);
+    expect([second?.gross.minor, second?.payments[0]?.method]).toEqual([1100, "cash"]);
     expect(first?.seller).toBe(document.seller);
   });
 
@@ -60,11 +60,7 @@ describe("checkDocuments", () => {
       checkDocuments({ ...check, parts: first ? [first] : [] }, CheckDocumentMode.WholeCheck),
     ).toEqual([]);
     const [whole] = checkDocuments(check, CheckDocumentMode.WholeCheck);
-    expect([whole?.id, whole?.gross.minor, whole?.payments.length]).toEqual([
-      document.id,
-      3_500,
-      2,
-    ]);
+    expect([whole?.id, whole?.gross.minor, whole?.payments.length]).toEqual([document.id, 3500, 2]);
   });
 
   it("refuses a part without lines when every part is its own document", () => {

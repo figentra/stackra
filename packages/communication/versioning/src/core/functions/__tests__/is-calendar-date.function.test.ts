@@ -21,7 +21,7 @@ describe("isCalendarDate", () => {
     expect(isCalendarDate("2027-13-01")).toBe(false);
     expect(isCalendarDate("2027-3-1")).toBe(false);
     expect(isCalendarDate("2027-03-01T00:00:00Z")).toBe(false);
-    expect(isCalendarDate(20270301)).toBe(false);
+    expect(isCalendarDate(20_270_301)).toBe(false);
     expect(isCalendarDate(undefined)).toBe(false);
   });
 });

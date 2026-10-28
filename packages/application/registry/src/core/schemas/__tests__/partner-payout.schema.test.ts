@@ -18,8 +18,8 @@ const payout = {
   period: "2026-11",
   currency: "SAR",
   grossMinor: 10_000,
-  feeMinor: 2_000,
-  netMinor: 8_000,
+  feeMinor: 2000,
+  netMinor: 8000,
   schedule: "partner-test",
 };
 
@@ -30,7 +30,7 @@ describe("PartnerPayout", () => {
   });
 
   it("refuses an unbalanced net and a bad period", () => {
-    expect(validate(PartnerPayout, { ...payout, netMinor: 7_999 }).success).toBe(false);
+    expect(validate(PartnerPayout, { ...payout, netMinor: 7999 }).success).toBe(false);
     expect(validate(PartnerPayout, { ...payout, period: "2026-13" }).success).toBe(false);
   });
 });

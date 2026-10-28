@@ -15,7 +15,7 @@
 export function toBase64(input: string | Uint8Array): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let binary = "";
-  for (let start = 0; start < bytes.length; start += 0x8000)
-    binary += String.fromCodePoint(...bytes.subarray(start, start + 0x8000));
+  for (let start = 0; start < bytes.length; start += 0x80_00)
+    binary += String.fromCodePoint(...bytes.subarray(start, start + 0x80_00));
   return btoa(binary);
 }

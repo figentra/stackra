@@ -47,7 +47,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
   const t = useUiText();
   const { locale } = useLocale();
   switch (definition.kind) {
-    case "text":
+    case "text": {
       return (
         <TextField
           aria-label={definition.label}
@@ -58,6 +58,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           {...(definition.placeholder === undefined ? {} : { placeholder: definition.placeholder })}
         />
       );
+    }
     case "number": {
       const range = filterValueOfKind("number", value) ?? { min: null, max: null };
       const shared = { step: definition.step, formatOptions: definition.formatOptions };
@@ -83,7 +84,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
         </div>
       );
     }
-    case "select":
+    case "select": {
       return (
         <RadioGroup
           aria-label={definition.label}
@@ -92,7 +93,8 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           onChange={onChange}
         />
       );
-    case "multi-select":
+    }
+    case "multi-select": {
       return (
         <CheckboxGroup
           aria-label={definition.label}
@@ -106,6 +108,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           }
         />
       );
+    }
     case "date-range": {
       const range = filterValueOfKind("date-range", value) ?? { start: null, end: null };
       return (

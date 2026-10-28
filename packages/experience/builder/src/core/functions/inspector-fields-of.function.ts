@@ -68,8 +68,8 @@ function describeProp(schema: unknown): Pick<InspectorField, "kind" | "options">
 /** The key as words: `heroTitle` and `hero_title` read `Hero title`. */
 function labelOf(key: string): string {
   const words = key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replaceAll(/[_-]+/g, " ")
     .toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }

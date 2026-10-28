@@ -17,8 +17,8 @@ function labelOf(key: string, part: string, name?: string): string {
     name === undefined
       ? ""
       : `.${name
-          .replace(/\./g, "_")
-          .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+          .replaceAll(".", "_")
+          .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
           .toLowerCase()}`;
   return `${key.slice(0, dot)}::resources.${key.slice(dot + 1)}.${part}${leaf}`;
 }

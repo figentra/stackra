@@ -16,7 +16,7 @@ const box: Parcel = { lengthMm: 400, widthMm: 300, heightMm: 200, weightG: 1 };
 describe("dimensionalWeight", () => {
   it("divides the volume in mm³ by the factor in cm³ per kg, giving grams", () => {
     // 24 000 000 mm³ = 24 000 cm³; at 4 000 cm³/kg that is 6 kg.
-    expect(dimensionalWeight(box, 4_000)).toBe(6_000);
+    expect(dimensionalWeight(box, 4000)).toBe(6000);
   });
 
   it("rounds a fraction of a gram up", () => {
@@ -31,7 +31,7 @@ describe("dimensionalWeight", () => {
 
   it.each(["lengthMm", "widthMm", "heightMm", "weightG"] as const)("refuses a bad %s", (field) => {
     for (const value of [0, -1, 1.5, Number.NaN])
-      expect(() => dimensionalWeight({ ...box, [field]: value }, 4_000)).toThrow(RangeError);
+      expect(() => dimensionalWeight({ ...box, [field]: value }, 4000)).toThrow(RangeError);
   });
 
   it.each([0, -5, Number.NaN, Number.POSITIVE_INFINITY])("refuses factor %s", (factor) => {
@@ -40,6 +40,6 @@ describe("dimensionalWeight", () => {
 
   it("refuses a volume past the safe integer limit", () => {
     const huge = { lengthMm: 1e6, widthMm: 1e6, heightMm: 1e6, weightG: 1 };
-    expect(() => dimensionalWeight(huge, 4_000)).toThrow(RangeError);
+    expect(() => dimensionalWeight(huge, 4000)).toThrow(RangeError);
   });
 });

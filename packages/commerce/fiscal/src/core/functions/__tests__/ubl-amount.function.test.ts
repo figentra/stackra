@@ -13,7 +13,7 @@ import { ublAmount } from "#core/functions/ubl-amount.function";
 
 describe("ublAmount", () => {
   it("writes the amount with its currency", () => {
-    expect(renderXml(ublAmount("cbc:PayableAmount", Money.ofMinor(1_150, "EUR")))).toBe(
+    expect(renderXml(ublAmount("cbc:PayableAmount", Money.ofMinor(1150, "EUR")))).toBe(
       '<cbc:PayableAmount currencyID="EUR">11.50</cbc:PayableAmount>',
     );
   });

@@ -27,7 +27,7 @@ export function stripJsonc(text) {
       i++;
     } else out += c;
   }
-  return out.replace(/,(\s*[}\]])/g, "$1");
+  return out.replaceAll(/,(\s*[}\]])/g, "$1");
 }
 
 /** Parses a .json or .jsonc file. */

@@ -84,16 +84,21 @@ function roundQuotient(numerator: bigint, denominator: bigint, rounding: Roundin
   const away = quotient + (n < 0n ? -1n : 1n);
   const twice = (remainder < 0n ? -remainder : remainder) * 2n;
   switch (rounding) {
-    case Rounding.Down:
+    case Rounding.Down: {
       return quotient;
-    case Rounding.Up:
+    }
+    case Rounding.Up: {
       return away;
-    case Rounding.HalfUp:
+    }
+    case Rounding.HalfUp: {
       return twice >= d ? away : quotient;
-    case Rounding.HalfEven:
+    }
+    case Rounding.HalfEven: {
       return twice > d || (twice === d && quotient % 2n !== 0n) ? away : quotient;
-    default:
+    }
+    default: {
       throw new RangeError(`Money: "${String(rounding)}" is not a Rounding`);
+    }
   }
 }
 

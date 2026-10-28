@@ -49,7 +49,7 @@ export function readEdifact(text: string): EdiInterchange {
     body = body.slice(9);
   }
   const segments = splitEdi(body, terminator ?? "'", release)
-    .map((segment) => segment.replace(/^[\r\n]+|[\r\n]+$/g, ""))
+    .map((segment) => segment.replaceAll(/^[\r\n]+|[\r\n]+$/g, ""))
     .filter((segment) => segment !== "")
     .map((segment) =>
       splitEdi(segment, element ?? "+", release).map((value): EdiElement => {

@@ -18,8 +18,10 @@
  */
 export function decodeBase64(text: string): Uint8Array<ArrayBuffer> | undefined {
   try {
-    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
-    return Uint8Array.from(atob(text.replace(/\s+/g, "")), (character) => character.charCodeAt(0));
+    return Uint8Array.from(atob(text.replaceAll(/\s+/g, "")), (character) =>
+      // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
+      character.charCodeAt(0),
+    );
   } catch {
     return undefined;
   }

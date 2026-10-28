@@ -159,7 +159,7 @@ describe("IntegrationRuntime", () => {
     );
     expect(String(callsTo("/token")[0]?.[1].body)).toBe("grant_type=client_credentials&scope=read");
 
-    clock.at += 3600_000 - 30_000; // inside the 60 s refresh buffer
+    clock.at += 3_600_000 - 30_000; // inside the 60 s refresh buffer
     await api.get("/d");
     expect(callsTo("/token")).toHaveLength(2);
     expect(new Headers(fetchMock.mock.calls.at(-1)?.[1].headers).get("authorization")).toBe(

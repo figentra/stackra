@@ -13,7 +13,7 @@ import { restrictedGtin } from "#core/functions/restricted-gtin.function";
 describe("restrictedGtin", () => {
   it("pads the serial and appends the check digit", () => {
     expect(restrictedGtin("20", 1)).toBe("2000000000015");
-    expect(restrictedGtin("0412", 98765n)).toHaveLength(13);
+    expect(restrictedGtin("0412", 98_765n)).toHaveLength(13);
   });
 
   it.each(["62", "1", "301", "2a"])("refuses prefix %s", (prefix) => {

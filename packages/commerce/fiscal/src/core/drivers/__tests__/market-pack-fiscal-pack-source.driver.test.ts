@@ -89,7 +89,7 @@ describe("MarketPackFiscalPackSourceDriver", () => {
   it("refuses a value of the wrong shape", async () => {
     const error: unknown = await source
       .section("xy", new Date("2026-03-01T00:00:00Z"))
-      .catch((caught: unknown) => caught);
+      .catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, FiscalOptionsInvalidError) && error.driver).toBe("fiscal.till");
   });
 });

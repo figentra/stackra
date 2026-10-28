@@ -12,6 +12,6 @@
 /** The default edge render budget. */
 export const EDGE_RENDER_LIMITS = Object.freeze({
   maxDepth: 32,
-  maxNodes: 2_000,
+  maxNodes: 2000,
   maxBytes: 512 * 1024,
 });

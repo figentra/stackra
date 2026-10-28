@@ -36,54 +36,71 @@ async function dispatch(request: Request, deps: RegistryDeps): Promise<Response>
   const route = parsePath(url.pathname);
   const method = request.method === "HEAD" ? "GET" : request.method;
   switch (route.kind) {
-    case "landing":
+    case "landing": {
       return method === "GET" ? handleLanding() : notAllowed("GET");
-    case "ping":
+    }
+    case "ping": {
       return method === "GET" ? handlePing() : notAllowed("GET");
-    case "whoami":
+    }
+    case "whoami": {
       return method === "GET" ? handleWhoami(deps, request) : notAllowed("GET");
-    case "keys":
+    }
+    case "keys": {
       return method === "GET" ? handleKeys(deps) : notAllowed("GET");
-    case "login":
+    }
+    case "login": {
       return handleLogin(deps);
-    case "exchange":
+    }
+    case "exchange": {
       return method === "POST" ? exchangeToken(deps, request, route.name) : notAllowed("POST");
-    case "attestations":
+    }
+    case "attestations": {
       return method === "GET"
         ? handleAttestations(deps, request, route.name, route.version)
         : notAllowed("GET");
-    case "distTags":
+    }
+    case "distTags": {
       if (route.tag === null)
         return method === "GET" ? readDistTags(deps, request, route.name) : notAllowed("GET");
       return method === "PUT" || method === "DELETE"
         ? writeDistTag(deps, request, route.name, route.tag)
         : notAllowed("PUT, DELETE");
-    case "package":
+    }
+    case "package": {
       if (method === "GET") return handlePackument(deps, request, route.name);
       if (method === "PUT") return putPackage(deps, request, route.name);
       return method === "DELETE" ? handleUnpublish() : notAllowed("GET, PUT");
-    case "unpublish":
+    }
+    case "unpublish": {
       return handleUnpublish();
-    case "version":
+    }
+    case "version": {
       if (method === "DELETE") return handleUnpublish();
       return method === "GET"
         ? handleVersion(deps, request, route.name, route.spec)
         : notAllowed("GET");
-    case "tarball":
+    }
+    case "tarball": {
       if (method === "DELETE") return handleUnpublish();
       return method === "GET"
         ? handleTarball(deps, request, route.name, route.file)
         : notAllowed("GET");
-    case "catalogue":
+    }
+    case "catalogue": {
       return method === "GET" ? listCatalogue(deps, url) : notAllowed("GET");
-    case "catalogueItem":
+    }
+    case "catalogueItem": {
       return method === "GET" ? catalogueItem(deps, route.name) : notAllowed("GET");
-    case "entitlements":
+    }
+    case "entitlements": {
       return method === "GET" ? handleEntitlements(deps, request) : notAllowed("GET");
-    case "licences":
+    }
+    case "licences": {
       return handleLicences(deps, request, route.rest);
-    case "unknown":
+    }
+    case "unknown": {
       return failure(404, "not_found");
+    }
   }
 }
 

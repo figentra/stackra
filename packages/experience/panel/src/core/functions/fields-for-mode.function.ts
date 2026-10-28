@@ -16,10 +16,12 @@ import type { FieldNode } from "#core/types/field-node.type";
 function essentialOf(node: FieldNode): FieldNode | undefined {
   switch (node.kind) {
     case "value":
-    case "upload":
+    case "upload": {
       return node.essential === true ? node : undefined;
-    case "repeater":
+    }
+    case "repeater": {
       return node.fields.some((field) => essentialOf(field) !== undefined) ? node : undefined;
+    }
     case "grid": {
       const fields = node.fields.flatMap((field) => essentialOf(field) ?? []);
       return fields.length === 0

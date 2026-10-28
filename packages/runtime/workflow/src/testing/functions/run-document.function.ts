@@ -53,10 +53,10 @@ export async function runDocument(
   let error: unknown;
   try {
     await harness.runner.startDocument(document, input, origin, { key });
-  } catch (caught) {
-    if (!isRefusal(caught) || (await harness.runner.find(await idOf(key))) === undefined)
-      throw caught;
-    error = caught;
+  } catch (caughtError) {
+    if (!isRefusal(caughtError) || (await harness.runner.find(await idOf(key))) === undefined)
+      throw caughtError;
+    error = caughtError;
   }
   const run = await harness.runner.find(await idOf(key));
   if (run === undefined) throw new Error(`the document run keyed ${key} recorded no run`);

@@ -39,7 +39,7 @@ export async function pwaPlugin(
       globPatterns: ["**/*.{js,css,html,webmanifest,svg,png,webp,woff2}"],
       globIgnores: isPrerenderPrecached
         ? []
-        : prerendered.map((route) => `${route.replace(/^\/+|\/+$/g, "")}/index.html`),
+        : prerendered.map((route) => `${route.replaceAll(/^\/+|\/+$/g, "")}/index.html`),
     },
   });
 }

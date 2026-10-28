@@ -65,8 +65,8 @@ describe("useMoney", () => {
   it("formats minor units in a currency, as the pricing table shows them", async () => {
     const money = await formatter(Locale.En);
     // Intl joins a currency code to the amount with a no-break space, so the two never wrap apart.
-    expect(money(9_900, "SAR")).toBe("SAR\u00A099.00");
-    expect(money(1_250, "USD")).toBe("$12.50");
+    expect(money(9900, "SAR")).toBe("SAR\u00A099.00");
+    expect(money(1250, "USD")).toBe("$12.50");
   });
 
   it("formats a Money, the per-month equivalent rounded down by the caller", async () => {
@@ -76,13 +76,13 @@ describe("useMoney", () => {
 
   it("shows exactly the currency's exponent of fraction digits", async () => {
     const money = await formatter(Locale.En);
-    expect(money(1_250, "KWD")).toBe("KWD\u00A01.250");
-    expect(money(1_000, "JPY")).toBe("¥1,000");
+    expect(money(1250, "KWD")).toBe("KWD\u00A01.250");
+    expect(money(1000, "JPY")).toBe("¥1,000");
   });
 
   it("uses the configured digits", async () => {
     const money = await formatter(Locale.En, ArabicDigitsConfig);
-    expect(money(9_900, "SAR")).toMatch(/٩٩.٠٠/);
+    expect(money(9900, "SAR")).toMatch(/٩٩.٠٠/);
   });
 
   it("refuses an unsafe amount and an unknown currency", async () => {

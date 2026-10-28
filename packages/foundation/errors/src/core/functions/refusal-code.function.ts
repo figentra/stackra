@@ -31,9 +31,9 @@ export function refusalCode(className: string): string {
   return (
     className
       .slice(0, -"Error".length)
-      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+      .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
       // A one-letter word before the next one: NotAMember is not_a_member, not not_amember.
-      .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+      .replaceAll(/([A-Z])([A-Z][a-z])/g, "$1_$2")
       .toLowerCase()
   );
 }

@@ -10,11 +10,11 @@ import type { Finding } from "@stackra/repo-checks/node";
 
 /** Escapes a workflow-command message: `%`, CR and LF. */
 const escapeData = (text: string): string =>
-  text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  text.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
 
 /** Escapes a workflow-command property: the message escapes plus `:` and `,`. */
 const escapeProperty = (text: string): string =>
-  escapeData(text).replace(/:/g, "%3A").replace(/,/g, "%2C");
+  escapeData(text).replaceAll(":", "%3A").replaceAll(",", "%2C");
 
 /**
  * The printed line of `finding`.

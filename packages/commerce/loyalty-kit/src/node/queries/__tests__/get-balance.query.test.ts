@@ -56,7 +56,7 @@ async function queryWith(rows: LedgerEntry[]) {
     tier: LoyaltyTier.Gold,
   });
   const ledger = new MemoryLoyaltyLedgerDriver();
-  await ledger.append(pointsEntry.build({ memberId: memberId("usr_1"), points: 1_000 }));
+  await ledger.append(pointsEntry.build({ memberId: memberId("usr_1"), points: 1000 }));
   const query = new GetBalanceQuery(
     { findOneOrFail: async () => account } as unknown as AccountService,
     ledger,
@@ -101,7 +101,7 @@ describe("GetBalanceQuery", () => {
     expect({ ...view }).toEqual({
       memberId: "usr_1",
       tier: LoyaltyTier.Gold,
-      balance: 1_000,
+      balance: 1000,
       nextExpiryAt: new Date("2027-10-21T10:00:00Z"),
     });
   });

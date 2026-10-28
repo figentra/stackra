@@ -24,7 +24,7 @@ const MAX_DEPTH = 8;
 
 /** A field name in the form the lists hold: lower case, letters and digits only. */
 function normalise(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return name.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
 }
 
 /** `text` with every secret shape masked. */

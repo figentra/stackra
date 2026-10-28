@@ -32,9 +32,9 @@ function classOf(character: string): BidiClass {
   const point = character.codePointAt(0) ?? 0;
   if (/\p{Nd}/u.test(character)) return "EN";
   if (
-    (point >= 0x0590 && point <= 0x08ff) ||
-    (point >= 0xfb1d && point <= 0xfdff) ||
-    (point >= 0xfe70 && point <= 0xfeff)
+    (point >= 0x05_90 && point <= 0x08_ff) ||
+    (point >= 0xfb_1d && point <= 0xfd_ff) ||
+    (point >= 0xfe_70 && point <= 0xfe_ff)
   )
     return "R";
   return /\p{L}/u.test(character) ? "L" : "N";

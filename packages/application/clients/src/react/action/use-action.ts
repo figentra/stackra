@@ -50,9 +50,9 @@ export function useAction<A extends ActionRef>(
           action,
           input,
         );
-      } catch (failure) {
-        if (isRefusal(failure)) setError(failure);
-        throw failure;
+      } catch (failureError) {
+        if (isRefusal(failureError)) setError(failureError);
+        throw failureError;
       } finally {
         setRunning((count) => count - 1);
       }

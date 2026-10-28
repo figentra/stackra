@@ -13,8 +13,8 @@ export const CACHE_NODE_TYPES = [
   { type: "cache.t4g.micro", memoryMb: 512 },
   { type: "cache.t4g.small", memoryMb: 1402 },
   { type: "cache.t4g.medium", memoryMb: 3164 },
-  { type: "cache.r7g.large", memoryMb: 13383 },
-  { type: "cache.r7g.xlarge", memoryMb: 26951 },
-  { type: "cache.r7g.2xlarge", memoryMb: 54087 },
-  { type: "cache.r7g.4xlarge", memoryMb: 108349 },
+  { type: "cache.r7g.large", memoryMb: 13_383 },
+  { type: "cache.r7g.xlarge", memoryMb: 26_951 },
+  { type: "cache.r7g.2xlarge", memoryMb: 54_087 },
+  { type: "cache.r7g.4xlarge", memoryMb: 108_349 },
 ] as const;

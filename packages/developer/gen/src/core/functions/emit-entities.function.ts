@@ -32,21 +32,26 @@ import type { ShapeIR } from "#core/types/shape-ir.type";
 /** The ORM type of a scalar field. */
 function ormType(field: FieldIR): string {
   switch (field.type.kind) {
-    case "boolean":
+    case "boolean": {
       return "boolean";
-    case "date":
+    }
+    case "date": {
       return "datetime";
-    case "number":
+    }
+    case "number": {
       return field.rules.some((rule) => rule.name === "Int") ? "integer" : "double";
+    }
     case "string":
     case "brand":
     case "public_id":
     case "driver_name":
-    case "duration":
+    case "duration": {
       // shortcut: a Duration column is read back as its ISO 8601 string; add a Duration ORM type when a model needs one.
       return "string";
-    default:
+    }
+    default: {
       return "json";
+    }
   }
 }
 

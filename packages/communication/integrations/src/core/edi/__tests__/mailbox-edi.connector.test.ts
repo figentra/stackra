@@ -56,7 +56,7 @@ describe("MailboxEdiConnector", () => {
       { ...order, body: {} },
       { ...order, partner: "ACMEFOODS" },
     ]) {
-      const error = await edi.send(document, "k").catch((caught: unknown) => caught);
+      const error = await edi.send(document, "k").catch((caughtError: unknown) => caughtError);
       expect(isRefusal(error, ProviderRefusedError)).toBe(true);
     }
   });
@@ -110,7 +110,7 @@ describe("MailboxEdiConnector", () => {
     mailbox.deliver("in_1", X12_ORDER.replaceAll("850", "940"));
     const error = await new MailboxEdiConnector(mailbox, x12)
       .receive(new Date(0))
-      .catch((caught: unknown) => caught);
+      .catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, MalformedEdiError)).toBe(true);
     expect(mailbox.inbox.has("in_1")).toBe(true);
   });

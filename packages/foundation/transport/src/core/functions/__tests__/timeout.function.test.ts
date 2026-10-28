@@ -28,7 +28,7 @@ describe("timeout", () => {
   it("refuses with RequestTimedOutError when no response arrives in time", async () => {
     const send = createTransport({ middleware: [timeout(Duration.seconds(0.01))], fetch: hanging });
     const error: unknown = await send(new Request("https://api.test/slow")).catch(
-      (caught) => caught,
+      (caughtError) => caughtError,
     );
     expect(isRefusal(error, RequestTimedOutError)).toBe(true);
     expect((error as RequestTimedOutError).timeout).toBe(Duration.seconds(0.01));
@@ -40,7 +40,7 @@ describe("timeout", () => {
     const controller = new AbortController();
     const sent = send(new Request("https://api.test/slow", { signal: controller.signal }));
     controller.abort();
-    const error: unknown = await sent.catch((caught) => caught);
+    const error: unknown = await sent.catch((caughtError) => caughtError);
     expect(isRefusal(error)).toBe(false);
     expect((error as Error).name).toBe("AbortError");
   });

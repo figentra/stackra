@@ -19,7 +19,7 @@ export function rtpPacket(header: RtpHeader, payload: Uint8Array): Uint8Array {
   const view = new DataView(packet.buffer);
   view.setUint8(0, 0x80);
   view.setUint8(1, (header.marker === true ? 0x80 : 0) | (header.payloadType & 0x7f));
-  view.setUint16(2, header.sequence & 0xffff);
+  view.setUint16(2, header.sequence & 0xff_ff);
   view.setUint32(4, header.timestamp >>> 0);
   view.setUint32(8, header.ssrc >>> 0);
   packet.set(payload, 12);

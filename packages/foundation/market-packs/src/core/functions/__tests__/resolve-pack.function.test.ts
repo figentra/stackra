@@ -80,8 +80,8 @@ describe("resolvePack", () => {
     const error: unknown = (() => {
       try {
         return resolvePack(packs, "xa-one", { pins: { xa: "9" } });
-      } catch (caught) {
-        return caught;
+      } catch (caughtError) {
+        return caughtError;
       }
     })();
     expect(isRefusal(error, PackNotFoundError) && [error.market, error.pin]).toEqual(["xa", "9"]);
@@ -96,8 +96,8 @@ describe("resolvePack", () => {
     const error: unknown = (() => {
       try {
         return resolvePack(loop, "xa");
-      } catch (caught) {
-        return caught;
+      } catch (caughtError) {
+        return caughtError;
       }
     })();
     expect(isRefusal(error, PackRejectedError) && error.reason).toBe(PackRejection.OverlayCycle);

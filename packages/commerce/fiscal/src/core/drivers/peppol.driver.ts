@@ -192,7 +192,7 @@ export class PeppolDriver extends Driver(FiscalDriver) {
     return {
       status: taken ? FiscalRecordStatus.Submitted : FiscalRecordStatus.Rejected,
       authorityReference: null,
-      message: taken ? null : response.body.slice(0, 1_000) || `HTTP ${response.status}`,
+      message: taken ? null : response.body.slice(0, 1000) || `HTTP ${response.status}`,
       payload: null,
     };
   }

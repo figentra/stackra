@@ -12,11 +12,11 @@ import type { CatalogueOffer } from "#core/types/catalogue-offer.type";
 /** The three test offers, by name. */
 export const OFFERS: Readonly<Record<"founding" | "startup" | "annual", CatalogueOffer>> = {
   founding: offerOf("offer:founding", [
-    { id: "p", record: "benefit", kind: "percent", basisPoints: 4_500, months: null },
+    { id: "p", record: "benefit", kind: "percent", basisPoints: 4500, months: null },
     { id: "e", record: "eligibility", packs: ["ae"], products: ["academorix"] },
   ]),
   startup: offerOf("offer:startup", [
-    { id: "p", record: "benefit", kind: "percent", basisPoints: 5_000, months: 12 },
+    { id: "p", record: "benefit", kind: "percent", basisPoints: 5000, months: 12 },
     {
       id: "ai",
       record: "benefit",
@@ -38,7 +38,7 @@ export const OFFERS: Readonly<Record<"founding" | "startup" | "annual", Catalogu
     },
   ]),
   annual: offerOf("offer:annual", [
-    { id: "p", record: "benefit", kind: "percent", basisPoints: 2_000, months: null },
+    { id: "p", record: "benefit", kind: "percent", basisPoints: 2000, months: null },
     { id: "e", record: "eligibility", packs: ["ae", "eg"], products: ["commerce", "academorix"] },
   ]),
 };

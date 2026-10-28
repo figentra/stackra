@@ -15,20 +15,20 @@ const sar = (minor: number) => ({ minor, currency: "SAR" });
 
 describe("computePartnerPayout", () => {
   it("applies the rate, half up, plus the fixed fee", () => {
-    expect(computePartnerPayout(sar(10_005), { basisPoints: 2_000, fixedMinor: 0 })).toEqual({
+    expect(computePartnerPayout(sar(10_005), { basisPoints: 2000, fixedMinor: 0 })).toEqual({
       gross: sar(10_005),
-      fee: sar(2_001),
-      net: sar(8_004),
+      fee: sar(2001),
+      net: sar(8004),
     });
-    expect(computePartnerPayout(sar(10_002), { basisPoints: 2_000, fixedMinor: 100 })).toEqual({
+    expect(computePartnerPayout(sar(10_002), { basisPoints: 2000, fixedMinor: 100 })).toEqual({
       gross: sar(10_002),
-      fee: sar(2_100),
-      net: sar(7_902),
+      fee: sar(2100),
+      net: sar(7902),
     });
   });
 
   it("never keeps more than the gross", () => {
-    expect(computePartnerPayout(sar(50), { basisPoints: 1_000, fixedMinor: 100 })).toEqual({
+    expect(computePartnerPayout(sar(50), { basisPoints: 1000, fixedMinor: 100 })).toEqual({
       gross: sar(50),
       fee: sar(50),
       net: sar(0),
@@ -38,10 +38,10 @@ describe("computePartnerPayout", () => {
   it("stays exact on large grosses", () => {
     const gross = Number.MAX_SAFE_INTEGER;
     const { fee, net } = computePartnerPayout(sar(gross), {
-      basisPoints: 9_999,
+      basisPoints: 9999,
       fixedMinor: 0,
     });
-    expect(BigInt(fee.minor)).toBe((BigInt(gross) * 9_999n + 5_000n) / 10_000n);
+    expect(BigInt(fee.minor)).toBe((BigInt(gross) * 9999n + 5000n) / 10_000n);
     expect(fee.minor + net.minor).toBe(gross);
   });
 

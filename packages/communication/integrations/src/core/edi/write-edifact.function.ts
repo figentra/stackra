@@ -14,7 +14,7 @@ import type { EdiParty } from "#contracts/edi/edi-party.type";
 
 /** `value` with its delimiters escaped. */
 function escape(value: string): string {
-  return value.replace(/[?:+']/g, "?$&");
+  return value.replaceAll(/[?:+']/g, "?$&");
 }
 
 /** One segment as text. */

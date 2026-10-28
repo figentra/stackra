@@ -37,7 +37,7 @@ export function settingsKeyOf(type: AnyClass): string {
     root = parent;
   const key = (root as AnyClass).name
     .replace(/Settings$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
   if (key === "")
     throw new TypeError(

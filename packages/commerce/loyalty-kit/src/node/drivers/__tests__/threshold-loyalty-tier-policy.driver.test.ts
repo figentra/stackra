@@ -24,7 +24,7 @@ const draft = (balanceAfter: number) => ({
 
 describe("ThresholdLoyaltyTierPolicyDriver", () => {
   const policy = new ThresholdLoyaltyTierPolicyDriver(
-    fakeSettings([[LoyaltyKitSettings, { tiers: { silverFrom: 500, goldFrom: 1_500 } }]]),
+    fakeSettings([[LoyaltyKitSettings, { tiers: { silverFrom: 500, goldFrom: 1500 } }]]),
   );
 
   it("is a LoyaltyTierPolicy driver", () => {
@@ -32,7 +32,7 @@ describe("ThresholdLoyaltyTierPolicyDriver", () => {
   });
 
   it("maps the balance to the tier whose threshold it reached", async () => {
-    expect(await policy.tierFor(draft(1_500))).toBe(LoyaltyTier.Gold);
+    expect(await policy.tierFor(draft(1500))).toBe(LoyaltyTier.Gold);
     expect(await policy.tierFor(draft(500))).toBe(LoyaltyTier.Silver);
     expect(await policy.tierFor(draft(499))).toBe(LoyaltyTier.Bronze);
   });

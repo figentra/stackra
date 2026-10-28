@@ -14,6 +14,9 @@
   `--deny-warnings`, so a warning would never fail. B-2 (`no-array-sort`) and B-5 (promise executor, code point,
   structured clone, spread) are at error too. Until the base lib is ES2023, a sort or reverse of a just-built array
   carries a reasoned disable; never run `--fix` for `prefer-spread` on typed arrays (it yields a `number[]`).
+- B-3 (stackra-231): numeric separators, switch-case braces, `replaceAll` and `catch-error-name` at error;
+  `number-literal-case` off (oxfmt lowercases hex digits). Never `--fix` `catch-error-name`: its rename to `error`
+  can shadow an outer `error`; use an `Error`-suffixed name (`caughtError`) there.
 - Secrets: forbidden.
 
 ## PII

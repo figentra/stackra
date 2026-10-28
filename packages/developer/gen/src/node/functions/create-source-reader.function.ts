@@ -421,17 +421,22 @@ export function createSourceReader(
   const constant = (node: TsNode | undefined, self?: SelfOf): unknown => {
     if (node === undefined) return NOT_CONSTANT;
     switch (host.kind(node)) {
-      case "NumericLiteral":
+      case "NumericLiteral": {
         return Number(nameOf(node).replaceAll("_", ""));
+      }
       case "StringLiteral":
-      case "NoSubstitutionTemplateLiteral":
+      case "NoSubstitutionTemplateLiteral": {
         return node.text ?? "";
-      case "TrueKeyword":
+      }
+      case "TrueKeyword": {
         return true;
-      case "FalseKeyword":
+      }
+      case "FalseKeyword": {
         return false;
-      case "NullKeyword":
+      }
+      case "NullKeyword": {
         return null;
+      }
       case "RegularExpressionLiteral": {
         const raw = nameOf(node);
         const end = raw.lastIndexOf("/");
@@ -449,8 +454,9 @@ export function createSourceReader(
       case "AsExpression":
       case "SatisfiesExpression":
       case "NonNullExpression":
-      case "TypeAssertionExpression":
+      case "TypeAssertionExpression": {
         return constant(node.expression, self);
+      }
       case "ArrayLiteralExpression": {
         const items: unknown[] = [];
         for (const element of node.elements ?? []) {
@@ -486,13 +492,15 @@ export function createSourceReader(
           ? NOT_CONSTANT
           : Object.fromEntries(entries);
       }
-      case "Identifier":
+      case "Identifier": {
         if (nameOf(node) === "undefined") return undefined;
         return reference(node);
-      case "PropertyAccessExpression":
+      }
+      case "PropertyAccessExpression": {
         if (node.expression !== undefined && host.kind(node.expression) === "ThisKeyword")
           return self === undefined ? NOT_CONSTANT : self(nameOf(node.name));
         return i18nKey(node) ?? reference(node);
+      }
       case "CallExpression": {
         const callee = node.expression === undefined ? "" : host.text(node.expression);
         // `Object.freeze({ ... })` (a shared level constant) is the value it freezes (STA-1296).
@@ -507,8 +515,9 @@ export function createSourceReader(
           return NOT_CONSTANT;
         }
       }
-      default:
+      default: {
         return NOT_CONSTANT;
+      }
     }
   };
 
@@ -982,30 +991,36 @@ export function createSourceReader(
 
   const readSingleType = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
     switch (host.kind(node)) {
-      case "StringKeyword":
+      case "StringKeyword": {
         return { kind: "string" };
-      case "NumberKeyword":
+      }
+      case "NumberKeyword": {
         return { kind: "number" };
-      case "BooleanKeyword":
+      }
+      case "BooleanKeyword": {
         return { kind: "boolean" };
-      case "ArrayType":
+      }
+      case "ArrayType": {
         return node.elementType === undefined
           ? unknownType(node, subject, quiet)
           : { kind: "array", element: elementOf(node.elementType, subject, quiet) };
-      case "TypeOperator":
+      }
+      case "TypeOperator": {
         // `readonly T[]`
         return node.type === undefined
           ? unknownType(node, subject, quiet)
           : readSingleType(node.type, subject, quiet);
+      }
       case "TypeQuery": {
         const value = host.literal(host.typeAt(node));
         return typeof value === "string"
           ? { kind: "enum", name: host.text(node).replace(/^typeof\s+/, ""), values: [value] }
           : unknownType(node, subject, quiet);
       }
-      case "AnyKeyword":
+      case "AnyKeyword": {
         return unknownType(node, subject, quiet, "`any` is not a shape type");
-      case "UnknownKeyword":
+      }
+      case "UnknownKeyword": {
         return unknownType(
           node,
           subject,
@@ -1013,7 +1028,8 @@ export function createSourceReader(
           "`unknown` is not a shape type",
           `${FIX_SHAPE}; free-form data is Json`,
         );
-      case "TypeLiteral":
+      }
+      case "TypeLiteral": {
         return unknownType(
           node,
           subject,
@@ -1021,7 +1037,8 @@ export function createSourceReader(
           "an inline object type is not a shape type",
           "move the fields to a Schema class",
         );
-      case "LiteralType":
+      }
+      case "LiteralType": {
         return unknownType(
           node,
           subject,
@@ -1029,10 +1046,13 @@ export function createSourceReader(
           `the literal type \`${host.text(node)}\` is not a shape type`,
           "use an enum (Enum.of)",
         );
-      case "TypeReference":
+      }
+      case "TypeReference": {
         return readTypeReference(node, subject, quiet);
-      default:
+      }
+      default: {
         return unknownType(node, subject, quiet);
+      }
     }
   };
 
@@ -1812,7 +1832,7 @@ export function createSourceReader(
     const byModule = new Map<string, Map<string, FieldIR>>();
     const fields: FieldIR[] = [];
     for (const element of elements) {
-      const [head, module, key, ...rest] = host.text(element).replace(/\s+/g, "").split(".");
+      const [head, module, key, ...rest] = host.text(element).replaceAll(/\s+/g, "").split(".");
       let field: FieldIR | undefined;
       if (head === local && module !== undefined && key !== undefined && rest.length === 0) {
         const keys = byModule.get(module) ?? settingFieldsOf(module);

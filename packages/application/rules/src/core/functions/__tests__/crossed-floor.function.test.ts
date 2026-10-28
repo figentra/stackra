@@ -47,8 +47,8 @@ describe(crossedFloor, () => {
       to: AED_100,
       reason: "past_floor",
     });
-    expect(crossedFloor(FieldType.Money, { minor: 5_000, currency: "AED" }, cap)).toBeUndefined();
-    expect(crossedFloor(FieldType.Money, { minor: 5_000, currency: "USD" }, cap)).toEqual({
+    expect(crossedFloor(FieldType.Money, { minor: 5000, currency: "AED" }, cap)).toBeUndefined();
+    expect(crossedFloor(FieldType.Money, { minor: 5000, currency: "USD" }, cap)).toEqual({
       to: AED_100,
       reason: "currency_mismatch",
     });

@@ -184,15 +184,15 @@ export async function apply(L, actions, issueByKey, log = console.log) {
       // The GitHub integration usually attached the PR already, and Linear refuses a duplicate: the marker
       // comment below must still be written, or a later run would override a human.
       if (a.link && !issue.attachments?.nodes?.some((n) => n.url === a.link))
-        await L.link(issue, a.link).catch((e) =>
-          log(`  (${a.key}: attachment skipped: ${e.message})`),
+        await L.link(issue, a.link).catch((error) =>
+          log(`  (${a.key}: attachment skipped: ${error.message})`),
         );
       if (a.addLabel) await L.addLabel(issue, a.addLabel);
       if (a.removeLabel) await L.removeLabel(issue, a.removeLabel);
       if (a.comment) await L.comment(issue, `${a.comment}\n\n— ${MARK(a.tag)}`);
-    } catch (e) {
+    } catch (error) {
       failed++;
-      log(`  ! ${a.key}: ${e.message}`);
+      log(`  ! ${a.key}: ${error.message}`);
     }
   }
   return failed;
@@ -303,8 +303,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
     // Never blocks: a Linear or GitHub outage is reported, not failed.
-    (e) => {
-      console.log(`linear-reconcile: ${e.message}`);
+    (error) => {
+      console.log(`linear-reconcile: ${error.message}`);
       process.exit(0);
     },
   );

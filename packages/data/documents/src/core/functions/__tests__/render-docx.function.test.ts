@@ -83,7 +83,7 @@ const DATA = {
   order: {
     number: "R-1001",
     verifyUrl: "https://verify.example/R-1001",
-    totalMinor: 123550n,
+    totalMinor: 123_550n,
     lines: [{ name: "<b>Tea</b>", quantity: 2 }],
   },
   currency: CURRENCY,

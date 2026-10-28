@@ -70,7 +70,7 @@ export class Nf525Driver extends Driver(FiscalDriver) {
     const payload = [
       [...totals].map(([rate, minor]) => `${rate}:${minor}`).join("|"),
       sign * document.gross.minor,
-      `${local.date}${local.time}`.replace(/[-:]/g, ""),
+      `${local.date}${local.time}`.replaceAll(/[-:]/g, ""),
       document.number,
       options.operationTypes[document.kind],
       context.previous === null ? "O" : "N",

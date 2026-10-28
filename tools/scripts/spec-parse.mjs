@@ -9,7 +9,7 @@
  */
 
 /** Text without HTML comments, which hold template guidance, never content. */
-export const strip = (text) => text.replace(/<!--[\s\S]*?-->/g, "");
+export const strip = (text) => text.replaceAll(/<!--[\s\S]*?-->/g, "");
 
 /** IDs defined as `- **FR-001**: …` (or SC/EC/P), split into live and struck (`~~FR-001~~`, amendments). */
 export function definedIds(text, prefix) {

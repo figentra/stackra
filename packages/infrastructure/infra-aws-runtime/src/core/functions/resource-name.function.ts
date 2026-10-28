@@ -14,11 +14,11 @@ const SUFFIX_LENGTH = 8;
 
 /** FNV-1a (32 bit) of `text`, seven base-36 characters. */
 function hashOf(text: string): string {
-  let hash = 0x811c9dc5;
+  let hash = 0x81_1c_9d_c5;
   for (let index = 0; index < text.length; index += 1) {
     // oxlint-disable-next-line unicorn/prefer-code-point -- hashes UTF-16 code units; code points would change every hash already issued
     hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
+    hash = Math.imul(hash, 0x01_00_01_93);
   }
   return (hash >>> 0).toString(36).padStart(SUFFIX_LENGTH - 1, "0");
 }
@@ -36,8 +36,8 @@ export function resourceName(parts: readonly string[], limit: number): string {
     .map((part) =>
       part
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, ""),
+        .replaceAll(/[^a-z0-9]+/g, "-")
+        .replaceAll(/^-+|-+$/g, ""),
     )
     .filter((part) => part !== "")
     .join("-");

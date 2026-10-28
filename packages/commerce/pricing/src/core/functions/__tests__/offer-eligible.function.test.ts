@@ -17,7 +17,7 @@ describe("offerEligible", () => {
   it("passes an applicant in the pack and product whose rule set matched under the cap", () => {
     expect(offerEligible(OFFERS.startup, APPLICANT)).toBe(true);
     expect(
-      offerEligible(OFFERS.annual, { ...APPLICANT, ruleSetMatched: false, redeemedInPack: 1_000 }),
+      offerEligible(OFFERS.annual, { ...APPLICANT, ruleSetMatched: false, redeemedInPack: 1000 }),
     ).toBe(true);
   });
 

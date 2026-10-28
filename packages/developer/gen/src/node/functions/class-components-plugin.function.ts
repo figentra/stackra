@@ -152,13 +152,15 @@ function rewriteThis(path: NodePath<BabelTypes.ThisExpression>, state: ThisState
   switch (member.kind) {
     case "render":
     case "mount":
-    case "unmount":
+    case "unmount": {
       throw access.buildCodeFrameError(`${key}() is called by React; it cannot be referenced.`);
-    case "method":
+    }
+    case "method": {
       access.replaceWith(t.identifier(member.binding));
       return;
+    }
     case "getter":
-    case "hook":
+    case "hook": {
       if (isWriteTarget(access))
         throw access.buildCodeFrameError(
           `"${key}" is read-only (${member.kind === "getter" ? "a getter" : "a hook result"}).`,
@@ -169,8 +171,10 @@ function rewriteThis(path: NodePath<BabelTypes.ThisExpression>, state: ThisState
           : t.identifier(member.binding),
       );
       return;
-    case "state":
+    }
+    case "state": {
       rewriteState(state, access, member);
+    }
   }
 }
 

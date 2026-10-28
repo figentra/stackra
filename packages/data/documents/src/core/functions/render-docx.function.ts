@@ -148,7 +148,7 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
   const children: (Paragraph | Table)[] = [];
   for (const block of document.blocks) {
     switch (block.type) {
-      case "text":
+      case "text": {
         children.push(
           ...localized(
             block.texts.map((parts, index) =>
@@ -157,7 +157,8 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
           ),
         );
         break;
-      case "amount-in-words":
+      }
+      case "amount-in-words": {
         children.push(
           ...localized(
             block.texts.map((text, index) =>
@@ -166,6 +167,7 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
           ),
         );
         break;
+      }
       case "table": {
         const cell = (text: string, align: keyof typeof ALIGNMENTS, look: Look): TableCell =>
           new TableCell({
@@ -205,7 +207,7 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
         );
         break;
       }
-      case "qr":
+      case "qr": {
         children.push(
           imageParagraph(
             await encodeQrPng(block.matrix, QR_SCALE),
@@ -216,7 +218,8 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
           ),
         );
         break;
-      case "barcode":
+      }
+      case "barcode": {
         children.push(
           imageParagraph(
             await encodeQrPng([block.modules], QR_SCALE),
@@ -237,7 +240,8 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
             : []),
         );
         break;
-      case "image":
+      }
+      case "image": {
         children.push(
           imageParagraph(
             block.image.bytes,
@@ -248,7 +252,8 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
           ),
         );
         break;
-      case "signature":
+      }
+      case "signature": {
         children.push(
           imageParagraph(
             block.image.bytes,
@@ -269,6 +274,7 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
           ),
         );
         break;
+      }
     }
   }
   const margin = Math.round(page.marginMm * TWIPS_PER_MM);

@@ -2967,7 +2967,7 @@ const permissionGlob = (g) =>
   new RegExp(
     `^${g
       .slice(5, -1)
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&")
       .replaceAll("*", ".*")}$`,
   );
 
@@ -3011,7 +3011,7 @@ const settingsGlob = (rule) =>
   new RegExp(
     `^${rule
       .slice(5, -1)
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&")
       .replaceAll("*", ".*")}$`,
   );
 

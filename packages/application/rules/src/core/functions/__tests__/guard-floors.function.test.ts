@@ -103,25 +103,25 @@ describe(guardFloors, () => {
   });
 
   it("moves a money amount past a money floor, or in another currency, to the floor", () => {
-    const cap = [floor("consumer.fee_cap", { minor: 5_000, currency: "EUR" }, FloorBound.Max)];
+    const cap = [floor("consumer.fee_cap", { minor: 5000, currency: "EUR" }, FloorBound.Max)];
     const over = guardFloors(
       RULES,
-      [{ kind: "fee", params: { amount: { minor: 9_000, currency: "EUR" } } }],
+      [{ kind: "fee", params: { amount: { minor: 9000, currency: "EUR" } } }],
       cap,
     );
     expect(over.outcomes).toEqual([
-      { kind: "fee", params: { amount: { minor: 5_000, currency: "EUR" } } },
+      { kind: "fee", params: { amount: { minor: 5000, currency: "EUR" } } },
     ]);
     expect(over.floored[0]).toMatchObject({
-      from: { minor: 9_000, currency: "EUR" },
-      to: { minor: 5_000, currency: "EUR" },
+      from: { minor: 9000, currency: "EUR" },
+      to: { minor: 5000, currency: "EUR" },
     });
     const foreign = guardFloors(
       RULES,
       [{ kind: "fee", params: { amount: { minor: 100, currency: "USD" } } }],
       cap,
     );
-    expect(foreign.outcomes[0]?.params["amount"]).toEqual({ minor: 5_000, currency: "EUR" });
+    expect(foreign.outcomes[0]?.params["amount"]).toEqual({ minor: 5000, currency: "EUR" });
     const under = [{ kind: "fee", params: { amount: { minor: 100, currency: "EUR" } } }];
     expect(guardFloors(RULES, under, cap).floored).toEqual([]);
   });

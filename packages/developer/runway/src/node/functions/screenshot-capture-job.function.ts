@@ -33,7 +33,7 @@ function isInside(path: string): boolean {
 
 /** `template` with each `{key}` replaced. */
 function fill(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+  return template.replaceAll(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
 }
 
 /** The screens of one captions file, or a problem line. */

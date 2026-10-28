@@ -16,7 +16,7 @@ const BLOCK_TAG = /(?:^|\s)@[A-Za-z]+(?=\s|\{|$)/;
 
 /** Whether `text` carries a block tag, ignoring inline tags and code spans. */
 const hasBlockTag = (text: string): boolean =>
-  BLOCK_TAG.test(text.replace(/\{@[^}]*\}/g, "").replace(/`[^`]*`/g, ""));
+  BLOCK_TAG.test(text.replaceAll(/\{@[^}]*\}/g, "").replaceAll(/`[^`]*`/g, ""));
 
 /** The non-empty text lines of a `/** *\/` comment value, gutters stripped. */
 const textLines = (value: string): string[] =>

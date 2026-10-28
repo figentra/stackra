@@ -81,7 +81,7 @@ describe("checkLicenceKey", () => {
       account: "acme",
       licenceKey: "K",
       transport: send,
-    }).catch((caught: unknown) => caught);
+    }).catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, LicenceCheckUnavailableError)).toBe(true);
     expect((error as LicenceCheckUnavailableError).status).toBe(503);
   });

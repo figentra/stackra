@@ -15,11 +15,11 @@ import { sdpOffer } from "#node/sip/sdp-offer.function";
 
 describe("sdpOffer", () => {
   it("offers the codecs in order", () => {
-    const offer = sdpOffer("203.0.113.7", 40000, [AudioEncoding.Alaw, AudioEncoding.Mulaw], 7);
+    const offer = sdpOffer("203.0.113.7", 40_000, [AudioEncoding.Alaw, AudioEncoding.Mulaw], 7);
     expect(offer).toContain("c=IN IP4 203.0.113.7\r\n");
     expect(offer).toContain("m=audio 40000 RTP/AVP 8 0\r\n");
     expect(offer).toContain("a=rtpmap:8 PCMA/8000\r\na=rtpmap:0 PCMU/8000\r\n");
-    expect(parseSdp(offer)).toEqual({ address: "203.0.113.7", port: 40000, payloadTypes: [8, 0] });
+    expect(parseSdp(offer)).toEqual({ address: "203.0.113.7", port: 40_000, payloadTypes: [8, 0] });
   });
 
   it("refuses an encoding RTP does not carry here", () => {
@@ -44,7 +44,7 @@ describe("parseSdp", () => {
     ].join("\r\n");
     expect(parseSdp(answer)).toEqual({
       address: "192.0.2.4",
-      port: 49172,
+      port: 49_172,
       payloadTypes: [0, 8, 101],
     });
   });

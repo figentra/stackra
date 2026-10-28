@@ -53,7 +53,7 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
       "P7D",
     );
     expect(MEDIA_CONFIG_SCHEMA.parse({ uploadExpiresIn: "1h" }).uploadExpiresIn).toBe("PT1H");
-    for (const lifetime of ["PT0S", "P8D", "8d", "an hour", 3_600])
+    for (const lifetime of ["PT0S", "P8D", "8d", "an hour", 3600])
       expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploadExpiresIn: lifetime }).success).toBe(false);
   });
 

@@ -11,7 +11,7 @@
 
 /** A uniform random whole number in `[0, below)`. */
 function randomBelow(below: number): number {
-  const limit = Math.floor(0x1_0000_0000 / below) * below;
+  const limit = Math.floor(0x1_00_00_00_00 / below) * below;
   const word = new Uint32Array(1);
   let value: number;
   do value = crypto.getRandomValues(word)[0] ?? limit;

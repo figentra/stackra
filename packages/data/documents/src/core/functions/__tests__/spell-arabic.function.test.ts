@@ -48,7 +48,7 @@ describe("spellArabic", () => {
     expect(spellArabic(1235n, RIYAL)).toBe("ألف ومائتان وخمسة وثلاثون ريالًا");
     expect(spellArabic(2000n, RIYAL)).toBe("ألفان ريال");
     expect(spellArabic(3000n, LIRA)).toBe("ثلاثة آلاف ليرة");
-    expect(spellArabic(15000n, RIYAL)).toBe("خمسة عشر ألفًا ريال");
+    expect(spellArabic(15_000n, RIYAL)).toBe("خمسة عشر ألفًا ريال");
     expect(spellArabic(1_000_005n, RIYAL)).toBe("مليون وخمسة ريالات");
   });
 

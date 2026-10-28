@@ -51,13 +51,13 @@ describe("ClientFake", () => {
     const fake = new ClientFake();
     fake.on(GetVariantByBarcodeQuery).returns({ variantId: "var_1" });
     fake.on(QuotePriceQuery).returns(({ lines }) => ({
-      lines: lines.map((line) => ({ ...line, unitPriceMinor: 1_000 })),
+      lines: lines.map((line) => ({ ...line, unitPriceMinor: 1000 })),
     }));
     expect(await fake.send(clientRequest(GetVariantByBarcodeQuery, { barcode: "1" }))).toEqual({
       variantId: "var_1",
     });
     expect(await fake.send(clientRequest(QuotePriceQuery, { lines: [{ quantity: 2 }] }))).toEqual({
-      lines: [{ quantity: 2, unitPriceMinor: 1_000 }],
+      lines: [{ quantity: 2, unitPriceMinor: 1000 }],
     });
     expect(fake.knows(QuotePriceQuery.key)).toBe(true);
     expect(fake.knows(VoidPaymentAction.key)).toBe(false);

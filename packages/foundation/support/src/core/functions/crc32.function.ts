@@ -11,7 +11,8 @@
 /** The CRC-32 lookup table. */
 const TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
-  for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+  for (let bit = 0; bit < 8; bit += 1)
+    value = value & 1 ? 0xed_b8_83_20 ^ (value >>> 1) : value >>> 1;
   return value >>> 0;
 });
 
@@ -25,7 +26,7 @@ const TABLE = Uint32Array.from({ length: 256 }, (_, index) => {
  */
 export function crc32(input: Uint8Array | string, previous = 0): number {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
-  let crc = (previous ^ 0xffffffff) >>> 0;
+  let crc = (previous ^ 0xff_ff_ff_ff) >>> 0;
   for (const byte of bytes) crc = (TABLE[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
+  return (crc ^ 0xff_ff_ff_ff) >>> 0;
 }

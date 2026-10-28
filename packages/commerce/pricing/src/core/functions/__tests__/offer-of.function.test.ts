@@ -21,13 +21,13 @@ const ELIGIBILITY = {
 describe("offerOf", () => {
   it("reads every benefit kind and the eligibility", () => {
     const offer = offerOf("offer:startup", [
-      { id: "half", record: "benefit", kind: "percent", basisPoints: 5_000, months: 12 },
+      { id: "half", record: "benefit", kind: "percent", basisPoints: 5000, months: 12 },
       {
         id: "ai",
         record: "benefit",
         kind: "credit_grant",
         credit: "ai",
-        units: 1_000,
+        units: 1000,
         period: "month",
         months: 12,
       },
@@ -36,8 +36,8 @@ describe("offerOf", () => {
       ELIGIBILITY,
     ]);
     expect(offer.benefits).toEqual([
-      { kind: "percent", basisPoints: 5_000, months: 12 },
-      { kind: "credit_grant", credit: "ai", units: 1_000, period: "month", months: 12 },
+      { kind: "percent", basisPoints: 5000, months: 12 },
+      { kind: "credit_grant", credit: "ai", units: 1000, period: "month", months: 12 },
       { kind: "free_migration" },
       { kind: "module_grant", module: "crm", months: null },
     ]);

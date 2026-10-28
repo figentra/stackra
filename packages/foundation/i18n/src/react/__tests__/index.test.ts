@@ -40,7 +40,7 @@ describe("@stackra/i18n/react", () => {
     expectTypeOf(react.useLocaleChoice)
       .returns.toHaveProperty("chosen")
       .toEqualTypeOf<Locale | null>();
-    expectTypeOf(react.useMoney).returns.toBeCallableWith(9_900, "SAR");
+    expectTypeOf(react.useMoney).returns.toBeCallableWith(9900, "SAR");
     expectTypeOf(react.useMoney).returns.toBeCallableWith({} as Money);
     expectTypeOf(react.useNumber).returns.toBeCallableWith(12);
     expectTypeOf(react.useDateTime).returns.toBeCallableWith(new Date(), { dateStyle: "medium" });

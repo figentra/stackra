@@ -21,5 +21,7 @@ export function csvCell(value: TabularCell, delimiter: string, isGuarded: boolea
   let text = value instanceof Date ? value.toISOString() : String(value);
   if (isGuarded && typeof value === "string" && FORMULA_PREFIXES.includes(text.charAt(0)))
     text = `'${text}`;
-  return text.includes(delimiter) || /["\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  return text.includes(delimiter) || /["\r\n]/.test(text)
+    ? `"${text.replaceAll('"', '""')}"`
+    : text;
 }

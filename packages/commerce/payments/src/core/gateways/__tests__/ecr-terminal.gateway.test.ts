@@ -61,10 +61,10 @@ const profile: EcrProfile = {
     "17": EcrOutcome.Cancelled,
     P: EcrOutcome.Pending,
   },
-  timing: { answerMs: 120_000, ackMs: 2_000, retries: 3 },
+  timing: { answerMs: 120_000, ackMs: 2000, retries: 3 },
 };
 
-const amount = Money.ofMinor(2_500, "SAR");
+const amount = Money.ofMinor(2500, "SAR");
 const sale = { reference: "chk_9", terminalId: "T-0042", amount };
 
 /** Lets queued microtasks and timers run, so the held exchange has started. */
@@ -202,7 +202,7 @@ describe("EcrTerminalGateway", () => {
     );
     const gateway = gatewayOver(link);
     const payment = { reference: "chk_9", providerRef: "RRN-1" };
-    const refund = { payment, amount: Money.ofMinor(1_000, "SAR") };
+    const refund = { payment, amount: Money.ofMinor(1000, "SAR") };
     expect(await gateway.refund({ ...refund, reference: "rf_1" })).toEqual({
       providerRef: "RRN-9",
       status: TransferStatus.Succeeded,
@@ -224,19 +224,19 @@ describe("EcrTerminalGateway", () => {
       "VOD|tab_2|00|RRN-6||",
     );
     const gateway = gatewayOver(link);
-    const hold = { ...sale, amount: Money.ofMinor(5_000, "SAR"), captureLater: true };
+    const hold = { ...sale, amount: Money.ofMinor(5000, "SAR"), captureLater: true };
     expect((await gateway.startTerminal({ ...hold, reference: "tab_1" })).status).toBe(
       PaymentStatus.Authorized,
     );
     const captured = await gateway.capture({
       payment: { reference: "tab_1", providerRef: "RRN-5" },
-      amount: Money.ofMinor(4_200, "SAR"),
+      amount: Money.ofMinor(4200, "SAR"),
       reference: "capture:tab_1",
     });
-    expect(captured).toMatchObject({ status: PaymentStatus.Captured, amount: { minor: 4_200 } });
+    expect(captured).toMatchObject({ status: PaymentStatus.Captured, amount: { minor: 4200 } });
     await gateway.startTerminal({ ...hold, reference: "tab_2" });
     const voided = await gateway.void({ reference: "tab_2", providerRef: "RRN-6" });
-    expect(voided).toMatchObject({ status: PaymentStatus.Voided, amount: { minor: 5_000 } });
+    expect(voided).toMatchObject({ status: PaymentStatus.Voided, amount: { minor: 5000 } });
     const plain = gatewayOver(new EcrLinkFake(), {
       operations: { sale: "PUR", refund: "REF", inquiry: "INQ", cancel: "CAN" },
     });

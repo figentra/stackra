@@ -17,7 +17,7 @@ import type { IsoDate } from "#core/types/iso-date.type";
 const EPOCH = Date.UTC(622, 6, 19) / MS_PER_DAY;
 
 /** The mean synodic month in days. */
-const MONTH = 29.530_588;
+const MONTH = 29.530588;
 
 /** Corrections tried before the date is declared not to exist. */
 const ATTEMPTS = 8;

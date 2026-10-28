@@ -39,7 +39,7 @@ import type { ComboBoxProps } from "#native/combo-box/combo-box.props";
 const LIST_STYLE = Object.freeze({ maxHeight: 320 });
 
 /** Text as compared when filtering: without accents or case, so "cafe" finds "Café". */
-const fold = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+const fold = (text: string) => text.normalize("NFD").replaceAll(/\p{M}/gu, "").toLocaleLowerCase();
 
 /** The option HeroUI Native holds for a key: its key and label, or nothing when no choice has that key. */
 function optionOf(items: readonly SelectItem[], key: string | null | undefined) {

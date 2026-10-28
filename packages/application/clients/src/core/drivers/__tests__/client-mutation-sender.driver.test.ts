@@ -56,7 +56,7 @@ class StubTransport extends ClientTransport {
   }
 }
 
-const ORDER = { deviceId: "device-1", sequence: 1729760400000 };
+const ORDER = { deviceId: "device-1", sequence: 1_729_760_400_000 };
 
 const replay = (answer: () => Promise<unknown>) => {
   const transport = new StubTransport(answer);

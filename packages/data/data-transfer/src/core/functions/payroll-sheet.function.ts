@@ -45,24 +45,33 @@ export function payrollSheet(
     column: PayrollExportProfile["columns"][number],
   ): TabularCell => {
     switch (column.field) {
-      case "employee":
+      case "employee": {
         return input.employee;
-      case "item":
+      }
+      case "item": {
         return input.item;
-      case "code":
+      }
+      case "code": {
         return code;
-      case "quantity":
+      }
+      case "quantity": {
         return numberOf(input.quantity);
-      case "amount":
+      }
+      case "amount": {
         return numberOf(input.amount);
-      case "currency":
+      }
+      case "currency": {
         return input.currency ?? null;
-      case "periodStart":
+      }
+      case "periodStart": {
         return dateOf(input.periodStart, profile.dateFormat);
-      case "periodEnd":
+      }
+      case "periodEnd": {
         return dateOf(input.periodEnd, profile.dateFormat);
-      case "literal":
+      }
+      case "literal": {
         return column.value ?? "";
+      }
     }
   };
   async function* rows(): AsyncGenerator<readonly TabularCell[]> {

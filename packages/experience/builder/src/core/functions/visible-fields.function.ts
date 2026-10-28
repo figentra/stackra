@@ -22,14 +22,18 @@ import type { FormDocumentField } from "#core/types/form-document-field.type";
 function factOf(field: FormDocumentField, answer: Json | undefined): FactValue | undefined {
   if (answer === undefined || !answerSchema(field).safeParse(answer).success) return undefined;
   switch (field.type) {
-    case FormFieldType.Money:
+    case FormFieldType.Money: {
       return undefined;
-    case FormFieldType.Date:
+    }
+    case FormFieldType.Date: {
       return new Date(`${String(answer)}T00:00:00Z`);
-    case FormFieldType.Boolean:
+    }
+    case FormFieldType.Boolean: {
       return String(answer);
-    default:
+    }
+    default: {
       return answer as FactValue;
+    }
   }
 }
 

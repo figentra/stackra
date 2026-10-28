@@ -21,7 +21,7 @@ type Visit = RoutePlan["routes"][number]["visits"][number];
 /** Arrival and departure, in epoch milliseconds, of `stop` for a vehicle free from `cursor`. */
 const timing = (cursor: number, stop: RouteStop): { arrive: number; depart: number } => {
   const arrive = Math.max(cursor, stop.window ? Date.parse(stop.window.from) : cursor);
-  return { arrive, depart: arrive + (stop.serviceS ?? 0) * 1_000 };
+  return { arrive, depart: arrive + (stop.serviceS ?? 0) * 1000 };
 };
 
 /**
@@ -71,7 +71,7 @@ export class MemoryRouteSolverDriver extends Driver(RouteSolver) {
         vehicleId: vehicle.vehicleId,
         visits,
         distanceM: 0,
-        durationS: visits.length === 0 ? 0 : (cursor - Date.parse(vehicle.shift.from)) / 1_000,
+        durationS: visits.length === 0 ? 0 : (cursor - Date.parse(vehicle.shift.from)) / 1000,
       })),
       unassigned,
     };

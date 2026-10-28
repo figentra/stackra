@@ -20,8 +20,8 @@ describe("mintUploadId", () => {
   });
 
   it("never repeats", () => {
-    const ids = new Set(Array.from({ length: 1_000 }, () => mintUploadId()));
-    expect(ids.size).toBe(1_000);
+    const ids = new Set(Array.from({ length: 1000 }, () => mintUploadId()));
+    expect(ids.size).toBe(1000);
   });
 
   it("orders ids by time", () => {

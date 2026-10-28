@@ -97,8 +97,8 @@ export function client({ env = process.env, fetch = netFetch } = {}) {
   const refresh = async () => {
     try {
       state.header = `Bearer ${await mint(env, fetch)}`;
-    } catch (e) {
-      if (!fallback()) throw e;
+    } catch (error) {
+      if (!fallback()) throw error;
     }
   };
   const post = async (query, variables) => {
@@ -392,8 +392,8 @@ export async function main(argv, { env = process.env, fetch, log = console.log }
       const state = cmd === "review" ? "In Review" : "Done";
       await L.setState(issue, state);
       // Linear refuses a second attachment for a URL the GitHub integration already linked; that is not a failure.
-      await L.link(issue, url, cmd === "review" ? "Pull request" : undefined).catch((e) =>
-        log(`(attachment skipped: ${e.message})`),
+      await L.link(issue, url, cmd === "review" ? "Pull request" : undefined).catch((error) =>
+        log(`(attachment skipped: ${error.message})`),
       );
       await L.comment(issue, `${state}: ${url}`);
       log(`${issue.identifier} → ${state}`);
@@ -445,19 +445,20 @@ export async function main(argv, { env = process.env, fetch, log = console.log }
       for (const line of digest(started, owner)) log(line);
       return 0;
     }
-    default:
+    default: {
       log(
         "usage: pnpm linear start|review|done|comment|link <STA-n> … | create --title t | mine | open [--label l] | check-pr",
       );
       return 2;
+    }
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
-    (e) => {
-      console.error(`linear: ${e.message}`);
+    (error) => {
+      console.error(`linear: ${error.message}`);
       process.exit(1);
     },
   );

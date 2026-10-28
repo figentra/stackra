@@ -25,12 +25,14 @@ export function routeOverlayScreenOptions(
   { isDismissable = true }: RouteOverlayScreenOptionsInput = {},
 ): NativeStackNavigationOptions {
   switch (presentation) {
-    case "modal":
+    case "modal": {
       return { presentation: "modal", headerShown: false, gestureEnabled: isDismissable };
-    case "full-screen":
+    }
+    case "full-screen": {
       return { presentation: "fullScreenModal", headerShown: false, gestureEnabled: isDismissable };
+    }
     case "sheet":
-    case "drawer":
+    case "drawer": {
       // The sheet owns the pan gesture and the scrim, so the stack's own swipe is off and the screen is see-through.
       return {
         presentation: "transparentModal",
@@ -39,5 +41,6 @@ export function routeOverlayScreenOptions(
         gestureEnabled: false,
         contentStyle: { backgroundColor: "transparent" },
       };
+    }
   }
 }

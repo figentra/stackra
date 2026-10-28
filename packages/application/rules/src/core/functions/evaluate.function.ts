@@ -56,19 +56,24 @@ function kilometresBetween(from: GeoPoint, to: GeoPoint): number {
 function hasForm(type: FieldType, fact: FactValue): boolean {
   switch (type) {
     case FieldType.String:
-    case FieldType.Enum:
+    case FieldType.Enum: {
       return typeof fact === "string";
-    case FieldType.Number:
+    }
+    case FieldType.Number: {
       return typeof fact === "number" && Number.isFinite(fact);
-    case FieldType.Money:
+    }
+    case FieldType.Money: {
       return fact instanceof Money;
-    case FieldType.Date:
+    }
+    case FieldType.Date: {
       return fact instanceof Date && !Number.isNaN(fact.getTime());
-    case FieldType.List:
+    }
+    case FieldType.List: {
       return (
         Array.isArray(fact) &&
         (fact as readonly unknown[]).every((item) => typeof item === "string")
       );
+    }
     default: {
       const point = fact as Partial<GeoPoint>;
       return Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
@@ -79,22 +84,29 @@ function hasForm(type: FieldType, fact: FactValue): boolean {
 /** An ordered test of `fact` against `low` (and `high` for `between`). */
 function compare(operator: Operator, fact: number, low: number, high: number): boolean {
   switch (operator) {
-    case Operator.Equals:
+    case Operator.Equals: {
       return fact === low;
-    case Operator.NotEquals:
+    }
+    case Operator.NotEquals: {
       return fact !== low;
+    }
     case Operator.LessThan:
-    case Operator.Before:
+    case Operator.Before: {
       return fact < low;
-    case Operator.AtMost:
+    }
+    case Operator.AtMost: {
       return fact <= low;
+    }
     case Operator.GreaterThan:
-    case Operator.After:
+    case Operator.After: {
       return fact > low;
-    case Operator.AtLeast:
+    }
+    case Operator.AtLeast: {
       return fact >= low;
-    default:
+    }
+    default: {
       return fact >= low && fact <= high;
+    }
   }
 }
 
@@ -103,20 +115,27 @@ function testText(operator: Operator, fact: string, value: Json | undefined): bo
   const values = Array.isArray(value) ? (value as readonly Json[]) : [];
   const text = String(value);
   switch (operator) {
-    case Operator.Equals:
+    case Operator.Equals: {
       return fact === text;
-    case Operator.NotEquals:
+    }
+    case Operator.NotEquals: {
       return fact !== text;
-    case Operator.OneOf:
+    }
+    case Operator.OneOf: {
       return values.includes(fact);
-    case Operator.NotOneOf:
+    }
+    case Operator.NotOneOf: {
       return !values.includes(fact);
-    case Operator.Contains:
+    }
+    case Operator.Contains: {
       return fact.includes(text);
-    case Operator.StartsWith:
+    }
+    case Operator.StartsWith: {
       return fact.startsWith(text);
-    default:
+    }
+    default: {
       return fact.endsWith(text);
+    }
   }
 }
 
@@ -124,18 +143,24 @@ function testText(operator: Operator, fact: string, value: Json | undefined): bo
 function testList(operator: Operator, fact: readonly string[], value: Json | undefined): boolean {
   const values = Array.isArray(value) ? (value as readonly Json[]) : [];
   switch (operator) {
-    case Operator.Includes:
+    case Operator.Includes: {
       return fact.includes(String(value));
-    case Operator.IncludesAny:
+    }
+    case Operator.IncludesAny: {
       return values.some((item) => fact.includes(String(item)));
-    case Operator.IncludesAll:
+    }
+    case Operator.IncludesAll: {
       return values.every((item) => fact.includes(String(item)));
-    case Operator.IncludesNone:
+    }
+    case Operator.IncludesNone: {
       return !values.some((item) => fact.includes(String(item)));
-    case Operator.IsEmpty:
+    }
+    case Operator.IsEmpty: {
       return fact.length === 0;
-    default:
+    }
+    default: {
       return fact.length > 0;
+    }
   }
 }
 
@@ -190,20 +215,25 @@ function testLeaf(
   // reason: `hasForm` proved the fact's form for the field type, and `Rules.check` the operand's
   switch (field.type) {
     case FieldType.String:
-    case FieldType.Enum:
+    case FieldType.Enum: {
       return { matched: testText(operator, fact as string, value) };
+    }
     case FieldType.Number: {
       const [low = Number.NaN, high = low] = (Array.isArray(value) ? value : [value]).map(Number);
       return { matched: compare(operator, fact as number, low, high) };
     }
-    case FieldType.Money:
+    case FieldType.Money: {
       return testMoney(operator, fact as Money, value);
-    case FieldType.Date:
+    }
+    case FieldType.Date: {
       return { matched: testDate(operator, fact as Date, value, now) };
-    case FieldType.List:
+    }
+    case FieldType.List: {
       return { matched: testList(operator, fact as readonly string[], value) };
-    default:
+    }
+    default: {
       return { matched: testGeo(operator, fact as GeoPoint, value) };
+    }
   }
 }
 

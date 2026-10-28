@@ -71,7 +71,7 @@ describe("postMappedJournal", () => {
       UnmappedAccountError,
     );
     const unbalanced = connector();
-    await expect(postMappedJournal(unbalanced, entry(9_000), "k2")).rejects.toThrow(
+    await expect(postMappedJournal(unbalanced, entry(9000), "k2")).rejects.toThrow(
       UnbalancedJournalError,
     );
     expect([...unmapped.posted, ...unbalanced.posted]).toHaveLength(0);

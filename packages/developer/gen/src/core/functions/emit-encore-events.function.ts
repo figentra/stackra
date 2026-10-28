@@ -46,7 +46,7 @@ function wireNames(manifest: StackraManifest): string[] {
 
 /** The snake_case stem of a wire name: `orders.order.paid.v1` → `orders_order_paid_v1`. */
 function stem(wire: string): string {
-  return wire.replace(/[^A-Za-z0-9]+/g, "_");
+  return wire.replaceAll(/[^A-Za-z0-9]+/g, "_");
 }
 
 /** The exported topic constant of a wire name: `eventOrdersOrderPaidV1`. */

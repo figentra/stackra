@@ -137,8 +137,8 @@ export class QueueWorkerService extends Service {
         const job = await this.driver.reserve(queue, now);
         // oxlint-disable-next-line no-await-in-loop -- see above
         await (job === undefined ? this.pause(signal) : this.run(job, now));
-      } catch (cause) {
-        this.logger()?.error(QUEUE_LOG_EVENTS.workerFailed, { queue, cause });
+      } catch (error) {
+        this.logger()?.error(QUEUE_LOG_EVENTS.workerFailed, { queue, cause: error });
         // oxlint-disable-next-line no-await-in-loop -- see above
         await this.pause(signal);
       }
@@ -271,11 +271,11 @@ export class QueueWorkerService extends Service {
       };
       const unit = resolver.has(UnitOfWork) ? resolver.get(UnitOfWork) : undefined;
       await this.inScope(job, () => (unit === undefined ? hook() : unit.transaction(hook)));
-    } catch (cause) {
+    } catch (error) {
       this.logger()?.error(QUEUE_LOG_EVENTS.deadLetterHookFailed, {
         jobId: job.id,
         key: job.key,
-        cause,
+        cause: error,
       });
     }
   }

@@ -79,7 +79,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
     at: Date,
     facts: DeviceClaimFacts = NO_FACTS,
   ): Promise<RegisteredDevice> {
-    const typed = code.replace(/[\s-]/g, "").toUpperCase();
+    const typed = code.replaceAll(/[\s-]/g, "").toUpperCase();
     const pairing = this.pairings.find((candidate) => candidate.code === typed);
     if (pairing === undefined || pairing.claimed || pairing.expiresAt.getTime() <= at.getTime())
       throw PairingCodeInvalidError.create();

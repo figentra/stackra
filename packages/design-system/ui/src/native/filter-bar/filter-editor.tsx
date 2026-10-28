@@ -51,7 +51,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
   const WORDS = UI_KEYS.ui.filter_bar;
   const { locale } = useDesignSystem();
   switch (definition.kind) {
-    case "text":
+    case "text": {
       return (
         <TextField
           accessibilityLabel={definition.label}
@@ -60,6 +60,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           {...(definition.placeholder === undefined ? {} : { placeholder: definition.placeholder })}
         />
       );
+    }
     case "number": {
       const range = filterValueOfKind("number", value) ?? { min: null, max: null };
       const shared = {
@@ -85,7 +86,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
         </View>
       );
     }
-    case "select":
+    case "select": {
       return (
         <RadioGroup
           accessibilityLabel={definition.label}
@@ -94,7 +95,8 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           onChange={onChange}
         />
       );
-    case "multi-select":
+    }
+    case "multi-select": {
       return (
         <CheckboxGroup
           accessibilityLabel={definition.label}
@@ -108,6 +110,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
           }
         />
       );
+    }
     case "date-range": {
       const range = filterValueOfKind("date-range", value) ?? { start: null, end: null };
       return (

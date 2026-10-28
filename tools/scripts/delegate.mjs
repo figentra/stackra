@@ -68,8 +68,8 @@ export function resolveRoute(routing, { type, agent, executor }, env = {}) {
 export const slugify = (s) =>
   s
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+|-+$/g, "")
     .slice(0, 40)
     .replace(/-+$/, "") || "task";
 
@@ -158,8 +158,8 @@ function main() {
   try {
     spend = evaluate({ today: costOf(fetchStats(0)), week: costOf(fetchStats(7)) }, routing.budget);
     console.log(formatLine(spend));
-  } catch (e) {
-    console.warn(`delegate: spend unknown (${e.message}); continuing`);
+  } catch (error) {
+    console.warn(`delegate: spend unknown (${error.message}); continuing`);
   }
   if (spend?.level === "over") {
     console.error(
@@ -232,8 +232,8 @@ function main() {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     main();
-  } catch (e) {
-    console.error(`delegate: ${e.message}`);
+  } catch (error) {
+    console.error(`delegate: ${error.message}`);
     process.exit(2);
   }
 }

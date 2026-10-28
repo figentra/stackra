@@ -92,24 +92,30 @@ function zodOf(
       const trim = rules.some((rule) => rule.name === "Trim") ? ".trim()" : "";
       return `z.string()${trim}${calls(rules, "Str", { min: "min", max: "max", pattern: "regex" })}`;
     }
-    case "number":
+    case "number": {
       return rules.some((rule) => rule.name === "Int")
         ? `z.number().int()${calls(rules, "Int", { min: "min", max: "max" })}`
         : `z.number()${calls(rules, "Num", { min: "min", max: "max", exclusiveMin: "gt" })}`;
-    case "boolean":
+    }
+    case "boolean": {
       return "z.boolean()";
-    case "date":
+    }
+    case "date": {
       use(imports, "@stackra/validation", "isoDateTime");
       return "isoDateTime()";
-    case "money":
+    }
+    case "money": {
       use(imports, "@stackra/money", "money");
       return "money()";
-    case "json":
+    }
+    case "json": {
       use(imports, "@stackra/validation", "json");
       return "json()";
-    case "duration":
+    }
+    case "duration": {
       use(imports, "@stackra/validation", "duration");
       return "z.string().transform(duration)";
+    }
     case "translated": {
       const text = zodOf(context, { kind: "string" }, rules, []);
       if (type.form === "strings")
@@ -117,10 +123,11 @@ function zodOf(
       use(imports, "@stackra/model", "Translated");
       return `z.record(z.string(), ${text}).transform((values) => Translated.of(values))`;
     }
-    case "upload":
+    case "upload": {
       use(imports, "@stackra/media", "Upload");
       return "Upload.schema";
-    case "brand":
+    }
+    case "brand": {
       if (type.brand === "url") {
         use(imports, "@stackra/validation", "url");
         return "url()";
@@ -135,7 +142,8 @@ function zodOf(
       }
       use(imports, "@stackra/contracts", "Email", true);
       return "z.email().transform((value) => value as Email)";
-    case "public_id":
+    }
+    case "public_id": {
       if (type.prefix === "" && type.prefixes === undefined) {
         use(imports, "@stackra/contracts", "PublicId", true);
         // Any registered prefix: the format of `publicId(prefix)` in @stackra/validation, prefix left open.
@@ -145,18 +153,23 @@ function zodOf(
       return type.prefixes === undefined
         ? `publicId(${JSON.stringify(type.prefix)})`
         : `z.union([${type.prefixes.map((prefix) => `publicId(${JSON.stringify(prefix)})`).join(", ")}])`;
-    case "enum":
+    }
+    case "enum": {
       return type.module === undefined
         ? `z.enum(${JSON.stringify(type.values)})`
         : reference(context, type.module, type.name);
-    case "driver_name":
+    }
+    case "driver_name": {
       return `z.enum(${JSON.stringify(type.values)})`;
-    case "schema":
+    }
+    case "schema": {
       return reference(context, type.module, type.name);
-    case "shipped":
+    }
+    case "shipped": {
       // Aliased so it never collides with a member shape of the same name in this file.
       use(imports, type.from, `${type.name}$ as Shipped${type.name}$`);
       return `Shipped${type.name}$`;
+    }
     case "array": {
       const unique = rules.some((rule) => rule.name === "List" && rule.options["unique"] === true)
         ? `.refine((items) => new Set(items.map((item) => JSON.stringify(item))).size === items.length, ` +
@@ -164,16 +177,18 @@ function zodOf(
         : "";
       return `z.array(${elementOf(context, type.element, each)})${calls(rules, "List", { min: "min", max: "max" })}${unique}`;
     }
-    case "record":
+    case "record": {
       return `z.record(z.string(), ${elementOf(context, type.value, each)})`;
+    }
     case "union": {
       const members = type.members.map((member) => reference(context, member.module, member.name));
       return `z.discriminatedUnion(${JSON.stringify(type.discriminator)}, [${members.join(", ")}])`;
     }
-    case "hatch":
+    case "hatch": {
       for (const [name, from, typeOnly] of type.imports ?? [])
         use(imports, from, name, typeOnly === true);
       return type.source;
+    }
   }
 }
 

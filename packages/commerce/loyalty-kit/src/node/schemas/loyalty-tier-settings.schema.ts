@@ -24,12 +24,12 @@ import { LOYALTY_TIER_SETTINGS_SCHEMA } from "#node/constants/loyalty-tier-setti
 export class LoyaltyTierSettings extends Schema {
   /** Balance at which an account becomes silver. */
   @Int({ min: 0 })
-  silverFrom = 1_000;
+  silverFrom = 1000;
 
   /** Balance at which an account becomes gold; the platform may lock it for every scope below. */
   @Int({ min: 0 })
   @Setting({ lockable: true })
-  goldFrom = 5_000;
+  goldFrom = 5000;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

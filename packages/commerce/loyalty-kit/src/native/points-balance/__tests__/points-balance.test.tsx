@@ -35,7 +35,7 @@ vi.mock("@stackra/ui/native", async () => {
 vi.mock("@stackra/i18n/react", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 /** A day in milliseconds. */
-const DAY = 24 * 60 * 60 * 1_000;
+const DAY = 24 * 60 * 60 * 1000;
 
 /** A gold balance of 420 points whose oldest points expire `days` from now. */
 const balance = (days: number) =>

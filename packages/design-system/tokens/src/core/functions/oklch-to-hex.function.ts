@@ -11,7 +11,7 @@ const OKLCH = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?
 
 const clip = (channel: number) => Math.min(1, Math.max(0, channel));
 const encode = (linear: number) =>
-  linear <= 0.003_130_8 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055;
+  linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055;
 const byte = (unit: number) =>
   Math.round(clip(unit) * 255)
     .toString(16)
@@ -32,13 +32,13 @@ export function oklchToHex(oklch: string): string {
   // OKLCh to OKLab to LMS to linear sRGB (Ottosson's matrices, as CSS Color 4 uses).
   const a = chroma * Math.cos((hue * Math.PI) / 180);
   const b = chroma * Math.sin((hue * Math.PI) / 180);
-  const l = (lightness + 0.396_337_777_4 * a + 0.215_803_757_3 * b) ** 3;
-  const m = (lightness - 0.105_561_345_8 * a - 0.063_854_172_8 * b) ** 3;
-  const s = (lightness - 0.089_484_177_5 * a - 1.291_485_548 * b) ** 3;
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
   const rgb = [
-    4.076_741_662_1 * l - 3.307_711_591_3 * m + 0.230_969_929_2 * s,
-    -1.268_438_004_6 * l + 2.609_757_401_1 * m - 0.341_319_396_5 * s,
-    -0.004_196_086_3 * l - 0.703_418_614_7 * m + 1.707_614_701 * s,
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
   ];
   const alpha = match[4] === undefined ? "" : byte(Number(match[4]));
   return `#${rgb.map((linear) => byte(encode(clip(linear)))).join("")}${alpha}`;

@@ -15,16 +15,16 @@ describe("crc32", () => {
   const bytes = new TextEncoder().encode("123456789");
 
   it("gives the IEEE check value", () => {
-    expect(crc32(bytes)).toBe(0xcbf43926);
+    expect(crc32(bytes)).toBe(0xcb_f4_39_26);
     expect(crc32(new Uint8Array())).toBe(0);
   });
 
   it("reads a string as its UTF-8 bytes", () => {
-    expect(crc32("123456789")).toBe(0xcbf43926);
+    expect(crc32("123456789")).toBe(0xcb_f4_39_26);
     expect(crc32("é")).toBe(crc32(new TextEncoder().encode("é")));
   });
 
   it("continues across chunks", () => {
-    expect(crc32(bytes.subarray(4), crc32(bytes.subarray(0, 4)))).toBe(0xcbf43926);
+    expect(crc32(bytes.subarray(4), crc32(bytes.subarray(0, 4)))).toBe(0xcb_f4_39_26);
   });
 });

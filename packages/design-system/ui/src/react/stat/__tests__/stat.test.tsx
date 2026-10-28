@@ -17,7 +17,7 @@ describe("Stat (web)", () => {
   it("shows the label before the figure, formatted in the provider's locale", () => {
     const { container } = render(
       <DesignSystemContext value={{ locale: "de-DE" } as DesignSystemState}>
-        <Stat label="Points" value={12500} badge="Gold" />
+        <Stat label="Points" value={12_500} badge="Gold" />
       </DesignSystemContext>,
     );
     expect(container.textContent).toBe("Points12.500Gold");

@@ -29,7 +29,7 @@ const ESCAPES: Readonly<Record<string, string>> = {
  */
 export function serializeJsonLd(block: JsonLd): string {
   const withContext = "@context" in block ? block : { "@context": "https://schema.org", ...block };
-  return JSON.stringify(withContext).replace(
+  return JSON.stringify(withContext).replaceAll(
     /[<>&\u2028\u2029]/g,
     (character) => ESCAPES[character] ?? character,
   );

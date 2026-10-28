@@ -26,13 +26,14 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | N-9  | `react/button-has-type`, `no-array-index-key`, `no-object-type-as-default-prop`, `jsx-no-useless-fragment` (expressions allowed)                                                                                                                                                                                                                                                         | every `**/*.tsx`                                                                            |
 | N-10 | `no-console`                                                                                                                                                                                                                                                                                                                                                                             | off for tools, agent hooks, editor plugins, package `scripts/`, apps and workers            |
 
-## The B group: B-1, B-2, B-5 (stackra-230, owner D11)
+## The B group: B-1, B-2, B-3, B-5 (stackra-230, stackra-231, owner D11)
 
 | Row | Change                                                                                                                                      | Where                                       |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | B-1 | `suspicious` category and `react/exhaustive-deps` at `error`: no warn level is left, because a member's `oxlint .` never fails on a warning | everywhere; `no-array-reverse` off in tests |
 | B-2 | `unicorn/no-array-sort` (`allowExpressionStatement`: a bare `x.sort();` passes)                                                             | everywhere but tests                        |
 | B-5 | `no-promise-executor-return`, `unicorn/prefer-code-point`, `unicorn/prefer-structured-clone`, `unicorn/prefer-spread`                       | everywhere                                  |
+| B-3 | `unicorn/numeric-separators-style`, `switch-case-braces`, `prefer-string-replace-all`, `catch-error-name`; `number-literal-case` stays off  | everywhere                                  |
 
 `toSorted` and `toReversed` are ES2023 and the TypeScript base lib is ES2022, so a TypeScript site that sorts or
 reverses an array it just built carries `oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here,
@@ -40,6 +41,11 @@ reverses an array it just built carries `oxlint-disable-next-line unicorn/no-arr
 same holds for byte-level `charCodeAt` (a binary string), text hashes and deliberate JSON round trips (the wire shape):
 they keep their form with a reason. `prefer-spread`'s autofix turns a typed-array `.slice()` into a `number[]`; copy a
 typed array with `new Uint8Array(x)` instead.
+
+B-3 (stackra-231) is the autofix sweep. `number-literal-case` stays off: it wants uppercase hex digits and oxfmt prints
+them lowercase, so the two would fight. `catch-error-name` wants `error`; where an outer `error` is in scope, name the
+parameter with an `Error` suffix (`caughtError`, `readError`), which the rule accepts and which does not shadow. Never
+run its `--fix`: it renames to `error` even when that shadows an outer `error`, which silently rebinds the outer name.
 
 `decorators.jsonc` needs no new wiring: `boundaries.jsonc` already applies its `new-cap` and `no-extraneous-class`
 settings to every package and app file, and keeps `consistent-type-imports` on (ADR 0005 d5). N-5 (the

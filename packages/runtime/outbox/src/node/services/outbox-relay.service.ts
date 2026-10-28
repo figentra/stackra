@@ -136,8 +136,8 @@ export class OutboxRelayService extends Service {
       try {
         // oxlint-disable-next-line no-await-in-loop -- one tick at a time
         if ((await this.relay()) === 0) await this.pause(options.signal);
-      } catch (cause) {
-        this.logger()?.error(OUTBOX_LOG_EVENTS.relayFailed, { cause });
+      } catch (error) {
+        this.logger()?.error(OUTBOX_LOG_EVENTS.relayFailed, { cause: error });
         // oxlint-disable-next-line no-await-in-loop -- see above
         await this.pause(options.signal);
       }

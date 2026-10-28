@@ -134,7 +134,7 @@ describe("KpiView", () => {
       <KpiView
         widget={TILE}
         kpi={kpi}
-        metric={{ value: 5_000, previous: 4_000, target: 10_000, series: null, currency: "USD" }}
+        metric={{ value: 5000, previous: 4000, target: 10_000, series: null, currency: "USD" }}
       />,
     );
     expect(screen.getByText("USD 5000").getAttribute("data-tone")).toBe("warning");

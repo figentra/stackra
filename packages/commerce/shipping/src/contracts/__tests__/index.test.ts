@@ -51,7 +51,7 @@ const { CarrierCapability, LabelFormat, PickupPointKind, TrackingState } = entry
 
 const address: ShippingAddress = { lines: ["Line 1"], locality: "City", country: "ZZ" };
 const party: ShippingParty = { name: "Name", address };
-const parcel: Parcel = { lengthMm: 300, widthMm: 200, heightMm: 100, weightG: 1_000 };
+const parcel: Parcel = { lengthMm: 300, widthMm: 200, heightMm: 100, weightG: 1000 };
 const label: LabelDocument = { format: LabelFormat.Zpl, bytes: new TextEncoder().encode("^XA^XZ") };
 
 describe("@stackra/shipping/contracts", () => {
@@ -83,7 +83,7 @@ describe("@stackra/shipping/contracts", () => {
     expect([pinned.coordinates?.latitude, business.address, parcel.weightG]).toEqual([
       1.5,
       address,
-      1_000,
+      1000,
     ]);
     // @ts-expect-error -- an address has a country
     const countryless: ShippingAddress = { lines: [], locality: "City" };
@@ -211,7 +211,7 @@ describe("@stackra/shipping/contracts", () => {
   it("searches pickup points and buys return labels", async () => {
     const search: PickupPointSearch = {
       near: address,
-      radiusM: 2_000,
+      radiusM: 2000,
       limit: 5,
       kinds: [PickupPointKind.Locker],
       parcels: [parcel],

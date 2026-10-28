@@ -159,7 +159,7 @@ const CARRIER_SDP = [
 /** The host's fakes and what reached them. */
 function hostOf(answers: Readonly<Record<string, readonly CallInstruction[]>>) {
   const signalling = new FakeSocket(5060);
-  const rtp = new FakeSocket(40000);
+  const rtp = new FakeSocket(40_000);
   const posts: { url: string; params: Readonly<Record<string, string>> }[] = [];
   const metered: unknown[] = [];
   const said: string[] = [];
@@ -353,7 +353,7 @@ describe("SipVoiceGateway", () => {
     expect(sipHeaders(ok, "To")[0]).toMatch(/;tag=\w+/);
     expect(parseSdp(ok.body)).toMatchObject({
       address: "203.0.113.7",
-      port: 40000,
+      port: 40_000,
       payloadTypes: [0],
     });
     expect(sent[2]?.uri).toBe("sip:192.0.2.10:5060");
@@ -363,7 +363,7 @@ describe("SipVoiceGateway", () => {
     });
     expect(said).toEqual(["marhaba"]);
     expect(rtp.sent).toHaveLength(1);
-    expect(rtp.sent[0]).toMatchObject({ address: "192.0.2.10", port: 30000 });
+    expect(rtp.sent[0]).toMatchObject({ address: "192.0.2.10", port: 30_000 });
     expect(rtpPayload(defined(rtp.sent[0]).data)?.payloadType).toBe(0);
     gateway.stop();
   });

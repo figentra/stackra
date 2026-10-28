@@ -32,10 +32,10 @@ describe("OfflineCapStore", () => {
 
   it("is implemented by a driver", async () => {
     const driver: OfflineCapStore = new TallyDriver();
-    await driver.record("dev_1", "gift_cards.gift_card.redeem@1", new Date(), 2_500);
+    await driver.record("dev_1", "gift_cards.gift_card.redeem@1", new Date(), 2500);
     expect(await driver.usage("dev_1", "gift_cards.gift_card.redeem@1", new Date(0))).toEqual({
       count: 1,
-      amount: 2_500,
+      amount: 2500,
     });
   });
 });

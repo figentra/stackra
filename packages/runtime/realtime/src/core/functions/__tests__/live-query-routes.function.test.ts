@@ -79,7 +79,7 @@ describe("liveQueryRoutes", () => {
     });
     if (route === undefined) throw new Error("expected a route");
     const sale: RecordedEvent = {
-      event: { saleId: "sal_1", totalMinor: 1_200 },
+      event: { saleId: "sal_1", totalMinor: 1200 },
       meta: { id: "evt_1", occurredAt: new Date(0), scopeId: "ten_1" },
     };
     await expect(new RealtimeBroadcaster(driver).broadcast(sale, route)).resolves.toBe(1);

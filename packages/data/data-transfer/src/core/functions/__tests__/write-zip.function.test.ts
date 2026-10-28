@@ -24,11 +24,11 @@ async function zip(entries: Iterable<ZipEntry>): Promise<Buffer> {
 /** The files of `archive`, read through its 32-bit central directory. */
 function unzip(archive: Buffer): Map<string, Buffer> {
   const end = archive.length - 22;
-  expect(archive.readUInt32LE(end)).toBe(0x06054b50);
+  expect(archive.readUInt32LE(end)).toBe(0x06_05_4b_50);
   const files = new Map<string, Buffer>();
   let at = archive.readUInt32LE(end + 16);
   for (let index = 0; index < archive.readUInt16LE(end + 10); index += 1) {
-    expect(archive.readUInt32LE(at)).toBe(0x02014b50);
+    expect(archive.readUInt32LE(at)).toBe(0x02_01_4b_50);
     const method = archive.readUInt16LE(at + 10);
     const crc = archive.readUInt32LE(at + 16);
     const size = archive.readUInt32LE(at + 20);
@@ -76,8 +76,8 @@ describe("writeZip", () => {
 
   it("marks UTF-8 names and data descriptors", async () => {
     const archive = await zip([{ name: "a.txt", bytes: [new Uint8Array([1, 2, 3])] }]);
-    expect(archive.readUInt32LE(0)).toBe(0x04034b50);
-    expect(archive.readUInt16LE(6)).toBe(0x0808);
+    expect(archive.readUInt32LE(0)).toBe(0x04_03_4b_50);
+    expect(archive.readUInt16LE(6)).toBe(0x08_08);
     expect(archive.readUInt16LE(8)).toBe(8);
   });
 
@@ -86,12 +86,12 @@ describe("writeZip", () => {
   });
 
   it("refuses a name past 65,535 bytes", async () => {
-    await expect(zip([{ name: "a".repeat(0x10000), bytes: [] }])).rejects.toThrow(RangeError);
+    await expect(zip([{ name: "a".repeat(0x1_00_00), bytes: [] }])).rejects.toThrow(RangeError);
   });
 
   // 65,536 entries take about 9 s on CI, past the default 5 s.
   it("writes the ZIP64 end records past 65,535 entries", { timeout: 30_000 }, async () => {
-    const count = 0x10000;
+    const count = 0x1_00_00;
     const archive = await zip(
       Array.from({ length: count }, (_, index) => ({
         name: `${index}`,
@@ -100,12 +100,12 @@ describe("writeZip", () => {
       })),
     );
     const end = archive.length - 22;
-    expect(archive.readUInt16LE(end + 10)).toBe(0xffff);
+    expect(archive.readUInt16LE(end + 10)).toBe(0xff_ff);
     const locator = end - 20;
-    expect(archive.readUInt32LE(locator)).toBe(0x07064b50);
+    expect(archive.readUInt32LE(locator)).toBe(0x07_06_4b_50);
     const record = Number(archive.readBigUInt64LE(locator + 8));
-    expect(archive.readUInt32LE(record)).toBe(0x06064b50);
+    expect(archive.readUInt32LE(record)).toBe(0x06_06_4b_50);
     expect(Number(archive.readBigUInt64LE(record + 32))).toBe(count);
-    expect(archive.readUInt32LE(Number(archive.readBigUInt64LE(record + 48)))).toBe(0x02014b50);
+    expect(archive.readUInt32LE(Number(archive.readBigUInt64LE(record + 48)))).toBe(0x02_01_4b_50);
   });
 });

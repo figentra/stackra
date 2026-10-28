@@ -23,8 +23,8 @@ const minors = (parts: Money[]) => parts.map((part) => part.minor);
 
 describe("Money.ofMinor", () => {
   it("holds minor units as a number and the currency as given", () => {
-    const price = Money.ofMinor(2_000, "USD");
-    expect(price.minor).toBe(2_000);
+    const price = Money.ofMinor(2000, "USD");
+    expect(price.minor).toBe(2000);
     expect(price.currency).toBe("USD");
     expect(price).toBeInstanceOf(Money);
   });
@@ -50,7 +50,7 @@ describe("Money.ofMinor", () => {
   });
 
   it("serialises to the wire form, because its own fields are exactly minor and currency", () => {
-    expect(JSON.stringify(Money.ofMinor(1_250, "USD"))).toBe('{"minor":1250,"currency":"USD"}');
+    expect(JSON.stringify(Money.ofMinor(1250, "USD"))).toBe('{"minor":1250,"currency":"USD"}');
   });
 
   it("types the currency as CurrencyCode while taking a plain string", () => {
@@ -62,15 +62,15 @@ describe("Money.ofMinor", () => {
 
 describe("Money.of", () => {
   it.each([
-    ["12.50", "USD", 1_250],
-    ["12.5", "USD", 1_250],
-    ["12", "USD", 1_200],
+    ["12.50", "USD", 1250],
+    ["12.5", "USD", 1250],
+    ["12", "USD", 1200],
     ["0.05", "USD", 5],
     ["-0.05", "USD", -5],
     ["-0", "USD", 0],
-    ["1000", "JPY", 1_000],
-    ["1.234", "KWD", 1_234],
-    ["1.5", "BHD", 1_500],
+    ["1000", "JPY", 1000],
+    ["1.234", "KWD", 1234],
+    ["1.5", "BHD", 1500],
     ["0.0001", "CLF", 1],
     ["90071992547409.91", "USD", MAX],
   ] as const)("reads %s %s as %d minor units", (decimal, currency, minor) => {
@@ -116,8 +116,8 @@ describe("Money.zero", () => {
     const zero = Money.zero("KWD");
     expect(zero.minor).toBe(0);
     expect(zero.currency).toBe("KWD");
-    const lines = [Money.ofMinor(1_250, "KWD").times(2), Money.ofMinor(5, "KWD")];
-    expect(lines.reduce((sum, line) => sum.plus(line), zero).minor).toBe(2_505);
+    const lines = [Money.ofMinor(1250, "KWD").times(2), Money.ofMinor(5, "KWD")];
+    expect(lines.reduce((sum, line) => sum.plus(line), zero).minor).toBe(2505);
   });
 
   it("refuses an unknown currency", () => {
@@ -148,14 +148,14 @@ describe("Money.max", () => {
 
 describe("Money#toDecimal", () => {
   it.each([
-    [1_250, "USD", "12.50"],
+    [1250, "USD", "12.50"],
     [5, "USD", "0.05"],
     [-5, "USD", "-0.05"],
     [0, "USD", "0.00"],
     [100_000, "USD", "1000.00"],
-    [1_000, "JPY", "1000"],
+    [1000, "JPY", "1000"],
     [-7, "JPY", "-7"],
-    [1_250, "KWD", "1.250"],
+    [1250, "KWD", "1.250"],
     [1, "CLF", "0.0001"],
   ] as const)("writes %d %s as %s", (minor, currency, decimal) => {
     expect(Money.ofMinor(minor, currency).toDecimal()).toBe(decimal);
@@ -173,12 +173,12 @@ describe("Money#toDecimal", () => {
 
 describe("Money#plus and Money#minus", () => {
   it("adds and subtracts in the same currency and returns new values", () => {
-    const a = Money.ofMinor(1_000, "USD");
+    const a = Money.ofMinor(1000, "USD");
     const b = Money.ofMinor(250, "USD");
-    expect(a.plus(b).minor).toBe(1_250);
+    expect(a.plus(b).minor).toBe(1250);
     expect(a.minus(b).minor).toBe(750);
     expect(b.minus(a).minor).toBe(-750);
-    expect(a.minor).toBe(1_000);
+    expect(a.minor).toBe(1000);
   });
 
   it("refuses mixed currencies", () => {
@@ -225,9 +225,9 @@ describe("Money#times", () => {
   });
 
   it("multiplies by integers and negatives exactly", () => {
-    expect(Money.ofMinor(1_999, "USD").times(3).minor).toBe(5_997);
-    expect(Money.ofMinor(1_999, "USD").times(-1).minor).toBe(-1_999);
-    expect(Money.ofMinor(1_999, "USD").times(0.15, Rounding.Down).minor).toBe(299);
+    expect(Money.ofMinor(1999, "USD").times(3).minor).toBe(5997);
+    expect(Money.ofMinor(1999, "USD").times(-1).minor).toBe(-1999);
+    expect(Money.ofMinor(1999, "USD").times(0.15, Rounding.Down).minor).toBe(299);
   });
 
   it("refuses a non-finite factor and a product beyond the safe-integer limit", () => {
@@ -273,12 +273,12 @@ describe("Money#divide", () => {
   });
 
   it("shows a yearly price per month rounded down, as the pricing table does", () => {
-    expect(Money.ofMinor(9_900, "USD").divide(12, Rounding.Down).toDecimal()).toBe("8.25");
-    expect(Money.ofMinor(9_999, "USD").divide(12, Rounding.Down).toDecimal()).toBe("8.33");
+    expect(Money.ofMinor(9900, "USD").divide(12, Rounding.Down).toDecimal()).toBe("8.25");
+    expect(Money.ofMinor(9999, "USD").divide(12, Rounding.Down).toDecimal()).toBe("8.33");
   });
 
   it("divides exactly when there is no remainder, by fractions and by negatives", () => {
-    expect(Money.ofMinor(1_000, "USD").divide(8).minor).toBe(125);
+    expect(Money.ofMinor(1000, "USD").divide(8).minor).toBe(125);
     expect(Money.ofMinor(25, "USD").divide(0.5).minor).toBe(50);
     expect(Money.ofMinor(25, "USD").divide(-2, Rounding.HalfUp).minor).toBe(-13);
   });
@@ -296,18 +296,18 @@ describe("Money#divide", () => {
   });
 
   it("keeps the currency", () => {
-    expect(Money.ofMinor(1_000, "JPY").divide(3).currency).toBe("JPY");
+    expect(Money.ofMinor(1000, "JPY").divide(3).currency).toBe("JPY");
   });
 });
 
 describe("Money#allocate", () => {
   it.each([
-    [1_000, [1, 1, 1], [334, 333, 333]],
+    [1000, [1, 1, 1], [334, 333, 333]],
     [100, [70, 30], [70, 30]],
     [5, [1, 1, 1, 1], [2, 1, 1, 1]],
-    [1_001, [0.2, 0.8], [200, 801]],
+    [1001, [0.2, 0.8], [200, 801]],
     [3, [1, 0, 1], [2, 0, 1]],
-    [-1_000, [1, 1, 1], [-334, -333, -333]],
+    [-1000, [1, 1, 1], [-334, -333, -333]],
     [0, [1, 2], [0, 0]],
   ] as const)("splits %d by %j into %j", (amount, ratios, expected) => {
     expect(minors(Money.ofMinor(amount, "USD").allocate(ratios))).toEqual(expected);
@@ -327,13 +327,13 @@ describe("Money#allocate", () => {
       [13],
       [1, 1, 1, 1, 1, 1, 1],
     ];
-    for (const amount of [0, 1, 7, 99, 1_001, 123_457, -9_999, 2 ** 40 + 3]) {
+    for (const amount of [0, 1, 7, 99, 1001, 123_457, -9999, 2 ** 40 + 3]) {
       for (const ratios of ratioSets) {
         const parts = minors(Money.ofMinor(amount, "USD").allocate(ratios));
         const total = ratios.reduce((sum, ratio) => sum + ratio, 0);
         expect(parts.reduce((sum, part) => BigInt(part) + sum, 0n)).toBe(BigInt(amount));
         parts.forEach((part, index) =>
-          expect(Math.abs(part - (amount * (ratios[index] ?? 0)) / total)).toBeLessThan(1.000_001),
+          expect(Math.abs(part - (amount * (ratios[index] ?? 0)) / total)).toBeLessThan(1.000001),
         );
       }
     }

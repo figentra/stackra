@@ -205,7 +205,7 @@ describe("awsBaselineConfig", () => {
       "environments.dev.encore.account",
     ]);
     const unquoted = templateRoot((draft) => {
-      at(draft, "providers", "aws", "accounts").prod = 12345678901;
+      at(draft, "providers", "aws", "accounts").prod = 12_345_678_901;
     });
     expect(pathsOf(() => awsBaselineConfig(unquoted, "production"))).toEqual([
       "providers.aws.accounts.prod",

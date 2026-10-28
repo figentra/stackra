@@ -33,10 +33,11 @@ export function renderClaudeCode(
   for (const document of documents) {
     const comment = provenanceComment(generator, `${document.kind} "${document.name}"`);
     switch (document.kind) {
-      case "skill":
+      case "skill": {
         files.push(skillFile(document.name, document.description, comment, document.body));
         break;
-      case "rule":
+      }
+      case "rule": {
         if (!document.always && document.globs.length === 0) {
           files.push(skillFile(document.name, document.description, comment, document.body));
         } else {
@@ -47,7 +48,8 @@ export function renderClaudeCode(
           });
         }
         break;
-      case "subagent":
+      }
+      case "subagent": {
         files.push({
           path: `agents/${document.name}.md`,
           content: composeMarkdown(
@@ -61,7 +63,8 @@ export function renderClaudeCode(
           ),
         });
         break;
-      case "command":
+      }
+      case "command": {
         files.push({
           path: `commands/${document.name}.md`,
           content: composeMarkdown(
@@ -71,9 +74,11 @@ export function renderClaudeCode(
           ),
         });
         break;
-      case "hook":
+      }
+      case "hook": {
         hooks.push(document);
         break;
+      }
     }
   }
   if (hooks.length > 0) files.push({ path: "hooks/hooks.json", content: hooksJson(hooks) });

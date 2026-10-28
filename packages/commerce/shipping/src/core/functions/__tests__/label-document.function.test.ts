@@ -35,7 +35,7 @@ describe("labelDocument", () => {
   });
 
   it("decodes base64 and ignores its line breaks", () => {
-    const encoded = btoa(PDF).replace(/(.{8})/g, "$1\n");
+    const encoded = btoa(PDF).replaceAll(/(.{8})/g, "$1\n");
     expect(labelDocument(LabelFormat.Pdf, encoded).bytes).toEqual(bytes(PDF));
   });
 

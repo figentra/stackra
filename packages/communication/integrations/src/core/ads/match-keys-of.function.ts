@@ -32,7 +32,7 @@ export async function matchKeysOf(
   format: { readonly phone: "e164" | "digits" },
 ): Promise<MatchKeys> {
   const email = person.email?.trim().toLowerCase();
-  const digits = person.phone?.replace(/\D/g, "");
+  const digits = person.phone?.replaceAll(/\D/g, "");
   const externalId = person.externalId?.trim();
   const keys: { email?: string; phone?: string; externalId?: string } = {};
   if (email) keys.email = await sha256(email);

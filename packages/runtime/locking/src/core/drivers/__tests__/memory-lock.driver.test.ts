@@ -71,7 +71,7 @@ describe(MemoryLockDriver, () => {
   it("lets a lease lapse at its ttl, and the next one gets a larger token", async () => {
     const { driver, clock } = setup();
     const stale = await take(driver, ["a"], "one");
-    clock.time += 9_999;
+    clock.time += 9999;
     await expect(driver.tryAcquire(["a"], "two", TTL)).resolves.toBeUndefined();
     clock.time += 1;
     const fresh = await take(driver, ["a"], "two");
@@ -84,11 +84,11 @@ describe(MemoryLockDriver, () => {
   it("keeps a renewed lease past its first ttl", async () => {
     const { driver, clock } = setup();
     const lease = await take(driver, ["a", "b"], "one");
-    clock.time += 6_000;
+    clock.time += 6000;
     await expect(driver.renew(lease, TTL)).resolves.toBe(true);
-    clock.time += 6_000;
+    clock.time += 6000;
     await expect(driver.tryAcquire(["b"], "two", TTL)).resolves.toBeUndefined();
-    clock.time += 4_000;
+    clock.time += 4000;
     await expect(driver.renew(lease, TTL)).resolves.toBe(false);
     await expect(driver.tryAcquire(["b"], "two", TTL)).resolves.toMatchObject({ keys: ["b"] });
   });

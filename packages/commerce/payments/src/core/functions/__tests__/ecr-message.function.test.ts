@@ -21,7 +21,7 @@ const profile: EcrProfile = {
   request: ["operation", "reference", "amount", "blank", "tip_percentages"],
   response: ["operation", "reference", "result", "blank", "amount", "tip"],
   results: { "00": EcrOutcome.Approved },
-  timing: { answerMs: 120_000, ackMs: 2_000, retries: 3 },
+  timing: { answerMs: 120_000, ackMs: 2000, retries: 3 },
 };
 
 describe("encodeEcrMessage", () => {

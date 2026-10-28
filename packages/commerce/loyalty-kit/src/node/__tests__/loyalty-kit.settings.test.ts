@@ -28,7 +28,7 @@ describe("LoyaltyKitSettings", () => {
   it("resolves to a twelve-month window and the default thresholds", async () => {
     const settings = await fakeSettings().get(LoyaltyKitSettings);
     expect(settings.expiryMonths).toBe(12);
-    expect(settings.tiers).toEqual({ silverFrom: 1_000, goldFrom: 5_000 });
+    expect(settings.tiers).toEqual({ silverFrom: 1000, goldFrom: 5000 });
     expect([settings.stampsPerVisit, settings.stampsPerCard]).toEqual([1, 10]);
     expect([settings.isActive, settings.earnPerMinor]).toEqual([true, 0.01]);
     expect([settings.pointValueMinor, settings.maxRedeemPercent]).toEqual([1, 50]);

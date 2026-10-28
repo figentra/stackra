@@ -30,16 +30,16 @@ describe("@stackra/money", () => {
 
   it("supports the template's uses", () => {
     const currency: CurrencyCode = "USD";
-    const perMonth = entry.Money.ofMinor(9_900, currency).divide(12, Rounding.Down);
+    const perMonth = entry.Money.ofMinor(9900, currency).divide(12, Rounding.Down);
     expect(perMonth.toDecimal()).toBe("8.25");
     expect(entry.currencyCode().default("USD").parse(undefined)).toBe("USD");
-    expect(entry.money().parse({ minor: 2_000, currency }).minor).toBe(2_000);
+    expect(entry.money().parse({ minor: 2000, currency }).minor).toBe(2000);
     const zero = entry.Money.zero(currency);
-    const subtotal = [1_250, 300].reduce(
+    const subtotal = [1250, 300].reduce(
       (sum, minor) => sum.plus(entry.Money.ofMinor(minor, currency).times(2)),
       zero,
     );
-    expect(entry.Money.max(subtotal.plus(entry.Money.ofMinor(-9_999, currency)), zero).minor).toBe(
+    expect(entry.Money.max(subtotal.plus(entry.Money.ofMinor(-9999, currency)), zero).minor).toBe(
       0,
     );
   });

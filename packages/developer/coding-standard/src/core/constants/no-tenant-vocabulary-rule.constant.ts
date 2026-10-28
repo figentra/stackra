@@ -72,19 +72,25 @@ function declares(node: AstNode): boolean {
   if (DECLARED_BY_ID.has(parent.type)) return parent.id === node;
   if (DECLARED_BY_KEY.has(parent.type)) return parent.key === node && parent.computed !== true;
   switch (parent.type) {
-    case "TSParameterProperty":
+    case "TSParameterProperty": {
       return true;
-    case "AssignmentPattern":
+    }
+    case "AssignmentPattern": {
       return parent.left === node;
-    case "RestElement":
+    }
+    case "RestElement": {
       return parent.argument === node;
-    case "ArrayPattern":
+    }
+    case "ArrayPattern": {
       return parent.elements?.includes(node) ?? false;
-    case "Property":
+    }
+    case "Property": {
       if (parent.parent?.type === "ObjectPattern") return parent.value === node;
       return parent.key === node && parent.computed !== true && isEnumBody(parent.parent);
-    default:
+    }
+    default: {
       return false;
+    }
   }
 }
 

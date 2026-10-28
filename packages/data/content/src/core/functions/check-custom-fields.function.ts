@@ -25,32 +25,40 @@ function valueSchemaOf(definition: CustomFieldDefinition): ZodType<CustomFieldVa
   const values = choices.map(({ value }) => value);
   switch (type) {
     case CustomFieldType.Text:
-    case CustomFieldType.LongText:
+    case CustomFieldType.LongText: {
       return z
         .string()
         .min(min ?? 1)
         .max(max ?? Enum.meta(CustomFieldType, type).maxLength);
-    case CustomFieldType.Number:
+    }
+    case CustomFieldType.Number: {
       return z
         .number()
         .gte(min ?? -Number.MAX_VALUE)
         .lte(max ?? Number.MAX_VALUE);
-    case CustomFieldType.Boolean:
+    }
+    case CustomFieldType.Boolean: {
       return z.boolean();
-    case CustomFieldType.Date:
+    }
+    case CustomFieldType.Date: {
       return z.iso.date();
-    case CustomFieldType.Select:
+    }
+    case CustomFieldType.Select: {
       return z.enum(values);
-    case CustomFieldType.MultiSelect:
+    }
+    case CustomFieldType.MultiSelect: {
       return z
         .array(z.enum(values))
         .min(min ?? 0)
         .max(max ?? values.length)
         .refine((picked) => new Set(picked).size === picked.length, "choices_repeated");
-    case CustomFieldType.Url:
+    }
+    case CustomFieldType.Url: {
       return z.url({ protocol: /^https?$/ }).max(Enum.meta(CustomFieldType, type).maxLength);
-    case CustomFieldType.Email:
+    }
+    case CustomFieldType.Email: {
       return z.email().max(Enum.meta(CustomFieldType, type).maxLength);
+    }
   }
 }
 

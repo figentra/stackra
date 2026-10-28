@@ -12,17 +12,21 @@ import type { XmlNode } from "#core/types/xml-node.type";
 
 /** Text content escapes. */
 const text = (value: string): string =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r/g, "&#xD;");
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\r", "&#xD;");
 
 /** Attribute value escapes. */
 const attribute = (value: string): string =>
   value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/"/g, "&quot;")
-    .replace(/\t/g, "&#x9;")
-    .replace(/\n/g, "&#xA;")
-    .replace(/\r/g, "&#xD;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("\t", "&#x9;")
+    .replaceAll("\n", "&#xA;")
+    .replaceAll("\r", "&#xD;");
 
 /** 0 for the default namespace declaration, 1 for a prefixed one, 2 for an attribute. */
 const namespaceRank = (name: string) => (name === "xmlns" ? 0 : name.startsWith("xmlns:") ? 1 : 2);

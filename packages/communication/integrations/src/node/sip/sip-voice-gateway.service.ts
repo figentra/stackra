@@ -890,7 +890,7 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
     const dialog = this.dialogs.get(sipHeaders(request, "Call-ID")[0] ?? "");
     const tag = dialog?.localTag;
     switch (request.method) {
-      case "INVITE":
+      case "INVITE": {
         if (dialog === undefined) return this.incoming(request, from);
         // A retransmitted INVITE of a call still being set up only hears that we are on it.
         if (dialog.answeredAt === undefined) {
@@ -911,10 +911,12 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
           dialog.sdp ?? "",
         );
         return;
-      case "ACK":
+      }
+      case "ACK": {
         dialog?.acked?.();
         return;
-      case "BYE":
+      }
+      case "BYE": {
         this.respond(
           request,
           from,
@@ -924,7 +926,8 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
         );
         if (dialog !== undefined) await this.end(dialog, CallStatus.Completed);
         return;
-      case "CANCEL":
+      }
+      case "CANCEL": {
         this.respond(
           request,
           from,
@@ -937,19 +940,22 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
           await this.end(dialog, CallStatus.Cancelled);
         }
         return;
+      }
       case "NOTIFY": {
         this.respond(request, from, 200, "OK", tag);
         const status = Number(/^SIP\/2\.0 (\d{3})/.exec(request.body)?.[1] ?? 0);
         if (status >= 200) dialog?.referred?.(status < 300);
         return;
       }
-      case "OPTIONS":
+      case "OPTIONS": {
         this.respond(request, from, 200, "OK", tag);
         return;
-      default:
+      }
+      default: {
         this.respond(request, from, 405, "Method Not Allowed", tag, [
           ["Allow", "INVITE, ACK, BYE, CANCEL, NOTIFY, OPTIONS"],
         ]);
+      }
     }
   }
 

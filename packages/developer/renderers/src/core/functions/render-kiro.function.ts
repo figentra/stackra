@@ -33,7 +33,7 @@ export function renderKiro(documents: readonly AgentDocument[], generator: strin
   for (const document of documents) {
     const comment = provenanceComment(generator, `${document.kind} "${document.name}"`);
     switch (document.kind) {
-      case "skill":
+      case "skill": {
         files.push({
           path: `skills/${document.name}/SKILL.md`,
           content: composeMarkdown(
@@ -43,12 +43,14 @@ export function renderKiro(documents: readonly AgentDocument[], generator: strin
           ),
         });
         break;
-      case "rule":
+      }
+      case "rule": {
         files.push({
           path: `steering/${document.name}.md`,
           content: composeMarkdown(inclusionOf(document), comment, document.body),
         });
         break;
+      }
       case "subagent": {
         const unmapped = document.tools.filter((tool) => !Object.hasOwn(KIRO_TOOLS, tool));
         if (unmapped.length > 0) {
@@ -78,20 +80,22 @@ export function renderKiro(documents: readonly AgentDocument[], generator: strin
         });
         break;
       }
-      case "command":
+      case "command": {
         skipped.push({
           kind: document.kind,
           name: document.name,
           reason: "Kiro has no command file",
         });
         break;
-      case "hook":
+      }
+      case "hook": {
         skipped.push({
           kind: document.kind,
           name: document.name,
           reason: "Kiro hooks run on IDE events, which the neutral hook events do not map to",
         });
         break;
+      }
     }
   }
   return { files, skipped };

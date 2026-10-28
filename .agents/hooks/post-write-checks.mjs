@@ -30,9 +30,9 @@ async function main() {
   ) {
     try {
       execFileSync(oxfmt, ["--check", file], { cwd: root, stdio: "ignore" });
-    } catch (e) {
+    } catch (error) {
       // A non-zero exit with a numeric status means "needs formatting"; spawn failures stay silent.
-      if (typeof e.status === "number")
+      if (typeof error.status === "number")
         context(
           "PostToolUse",
           `[CHECKS] ${file} is not oxfmt-formatted. Run \`pnpm exec oxfmt ${file}\`.`,

@@ -44,14 +44,18 @@ import { readServiceManifests } from "#node/functions/read-service-manifests.fun
 /** A type with every `DriverName<Port>` filled from `names`. */
 function withDrivers(type: TypeDesc, names: ReadonlyMap<string, readonly string[]>): TypeDesc {
   switch (type.kind) {
-    case "driver_name":
+    case "driver_name": {
       return { ...type, values: [...(names.get(type.port) ?? [])] };
-    case "array":
+    }
+    case "array": {
       return { ...type, element: withDrivers(type.element, names) };
-    case "record":
+    }
+    case "record": {
       return { ...type, value: withDrivers(type.value, names) };
-    default:
+    }
+    default: {
       return type;
+    }
   }
 }
 

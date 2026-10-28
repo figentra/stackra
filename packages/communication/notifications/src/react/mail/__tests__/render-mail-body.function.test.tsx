@@ -67,7 +67,7 @@ function receipt(locale: Locale, lines: number, i18n = new I18nConfig()) {
   const messages = locale === Locale.Ar ? MESSAGES.ar : MESSAGES.en;
   return renderMailBody(
     OrderReceiptMail,
-    { id: "ord_1", lines, totalMinor: 1_200 },
+    { id: "ord_1", lines, totalMinor: 1200 },
     {
       locale,
       messages,

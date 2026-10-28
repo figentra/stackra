@@ -24,7 +24,7 @@ export function personalDataDeclarations(): PersonalDataDeclaration[] {
     const options = kindOf(type)?.options as unknown as PersonalDataOptions;
     const model: AnyClass = options.model();
     // shortcut: derived from the class name as gen derives it, until gen exposes the locked model keys (STA-339).
-    const kind = `${module}.${model.name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase()}`;
+    const kind = `${module}.${model.name.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase()}`;
     return { kind, model, subject: options.subject, fields: options.fields };
   });
 }

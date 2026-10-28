@@ -24,7 +24,7 @@ const card = rateCardOf("rate-card:messaging", [
     record: "pack",
     meter: "messaging.whatsapp",
     currency: "USD",
-    units: 1_000,
+    units: 1000,
     price: "11.00",
   },
 ]);
@@ -35,7 +35,7 @@ describe("rateCardOf", () => {
       ["messaging.whatsapp", "0.012500"],
     ]);
     expect(card.packs.map((pack) => [pack.units, pack.price.toDecimal()])).toEqual([
-      [1_000, "11.00"],
+      [1000, "11.00"],
     ]);
   });
 
@@ -51,7 +51,7 @@ describe("rateCardOf", () => {
 
 describe("meterCharge", () => {
   it("charges units at the meter's rate", () => {
-    expect(meterCharge(card, "messaging.whatsapp", 1_200, "USD").toDecimal()).toBe("15.00");
+    expect(meterCharge(card, "messaging.whatsapp", 1200, "USD").toDecimal()).toBe("15.00");
     expect(() => meterCharge(card, "messaging.whatsapp", 1, "EUR")).toThrow(
       /no messaging.whatsapp rate in EUR/,
     );

@@ -113,9 +113,9 @@ const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const TOKEN_RE = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/g;
 /** Template files copied byte for byte: images, fonts and documents hold no tokens and a text round trip corrupts them. */
 export const BINARY_RE = /\.(png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|pdf)$/i;
-const pascal = (n) => n.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
+const pascal = (n) => n.replaceAll(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
 const titleCase = (n) =>
-  n.replace(/(^|-)([a-z0-9])/g, (_, s, c) => (s ? " " : "") + c.toUpperCase());
+  n.replaceAll(/(^|-)([a-z0-9])/g, (_, s, c) => (s ? " " : "") + c.toUpperCase());
 
 function* walk(dir) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -366,8 +366,8 @@ async function main() {
     console.log(`${opts.dryRun ? "Would create" : "Created"} ${r.rel}:`);
     for (const f of r.files) console.log(`  ${f}`);
     if (!opts.dryRun) console.log("\nNext: pnpm install, then pnpm verify");
-  } catch (e) {
-    console.error(e.message);
+  } catch (error) {
+    console.error(error.message);
     process.exit(1);
   }
 }

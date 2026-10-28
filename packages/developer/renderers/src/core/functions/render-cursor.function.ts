@@ -30,7 +30,7 @@ export function renderCursor(documents: readonly AgentDocument[], generator: str
   for (const document of documents) {
     const comment = provenanceComment(generator, `${document.kind} "${document.name}"`);
     switch (document.kind) {
-      case "rule":
+      case "rule": {
         files.push(
           ruleFile(
             document.name,
@@ -42,25 +42,29 @@ export function renderCursor(documents: readonly AgentDocument[], generator: str
           ),
         );
         break;
-      case "skill":
+      }
+      case "skill": {
         files.push(
           ruleFile(document.name, document.description, [], false, comment, document.body),
         );
         break;
-      case "command":
+      }
+      case "command": {
         files.push({
           path: `commands/${document.name}.md`,
           content: composeMarkdown(undefined, comment, document.body),
         });
         break;
-      case "subagent":
+      }
+      case "subagent": {
         skipped.push({
           kind: document.kind,
           name: document.name,
           reason: "Cursor has no sub-agent file",
         });
         break;
-      case "hook":
+      }
+      case "hook": {
         skipped.push({
           kind: document.kind,
           name: document.name,
@@ -68,6 +72,7 @@ export function renderCursor(documents: readonly AgentDocument[], generator: str
             "Cursor hooks run on their own events, which the neutral hook events do not map to",
         });
         break;
+      }
     }
   }
   return { files, skipped };

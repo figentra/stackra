@@ -53,8 +53,8 @@ export async function attemptWebhook(
       ...(signal === undefined ? {} : { signal }),
     });
     return { status: null, isDelivered: true };
-  } catch (cause) {
-    return { status, isDelivered: false, cause };
+  } catch (error) {
+    return { status, isDelivered: false, cause: error };
   }
 }
 

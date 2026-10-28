@@ -25,7 +25,9 @@ export function matchesEndpoint(
   if (call.method.toUpperCase() !== endpoint.method.toUpperCase()) return false;
   const pattern = endpoint.path
     .split(PARAM)
-    .map((part, index) => (index % 2 === 1 ? "[^/]+" : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))
+    .map((part, index) =>
+      index % 2 === 1 ? "[^/]+" : part.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    )
     .join("");
   return new RegExp(`${pattern}/?$`).test(new URL(call.url).pathname);
 }

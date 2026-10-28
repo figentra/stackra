@@ -25,7 +25,7 @@ import { configRoot } from "#core/functions/config-root.function";
 export function configKey(type: AnyClass, member: string): string {
   const stem = configRoot(type)
     .name.replace(/Config$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
   return stem === member ? member : `${member}.${stem}`;
 }

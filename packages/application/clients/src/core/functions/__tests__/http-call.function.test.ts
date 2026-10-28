@@ -108,7 +108,7 @@ describe("httpCall", () => {
       output,
     };
     await httpCall(
-      { ...rename, device: { deviceId: "device-1", sequence: 1729760400000 } },
+      { ...rename, device: { deviceId: "device-1", sequence: 1_729_760_400_000 } },
       { baseUrl: API, transport, headers: {} },
     );
     expect(sent[0]?.headers.get("Stackra-Device")).toBe("device-1");

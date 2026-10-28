@@ -18,7 +18,7 @@ import { sealDataset } from "./fixtures/licence-file.fixture";
 async function reasonOf(promise: Promise<unknown>): Promise<unknown> {
   const error: unknown = await promise.then(
     () => undefined,
-    (caught: unknown) => caught,
+    (caughtError: unknown) => caughtError,
   );
   return isRefusal(error, LicenceFileInvalidError) ? error.reason : error;
 }

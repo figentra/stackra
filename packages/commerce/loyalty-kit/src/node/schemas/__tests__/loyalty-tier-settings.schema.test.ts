@@ -13,7 +13,7 @@ import { LoyaltyTierSettings } from "#node/schemas/loyalty-tier-settings.schema"
 
 describe("LoyaltyTierSettings", () => {
   it("defaults silver to 1 000 and gold to 5 000 points", () => {
-    expect({ ...new LoyaltyTierSettings() }).toEqual({ silverFrom: 1_000, goldFrom: 5_000 });
+    expect({ ...new LoyaltyTierSettings() }).toEqual({ silverFrom: 1000, goldFrom: 5000 });
     expect(LoyaltyTierSettings.create({ silverFrom: 10, goldFrom: 20 }).goldFrom).toBe(20);
   });
 

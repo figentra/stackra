@@ -88,8 +88,9 @@ function bodyOf(message: Record<string, unknown>) {
         ? undefined
         : { kind: "reply" as const, replyId, title };
     }
-    default:
+    default: {
       return undefined;
+    }
   }
 }
 

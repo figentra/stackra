@@ -79,7 +79,7 @@ describe("StoreResolvedPackSourceDriver", () => {
 
   it("refuses a hash the store lacks and tries again on the next call", async () => {
     const { signed, store, source } = await setUp(false);
-    const error: unknown = await source.packs().catch((caught: unknown) => caught);
+    const error: unknown = await source.packs().catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, PackRejectedError) ? error.reason : undefined).toBe(
       PackRejection.NotStored,
     );

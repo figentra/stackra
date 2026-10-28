@@ -32,7 +32,9 @@ const OID = {
 
 /** The DER bytes of a PEM block. */
 function derOf(pem: string): Uint8Array<ArrayBuffer> {
-  const binary = atob(pem.replace(/-----(?:BEGIN|END) [A-Z0-9 ]+-----/g, "").replace(/\s+/g, ""));
+  const binary = atob(
+    pem.replaceAll(/-----(?:BEGIN|END) [A-Z0-9 ]+-----/g, "").replaceAll(/\s+/g, ""),
+  );
   // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }

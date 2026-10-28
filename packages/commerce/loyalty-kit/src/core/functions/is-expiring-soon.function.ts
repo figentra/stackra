@@ -9,7 +9,7 @@
  */
 
 /** Thirty days in milliseconds: the warning window. */
-const WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
+const WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * True when `expiry` falls less than thirty days after `now` (already past included).

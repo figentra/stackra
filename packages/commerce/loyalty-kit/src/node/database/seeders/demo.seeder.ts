@@ -36,7 +36,7 @@ export class LoyaltyKitDemoSeeder extends Seeder {
       const memberId = LoyaltyKitDemoSeeder.ids[tier];
       const earn = LedgerEntryFactory.new().state({
         memberId,
-        points: 1_000,
+        points: 1000,
         reference: `seed_${tier}`,
         at: new Date(),
       });

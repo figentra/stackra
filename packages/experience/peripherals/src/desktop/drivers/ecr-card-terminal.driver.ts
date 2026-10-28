@@ -203,7 +203,7 @@ export class EcrCardTerminalDriver extends Driver(CardTerminal) {
     if (address === null || address === undefined) throw new Error("No card terminal is paired");
     const { createConnection } = await import("node:net");
     const url = new URL(address);
-    const host = url.hostname.replace(/^\[|\]$/g, "");
+    const host = url.hostname.replaceAll(/^\[|\]$/g, "");
     const socket = await new Promise<Socket>((resolve, reject) => {
       const opened = createConnection({ host, port: Number(url.port) });
       opened.setTimeout(CONNECT_TIMEOUT, () => opened.destroy(new Error(`${address} timed out`)));

@@ -74,7 +74,7 @@ describe("FilesystemPackStoreDriver", () => {
     const shipped = await signed();
     const error: unknown = await packs
       .put({ ...shipped, hash: "b".repeat(64) })
-      .catch((caught: unknown) => caught);
+      .catch((caughtError: unknown) => caughtError);
     expect(isRefusal(error, PackRejectedError) && error.reason).toBe(PackRejection.HashMismatch);
   });
 });

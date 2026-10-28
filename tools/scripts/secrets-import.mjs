@@ -389,7 +389,7 @@ export function main(
 ) {
   // Strip control characters: a crafted file name must not drive the terminal.
   // oxlint-disable-next-line no-control-regex -- matching control characters is the point
-  const say = (s) => write(s.replace(/[\u0000-\u001f\u007f-\u009f]/g, "?") + "\n");
+  const say = (s) => write(s.replaceAll(/[\u0000-\u001f\u007f-\u009f]/g, "?") + "\n");
   let args;
   try {
     args = parseArgs({

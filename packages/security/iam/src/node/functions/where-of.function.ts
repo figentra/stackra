@@ -37,34 +37,47 @@ const literal = (text: string): string => text.replaceAll(/[\\%_]/g, (match) => 
 function scalarTest(operator: Operator, value: unknown): Filter {
   const [low, high] = Array.isArray(value) ? (value as readonly unknown[]) : [value, value];
   switch (operator) {
-    case Operator.Equals:
+    case Operator.Equals: {
       return { $eq: value };
-    case Operator.NotEquals:
+    }
+    case Operator.NotEquals: {
       return { $ne: value };
-    case Operator.OneOf:
+    }
+    case Operator.OneOf: {
       return { $in: value };
-    case Operator.NotOneOf:
+    }
+    case Operator.NotOneOf: {
       return { $nin: value };
-    case Operator.Contains:
+    }
+    case Operator.Contains: {
       return { $like: `%${literal(String(value))}%` };
-    case Operator.StartsWith:
+    }
+    case Operator.StartsWith: {
       return { $like: `${literal(String(value))}%` };
-    case Operator.EndsWith:
+    }
+    case Operator.EndsWith: {
       return { $like: `%${literal(String(value))}` };
+    }
     case Operator.LessThan:
-    case Operator.Before:
+    case Operator.Before: {
       return { $lt: low };
-    case Operator.AtMost:
+    }
+    case Operator.AtMost: {
       return { $lte: low };
+    }
     case Operator.GreaterThan:
-    case Operator.After:
+    case Operator.After: {
       return { $gt: low };
-    case Operator.AtLeast:
+    }
+    case Operator.AtLeast: {
       return { $gte: low };
-    case Operator.Between:
+    }
+    case Operator.Between: {
       return { $gte: low, $lte: high };
-    default:
+    }
+    default: {
       throw new TypeError(`whereOf: ${operator} is not a text or number operator`);
+    }
   }
 }
 
@@ -79,8 +92,9 @@ function leafTest(
   switch (type) {
     case FieldType.String:
     case FieldType.Enum:
-    case FieldType.Number:
+    case FieldType.Number: {
       return { [property]: scalarTest(operator, value) };
+    }
     case FieldType.Money: {
       // reason: `Rules.check` proved each operand a money amount, and a range's two in one currency
       const amounts = (Array.isArray(value) ? value : [value]) as unknown as readonly {
@@ -107,25 +121,33 @@ function leafTest(
         [property]: scalarTest(operator, operator === Operator.Between ? instants : instants[0]),
       };
     }
-    case FieldType.List:
+    case FieldType.List: {
       switch (operator) {
-        case Operator.Includes:
+        case Operator.Includes: {
           return { [property]: { $hasKey: value } };
-        case Operator.IncludesAny:
+        }
+        case Operator.IncludesAny: {
           return { [property]: { $hasSomeKeys: value } };
-        case Operator.IncludesAll:
+        }
+        case Operator.IncludesAll: {
           return { [property]: { $hasKeys: value } };
-        case Operator.IncludesNone:
+        }
+        case Operator.IncludesNone: {
           return { $not: { [property]: { $hasSomeKeys: value } } };
-        case Operator.IsEmpty:
+        }
+        case Operator.IsEmpty: {
           return { [property]: { $eq: [] } };
-        default:
+        }
+        default: {
           return { $not: { [property]: { $eq: [] } } };
+        }
       }
-    default:
+    }
+    default: {
       // shortcut: registerVisibility refuses a geo attribute, since a read cannot test one yet; push ST_DWithin
       // through a raw fragment when a model needs a geo visibility rule.
       throw new TypeError(`whereOf: a ${type} attribute cannot filter a read`);
+    }
   }
 }
 

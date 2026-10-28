@@ -15,7 +15,7 @@
  */
 export function modelKey(name: string): { readonly key: string; readonly idKey: string } {
   return {
-    key: name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase(),
+    key: name.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase(),
     idKey: `${name.charAt(0).toLowerCase()}${name.slice(1)}Id`,
   };
 }

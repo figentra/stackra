@@ -59,12 +59,13 @@ function typeSchema(
   each: readonly FieldRule[],
 ): JsonObject {
   switch (type.kind) {
-    case "string":
+    case "string": {
       return keywords({ type: "string" }, rules, "Str", {
         min: "minLength",
         max: "maxLength",
         pattern: "pattern",
       });
+    }
     case "number": {
       const isInt = rules.some((rule) => rule.name === "Int");
       return isInt
@@ -75,11 +76,13 @@ function typeSchema(
             exclusiveMin: "exclusiveMinimum",
           });
     }
-    case "boolean":
+    case "boolean": {
       return { type: "boolean" };
-    case "date":
+    }
+    case "date": {
       return { type: "string", format: "date-time" };
-    case "money":
+    }
+    case "money": {
       return {
         type: "object",
         required: ["minor", "currency"],
@@ -88,17 +91,21 @@ function typeSchema(
           currency: { type: "string", pattern: "^[A-Z]{3}$" },
         },
       };
-    case "json":
+    }
+    case "json": {
       return {};
-    case "duration":
+    }
+    case "duration": {
       return { type: "string", format: "duration" };
-    case "translated":
+    }
+    case "translated": {
       return {
         type: "object",
         additionalProperties: typeSchema({ kind: "string" }, rules, []),
         "x-stackra-type": "translated",
       };
-    case "upload":
+    }
+    case "upload": {
       return {
         type: "object",
         required: ["id"],
@@ -106,28 +113,35 @@ function typeSchema(
         "x-stackra-type": "upload",
         ...(type.bucket === undefined ? {} : { "x-stackra-bucket": type.bucket }),
       };
-    case "brand":
+    }
+    case "brand": {
       if (type.brand === "i18n_key") return { type: "string" };
       return type.brand === "currency_code"
         ? { type: "string", pattern: "^[A-Z]{3}$" }
         : { type: "string", format: type.brand === "url" ? "uri" : "email" };
-    case "public_id":
+    }
+    case "public_id": {
       return {
         type: "string",
         pattern: `^${type.prefixes !== undefined ? `(${type.prefixes.join("|")})` : type.prefix === "" ? "[a-z]{2,6}" : type.prefix}_[0-9A-Za-z]{26}$`,
       };
-    case "enum":
+    }
+    case "enum": {
       return type.module === undefined
         ? { type: "string", enum: [...type.values] }
         : ref(type.module, type.name);
-    case "driver_name":
+    }
+    case "driver_name": {
       return { type: "string", enum: [...type.values] };
-    case "schema":
+    }
+    case "schema": {
       return ref(type.module, type.name);
-    case "shipped":
+    }
+    case "shipped": {
       // No local `$ref`: the package's schema is the contract; `zodOfJsonSchema` imports it back.
       return { "x-stackra-schema": `${type.from}#${type.name}$` };
-    case "array":
+    }
+    case "array": {
       return keywords(
         {
           type: "array",
@@ -138,15 +152,19 @@ function typeSchema(
         "List",
         { min: "minItems", max: "maxItems" },
       );
-    case "record":
+    }
+    case "record": {
       return { type: "object", additionalProperties: elementSchema(type.value, each) };
-    case "union":
+    }
+    case "union": {
       return {
         oneOf: type.members.map((member) => ref(member.module, member.name)),
         discriminator: { propertyName: type.discriminator },
       };
-    case "hatch":
+    }
+    case "hatch": {
       return { description: "@Field(zod): described by its zod schema" };
+    }
   }
 }
 

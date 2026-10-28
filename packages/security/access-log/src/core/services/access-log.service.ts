@@ -83,9 +83,9 @@ export class AccessLogService extends Service {
         subjects,
         at: this.clock.now(),
       });
-    } catch (cause) {
-      this.logger.error(ACCESS_LOG_WRITE_FAILED, { callId, target, cause });
-      if (this.failsClosed(options)) throw AccessLogWriteFailedError.create({}, { cause });
+    } catch (error) {
+      this.logger.error(ACCESS_LOG_WRITE_FAILED, { callId, target, cause: error });
+      if (this.failsClosed(options)) throw AccessLogWriteFailedError.create({}, { cause: error });
     }
   }
 

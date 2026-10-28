@@ -256,7 +256,7 @@ describe(QueueWorkerService, () => {
       const { queue, worker, hang } = setup();
       await queue.push(HangAction, {});
       const drained = worker.drain();
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(1000);
       const [run] = await drained;
       expect(run?.outcome).toBe(JobOutcome.Retried);
       expect(isRefusal(run?.error, JobTimedOutError)).toBe(true);

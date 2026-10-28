@@ -73,9 +73,9 @@ export async function runAction<A extends ActionRef>(
     if (!isOffline || runtime.queue === undefined) throw error;
     try {
       await runtime.queue.enqueue(action, request.input, aggregateOf(request));
-    } catch (refused) {
-      if (isRefusal(refused, OfflineError)) throw error;
-      throw refused;
+    } catch (refusedError) {
+      if (isRefusal(refusedError, OfflineError)) throw error;
+      throw refusedError;
     }
     return { queued: true };
   }

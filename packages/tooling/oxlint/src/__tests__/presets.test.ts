@@ -4,10 +4,10 @@
  *          source file that exists and turns on every `stackra/*` rule at error, that @stackra/coding-standard is a
  *          peer, that the boundary preset still carries the two non-negotiable patterns (packages never import
  *          apps/services; no deep src imports), and that base.jsonc carries the rule-gap cheap set (stackra-229)
- *          and the B group rows B-1, B-2 and B-5 with no warn level left (stackra-230).
+ *          and the B group rows B-1, B-2 and B-5 with no warn level left (stackra-230), plus B-3 (stackra-231).
  * Boundary: test only; reads the preset files and the plugin's source as text, imports no workspace package.
  * Runtime: node (vitest)
- * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10, B-1, B-2, B-5.
+ * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10, B-1, B-2, B-3, B-5.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -117,5 +117,18 @@ describe("@stackra/oxlint-config presets", () => {
       "unicorn/prefer-spread",
     ])
       expect(text).toContain(`"${rule}": "error"`);
+  });
+
+  it("base.jsonc carries the B-3 autofix sweep at error and keeps number-literal-case off (stackra-231)", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    for (const rule of [
+      "unicorn/numeric-separators-style",
+      "unicorn/switch-case-braces",
+      "unicorn/prefer-string-replace-all",
+      "unicorn/catch-error-name",
+    ])
+      expect(text).toContain(`"${rule}": "error"`);
+    // oxfmt prints hex digits lowercase, so the rule's uppercase demand would fight the formatter.
+    expect(text).toContain('"unicorn/number-literal-case": "off"');
   });
 });

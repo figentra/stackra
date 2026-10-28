@@ -518,7 +518,7 @@ describe("MutationQueue", () => {
     await expect(queue.enqueue(SpendStoreCreditAction, { total: 41 })).rejects.toThrow(
       OfflineCapReachedError,
     );
-    await queue.enqueue(SpendStoreCreditAction, { total: 40, amount: 1_000 });
+    await queue.enqueue(SpendStoreCreditAction, { total: 40, amount: 1000 });
   });
 
   it("drains only while leading and online, and on its own when either turns on", async () => {

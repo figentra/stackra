@@ -94,10 +94,11 @@ function write(doc: Doc, change: EditorChange): void {
       children.insert(clamp(change.index, children.length), [change.node.id]);
       return;
     }
-    case EditorChangeKind.Remove:
+    case EditorChangeKind.Remove: {
       unlink(blocks, change.id);
       drop(blocks, change.id);
       return;
+    }
     case EditorChangeKind.Move: {
       unlink(blocks, change.id);
       const children = childrenOf(blocks, change.parentId);

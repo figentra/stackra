@@ -356,7 +356,7 @@ const LINE_WORD = new RegExp(
  */
 function outsideSubstitutions(w) {
   const { spans, source } = scanShell(w);
-  const escaped = source.replace(/\\[\s\S]/g, "__");
+  const escaped = source.replaceAll(/\\[\s\S]/g, "__");
   let mask = "";
   let at = 0;
   for (const [a, b] of spans) {
@@ -365,8 +365,8 @@ function outsideSubstitutions(w) {
   }
   mask += escaped.slice(at);
   for (let was = ""; was !== mask;)
-    [was, mask] = [mask, mask.replace(/[$<>]\([^()]*\)|`[^`]*`/g, (m) => "\0".repeat(m.length))];
-  return source.replace(/[\s\S]/g, (ch, i) => (mask[i] === "\0" ? "" : ch));
+    [was, mask] = [mask, mask.replaceAll(/[$<>]\([^()]*\)|`[^`]*`/g, (m) => "\0".repeat(m.length))];
+  return source.replaceAll(/[\s\S]/g, (ch, i) => (mask[i] === "\0" ? "" : ch));
 }
 let lineDepth = 0;
 /**
@@ -488,7 +488,7 @@ function splitSegments(c) {
   out.push(cur);
   return out;
 }
-const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
+const unquote = (w) => w.replaceAll(/^['"]+|['"]+$/g, "");
 /**
  * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` / `--description` value and the
  * text of `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or
@@ -787,7 +787,7 @@ export function sessionScratchpad({ scratchpadDir = "", sessionIds = [], project
   const ids = sessionIds.filter((x) => /^[\w-]+$/.test(x ?? ""));
   const tails = projectDirs
     .filter(Boolean)
-    .flatMap((p) => ids.map((id) => [p.replace(/[^A-Za-z0-9]/g, "-"), id, "scratchpad"]));
+    .flatMap((p) => ids.map((id) => [p.replaceAll(/[^A-Za-z0-9]/g, "-"), id, "scratchpad"]));
   const expected = new Set(tails.map((t) => join(real, ...t)));
   for (const dir of scratchpadDir ? [scratchpadDir] : tails.map((t) => join(root, ...t))) {
     try {
@@ -931,15 +931,15 @@ function braces(w) {
  */
 function globRx(seg) {
   const body = seg
-    .replace(/\[\^/g, "[!")
-    .replace(/[.+^${}()|\\]/g, "\\$&")
-    .replace(/\*+/g, ".*")
-    .replace(/\?/g, ".")
-    .replace(/\[!/g, "[^");
+    .replaceAll("[^", "[!")
+    .replaceAll(/[.+^${}()|\\]/g, "\\$&")
+    .replaceAll(/\*+/g, ".*")
+    .replaceAll("?", ".")
+    .replaceAll("[!", "[^");
   try {
     return new RegExp(`^${body}$`);
   } catch {
-    return new RegExp(`^${seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`); // an unclosed `[` is literal
+    return new RegExp(`^${seg.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`); // an unclosed `[` is literal
   }
 }
 /**
@@ -1236,7 +1236,7 @@ const botMerges = (c) =>
     segments(t).some(
       (s) =>
         /\bbot:gh\b/.test(blank(s)) &&
-        (MERGE.test(s) || MERGE.test(s.replace(/\S+/g, normalizeWord))),
+        (MERGE.test(s) || MERGE.test(s.replaceAll(/\S+/g, normalizeWord))),
     ),
   );
 
@@ -2254,7 +2254,7 @@ function withoutPrograms(words) {
 
 /** True when `p` names a file that holds secret values (ADR 0173). */
 export function isSecretPath(p) {
-  const s = p.trim().replace(/^['"]+|['"]+$/g, "");
+  const s = p.trim().replaceAll(/^['"]+|['"]+$/g, "");
   const home = s.replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, HOME_DIR);
   if (home.startsWith(HOME_DIR + "/") && HOME_SECRET.test(home.slice(HOME_DIR.length + 1)))
     return true;

@@ -73,21 +73,27 @@ export function platformConstant(
       const unit = callee.slice("Duration.".length) as "seconds" | "minutes" | "hours" | "days";
       return durationDefault(Duration[unit](first));
     }
-    case "Duration.parse":
+    case "Duration.parse": {
       return typeof first === "string" ? durationDefault(Duration.parse(first)) : undefined;
-    case "Money.of":
+    }
+    case "Money.of": {
       return typeof first === "string" && typeof second === "string"
         ? moneyDefault(Money.of(first, second))
         : undefined;
-    case "Money.ofMinor":
+    }
+    case "Money.ofMinor": {
       return typeof first === "number" && typeof second === "string"
         ? moneyDefault(Money.ofMinor(first, second))
         : undefined;
-    case "Money.zero":
+    }
+    case "Money.zero": {
       return typeof first === "string" ? moneyDefault(Money.zero(first)) : undefined;
-    case "Translated.of":
+    }
+    case "Translated.of": {
       return translatedDefault(first);
-    default:
+    }
+    default: {
       return undefined;
+    }
   }
 }

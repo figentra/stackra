@@ -492,12 +492,15 @@ export class AgentRuntime extends Service {
       at,
     });
     switch (result.outcome) {
-      case ToolCallOutcome.Ok:
+      case ToolCallOutcome.Ok: {
         return result.output;
-      case ToolCallOutcome.Refused:
+      }
+      case ToolCallOutcome.Refused: {
         return { refused: result.code };
-      case ToolCallOutcome.Proposed:
+      }
+      case ToolCallOutcome.Proposed: {
         return { proposed: result.draft };
+      }
       case ToolCallOutcome.ApprovalRequired: {
         await this.runs.recordApproval({
           approvalId: result.approvalId,

@@ -29,8 +29,8 @@ const SIGNED_UPLOAD = z.object({
 async function send(url: string, init: RequestInit): Promise<Response> {
   try {
     return await fetch(url, init);
-  } catch (cause) {
-    throw UploadFailedError.create({ status: 0, serviceCode: null }, { cause });
+  } catch (error) {
+    throw UploadFailedError.create({ status: 0, serviceCode: null }, { cause: error });
   }
 }
 

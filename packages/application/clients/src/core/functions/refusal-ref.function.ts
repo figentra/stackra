@@ -42,7 +42,7 @@ export function refusalRef(code: string, options: RefusalRefOptions = {}): Refus
   const Ref = class extends Refusal(declared) {};
   // The code is derived from the class name, so the base carries the name the producer's class has.
   Object.defineProperty(Ref, "name", {
-    value: `${unqualified.replace(/(^|_)([a-z0-9])/g, (_, __, letter: string) => letter.toUpperCase())}Error`,
+    value: `${unqualified.replaceAll(/(^|_)([a-z0-9])/g, (_, __, letter: string) => letter.toUpperCase())}Error`,
   });
   defineStatics(Ref, { qualifiedCode: code, messageKey: options.message });
   Object.defineProperty(Ref.prototype, "refusalKey", { get: () => options.message });

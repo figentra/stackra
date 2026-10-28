@@ -319,7 +319,7 @@ describe(AwardService, () => {
     const kind = kindOf();
     const { service } = setup([kind]);
     const award = await service.grant(ACME, { kindId: kind.id, recipient: MEMBER }, "usr_1");
-    const typed = (award.verifyCode ?? "").toLowerCase().replace(/-/g, " ");
+    const typed = (award.verifyCode ?? "").toLowerCase().replaceAll("-", " ");
     await expect(service.verifyCode(typed)).resolves.toMatchObject({ awardId: award.id });
     await expect(service.verifyCode("0000-0000-0000")).resolves.toBeNull();
     await expect(service.verifyCode("short")).resolves.toBeNull();

@@ -167,7 +167,7 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
         `${meta.className} has no module schema, so its encrypted fields have no cipher context`,
       );
     // the same snake_case gen's `modelKey` gives a class name
-    const model = meta.className.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+    const model = meta.className.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
     return `${schema}.${model}.${field}`;
   }
 }

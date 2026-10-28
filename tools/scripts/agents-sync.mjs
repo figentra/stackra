@@ -639,7 +639,7 @@ function yamlScalar(value) {
 }
 
 function escapeYamlDouble(s) {
-  return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r?\n/g, " ");
+  return String(s).replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll(/\r?\n/g, " ");
 }
 
 function claudeAgentFrontmatter(agent) {
@@ -949,7 +949,7 @@ function renderConstitution(files) {
     // Docs components (<Note>, <Steps>…) are Mintlify-only; keep their text, drop the tags. oxfmt wraps a
     // component's body onto indented lines, so a <Step> joins into one list item and other bodies are dedented
     // (left indented, they would render as code blocks).
-    let text = body.replace(
+    let text = body.replaceAll(
       /^[ \t]*<Step title="([^"]*)">([\s\S]*?)<\/Step>[ \t]*$/gm,
       (_, title, inner) =>
         `- **${title}**: ${inner
@@ -966,9 +966,11 @@ function renderConstitution(files) {
             .filter((l) => l.trim())
             .map((l) => /^ */.exec(l)[0].length),
         );
-        return `\n${inner.replace(new RegExp(`^ {0,${pad}}`, "gm"), "")}\n`;
+        return `\n${inner.replaceAll(new RegExp(`^ {0,${pad}}`, "gm"), "")}\n`;
       });
-    text = text.replace(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "").replace(/\n{3,}/g, "\n\n");
+    text = text
+      .replaceAll(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "")
+      .replaceAll(/\n{3,}/g, "\n\n");
     return `## ${unquote(String(data.title ?? f))}\n\n${demoteHeadings(text.trim(), "#")}`;
   });
   return [

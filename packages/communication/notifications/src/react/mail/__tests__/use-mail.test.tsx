@@ -29,7 +29,7 @@ function ToolsMail() {
         locale,
         dir,
         t(I18n.orders.order_receipt.mail.intro, { id: "ord_1" }),
-        money(1_250, "KWD"),
+        money(1250, "KWD"),
         asset(LOGO),
       ].join("|")}
     </p>

@@ -82,7 +82,7 @@ function wrong(cases, cwd = wt) {
 /** `c` as one single-quoted shell word. */
 const sq = (c) => `'${c.replaceAll("'", `'\\''`)}'`;
 /** `c` as one double-quoted shell word, filled first so no placeholder hides behind an escaped `$`. */
-const dq = (c) => `"${fill(c).replace(/[\\"$`]/g, "\\$&")}"`;
+const dq = (c) => `"${fill(c).replaceAll(/[\\"$`]/g, "\\$&")}"`;
 /** A typical option for a wrapper that takes one (`_inbox.mjs` `WRAPPER_VALUE`). */
 const OPTION = {
   sudo: "sudo -u x",

@@ -25,13 +25,16 @@ export function recordingPlan(input: {
 }): { readonly record: boolean; readonly notice: boolean; readonly ask: boolean } {
   if (!input.wanted) return { record: false, notice: false, ask: false };
   switch (input.rule) {
-    case RecordingConsent.NotRequired:
+    case RecordingConsent.NotRequired: {
       return { record: true, notice: false, ask: false };
-    case RecordingConsent.Notice:
+    }
+    case RecordingConsent.Notice: {
       return { record: true, notice: true, ask: false };
-    case RecordingConsent.Explicit:
+    }
+    case RecordingConsent.Explicit: {
       return input.consented === undefined
         ? { record: false, notice: false, ask: true }
         : { record: input.consented, notice: false, ask: false };
+    }
   }
 }

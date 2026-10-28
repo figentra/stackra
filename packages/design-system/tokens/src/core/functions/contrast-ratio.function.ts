@@ -13,7 +13,7 @@ const luminance = (hex: string): number => {
   if (!HEX.test(hex)) throw new RangeError(`Not an opaque #RRGGBB colour: ${hex}`);
   const [red, green, blue] = [1, 3, 5].map((start) => {
     const unit = Number.parseInt(hex.slice(start, start + 2), 16) / 255;
-    return unit <= 0.040_45 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+    return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
   }) as [number, number, number];
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 };

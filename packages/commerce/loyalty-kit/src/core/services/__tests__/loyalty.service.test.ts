@@ -27,7 +27,7 @@ const usr1 = memberId("usr_1");
 const RATES = { pointValueMinor: 1, maxRedeemPercent: 30 };
 
 /** The amount still to pay that each quote caps against. */
-const TOTAL = { minor: 1_000, currency: "SAR" };
+const TOTAL = { minor: 1000, currency: "SAR" };
 
 /** The time of every entry. */
 const at = new Date("2026-10-21T00:00:00Z");
@@ -42,9 +42,9 @@ describe("LoyaltyService", () => {
   });
 
   it("quotes the base earn without touching the ledger", async () => {
-    expect(loyalty.quoteEarn(5_000, 0.1)).toBe(500);
+    expect(loyalty.quoteEarn(5000, 0.1)).toBe(500);
     expect(loyalty.quoteEarn(9, 0.1)).toBe(0);
-    expect(loyalty.quoteEarn(5_000, 0.02)).toBe(100);
+    expect(loyalty.quoteEarn(5000, 0.02)).toBe(100);
     expect(loyalty.pointsFor(250, 1)).toBe(250);
     expect(loyalty.pointsFor(250, 10)).toBe(25);
     expect(await ledger.balance(usr1)).toBe(0);
@@ -52,7 +52,7 @@ describe("LoyaltyService", () => {
 
   it("caps redemption at maxRedeemPercent of the total and at the balance", async () => {
     await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
-    expect(await loyalty.quote(usr1, 9_999, TOTAL, RATES)).toEqual({
+    expect(await loyalty.quote(usr1, 9999, TOTAL, RATES)).toEqual({
       points: 300,
       amount: { minor: 300, currency: "SAR" },
     });
@@ -70,10 +70,10 @@ describe("LoyaltyService", () => {
     await ledger.append(pointsEntry.build({ memberId: usr1, points: 10_000, at }));
     // 20 % of 1 000 is 200 minor units; at 5 a point that is 40 points
     expect(
-      await loyalty.quote(usr1, 9_999, TOTAL, { pointValueMinor: 5, maxRedeemPercent: 20 }),
+      await loyalty.quote(usr1, 9999, TOTAL, { pointValueMinor: 5, maxRedeemPercent: 20 }),
     ).toEqual({ points: 40, amount: { minor: 200, currency: "SAR" } });
     expect(
-      await loyalty.quote(usr1, 9_999, TOTAL, { pointValueMinor: 1, maxRedeemPercent: 0 }),
+      await loyalty.quote(usr1, 9999, TOTAL, { pointValueMinor: 1, maxRedeemPercent: 0 }),
     ).toEqual({ points: 0, amount: { minor: 0, currency: "SAR" } });
   });
 

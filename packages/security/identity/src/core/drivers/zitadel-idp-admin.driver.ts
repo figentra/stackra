@@ -383,8 +383,8 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
         ...(body === undefined ? {} : { body }),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
-    } catch (cause) {
-      throw IdpAdminUnavailableError.create({}, { cause });
+    } catch (error) {
+      throw IdpAdminUnavailableError.create({}, { cause: error });
     }
     const { status } = response;
     if (!response.ok && !allowed.includes(status)) {

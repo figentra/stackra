@@ -45,7 +45,7 @@ describe("wavAudio", () => {
   it("refuses another codec, rate or channel count, and a non-WAV", () => {
     const data = Uint8Array.of(1);
     expect(() => wavAudio(wav(6, 1, 8000, data), AudioEncoding.Mulaw)).toThrow(RangeError);
-    expect(() => wavAudio(wav(6, 1, 16000, data), AudioEncoding.Alaw)).toThrow(RangeError);
+    expect(() => wavAudio(wav(6, 1, 16_000, data), AudioEncoding.Alaw)).toThrow(RangeError);
     expect(() => wavAudio(wav(6, 2, 8000, data), AudioEncoding.Alaw)).toThrow(RangeError);
     expect(() => wavAudio(Uint8Array.of(1, 2, 3), AudioEncoding.Alaw)).toThrow(RangeError);
   });

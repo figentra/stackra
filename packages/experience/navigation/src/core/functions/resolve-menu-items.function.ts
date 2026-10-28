@@ -59,7 +59,7 @@ export function resolveMenuItems<V>(
         });
         break;
       }
-      case MenuItemKind.Link:
+      case MenuItemKind.Link: {
         out.push({
           kind: item.kind,
           label: item.label,
@@ -68,12 +68,13 @@ export function resolveMenuItems<V>(
           ...(item.icon === undefined ? {} : { icon: item.icon }),
         });
         break;
+      }
       case MenuItemKind.Group: {
         const children = resolveMenuItems(item.items, resolve);
         if (children.length > 0) out.push({ kind: item.kind, label: item.label, items: children });
         break;
       }
-      case MenuItemKind.Action:
+      case MenuItemKind.Action: {
         if (item.flag !== undefined && !resolve.isOn(item.flag)) break;
         out.push({
           kind: item.kind,
@@ -84,11 +85,14 @@ export function resolveMenuItems<V>(
           ...(item.icon === undefined ? {} : { icon: item.icon }),
         });
         break;
-      case MenuItemKind.Shortcut:
+      }
+      case MenuItemKind.Shortcut: {
         out.push({ kind: item.kind, label: "", shortcut: item.shortcut });
         break;
-      default:
+      }
+      default: {
         out.push({ kind: item.kind, label: "" });
+      }
     }
   }
   return out;

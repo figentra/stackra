@@ -153,12 +153,12 @@ describe("PaymentService", () => {
     gateway.settle(session.providerRef, PaymentStatus.Authorized);
     await payments.reconcile("ord_1");
     expect((await payments.capture("ord_1")).status).toBe(PaymentStatus.Captured);
-    await payments.refund("ord_1", Money.ofMinor(4_000, "SAR"), "r1");
+    await payments.refund("ord_1", Money.ofMinor(4000, "SAR"), "r1");
     expect((await records.find("ord_1"))?.status).toBe(PaymentStatus.PartiallyRefunded);
-    await expect(payments.refund("ord_1", Money.ofMinor(7_000, "SAR"), "r2")).rejects.toRefuseWith(
+    await expect(payments.refund("ord_1", Money.ofMinor(7000, "SAR"), "r2")).rejects.toRefuseWith(
       refusal(InvalidPaymentTransitionError, { operation: "refund" }),
     );
-    await payments.refund("ord_1", Money.ofMinor(6_000, "SAR"), "r3");
+    await payments.refund("ord_1", Money.ofMinor(6000, "SAR"), "r3");
     expect(await records.find("ord_1")).toMatchObject({
       status: PaymentStatus.Refunded,
       refunded: { minor: 10_000 },
@@ -227,10 +227,10 @@ describe("PaymentService", () => {
       amount,
       tipPrompt,
     });
-    gateway.settle(session.providerRef, PaymentStatus.Captured, Money.ofMinor(1_000, "SAR"));
+    gateway.settle(session.providerRef, PaymentStatus.Captured, Money.ofMinor(1000, "SAR"));
     expect(await payments.reconcile("chk_1")).toMatchObject({
       status: PaymentStatus.Captured,
-      tip: { minor: 1_000 },
+      tip: { minor: 1000 },
     });
     await payments.startTerminal("m1", { reference: "chk_2", terminalId: "tmr_1", amount });
     expect((await payments.cancelTerminal("chk_2")).status).toBe(PaymentStatus.Voided);
@@ -286,7 +286,7 @@ describe("PaymentService", () => {
   });
 
   describe("connection modes", () => {
-    const cap = Money.ofMinor(5_000, "SAR");
+    const cap = Money.ofMinor(5000, "SAR");
     const payout = { reference: "po_1", amount, destination: "acct_1" };
 
     /** A service over one gateway of `mode` whose cap is `cap` and whose payouts are held. */
@@ -399,7 +399,7 @@ describe("PaymentService", () => {
 
     it("charges the wallet token within the confirmation, tags the agent, and never twice", async () => {
       const service = withAgents();
-      const record = await service.agentCheckout({ ...ask, amount: Money.ofMinor(9_000, "SAR") });
+      const record = await service.agentCheckout({ ...ask, amount: Money.ofMinor(9000, "SAR") });
       expect(record).toMatchObject({
         reference: "cart_1",
         status: PaymentStatus.Captured,
@@ -436,7 +436,7 @@ describe("PaymentService", () => {
       const held = await payments.preAuthorize(hold);
       expect(held).toMatchObject({ status: PaymentStatus.Authorized, providerRef: "fake_tab_1" });
       expect(await payments.preAuthorize(hold)).toEqual(held);
-      const extra = Money.ofMinor(2_500, "SAR");
+      const extra = Money.ofMinor(2500, "SAR");
       expect((await payments.increment("tab_1", extra, "tab_1:2")).amount.minor).toBe(12_500);
       expect((await payments.increment("tab_1", extra, "tab_1:2")).amount.minor).toBe(12_500);
       const captured = await payments.capture("tab_1", Money.ofMinor(11_000, "SAR"));

@@ -87,7 +87,7 @@ async function engineWith(
     },
   } as Clock & { at: Date };
   const ledger = new MemoryLoyaltyLedgerDriver();
-  await ledger.append(pointsEntry.build({ memberId: member, points: 1_000, at: plus(-60) }));
+  await ledger.append(pointsEntry.build({ memberId: member, points: 1000, at: plus(-60) }));
   const loyalty = new LoyaltyService(ledger, LoyaltyMembersFake.with([CUSTOMER]));
   const workflow = new RedeemPointsWorkflow(
     loyalty,
@@ -160,7 +160,7 @@ describe("RedeemPointsWorkflow", () => {
     expect(run?.status).toBe(WorkflowRunStatus.Compensated);
     expect(run?.error?.code).toBe("workflow_timed_out");
     expect(steps(run)).toEqual(["quote:done", "debit:compensated", "confirm:timed_out"]);
-    expect(await ledger.balance(member)).toBe(1_000);
+    expect(await ledger.balance(member)).toBe(1000);
     expect(await ledger.find(member, "revert:ord_1")).toMatchObject({
       kind: EntryKind.Adjust,
       points: 300,

@@ -20,17 +20,17 @@ describe("MemoryOfflineCapStoreDriver", () => {
 
   it("counts a device's calls of an action within the window", async () => {
     const store = new MemoryOfflineCapStoreDriver();
-    await store.record("dev_1", KEY, new Date("2026-10-24T08:00:00Z"), 1_000);
-    await store.record("dev_1", KEY, new Date("2026-10-25T08:00:00Z"), 2_500);
-    await store.record("dev_2", KEY, new Date("2026-10-25T08:00:00Z"), 9_000);
+    await store.record("dev_1", KEY, new Date("2026-10-24T08:00:00Z"), 1000);
+    await store.record("dev_1", KEY, new Date("2026-10-25T08:00:00Z"), 2500);
+    await store.record("dev_2", KEY, new Date("2026-10-25T08:00:00Z"), 9000);
     await store.record("dev_1", "sales.sale.refund@1", new Date("2026-10-25T08:00:00Z"), 700);
     expect(await store.usage("dev_1", KEY, new Date("2026-10-24T00:00:00Z"))).toEqual({
       count: 2,
-      amount: 3_500,
+      amount: 3500,
     });
     expect(await store.usage("dev_1", KEY, new Date("2026-10-25T00:00:00Z"))).toEqual({
       count: 1,
-      amount: 2_500,
+      amount: 2500,
     });
     expect(await store.usage("dev_3", KEY, new Date(0))).toEqual({ count: 0, amount: 0 });
   });

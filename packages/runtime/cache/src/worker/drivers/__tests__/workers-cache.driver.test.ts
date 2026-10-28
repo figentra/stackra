@@ -87,7 +87,7 @@ describe("WorkersCacheDriver", () => {
       expirationTtl: 60,
     });
     await expect(cache.get(key)).resolves.toBe("short");
-    clock.time += 5_000;
+    clock.time += 5000;
     await expect(cache.get(key)).resolves.toBeUndefined();
     await cache.put(key, "long", Duration.seconds(90.5));
     expect(worker.kv.put).toHaveBeenLastCalledWith("/Product:prd_1", expect.any(String), {

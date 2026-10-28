@@ -46,7 +46,7 @@ describe("parseInfraRunway", () => {
   it("refuses a project number YAML read as a number", () => {
     const root = rootWith({
       region: "europe-west3",
-      projects: { prod: { id: "acme-prod", number: 123456789012 } },
+      projects: { prod: { id: "acme-prod", number: 123_456_789_012 } },
     });
 
     expect(() => parseInfraRunway(root)).toThrow(/providers\.gcp\.projects\.prod\.number/);

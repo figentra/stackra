@@ -104,15 +104,17 @@ export function renderHtml(document: ResolvedDocument): string {
   const body = document.blocks
     .map((block) => {
       switch (block.type) {
-        case "text":
+        case "text": {
           return localized(
             document,
             ROLE_TAGS[block.role],
             block.align,
             block.texts.map(partsHtml),
           );
-        case "amount-in-words":
+        }
+        case "amount-in-words": {
           return localized(document, "p", block.align, block.texts.map(escapeHtml));
+        }
         case "table": {
           const head = block.columns
             .map(
@@ -128,17 +130,22 @@ export function renderHtml(document: ResolvedDocument): string {
             .join("");
           return `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
         }
-        case "qr":
+        case "qr": {
           return `<figure class="${block.align}">${qrSvg(block.matrix, block.sizeMm)}</figure>`;
-        case "barcode":
+        }
+        case "barcode": {
           return `<figure class="${block.align}">${barcodeSvg(block.modules, block.widthMm, block.heightMm)}${block.showText ? `<p dir="ltr">${escapeHtml(block.text)}</p>` : ""}</figure>`;
-        case "image":
+        }
+        case "image": {
           return `<figure class="${block.align}">${imageHtml(block.image, block.widthMm, block.heightMm, "")}</figure>`;
-        case "signature":
+        }
+        case "signature": {
           return `<figure class="${block.align}">${imageHtml(block.image, block.widthMm, block.heightMm, block.labels[0] ?? "")}${localized(document, "p", block.align, block.labels.map(escapeHtml))}</figure>`;
-        default:
+        }
+        default: {
           block satisfies never;
           throw new TypeError("renderHtml: unknown block type");
+        }
       }
     })
     .join("");

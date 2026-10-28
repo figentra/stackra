@@ -214,6 +214,6 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
 function templateKeyOf(name: string): string {
   return name
     .replace(/Notification$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
 }

@@ -234,7 +234,7 @@ export function certificationCases(): CertificationCase[] {
         "(first record); Orden HAC/1177/2024 QR specification",
       driver: (ports) => new VerifactuDriver(ports.transport),
       options: VERIFACTU,
-      document: document("EUR", 11_110, 1_235, "21", {
+      document: document("EUR", 11_110, 1235, "21", {
         number: "12345678/G33",
         issuedAt: new Date("2024-01-01T09:00:00Z"),
         seller: AEAT_SELLER,
@@ -268,7 +268,7 @@ export function certificationCases(): CertificationCase[] {
         "(record chained to example 1)",
       driver: (ports) => new VerifactuDriver(ports.transport),
       options: VERIFACTU,
-      document: document("EUR", 11_110, 1_235, "21", {
+      document: document("EUR", 11_110, 1235, "21", {
         number: "12345679/G34",
         issuedAt: new Date("2024-01-01T09:00:00Z"),
         seller: AEAT_SELLER,
@@ -358,7 +358,7 @@ export function certificationCases(): CertificationCase[] {
         },
         timeZone: "Europe/Vienna",
       },
-      document: document("EUR", 1_000, 200, "20", {
+      document: document("EUR", 1000, 200, "20", {
         number: "83810",
         kind: FiscalDocumentKind.Simplified,
         issuedAt: new Date("2016-03-11T03:24:44Z"),
@@ -409,7 +409,7 @@ export function certificationCases(): CertificationCase[] {
         taxTypes: { S: { taxType: "T1", subType: "V009" } },
         paymentMethods: { cash: "C" },
       },
-      document: document("EGP", 10_000, 1_400, "14", {
+      document: document("EGP", 10_000, 1400, "14", {
         number: "R-0001",
         kind: FiscalDocumentKind.Simplified,
         issuedAt: new Date("2026-03-01T09:30:00Z"),

@@ -14,5 +14,5 @@ import { toBase64 } from "#core/functions/to-base64.function";
  * toBase64Url(new Uint8Array([251, 255])); // "-_8"
  */
 export function toBase64Url(input: string | Uint8Array): string {
-  return toBase64(input).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return toBase64(input).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }

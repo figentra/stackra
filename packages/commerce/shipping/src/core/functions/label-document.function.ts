@@ -15,7 +15,7 @@ import { LabelDocumentInvalidError } from "#core/errors/label-document-invalid.e
 /** The bytes of base64 text, or null when it is not base64. */
 function fromBase64(text: string): Uint8Array | null {
   try {
-    const binary = atob(text.replace(/\s+/g, ""));
+    const binary = atob(text.replaceAll(/\s+/g, ""));
     // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     return Uint8Array.from(binary, (char) => char.charCodeAt(0));
   } catch {

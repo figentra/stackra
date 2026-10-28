@@ -30,11 +30,11 @@ export function normalizeArabic(text: string): string {
     .normalize("NFC")
     .replace(MARKS, "")
     .replace(ALEFS, "ا")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي")
-    .replace(/\s+/g, " ")
+    .replaceAll("ؤ", "و")
+    .replaceAll("ئ", "ي")
+    .replaceAll("ة", "ه")
+    .replaceAll("ى", "ي")
+    .replaceAll(/\s+/g, " ")
     .trim()
     .replace(ARTICLE, "$1");
 }

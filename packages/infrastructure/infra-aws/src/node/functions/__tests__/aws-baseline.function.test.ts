@@ -280,7 +280,7 @@ describe("awsBaseline", () => {
   });
 
   it("refuses an account that does not resolve to twelve digits", async () => {
-    await mockPulumi({ ...STACK, aws: { ...STACK.aws, accounts: { nonprod: 12345 } } });
+    await mockPulumi({ ...STACK, aws: { ...STACK.aws, accounts: { nonprod: 12_345 } } });
 
     expect(() => awsBaseline(STAGING)).toThrow(/not a 12-digit AWS account id/);
   });

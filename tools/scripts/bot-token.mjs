@@ -92,17 +92,17 @@ export async function retryUnlessLanded(run, landed, wait = sleep) {
     let error;
     try {
       return await run();
-    } catch (failure) {
-      error = failure;
+    } catch (failureError) {
+      error = failureError;
     }
     if (!TRANSIENT.test(error.message)) throw error;
     let done;
     try {
       done = await landed();
-    } catch (read) {
+    } catch (readError) {
       throw new Error(
-        `${error.message}; outcome unknown, check it by hand (re-read failed: ${read.message})`,
-        { cause: read },
+        `${error.message}; outcome unknown, check it by hand (re-read failed: ${readError.message})`,
+        { cause: readError },
       );
     }
     if (done) return undefined;
@@ -153,7 +153,7 @@ export function appJwt(appId, privateKey, now = Math.floor(Date.now() / 1000)) {
   const head = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const body = b64url(JSON.stringify({ iat: now - 60, exp: now + 540, iss: String(appId) }));
   // Vaults often store a PEM with literal "\n"; restore real newlines.
-  const key = privateKey.replace(/\\n/g, "\n");
+  const key = privateKey.replaceAll("\\n", "\n");
   const signature = sign("RSA-SHA256", Buffer.from(`${head}.${body}`), key).toString("base64url");
   return `${head}.${body}.${signature}`;
 }

@@ -19,11 +19,12 @@ const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
  * scopeIdOf("platform.acme"); // "scp_…" (26 characters after the prefix, the same on every run)
  */
 export function scopeIdOf(path: string): `scp_${string}` {
-  let hash = 0x811c9dc5;
+  let hash = 0x81_1c_9d_c5;
   let body = "";
   for (let round = 0; body.length < 26; round += 1) {
-    // oxlint-disable-next-line unicorn/prefer-code-point -- hashes UTF-16 code units; code points would change every hash already issued
-    for (const char of `${round}:${path}`) hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193);
+    for (const char of `${round}:${path}`)
+      // oxlint-disable-next-line unicorn/prefer-code-point -- hashes UTF-16 code units; code points would change every hash already issued
+      hash = Math.imul(hash ^ char.charCodeAt(0), 0x01_00_01_93);
     for (let bits = hash >>> 0, left = 6; left > 0 && body.length < 26; left -= 1, bits >>>= 5)
       body += ALPHABET[bits & 31];
   }

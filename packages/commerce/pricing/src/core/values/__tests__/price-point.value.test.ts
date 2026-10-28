@@ -74,15 +74,15 @@ describe("PricePoint#apply", () => {
   });
 
   it("rounds to whole steps when the ending is zero", () => {
-    const tens = PricePoint.ofMinor(1_000, 0, "USD");
+    const tens = PricePoint.ofMinor(1000, 0, "USD");
     expect(tens.apply(usd("41.00")).toDecimal()).toBe("50.00");
     expect(tens.apply(usd("41.00"), Rounding.Down).toDecimal()).toBe("40.00");
   });
 
   it("counts in the currency's own minor units", () => {
     const yen = PricePoint.ofMinor(100, 80, "JPY");
-    expect(yen.apply(Money.ofMinor(1_234, "JPY")).toDecimal()).toBe("1280");
-    const dinar = PricePoint.ofMinor(1_000, 950, "KWD");
+    expect(yen.apply(Money.ofMinor(1234, "JPY")).toDecimal()).toBe("1280");
+    const dinar = PricePoint.ofMinor(1000, 950, "KWD");
     expect(dinar.apply(Money.of("3.100", "KWD")).toDecimal()).toBe("3.950");
   });
 
@@ -90,7 +90,7 @@ describe("PricePoint#apply", () => {
     const price = usd("12.34");
     const rounded = charm.apply(price);
     expect(rounded).not.toBe(price);
-    expect(price.minor).toBe(1_234);
+    expect(price.minor).toBe(1234);
     expect(rounded.currency).toBe("USD");
   });
 

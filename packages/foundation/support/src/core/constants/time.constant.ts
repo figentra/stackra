@@ -11,7 +11,7 @@
  *                     ADR 0127 2026-10-24 note (support in foundation, entry `.`).
  */
 
-const MS_PER_SECOND = 1_000;
+const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;

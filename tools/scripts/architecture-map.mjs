@@ -76,7 +76,7 @@ const ENFORCEMENT = [
 ];
 
 const byText = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
-const idOf = (text) => text.replace(/[^a-zA-Z0-9_-]+/g, "-");
+const idOf = (text) => text.replaceAll(/[^a-zA-Z0-9_-]+/g, "-");
 const shortName = (name) => name.replace(/^@[^/]+\//, "");
 
 /** The turbo.jsonc tags of a member folder, or none. */

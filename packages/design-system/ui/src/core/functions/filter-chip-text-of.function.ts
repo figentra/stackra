@@ -46,8 +46,9 @@ export function filterChipTextOf(
 ): string {
   if (value === undefined || isFilterValueEmpty(value)) return "";
   switch (definition.kind) {
-    case "text":
+    case "text": {
       return (filterValueOfKind("text", value) ?? "").trim();
+    }
     case "select": {
       const id = filterValueOfKind("select", value);
       return definition.options.find((option) => option.id === id)?.label ?? id ?? "";
@@ -80,9 +81,10 @@ export function filterChipTextOf(
       if (start !== null && end !== null) return `${start} – ${end}`;
       return start !== null ? `${words.from} ${start}` : `${words.until} ${end ?? ""}`;
     }
-    case "boolean":
+    case "boolean": {
       return filterValueOfKind("boolean", value)
         ? (definition.trueLabel ?? words.yes)
         : (definition.falseLabel ?? words.no);
+    }
   }
 }

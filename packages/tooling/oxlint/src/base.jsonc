@@ -83,6 +83,15 @@
     "unicorn/prefer-code-point": "error",
     "unicorn/prefer-structured-clone": "error",
     "unicorn/prefer-spread": "error",
+    // B-3: the mechanical autofix sweep. Readable money and byte constants, `case` blocks that cannot leak a
+    // `const` into the next case, `replaceAll` over a global regex, and one name for a caught error.
+    "unicorn/numeric-separators-style": "error",
+    // B-3 keeps number-literal-case off: it wants uppercase hex digits and oxfmt prints them lowercase, so the two
+    // would fight on every save. oxfmt already lowercases the `0x` prefix and the exponent `e`.
+    "unicorn/number-literal-case": "off",
+    "unicorn/switch-case-braces": "error",
+    "unicorn/prefer-string-replace-all": "error",
+    "unicorn/catch-error-name": "error",
     // Empty files are allowed for placeholders and test setup.
     "unicorn/no-empty-file": "off",
     // Side-effect imports for CSS and polyfills.

@@ -26,5 +26,5 @@ export function bucketKeyOf(type: BucketClass): string {
     throw new TypeError(
       "A bucket class needs a name, such as ProductImagesBucket, or a registered key",
     );
-  return stem.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+  return stem.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
 }

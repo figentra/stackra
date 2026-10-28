@@ -11,10 +11,10 @@ import { McpProtocolError } from "#node/errors/mcp-protocol.error";
 
 describe("McpProtocolError", () => {
   it("carries the JSON-RPC code", () => {
-    const error = new McpProtocolError(-32602, "Unknown tool: deploy");
+    const error = new McpProtocolError(-32_602, "Unknown tool: deploy");
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe("McpProtocolError");
-    expect(error.code).toBe(-32602);
+    expect(error.code).toBe(-32_602);
     expect(error.message).toBe("Unknown tool: deploy");
   });
 });

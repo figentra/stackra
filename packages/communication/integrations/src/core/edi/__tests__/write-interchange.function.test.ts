@@ -97,8 +97,8 @@ describe("writeInterchange", () => {
       let error: unknown;
       try {
         writeInterchange(bad);
-      } catch (caught) {
-        error = caught;
+      } catch (caughtError) {
+        error = caughtError;
       }
       expect(isRefusal(error, MalformedEdiError)).toBe(true);
     }

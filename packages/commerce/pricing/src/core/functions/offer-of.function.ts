@@ -69,12 +69,15 @@ export function offerOf(key: string, rows: readonly CatalogueRow[]): CatalogueOf
           months,
         });
       }
-      case OfferBenefitKind.FreeMigration:
+      case OfferBenefitKind.FreeMigration: {
         return Object.freeze({ kind });
-      case OfferBenefitKind.ModuleGrant:
+      }
+      case OfferBenefitKind.ModuleGrant: {
         return Object.freeze({ kind, module: rowText(READER, row, "module"), months });
-      default:
+      }
+      default: {
         throw new RangeError(`${READER}: row ${String(row.id)} has unknown benefit kind ${kind}`);
+      }
     }
   }
 

@@ -679,12 +679,12 @@ export class ActionPipeline {
     for (const work of call.state.afterCommit)
       try {
         await work();
-      } catch (cause) {
+      } catch (error) {
         // shortcut: dropped silently when no Logger is bound; every booted container binds one.
         this.optional(Logger)?.error(AFTER_COMMIT_FAILED, {
           key: call.descriptor.key,
           callId: call.descriptor.callId,
-          cause,
+          cause: error,
         });
       }
   }

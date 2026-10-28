@@ -19,12 +19,12 @@ export class ExpirePointsInput extends Schema {
   /** How many accounts one run visits; the cron passes 500. */
   @Int({
     min: 1,
-    max: 5_000,
+    max: 5000,
   })
   batchSize = 500;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).
 registerSchemas([
-  [ExpirePointsInput, z.object({ batchSize: z.number().int().min(1).max(5_000).default(500) })],
+  [ExpirePointsInput, z.object({ batchSize: z.number().int().min(1).max(5000).default(500) })],
 ]);

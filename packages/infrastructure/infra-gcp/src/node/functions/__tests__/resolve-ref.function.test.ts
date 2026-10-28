@@ -21,7 +21,7 @@ describe("resolveRef", () => {
   it("reads a plain key and walks a structured one", async () => {
     await mockPulumi({
       billingAccount: "012345-6789AB-CDEF01",
-      gcp: { projects: { prod: { id: "acme-prod", number: 123456789012 } } },
+      gcp: { projects: { prod: { id: "acme-prod", number: 123_456_789_012 } } },
     });
 
     expect(resolveRef("ref:billingAccount")).toBe("012345-6789AB-CDEF01");

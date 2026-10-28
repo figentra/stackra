@@ -499,8 +499,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       try {
         // oxlint-disable-next-line no-await-in-loop -- one tick at a time
         if ((await this.tick()) === 0) await pause(options.signal);
-      } catch (cause) {
-        this.optional(Logger)?.error(WORKFLOW_DEFAULTS.tickFailed, { cause });
+      } catch (error) {
+        this.optional(Logger)?.error(WORKFLOW_DEFAULTS.tickFailed, { cause: error });
         // oxlint-disable-next-line no-await-in-loop -- see above
         await pause(options.signal);
       }
@@ -912,9 +912,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         });
         // oxlint-disable-next-line no-await-in-loop -- see above
         await this.publish(events, current, now);
-      } catch (cause) {
+      } catch (causeError) {
         const stuck: WorkflowRun = {
-          ...withStep(current, { ...record, error: errorOf(cause) }),
+          ...withStep(current, { ...record, error: errorOf(causeError) }),
           status: WorkflowRunStatus.Failed,
           endedAt: this.clock.now(),
         };

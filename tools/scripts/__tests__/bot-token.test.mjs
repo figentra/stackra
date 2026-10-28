@@ -33,7 +33,7 @@ const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 20
 const pem = privateKey.export({ type: "pkcs8", format: "pem" });
 
 test("appJwt is a valid RS256 JWT with iat-60, exp+9m and iss", () => {
-  const jwt = appJwt(5386128, pem, 1_000_000);
+  const jwt = appJwt(5_386_128, pem, 1_000_000);
   const [head, body, sig] = jwt.split(".");
   assert.deepEqual(JSON.parse(Buffer.from(head, "base64url")), { alg: "RS256", typ: "JWT" });
   assert.deepEqual(JSON.parse(Buffer.from(body, "base64url")), {
@@ -47,7 +47,7 @@ test("appJwt is a valid RS256 JWT with iat-60, exp+9m and iss", () => {
 });
 
 test("appJwt accepts a PEM stored with escaped newlines", () => {
-  assert.equal(appJwt(1, pem.replace(/\n/g, "\\n"), 5).split(".").length, 3);
+  assert.equal(appJwt(1, pem.replaceAll("\n", "\\n"), 5).split(".").length, 3);
 });
 
 const env = {

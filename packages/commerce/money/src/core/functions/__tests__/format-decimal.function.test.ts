@@ -13,7 +13,7 @@ import { formatDecimal } from "#core/functions/format-decimal.function";
 describe("formatDecimal", () => {
   it("prints the shortest exact decimal", () => {
     expect(formatDecimal({ digits: 1250n, scale: 2 })).toBe("12.5");
-    expect(formatDecimal({ digits: 109375n, scale: 4 })).toBe("10.9375");
+    expect(formatDecimal({ digits: 109_375n, scale: 4 })).toBe("10.9375");
     expect(formatDecimal({ digits: 7n, scale: 0 })).toBe("7");
     expect(formatDecimal({ digits: -5n, scale: 3 })).toBe("-0.005");
     expect(formatDecimal({ digits: 0n, scale: 4 })).toBe("0");

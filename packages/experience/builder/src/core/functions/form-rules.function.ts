@@ -21,24 +21,31 @@ import type { FormDocumentField } from "#core/types/form-document-field.type";
 function factOf(field: FormDocumentField): FactField | undefined {
   const label = field.label as FactField["label"];
   switch (field.type) {
-    case FormFieldType.Number:
+    case FormFieldType.Number: {
       return { type: FieldType.Number, label };
-    case FormFieldType.Date:
+    }
+    case FormFieldType.Date: {
       return { type: FieldType.Date, label };
-    case FormFieldType.Boolean:
+    }
+    case FormFieldType.Boolean: {
       return { type: FieldType.Enum, label, values: { true: label, false: label } };
-    case FormFieldType.Choice:
+    }
+    case FormFieldType.Choice: {
       return {
         type: FieldType.Enum,
         label,
         values: (field.options ?? {}) as Record<string, FactField["label"]>,
       };
-    case FormFieldType.MultiChoice:
+    }
+    case FormFieldType.MultiChoice: {
       return { type: FieldType.List, label };
-    case FormFieldType.Money:
+    }
+    case FormFieldType.Money: {
       return undefined;
-    default:
+    }
+    default: {
       return { type: FieldType.String, label };
+    }
   }
 }
 

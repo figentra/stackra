@@ -39,8 +39,8 @@ export function useAppApprovalSheet(options: AppApprovalSheetOptions): AppApprov
     setError(undefined);
     try {
       return await work();
-    } catch (failure) {
-      setError(failure);
+    } catch (failureError) {
+      setError(failureError);
       return fallback;
     } finally {
       setBusy(false);

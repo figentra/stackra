@@ -129,26 +129,29 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   /** Adds the credentials of the Integration's `auth` type. */
   async function authorize(headers: Headers, url: URL): Promise<void> {
     switch (auth.type) {
-      case AuthType.None:
+      case AuthType.None: {
         return;
+      }
       case AuthType.ApiKey: {
         const value = resolve(auth.format ?? "{apiKey}");
         if (auth.header !== undefined) headers.set(auth.header, value);
         else if (auth.query !== undefined) url.searchParams.set(auth.query, value);
         return;
       }
-      case AuthType.Basic:
+      case AuthType.Basic: {
         headers.set(
           "authorization",
           `Basic ${encodeBase64(`${resolve(auth.username)}:${resolve(auth.password)}`)}`,
         );
         return;
-      case AuthType.Jwt:
+      }
+      case AuthType.Jwt: {
         headers.set(
           auth.header ?? "authorization",
           `Bearer ${await signJwt(auth, resolve, clock.now())}`,
         );
         return;
+      }
       case AuthType.OAuth2Code:
       case AuthType.OAuth2ClientCredentials:
       case AuthType.OAuth2JwtBearer: {

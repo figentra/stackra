@@ -17,7 +17,7 @@ import { GuardDutyFileScannerDriver } from "#node/drivers/guard-duty-file-scanne
 function driverName(type: { readonly name: string }): string {
   return type.name
     .replace(/FileScannerDriver$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
 }
 

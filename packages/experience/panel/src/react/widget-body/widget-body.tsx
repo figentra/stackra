@@ -38,9 +38,10 @@ export function WidgetBody({ widget, data, isRefreshing }: WidgetBodyProps): Rea
   const number = useNumber();
   const display = widget.display;
   switch (display.kind) {
-    case DisplayKind.Kpi:
+    case DisplayKind.Kpi: {
       return <KpiView widget={widget} kpi={display} metric={valueAt(data, display.path)} />;
-    case DisplayKind.KpiGroup:
+    }
+    case DisplayKind.KpiGroup: {
       return (
         <div className="grid gap-4 sm:grid-cols-2">
           {display.kpis.map((kpi) => (
@@ -48,6 +49,7 @@ export function WidgetBody({ widget, data, isRefreshing }: WidgetBodyProps): Rea
           ))}
         </div>
       );
+    }
     case DisplayKind.Progress: {
       const value = valueAt(data, `${display.path}.value`);
       const target = valueAt(data, `${display.path}.target`);
@@ -81,14 +83,16 @@ export function WidgetBody({ widget, data, isRefreshing }: WidgetBodyProps): Rea
         />
       );
     }
-    case DisplayKind.Custom:
+    case DisplayKind.Custom: {
       if (widget.renderer !== undefined)
         return createElement(widget.renderer as ComponentType<CustomWidgetProps>, {
           data,
           isRefreshing,
         });
       return <EmptyState title={t(PANEL_KEYS.panel.widgets.not_rendered)} />;
-    default:
+    }
+    default: {
       return <EmptyState title={t(PANEL_KEYS.panel.widgets.not_rendered)} />;
+    }
   }
 }

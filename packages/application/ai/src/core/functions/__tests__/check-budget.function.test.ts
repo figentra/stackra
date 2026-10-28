@@ -10,7 +10,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { checkBudget } from "#core/functions/check-budget.function";
 
-const budget = { limit: 1_000, warnAt: 0.8 };
+const budget = { limit: 1000, warnAt: 0.8 };
 
 describe("checkBudget", () => {
   it("allows a run that fits and warns from the share", () => {
@@ -20,7 +20,7 @@ describe("checkBudget", () => {
 
   it("refuses a run over what remains", () => {
     expect(checkBudget(950, 100, budget)).toEqual({ allowed: false, warn: true, remaining: 50 });
-    expect(checkBudget(1_200, 0, budget)).toEqual({ allowed: true, warn: true, remaining: 0 });
+    expect(checkBudget(1200, 0, budget)).toEqual({ allowed: true, warn: true, remaining: 0 });
   });
 
   it("refuses bad counts and shares", () => {

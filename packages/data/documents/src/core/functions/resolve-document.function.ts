@@ -81,7 +81,7 @@ export function resolveDocument(
   const blocks = template.blocks.map((block, index): ResolvedBlock => {
     const at = `blocks.${index}`;
     switch (block.type) {
-      case "text":
+      case "text": {
         return {
           type: "text",
           role: block.role,
@@ -90,6 +90,7 @@ export function resolveDocument(
             fillPlaceholders(textFor(block.text, code, `${at}.text`), data, code),
           ),
         };
+      }
       case "table": {
         const rows = readPath(data, block.rows);
         if (rows === undefined || rows === null)
@@ -147,7 +148,7 @@ export function resolveDocument(
           align: block.align,
         };
       }
-      case "image":
+      case "image": {
         return {
           type: "image",
           image: imageAt(data, block.image),
@@ -155,7 +156,8 @@ export function resolveDocument(
           heightMm: block.heightMm,
           align: block.align,
         };
-      case "signature":
+      }
+      case "signature": {
         return {
           type: "signature",
           image: imageAt(data, block.image),
@@ -164,6 +166,7 @@ export function resolveDocument(
           heightMm: block.heightMm,
           align: block.align,
         };
+      }
       case "amount-in-words": {
         const amount = amountAt(data, block.amount);
         const words = readPath(data, block.currency);
@@ -186,9 +189,10 @@ export function resolveDocument(
           ),
         };
       }
-      default:
+      default: {
         block satisfies never;
         throw new TypeError(`${at}: unknown block type`);
+      }
     }
   });
   return { template, blocks };

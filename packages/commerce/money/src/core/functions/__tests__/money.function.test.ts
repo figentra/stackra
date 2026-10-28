@@ -20,15 +20,15 @@ type Same<A, B> =
 
 describe("money()", () => {
   it("decodes the wire form to a Money", () => {
-    const value = money().parse({ minor: 1_250, currency: "USD" });
+    const value = money().parse({ minor: 1250, currency: "USD" });
     expect(value).toBeInstanceOf(Money);
-    expect(value.minor).toBe(1_250);
+    expect(value.minor).toBe(1250);
     expect(value.currency).toBe("USD");
   });
 
   it("encodes a Money to the wire form", () => {
-    expect(z.encode(money(), Money.ofMinor(1_250, "USD"))).toEqual({
-      minor: 1_250,
+    expect(z.encode(money(), Money.ofMinor(1250, "USD"))).toEqual({
+      minor: 1250,
       currency: "USD",
     });
   });
@@ -46,11 +46,11 @@ describe("money()", () => {
     { minor: -Number.MAX_SAFE_INTEGER - 1, currency: "USD" },
     { minor: 12.5, currency: "USD" },
     { minor: "1250", currency: "USD" },
-    { minor: 1_250, currency: "usd" },
-    { minor: 1_250, currency: "XXX" },
-    { minor: 1_250 },
+    { minor: 1250, currency: "usd" },
+    { minor: 1250, currency: "XXX" },
+    { minor: 1250 },
     null,
-    1_250,
+    1250,
   ])("refuses %j", (wire) => {
     expect(money().safeParse(wire).success).toBe(false);
   });
@@ -64,11 +64,11 @@ describe("money()", () => {
 
   it("works as a field of a generated object schema", () => {
     const OrderLine$ = z.object({ quantity: z.number().int().min(1), unitPrice: money() });
-    const line = OrderLine$.parse({ quantity: 2, unitPrice: { minor: 1_250, currency: "USD" } });
+    const line = OrderLine$.parse({ quantity: 2, unitPrice: { minor: 1250, currency: "USD" } });
     expect(line.unitPrice.toDecimal()).toBe("12.50");
     expect(z.encode(OrderLine$, line)).toEqual({
       quantity: 2,
-      unitPrice: { minor: 1_250, currency: "USD" },
+      unitPrice: { minor: 1250, currency: "USD" },
     });
   });
 

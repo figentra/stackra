@@ -16,9 +16,9 @@ describe("rtpPacket", () => {
     const packet = rtpPacket(
       {
         payloadType: 8,
-        sequence: 0x1_0001,
+        sequence: 0x1_00_01,
         timestamp: 2 ** 32 + 160,
-        ssrc: 0xdeadbeef,
+        ssrc: 0xde_ad_be_ef,
         marker: true,
       },
       Uint8Array.of(1, 2, 3),

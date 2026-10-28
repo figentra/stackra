@@ -24,7 +24,7 @@ const SHAPE = /^\+[1-9]\d{7,14}$/;
  */
 export function e164(): ZodType<E164, string> {
   return z.string().transform((value, context) => {
-    const compact = normalizeIdentifier(value.replace(/[().]/g, "")).replace(/^00/, "+");
+    const compact = normalizeIdentifier(value.replaceAll(/[().]/g, "")).replace(/^00/, "+");
     if (!SHAPE.test(compact)) {
       context.addIssue({
         code: "custom",

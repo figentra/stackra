@@ -39,7 +39,7 @@ const SCAN = {
   ean13: { code: "6291041500213" },
   gs1: { code: "01062910415002133103001250" },
   empty: { code: "" },
-  notText: { code: 6291041500213 },
+  notText: { code: 6_291_041_500_213 },
   missing: {},
 } as const;
 

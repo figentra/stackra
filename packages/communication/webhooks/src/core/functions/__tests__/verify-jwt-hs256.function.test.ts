@@ -22,8 +22,8 @@ const RECIPE: WebhookSchemeRecipe = { query: "tamaraToken", header: "authorizati
 /** Base64url of `bytes`. */
 const base64url = (bytes: Uint8Array) =>
   btoa(String.fromCodePoint(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
     .replace(/=+$/, "");
 const segment = (value: object) => base64url(new TextEncoder().encode(JSON.stringify(value)));
 

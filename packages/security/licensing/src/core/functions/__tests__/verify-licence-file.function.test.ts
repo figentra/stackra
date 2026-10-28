@@ -25,7 +25,7 @@ import {
 async function reasonOf(promise: Promise<unknown>): Promise<unknown> {
   const error: unknown = await promise.then(
     () => undefined,
-    (caught: unknown) => caught,
+    (caughtError: unknown) => caughtError,
   );
   return isRefusal(error, LicenceFileInvalidError) ? error.reason : error;
 }
@@ -132,7 +132,7 @@ describe("verifyLicenceFile", () => {
     const error: unknown = await verifyLicenceFile(file, {
       publicKey: key.publicKey,
       licenceKey: "WRONG-KEY-VALUE",
-    }).catch((caught: unknown) => caught);
+    }).catch((caughtError: unknown) => caughtError);
     expect(JSON.stringify((error as LicenceFileInvalidError).toEnvelope())).not.toContain(
       "WRONG-KEY-VALUE",
     );

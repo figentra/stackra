@@ -17,7 +17,7 @@ const values = {
   points: 100,
   reference: "ord_1",
   tier: LoyaltyTier.Silver,
-  balanceAfter: 1_100,
+  balanceAfter: 1100,
 };
 
 describe("PointsEarned", () => {

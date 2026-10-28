@@ -11,7 +11,7 @@ import { vi } from "vitest";
 import { restoreAfterTest } from "#core/functions/restore-after-test.function";
 
 /** The fixed seed: every `freezeIds()` call replays the same byte stream. */
-const SEED = 0x5eed_1d5;
+const SEED = 0x5_ee_d1_d5;
 
 /**
  * Replaces `crypto.getRandomValues` with a mulberry32 stream from a fixed seed until the current test finishes. Each
@@ -27,7 +27,7 @@ const SEED = 0x5eed_1d5;
 export function freezeIds(): () => void {
   let state = SEED;
   const nextByte = (): number => {
-    state = (state + 0x6d2b79f5) | 0;
+    state = (state + 0x6d_2b_79_f5) | 0;
     let t = Math.imul(state ^ (state >>> 15), 1 | state);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) & 0xff;

@@ -15,8 +15,8 @@ import { HttpPageReaderDriver } from "#core/drivers/http-page-reader.driver";
 import type { PageReaderPolicy } from "#core/types/page-reader-policy.type";
 
 const POLICY: PageReaderPolicy = {
-  maxBytes: 1_000,
-  timeoutMs: 5_000,
+  maxBytes: 1000,
+  timeoutMs: 5000,
   maxRedirects: 1,
   maxTextChars: 100,
   userAgent: "StackraPageReader/1.0",
@@ -118,7 +118,7 @@ describe(HttpPageReaderDriver, () => {
       { refusal: "not_html", status: 200 },
     ],
     [html("<p>x</p>", { "content-length": "5000" }), { refusal: "too_large", status: 200 }],
-    [html(`<p>${"x".repeat(2_000)}</p>`), { refusal: "too_large", status: 200 }],
+    [html(`<p>${"x".repeat(2000)}</p>`), { refusal: "too_large", status: 200 }],
   ])("refuses a bad answer", async (answer, refusal) => {
     const pages = HttpPageReaderDriver.within(POLICY, async () => answer);
     expect(await pages.read("https://shop.example.com/")).toEqual({ ok: false, ...refusal });

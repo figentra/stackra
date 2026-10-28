@@ -34,18 +34,24 @@ const within = (value: unknown, low: number, high: number): boolean =>
 function fitsElement(field: FactField, value: unknown): boolean {
   switch (field.type) {
     case FieldType.String:
-    case FieldType.List:
+    case FieldType.List: {
       return typeof value === "string" && value.length <= MAX_TEXT;
-    case FieldType.Number:
+    }
+    case FieldType.Number: {
       return typeof value === "number" && Number.isFinite(value);
-    case FieldType.Money:
+    }
+    case FieldType.Money: {
       return moneyOf(value) !== undefined;
-    case FieldType.Date:
+    }
+    case FieldType.Date: {
       return typeof value === "string" && INSTANT.safeParse(value).success;
-    case FieldType.Enum:
+    }
+    case FieldType.Enum: {
       return typeof value === "string" && Object.hasOwn(field.values ?? {}, value);
-    default:
+    }
+    default: {
       return false;
+    }
   }
 }
 
@@ -75,29 +81,36 @@ function fitsRange(field: FactField, value: unknown): boolean {
  */
 export function fitsOperand(field: FactField, operator: Operator, value: unknown): boolean {
   switch (Enum.meta(Operator, operator).operand) {
-    case "none":
+    case "none": {
       return value === undefined;
-    case "one":
+    }
+    case "one": {
       return fitsElement(field, value);
-    case "many":
+    }
+    case "many": {
       return (
         Array.isArray(value) &&
         value.length >= 1 &&
         value.length <= MAX_ITEMS &&
         (value as readonly unknown[]).every((item) => fitsElement(field, item))
       );
-    case "range":
+    }
+    case "range": {
       return fitsRange(field, value);
-    case "duration":
+    }
+    case "duration": {
       return millisecondsOf(value) !== undefined;
-    case "circle":
+    }
+    case "circle": {
       return (
         isRecord(value, ["latitude", "longitude", "radiusKilometres"]) &&
         within(value["latitude"], -90, 90) &&
         within(value["longitude"], -180, 180) &&
         within(value["radiusKilometres"], Number.MIN_VALUE, Number.MAX_VALUE)
       );
-    default:
+    }
+    default: {
       return false;
+    }
   }
 }

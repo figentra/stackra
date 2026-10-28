@@ -46,7 +46,7 @@ describe("MemoryAccountingConnector", () => {
 
   it("refuses an unbalanced journal and an account outside the chart", async () => {
     const accounting = new MemoryAccountingConnector({ chart });
-    await expect(accounting.post(entry("4000", 9_000), "k1")).rejects.toThrow(
+    await expect(accounting.post(entry("4000", 9000), "k1")).rejects.toThrow(
       UnbalancedJournalError,
     );
     const refused = await accounting.post(entry("9999"), "k2").catch((error: unknown) => error);

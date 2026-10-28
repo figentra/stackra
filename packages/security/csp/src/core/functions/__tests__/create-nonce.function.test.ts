@@ -27,7 +27,7 @@ describe("createNonce", () => {
   });
 
   it("never repeats", () => {
-    const nonces = new Set(Array.from({ length: 1_000 }, () => createNonce()));
-    expect(nonces.size).toBe(1_000);
+    const nonces = new Set(Array.from({ length: 1000 }, () => createNonce()));
+    expect(nonces.size).toBe(1000);
   });
 });

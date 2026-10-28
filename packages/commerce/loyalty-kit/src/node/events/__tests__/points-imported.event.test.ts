@@ -17,10 +17,10 @@ describe("PointsImported", () => {
     expect(kindOf(PointsImported)?.options).toMatchObject({ name: "points.imported", version: 1 });
     const event = PointsImported.create({
       memberId: "usr_1",
-      points: 1_250,
+      points: 1250,
       reference: "run_1:row_1",
       tier: LoyaltyTier.Silver,
-      balanceAfter: 1_250,
+      balanceAfter: 1250,
     });
     expect(event.tier).toBe(LoyaltyTier.Silver);
     expect(() =>

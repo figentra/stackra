@@ -32,7 +32,7 @@ import type { ModuleRecord } from "#testing/types/module-record.type";
 const keyOf = (type: ModuleClass) =>
   type.name
     .replace(/Module$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
 
 /** The modules each root boots: its wiring's own modules, its own wiring row, or the class itself. */

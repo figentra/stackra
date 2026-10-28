@@ -16,7 +16,11 @@ import { AWARD_CODE_ALPHABET } from "#core/constants/award-code-alphabet.constan
  * normalizeAwardCode("7K3Q 9XPM OABZ"); // "7K3Q9XPM0ABZ"
  */
 export function normalizeAwardCode(typed: string): string | null {
-  const code = typed.toUpperCase().replace(/[\s-]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1");
+  const code = typed
+    .toUpperCase()
+    .replaceAll(/[\s-]/g, "")
+    .replaceAll("O", "0")
+    .replaceAll(/[IL]/g, "1");
   if (code.length !== 12) return null;
   return [...code].every((character) => AWARD_CODE_ALPHABET.includes(character)) ? code : null;
 }

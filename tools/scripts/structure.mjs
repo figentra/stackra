@@ -70,9 +70,9 @@ export const {
 const cell = (text) =>
   String(text ?? "")
     .split(/(`[^`]*`)/)
-    .map((part, i) => (i % 2 ? part : part.replace(/__tests__\/?/g, (token) => `\`${token}\``)))
+    .map((part, i) => (i % 2 ? part : part.replaceAll(/__tests__\/?/g, (token) => `\`${token}\``)))
     .join("")
-    .replace(/\|/g, "/");
+    .replaceAll("|", "/");
 /**
  * A value rendered as a code span, or `none` when there is no value.
  * @param {unknown} text

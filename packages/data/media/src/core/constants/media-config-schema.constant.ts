@@ -47,7 +47,7 @@ export const MEDIA_CONFIG_SCHEMA = z.object({
   clamav: z
     .object({
       host: z.string().min(1).default("127.0.0.1"),
-      port: z.number().int().min(1).max(65535).default(3310),
+      port: z.number().int().min(1).max(65_535).default(3310),
       maxBytes: z.number().int().min(1).default(26_214_400),
     })
     .default(() => ({ host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 })),

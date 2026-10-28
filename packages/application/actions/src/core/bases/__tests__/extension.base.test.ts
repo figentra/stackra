@@ -82,7 +82,7 @@ describe("Extension", () => {
       "insufficient_points",
     );
     const totals = await new RedeemPointsExtension().handle(
-      { subtotalMinor: 1_000, adjustments: [] },
+      { subtotalMinor: 1000, adjustments: [] },
       {
         customerId: "usr_1",
       },

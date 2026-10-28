@@ -60,7 +60,7 @@ export function readI18nReferences(root: string): NonNullable<MemberIR["i18nRefe
           column: (match.index ?? 0) + 1,
           path: (match[1] ?? "")
             .split(".")
-            .map((segment) => segment.replace(/[\s?]/g, ""))
+            .map((segment) => segment.replaceAll(/[\s?]/g, ""))
             .filter((segment) => segment !== ""),
         });
     });

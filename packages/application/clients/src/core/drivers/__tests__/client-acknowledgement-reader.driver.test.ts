@@ -39,10 +39,10 @@ class StubTransport extends ClientTransport {
 
 describe("ClientAcknowledgementReaderDriver", () => {
   it("asks the acknowledged query for the device and answers its sequence", async () => {
-    const transport = new StubTransport(() => Promise.resolve({ sequence: 1729760400000 }));
+    const transport = new StubTransport(() => Promise.resolve({ sequence: 1_729_760_400_000 }));
     const reader = new ClientAcknowledgementReaderDriver(transport);
     expect(reader).toBeInstanceOf(AcknowledgementReader);
-    expect(await reader.lastAcknowledged("device-1")).toBe(1729760400000);
+    expect(await reader.lastAcknowledged("device-1")).toBe(1_729_760_400_000);
     expect(transport.sent[0]).toMatchObject({
       key: "devices.device.acknowledged@1",
       kind: "query",

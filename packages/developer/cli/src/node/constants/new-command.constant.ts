@@ -79,7 +79,7 @@ export const NEW_COMMAND: CliCommand = {
       throw new CliUsageError("--scope takes a product key (beautilon) or an npm scope (@acme)");
     const over = values["over"] === true;
     const root = workspaceRoot(cwd);
-    const pascal = name.replace(/(^|-)([a-z0-9])/g, (_match, _dash: string, letter: string) =>
+    const pascal = name.replaceAll(/(^|-)([a-z0-9])/g, (_match, _dash: string, letter: string) =>
       letter.toUpperCase(),
     );
     const description =

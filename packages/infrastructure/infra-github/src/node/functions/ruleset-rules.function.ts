@@ -33,11 +33,12 @@ export function rulesetRules(
   const out: github.types.input.RepositoryRulesetRules = {};
   for (const rule of rules) {
     switch (rule.type) {
-      case "update":
+      case "update": {
         out.update = true;
         out.updateAllowsFetchAndMerge = rule.parameters?.update_allows_fetch_and_merge;
         break;
-      case "pull_request":
+      }
+      case "pull_request": {
         out.pullRequest = {
           allowedMergeMethods: rule.parameters.allowed_merge_methods,
           dismissStaleReviewsOnPush: rule.parameters.dismiss_stale_reviews_on_push,
@@ -47,7 +48,8 @@ export function rulesetRules(
           requiredReviewThreadResolution: rule.parameters.required_review_thread_resolution,
         };
         break;
-      case "required_status_checks":
+      }
+      case "required_status_checks": {
         out.requiredStatusChecks = {
           requiredChecks: rule.parameters.required_status_checks.map((check) => ({
             context: check.context,
@@ -57,7 +59,8 @@ export function rulesetRules(
           doNotEnforceOnCreate: rule.parameters.do_not_enforce_on_create,
         };
         break;
-      case "merge_queue":
+      }
+      case "merge_queue": {
         out.mergeQueue = {
           checkResponseTimeoutMinutes: rule.parameters?.check_response_timeout_minutes,
           groupingStrategy: rule.parameters?.grouping_strategy,
@@ -68,8 +71,10 @@ export function rulesetRules(
           minEntriesToMergeWaitMinutes: rule.parameters?.min_entries_to_merge_wait_minutes,
         };
         break;
-      default:
+      }
+      default: {
         out[FLAGS[rule.type]] = true;
+      }
     }
   }
   return out;

@@ -213,15 +213,18 @@ for (const locale of LOCALES)
         // `start` is the left in English and the right in Arabic; `end` is the other way round.
         const isLeft = (side === "Start") === (locale === "en");
         switch (side) {
-          case "Top":
+          case "Top": {
             expect(box.y + box.height).toBeLessThanOrEqual(anchor.y + 1);
             break;
-          case "Bottom":
+          }
+          case "Bottom": {
             expect(box.y).toBeGreaterThanOrEqual(anchor.y + anchor.height - 1);
             break;
-          default:
+          }
+          default: {
             if (isLeft) expect(box.x + box.width).toBeLessThanOrEqual(anchor.x + 1);
             else expect(box.x).toBeGreaterThanOrEqual(anchor.x + anchor.width - 1);
+          }
         }
       }).toPass();
     });

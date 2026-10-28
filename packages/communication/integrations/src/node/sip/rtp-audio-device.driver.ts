@@ -145,7 +145,7 @@ export class RtpAudioDeviceDriver extends Driver(AudioDevice) {
         marker: sent === 0,
       };
       this.socket.send(rtpPacket(header, frame), this.far.port, this.far.address);
-      this.sequence = (this.sequence + 1) & 0xffff;
+      this.sequence = (this.sequence + 1) & 0xff_ff;
       this.timestamp = (this.timestamp + FRAME) >>> 0;
       sent += 1;
     };

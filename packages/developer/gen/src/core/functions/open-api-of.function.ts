@@ -87,7 +87,7 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
     )
       continue;
     const method = endpoint["method"].toLowerCase();
-    const path = endpoint["path"].replace(/:(\w+)/g, "{$1}");
+    const path = endpoint["path"].replaceAll(/:(\w+)/g, "{$1}");
     const pathParameters = [...endpoint["path"].matchAll(/:(\w+)/g)].map((match) => match[1] ?? "");
     const input = resolve(action["input"]);
     const properties = isObject(input?.["properties"]) ? input["properties"] : {};

@@ -27,7 +27,7 @@ export function toResource(resource: {
   readonly view?: unknown;
   readonly edit?: unknown;
 }): RouteObject[] {
-  const base = resource.base.replace(/^\/+|\/+$/g, "");
+  const base = resource.base.replaceAll(/^\/+|\/+$/g, "");
   const pages = [
     ["list", base],
     ["create", `${base}/new`],

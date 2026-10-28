@@ -17,16 +17,21 @@ import type { FilterValueByKind } from "#contracts/types/filter-value-by-kind.ty
 function hasShapeOf(kind: FilterKind, value: unknown): boolean {
   switch (kind) {
     case "text":
-    case "select":
+    case "select": {
       return typeof value === "string";
-    case "boolean":
+    }
+    case "boolean": {
       return typeof value === "boolean";
-    case "multi-select":
+    }
+    case "multi-select": {
       return Array.isArray(value);
-    case "number":
+    }
+    case "number": {
       return typeof value === "object" && value !== null && "min" in value && "max" in value;
-    case "date-range":
+    }
+    case "date-range": {
       return typeof value === "object" && value !== null && "start" in value && "end" in value;
+    }
   }
 }
 

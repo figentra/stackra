@@ -29,30 +29,40 @@ export function answerSchema(field: FormDocumentField): z.ZodType {
       .min(Math.max(1, field.min ?? 1))
       .max(field.max ?? limit);
   switch (field.type) {
-    case FormFieldType.Text:
+    case FormFieldType.Text: {
       return text(500);
-    case FormFieldType.LongText:
+    }
+    case FormFieldType.LongText: {
       return text(5000);
-    case FormFieldType.Email:
+    }
+    case FormFieldType.Email: {
       return z.email();
-    case FormFieldType.Phone:
+    }
+    case FormFieldType.Phone: {
       return z.string().regex(/^\+[1-9]\d{6,14}$/);
-    case FormFieldType.Number:
+    }
+    case FormFieldType.Number: {
       return z
         .number()
         .min(field.min ?? Number.NEGATIVE_INFINITY)
         .max(field.max ?? Number.POSITIVE_INFINITY);
-    case FormFieldType.Money:
+    }
+    case FormFieldType.Money: {
       return z.object({ minor: z.int(), currency: z.string().regex(/^[A-Z]{3}$/) }).strict();
-    case FormFieldType.Date:
+    }
+    case FormFieldType.Date: {
       return z.iso.date();
-    case FormFieldType.Boolean:
+    }
+    case FormFieldType.Boolean: {
       return z.boolean();
-    case FormFieldType.Choice:
+    }
+    case FormFieldType.Choice: {
       return z.enum(options);
-    default:
+    }
+    default: {
       return z
         .array(z.enum(options))
         .refine((codes) => new Set(codes).size === codes.length, "Expected distinct options");
+    }
   }
 }

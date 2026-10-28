@@ -41,7 +41,7 @@ describe(PostgresDeviceSequenceStoreDriver, () => {
     expect(store).toBeInstanceOf(DeviceSequenceStore);
     expect(await store.last("dev_1")).toEqual({
       deviceId: "dev_1",
-      sequence: 1729760400000,
+      sequence: 1_729_760_400_000,
       settledAt: new Date("2026-10-25T09:00:00.000Z"),
       scope: { id: "scp_1", path: "platform.acme" },
     });

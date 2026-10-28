@@ -25,27 +25,34 @@ function windowOf(input: PeriodInput, now: Date, timeZone: string): [from: Date,
   const today = startOfZonedDay(now, timeZone);
   const tomorrow = shiftDays(today, 1, timeZone);
   switch (input.range ?? undefined) {
-    case "today":
+    case "today": {
       return [today, tomorrow];
-    case "yesterday":
+    }
+    case "yesterday": {
       return [shiftDays(today, -1, timeZone), today];
-    case "last_7_days":
+    }
+    case "last_7_days": {
       return [shiftDays(today, -6, timeZone), tomorrow];
-    case "last_30_days":
+    }
+    case "last_30_days": {
       return [shiftDays(today, -29, timeZone), tomorrow];
+    }
     case "this_month": {
       const first = startOfZonedDay(now, timeZone, "month");
       return [first, startOfZonedDay(new Date(first.getTime() + 32 * DAY), timeZone, "month")];
     }
-    case "custom":
+    case "custom": {
       if (input.from === undefined || input.from === null)
         throw new RangeError("ctx.period: a custom range needs `from`");
       return [input.from, input.to ?? now];
-    case undefined:
+    }
+    case undefined: {
       if (input.from === undefined || input.from === null) return [today, tomorrow];
       return [input.from, input.to ?? now];
-    default:
+    }
+    default: {
       throw new RangeError(`ctx.period: unknown range ${JSON.stringify(input.range)}`);
+    }
   }
 }
 

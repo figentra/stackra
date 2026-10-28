@@ -12,11 +12,11 @@ import type { CallInstruction } from "@stackra/integrations/contracts";
 /** `value` safe inside XML text or a double-quoted attribute. */
 const escape = (value: string): string =>
   value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 
 /** Attributes, the undefined ones left out. */
 const attributes = (pairs: Readonly<Record<string, string | number | undefined>>): string =>
@@ -35,11 +35,13 @@ const attributes = (pairs: Readonly<Record<string, string | number | undefined>>
 export function twiml(instructions: readonly CallInstruction[]): string {
   const verbs = instructions.map((step) => {
     switch (step.kind) {
-      case "say":
+      case "say": {
         return `<Say${attributes({ language: step.speech.language, voice: step.speech.voice })}>${escape(step.text)}</Say>`;
-      case "play":
+      }
+      case "play": {
         return `<Play>${escape(step.url)}</Play>`;
-      case "listen":
+      }
+      case "listen": {
         return `<Gather${attributes({
           input: "speech",
           language: step.speech.language,
@@ -49,13 +51,17 @@ export function twiml(instructions: readonly CallInstruction[]): string {
           speechTimeout: "auto",
           hints: step.hints?.join(","),
         })}/>`;
-      case "handover":
+      }
+      case "handover": {
         return `<Dial${attributes({ callerId: step.callerId, timeout: step.timeoutSeconds })}>${escape(step.to)}</Dial>`;
-      case "hang_up":
+      }
+      case "hang_up": {
         return "<Hangup/>";
-      default:
+      }
+      default: {
         step satisfies never;
         throw new TypeError("twiml: unknown call instruction kind");
+      }
     }
   });
   return `<?xml version="1.0" encoding="UTF-8"?><Response>${verbs.join("")}</Response>`;

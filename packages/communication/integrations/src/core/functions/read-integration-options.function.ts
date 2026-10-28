@@ -52,7 +52,7 @@ const isPlaceholderUrl = (value: unknown): boolean =>
   isText(value) &&
   /\{[A-Za-z_$][\w$]*\}/.test(value) &&
   value.startsWith("https://") &&
-  isHttpUrl(value.replace(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"));
+  isHttpUrl(value.replaceAll(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"));
 
 /** Whether `value` is a lowercase HTTP header name. */
 const isHeaderName = (value: unknown): boolean =>
@@ -102,21 +102,23 @@ export function readIntegrationOptions(
   );
   ensure(Enum.values(AuthType).includes(auth?.type), "auth", "needs a type from AuthType");
   switch (auth.type) {
-    case AuthType.ApiKey:
+    case AuthType.ApiKey: {
       ensure(
         isText(auth.header) !== isText(auth.query),
         "auth",
         "of an API key names exactly one of header or query",
       );
       break;
-    case AuthType.Basic:
+    }
+    case AuthType.Basic: {
       ensure(
         isText(auth.username) && isText(auth.password),
         "auth",
         "of Basic needs username and password",
       );
       break;
-    case AuthType.Jwt:
+    }
+    case AuthType.Jwt: {
       ensure(
         JWT_ALGORITHMS.has(auth.algorithm) && isText(auth.key),
         "auth",
@@ -124,7 +126,8 @@ export function readIntegrationOptions(
       );
       checkDuration(auth.expiresIn, true);
       break;
-    case AuthType.OAuth2Code:
+    }
+    case AuthType.OAuth2Code: {
       ensure(
         isHttpUrl(auth.authorizeUrl) &&
           isHttpUrl(auth.tokenUrl) &&
@@ -145,7 +148,8 @@ export function readIntegrationOptions(
       );
       checkDuration(auth.refresh?.buffer);
       break;
-    case AuthType.OAuth2ClientCredentials:
+    }
+    case AuthType.OAuth2ClientCredentials: {
       ensure(
         isHttpUrl(auth.tokenUrl) && isText(auth.clientId) && isText(auth.clientSecret),
         "auth",
@@ -153,7 +157,8 @@ export function readIntegrationOptions(
       );
       checkDuration(auth.refresh?.buffer);
       break;
-    case AuthType.OAuth2JwtBearer:
+    }
+    case AuthType.OAuth2JwtBearer: {
       ensure(
         isHttpUrl(auth.tokenUrl) &&
           isText(auth.key) &&
@@ -165,8 +170,10 @@ export function readIntegrationOptions(
       checkDuration(auth.expiresIn, true);
       checkDuration(auth.refresh?.buffer);
       break;
-    case AuthType.None:
+    }
+    case AuthType.None: {
       break;
+    }
   }
   if ("token" in auth && auth.token !== undefined)
     ensure(

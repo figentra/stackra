@@ -53,7 +53,7 @@ describe("ExtensionPoint", () => {
 
   it("returns the value or the arguments unchanged when no extension is registered", async () => {
     const point = new OrderExtensionPoint();
-    const totals = { subtotalMinor: 1_000 };
+    const totals = { subtotalMinor: 1000 };
     const draft = { customerId: "usr_1" };
     expect(await point.adjustTotals(totals, draft, ctx)).toBe(totals);
     expect(await point.verifyPlacement(draft, ctx)).toEqual([draft]);

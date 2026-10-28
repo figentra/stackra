@@ -168,7 +168,7 @@ export function buildManifest(ir: MemberIR): {
   const permissions: Entry[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "permissions")) {
     for (const [verb, source] of Object.entries(declared.statics)) {
-      const level = PERMISSION_LEVEL.exec(source.replace(/\s+/g, ""));
+      const level = PERMISSION_LEVEL.exec(source.replaceAll(/\s+/g, ""));
       if (level === null) continue;
       const key = permissionKey(declared.module, declared.name, verb);
       claim(key, declared);

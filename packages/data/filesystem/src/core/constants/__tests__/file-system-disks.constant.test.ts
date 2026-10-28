@@ -24,7 +24,7 @@ vi.mock("electron", () => ({ app: { getPath: () => "/tmp/stackra-user-data" } })
 function driverName(type: { readonly name: string }): string {
   return type.name
     .replace(/FileSystemDriver$/, "")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
 }
 

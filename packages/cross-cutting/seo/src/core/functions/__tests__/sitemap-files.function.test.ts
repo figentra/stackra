@@ -14,7 +14,7 @@ import { sitemapFiles } from "#core/functions/sitemap-files.function";
 import type { SitemapSource } from "#core/types/sitemap-source.type";
 
 /** A source of `total` paths in pages of `step`. */
-function source(total: number, step = 1_000): SitemapSource<null> {
+function source(total: number, step = 1000): SitemapSource<null> {
   return {
     changefreq: Changefreq.Daily,
     list: async (_clients, _site, _href, { cursor }) => {

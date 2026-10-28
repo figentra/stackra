@@ -89,7 +89,7 @@ export class RegistryLicenceIssuerDriver extends Driver(LicenceIssuer) {
   async apply(command: RegistryLicenceCommand): Promise<RegistryLicence> {
     const id = "licenceId" in command ? `/${encodeURIComponent(command.licenceId)}` : "";
     switch (command.action) {
-      case "issue":
+      case "issue": {
         return this.call("POST", LICENCES, command.idempotencyKey, {
           holderRef: command.holderRef,
           grants: command.grants,
@@ -97,28 +97,34 @@ export class RegistryLicenceIssuerDriver extends Driver(LicenceIssuer) {
           expiresAt: command.expiresAt,
           tokenLabel: command.tokenLabel,
         });
-      case "renew":
+      }
+      case "renew": {
         return this.call("PATCH", `${LICENCES}${id}`, command.idempotencyKey, {
           expiresAt: command.expiresAt,
         });
-      case "setGrants":
+      }
+      case "setGrants": {
         return this.call("PATCH", `${LICENCES}${id}`, command.idempotencyKey, {
           grants: command.grants,
         });
+      }
       case "suspend":
       case "resume":
-      case "revoke":
+      case "revoke": {
         return this.call("POST", `${LICENCES}${id}/${command.action}`, command.idempotencyKey);
-      case "addToken":
+      }
+      case "addToken": {
         return this.call("POST", `${LICENCES}${id}/tokens`, command.idempotencyKey, {
           label: command.tokenLabel,
         });
-      case "revokeToken":
+      }
+      case "revokeToken": {
         return this.call(
           "DELETE",
           `${LICENCES}${id}/tokens/${encodeURIComponent(command.tokenId)}`,
           command.idempotencyKey,
         );
+      }
     }
   }
 

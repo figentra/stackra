@@ -23,7 +23,7 @@ const ENDPOINT = "http://ocr.ksa.internal/ocr";
 function extractor(maxBytes = 1024): PaddleOcrTextExtractorDriver {
   return new PaddleOcrTextExtractorDriver(
     buildConfig(MediaConfig, {
-      values: { ocr: { endpoint: ENDPOINT, languages: ["ar", "en"], maxBytes, timeoutMs: 5_000 } },
+      values: { ocr: { endpoint: ENDPOINT, languages: ["ar", "en"], maxBytes, timeoutMs: 5000 } },
     }),
   );
 }

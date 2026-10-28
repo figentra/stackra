@@ -24,7 +24,7 @@ describe("MemoryDistanceMatrixDriver", () => {
 
   it("answers known legs, itself as 0 and unknown pairs as null", async () => {
     const distances = new MemoryDistanceMatrixDriver();
-    distances.legs.push({ from: store, to: door, durationS: 600, distanceM: 4_000 });
+    distances.legs.push({ from: store, to: door, durationS: 600, distanceM: 4000 });
     expect(
       await distances.matrix({ origins: [store, door], destinations: [door, far, store] }),
     ).toEqual({
@@ -33,7 +33,7 @@ describe("MemoryDistanceMatrixDriver", () => {
         [0, null, null],
       ],
       distancesM: [
-        [4_000, null, 0],
+        [4000, null, 0],
         [0, null, null],
       ],
     });

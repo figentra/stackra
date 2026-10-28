@@ -9,7 +9,7 @@
 
 const linear = (channel: number) => {
   const unit = channel / 255;
-  return unit <= 0.040_45 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+  return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
 };
 
 /**
@@ -19,12 +19,12 @@ const linear = (channel: number) => {
  */
 export function srgbToOklab(rgb: readonly [number, number, number]): [number, number, number] {
   const [red, green, blue] = rgb.map(linear) as [number, number, number];
-  const l = Math.cbrt(0.412_221_470_8 * red + 0.536_332_536_3 * green + 0.051_445_992_9 * blue);
-  const m = Math.cbrt(0.211_903_498_2 * red + 0.680_699_545_1 * green + 0.107_396_956_6 * blue);
-  const s = Math.cbrt(0.088_302_461_9 * red + 0.281_718_837_6 * green + 0.629_978_700_5 * blue);
+  const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
+  const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
+  const s = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue);
   return [
-    0.210_454_255_3 * l + 0.793_617_785 * m - 0.004_072_046_8 * s,
-    1.977_998_495_1 * l - 2.428_592_205 * m + 0.450_593_709_9 * s,
-    0.025_904_037_1 * l + 0.782_771_766_2 * m - 0.808_675_766 * s,
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
   ];
 }

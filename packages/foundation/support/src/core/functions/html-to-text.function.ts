@@ -23,16 +23,16 @@ const NAMED = new Map([
 
 /** `text` with its entities decoded; an unknown or invalid entity stays as written. */
 function decode(text: string): string {
-  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, body: string) => {
+  return text.replaceAll(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, body: string) => {
     if (!body.startsWith("#")) return NAMED.get(body.toLowerCase()) ?? entity;
     const code = /^#x/i.test(body) ? Number.parseInt(body.slice(2), 16) : Number(body.slice(1));
-    return code <= 0x10_ffff ? String.fromCodePoint(code) : entity;
+    return code <= 0x10_ff_ff ? String.fromCodePoint(code) : entity;
   });
 }
 
 /** A link as text: its label, then its address unless the label already is the address. */
 function link(href: string, label: string): string {
-  const text = label.replace(/<[^>]*>/g, "").trim();
+  const text = label.replaceAll(/<[^>]*>/g, "").trim();
   if (text === "") return href;
   return text === href ? text : `${text} (${href})`;
 }
@@ -48,22 +48,25 @@ function link(href: string, label: string): string {
  */
 export function htmlToText(html: string): string {
   const flat = html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<!doctype[^>]*>/gi, "")
-    .replace(/<(head|style|script|title)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
-    .replace(
+    .replaceAll(/<!--[\s\S]*?-->/g, "")
+    .replaceAll(/<!doctype[^>]*>/gi, "")
+    .replaceAll(/<(head|style|script|title)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replaceAll(
       /<a\b[^>]*?\shref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
       (_match, href: string, label: string) => link(href, label),
     )
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<hr\b[^>]*>/gi, "\n\n---\n\n")
-    .replace(/<\/t[dh]>/gi, " ")
-    .replace(/<\/(p|div|h[1-6]|tr|table|li|ul|ol|section|header|footer|blockquote|pre)>/gi, "\n\n")
-    .replace(/<[^>]*>/g, "");
+    .replaceAll(/<br\s*\/?>/gi, "\n")
+    .replaceAll(/<hr\b[^>]*>/gi, "\n\n---\n\n")
+    .replaceAll(/<\/t[dh]>/gi, " ")
+    .replaceAll(
+      /<\/(p|div|h[1-6]|tr|table|li|ul|ol|section|header|footer|blockquote|pre)>/gi,
+      "\n\n",
+    )
+    .replaceAll(/<[^>]*>/g, "");
   return decode(flat)
     .split("\n")
-    .map((line) => line.replace(/[ \t\f\v ]+/g, " ").trim())
+    .map((line) => line.replaceAll(/[ \t\f\v ]+/g, " ").trim())
     .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
+    .replaceAll(/\n{3,}/g, "\n\n")
     .trim();
 }

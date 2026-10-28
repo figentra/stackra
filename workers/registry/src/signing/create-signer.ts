@@ -20,7 +20,7 @@ const KEY_TYPE = "ecdsa-sha2-nistp256";
 
 /** The DER bytes of a PEM block. */
 function pemBody(pem: string): Bytes {
-  return fromBase64(pem.replace(/-----(BEGIN|END) [A-Z ]+-----/g, "").replace(/\s+/g, ""));
+  return fromBase64(pem.replaceAll(/-----(BEGIN|END) [A-Z ]+-----/g, "").replaceAll(/\s+/g, ""));
 }
 
 /**

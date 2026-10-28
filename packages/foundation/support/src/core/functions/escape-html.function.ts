@@ -28,5 +28,5 @@ const ENTITIES: Readonly<Record<string, string>> = {
 export function escapeHtml(value: unknown): string {
   return value === null || value === undefined
     ? ""
-    : String(value).replace(/[&<>"']/g, (character) => ENTITIES[character] ?? character);
+    : String(value).replaceAll(/[&<>"']/g, (character) => ENTITIES[character] ?? character);
 }

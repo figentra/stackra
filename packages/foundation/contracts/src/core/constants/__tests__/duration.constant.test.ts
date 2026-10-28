@@ -76,7 +76,7 @@ describe("Duration", () => {
 
   it("reads back the length in milliseconds", () => {
     expect(Duration.toMilliseconds(Duration.minutes(10))).toBe(600_000);
-    expect(Duration.toMilliseconds(Duration.seconds(1.5))).toBe(1_500);
+    expect(Duration.toMilliseconds(Duration.seconds(1.5))).toBe(1500);
     expect(Duration.toMilliseconds(Duration.days(1))).toBe(86_400_000);
     expect(Duration.toMilliseconds(Duration.parse("P1W"))).toBe(604_800_000);
   });

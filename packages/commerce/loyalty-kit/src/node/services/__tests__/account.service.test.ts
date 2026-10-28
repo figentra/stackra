@@ -251,31 +251,31 @@ describe("AccountService", () => {
 
     expect(
       await accounts.importBalance(member, {
-        points: 1_250,
+        points: 1250,
         reference: "run_1:row_1",
         tier: LoyaltyTier.Silver,
       }),
-    ).toBe(1_250);
-    expect(await accounts.importBalance(member, { points: 1_250, reference: "run_1:row_1" })).toBe(
+    ).toBe(1250);
+    expect(await accounts.importBalance(member, { points: 1250, reference: "run_1:row_1" })).toBe(
       0,
     );
 
     const account = stored[0] as LoyaltyAccount;
     expect(account.tier).toBe(LoyaltyTier.Silver);
-    expect(await ledger.balance(member)).toBe(1_250);
+    expect(await ledger.balance(member)).toBe(1250);
     expect(await ledger.find(member, "import:run_1:row_1")).toMatchObject({
       kind: EntryKind.Earn,
-      points: 1_250,
+      points: 1250,
     });
     const events = takeRecordedEvents(account);
     expect(events.filter((event) => event instanceof PointsEarned)).toHaveLength(0);
     expect(events.filter((event) => event instanceof PointsImported)).toEqual([
       PointsImported.create({
         memberId: member,
-        points: 1_250,
+        points: 1250,
         reference: "run_1:row_1",
         tier: LoyaltyTier.Silver,
-        balanceAfter: 1_250,
+        balanceAfter: 1250,
       }),
     ]);
   });

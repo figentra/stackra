@@ -20,7 +20,7 @@ import type { InboundWebhook } from "#core/types/inbound-webhook.type";
 /** The bytes of a Base64url text (RFC 7515), or `undefined` when it is not one. */
 function base64url(text: string): Uint8Array<ArrayBuffer> | undefined {
   if (!/^[\w-]*$/.test(text)) return undefined;
-  const base64 = text.replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = text.replaceAll("-", "+").replaceAll("_", "/");
   return decodeBase64(base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "="));
 }
 

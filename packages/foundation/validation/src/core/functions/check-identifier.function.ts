@@ -21,14 +21,18 @@ import type { IdentifierFormat } from "#core/types/identifier-format.type";
 /** Whether `value` passes `check`. */
 function passes(value: string, check: IdentifierCheck): boolean {
   switch (check) {
-    case IdentifierCheck.Luhn:
+    case IdentifierCheck.Luhn: {
       return luhnValid(value);
-    case IdentifierCheck.Mod97:
+    }
+    case IdentifierCheck.Mod97: {
       return mod97Valid(value);
-    case IdentifierCheck.Gs1:
+    }
+    case IdentifierCheck.Gs1: {
       return isGtin(value);
-    case IdentifierCheck.CenturyBirthDate:
+    }
+    case IdentifierCheck.CenturyBirthDate: {
       return centuryBirthDateValid(value);
+    }
   }
 }
 
@@ -37,7 +41,7 @@ function passes(value: string, check: IdentifierCheck): boolean {
  * before it.
  */
 function rewrite(match: RegExpExecArray, template: string): string {
-  return template.replace(/([^$]*)\$(\d)/g, (_, literal: string, index: string) => {
+  return template.replaceAll(/([^$]*)\$(\d)/g, (_, literal: string, index: string) => {
     const group = match[Number(index)];
     return group === undefined ? "" : literal + group;
   });

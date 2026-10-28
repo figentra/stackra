@@ -30,7 +30,7 @@ describe("@stackra/shipping", () => {
 
   it("weighs, labels and tracks a shipment", () => {
     const parcel = { lengthMm: 100, widthMm: 100, heightMm: 100, weightG: 100 };
-    expect(entry.chargeableWeight(parcel, 1_000, 1_000)).toBe(1_000);
+    expect(entry.chargeableWeight(parcel, 1000, 1000)).toBe(1000);
     const label = entry.labelDocument(LabelFormat.Zpl, btoa("^XA^XZ"));
     expect(entry.batchZpl([label, label]).bytes.length).toBe(13);
     const timeline = entry.normaliseTracking([{ code: "D", at: "2026-10-25T08:00:00Z" }], {

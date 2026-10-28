@@ -25,7 +25,9 @@ describe("installSigner", () => {
   it.each([["not json"], ['{"kty":"EC","crv":"P-256"}'], ['{"kty":"RSA"}']])(
     "refuses %s without quoting it",
     async (text) => {
-      const error: unknown = await installSigner("k", text).catch((caught: unknown) => caught);
+      const error: unknown = await installSigner("k", text).catch(
+        (caughtError: unknown) => caughtError,
+      );
       expect(error).toBeInstanceOf(RangeError);
       expect((error as RangeError).message).not.toContain(text);
     },

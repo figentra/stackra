@@ -27,7 +27,7 @@ const ENTITIES: Readonly<Record<string, string>> = {
 
 /** `text` with its XML character and entity references decoded. */
 function decodeXml(text: string): string {
-  return text.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (reference, name: string) => {
+  return text.replaceAll(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (reference, name: string) => {
     if (name.startsWith("#x") || name.startsWith("#X"))
       return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
     if (name.startsWith("#")) return String.fromCodePoint(Number.parseInt(name.slice(1), 10));

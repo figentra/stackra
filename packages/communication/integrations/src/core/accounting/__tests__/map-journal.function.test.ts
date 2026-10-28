@@ -21,7 +21,7 @@ const entry: AccountingJournalEntry = {
   lines: [
     { account: "receivables", side: "debit", amount: sar(11_500) },
     { account: "sales", side: "credit", amount: sar(10_000), taxCode: "vat_standard" },
-    { account: "vat_output", side: "credit", amount: sar(1_500), description: "VAT" },
+    { account: "vat_output", side: "credit", amount: sar(1500), description: "VAT" },
   ],
 };
 const map: AccountMap = {

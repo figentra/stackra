@@ -63,7 +63,7 @@ function docOf(sf: ts.SourceFile, text: string, node: ts.Node): string | undefin
   // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   const block = comments.filter((c) => text.startsWith("/**", c.pos)).at(-1);
   if (!block) return undefined;
-  const between = text.slice(block.end, node.getStart(sf)).replace(/\/\/[^\n]*/g, "");
+  const between = text.slice(block.end, node.getStart(sf)).replaceAll(/\/\/[^\n]*/g, "");
   if (between.trim() !== "") return undefined;
   const body = text.slice(block.pos, block.end);
   return body.includes(CONTRACT) ? undefined : body;
@@ -72,7 +72,7 @@ function docOf(sf: ts.SourceFile, text: string, node: ts.Node): string | undefin
 /** The summary (the text before the first tag) must be a sentence, not a label. */
 function summaryProblem(doc: string): string | undefined {
   const lines = doc
-    .replace(/^\/\*\*|\*\/$/g, "")
+    .replaceAll(/^\/\*\*|\*\/$/g, "")
     .split("\n")
     .map((line) => line.replace(/^\s*\*?\s?/, ""));
   // Only a tag that starts a line ends the summary; `@stackra/logger` mid-sentence is prose.

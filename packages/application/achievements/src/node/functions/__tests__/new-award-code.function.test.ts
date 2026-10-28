@@ -15,7 +15,7 @@ describe(newAwardCode, () => {
   it("prints three groups of four code characters", () => {
     const code = newAwardCode();
     expect(code).toMatch(/^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
-    expect(normalizeAwardCode(code)).toBe(code.replace(/-/g, ""));
+    expect(normalizeAwardCode(code)).toBe(code.replaceAll("-", ""));
     expect(newAwardCode()).not.toBe(code);
   });
 });

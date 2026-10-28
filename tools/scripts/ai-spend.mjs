@@ -74,8 +74,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
     console.log(formatLine(result));
     process.exit(result.level === "over" ? 1 : 0);
-  } catch (e) {
-    console.error(`ai-spend: cannot read OpenCode stats (${e.message})`);
+  } catch (error) {
+    console.error(`ai-spend: cannot read OpenCode stats (${error.message})`);
     process.exit(2);
   }
 }

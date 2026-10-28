@@ -83,7 +83,7 @@ const RULES: GithubRules = {
           type: "required_status_checks",
           parameters: {
             strict_required_status_checks_policy: false,
-            required_status_checks: [{ context: "Quality Gate", integration_id: 15368 }],
+            required_status_checks: [{ context: "Quality Gate", integration_id: 15_368 }],
           },
         },
         {
@@ -237,7 +237,7 @@ describe("githubStack", () => {
         updateAllowsFetchAndMerge: true,
         pullRequest: { requiredApprovingReviewCount: 1, allowedMergeMethods: ["squash"] },
         requiredStatusChecks: {
-          requiredChecks: [{ context: "Quality Gate", integrationId: 15368 }],
+          requiredChecks: [{ context: "Quality Gate", integrationId: 15_368 }],
           strictRequiredStatusChecksPolicy: false,
         },
         mergeQueue: { mergeMethod: "SQUASH", groupingStrategy: "ALLGREEN" },

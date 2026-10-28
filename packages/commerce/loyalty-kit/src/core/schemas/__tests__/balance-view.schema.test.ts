@@ -17,11 +17,11 @@ describe("BalanceView", () => {
     const view = BalanceView.create({
       memberId: "usr_1",
       tier: LoyaltyTier.Gold,
-      balance: 1_000,
+      balance: 1000,
       nextExpiryAt: null,
     });
     expect(view).toBeInstanceOf(Schema);
-    expect(view.balance).toBe(1_000);
+    expect(view.balance).toBe(1000);
     expect(view.nextExpiryAt).toBeNull();
   });
 

@@ -71,7 +71,7 @@ describe("the entries of @stackra/testing", () => {
   it("names no domain kind in its source", () => {
     const domain = /\b(Action|Query|Permission|IntegrationEvent|DomainEvent|Module|Refusal)\b/;
     for (const { path, text } of sources) {
-      const code = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+      const code = text.replaceAll(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
       expect({ path, hit: domain.exec(code)?.[0] ?? null }).toEqual({ path, hit: null });
     }
   });

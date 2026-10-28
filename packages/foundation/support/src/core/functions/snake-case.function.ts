@@ -20,8 +20,8 @@
  */
 export function snakeCase(name: string): string {
   return name
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
-    .replace(/[-\s.]+/g, "_")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replaceAll(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+    .replaceAll(/[-\s.]+/g, "_")
     .toLowerCase();
 }

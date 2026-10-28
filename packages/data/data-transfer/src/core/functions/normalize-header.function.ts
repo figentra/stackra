@@ -27,10 +27,10 @@ export function normalizeHeader(header: string): string {
       .replace(INVISIBLE, "")
       .replace(ARABIC_MARKS, "")
       .replace(ALEF_FORMS, "ا")
-      .replace(/ى/g, "ي")
+      .replaceAll("ى", "ي")
       // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
-      .replace(ARABIC_INDIC_DIGITS, (digit) => String((digit.charCodeAt(0) - 0x0660) % 0x90))
-      .replace(/[\s_-]+/g, " ")
+      .replace(ARABIC_INDIC_DIGITS, (digit) => String((digit.charCodeAt(0) - 0x06_60) % 0x90))
+      .replaceAll(/[\s_-]+/g, " ")
       .trim()
       .toLowerCase()
   );

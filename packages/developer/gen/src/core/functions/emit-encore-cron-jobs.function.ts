@@ -70,7 +70,7 @@ export function emitEncoreCronJobs(
     },
   ];
   const body = jobs.flatMap(({ id, title, schedule, call }) => {
-    const endpoint = camelCase(id.replace(/-/g, "_"));
+    const endpoint = camelCase(id.replaceAll("-", "_"));
     return [
       `/** Runs ${title} on its schedule. */`,
       `export const ${endpoint} = api({ expose: false }, async (): Promise<void> => {`,

@@ -24,7 +24,7 @@ const identity = buildConfig(IdentityConfig);
 
 describe("API keys", () => {
   it("computes the standard CRC-32", () => {
-    expect(crc32("123456789")).toBe(0xcbf43926);
+    expect(crc32("123456789")).toBe(0xcb_f4_39_26);
   });
 
   it("mints a well-formed key of each kind", () => {

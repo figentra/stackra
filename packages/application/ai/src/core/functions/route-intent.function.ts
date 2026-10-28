@@ -17,7 +17,7 @@ const NONE = "no matching intent";
 
 /** `text` folded for comparison. */
 const fold = (text: string): string =>
-  text.normalize("NFKC").toLocaleLowerCase().replace(/\s+/gu, " ").trim();
+  text.normalize("NFKC").toLocaleLowerCase().replaceAll(/\s+/gu, " ").trim();
 
 /**
  * The key of the intent `text` names.

@@ -105,10 +105,12 @@ export function resolveTool(
   }
 
   switch (task) {
-    case "lint":
+    case "lint": {
       return at("oxlint", ["."]);
-    case "typecheck":
+    }
+    case "typecheck": {
       return at("tsc", ["--noEmit"]);
+    }
     case "test": {
       const tier = options.tier ?? "unit";
       if (!TIERS.has(tier)) throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
@@ -120,7 +122,7 @@ export function resolveTool(
       }
       return refuse("the app declares no targets");
     }
-    case "dev":
+    case "dev": {
       if (layout === "worker") return at("wrangler", ["dev", ...config("wrangler.jsonc")]);
       if (layout === "service") {
         const encore = join(root, ".stackra", "encore");
@@ -136,7 +138,8 @@ export function resolveTool(
           ? "the desktop target has no dev tool yet"
           : "the app declares no targets",
       );
-    case "build":
+    }
+    case "build": {
       if (layout === "package") return at("tsdown", [...config("tsdown.config.ts")]);
       if (layout === "worker") {
         return at("wrangler", [
@@ -155,8 +158,10 @@ export function resolveTool(
           ? "the desktop target has no build tool yet"
           : "the app declares no targets",
       );
-    case "start":
+    }
+    case "start": {
       if (layout === "app" && web) return at("vite", ["preview", ...config("vite.config.ts")]);
       return refuse("`start` previews an app's web build");
+    }
   }
 }

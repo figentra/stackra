@@ -351,7 +351,7 @@ class RedeemGiftCardAction extends Action({
     precondition: OfflinePrecondition.None,
     retention: "72h",
     onConflict: [ConflictResolution.Manual],
-    cap: { count: 2, amount: 5_000, window: "24h" },
+    cap: { count: 2, amount: 5000, window: "24h" },
   },
 }) {
   async handle(input: { amount: number | { minor: number; currency: string } }): Promise<object> {
@@ -943,18 +943,18 @@ describe(ActionPipeline, () => {
         actor: customer,
         device: { deviceId: "dev_1", sequence },
       });
-    await redeem(1, 2_000);
-    await expect(redeem(2, 3_500)).rejects.toBeInstanceOf(OfflineCapReachedError);
-    await redeem(3, { minor: 3_000, currency: "USD" });
+    await redeem(1, 2000);
+    await expect(redeem(2, 3500)).rejects.toBeInstanceOf(OfflineCapReachedError);
+    await redeem(3, { minor: 3000, currency: "USD" });
     await expect(redeem(4, 1)).rejects.toMatchObject({ code: "offline_cap_reached" });
     expect(await caps.usage("dev_1", "gift_card.redeem", new Date(0))).toEqual({
       count: 2,
-      amount: 5_000,
+      amount: 5000,
     });
     await expect(redeem(5, "lots")).rejects.toBeInstanceOf(InputInvalidError);
     expect(
-      await pipeline.execute(RedeemGiftCardAction, { amount: 9_000 }, { actor: customer }),
-    ).toEqual({ redeemed: 9_000 });
+      await pipeline.execute(RedeemGiftCardAction, { amount: 9000 }, { actor: customer }),
+    ).toEqual({ redeemed: 9000 });
   });
 
   it("reviews an offline-computed document that differs or is older, and never refuses it", async () => {
@@ -1108,7 +1108,7 @@ class TopUpAction extends Action({
     precondition: OfflinePrecondition.None,
     retention: "72h",
     onConflict: [ConflictResolution.Manual],
-    cap: { amount: 1_000, amountField: "total", window: "24h" },
+    cap: { amount: 1000, amountField: "total", window: "24h" },
   },
 }) {
   async handle(): Promise<void> {}
@@ -1216,7 +1216,7 @@ describe("ActionPipeline governance additions", () => {
     ]);
     await pipeline.execute(
       RefundAction,
-      { amount: { minor: 2_500, currency: "SAR" } },
+      { amount: { minor: 2500, currency: "SAR" } },
       { actor: customer, scope: SCOPE },
     );
     expect(log.slice(log.indexOf("begin"))).toEqual(["begin", "handle", "outbox", "commit"]);
@@ -1225,7 +1225,7 @@ describe("ActionPipeline governance additions", () => {
     expect(usage?.event).toMatchObject({
       meter: "payments.refunded",
       kind: "sum",
-      value: 2_500,
+      value: 2500,
       key: "payments.payment.refund@1",
       scopeId: SCOPE.id,
     });

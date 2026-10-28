@@ -13,9 +13,9 @@ import type { PriceTier } from "#core/types/price-tier.type";
 
 describe("PriceTier", () => {
   it("takes a bounded band and an open band", () => {
-    const included: PriceTier = { upTo: 1_000, unitPrice: Money.zero("USD") };
+    const included: PriceTier = { upTo: 1000, unitPrice: Money.zero("USD") };
     const rest: PriceTier = { upTo: null, unitPrice: Money.ofMinor(2, "USD") };
-    expect([included.upTo, rest.upTo]).toEqual([1_000, null]);
+    expect([included.upTo, rest.upTo]).toEqual([1000, null]);
   });
 
   it("refuses a band without a price or with a string bound", () => {

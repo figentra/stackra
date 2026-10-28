@@ -39,7 +39,7 @@ export function readX12(text: string): EdiInterchange {
   const terminator = body.charAt(105);
   const raw = body
     .split(terminator)
-    .map((segment) => segment.replace(/^[\r\n]+|[\r\n]+$/g, ""))
+    .map((segment) => segment.replaceAll(/^[\r\n]+|[\r\n]+$/g, ""))
     .filter((segment) => segment !== "")
     .map((segment) => segment.split(element));
   const isa = raw[0] ?? [];

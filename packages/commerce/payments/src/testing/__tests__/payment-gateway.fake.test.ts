@@ -17,7 +17,7 @@ import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { TransferStatus } from "#contracts/enums/transfer-status.enum";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 
-const amount = Money.ofMinor(5_000, "SAR");
+const amount = Money.ofMinor(5000, "SAR");
 const request = {
   reference: "ord_1",
   amount,
@@ -80,7 +80,7 @@ describe("PaymentGatewayFake", () => {
       amount,
       initiator: "customer",
     });
-    expect(held).toMatchObject({ status: PaymentStatus.Authorized, amount: { minor: 5_000 } });
+    expect(held).toMatchObject({ status: PaymentStatus.Authorized, amount: { minor: 5000 } });
     const raise = { payment: { reference: "tab_1" }, amount, reference: "tab_1:2" };
     expect((await gateway.increment(raise)).amount.minor).toBe(10_000);
     expect((await gateway.increment(raise)).amount.minor).toBe(10_000);

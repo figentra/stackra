@@ -14,6 +14,6 @@ describe("ExpirePointsInput", () => {
   it("defaults the batch to 500 and bounds it", () => {
     expect(ExpirePointsInput.create({} as ExpirePointsInput).batchSize).toBe(500);
     expect(() => ExpirePointsInput.create({ batchSize: 0 })).toThrow();
-    expect(() => ExpirePointsInput.create({ batchSize: 5_001 })).toThrow();
+    expect(() => ExpirePointsInput.create({ batchSize: 5001 })).toThrow();
   });
 });

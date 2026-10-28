@@ -144,7 +144,7 @@ describe("PaymentBalanceService", () => {
       }),
     ).rejects.toRefuseWith(refusal(PaymentUnknownError, { reference: "chk_9:1" }));
     expect((await parts.remaining("chk_9")).minor).toBe(0);
-    gateway.settle("fake_chk_9:1", PaymentStatus.Captured, sar(1_000));
+    gateway.settle("fake_chk_9:1", PaymentStatus.Captured, sar(1000));
     const settled = await parts.settle("chk_9");
     expect(settled.parts[0]).toMatchObject({ state: "paid", amount: { minor: 30_000 } });
     expect(settled.settledAt).toBeDefined();

@@ -70,7 +70,7 @@ const stageOf = (text, over = {}) =>
 const at = (status) =>
   fixture("spec.md")
     .replace("**Status**: Done", `**Status**: ${status}`)
-    .replace(/- 2026-10-20 · .*→ (?!Draft|Clarified).*\n/g, (l) =>
+    .replaceAll(/- 2026-10-20 · .*→ (?!Draft|Clarified).*\n/g, (l) =>
       l.includes(`→ ${status}`) ? l : "",
     );
 

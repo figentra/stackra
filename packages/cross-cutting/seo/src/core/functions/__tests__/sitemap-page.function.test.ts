@@ -66,7 +66,7 @@ describe("sitemapPage", () => {
   });
 
   it("stops walking once the page is full", async () => {
-    const source = pagedSource(1_000);
+    const source = pagedSource(1000);
     const list = vi.spyOn(source, "list");
     await sitemapPage(source, { ...CONTEXT, page: 1 });
     expect(list).toHaveBeenCalledTimes(2); // 3 + 3 items cover the first five

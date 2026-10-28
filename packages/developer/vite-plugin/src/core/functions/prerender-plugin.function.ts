@@ -72,7 +72,7 @@ export function prerenderPlugin(prerender: NonNullable<ViteConfigOptions["preren
       }
       const outDir = resolve(root, config.build.outDir);
       for (const route of prerender.routes) {
-        const folder = route.replace(/^\/+|\/+$/g, "");
+        const folder = route.replaceAll(/^\/+|\/+$/g, "");
         // a relative base (the desktop renderer) is relative to each document's own folder
         const prefix =
           base === "" || base.startsWith(".")

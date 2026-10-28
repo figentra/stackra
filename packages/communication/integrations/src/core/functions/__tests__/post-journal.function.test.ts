@@ -26,7 +26,7 @@ const entry = (lines: AccountingJournalEntry["lines"]): AccountingJournalEntry =
 const balanced = entry([
   { account: "1100", side: "debit", amount: sar(11_500) },
   { account: "4000", side: "credit", amount: sar(10_000) },
-  { account: "2200", side: "credit", amount: sar(1_500) },
+  { account: "2200", side: "credit", amount: sar(1500) },
 ]);
 
 /** Remembers posts by key. */

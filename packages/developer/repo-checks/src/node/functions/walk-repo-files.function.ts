@@ -35,7 +35,7 @@ function globSource(glob: string): string {
       source += `[${glob.slice(index + 1, end).replace(/^!/, "^")}]`;
       index = end;
     } else if (char === "\\" && index + 1 < glob.length) source += `\\${glob[++index] as string}`;
-    else source += char.replace(/[.+^${}()|\\]/g, "\\$&");
+    else source += char.replaceAll(/[.+^${}()|\\]/g, "\\$&");
   }
   return source;
 }

@@ -28,7 +28,7 @@ describe(freezeClock, () => {
 
   it("restores the real clock when the previous test finished", () => {
     expect(vi.isFakeTimers()).toBe(false);
-    expect(Math.abs(Date.now() - realNow())).toBeLessThan(1_000);
+    expect(Math.abs(Date.now() - realNow())).toBeLessThan(1000);
   });
 
   it("keeps timers real, so awaited work settles while the time stands still", async () => {

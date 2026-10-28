@@ -17,7 +17,7 @@ const TIMEOUT = 5000;
 async function sendOverTcp(address: string, bytes: Uint8Array): Promise<void> {
   const { createConnection } = await import("node:net");
   const url = new URL(address);
-  const host = url.hostname.replace(/^\[|\]$/g, "");
+  const host = url.hostname.replaceAll(/^\[|\]$/g, "");
   await new Promise<void>((resolve, reject) => {
     const socket = createConnection({ host, port: Number(url.port) });
     socket.setTimeout(TIMEOUT, () => socket.destroy(new Error(`${address} timed out`)));

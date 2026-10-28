@@ -65,7 +65,7 @@ async function recordedBucket(output: CreateUploadOutput): Promise<string> {
 
 /** The input of one call. */
 const input = (bucket: string | null, mediaType: MediaType = MediaType.Png) =>
-  CreateUploadInput.create({ bucket, mediaType, size: 1_024 });
+  CreateUploadInput.create({ bucket, mediaType, size: 1024 });
 
 afterEach(() => {
   BUCKET_REGISTRY.clear();

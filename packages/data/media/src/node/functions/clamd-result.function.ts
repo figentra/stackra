@@ -16,7 +16,7 @@ import type { ScanResult } from "#contracts/types/scan-result.type";
  * clamdResult("stream: Eicar-Signature FOUND\0"); // { verdict: "infected", threats: ["Eicar-Signature"] }
  */
 export function clamdResult(reply: string): ScanResult {
-  const line = reply.replace(/\0/g, "").trim();
+  const line = reply.replaceAll("\0", "").trim();
   if (line === "stream: OK") return { verdict: ScanVerdict.Clean, threats: [] };
   const found = /^stream: (.+) FOUND$/.exec(line);
   if (found?.[1] !== undefined) return { verdict: ScanVerdict.Infected, threats: [found[1]] };

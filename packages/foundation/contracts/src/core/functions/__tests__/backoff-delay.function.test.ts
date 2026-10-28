@@ -51,7 +51,7 @@ describe(backoffDelay, () => {
       expect(wait).toBeLessThanOrEqual(30_000);
     }
     expect(backoffDelay(queue, 40, none)).toBe(3_600_000);
-    expect(backoffDelay({ ...queue, backoff: Backoff.Linear }, 1_000, () => 0.9)).toBe(3_600_000);
+    expect(backoffDelay({ ...queue, backoff: Backoff.Linear }, 1000, () => 0.9)).toBe(3_600_000);
   });
 
   it("keeps the wait in the upper half with Jitter.Equal (realtime: attempt = old attempt + 1)", () => {

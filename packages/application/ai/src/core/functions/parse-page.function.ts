@@ -35,10 +35,10 @@ const NAMED: Readonly<Record<string, string>> = {
 
 /** `text` with its character references decoded; an unknown one is kept as written. */
 function decode(text: string): string {
-  return text.replace(/&(#[xX][0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (whole, ref: string) => {
+  return text.replaceAll(/&(#[xX][0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (whole, ref: string) => {
     if (!ref.startsWith("#")) return NAMED[ref.toLowerCase()] ?? whole;
     const code = /^#x/i.test(ref) ? Number.parseInt(ref.slice(2), 16) : Number(ref.slice(1));
-    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+    return code > 0 && code <= 0x10_ff_ff ? String.fromCodePoint(code) : whole;
   });
 }
 
@@ -129,7 +129,7 @@ export function parsePage(
 ): Omit<PageReading, "url" | "status"> {
   // shortcut: patterns, not an HTML parser; enough for title, text and JSON-LD. Upgrade if readings miss content.
   const title = textOf(
-    /<title\b[^>]*>([\s\S]*?)<\/title\s*>/i.exec(html)?.[1]?.replace(/\s+/g, " "),
+    /<title\b[^>]*>([\s\S]*?)<\/title\s*>/i.exec(html)?.[1]?.replaceAll(/\s+/g, " "),
   );
   const lang = /<html\b[^>]*\blang\s*=\s*["']?([A-Za-z0-9-]+)/i.exec(html)?.[1];
   const products: ProductHint[] = [];
@@ -142,13 +142,13 @@ export function parsePage(
   }
   const full = decode(
     html
-      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replaceAll(/<!--[\s\S]*?-->/g, " ")
       .replace(HIDDEN, " ")
       .replace(BLOCK, "\n")
-      .replace(/<[^>]*>/g, " "),
+      .replaceAll(/<[^>]*>/g, " "),
   )
     .split("\n")
-    .map((line) => line.replace(/[^\S\n]+/g, " ").trim())
+    .map((line) => line.replaceAll(/[^\S\n]+/g, " ").trim())
     .filter((line) => line !== "")
     .join("\n");
   const truncated = maxTextChars !== undefined && full.length > maxTextChars;

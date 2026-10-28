@@ -146,7 +146,7 @@ describe(Locks, () => {
     await driver.tryAcquire(["a"], "other", Duration.minutes(1));
     const work = vi.fn(async () => {});
     const refused = locks.with("a", TTL, work).catch((error: unknown) => error);
-    await vi.advanceTimersByTimeAsync(3_200);
+    await vi.advanceTimersByTimeAsync(3200);
     expect(isRefusal(await refused, LockUnavailableError)).toBe(true);
     expect(work).not.toHaveBeenCalled();
   });

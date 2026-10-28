@@ -37,15 +37,17 @@ function reduceThemeSettings(state: ThemeSettings, change: ThemeSettingsChange):
   const { past, present, future } = state;
   switch (change.type) {
     case "change":
-    case "reset":
+    case "reset": {
       return settle(state, {
         past: [...past, present],
         present: change.type === "reset" ? STACKRA_STEP : change.step,
         draft: undefined,
         future: [],
       });
-    case "draft":
+    }
+    case "draft": {
       return settle(state, { past, present, draft: change.step, future });
+    }
     case "undo": {
       const previous = past.at(-1);
       if (!previous) return state;

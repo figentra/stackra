@@ -97,14 +97,18 @@ function typeOf(schema: Schema, type: unknown, context: ZodPrintContext): string
       }
       return `z.string()${calls(schema, { minLength: "min", maxLength: "max", pattern: "regex" })}`;
     }
-    case "integer":
+    case "integer": {
       return `z.number().int()${calls(schema, { minimum: "min", maximum: "max" })}`;
-    case "number":
+    }
+    case "number": {
       return `z.number()${calls(schema, { minimum: "min", maximum: "max", exclusiveMinimum: "gt" })}`;
-    case "boolean":
+    }
+    case "boolean": {
       return "z.boolean()";
-    case "array":
+    }
+    case "array": {
       return `z.array(${isSchema(schema["items"]) ? zodOfJsonSchema(schema["items"], context) : "z.unknown()"})${calls(schema, { minItems: "min", maxItems: "max" })}`;
+    }
     case "object": {
       if (isMoney(schema)) {
         context.use("@stackra/money", "money");
@@ -128,9 +132,10 @@ function typeOf(schema: Schema, type: unknown, context: ZodPrintContext): string
         });
       return `z.object({ ${fields.join(", ")} })`;
     }
-    default:
+    default: {
       context.use("@stackra/validation", "json");
       return "json()";
+    }
   }
 }
 

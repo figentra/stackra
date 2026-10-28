@@ -25,7 +25,7 @@ type Message = {
 
 /** The default handler: every method is unknown. */
 const unknownMethod: McpHandler = (method) =>
-  Promise.reject(new McpProtocolError(-32601, `Method not found: ${method}`));
+  Promise.reject(new McpProtocolError(-32_601, `Method not found: ${method}`));
 
 /**
  * A connection reading `input` and writing `output`.
@@ -62,7 +62,7 @@ export function connectMcp(
     try {
       send({ id, result: (await handle(method, params)) ?? {} });
     } catch (error) {
-      const code = error instanceof McpProtocolError ? error.code : -32603;
+      const code = error instanceof McpProtocolError ? error.code : -32_603;
       send({ id, error: { code, message: (error as Error).message } });
     }
   };
@@ -73,7 +73,7 @@ export function connectMcp(
     try {
       message = JSON.parse(line) as Message;
     } catch {
-      send({ id: null, error: { code: -32700, message: "Parse error" } });
+      send({ id: null, error: { code: -32_700, message: "Parse error" } });
       return;
     }
     if (typeof message.method === "string") {
