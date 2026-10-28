@@ -8,7 +8,7 @@
  *          envelope v2 ids and context (event id per event, visitor and session ids made only after consent and kept
  *          for the launch), and identity stitching (identify, group, reset, the anonymous id kept only after consent,
  *          restored on a new launch and forgotten on withdrawal), and the delivery engine (batch at `flushAt`, the flush
- *          window, `flush()`, retry with backoff holding later events, the offline queue after spent retries, sampling
+ *          window, the longer window while the phone saves, `flush()`, retry with backoff holding later events, the offline queue after spent retries, sampling
  *          per visitor and per event, the beacon on page hide, and the refusal dropping both), and the destinations
  *          (each gated by its own category, include and exclude routing, shared ids, the identity kept only under
  *          `consentCategory`, an unknown instance refused).
@@ -26,6 +26,7 @@ import {
 } from "@stackra/consent";
 import { Driver } from "@stackra/container";
 import { AnalyticsEvent, DomainEvent } from "@stackra/events";
+import { MemorySystemSettingsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, freezeClock, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
 import { vi } from "vitest";
@@ -456,6 +457,7 @@ function engineWith(
   driver: AnalyticsDriver,
   values: Partial<ConfigValues<AnalyticsConfig>> = {},
   offline?: AnalyticsOfflineQueue,
+  settings = new MemorySystemSettingsDriver(),
 ) {
   const config = buildConfig(AnalyticsConfig, { values });
   const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
@@ -466,6 +468,8 @@ function engineWith(
     ledger,
     new MemoryAnalyticsIdentityDriver(),
     offline ?? new MemoryAnalyticsOfflineQueueDriver(config),
+    undefined,
+    settings,
   );
   return { client, ledger, config };
 }
@@ -498,6 +502,24 @@ describe("AnalyticsClient delivery engine (stackra-406)", () => {
     expect(driver.batches).toEqual([]);
     await vi.advanceTimersByTimeAsync(1);
     expect(driver.batches).toEqual([["a", "b"]]);
+  });
+
+  it("waits longer and ignores flushAt while the phone saves power or data", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const driver = new BatchRecordingDriver();
+    const settings = new MemorySystemSettingsDriver();
+    settings.lowPowerMode.set(true);
+    const { client } = engineWith(
+      driver,
+      { flushAt: 2, flushIntervalMs: 1000 },
+      undefined,
+      settings,
+    );
+    trackPlans(client, "a", "b", "c");
+    await vi.advanceTimersByTimeAsync(3999);
+    expect(driver.batches).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(driver.batches).toEqual([["a", "b", "c"]]);
   });
 
   it("sends at once on flush()", async () => {

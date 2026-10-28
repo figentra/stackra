@@ -27,7 +27,9 @@
  *           own category, include and exclude lists, pre-consent queue, buffer and retries, so one destination's
  *           consent or outage never holds another; every lane shares the event id (destinations dedup on it) and the
  *           visitor ids. The identity is kept only while `consentCategory` is granted; the in-memory ids go once no
- *           destination is granted. Only the `default` destination uses the offline queue.
+ *           destination is granted. Only the `default` destination uses the offline queue. While the phone saves
+ *           (Low Power Mode or an expensive connection, `SystemSettings`), a buffer waits `SAVING_STRETCH` times the
+ *           flush window instead of leaving at `flushAt`, and leaves at once only when it reaches `bufferLimit`.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1, 2 and 5); ADR 0071 (no identifier before consent); ADR 0305 (rule 20);
  *                     ADR 0294 (decisions 16, 17 and 26); analytics gaps 5 and 6 (identity stitching, stackra-405; the
@@ -39,6 +41,8 @@ import { ConsentStatus } from "@stackra/consent";
 import { type AnyClass, kindOf, Service } from "@stackra/container";
 import { backoffDelay, Duration, Jitter } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
+import { MemorySystemSettingsDriver } from "@stackra/platform";
+import type { SystemSettings } from "@stackra/platform/contracts";
 import { schemaOf } from "@stackra/validation";
 
 import type { AnalyticsConfig } from "#config/analytics.config";
@@ -62,6 +66,9 @@ import type { AnalyticsLane } from "#core/types/analytics-lane.type";
 /** The library name every delivery's context carries. */
 const LIBRARY = "@stackra/analytics";
 
+/** How many flush windows a buffer waits while the phone saves power or data. */
+const SAVING_STRETCH = 4;
+
 /** A delivery before consent allows a send: no visitor or session id yet. */
 type Captured = Omit<AnalyticsDelivery, "anonymousId" | "sessionId">;
 
@@ -82,6 +89,8 @@ export class AnalyticsClient extends Service {
   private readonly offline: AnalyticsOfflineQueue;
 
   private readonly lanes: readonly AnalyticsLane[];
+
+  private readonly settings: SystemSettings;
 
   private anonymousId: string | null = null;
 
@@ -107,6 +116,8 @@ export class AnalyticsClient extends Service {
    * @param offline - where the `default` destination's undelivered batches wait for the next launch; nothing is kept
    *                  when absent.
    * @param lookup - finds the named driver instances other destinations send to; none when absent.
+   * @param settings - Low Power Mode and an expensive connection, which stretch the flush window; nothing saves when
+   *                   absent.
    * @throws RangeError when a destination names a driver instance `lookup` does not know.
    */
   constructor(
@@ -116,12 +127,14 @@ export class AnalyticsClient extends Service {
     identity: AnalyticsIdentity = new MemoryAnalyticsIdentityDriver(),
     offline: AnalyticsOfflineQueue = new NoneAnalyticsOfflineQueueDriver(),
     lookup: AnalyticsDriverLookup = new NoneAnalyticsDriverLookupDriver(),
+    settings: SystemSettings = new MemorySystemSettingsDriver(),
   ) {
     super();
     this.config = config;
     this.ledger = ledger;
     this.identity = identity;
     this.offline = offline;
+    this.settings = settings;
     const destinations: readonly AnalyticsDestination[] =
       config.destinations.length > 0
         ? config.destinations
@@ -280,15 +293,23 @@ export class AnalyticsClient extends Service {
     return sampleScore(delivery.anonymousId) < this.config.sampleRate;
   }
 
-  /** Sends `lane`'s buffer now when full or the window is zero, else once the window passes; never during a backoff. */
+  /**
+   * Sends `lane`'s buffer now when full or the window is zero, else once the window passes; never during a backoff.
+   * While the phone saves, only a buffer at `bufferLimit` leaves at once and the window is `SAVING_STRETCH` times longer.
+   */
   private schedule(lane: AnalyticsLane): void {
     this.hookPageHide();
     if (lane.buffer.length === 0 || (lane.failures > 0 && lane.timer !== null)) return;
-    if (lane.buffer.length >= this.config.flushAt || this.config.flushIntervalMs === 0) {
+    const saving = this.settings.lowPowerMode.get() || this.settings.expensiveNetwork.get();
+    const due = saving
+      ? lane.buffer.length >= this.config.bufferLimit
+      : lane.buffer.length >= this.config.flushAt || this.config.flushIntervalMs === 0;
+    if (due) {
       void this.flushLane(lane);
       return;
     }
-    lane.timer ??= setTimeout(() => void this.flushLane(lane), this.config.flushIntervalMs);
+    const wait = this.config.flushIntervalMs * (saving ? SAVING_STRETCH : 1);
+    lane.timer ??= setTimeout(() => void this.flushLane(lane), wait);
   }
 
   /** Sends `lane`'s buffer as one batch; a failure puts it back for a retry. */

@@ -12,7 +12,9 @@
  *           dropped even when the server sends it. Replicas persist only through an encrypting persister while
  *           `persistEncrypted` is on, and a stored replica older than `persistMaxAgeHours` refills. A failed refresh
  *           keeps what the replica holds and its "as of" time. An `OfflineLock` wipe closes the store until the next
- *           `open`. No sync engine: a refresh is the replica query with its cursor (ADR 0227 row).
+ *           `open`. No sync engine: a refresh is the replica query with its cursor (ADR 0227 row). While the phone
+ *           saves (Low Power Mode or an expensive connection, `SystemSettings`) the background refreshes wait, and run
+ *           once it stops; an explicit `refresh` still runs.
  * Runtime: isomorphic
  * Governing contract: ADR 0338 (decisions 2 to 4); ADR 0315 (live queries); ADR 0343 (decision 4); ADR 0294
  *                     (decisions 16 and 17).
@@ -20,7 +22,8 @@
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
-import type { Platform } from "@stackra/platform/contracts";
+import { MemorySystemSettingsDriver } from "@stackra/platform";
+import type { Platform, SystemSettings } from "@stackra/platform/contracts";
 import type { RealtimeConnection } from "@stackra/realtime";
 import { StorageArea } from "@stackra/storage";
 import { duration } from "@stackra/validation";
@@ -94,6 +97,8 @@ export class ReplicaStore extends Service {
 
   private readonly clock: Clock;
 
+  private readonly settings: SystemSettings;
+
   /** Whether replicas are written to the `cache` area at all. */
   private readonly isPersisted: boolean;
 
@@ -127,6 +132,8 @@ export class ReplicaStore extends Service {
    * @param platform - the network signal.
    * @param clock - ages the records.
    * @param lock - closes the store when the device's offline data is wiped.
+   * @param settings - Low Power Mode and an expensive connection, which hold the background refreshes; nothing saves
+   *                   when absent.
    */
   constructor(
     config: QueryConfig,
@@ -136,6 +143,7 @@ export class ReplicaStore extends Service {
     platform: Platform,
     clock: Clock,
     lock: OfflineLock,
+    settings: SystemSettings = new MemorySystemSettingsDriver(),
   ) {
     super();
     this.config = config;
@@ -144,6 +152,7 @@ export class ReplicaStore extends Service {
     this.realtime = realtime;
     this.platform = platform;
     this.clock = clock;
+    this.settings = settings;
     this.isPersisted =
       config.persistMaxAgeHours > 0 && (!config.persistEncrypted || persister.isEncrypted);
     this.stops = [
@@ -151,6 +160,8 @@ export class ReplicaStore extends Service {
         if (isOnline) void this.refreshAll();
       }),
       lock.onWipe(() => this.close()),
+      settings.lowPowerMode.subscribe(() => void this.refreshAll()),
+      settings.expensiveNetwork.subscribe(() => void this.refreshAll()),
     ];
   }
 
@@ -197,7 +208,9 @@ export class ReplicaStore extends Service {
     this.publish();
     this.signals = refs.flatMap((query) =>
       (query.invalidateOn ?? []).map((event) =>
-        this.realtime.subscribe(event, () => void this.refresh(query).catch(() => undefined)),
+        this.realtime.subscribe(event, () => {
+          if (!this.isSaving()) void this.refresh(query).catch(() => undefined);
+        }),
       ),
     );
     void this.refreshAll();
@@ -221,9 +234,15 @@ export class ReplicaStore extends Service {
     return pulling;
   }
 
-  /** Refreshes every replica when online; a failure leaves that replica as it was. */
+  /** Whether the phone saves power or data, so background refreshes wait. */
+  private isSaving(): boolean {
+    return this.settings.lowPowerMode.get() || this.settings.expensiveNetwork.get();
+  }
+
+  /** Refreshes every replica when online and not saving; a failure leaves that replica as it was. */
   private async refreshAll(): Promise<void> {
-    if (this.partition === undefined || !this.platform.network.isOnline.get()) return;
+    if (this.partition === undefined || !this.platform.network.isOnline.get() || this.isSaving())
+      return;
     await Promise.allSettled([...REPLICAS.values()].map((query) => this.refresh(query)));
   }
 

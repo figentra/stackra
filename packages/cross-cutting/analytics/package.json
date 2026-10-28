@@ -130,6 +130,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/platform": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

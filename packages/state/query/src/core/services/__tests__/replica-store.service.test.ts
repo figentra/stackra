@@ -5,7 +5,8 @@
  *          (on the refresh signal and on reconnect) and merge the changes and removals; a replica keeps its window and
  *          limit, newest first; a scoped replica asks for and keeps only the device's slice, and is not kept without
  *          one; replicas persist only through a persister they may use, restore within `persistMaxAgeHours` and keep
- *          what they hold when a refresh fails; a wipe drops everything; subscribers hear every change.
+ *          what they hold when a refresh fails; background refreshes wait while the phone saves power or data; a wipe
+ *          drops everything; subscribers hear every change.
  * Boundary: test only; storage, the seal, the platform and the realtime connection are the real memory drivers or the
  *           realtime fake, the source is a small class of its port, and the lock is a stand-in that runs its listeners.
  * Runtime: node (vitest)
@@ -15,7 +16,7 @@ import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { Service } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
-import { MemoryPlatformDriver } from "@stackra/platform";
+import { MemoryPlatformDriver, MemorySystemSettingsDriver } from "@stackra/platform";
 import { fakeRealtime } from "@stackra/realtime/testing";
 import { MemoryPayloadSealDriver, MemoryStorageDriver } from "@stackra/storage";
 import { describe, expect, it } from "@stackra/testing";
@@ -143,6 +144,7 @@ function storeOf(
   const realtime = fakeRealtime();
   const platform = new MemoryPlatformDriver();
   const lock = lockOf();
+  const settings = new MemorySystemSettingsDriver();
   const store = new ReplicaStore(
     buildConfig(QueryConfig, { values }),
     new StorageQueryPersisterDriver(storage, new MemoryPayloadSealDriver(storage)),
@@ -151,8 +153,9 @@ function storeOf(
     platform,
     clock,
     lock,
+    settings,
   );
-  return { store, source, realtime, platform, lock, storage, clock };
+  return { store, source, realtime, platform, lock, storage, clock, settings };
 }
 
 /** The ids `query`'s replica reads, in order. */
@@ -192,6 +195,24 @@ describe("ReplicaStore", () => {
     // The memory seal does not encrypt, so with persistEncrypted on nothing rests in the cache area.
     await settle();
     expect(storage.cache.keys()).toEqual([]);
+    store.onApplicationShutdown();
+  });
+
+  it("holds background refreshes while the phone saves power or data, and runs them once it stops", async () => {
+    const { store, source, realtime, settings } = storeOf();
+    source.queue(RecentSalesQuery.key, answer([row("sal_1", 1)], "c1"));
+    settings.lowPowerMode.set(true);
+    await store.open(USER);
+    realtime.emit(SaleRecorded);
+    await settle();
+    expect(source.asked).toEqual([]);
+    settings.expensiveNetwork.set(true);
+    settings.lowPowerMode.set(false);
+    await settle();
+    expect(source.asked).toEqual([]);
+    settings.expensiveNetwork.set(false);
+    await settle();
+    expect(idsOf(store, RecentSalesQuery)).toEqual(["sal_1"]);
     store.onApplicationShutdown();
   });
 

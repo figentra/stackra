@@ -94,6 +94,9 @@ return <Caption>{t(I18n.sales.replica.asOf, { asOf })}</Caption>;
   refreshes each replica. The first fill is the only full download; later refreshes send the opaque cursor the server
   returned and merge the rows changed and the ids removed since it, on `open`, on every reconnect and on each broadcast
   of the query's refresh signal (`invalidateOn`).
+- While the phone saves (Low Power Mode or an expensive connection, `SystemSettings` of `@stackra/platform`), the
+  refreshes on `open`, reconnect and the refresh signal wait and run once it stops; an explicit `refresh` still runs.
+  The offline mutation queue does not wait: a person's writes leave as soon as the network allows.
 - A replica keeps the records within its `window` (by each record's `at`) and at most `limit` of them, newest first.
 - A replica with a `scope` dimension asks only for the device's slice and drops any record outside it; a device with no
   slice of that dimension keeps none.

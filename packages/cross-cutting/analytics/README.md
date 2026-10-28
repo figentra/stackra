@@ -96,6 +96,10 @@ it, so order holds. When the retries are spent the batch goes to the offline que
 the page hides (`pagehide`, or `visibilitychange` to hidden) the buffer leaves at once through the driver's `beacon`
 (`navigator.sendBeacon`), or `send` with `keepalive` when the driver has none.
 
+While the phone saves (Low Power Mode or an expensive connection, `SystemSettings` of `@stackra/platform`, the optional
+last constructor argument), a buffer ignores `flushAt` and waits four flush windows; it leaves at once only when it
+reaches `bufferLimit`, so nothing is dropped. `flush()` and the page-hide hand-off still send at once.
+
 Sampling is per visitor: `sampleRate` (0 to 1) keeps the same share of anonymous ids for every event, so funnels stay
 whole, and `sampleRates` gives one event its own rate (`{ "page.scrolled": 0.1 }`). `identify` and `group` are never
 sampled. A refusal drops the buffer and the offline queue.
