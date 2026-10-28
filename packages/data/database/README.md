@@ -457,6 +457,49 @@ daily job that calls it at 02:15 UTC, `data_maintenance.partition.maintain@1` (s
 `retain` ago, unless the `HoldRegistry` holds one of its rows (`Disposal.Retention`); a held partition is kept and
 reported. The job puts the partition names in its audit entry.
 
+## Time series rollups
+
+A big append-only source (meter readings, telemetry, fleet positions) declares a `TimeSeries` in its module: rollup
+tables `ts_<key>_<grain>` that a job keeps, so a long-range read scans buckets, not raw rows, and the raw table can keep
+a short `Partitioned` retention. Rollups are plain tables, not materialized views, so row-level security still applies.
+Native Postgres only (TimescaleDB is not approved, ADR 0160).
+
+```ts
+export class MeterReadingSeries extends TimeSeries<MeterReading>({
+  key: "meter_readings",
+  time: "at",
+  dimensions: ["scopeId", "meterId"], // the source's row-level security field is one of them
+  measures: {
+    kwh: { aggregate: Aggregate.Sum, field: "kwh" },
+    readings: { aggregate: Aggregate.Count },
+  },
+  rollups: [MetricGrain.Hour, MetricGrain.Day],
+  lateness: Duration.hours(2), // one grain by default
+  retain: { [MetricGrain.Hour]: Duration.days(90) }, // a grain left out keeps its buckets
+}) {}
+
+// its migration: one table per grain, with the source's policy
+schema.create(rollupTable("meter_readings", MetricGrain.Hour), (t: Blueprint) => {
+  t.timestamp("bucket").notNull();
+  t.scopeId();
+  t.link("meter_id").notNull();
+  t.decimal("kwh", 18, 3).nullable();
+  t.bigint("readings").notNull();
+  t.primary(["bucket", "scope_id", "meter_id"]);
+  t.rowLevelSecurity("scope_id", { setting: "app.scope_id", match: "equals" });
+});
+```
+
+- Gen's entry pairs each series with its source model (`registerTimeSeries([[MeterReadingSeries, MeterReading]])`).
+- `rollUpAllTimeSeries(now)` runs `rollUpTimeSeries(series, now)` for each registered series. Its job is
+  `RollUpTimeSeriesAction` of `@stackra/data-maintenance` (`data_maintenance.timeseries.rollup@1`, every 15 minutes,
+  once per scope, system actor, `TimeseriesPermissions.rollup`; ADR 0462 decision 1). Per series, per grain it
+  recomputes the buckets since one `lateness` before now (UTC buckets, weeks from Monday) by deleting and re-inserting
+  them from the source, grouped by the dimensions, then removes buckets older than the grain's `retain`. Older buckets
+  are never rewritten, so they outlive the raw rows.
+- Columns: `bucket`, each dimension's source column, and each measure's name in snake_case. `count` reads no field;
+  `distinct` is `count(distinct …)`; `sum`, `avg`, `min` and `max` read their field.
+
 ## Concurrency and database errors
 
 A `Versioned` model's `version` is the ORM's version property, so a unit of work that flushes a row someone else

@@ -25,7 +25,7 @@ The add-on that holds the data layer's system jobs and their system-held permiss
 ## This package
 
 - A job here is a thin call: the work stays in the lower package as an exported function, service or port method
-  (`maintainAllPartitions`, `pruneAllRecords`, `reindexSearch`, `reindexSemantic`, `ChangeFeed.maintain`,
+  (`maintainAllPartitions`, `pruneAllRecords`, `rollUpAllTimeSeries`, `reindexSearch`, `reindexSemantic`, `ChangeFeed.maintain`,
   `pruneOutbox`, `PostgresSearchQueryLogDriver.store`). A lower driver that must queue a job here is abstract there,
   and its subclass here names the job (`QueuedSearchQueryLogDriver`). Never move the work up here, and never add an action to `@stackra/database`, `@stackra/search` or
   `@stackra/outbox`: they stay below `@stackra/iam`, which depends on database and (through scope) on outbox.

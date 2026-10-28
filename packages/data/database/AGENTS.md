@@ -51,6 +51,10 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - Metadata (`HasMetadata`, mo18): `checkMetadata` is the one bound check (string values, 16 KB of UTF-8 JSON), run
   by `MetadataSubscriber` and by `CrudService.refuseSystemFields`, which every write passes. A new native write path
   that can set `metadata` calls it too.
+- Time series (`TimeSeries`, cdc7): rollups are plain `ts_<key>_<grain>` tables, never materialized views (row-level
+  security must apply), rebuilt only inside the run's window by `rollUpTimeSeries`, in the caller's scope. The job
+  (`RollUpTimeSeriesAction` of @stackra/data-maintenance, over `rollUpAllTimeSeries`) is per scope; never make it a
+  platform run, which the source's forced row-level security would show no rows.
 - A table count (`tableCount`, ADR 0307 r12) reads through the same filter as its page and calls the builder's
   `applyFilters()` so hidden rows stay hidden. Keep `Count.Estimated` bounded: the exact part stops at
   `BULK_LIMITS.countCap` plus one row, and past it only `explain` (never `explain analyze`) runs. Never estimate from
@@ -94,9 +98,10 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.
 - Partitions: `maintainPartitions` is the only code that creates, detaches or drops a partition, and it asks the
   `HoldRegistry` before dropping one. Never drop `<table>_default`, and never convert an existing table in a migration.
-- Jobs: declare no action here. The partition and retention jobs live in @stackra/data-maintenance, which holds their
-  system-held permissions and calls `maintainAllPartitions` and `pruneAllRecords`; database never depends on it (ADR
-  0462 decision 1). Keep those two functions exported from `.`.
+- Jobs: declare no action here. The partition, retention and time series rollup jobs live in
+  @stackra/data-maintenance, which holds their system-held permissions and calls `maintainAllPartitions`,
+  `pruneAllRecords` and `rollUpAllTimeSeries`; database never depends on it (ADR 0462 decision 1). Keep those three
+  functions exported from `.`.
 - Transactions (stackra-279): both drivers' `transaction` is `runTransaction` (keep it that way); `isolation`,
   `readOnly` and `retry` are refused inside a running transaction without `requiresNew`, never silently dropped. A
   retry reruns the whole work for `40001`/`40P01` only (`TRANSACTION_RETRY`); never retry a savepoint, and never add a

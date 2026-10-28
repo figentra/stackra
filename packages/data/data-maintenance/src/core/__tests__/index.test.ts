@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the six `Permissions` classes are its values and nothing else, and
+ * Purpose: the consumer contract of the `.` entry: the seven `Permissions` classes are its values and nothing else, and
  *          each job's permission is system-held at its risk (L4 for the jobs that drop or delete data, L2 for the
  *          reindex and query log jobs).
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -21,12 +21,14 @@ describe("@stackra/data-maintenance", () => {
       "PartitionPermissions",
       "QueryPermissions",
       "RecordPermissions",
+      "TimeseriesPermissions",
     ]);
   });
 
   it.each([
     [core.PartitionPermissions.maintain, Risk.L4],
     [core.RecordPermissions.prune, Risk.L4],
+    [core.TimeseriesPermissions.rollup, Risk.L4],
     [core.IndexPermissions.reindex, Risk.L2],
     [core.IndexPermissions.reindexSemantic, Risk.L2],
     [core.QueryPermissions.record, Risk.L2],

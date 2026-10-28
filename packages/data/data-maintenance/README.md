@@ -22,17 +22,18 @@ Every job's only actor is the system, so none gets an endpoint or a tool. Gen re
 | -------------------------- | ------------------------------------------- | ------------------------- | -------------------------------------------------------------- | --------------------------------------------- |
 | `MaintainPartitionsAction` | `data_maintenance.partition.maintain@1`     | 02:15 UTC, once           | `maintainAllPartitions` of `@stackra/database`                 | `PartitionPermissions.maintain`, L4 system    |
 | `PruneRecordsAction`       | `data_maintenance.record.prune@1`           | 03:00 UTC, once per scope | `pruneAllRecords` of `@stackra/database`                       | `RecordPermissions.prune`, L4 system          |
+| `RollUpTimeSeriesAction`   | `data_maintenance.timeseries.rollup@1`      | every 15 min, per scope   | `rollUpAllTimeSeries` of `@stackra/database`                   | `TimeseriesPermissions.rollup`, L4 system     |
 | `ReindexSearchAction`      | `data_maintenance.index.reindex@1`          | queued, unique per scope  | `reindexSearch` of `@stackra/search/node`                      | `IndexPermissions.reindex`, L2 system         |
 | `ReindexSemanticAction`    | `data_maintenance.index.reindex_semantic@1` | queued, unique per scope  | `reindexSemantic` of `@stackra/search/node`                    | `IndexPermissions.reindexSemantic`, L2 system |
 | `MaintainChangeLogAction`  | `data_maintenance.change_log.maintain@1`    | 02:30 UTC, once           | `ChangeFeed.maintain` of `@stackra/outbox`                     | `ChangeLogPermissions.maintain`, L4 system    |
 | `PruneOutboxAction`        | `data_maintenance.outbox_message.prune@1`   | 03:15 UTC, once           | `pruneOutbox` of `@stackra/outbox`                             | `OutboxMessagePermissions.prune`, L4 system   |
 | `RecordSearchQueryAction`  | `data_maintenance.query.record@1`           | queued per sampled read   | `PostgresSearchQueryLogDriver.store` of `@stackra/search/node` | `QueryPermissions.record`, L2 system          |
 
-The jobs that drop or delete data (partitions, expired rows, change log days, dead letters) are L4, privileged or
-destructive; the reindex jobs rewrite derived data only and the query log job appends an analytics row, so they are L2,
-a reversible write. All are system-held
-(`Permission.Lx.system()`): no role may grant them. Each job keeps its schedule, timeout and retries, and its input and
-output schema is here beside it (`MaintainPartitionsInput`, `ReindexSearchInput`, ...).
+The jobs that drop or delete data (partitions, expired rows, expired rollup buckets, change log days, dead letters) are
+L4, privileged or destructive; the reindex jobs rewrite derived data only and the query log job appends an analytics
+row, so they are L2, a reversible write. All are system-held (`Permission.Lx.system()`): no role may grant them. Each
+job keeps its schedule, timeout and retries, and its input and output schema is here beside it
+(`MaintainPartitionsInput`, `ReindexSearchInput`, ...).
 
 `searchReindex({ model, scope, since, semantic })` (`./node`) is the half of the `stackra search:reindex` runner that
 queues `ReindexSearchAction` or `ReindexSemanticAction` in the member's queue; `searchStatus` stays in

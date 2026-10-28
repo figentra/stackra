@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/data-maintenance (the system jobs with their input and
- *          output schemas: partition upkeep and record retention over @stackra/database, the full-text and semantic
- *          reindex and the search query log over @stackra/search, change log upkeep and the outbox prune over
- *          @stackra/outbox; `searchReindex`, the half of the `stackra search:reindex` runner that queues a reindex job;
- *          and `QueuedSearchQueryLogDriver`, the search query log that queues its entries) until
+ *          output schemas: partition upkeep, record retention and time series rollups over @stackra/database, the
+ *          full-text and semantic reindex and the search query log over @stackra/search, change log upkeep and the
+ *          outbox prune over @stackra/outbox; `searchReindex`, the half of the `stackra search:reindex` runner that
+ *          queues a reindex job; and `QueuedSearchQueryLogDriver`, the search query log that queues its entries) until
  *          `stackra gen` writes the entry barrels and the generated `DataMaintenanceModule` (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: every job reaches Postgres through the package
  *           that does its work. The permissions are the `.` entry's.
@@ -17,6 +17,7 @@ export { MaintainPartitionsAction } from "#node/actions/maintain-partitions.acti
 export { PruneOutboxAction } from "#node/actions/prune-outbox.action";
 export { PruneRecordsAction } from "#node/actions/prune-records.action";
 export { RecordSearchQueryAction } from "#node/actions/record-search-query.action";
+export { RollUpTimeSeriesAction } from "#node/actions/roll-up-time-series.action";
 export { ReindexSearchAction } from "#node/actions/reindex-search.action";
 export { ReindexSemanticAction } from "#node/actions/reindex-semantic.action";
 export { QueuedSearchQueryLogDriver } from "#node/drivers/queued-search-query-log.driver";
@@ -30,5 +31,7 @@ export { PruneOutboxOutput } from "#node/schemas/prune-outbox-output.schema";
 export { PruneRecordsInput } from "#node/schemas/prune-records-input.schema";
 export { PruneRecordsOutput } from "#node/schemas/prune-records-output.schema";
 export { RecordSearchQueryInput } from "#node/schemas/record-search-query-input.schema";
+export { RollUpTimeSeriesInput } from "#node/schemas/roll-up-time-series-input.schema";
+export { RollUpTimeSeriesOutput } from "#node/schemas/roll-up-time-series-output.schema";
 export { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 export { ReindexSearchOutput } from "#node/schemas/reindex-search-output.schema";

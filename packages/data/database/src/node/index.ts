@@ -7,9 +7,10 @@
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `migrate` and `rollback`, the runner
  *          `stackra db` calls; and `seedState` and `applySeed`, the runner `stackra seed-pack` calls;
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
- *          `ConnectionResolver` (stackra-310). The partition upkeep and retention jobs live in @stackra/data-maintenance
- *          (ADR 0462 decision 1) and call `maintainAllPartitions` and `pruneAllRecords` of the `.` entry. This package's
- *          migrations under `database/migrations/` are found by their path and not exported.
+ *          `ConnectionResolver` (stackra-310). The partition upkeep, retention and time series rollup jobs live in
+ *          @stackra/data-maintenance (ADR 0462 decision 1) and call `maintainAllPartitions`, `pruneAllRecords` and
+ *          `rollUpAllTimeSeries` of the `.` entry. This package's migrations under `database/migrations/` are found by
+ *          their path and not exported.
  * Boundary: names each re-export and declares nothing. Server only: the entry that starts MikroORM, so it stays out of
  *           the `.` entry that the models and services import.
  * Runtime: node

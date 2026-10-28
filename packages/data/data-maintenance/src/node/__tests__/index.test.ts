@@ -32,6 +32,9 @@ describe("@stackra/data-maintenance/node", () => {
       "ReindexSearchInput",
       "ReindexSearchOutput",
       "ReindexSemanticAction",
+      "RollUpTimeSeriesAction",
+      "RollUpTimeSeriesInput",
+      "RollUpTimeSeriesOutput",
       "searchReindex",
     ]);
   });
