@@ -41,7 +41,8 @@
  *                     an `…Error` in an `.error.ts` file, a base-less class in a `src/testing/` `.service.ts` file and a
  *                     class under an `oxlint-disable-next-line stackra/base-matches-suffix -- reason:` line are left out of
  *                     a file's exported classes, so never `kind_unregistered_base`; an abstract class is a kind base,
- *                     never `event_base_abstract`, and is never built, so its constructor is not read; a class without
+ *                     never `event_base_abstract`, and is never built, so its constructor is not read and it is marked
+ *                     `abstract` (never a driver candidate); a class without
  *                     a constructor takes the nearest one its chain declares; a port-kind class in a `.driver.ts` file of
  *                     a package below the container is built by hand, so its constructor is not read; `I18nKey` of a
  *                     `@stackra/*` package reads as the `i18n_key` brand, a string).
@@ -2473,6 +2474,7 @@ export function createSourceReader(
       statics,
       traits,
       ...(renamed !== undefined ? { renamed } : {}),
+      ...(isAbstract ? { abstract: true as const } : {}),
     };
   };
 

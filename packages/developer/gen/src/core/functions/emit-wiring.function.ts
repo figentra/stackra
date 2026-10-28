@@ -17,7 +17,8 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
- *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle. The
+ *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
+ *           abstract driver (a base the candidates extend) is never a candidate. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
@@ -354,7 +355,9 @@ export function emitWiring(ir: MemberIR): string {
   // member's bindings reach, read from that package's manifest (STA-1297). And the config fields that select them.
   const ports = new Map<string, PortTable>();
   for (const declared of ir.classes) {
-    if (declared.kind !== "driver" || declared.partner === undefined) continue;
+    // An abstract driver is a base the candidates extend, never one itself.
+    if (declared.kind !== "driver" || declared.partner === undefined || declared.abstract === true)
+      continue;
     const port: ClassRef = { name: declared.partner.name, from: declared.partner.from };
     const member = port.from.startsWith("#")
       ? ir.member

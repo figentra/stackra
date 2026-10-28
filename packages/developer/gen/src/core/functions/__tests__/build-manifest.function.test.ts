@@ -831,6 +831,29 @@ describe("buildManifest's package drivers (STA-1297)", () => {
     ]);
   });
 
+  it("lists no abstract driver, the base its candidates extend", () => {
+    const memory = LOYALTY_KIT_IR.classes.find(
+      (candidate) => candidate.name === "MemoryLoyaltyLedgerDriver",
+    );
+    if (memory === undefined) throw new Error("the fixture has no memory ledger driver");
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: [
+        ...LOYALTY_KIT_IR.classes,
+        {
+          ...memory,
+          name: "AreaLoyaltyLedgerDriver",
+          file: "src/core/drivers/area-loyalty-ledger.driver.ts",
+          importPath: "#core/drivers/area-loyalty-ledger.driver",
+          abstract: true,
+        },
+      ],
+    };
+    const [driver] = buildManifest(ir).manifest.drivers ?? [];
+    expect(driver?.candidates).toEqual(["memory"]);
+    expect(JSON.stringify(driver)).not.toContain("AreaLoyaltyLedgerDriver");
+  });
+
   it("keeps a service's drivers to names", () => {
     const [driver] = buildManifest(COMMERCE_IR).manifest.drivers ?? [];
     expect(driver).not.toHaveProperty("classes");

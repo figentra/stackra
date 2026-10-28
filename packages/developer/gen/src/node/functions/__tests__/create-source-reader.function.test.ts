@@ -1566,6 +1566,10 @@ describe("createSourceReader on the forms the base-matches-suffix lint accepts (
     expect(codes).not.toContain("token_not_a_class AreaService.constructor");
     expect(codes).toContain("token_not_a_class ConcreteAreaService.constructor");
     expect(classes.find((declared) => declared.name === "WebAreaService")?.deps).toEqual([]);
+    expect(classes.find((declared) => declared.name === "AreaService")?.abstract).toBe(true);
+    expect(
+      classes.find((declared) => declared.name === "WebAreaService")?.abstract,
+    ).toBeUndefined();
     expect(classes.find((declared) => declared.name === "TimerService")?.deps).toEqual([
       { class: { name: "ClockService", from: "#core/services/clock.service" } },
     ]);

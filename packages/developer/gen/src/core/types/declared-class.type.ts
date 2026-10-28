@@ -81,4 +81,7 @@ export interface DeclaredClass {
 
   /** The identity `@Renamed(old)` records. */
   readonly renamed?: string;
+
+  /** Set when the class is `abstract`: a kind base other classes extend, never built, so never a driver candidate. */
+  readonly abstract?: true;
 }

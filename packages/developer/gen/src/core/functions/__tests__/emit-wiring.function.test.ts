@@ -75,6 +75,28 @@ describe("emitWiring", () => {
     expect(wiring.trimEnd().endsWith("} satisfies Wiring;")).toBe(true);
   });
 
+  it("lists no abstract driver as a candidate", () => {
+    const stripe = COMMERCE_IR.classes.find(
+      (declared) => declared.name === "StripePaymentGatewayDriver",
+    );
+    if (stripe === undefined) throw new Error("the fixture has no stripe driver");
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          ...stripe,
+          name: "AreaPaymentGatewayDriver",
+          file: "src/modules/orders/drivers/area-payment-gateway.driver.ts",
+          importPath: "#modules/orders/drivers/area-payment-gateway.driver",
+          abstract: true,
+        },
+      ],
+    });
+    expect(content).not.toContain("AreaPaymentGatewayDriver");
+    expect(content).toContain('    "commerce.PaymentGateway": "stripe";');
+  });
+
   it("prints replacements, partners and dependency modules", () => {
     const ir: MemberIR = {
       ...COMMERCE_IR,

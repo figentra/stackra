@@ -69,8 +69,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   notice) that imports `./.stackra/vitest.config` and skips the shim; it refuses (`shim_authored`) any other (STA-1297).
 - Driver candidates of declared packages (STA-1297). **Source: the package manifests**, never a hand-kept table and
   never the packages' source or `.d.ts`. `buildManifest` writes, for a package only, each driver entry's `classes`
-  (`{ <name>: { class, from, deps? } }`: the class, its public entry from `packageSpecifier`, its constructor tokens
-  with `#…` subpaths mapped by `publicSpecifier`) and `config` (`{ class, from }`, the config class whose field
+  (`{ <name>: { class, from, deps? } }`: the class, its public entry from `packageSpecifier` (a file in another
+  `src/<folder>`, such as `src/desktop`, is that folder's own entry, `./desktop`), its constructor tokens with `#…`
+  subpaths mapped by `publicSpecifier`; an `abstract` driver is a base, never a candidate) and `config` (`{ class, from }`, the config class whose field
   selects one). `emitWiring` reads them (`dependencyDriverTables`) and lists a package's table only for a port its
   bindings reach (the `used` worklist: bindings, platform bindings and driver constructors, transitively), merged
   under the member's own candidates (own name wins). A package `*Config` class a reached token names gets a config

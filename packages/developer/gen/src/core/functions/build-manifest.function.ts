@@ -9,7 +9,8 @@
  *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
  *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
  *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
- *          constructor tokens (`classes`) and the config class that selects one (`config`), which a host's wiring
+ *          constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
+ *          abstract driver is no candidate) and the config class that selects one (`config`), which a host's wiring
  *          reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a host's wiring
  *          knows its configs without guessing from a name (STA-1308). It reports the identity checks it can see:
  *          `identity_collision`,
@@ -812,7 +813,10 @@ export function buildManifest(ir: MemberIR): {
       ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
       : {}),
   });
-  for (const declared of ir.classes.filter((candidate) => candidate.kind === "driver")) {
+  // An abstract driver (`AreaStorageDriver`) is a base the candidates extend, never one itself.
+  for (const declared of ir.classes.filter(
+    (candidate) => candidate.kind === "driver" && candidate.abstract !== true,
+  )) {
     const port = declared.partner;
     if (port === undefined) continue;
     const own =
