@@ -2,14 +2,17 @@
  * Stackra file contract:
  * Purpose: `SEARCH_CONFORMANCE_CASES`, the rules of the `SearchDriver` port as runnable cases: every word required,
  *          word prefixes, alternatives, exact filters, offset and limit, facet counts, re-indexing replaces, removal,
- *          refusing record visibility an engine cannot apply, and scope isolation of matches and facet counts.
+ *          refusing record visibility an engine cannot apply, scope isolation of matches and facet counts, and, for a
+ *          driver whose `fieldKinds` is true, any-of filters, numeric and date ranges and sort keys.
  * Boundary: test code only, in the `./testing` entry, vendor-neutral. A case gets a fresh driver and its own table,
  *           indexes `SEARCH_CONFORMANCE_DOCUMENTS` there first, and returns the rules missed. Ranking order between
  *           matching rows is the engine's, so cases compare id sets, never order. The scope cases index three more
  *           documents (two scopes and a subtree) and pass for a driver whose `isolatesScopes` is true, whose isolation
- *           is the database's row-level security, covered by the RLS suite.
+ *           is the database's row-level security, covered by the RLS suite. The field-kind cases index three lamps of
+ *           their own and compare order only for sort keys, which fix it.
  * Runtime: isomorphic
- * Governing contract: ADR 0089 (decisions 5 and 6); ADR 0221 (decisions 1, 7 and 9); ADR 0333 (amendment); ADR 0403; ADR 0404.
+ * Governing contract: ADR 0089 (decisions 5 and 6); ADR 0221 (decisions 1, 7 and 9); ADR 0333 (amendment); ADR 0403; ADR 0404;
+ *                     stackra-302 (field kinds).
  */
 import type { SearchDocument, SearchFacets } from "#contracts/index";
 import type { SearchConformanceCase } from "#testing/search-conformance-case.type";
@@ -52,6 +55,32 @@ const SCOPED_DOCUMENTS = [
     scope: { id: "scp_b", path: "platform.b" },
   },
 ] as const satisfies readonly SearchDocument[];
+
+/** Lamps with a color, a price and a launch date, all matching "orbit" (the field-kind cases). */
+const KIND_DOCUMENTS = [
+  {
+    id: "k1",
+    fields: ["orbit lamp"],
+    filters: { color: ["red"], price: [300], launchedAt: ["2026-03-01T00:00:00.000Z"] },
+  },
+  {
+    id: "k2",
+    fields: ["orbit lamp mini"],
+    filters: { color: ["blue"], price: [120], launchedAt: ["2026-06-01T00:00:00.000Z"] },
+  },
+  {
+    id: "k3",
+    fields: ["orbit lamp max"],
+    filters: { color: ["green"], price: [900] },
+  },
+] as const satisfies readonly SearchDocument[];
+
+/** The exact order of an id answer; empty when equal. */
+function sameOrder(label: string, got: readonly string[], want: readonly string[]): string[] {
+  return JSON.stringify(got) === JSON.stringify(want)
+    ? []
+    : [`${label}: expected ${JSON.stringify(want)} in order, got ${JSON.stringify(got)}`];
+}
 
 /** Every case, in run order. */
 export const SEARCH_CONFORMANCE_CASES: readonly SearchConformanceCase[] = [
@@ -234,6 +263,78 @@ export const SEARCH_CONFORMANCE_CASES: readonly SearchConformanceCase[] = [
         : [
             `facets orbit by color in platform.b: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`,
           ];
+    },
+  },
+  {
+    id: "filters.any-of",
+    run: async (driver, table) => {
+      if (!driver.fieldKinds) return [];
+      await driver.index(table, KIND_DOCUMENTS);
+      const facets = await driver.facets(table, {
+        words: ["orbit"],
+        filters: {},
+        anyOf: { color: ["red", "green"] },
+        paths: ["color"],
+        limit: 10,
+      });
+      return [
+        ...sameIds(
+          "orbit, color red or blue",
+          await driver.search(table, { ...page(["orbit"]), anyOf: { color: ["red", "blue"] } }),
+          ["k1", "k2"],
+        ),
+        ...sameIds("orbit facets, color red or green", Object.keys(facets["color"] ?? {}), [
+          "red",
+          "green",
+        ]),
+      ];
+    },
+  },
+  {
+    id: "filters.range",
+    run: async (driver, table) => {
+      if (!driver.fieldKinds) return [];
+      await driver.index(table, KIND_DOCUMENTS);
+      return [
+        ...sameIds(
+          "orbit, price 100 to under 500",
+          await driver.search(table, {
+            ...page(["orbit"]),
+            ranges: { price: { gte: 100, lt: 500 } },
+          }),
+          ["k1", "k2"],
+        ),
+        ...sameIds(
+          "orbit, launched after April",
+          await driver.search(table, {
+            ...page(["orbit"]),
+            ranges: { launchedAt: { gt: "2026-04-01T00:00:00.000Z" } },
+          }),
+          ["k2"],
+        ),
+      ];
+    },
+  },
+  {
+    id: "sort.by-field",
+    run: async (driver, table) => {
+      if (!driver.fieldKinds) return [];
+      await driver.index(table, KIND_DOCUMENTS);
+      return [
+        ...sameOrder(
+          "orbit by price, highest first",
+          await driver.search(table, {
+            ...page(["orbit"]),
+            sort: [{ path: "price", direction: "desc" }],
+          }),
+          ["k3", "k1", "k2"],
+        ),
+        ...sameOrder(
+          "orbit by launch, a missing one last",
+          await driver.search(table, { ...page(["orbit"]), sort: [{ path: "launchedAt" }] }),
+          ["k1", "k2", "k3"],
+        ),
+      ];
     },
   },
 ];

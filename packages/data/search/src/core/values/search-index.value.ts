@@ -17,14 +17,16 @@
  *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team. Each
  *           document carries its row's scope; for an engine that does not isolate scopes in the database, every read
  *           also carries the scope paths of the session (`app.scope_paths`, read from the database, never input), so
- *           pages and facet counts never cross scopes.
+ *           pages and facet counts never cross scopes. A filter may name several values (any of them holds), a range
+ *           field may be bounded and sortable fields order the rows before relevance, on a driver whose `fieldKinds`
+ *           says it applies them; a row the facet's `when` refuses is removed instead of indexed.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
  *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
  *                     every query scoped); stackra-301 (the vector lane, `similar`); stackra-303
- *                     (versioned rebuild and swap).
+ *                     (versioned rebuild and swap); stackra-302 (field kinds).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -38,6 +40,10 @@ import type {
   Embedder,
   SearchDriver,
   SearchFacets,
+  SearchFilterValue,
+  SearchRange,
+  SearchRequest,
+  SearchSort,
   SearchTable,
   SearchVector,
 } from "#contracts/index";
@@ -45,8 +51,10 @@ import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
+import { searchPathsOf } from "#core/functions/search-paths-of.function";
 import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
 import { searchSynonymsOf } from "#core/functions/search-synonyms-of.function";
+import { searchWhenHolds } from "#core/functions/search-when-holds.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 import { SearchSettings } from "#core/search.settings";
 import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
@@ -69,6 +77,18 @@ const MAX_WORDS = 32;
 
 /** The highest index version, as `t.searchable` allows. */
 const MAX_VERSION = 999;
+
+/** The most sort keys one read takes. */
+const MAX_SORTS = 3;
+
+/** The most values an any-of filter takes. */
+const MAX_ANY_OF = 50;
+
+/** The bound names of a range. */
+const RANGE_BOUNDS = ["gte", "gt", "lte", "lt"] as const;
+
+/** The narrowing of a read beyond its words: exact and any-of filters, ranges and sort keys. */
+type Narrowing = Pick<SearchRequest, "filters" | "anyOf" | "ranges" | "sort">;
 
 /** Rows per batch of `reindex`. */
 const REINDEX_BATCH = 500;
@@ -196,14 +216,16 @@ export class SearchIndex<M extends object> {
    */
   async facets(phrase: string, options: SearchFacetOptions): Promise<SearchFacets> {
     const limit = this.limitOf(options.limit);
-    const filters = options.filters ?? {};
-    this.checkFilters([...options.paths, ...Object.keys(filters)]);
+    this.checkFilters(options.paths);
+    const { filters, anyOf, ranges } = this.narrowingOf(options);
     const visible = await visibleKeysQuery(this.model);
     const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     const scopePaths = await this.scopePaths();
     return this.driver.facets(this.shape().table, {
       words,
       filters,
+      ...(anyOf === undefined ? {} : { anyOf }),
+      ...(ranges === undefined ? {} : { ranges }),
       paths: options.paths,
       limit,
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
@@ -324,11 +346,19 @@ export class SearchIndex<M extends object> {
     const relations = this.relations();
     // reason: populate types its hints from the entity type; the facet's paths are strings checked by gen
     if (relations.length > 0) await this.database.em().populate([...rows], relations as never);
-    const { table, key } = this.shape();
-    await this.driver.index(
-      version === undefined ? table : { ...table, version },
-      rows.map((row) => searchDocumentOf(row, String(this.keyOf(row, key)), this.facet)),
-    );
+    const { table: live, key } = this.shape();
+    const table = version === undefined ? live : { ...live, version };
+    // A row the facet's `when` refuses has no document, so a change that makes it unsearchable removes it.
+    const searchable = rows.filter((row) => searchWhenHolds(row, this.facet));
+    const hidden = rows
+      .filter((row) => !searchWhenHolds(row, this.facet))
+      .map((row) => String(this.keyOf(row, key)));
+    if (hidden.length > 0) await this.driver.remove(table, hidden);
+    if (searchable.length > 0)
+      await this.driver.index(
+        table,
+        searchable.map((row) => searchDocumentOf(row, String(this.keyOf(row, key)), this.facet)),
+      );
   }
 
   /**
@@ -355,8 +385,7 @@ export class SearchIndex<M extends object> {
     semantic: boolean,
   ): Promise<TablePage<M>> {
     const limit = this.limitOf(options.limit);
-    const filters = options.filters ?? {};
-    this.checkFilters(Object.keys(filters));
+    const narrowing = this.narrowingOf(options);
     const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
     if (words.length === 0) return { items: [], hasMore: false };
     const vector =
@@ -368,7 +397,7 @@ export class SearchIndex<M extends object> {
     const { table, key } = this.shape();
     const ids = await this.driver.search(table, {
       words: semantic ? [] : words,
-      filters,
+      ...narrowing,
       offset,
       limit: limit + 1,
       ...(vector === undefined ? {} : { vector }),
@@ -422,6 +451,82 @@ export class SearchIndex<M extends object> {
     if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT)
       throw new RangeError(`A search limit is a whole number from 1 to ${MAX_LIMIT}, got ${limit}`);
     return limit;
+  }
+
+  /**
+   * The request narrowing of `options`: each filter split into an exact value or an any-of list, the ranges and the
+   * sort keys, each path checked against the facet.
+   *
+   * @throws TypeError for a path the facet does not list for its kind, an empty or oversized any-of list, a range
+   *         with no bound or with bounds of mixed types, more than three sort keys, or any of these on a driver whose
+   *         `fieldKinds` is false.
+   */
+  private narrowingOf(options: {
+    readonly filters?:
+      | Readonly<Record<string, SearchFilterValue | readonly SearchFilterValue[]>>
+      | undefined;
+    readonly ranges?: Readonly<Record<string, SearchRange>> | undefined;
+    readonly sort?: SearchSort | readonly SearchSort[] | undefined;
+  }): Narrowing {
+    const filters: Record<string, SearchFilterValue> = {};
+    const anyOf: Record<string, readonly SearchFilterValue[]> = {};
+    for (const [path, value] of Object.entries(options.filters ?? {})) {
+      if (!Array.isArray(value)) {
+        filters[path] = value as SearchFilterValue;
+        continue;
+      }
+      const values = [...new Set(value as readonly SearchFilterValue[])];
+      if (values.length === 0 || values.length > MAX_ANY_OF)
+        throw new TypeError(
+          `A ${this.model.name} search filter on ${path} takes 1 to ${MAX_ANY_OF} values, got ${values.length}`,
+        );
+      if (values.length === 1) filters[path] = values[0] as SearchFilterValue;
+      else anyOf[path] = values;
+    }
+    this.checkFilters(Object.keys(options.filters ?? {}));
+    const ranges = options.ranges ?? {};
+    for (const [path, range] of Object.entries(ranges)) {
+      this.checkKind(path, this.facet.ranges, "ranges");
+      const types = new Set(
+        RANGE_BOUNDS.flatMap((bound) => (range[bound] === undefined ? [] : [typeof range[bound]])),
+      );
+      if (types.size !== 1)
+        throw new TypeError(
+          `A ${this.model.name} search range on ${path} takes at least one bound, all numbers or all ISO strings`,
+        );
+    }
+    const sort =
+      options.sort === undefined
+        ? []
+        : Array.isArray(options.sort)
+          ? (options.sort as readonly SearchSort[])
+          : [options.sort as SearchSort];
+    if (sort.length > MAX_SORTS)
+      throw new TypeError(`A ${this.model.name} search sorts by at most ${MAX_SORTS} keys`);
+    for (const key of sort) this.checkKind(key.path, this.facet.sortable, "sortable");
+    const kinds = Object.keys(anyOf).length + Object.keys(ranges).length + sort.length;
+    if (kinds > 0 && !this.driver.fieldKinds)
+      throw new TypeError(
+        `The search driver does not apply any-of filters, ranges or sort keys, so ${this.model.name} cannot be read with them`,
+      );
+    return {
+      filters,
+      ...(Object.keys(anyOf).length === 0 ? {} : { anyOf }),
+      ...(Object.keys(ranges).length === 0 ? {} : { ranges }),
+      ...(sort.length === 0 ? {} : { sort }),
+    };
+  }
+
+  /**
+   * Refuses a path the facet does not list under `kind`.
+   *
+   * @throws TypeError when `declared` lacks `path`.
+   */
+  private checkKind(path: string, declared: readonly string[] | undefined, kind: string): void {
+    if (!(declared ?? []).includes(path))
+      throw new TypeError(
+        `${this.model.name} does not take ${path} in ${kind}; its @Searchable ${kind} are: ${(declared ?? []).join(", ") || "none"}`,
+      );
   }
 
   /**
@@ -518,7 +623,7 @@ export class SearchIndex<M extends object> {
   /** The relations the facet's dotted paths walk, as populate hints. */
   private relations(): readonly string[] {
     const meta = this.database.em().getMetadata(this.model);
-    const hints = [...this.facet.text, ...(this.facet.filters ?? [])]
+    const hints = searchPathsOf(this.facet)
       .filter((path) => path.includes("."))
       .filter((path) => {
         const kind = meta.properties[path.split(".")[0] as keyof typeof meta.properties]?.kind;

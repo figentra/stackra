@@ -14,7 +14,7 @@
  *                     ADR 0089 (decision 6: every query scoped);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type); ADR 0404 (facets);
  *                     stackra-301 (the vector lane); stackra-303 (versioned
- *                     index swap, ADR 0221 decision 7).
+ *                     index swap, ADR 0221 decision 7); stackra-302 (field kinds).
  */
 import { Port } from "@stackra/contracts";
 
@@ -47,6 +47,12 @@ export abstract class SearchDriver extends Port {
    * false for an engine that does not, so `SearchIndex` reads it lexically and refuses `similar`.
    */
   readonly fusesVectors: boolean = false;
+
+  /**
+   * Whether the engine applies a request's `anyOf`, `ranges` and `sort`, and a document's `weights`; false for an
+   * engine that does not, so `SearchIndex` refuses those reads rather than answer them wrongly.
+   */
+  readonly fieldKinds: boolean = false;
 
   /** The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit. */
   abstract search(table: SearchTable, request: SearchRequest): Promise<readonly string[]>;

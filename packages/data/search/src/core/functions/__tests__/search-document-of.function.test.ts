@@ -5,7 +5,7 @@
  *          unwrapped references, rich-text leaves, and filter values with dates as ISO strings and objects left out.
  * Boundary: test only; rows are model instances with plain arrays standing in for populated collections.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3); ADR 0162.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3); ADR 0162; stackra-302 (field kinds).
  */
 import { Model, Translatable, Translated } from "@stackra/model";
 import { describe, expect, it } from "@stackra/testing";
@@ -32,6 +32,24 @@ class Product extends Model.with(Translatable(["title"])) {
 const productWith = (fields: Partial<Product>): Product => Object.assign(new Product(), fields);
 
 describe(searchDocumentOf, () => {
+  it("keeps sortable and range values under filters and gives each text field its boosted tier", () => {
+    const product = productWith({
+      status: "active",
+      variants: [{ sku: "AB-1", stock: 3 }],
+    });
+    expect(
+      searchDocumentOf(product, "prd_1", {
+        text: ["title", "status", "variants.sku"],
+        sortable: ["createdAt"],
+        ranges: ["variants.stock"],
+        boost: { "variants.sku": "A", status: "D" },
+      }),
+    ).toMatchObject({
+      weights: [0, 3, 0],
+      filters: { createdAt: ["2026-10-24T08:00:00.000Z"], "variants.stock": [3] },
+    });
+  });
+
   it("writes the text fields in order and the filters by path", () => {
     const product = productWith({
       title: Translated.of({ en: "Linen Shirt", ar: "قَمِيص كتان" }),

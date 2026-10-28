@@ -180,7 +180,10 @@ and tsc refuses a relation decorator on a field of the wrong type.
 ## Facets
 
 `@Index(properties, { unique, where })` declares one index (several per model, `Index.on(Model)` in source order);
-`@Searchable({ text, filters, semantic })` declares the hybrid search index (`Searchable.on(Model)`). Gen names the
+`@Searchable({ text, filters, sortable, ranges, boost, when, semantic })` declares the hybrid search index
+(`Searchable.on(Model)`): `sortable` and `ranges` name the number or date fields a search may sort by or bound,
+`boost` gives a text field its weight letter (`A` to `D`) over its position, and `when` lists the values a field must
+hold for a row to be searchable (`{ status: ["active"] }`). Gen names the
 indexes (`idx_<table>_<columns>`) and checks every path. `semantic: true` also embeds the text fields through
 @stackra/search's `Embedder` into its vector index; a text field whose data class says `ai: never` is then refused, by
 gen (`searchable_semantic_ai_never`) and again by search at index time (ADR 0380).

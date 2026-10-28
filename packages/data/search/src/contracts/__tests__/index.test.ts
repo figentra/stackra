@@ -15,7 +15,9 @@ import type {
   SearchFacetRequest,
   SearchFacets,
   SearchFilterValue,
+  SearchRange,
   SearchRequest,
+  SearchSort,
   SearchTable,
   VectorHit,
   VectorItem,
@@ -31,6 +33,9 @@ describe("@stackra/search/contracts", () => {
     expectTypeOf<SearchFilterValue>().toEqualTypeOf<string | number | boolean>();
     expectTypeOf<SearchDocument["id"]>().toEqualTypeOf<string>();
     expectTypeOf<SearchRequest["words"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<SearchRange["gte"]>().toEqualTypeOf<number | string | undefined>();
+    expectTypeOf<SearchSort["direction"]>().toEqualTypeOf<"asc" | "desc" | undefined>();
+    expectTypeOf<SearchDocument["weights"]>().toEqualTypeOf<readonly number[] | undefined>();
     expectTypeOf<SearchFacetRequest["paths"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchFacets[string][string]>().toEqualTypeOf<number>();
     expectTypeOf<SearchTable["schema"]>().toEqualTypeOf<string | undefined>();

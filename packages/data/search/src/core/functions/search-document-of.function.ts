@@ -7,48 +7,23 @@
  *           locale (`.in(locale)` for each value, so a value missing a locale falls back as it reads); a field the
  *           model's `Translatable` trait names counts as translated even while it still holds the plain locale map a
  *           factory gave it. A rich-text value gives its `text` leaves. Filters keep strings, numbers and booleans, and
- *           a date as its ISO 8601 string; other values are not filterable and are left out. The scope is the row's own
+ *           a date as its ISO 8601 string; other values are not filterable and are left out. Sortable and range fields
+ *           are stored under `filters` the same way, and `boost` gives each text field's weight tier. The scope is the row's own
  *           `scopeId` and `scopePath` when both are strings, else absent.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 to 3); ADR 0162 (decision 2: per-locale values); ADR 0294 (decision 6);
- *                     ADR 0089 (decision 6); ADR 0327 (a scope is an id and an `ltree` path).
+ *                     ADR 0089 (decision 6); ADR 0327 (a scope is an id and an `ltree` path); stackra-302 (field kinds).
  */
 import type { PublicId } from "@stackra/contracts";
-import { Collection, Translated, traitsOf } from "@stackra/model";
+import { Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 
 import type { SearchDocument, SearchFilterValue } from "#contracts/index";
+import { searchValuesAt } from "#core/functions/search-values-at.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 
-/** The field `key` of `owner`, as a `Translated` when the owner's model translates it. */
-function fieldOf(owner: object, key: string): unknown {
-  const value = (owner as Readonly<Record<string, unknown>>)[key];
-  if (value === null || typeof value !== "object" || value instanceof Translated) return value;
-  const fields = traitsOf(owner.constructor).find((trait) => trait.name === "translatable")
-    ?.options["fields"];
-  return Array.isArray(fields) && fields.includes(key)
-    ? Translated.of(value as Readonly<Record<string, string>>)
-    : value;
-}
-
-/** `value` as the items it stands for: a collection or array spreads, a reference unwraps, nothing is none. */
-function spread(value: unknown): readonly unknown[] {
-  if (value === null || value === undefined) return [];
-  if (value instanceof Collection) return value.getItems();
-  if (Array.isArray(value)) return value;
-  const unwrap = (value as { readonly unwrap?: unknown }).unwrap;
-  return typeof unwrap === "function" ? [unwrap.call(value)] : [value];
-}
-
-/** The values at the dotted `path` on `row`. */
-function valuesAt(row: object, path: string): readonly unknown[] {
-  let values: readonly unknown[] = [row];
-  for (const key of path.split("."))
-    values = values.flatMap((value) =>
-      typeof value === "object" && value !== null ? spread(fieldOf(value, key)) : [],
-    );
-  return values;
-}
+/** The weight letters by tier, 0 the heaviest. */
+const WEIGHT_TIERS = ["A", "B", "C", "D"] as const;
 
 /** The text of one non-translated value; a rich-text document gives its `text` leaves. */
 function stringsOf(value: unknown): readonly string[] {
@@ -116,9 +91,19 @@ export function searchDocumentOf(
   };
   return {
     id,
-    fields: facet.text.map((path) => textOf(valuesAt(row, path))),
+    fields: facet.text.map((path) => textOf(searchValuesAt(row, path))),
+    ...(facet.boost === undefined
+      ? {}
+      : {
+          weights: facet.text.map((path, position) => {
+            const boost = facet.boost?.[path];
+            return boost === undefined ? Math.min(position, 3) : WEIGHT_TIERS.indexOf(boost);
+          }),
+        }),
     filters: Object.fromEntries(
-      (facet.filters ?? []).map((path) => [path, filterValuesOf(valuesAt(row, path))]),
+      [
+        ...new Set([...(facet.filters ?? []), ...(facet.sortable ?? []), ...(facet.ranges ?? [])]),
+      ].map((path) => [path, filterValuesOf(searchValuesAt(row, path))]),
     ),
     ...(typeof scopeId === "string" && typeof scopePath === "string"
       ? { scope: { id: scopeId as PublicId<"scp">, path: scopePath } }

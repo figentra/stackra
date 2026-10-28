@@ -8,11 +8,16 @@
  *           `words` is empty only beside a `vector`, and its words are distinct. `scopePaths` comes from the scope session
  *           (`app.scope_paths`), never from input.
  * Runtime: isomorphic
+ *           `anyOf`, `ranges` and `sort` reach only a driver whose `fieldKinds` is true; `SearchIndex` refuses them for
+ *           any other, so no driver ignores them silently.
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
  *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language); ADR 0089 (decision 6: every query
- *                     scoped); ADR 0327 (decision 9); stackra-301 (the vector lane).
+ *                     scoped); ADR 0327 (decision 9); stackra-301 (the vector lane); stackra-302 (any-of, ranges and
+ *                     sort).
  */
 import type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
+import type { SearchRange } from "#contracts/types/search-range.type";
+import type { SearchSort } from "#contracts/types/search-sort.type";
 import type { SearchVector } from "#contracts/types/search-vector.type";
 
 /** One ranked read. */
@@ -22,6 +27,15 @@ export interface SearchRequest {
 
   /** The filter paths and the value each must hold. */
   readonly filters: Readonly<Record<string, SearchFilterValue>>;
+
+  /** Filter paths that must each hold at least one of their values (an OR within a facet), two or more values each. */
+  readonly anyOf?: Readonly<Record<string, readonly SearchFilterValue[]>>;
+
+  /** Range paths and the bounds one of each path's values must lie within. */
+  readonly ranges?: Readonly<Record<string, SearchRange>>;
+
+  /** The keys the matches are ordered by before relevance, at most three; relevance alone when absent. */
+  readonly sort?: readonly SearchSort[];
 
   /** How many ranked ids to skip. */
   readonly offset: number;

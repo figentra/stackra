@@ -32,6 +32,7 @@ import type { SearchConfig } from "#config/search.config";
 import type { Embedder, VectorIndex, VectorItem } from "#contracts/index";
 import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
 import { semanticChunksOf } from "#core/functions/semantic-chunks-of.function";
+import { searchWhenHolds } from "#core/functions/search-when-holds.function";
 import { semanticPassageOf } from "#core/functions/semantic-passage-of.function";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 import { passageIdOf } from "#node/functions/passage-id-of.function";
@@ -106,7 +107,7 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
       throw new TypeError(`${model.name} has no single-column primary key to index by`);
     const relations = [
       ...new Set(
-        facet.text
+        [...facet.text, ...Object.keys(facet.when ?? {})]
           .filter((path) => path.includes("."))
           .filter((path) => {
             const kind = meta.properties[path.split(".")[0] as keyof typeof meta.properties]?.kind;
@@ -121,7 +122,8 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
     const passages = rows.map((row) => ({
       row,
       id: String((row as Readonly<Record<string, unknown>>)[key]),
-      text: semanticPassageOf(row, facet),
+      // A row the facet's `when` refuses has no passage, as it has no document.
+      text: searchWhenHolds(row, facet) ? semanticPassageOf(row, facet) : "",
     }));
     const empty = passages.filter((passage) => passage.text === "");
     if (empty.length > 0)

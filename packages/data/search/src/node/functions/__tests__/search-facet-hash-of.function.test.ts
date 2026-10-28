@@ -29,4 +29,18 @@ describe(searchFacetHashOf, () => {
       searchFacetHashOf({ text: ["title", "sku"], filters: ["status", "brand"], semantic: true }),
     ).not.toBe(base);
   });
+
+  it("keeps its hash without field kinds and changes when one is declared or changed", () => {
+    const facet = { text: ["title", "sku"], filters: ["status", "brand"] };
+    const sorted = searchFacetHashOf({ ...facet, sortable: ["price", "createdAt"] });
+    expect(sorted).not.toBe(base);
+    expect(searchFacetHashOf({ ...facet, sortable: ["createdAt", "price"] })).toBe(sorted);
+    expect(searchFacetHashOf({ ...facet, ranges: ["price"] })).not.toBe(base);
+    expect(searchFacetHashOf({ ...facet, boost: { sku: "A" } })).not.toBe(base);
+    const when = searchFacetHashOf({ ...facet, when: { status: ["active"] } });
+    expect(when).not.toBe(base);
+    expect(searchFacetHashOf({ ...facet, when: { status: ["active", "featured"] } })).not.toBe(
+      when,
+    );
+  });
 });

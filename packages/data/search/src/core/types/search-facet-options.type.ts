@@ -8,17 +8,22 @@
  *           input's optional fields through as they are.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decision 1); ADR 0333 (amendment); ADR 0404 (facets under the VisibilityFilter);
- *                     STA-1251 (the Arabizi switch).
+ *                     STA-1251 (the Arabizi switch); stackra-302 (any-of filters and ranges).
  */
-import type { SearchFilterValue } from "#contracts/index";
+import type { SearchFilterValue, SearchRange } from "#contracts/index";
 
 /** The options of a facet count. */
 export interface SearchFacetOptions {
   /** The filter paths whose values are counted, such as `["status", "collections.slug"]`. */
   readonly paths: readonly string[];
 
-  /** Filter paths and the value each must hold, as a ranked read takes them. */
-  readonly filters?: Readonly<Record<string, SearchFilterValue>> | undefined;
+  /** Filter paths and the value (or any of the values) each must hold, as a ranked read takes them. */
+  readonly filters?:
+    | Readonly<Record<string, SearchFilterValue | readonly SearchFilterValue[]>>
+    | undefined;
+
+  /** Range paths and their bounds, as a ranked read takes them. */
+  readonly ranges?: Readonly<Record<string, SearchRange>> | undefined;
 
   /** The phrase's locale (`ar-SA`): only that language's synonym sets apply; every language's when absent. */
   readonly locale?: string | undefined;

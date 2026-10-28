@@ -52,7 +52,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   (ADR 0321). `HasCorrections` stays apart from `AppendOnly` so existing append-only tables keep their columns.
 - Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,
   export) apply them. The effects of the six classes of ADR 0134 are not set here yet; only `privileged` ships.
-- `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic` only declares. The embedding
+- `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic`, `sortable`, `ranges`,
+  `boost` and `when` only declare (@stackra/search applies them). `boost` names text fields only and `when` is data,
+  never a function, so gen and the change consumers can read it. The embedding
   and the `ai: never` refusal are @stackra/search's and gen's (ADR 0380); never read a provider here.
 - `Model.global(...)` marks a model global by design (no `tenant_id`, ADR 0210 amendment); `Model.isGlobal` reads it.
 - A `HasEncryptedFields({ subject })` model is never sealed under the scope's `FieldCipher`: without a bound

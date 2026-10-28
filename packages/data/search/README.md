@@ -75,6 +75,39 @@ export class SearchProductsQuery extends Query({ key: "product.search" }) {
   Arabic diacritics removed, hamza forms, alef wasla, alef maqsura and teh marbuta unified.
 - The rows are loaded through the ORM after ranking, so a row the session cannot see is never returned.
 
+### Field kinds: any-of, ranges, sort, weights and `when`
+
+```ts
+@Searchable({
+  text: ["title", "variants.sku"],
+  filters: ["status", "color"],
+  sortable: ["price", "publishedAt"],
+  ranges: ["price", "publishedAt"],
+  boost: { "variants.sku": "A" },
+  when: { status: ["active"] },
+})
+export class Product extends Model.with(HasPublicId("prd")) {}
+
+await search.in(Product).page(input.q, {
+  filters: { color: ["red", "blue"] }, // any of them
+  ranges: { price: { gte: 100, lt: 500 } },
+  sort: [{ path: "price", direction: "desc" }],
+});
+```
+
+- A filter value given as a list holds when the row has any of them (an OR within the facet); a one-item list is an
+  exact filter. At most 50 values.
+- `ranges` bounds a field the facet lists under `ranges` with `gte`, `gt`, `lte` and `lt`: numbers for a number field,
+  ISO 8601 strings for a date. A row passes when one of its values lies within every bound.
+- `sort` orders by up to three fields the facet lists under `sortable` (a row's first value of the path, a missing
+  one last), then by relevance. On Postgres a sort orders the 1,000 best matches per lane.
+- `boost` gives a text field its weight letter (`A` heaviest to `D`) instead of its position.
+- `when` lists the values a field must hold for the row to have a document: indexing a row that fails it removes its
+  document instead. Its fields count as read, so the change consumers never skip a change of them.
+- Sortable and range values are stored under `search_filters`, so `t.searchable` needs no new column. A driver
+  applies them only when its `fieldKinds` is true (memory, Postgres); `SearchIndex` refuses them for any other.
+  Declaring a field kind changes the facet hash, so the index registry marks the index `invalid` until a rebuild.
+
 ## Keeping the index current
 
 ```ts
@@ -324,7 +357,8 @@ Each case gets a fresh driver and its own table (`conformance_<case>`), seeded w
 and checks one rule: every word required, word prefixes, alternatives, exact filters, offset and limit, facet counts
 (with and without words), re-indexing replaces, removal (an unknown id included), refusing `visible` unless the
 driver says `appliesVisibility: true`, and scope isolation (`scope.isolated`, `facets.scoped`): a request's
-`scopePaths` admits only documents of those scopes or below them, plus unscoped ones. A driver whose
+`scopePaths` admits only documents of those scopes or below them, plus unscoped ones. A driver whose `fieldKinds` is true also
+passes `filters.any-of`, `filters.range` and `sort.by-field` (the only case that compares order, which its keys fix). A driver whose
 `isolatesScopes` is true (Postgres, under row-level security) passes the scope cases by declaration; its isolation is
 the RLS suite's. Ranking between matches is the engine's, so cases compare id sets. The suite
 uses no test framework and never throws for a miss: a thrown error becomes that case's mismatch.

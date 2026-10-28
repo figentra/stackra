@@ -13,6 +13,7 @@ import type { AnyClass } from "@stackra/container";
 import { ManyToMany, ManyToOne, OneToMany, OneToOne, Searchable } from "@stackra/model";
 
 import type { SearchRelation } from "#node/types/search-relation.type";
+import { searchPathsOf } from "#core/functions/search-paths-of.function";
 
 /** The relation decorators whose records name a target model. */
 const RELATIONS = [OneToMany, ManyToOne, ManyToMany, OneToOne];
@@ -42,7 +43,7 @@ export function searchRelationsOf(model: AnyClass): readonly SearchRelation[] {
   const facet = Searchable.on(model);
   if (facet === undefined) return [];
   const hops = new Map<string, { child: AnyClass; via: string[]; reads: Set<string> }>();
-  for (const path of [...facet.text, ...(facet.filters ?? [])]) {
+  for (const path of searchPathsOf(facet)) {
     const segments = path.split(".");
     let at: AnyClass = model;
     for (let depth = 0; depth < segments.length - 1; depth += 1) {

@@ -5,7 +5,9 @@
  * Boundary: the memory driver every capability ships first (ADR 0266); isomorphic, so it ships from `.`. A word
  *           matches a document when it starts one of its words (weighted by the field's position, as Postgres weighs
  *           A to D) or, failing that, appears inside its text (weighted lowest), so a SKU fragment still finds its row.
- *           Ties rank by id. A word also matches as any of its alternatives. It refuses a request that
+ *           Ties rank by id. A word also matches as any of its alternatives. A document's `weights` replace its fields'
+ *           positions as their tiers; any-of filters, ranges (numbers against number bounds, ISO strings against string
+ *           bounds) and sort keys (a document's first value, a missing one last) apply as the port describes. It refuses a request that
  *           carries record visibility, which it cannot apply. It keeps every document it was given, with its scope, and
  *           answers only the documents within a request's `scopePaths` (and those without a scope), so its matches,
  *           pages and facet counts never cross scopes. Nothing survives a restart, so `reindex` refills it. It keeps one
@@ -13,7 +15,7 @@
  *           live index and readable by version.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 9); ADR 0266 (memory drivers first); ADR 0294 (decision 16); ADR 0089
- *                     (decision 6: every query scoped); stackra-303 (versions).
+ *                     (decision 6: every query scoped); stackra-303 (versions); stackra-302 (field kinds).
  */
 import { Driver } from "@stackra/container";
 
@@ -22,14 +24,18 @@ import type {
   SearchDocument,
   SearchFacetRequest,
   SearchFacets,
+  SearchFilterValue,
+  SearchRange,
   SearchRequest,
+  SearchSort,
   SearchTable,
 } from "#contracts/index";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 
-/** One stored document: each field's words, all its text, its filter values and its scope path. */
+/** One stored document: each field's words and weight tier, all its text, its filter values and its scope path. */
 interface StoredDocument {
   readonly fields: readonly (readonly string[])[];
+  readonly tiers: readonly number[];
   readonly text: string;
   readonly filters: SearchDocument["filters"];
   readonly scopePath: string | undefined;
@@ -39,6 +45,30 @@ interface StoredDocument {
 function inScope(path: string | undefined, paths: readonly string[] | undefined): boolean {
   if (paths === undefined || path === undefined) return true;
   return paths.some((granted) => path === granted || path.startsWith(`${granted}.`));
+}
+
+/** Whether `value` lies within every bound of `range`, compared as numbers or as strings by the bound's type. */
+function inRange(value: SearchFilterValue, range: SearchRange): boolean {
+  const holds = (bound: number | string | undefined, test: (order: number) => boolean): boolean => {
+    if (bound === undefined) return true;
+    if (typeof bound !== typeof value) return false;
+    return test(value < bound ? -1 : value > bound ? 1 : 0);
+  };
+  return (
+    holds(range.gte, (order) => order >= 0) &&
+    holds(range.gt, (order) => order > 0) &&
+    holds(range.lte, (order) => order <= 0) &&
+    holds(range.lt, (order) => order < 0)
+  );
+}
+
+/** The order of two documents by one sort key: by their first value of its path, a missing value last. */
+function compareSortValues(a: StoredDocument, b: StoredDocument, key: SearchSort): number {
+  const x = a.filters[key.path]?.[0];
+  const y = b.filters[key.path]?.[0];
+  if (x === undefined || y === undefined) return x === y ? 0 : x === undefined ? 1 : -1;
+  const order = x < y ? -1 : x > y ? 1 : 0;
+  return key.direction === "desc" ? -order : order;
 }
 
 /** The score of a word that starts a word of field 0, 1, 2 and 3 or later; a word only inside the text scores 1. */
@@ -59,7 +89,7 @@ function wordScoreOf(document: StoredDocument, word: string): number {
   const field = document.fields.findIndex((tokens) =>
     tokens.some((token) => token.startsWith(word)),
   );
-  if (field >= 0) return WEIGHTS[Math.min(field, WEIGHTS.length - 1)] ?? 0;
+  if (field >= 0) return WEIGHTS[Math.min(document.tiers[field] ?? field, WEIGHTS.length - 1)] ?? 0;
   return document.text.includes(word) ? 1 : 0;
 }
 
@@ -89,6 +119,9 @@ function scoreOf(
  * await search.in(Product).index(products);
  */
 export class MemorySearchDriver extends Driver(SearchDriver) {
+  /** It applies any-of filters, ranges, sort keys and field weights. */
+  override readonly fieldKinds: boolean = true;
+
   /** Documents by table key, then by id. */
   private readonly tables = new Map<string, Map<string, StoredDocument>>();
 
@@ -102,7 +135,13 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
    */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
     const hits = this.matching(table, request);
-    hits.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const sort = request.sort ?? [];
+    hits.sort(
+      (a, b) =>
+        sort.reduce((order, key) => order || compareSortValues(a.document, b.document, key), 0) ||
+        b.score - a.score ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    );
     return hits.slice(request.offset, request.offset + request.limit).map((hit) => hit.id);
   }
 
@@ -138,6 +177,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
         const fields = document.fields.map(wordsOf);
         stored.set(document.id, {
           fields,
+          tiers: fields.map((_, position) => document.weights?.[position] ?? position),
           text: fields.flat().join(" "),
           filters: document.filters,
           scopePath: document.scope?.path,
@@ -213,6 +253,8 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
         "The memory search driver cannot apply record visibility; use the postgres driver",
       );
     const filters = Object.entries(request.filters);
+    const anyOf = Object.entries(request.anyOf ?? {});
+    const ranges = Object.entries(request.ranges ?? {});
     const hits: {
       readonly id: string;
       readonly score: number;
@@ -221,6 +263,18 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
     for (const [id, document] of this.tables.get(this.storeOf(table)) ?? []) {
       if (!inScope(document.scopePath, request.scopePaths)) continue;
       if (!filters.every(([path, value]) => document.filters[path]?.includes(value) === true))
+        continue;
+      if (
+        !anyOf.every(([path, values]) =>
+          values.some((value) => document.filters[path]?.includes(value) === true),
+        )
+      )
+        continue;
+      if (
+        !ranges.every(([path, range]) =>
+          (document.filters[path] ?? []).some((value) => inRange(value, range)),
+        )
+      )
         continue;
       if (request.words.length === 0) {
         hits.push({ id, score: 0, document });

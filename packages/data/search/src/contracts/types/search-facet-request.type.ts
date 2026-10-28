@@ -12,7 +12,7 @@
 import type { SearchRequest } from "#contracts/types/search-request.type";
 
 /** One facet count. */
-export interface SearchFacetRequest extends Omit<SearchRequest, "offset" | "limit"> {
+export interface SearchFacetRequest extends Omit<SearchRequest, "offset" | "limit" | "sort"> {
   /** The filter paths whose values are counted. */
   readonly paths: readonly string[];
 

@@ -20,12 +20,15 @@
  *           rebuild (`search_vector__v2`, `search_text__v2`, `search_filters__v2`, from the expand migration
  *           `t.searchable({ ..., version: 2 })`); `index` and `remove` write them beside the live ones so the shadow never
  *           misses a change, a rebuild writes them alone (`SearchTable.version`), reads stay on the live columns, and
- *           the swap is the contract migration that renames the shadow over the live columns.
+ *           the swap is the contract migration that renames the shadow over the live columns. Field kinds: an any-of
+ *           filter is an OR of `search_filters` containments, a range an `exists` over the path's stored values
+ *           (numbers as numeric, ISO strings as text), sort keys order the fused matches by each row's first stored
+ *           value of the path (missing last) before relevance, and a document's `weights` pick its `setweight` letters.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 3 and 7); ADR 0160 (raw SQL is parameterised; approved extensions);
  *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16); ADR 0333 (amendment);
  *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`); stackra-301 (the vector lane);
- *                     stackra-303 (versioned columns).
+ *                     stackra-303 (versioned columns); stackra-302 (field kinds).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -35,7 +38,9 @@ import type {
   SearchDocument,
   SearchFacetRequest,
   SearchFacets,
+  SearchRange,
   SearchRequest,
+  SearchSort,
   SearchTable,
 } from "#contracts/index";
 import { checkVector } from "#core/functions/check-vector.function";
@@ -126,25 +131,74 @@ const similarityOf = (count: number): string => {
   return count === 1 ? (similarities[0] ?? "") : `greatest(${similarities.join(", ")})`;
 };
 
-/** The filter and visibility conditions of a lane, each opening with ` and `, and their parameters in order. */
+/** The bound names of a range and their SQL operators. */
+const RANGE_BOUNDS = [
+  ["gte", ">="],
+  ["gt", ">"],
+  ["lte", "<="],
+  ["lt", "<"],
+] as const;
+
+/** The filter, any-of, range and visibility conditions of a lane, each opening with ` and `, and their parameters in order. */
 function narrowingOf(
   table: SearchTable,
-  request: Pick<SearchRequest, "filters" | "visible">,
+  request: Pick<SearchRequest, "filters" | "anyOf" | "ranges" | "visible">,
 ): { readonly sql: string; readonly params: readonly unknown[] } {
   const filters = Object.entries(request.filters);
+  const anyOf = Object.entries(request.anyOf ?? {});
+  const ranges = Object.entries(request.ranges ?? {});
   const { visible } = request;
   return {
     sql:
       (filters.length === 0 ? "" : ` and t."search_filters" @> ?::jsonb`) +
+      // An any-of filter is an OR of containments, so the GIN index on search_filters still serves it.
+      anyOf
+        .map(
+          ([, values]) =>
+            ` and (${values.map(() => `t."search_filters" @> ?::jsonb`).join(" or ")})`,
+        )
+        .join("") +
+      ranges.map(([, range]) => ` and ${rangeOf(range)}`).join("") +
       // Visibility bounds every lane before it ranks or counts (ADR 0333); the subquery is the ORM's, parameterised.
       (visible === undefined ? "" : ` and t.${quote(table.primaryKey)} in (${visible.sql})`),
     params: [
       ...(filters.length === 0
         ? []
         : [JSON.stringify(Object.fromEntries(filters.map(([path, value]) => [path, [value]])))]),
+      ...anyOf.flatMap(([path, values]) =>
+        values.map((value) => JSON.stringify({ [path]: [value] })),
+      ),
+      ...ranges.flatMap(([path, range]) => [
+        path,
+        ...RANGE_BOUNDS.flatMap(([bound]) => (range[bound] === undefined ? [] : [range[bound]])),
+      ]),
       ...(visible?.params ?? []),
     ],
   };
+}
+
+/**
+ * The SQL that one of a path's stored values lies within `range`: numbers compared as numeric, ISO strings as text,
+ * a value of the other type never matching. Placeholders: the path, then each given bound in `RANGE_BOUNDS` order.
+ */
+function rangeOf(range: SearchRange): string {
+  const numeric = RANGE_BOUNDS.some(([bound]) => typeof range[bound] === "number");
+  const value = numeric ? `(r.v #>> '{}')::numeric` : `(r.v #>> '{}')`;
+  const bounds = RANGE_BOUNDS.flatMap(([bound, operator]) =>
+    range[bound] === undefined ? [] : [`${value} ${operator} ?${numeric ? "::numeric" : "::text"}`],
+  );
+  return `exists (select 1 from jsonb_array_elements(coalesce(t."search_filters" -> ?, '[]'::jsonb)) as r(v)
+    where jsonb_typeof(r.v) = '${numeric ? "number" : "string"}' and ${bounds.join(" and ")})`;
+}
+
+/** The order by terms of `sort`, each over the row's first stored value of the path, missing values last. */
+function sortOf(sort: readonly SearchSort[]): string {
+  return sort
+    .map(
+      (key) =>
+        `(t."search_filters" -> ? -> 0) ${key.direction === "desc" ? "desc" : "asc"} nulls last, `,
+    )
+    .join("");
 }
 
 /** The text of one field for `locale`: that tag, else its language, else the first stored; every locale for none. */
@@ -172,6 +226,9 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
 
   /** A request's `vector` ranks rows through their passages in `search.vector_items` as a third lane. */
   override readonly fusesVectors = true;
+
+  /** Any-of filters, ranges and sort keys apply in SQL, and a document's weights pick its `setweight` letters. */
+  override readonly fieldKinds = true;
 
   /** The connected database. */
   private readonly database: Database;
@@ -256,17 +313,28 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
             .slice(0, upTo)
             .map((lane) => `${lane}.id`)
             .join(", ")})`;
+    const sort = request.sort ?? [];
+    // Sort keys join the fused matches back to their rows; relevance orders what the keys leave tied.
+    // shortcut: a sort orders only the CANDIDATES best matches per lane, from search_filters with no index of its own;
+    // add a typed sort column and index when a listing needs to sort beyond that window.
+    const sorted =
+      sort.length === 0
+        ? { from: "", order: "" }
+        : {
+            from: ` join ${qualified(table)} t on t.${quote(table.primaryKey)} = fused.id`,
+            order: sortOf(sort),
+          };
     // raw-sql: hybrid ranking (tsvector, trigram and pgvector lanes fused by reciprocal rank) has no ORM form (ADR 0221 d1)
     const rows = (await this.database.em().execute(
       `with ${ctes.join(",\n")}
-select id from (
+select fused.id from (
   select ${ids(lanes.length)} as id,
     ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score
   from ${first}${rest.map((lane, at) => ` full join ${lane} on ${lane}.id = ${ids(at + 1)}`).join("")}
-) fused
-order by score desc, id
+) fused${sorted.from}
+order by ${sorted.order}fused.score desc, fused.id
 limit ? offset ?`,
-      [...params, request.limit, request.offset],
+      [...params, ...sort.map((by) => by.path), request.limit, request.offset],
     )) as unknown as readonly { readonly id: unknown }[];
     return rows.map((row) => String(row.id));
   }
@@ -340,7 +408,8 @@ order by path, rank`,
         const weighted = vectors.map((vector) => {
           const fields = document.fields.map((field, position) => {
             params.push(textIn(field, vector.locale));
-            return `setweight(to_tsvector('${vector.config}', ?), '${WEIGHTS[Math.min(position, WEIGHTS.length - 1)]}')`;
+            const tier = Math.min(document.weights?.[position] ?? position, WEIGHTS.length - 1);
+            return `setweight(to_tsvector('${vector.config}', ?), '${WEIGHTS[Math.max(tier, 0)]}')`;
           });
           return `${quote(vector.name)} = ${fields.join(" || ")}`;
         });

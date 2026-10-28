@@ -15,7 +15,8 @@
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301; stackra-303.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301; stackra-303;
+ *                     stackra-302 (any-of filters, ranges, sort and `when`).
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
@@ -483,5 +484,102 @@ describe("SearchIndex versions", () => {
       await expect(products.reindex({ version })).rejects.toThrow(RangeError);
     }
     expect(prepare).not.toHaveBeenCalled();
+  });
+});
+
+@Searchable({
+  text: ["title"],
+  filters: ["status", "color"],
+  sortable: ["price"],
+  ranges: ["price"],
+  when: { status: ["active"] },
+})
+class Lamp extends Model.with() {
+  id = "";
+
+  title = "";
+
+  status = "active";
+
+  color = "";
+
+  price = 0;
+}
+
+/** The ids of `rows`, in order. */
+const idsOf = (rows: readonly Lamp[]): readonly string[] => rows.map((lamp) => lamp.id);
+
+describe("SearchIndex field kinds", () => {
+  const lamps = [
+    Object.assign(new Lamp(), { id: "l1", title: "Orbit Lamp", color: "red", price: 300 }),
+    Object.assign(new Lamp(), { id: "l2", title: "Orbit Lamp Mini", color: "blue", price: 120 }),
+    Object.assign(new Lamp(), { id: "l3", title: "Orbit Lamp Max", color: "green", price: 900 }),
+    Object.assign(new Lamp(), { id: "l4", title: "Orbit Lamp Old", status: "draft", price: 50 }),
+  ];
+
+  /** An index over the lamps, its `when` applied. */
+  async function lampIndex() {
+    const driver = new MemorySearchDriver();
+    const { database } = databaseOver(lamps as unknown as readonly Product[]);
+    const index = new SearchIndex(driver, database, Lamp);
+    await index.index(lamps);
+    return { driver, index };
+  }
+
+  it("indexes only the rows its when holds for, and removes one that stops holding", async () => {
+    const { index } = await lampIndex();
+    expect((await index.find("orbit")).map((lamp) => lamp.id).sort()).toEqual(["l1", "l2", "l3"]);
+    const archived = Object.assign(new Lamp(), { ...lamps[0], status: "draft" });
+    await index.index([archived]);
+    expect((await index.find("orbit")).map((lamp) => lamp.id).sort()).toEqual(["l2", "l3"]);
+  });
+
+  it("filters by any of several values, bounds a range and sorts by a sortable field", async () => {
+    const { index } = await lampIndex();
+    expect(
+      idsOf(
+        await index.find("orbit", { filters: { color: ["red", "blue"] }, sort: { path: "price" } }),
+      ),
+    ).toEqual(["l2", "l1"]);
+    expect(
+      idsOf(
+        await index.find("orbit", {
+          ranges: { price: { gte: 200 } },
+          sort: [{ path: "price", direction: "desc" }],
+        }),
+      ),
+    ).toEqual(["l3", "l1"]);
+    expect(
+      await index.facets("orbit", { paths: ["color"], ranges: { price: { lt: 500 } } }),
+    ).toEqual({
+      color: { blue: 1, red: 1 },
+    });
+  });
+
+  it("refuses a path of the wrong kind, a bad range or too many sort keys", async () => {
+    const { index } = await lampIndex();
+    await expect(index.find("orbit", { sort: { path: "color" } })).rejects.toThrow(TypeError);
+    await expect(index.find("orbit", { ranges: { color: { gte: "a" } } })).rejects.toThrow(
+      TypeError,
+    );
+    await expect(index.find("orbit", { ranges: { price: {} } })).rejects.toThrow(TypeError);
+    await expect(index.find("orbit", { ranges: { price: { gte: 1, lt: "9" } } })).rejects.toThrow(
+      TypeError,
+    );
+    await expect(index.find("orbit", { filters: { color: [] } })).rejects.toThrow(TypeError);
+    const price = { path: "price" } as const;
+    await expect(index.find("orbit", { sort: [price, price, price, price] })).rejects.toThrow(
+      TypeError,
+    );
+  });
+
+  it("refuses field kinds on a driver that does not apply them", async () => {
+    class PlainDriver extends MemorySearchDriver {
+      override readonly fieldKinds = false;
+    }
+    const { database } = databaseOver(lamps as unknown as readonly Product[]);
+    const index = new SearchIndex(new PlainDriver(), database, Lamp);
+    await expect(index.find("orbit", { sort: { path: "price" } })).rejects.toThrow(TypeError);
+    await expect(index.find("orbit", { filters: { color: ["red"] } })).resolves.toHaveLength(1);
   });
 });

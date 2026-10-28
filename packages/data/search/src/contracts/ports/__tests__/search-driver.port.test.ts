@@ -47,4 +47,8 @@ describe("SearchDriver", () => {
       ),
     ).resolves.toEqual({ status: { active: 1 } });
   });
+
+  it("applies no field kinds unless a driver says so", () => {
+    expect(new EchoSearchDriver().fieldKinds).toBe(false);
+  });
 });

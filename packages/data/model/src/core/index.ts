@@ -88,6 +88,8 @@ export type { RelationDefinition } from "#core/types/relation-definition.type";
 export type { RelationSource } from "#core/types/relation-source.type";
 export type { ResealOptions } from "#core/types/reseal-options.type";
 export type { ResealStep } from "#core/types/reseal-step.type";
+export type { SearchWeight } from "#core/types/search-weight.type";
+export type { SearchWhenValue } from "#core/types/search-when-value.type";
 export type { SearchableOptions } from "#core/types/searchable-options.type";
 export type { SystemField } from "#core/types/system-field.type";
 export type { Trait } from "#core/types/trait.type";

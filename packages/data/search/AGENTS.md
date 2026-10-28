@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap); se9 / stackra-302 (facet field kinds).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -86,6 +86,11 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   it through `searchStatus` here and `searchReindex` of @stackra/data-maintenance.
 - Declare no action here. A job over this package's work goes in @stackra/data-maintenance, which holds its
   system-held permission; search never depends on it (ADR 0462 decision 1).
+- Facet field kinds (stackra-302): any-of filters, ranges and sort keys reach a driver only when its `fieldKinds` is
+  true; `SearchIndex` refuses them otherwise, never drops them. Sortable and range values live in `search_filters`
+  (`searchDocumentOf`), so the macro writes no column for them; `boost` reaches a driver as `SearchDocument.weights`.
+  Every path a document reads comes from `searchPathsOf` (change consumers, relation hops, populate hints); a new
+  field kind joins there. `when` is applied in `SearchIndex` only (a refused row is removed, never indexed).
 - Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the

@@ -9,7 +9,8 @@
  * Boundary: test only; a stand-in entity manager records each statement and answers the catalogue read and the
  *           search from fixed rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane); stackra-303 (versions).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane); stackra-303 (versions);
+ *                     stackra-302 (field kinds).
  */
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
@@ -429,5 +430,65 @@ describe("PostgresSearchDriver versions", () => {
     await expect(
       driver.index({ ...PRODUCTS, version: 3 }, [{ id: "x", fields: ["a"], filters: {} }]),
     ).rejects.toThrow(TypeError);
+  });
+});
+
+describe("PostgresSearchDriver field kinds", () => {
+  it("applies any-of filters and ranges in every lane and sorts the fused matches, binding in order", async () => {
+    const { database, statements } = databaseWith(["search_vector"], ["prd_1"]);
+    const driver = new PostgresSearchDriver(database);
+    expect(driver.fieldKinds).toBe(true);
+    await driver.search(PRODUCTS, {
+      words: ["lamp"],
+      filters: {},
+      anyOf: { color: ["red", "blue"] },
+      ranges: { price: { gte: 100, lt: 500 }, launchedAt: { lte: "2026-10-01T00:00:00.000Z" } },
+      sort: [{ path: "price", direction: "desc" }, { path: "launchedAt" }],
+      offset: 0,
+      limit: 11,
+    });
+    const search = statements.at(-1);
+    expect(search?.sql).toContain(
+      `and (t."search_filters" @> ?::jsonb or t."search_filters" @> ?::jsonb)`,
+    );
+    expect(search?.sql).toContain(
+      `jsonb_typeof(r.v) = 'number' and (r.v #>> '{}')::numeric >= ?::numeric and (r.v #>> '{}')::numeric < ?::numeric`,
+    );
+    expect(search?.sql).toContain(`jsonb_typeof(r.v) = 'string' and (r.v #>> '{}') <= ?::text`);
+    expect(search?.sql).toContain(`join "catalogue"."products" t on t."id" = fused.id`);
+    expect(search?.sql).toContain(
+      `order by (t."search_filters" -> ? -> 0) desc nulls last, (t."search_filters" -> ? -> 0) asc nulls last, fused.score desc, fused.id`,
+    );
+    const narrowing = [
+      '{"color":["red"]}',
+      '{"color":["blue"]}',
+      "price",
+      100,
+      500,
+      "launchedAt",
+      "2026-10-01T00:00:00.000Z",
+    ];
+    expect(search?.params).toEqual([
+      "lamp:*",
+      ...narrowing,
+      "lamp",
+      "lamp",
+      ...narrowing,
+      "price",
+      "launchedAt",
+      11,
+      0,
+    ]);
+    expect(search?.sql.match(/\?/g) ?? []).toHaveLength(search?.params.length ?? -1);
+  });
+
+  it("writes a document's weights as its setweight letters", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    await new PostgresSearchDriver(database).index(PRODUCTS, [
+      { id: "prd_1", fields: ["shirt", "ab 1"], weights: [2, 0], filters: {} },
+    ]);
+    expect(statements.at(-1)?.sql).toContain(
+      `setweight(to_tsvector('simple', ?), 'C') || setweight(to_tsvector('simple', ?), 'A')`,
+    );
   });
 });

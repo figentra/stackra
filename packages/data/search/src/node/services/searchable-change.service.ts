@@ -8,7 +8,7 @@
  *           values, so the row is loaded here, under row-level security; indexing and removing are idempotent, so a
  *           redelivery changes nothing. A change of a model nobody registered is ignored. A run of changes
  *           (`consumeMany`) loads its rows in one `$in` query and indexes them in one call; an update that writes
- *           none of the fields the facet reads, nor a field deciding the row's presence, is skipped. A change of a
+ *           none of the fields the facet reads (its `when` fields included), nor a field deciding the row's presence, is skipped. A change of a
  *           related model that a dotted facet path reads (`variants.sku`) reaches the parent through
  *           `RelatedChangeService`.
  * Runtime: node
@@ -23,6 +23,7 @@ import { RowChangeKind } from "@stackra/outbox/contracts";
 import type { ChangeConsumer, RowChange } from "@stackra/outbox/contracts";
 
 import type { Search } from "#core/index";
+import { searchPathsOf } from "#core/functions/search-paths-of.function";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 import { changeTouches } from "#node/functions/change-touches.function";
 
@@ -61,9 +62,7 @@ export class SearchableChangeService extends Service implements ChangeConsumer {
       const model = SEARCHABLE_MODELS.get(name);
       const facet = model === undefined ? undefined : Searchable.on(model);
       if (model === undefined || facet === undefined) continue;
-      const read = new Set(
-        [...facet.text, ...(facet.filters ?? [])].map((path) => path.split(".")[0] ?? ""),
-      );
+      const read = new Set(searchPathsOf(facet).map((path) => path.split(".")[0] ?? ""));
       const touched = changes.filter(
         (change) => change.model === name && changeTouches(change, read),
       );
