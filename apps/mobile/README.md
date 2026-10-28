@@ -18,9 +18,13 @@ HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.
 ```text
 src/
 ├── main.ts                    registerRootComponent(App)
-├── app.tsx                    providers: gestures → safe area → DesignSystemProvider (HeroUI Native, scheme,
-│                              direction) → NavigationContainer (theme, linking,
-│                              direction)
+├── app.tsx                    boots the container, then ContainerProvider → I18nProvider (the phone's language
+│                              and region; setLocale saves account.locale) → gestures → safe area →
+│                              DesignSystemProvider (HeroUI Native, scheme, direction, maxFontScale) →
+│                              NavigationContainer (theme, linking, direction); re-reads the phone on each
+│                              return to the foreground
+├── boot/                      the container (overrides until gen's wiring), the app's SystemSettings driver,
+│                              followSystem (Android channels, ATT into consent), the phone's region
 ├── global.css                 Tailwind + Uniwind + HeroUI Native styles
 ├── navigation/
 │   ├── types.ts               every route + params (RootStackParamList, TabParamList, SettingsStackParamList, …)

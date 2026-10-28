@@ -37,6 +37,12 @@ const SINGLETONS = [
   "@internationalized/date",
   "@internationalized/number",
   "react-hook-form",
+  // The Expo modules @stackra/platform imports as optional peers: one linked copy, the app's.
+  "@react-native-community/netinfo",
+  "expo-camera",
+  "expo-constants",
+  "expo-haptics",
+  "expo-notifications",
 ];
 const APP_ORIGIN = path.join(__dirname, "package.json");
 

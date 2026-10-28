@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: the Settings tab's screen, the app's settings and the native twin of the playground's Theme Studio:
- *          - Appearance: the colour scheme (System, Light, Dark), the app language row that opens the phone's
- *            language screen for this app (iOS, Android 13 and later), and the language with its direction.
+ *          - Appearance: the colour scheme (System, Light, Dark), the app language (@stackra/i18n's
+ *            `<LanguageSwitcher />`: one row that opens the phone's language screen for this app, or the languages to
+ *            pick in the app below Android 13), and the language with its direction.
  *          - Theme: a preset; the accent (on or off, a hue strip, its strength and a live swatch); the neutral hue and
  *            tint; the corner radius; the Latin and Arabic faces. Every change restyles the whole app at once.
- *          - Contrast: the main pairs of the theme on screen against WCAG 2.2 AA.
+ *          - Contrast: the main pairs of the theme on screen against WCAG 2.2 AA, stacked at a large text size.
  *          - Actions: undo, redo and reset; share the theme as JSON through the system share sheet; import a pasted
  *            theme JSON, listing what is wrong with it.
  *          - The app version, at the bottom.
  * Boundary: presentation; the theme state and its push into Uniwind are `../stores/theme-settings.store`; the colour
  *           scheme and the language are the design-system provider's (`useDesignSystem()`), shared with the review
- *           area's display settings, so native headers, the tab bar and the direction follow them too.
+ *           area's display settings, so native headers, the tab bar and the direction follow them too. The text size
+ *           is the phone's (`useAccessibility()`), never set here.
  * Runtime: react-native
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0080 (2026-10-29 note: the language follows the phone); ADR 0007 (documentation); WCAG 2.2 SC 1.3.1, 1.4.3, 4.1.2, 4.1.3.
  */
@@ -23,11 +25,16 @@ import {
   STACKRA_THEME,
 } from "@stackra/tokens";
 import type { ThemeKnobs } from "@stackra/tokens/contracts";
+import { NativeSwitcher } from "@stackra/i18n";
+import type { Locale } from "@stackra/i18n";
+import { LanguageSwitcher } from "@stackra/i18n/native";
+import { useAccessibility } from "@stackra/theming/react";
 import { useDesignSystem } from "@stackra/ui/native";
 import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import { Button, Card, Label, Separator, Slider, Switch, TextArea, TextField } from "heroui-native";
 import { useState, type ReactNode } from "react";
-import { Linking, Platform, Share, Text, View } from "react-native";
+import { Share, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { Screen } from "../components/ui/screen";
@@ -45,6 +52,7 @@ const STRINGS = {
   appLanguage: "App language",
   appLanguageNote: "Opens this app's page in the phone's Settings, where its language is chosen.",
   openSettings: "Open Settings",
+  appLanguages: "App languages",
   language: "Language and direction",
   languages: { en: "English (LTR)", ar: "العربية (RTL)" },
   theme: "Theme",
@@ -90,10 +98,8 @@ const LANGUAGES = [
   { id: "ar", label: STRINGS.languages.ar },
 ] as const;
 
-// shortcut: @stackra/i18n's nativeSwitcherMode (system; Android below 13 has no per-app language screen), inlined
-// until the app mounts I18nProvider with expo-localization; then the row is its <LanguageSwitcher />.
-/** Whether the phone has a language screen for this app. */
-const HAS_SYSTEM_LANGUAGE = Platform.OS !== "android" || Number(Platform.Version) >= 33;
+/** The font scale from which the contrast rows stack their columns, so large text does not run off the card. */
+const STACKED_FONT_SCALE = 1.5;
 
 /** The accent the switch turns on when the knobs hold none, as the web studio's. */
 const DEFAULT_ACCENT = { hue: 248, chroma: 0.12 };
@@ -255,6 +261,7 @@ export function SettingsScreen() {
     setLocale,
     direction,
   } = useDesignSystem();
+  const isStacked = useAccessibility().fontScale >= STACKED_FONT_SCALE;
   const [pasted, setPasted] = useState("");
   const [importProblems, setImportProblems] = useState<readonly string[]>([]);
   const [status, setStatus] = useState("");
@@ -305,22 +312,36 @@ export function SettingsScreen() {
           value={colorScheme}
           onSelect={(id) => setColorScheme(id as (typeof SCHEMES)[number]["id"])}
         />
-        {HAS_SYSTEM_LANGUAGE ? (
-          <View className="gap-2">
-            <View className="flex-row items-center justify-between gap-3">
-              <Label>{STRINGS.appLanguage}</Label>
-              <Button
-                size="sm"
-                variant="secondary"
-                accessibilityHint={STRINGS.appLanguageNote}
-                onPress={() => void Linking.openSettings()}
-              >
-                {STRINGS.openSettings}
-              </Button>
-            </View>
-            <Text className="text-sm text-muted">{STRINGS.appLanguageNote}</Text>
-          </View>
-        ) : null}
+        <LanguageSwitcher reload={Updates.reloadAsync}>
+          {(switcher) =>
+            switcher.mode === NativeSwitcher.System ? (
+              <View className="gap-2">
+                <View className="flex-row items-center justify-between gap-3">
+                  <Label>{STRINGS.appLanguage}</Label>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    accessibilityHint={STRINGS.appLanguageNote}
+                    onPress={() => void switcher.choose(switcher.locale)}
+                  >
+                    {STRINGS.openSettings}
+                  </Button>
+                </View>
+                <Text className="text-sm text-muted">{STRINGS.appLanguageNote}</Text>
+              </View>
+            ) : (
+              <Choice
+                label={STRINGS.appLanguages}
+                options={switcher.locales.map((code) => ({
+                  id: code,
+                  label: switcher.endonym(code),
+                }))}
+                value={switcher.locale}
+                onSelect={(code) => void switcher.choose(code as Locale)}
+              />
+            )
+          }
+        </LanguageSwitcher>
         <Choice label={STRINGS.language} options={LANGUAGES} value={locale} onSelect={setLocale} />
       </Section>
 
@@ -448,9 +469,9 @@ export function SettingsScreen() {
               key={name}
               accessible
               accessibilityLabel={`${name}: ${ratio.toFixed(2)} to 1, ${isPassing ? STRINGS.passes : STRINGS.fails}`}
-              className="flex-row items-center justify-between gap-3"
+              className={isStacked ? "gap-1" : "flex-row items-center justify-between gap-3"}
             >
-              <Text className="flex-1 text-sm text-foreground">{name}</Text>
+              <Text className={`text-sm text-foreground ${isStacked ? "" : "flex-1"}`}>{name}</Text>
               <Text className="font-mono text-xs text-muted">
                 {`${ratio.toFixed(2)} / ${needs}`}
               </Text>
