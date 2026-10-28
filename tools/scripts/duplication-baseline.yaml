@@ -1,0 +1,13 @@
+# Stackra file contract:
+# Purpose: the per-member copy-paste baseline of tools/scripts/duplication.mjs (rule-gap B-9, stackra-235): the
+#          duplicated line percentage of each workspace member's src/ (and, apart, its __tests__/) at jscpd
+#          --min-tokens `minTokens`. `pnpm validate` fails when a member's src rises above its row, or above
+#          `newMemberCap` for a member with no row.
+# Boundary: data only, written by `node tools/scripts/duplication.mjs --update` on ci-box (never by hand; the
+#           Mac runs nothing). This comment block survives the rewrite.
+# Runtime: read by tools/scripts/duplication.mjs under node.
+# Governing contract: notes handover/testing/rule-gap-list.md B-9; owner decision D11.
+# Placeholder: `members` is absent until the first `--update` run, and the check passes while it is absent.
+# Owner: release-operations · Secrets: forbidden
+minTokens: 50
+newMemberCap: 5

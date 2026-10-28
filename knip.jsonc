@@ -2,6 +2,7 @@
 // Purpose: unused files/exports/dependencies detection. Runs in `pnpm verify`. Workspace globs for members that do
 //          not exist yet are listed on purpose: knip prints a hint, not a failure, and the entry is right the day
 //          the member lands.
+//          Unused catalog entries are errors (stackra-235, rule-gap B-10).
 // Owner: release-operations · Secrets: forbidden
 {
   "$schema": "./node_modules/knip/schema.json",
@@ -13,8 +14,10 @@
       // (a transitive of @changesets/cli) so VS Code needs no download; it is never imported.
       // The rest are the HeroUI Pro peers that `packageExtensions` in pnpm-workspace.yaml restores on the Pro shells
       // (ADR 0310); knip reads them as the root's own dependencies.
+      // jscpd: tools/scripts/duplication.mjs spawns its binary by path (node_modules/.bin/jscpd), which knip does not trace.
       "ignoreDependencies": [
         "@changesets/config",
+        "jscpd",
         "@heroui/react",
         "@heroui/styles",
         "@react-aria/utils",
@@ -204,8 +207,9 @@
   "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**", "**/dist/**"],
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
-    // Catalog entries are declared ahead of the members that consume them; `warn` keeps a dead one visible.
-    "catalog": "warn",
+    // A catalog entry no member names is an error (rule-gap B-10, stackra-235): add the entry with its first consumer,
+    // and drop it with the last one.
+    "catalog": "error",
   },
   "includeEntryExports": false,
 }
