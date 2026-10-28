@@ -8,16 +8,16 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 
 ## Where code goes
 
-| You are writing…                             | It goes in…                                               |
-| -------------------------------------------- | --------------------------------------------------------- |
-| A port, an enum or a type the ports exchange | `src/contracts/{ports,enums,types}/`                      |
-| The configuration and its shape              | `src/config/`, `src/core/schemas/`, `src/core/constants/` |
-| The kind base, its registry                  | `src/core/{bases,functions,constants}/`                   |
-| An isomorphic driver, service or event       | `src/core/{drivers,services,events}/`                     |
-| A job, the saga, a server driver, schemas    | `src/node/{actions,workflows,drivers,schemas}/`           |
-| A job's permissions (`<model>.permissions.ts`) | `src/node/access/`                                      |
-| A fake or a test helper                      | `src/testing/`                                            |
-| A test                                       | `__tests__/<name>.test.ts` beside it                      |
+| You are writing…                               | It goes in…                                               |
+| ---------------------------------------------- | --------------------------------------------------------- |
+| A port, an enum or a type the ports exchange   | `src/contracts/{ports,enums,types}/`                      |
+| The configuration and its shape                | `src/config/`, `src/core/schemas/`, `src/core/constants/` |
+| The kind base, its registry                    | `src/core/{bases,functions,constants}/`                   |
+| An isomorphic driver, service or event         | `src/core/{drivers,services,events}/`                     |
+| A job, the saga, a server driver, schemas      | `src/node/{actions,workflows,drivers,schemas}/`           |
+| A job's permissions (`<model>.permissions.ts`) | `src/node/access/`                                        |
+| A fake or a test helper                        | `src/testing/`                                            |
+| A test                                         | `__tests__/<name>.test.ts` beside it                      |
 
 ## Entries and barrels
 

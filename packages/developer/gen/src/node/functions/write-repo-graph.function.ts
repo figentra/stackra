@@ -7,13 +7,15 @@
  * Boundary: reads and writes files only; the derivation is `systemGraph`'s. It never runs gen: a member whose gen
  *           has not run has no graph file and is left out. `node_modules`, `dist` and dot folders other than
  *           `.stackra` are not walked. A graph or flow file that is not valid JSON, or a flow file without a
- *           `flows` array of `{ id, title, steps }`, fails the run with the path.
+ *           `flows` array of `{ id, title, steps }`, fails the run with the path. The file is written in the
+ *           formatter's shape (`formatJson`), so `oxfmt --check` passes on it (stackra-247).
  * Runtime: node
  * Governing contract: ADR 0452 (decisions 1 to 3); STA-845.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
+import { formatJson } from "#core/functions/format-json.function";
 import { systemGraph } from "#core/functions/system-graph.function";
 import type { GraphFlow } from "#core/types/graph-flow.type";
 import type { GraphNode } from "#core/types/graph-node.type";
@@ -89,6 +91,6 @@ export function writeRepoGraph(root: string, repo: string): SystemGraph {
     };
   });
   const graph = systemGraph([{ nodes, flows: readFlows(root) }]);
-  writeFileSync(join(root, "stackra.graph.json"), `${JSON.stringify(graph, null, 2)}\n`);
+  writeFileSync(join(root, "stackra.graph.json"), formatJson(graph));
   return graph;
 }

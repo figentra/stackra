@@ -20,9 +20,7 @@
       "file": "src/node/actions/publish-catalogue.action.ts",
       "permission": "catalogue.catalogue.publish",
       "risk": "L2",
-      "actors": [
-        "user"
-      ],
+      "actors": ["user"],
       "endpoint": {
         "method": "POST",
         "path": "/catalogues/publish",
@@ -83,16 +81,11 @@
   "schemas": {
     "catalogue.CatalogueStatus": {
       "type": "string",
-      "enum": [
-        "draft",
-        "live"
-      ]
+      "enum": ["draft", "live"]
     },
     "catalogue.CataloguePublished": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "string",
@@ -102,9 +95,7 @@
     },
     "catalogue.PublishCatalogueInput": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "string",

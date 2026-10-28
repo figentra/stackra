@@ -11,9 +11,7 @@
       "post": {
         "operationId": "catalogue_catalogue_publish",
         "summary": "PublishCatalogueAction",
-        "tags": [
-          "catalogue"
-        ],
+        "tags": ["catalogue"],
         "x-stackra-action": "catalogue.catalogue.publish@1",
         "x-stackra-permission": "catalogue.catalogue.publish",
         "x-stackra-risk": "L2",
@@ -49,16 +47,11 @@
     "schemas": {
       "catalogue.CatalogueStatus": {
         "type": "string",
-        "enum": [
-          "draft",
-          "live"
-        ]
+        "enum": ["draft", "live"]
       },
       "catalogue.CataloguePublished": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string",
@@ -68,9 +61,7 @@
       },
       "catalogue.PublishCatalogueInput": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string",
@@ -95,11 +86,7 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": [
-                "code",
-                "category",
-                "retryable"
-              ],
+              "required": ["code", "category", "retryable"],
               "properties": {
                 "code": {
                   "type": "string"

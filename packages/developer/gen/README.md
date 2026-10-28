@@ -76,7 +76,9 @@ tokens. A dependency is described by its committed manifest, never by its `.d.ts
 `stackra.manifest.json` in `files` so a host reads it under `node_modules`, and `--check` refuses
 `manifest_unshipped` when it does not (STA-1308). The manifest is committed, never generated at pack time: the
 workspace `.pnpmfile.mjs` refuses to pack a Stackra package whose `stackra.manifest.json` is missing (STA-1362), so run
-`stackra gen --manifests` and commit it first. Every refusal carries a
+`stackra gen --manifests` and commit it first. Every JSON file gen commits (`stackra.manifest.json`, `openapi.json`,
+the graphs) is written in oxfmt's shape by `formatJson` (short arrays on one line within 100 columns, objects broken),
+so `oxfmt --check` passes on it without a format step (stackra-247). Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
 
 The quality-gate refusals (STA-1306) hold the conventions gen can see: a kind class's file suffix and name

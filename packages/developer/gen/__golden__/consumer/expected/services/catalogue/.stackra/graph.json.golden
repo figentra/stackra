@@ -2,13 +2,9 @@
   "member": "catalogue",
   "package": "@golden/service-catalogue",
   "layout": "service",
-  "modules": [
-    "catalogue"
-  ],
+  "modules": ["catalogue"],
   "calls": [],
-  "eventsOut": [
-    "catalogue.item.published.v1"
-  ],
+  "eventsOut": ["catalogue.item.published.v1"],
   "eventsIn": [],
   "tables": [],
   "packages": [

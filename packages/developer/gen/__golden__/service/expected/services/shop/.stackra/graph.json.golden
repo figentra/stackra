@@ -2,19 +2,11 @@
   "member": "shop",
   "package": "@golden/service-shop",
   "layout": "service",
-  "modules": [
-    "shop"
-  ],
+  "modules": ["shop"],
   "calls": [],
-  "eventsOut": [
-    "shop.order.paid.v1"
-  ],
+  "eventsOut": ["shop.order.paid.v1"],
   "eventsIn": [],
-  "tables": [
-    "shop.customers",
-    "shop.order_lines",
-    "shop.orders"
-  ],
+  "tables": ["shop.customers", "shop.order_lines", "shop.orders"],
   "packages": [
     "@stackra/actions",
     "@stackra/app",
@@ -40,9 +32,7 @@
   "drivers": [
     {
       "port": "shop.PaymentGateway",
-      "candidates": [
-        "stripe"
-      ]
+      "candidates": ["stripe"]
     }
   ]
 }

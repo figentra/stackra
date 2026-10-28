@@ -11,9 +11,7 @@
       "post": {
         "operationId": "channels_channels_publish",
         "summary": "PublishChannelsAction",
-        "tags": [
-          "channels"
-        ],
+        "tags": ["channels"],
         "x-stackra-action": "channels.channels.publish@1",
         "x-stackra-permission": "channels.channels.publish",
         "x-stackra-risk": "L2",
@@ -49,16 +47,11 @@
     "schemas": {
       "channels.ChannelsStatus": {
         "type": "string",
-        "enum": [
-          "draft",
-          "live"
-        ]
+        "enum": ["draft", "live"]
       },
       "channels.ChannelsPublished": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string",
@@ -68,9 +61,7 @@
       },
       "channels.PublishChannelsInput": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string",
@@ -95,11 +86,7 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": [
-                "code",
-                "category",
-                "retryable"
-              ],
+              "required": ["code", "category", "retryable"],
               "properties": {
                 "code": {
                   "type": "string"

@@ -282,6 +282,8 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
 - Versions are `catalog:<name>` or `workspace:*` only.
+- Committed JSON goes through `formatJson` (oxfmt's shape), never `JSON.stringify(value, null, 2)`; a golden JSON file
+  is re-checked with `oxfmt --stdin-filepath=x.json` (stackra-247).
 
 ## PII
 

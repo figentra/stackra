@@ -22,7 +22,8 @@
  *           (`checkSemanticSearch`, STA-1251) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
- *           are added by their owning targets.
+ *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
+ *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
@@ -40,6 +41,7 @@ import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
+import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitClients } from "#core/functions/emit-clients.function";
@@ -70,10 +72,8 @@ import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
-/** JSON as gen commits it: two-space indent and a final newline. */
-function json(value: unknown): string {
-  return `${JSON.stringify(value, null, 2)}\n`;
-}
+/** JSON as gen commits it: in the repository formatter's shape, so `oxfmt --check` passes (stackra-247). */
+const json = formatJson;
 
 /**
  * Every file gen-core writes for `ir`.

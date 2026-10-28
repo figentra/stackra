@@ -11,15 +11,11 @@
       "put": {
         "operationId": "shop_order_cancel",
         "summary": "CancelOrderAction",
-        "tags": [
-          "shop"
-        ],
+        "tags": ["shop"],
         "x-stackra-action": "shop.order.cancel@1",
         "x-stackra-permission": "shop.order.cancel",
         "x-stackra-risk": "L2",
-        "x-stackra-refusals": [
-          "order_not_cancellable"
-        ],
+        "x-stackra-refusals": ["order_not_cancellable"],
         "parameters": [
           {
             "name": "orderId",
@@ -63,17 +59,11 @@
     "schemas": {
       "shop.OrderStatus": {
         "type": "string",
-        "enum": [
-          "pending",
-          "paid",
-          "cancelled"
-        ]
+        "enum": ["pending", "paid", "cancelled"]
       },
       "shop.OrderPaid": {
         "type": "object",
-        "required": [
-          "orderId"
-        ],
+        "required": ["orderId"],
         "properties": {
           "orderId": {
             "type": "string",
@@ -83,9 +73,7 @@
       },
       "shop.Customer": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string"
@@ -94,16 +82,10 @@
       },
       "shop.OrderLine": {
         "type": "object",
-        "required": [
-          "note",
-          "id"
-        ],
+        "required": ["note", "id"],
         "properties": {
           "note": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "id": {
             "type": "string"
@@ -112,11 +94,7 @@
       },
       "shop.Order": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "createdAt", "updatedAt"],
         "properties": {
           "status": {
             "type": "string",
@@ -137,9 +115,7 @@
       },
       "shop.CancelOrderInput": {
         "type": "object",
-        "required": [
-          "orderId"
-        ],
+        "required": ["orderId"],
         "properties": {
           "orderId": {
             "type": "string",
@@ -159,19 +135,14 @@
       },
       "shop.CancelOrderOutput": {
         "type": "object",
-        "required": [
-          "cancelledAt"
-        ],
+        "required": ["cancelledAt"],
         "properties": {
           "status": {
             "$ref": "#/components/schemas/shop.OrderStatus",
             "default": "cancelled"
           },
           "cancelledAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           }
         }
@@ -184,11 +155,7 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": [
-                "code",
-                "category",
-                "retryable"
-              ],
+              "required": ["code", "category", "retryable"],
               "properties": {
                 "code": {
                   "type": "string"

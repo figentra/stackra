@@ -2,13 +2,9 @@
   "member": "channels",
   "package": "@golden/service-channels",
   "layout": "service",
-  "modules": [
-    "channels"
-  ],
+  "modules": ["channels"],
   "calls": [],
-  "eventsOut": [
-    "channels.channel.published.v1"
-  ],
+  "eventsOut": ["channels.channel.published.v1"],
   "eventsIn": [],
   "tables": [],
   "packages": [

@@ -2,9 +2,7 @@
   "member": "customers",
   "package": "@golden/customers",
   "layout": "package",
-  "modules": [
-    "customers"
-  ],
+  "modules": ["customers"],
   "calls": [],
   "eventsOut": [],
   "eventsIn": [],

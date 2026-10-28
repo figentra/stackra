@@ -20,9 +20,7 @@
       "file": "src/node/actions/publish-channels.action.ts",
       "permission": "channels.channels.publish",
       "risk": "L2",
-      "actors": [
-        "user"
-      ],
+      "actors": ["user"],
       "endpoint": {
         "method": "POST",
         "path": "/channelses/publish",
@@ -83,16 +81,11 @@
   "schemas": {
     "channels.ChannelsStatus": {
       "type": "string",
-      "enum": [
-        "draft",
-        "live"
-      ]
+      "enum": ["draft", "live"]
     },
     "channels.ChannelsPublished": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "string",
@@ -102,9 +95,7 @@
     },
     "channels.PublishChannelsInput": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "string",

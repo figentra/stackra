@@ -2,16 +2,10 @@
   "member": "channels",
   "package": "@golden/service-channels",
   "layout": "service",
-  "modules": [
-    "channels"
-  ],
-  "calls": [
-    "catalogue"
-  ],
+  "modules": ["channels"],
+  "calls": ["catalogue"],
   "eventsOut": [],
-  "eventsIn": [
-    "catalogue.item.published.v1"
-  ],
+  "eventsIn": ["catalogue.item.published.v1"],
   "tables": [],
   "packages": [
     "@stackra/actions",

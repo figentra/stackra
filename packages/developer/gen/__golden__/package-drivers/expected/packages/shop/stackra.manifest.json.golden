@@ -7,9 +7,7 @@
     {
       "key": "shop",
       "class": "ShopModule",
-      "exports": [
-        "ShopService"
-      ],
+      "exports": ["ShopService"],
       "dependsOn": []
     }
   ],
@@ -19,20 +17,14 @@
       "kind": "audited",
       "target": "class",
       "from": "#core/functions/audited.function",
-      "targets": [
-        "ShopService.cancel",
-        "ShopService.list"
-      ]
+      "targets": ["ShopService.cancel", "ShopService.list"]
     },
     {
       "name": "Lifetime",
       "kind": "lifetime",
       "target": "class",
       "from": "@stackra/container",
-      "targets": [
-        "ShopService.cancel",
-        "ShopService.list"
-      ]
+      "targets": ["ShopService.cancel", "ShopService.list"]
     }
   ],
   "actions": [
@@ -44,9 +36,7 @@
       "file": "src/node/actions/cancel-order.action.ts",
       "permission": "shop.order.cancel",
       "risk": "L2",
-      "actors": [
-        "user"
-      ],
+      "actors": ["user"],
       "endpoint": {
         "method": "PUT",
         "path": "/orders/:orderId/cancel",
@@ -68,9 +58,7 @@
       "output": {
         "$ref": "#/schemas/shop.CancelOrderOutput"
       },
-      "refusals": [
-        "order_not_cancellable"
-      ]
+      "refusals": ["order_not_cancellable"]
     }
   ],
   "events": [
@@ -112,10 +100,7 @@
     {
       "port": "PaymentGateway",
       "key": "shop.PaymentGateway",
-      "candidates": [
-        "manual",
-        "stripe"
-      ],
+      "candidates": ["manual", "stripe"],
       "classes": {
         "manual": {
           "class": "ManualPaymentGatewayDriver",
@@ -157,17 +142,11 @@
   "schemas": {
     "shop.OrderStatus": {
       "type": "string",
-      "enum": [
-        "pending",
-        "paid",
-        "cancelled"
-      ]
+      "enum": ["pending", "paid", "cancelled"]
     },
     "shop.OrderPaid": {
       "type": "object",
-      "required": [
-        "orderId"
-      ],
+      "required": ["orderId"],
       "properties": {
         "orderId": {
           "type": "string",
@@ -177,9 +156,7 @@
     },
     "shop.CancelOrderInput": {
       "type": "object",
-      "required": [
-        "orderId"
-      ],
+      "required": ["orderId"],
       "properties": {
         "orderId": {
           "type": "string",
@@ -199,19 +176,14 @@
     },
     "shop.CancelOrderOutput": {
       "type": "object",
-      "required": [
-        "cancelledAt"
-      ],
+      "required": ["cancelledAt"],
       "properties": {
         "status": {
           "$ref": "#/schemas/shop.OrderStatus",
           "default": "cancelled"
         },
         "cancelledAt": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "format": "date-time"
         }
       }

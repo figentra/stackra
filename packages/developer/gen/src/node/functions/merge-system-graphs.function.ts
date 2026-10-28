@@ -4,12 +4,14 @@
  *          product, stackra) and writes one system graph through `systemGraph`, so calls and events across repos
  *          resolve and each node's `usedBy` and flow tags span the whole system.
  * Boundary: reads and writes files only; the derivation is `systemGraph`'s. The repo graphs are read as written; a
- *           repo whose graph is missing fails the run with the path, never a partial map.
+ *           repo whose graph is missing fails the run with the path, never a partial map. Written in the formatter's
+ *           shape (`formatJson`, stackra-247).
  * Runtime: node
  * Governing contract: ADR 0452 (decision 2); STA-845.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
+import { formatJson } from "#core/functions/format-json.function";
 import { systemGraph } from "#core/functions/system-graph.function";
 import type { SystemGraph } from "#core/types/system-graph.type";
 
@@ -33,6 +35,6 @@ export function mergeSystemGraphs(graphs: readonly string[], out: string): Syste
     }
   });
   const graph = systemGraph(parts);
-  writeFileSync(out, `${JSON.stringify(graph, null, 2)}\n`);
+  writeFileSync(out, formatJson(graph));
   return graph;
 }

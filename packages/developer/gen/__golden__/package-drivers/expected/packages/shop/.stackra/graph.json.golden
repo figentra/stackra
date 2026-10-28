@@ -2,13 +2,9 @@
   "member": "shop",
   "package": "@golden/shop",
   "layout": "package",
-  "modules": [
-    "shop"
-  ],
+  "modules": ["shop"],
   "calls": [],
-  "eventsOut": [
-    "shop.order.paid.v1"
-  ],
+  "eventsOut": ["shop.order.paid.v1"],
   "eventsIn": [],
   "tables": [],
   "packages": [
@@ -34,10 +30,7 @@
   "drivers": [
     {
       "port": "shop.PaymentGateway",
-      "candidates": [
-        "manual",
-        "stripe"
-      ]
+      "candidates": ["manual", "stripe"]
     }
   ]
 }

@@ -5,9 +5,7 @@
   "version": "1.0.0",
   "kind": "app",
   "area": "app",
-  "targets": [
-    "web"
-  ],
+  "targets": ["web"],
   "modules": [
     {
       "key": "web",
