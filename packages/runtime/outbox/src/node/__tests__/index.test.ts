@@ -27,6 +27,9 @@ describe("@stackra/outbox/node", () => {
       "PostgresOfflineCapStoreDriver",
       "PostgresOutboxDriver",
       "PostgresReplicaLogDriver",
+      "PruneOutboxAction",
+      "PruneOutboxInput",
+      "PruneOutboxOutput",
     ]);
   });
 });

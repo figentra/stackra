@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryOutboxDriver`: a write keeps the payload as JSON; `due` lists messages due at `now` that
  *          are not dead, oldest first and by id within one instant, up to the limit; `retry` counts the attempt and
- *          moves the due time; `deadLetter` counts it and hides the message from `due`; `remove` deletes it.
+ *          moves the due time; `deadLetter` counts it and hides the message from `due`; `remove` deletes it;
+ *          `pruneDead` deletes only messages dead before its cutoff.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4).
@@ -83,5 +84,14 @@ describe(MemoryOutboxDriver, () => {
     await driver.remove("evt_A");
     await driver.retry("evt_A", LATER, FAILURE);
     expect(driver.stored()).toEqual([]);
+  });
+
+  it("prunes only messages dead before the cutoff", async () => {
+    const driver = new MemoryOutboxDriver();
+    await driver.write([message("evt_A"), message("evt_B"), message("evt_C")]);
+    await driver.deadLetter("evt_A", FAILURE, NOON);
+    await driver.deadLetter("evt_B", FAILURE, LATER);
+    await expect(driver.pruneDead(LATER)).resolves.toBe(1);
+    expect(driver.stored().map((stored) => stored.id)).toEqual(["evt_B", "evt_C"]);
   });
 });

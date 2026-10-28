@@ -21,30 +21,31 @@ and zod.
 
 ## What is here
 
-| Symbol                                                                 | Entry         | Use                                                                            |
-| ---------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
-| `OutboxWriterService`                                                  | `./node`      | the ORM flush writer, passed as one of `DatabaseOptions.subscribers`           |
-| `OutboxRelayService`                                                   | `./node`      | `connect(container)`, then `work({ signal })` or one `relay()` tick            |
-| `InboxService`                                                         | `./node`      | `receive(envelope)` runs an event's listeners and relays once; `prune(before)` |
-| `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays; `disconnect()` drops them |
-| `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox           |
-| `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                       |
-| `PostgresChangeFeedDriver`                                             | `./node`      | the default change log: `outbox.changes` and `outbox.change_cursors`           |
-| `ChangeFeedService`                                                    | `./node`      | `replay(Consumer, from?)`, `resume(Consumer)`, `backfill(consumer, Model)`     |
-| `MaintainChangeLogAction`                                              | `./node`      | `change_log.maintain`, daily: next partitions ready, expired ones dropped      |
-| `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                              |
-| `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from |
-| `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`   |
-| `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]` (gen writes it)      |
-| `ConsumesChanges`                                                      | `.`           | `@ConsumesChanges(Product)` on a consumer service; gen registers the pair      |
-| `coalesceChanges`                                                      | `.`           | one change per row of a run, a later change superseding an earlier one         |
-| `MemoryChangeFeedDriver`                                               | `.`           | the change log of a test or a single process                                   |
-| `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know   |
-| `MemoryOutboxDriver`, `MemoryInboxDriver`                              | `.`           | the stores of a test or a single process                                       |
-| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver`, `batchWindowSeconds` (0-60), `changeRetentionDays`     |
-| `OutboxDriver`, `InboxDriver`, `ChangeFeed`, `EventPublisher`          | `./contracts` | the ports                                                                      |
-| `ChangeRecord`, `ChangeCursor`, `ChangeLogReport`                      | `./contracts` | a retained change, a consumer's place in the log, a maintenance run            |
-| `OutboxMessage`, `EventEnvelope`, `RowChange`, `ChangeConsumer`, enums | `./contracts` | the stored message, the wire form, a row change and what a consumer implements |
+| Symbol                                                                 | Entry         | Use                                                                             |
+| ---------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------- |
+| `OutboxWriterService`                                                  | `./node`      | the ORM flush writer, passed as one of `DatabaseOptions.subscribers`            |
+| `OutboxRelayService`                                                   | `./node`      | `connect(container)`, then `work({ signal })` or one `relay()` tick             |
+| `InboxService`                                                         | `./node`      | `receive(envelope)` runs an event's listeners and relays once; `prune(before)`  |
+| `InboxService#connect`                                                 | `./node`      | `connect(container)` resolves the registered relays; `disconnect()` drops them  |
+| `InboxEventPublisherDriver`                                            | `./node`      | the in-process `EventPublisher`: publishes into this service's inbox            |
+| `PostgresOutboxDriver`, `PostgresInboxDriver`                          | `./node`      | the default stores: `outbox.messages` and `outbox.inbox`                        |
+| `PostgresChangeFeedDriver`                                             | `./node`      | the default change log: `outbox.changes` and `outbox.change_cursors`            |
+| `ChangeFeedService`                                                    | `./node`      | `replay(Consumer, from?)`, `resume(Consumer)`, `backfill(consumer, Model)`      |
+| `MaintainChangeLogAction`                                              | `./node`      | `change_log.maintain`, daily: next partitions ready, expired ones dropped       |
+| `PruneOutboxAction`                                                    | `./node`      | `outbox_message.prune`, daily: dead letters and inbox ids past `pruneAfterDays` |
+| `OutboxEventOutboxDriver`                                              | `.`           | the driver of @stackra/events' `EventOutbox` port                               |
+| `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from  |
+| `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`    |
+| `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]` (gen writes it)       |
+| `ConsumesChanges`                                                      | `.`           | `@ConsumesChanges(Product)` on a consumer service; gen registers the pair       |
+| `coalesceChanges`                                                      | `.`           | one change per row of a run, a later change superseding an earlier one          |
+| `MemoryChangeFeedDriver`                                               | `.`           | the change log of a test or a single process                                    |
+| `UnknownEventError`                                                    | `.`           | `unknown_event` (retryable): a received wire name this process does not know    |
+| `MemoryOutboxDriver`, `MemoryInboxDriver`                              | `.`           | the stores of a test or a single process                                        |
+| `OutboxConfig`, `OutboxConfig$`, `OutboxOptions`                       | `.`           | key `outbox`: `driver`, `batchWindowSeconds` (0-60), `changeRetentionDays`      |
+| `OutboxDriver`, `InboxDriver`, `ChangeFeed`, `EventPublisher`          | `./contracts` | the ports                                                                       |
+| `ChangeRecord`, `ChangeCursor`, `ChangeLogReport`                      | `./contracts` | a retained change, a consumer's place in the log, a maintenance run             |
+| `OutboxMessage`, `EventEnvelope`, `RowChange`, `ChangeConsumer`, enums | `./contracts` | the stored message, the wire form, a row change and what a consumer implements  |
 
 ## Writing in the producer's transaction
 
@@ -157,7 +158,9 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
 ## Not here
 
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.
-- Listing and redriving dead messages, and the retention purge jobs, wait for the scheduler and the console.
+- Listing and redriving dead messages wait for the console. `outbox_message.prune` (03:15 UTC) deletes dead letters
+  and received event ids older than `outbox.pruneAfterDays` (30 by default); redacting held messages' payloads on
+  erasure is not built.
 - A `stackra changes:replay|resume|backfill` command and a panel for stalled cursors; `ChangeFeedService` is the API.
 - Publishing both versions of an event until a change's sunset (ADR 0141 note) waits for gen's version table.
 

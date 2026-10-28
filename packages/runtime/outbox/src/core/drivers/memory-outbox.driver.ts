@@ -71,6 +71,17 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     return Promise.resolve();
   }
 
+  /** Implements `OutboxDriver.pruneDead`, documented there. */
+  pruneDead(before: Date): Promise<number> {
+    let pruned = 0;
+    for (const [id, message] of this.messages)
+      if (message.deadAt !== undefined && message.deadAt.getTime() < before.getTime()) {
+        this.messages.delete(id);
+        pruned += 1;
+      }
+    return Promise.resolve(pruned);
+  }
+
   /** Every message kept, dead ones included, in the relay's order; for a test's assertions. */
   stored(): readonly OutboxMessage[] {
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022

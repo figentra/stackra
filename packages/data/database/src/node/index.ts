@@ -6,7 +6,8 @@
  *          rate-limit ports; `ServiceHoldRegistryDriver`, the `HoldRegistry` every service binds over its `HoldChannel`;
  *          `migrate` and `rollback`, the runner `stackra db` calls; and `seedState` and
  *          `applySeed`, the runner `stackra seed-pack` calls; `DatabaseHealthIndicatorDriver`, the `/readyz` probe;
- *          `MaintainPartitionsAction` with its input and output, the partition upkeep job. This package's migrations under `database/migrations/`
+ *          `MaintainPartitionsAction` with its input and output, the partition upkeep job; `PruneRecordsAction` with its
+ *          input and output, the retention job. This package's migrations under `database/migrations/`
  *          are found by their path and not exported.
  * Boundary: names each re-export and declares nothing. Server only: the entry that starts MikroORM, so it stays out of
  *           the `.` entry that the models and services import.
@@ -17,6 +18,9 @@
 export { MaintainPartitionsAction } from "#node/actions/maintain-partitions.action";
 export { MaintainPartitionsInput } from "#node/schemas/maintain-partitions-input.schema";
 export { MaintainPartitionsOutput } from "#node/schemas/maintain-partitions-output.schema";
+export { PruneRecordsAction } from "#node/actions/prune-records.action";
+export { PruneRecordsInput } from "#node/schemas/prune-records-input.schema";
+export { PruneRecordsOutput } from "#node/schemas/prune-records-output.schema";
 export { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-indicator.driver";
 export { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
 export { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";

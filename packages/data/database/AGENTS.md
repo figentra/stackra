@@ -68,6 +68,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   `stampFields(model, "update")` into its data, as `increment` and `repath` do, and goes through `CrudService`'s
   private `watched` (or `report` when its ids are known) so the connected `NativeWriteWatcher` sees its rows
   (data-layer gap mo10). Never call the watcher for a model it does not `watches`.
+- Retention (ADR 0134 d3, ADR 0189 d4): `pruneRecords` is the one retention path; a hard delete always goes through
+  `disposableIds(..., Disposal.Retention)` in chunks. Never purge expired rows in one unchecked statement.
 - Delete policies (ADR 0134 d4): `deleteFilters` registers the `deleted` and `archived` filters in both drivers'
   `connect` (keep them the same); `CrudService.delete` picks the policy from the model's traits. A new bulk read that
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.

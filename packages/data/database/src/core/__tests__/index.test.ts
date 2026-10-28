@@ -217,6 +217,7 @@ describe("@stackra/database", () => {
       "maintainPartitions",
       "operationAction",
       "operationQuery",
+      "pruneRecords",
       "registerEntities",
       "registerHoldLinks",
       "registerModelPartners",

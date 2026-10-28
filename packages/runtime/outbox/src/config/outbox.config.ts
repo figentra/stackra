@@ -3,7 +3,8 @@
  * Purpose: `OutboxConfig`, the outbox configuration (key `outbox`): the `driver` choice runway sets per environment
  *          (`postgres` by default, `memory` for a test or a single process), which picks the message store, the inbox and
  *          the change log, `batchWindowSeconds`, how long the relay lets due messages gather (`0`, none, by default),
- *          and `changeRetentionDays`, how long the change log keeps a change (7 by default).
+ *          `changeRetentionDays`, how long the change log keeps a change (7 by default), and `pruneAfterDays`, when dead
+ *          letters and received event ids are pruned (30 by default).
  * Boundary: a configuration class over `OutboxOptions` with no env map; runway's `config.outbox` layer sets it. A host
  *           overrides it as `class OutboxConfig extends BaseOutboxConfig` with `override` members only.
  * Runtime: isomorphic

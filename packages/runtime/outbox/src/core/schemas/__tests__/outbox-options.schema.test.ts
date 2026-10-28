@@ -24,6 +24,7 @@ describe("OutboxOptions", () => {
       driver: "postgres",
       batchWindowSeconds: 0,
       changeRetentionDays: 7,
+      pruneAfterDays: 30,
     });
   });
 

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PostgresOutboxDriver`: a write goes through the batch insert on the running context's entity
  *          manager; `due` selects live due messages oldest first with every value bound and reads rows back into
- *          messages (scope, failure, dead time); `remove`, `retry` and `deadLetter` are one bound statement each.
+ *          messages (scope, failure, dead time); `remove`, `retry`, `deadLetter` and `pruneDead` are one bound
+ *          statement each.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -129,6 +130,14 @@ describe(PostgresOutboxDriver, () => {
     ]);
     expect(statements[1]?.sql).toContain("attempts = attempts + 1, available_at = ?");
     expect(statements[2]?.sql).toContain("attempts = attempts + 1, dead_at = ?");
+    expectBound(statements);
+  });
+
+  it("prunes old dead letters with one bound statement and counts them", async () => {
+    const { database, statements } = databaseWith([{ id: "evt_A" }, { id: "evt_B" }]);
+    await expect(new PostgresOutboxDriver(database).pruneDead(NOON)).resolves.toBe(2);
+    expect(statements[0]?.sql).toContain("where dead_at is not null and dead_at < ? returning id");
+    expect(statements[0]?.params).toEqual([NOON]);
     expectBound(statements);
   });
 });

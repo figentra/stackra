@@ -141,6 +141,7 @@ describe("@stackra/model", () => {
       "Partitioned",
       "PrivilegedDataClass",
       "PublicIdType",
+      "Retention",
       "SearchSnippet",
       "Searchable",
       "SoftDeletes",

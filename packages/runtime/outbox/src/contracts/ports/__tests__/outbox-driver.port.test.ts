@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `OutboxDriver` port: it is a `Port` whose class is its token, keyed `outbox.OutboxDriver`,
- *          a driver subclass implements its five methods, and a stored message carries what the relay needs.
+ *          a driver subclass implements its six methods, and a stored message carries what the relay needs.
  * Boundary: test only; a minimal in-test driver stands in for a real one.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0142 (drivers behind ports); ADR 0078 (decision 4).
@@ -28,6 +28,10 @@ class NullOutboxDriver extends Driver(OutboxDriver) {
   async retry(): Promise<void> {}
 
   async deadLetter(): Promise<void> {}
+
+  async pruneDead(): Promise<number> {
+    return 0;
+  }
 }
 
 describe("OutboxDriver", () => {

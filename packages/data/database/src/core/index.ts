@@ -36,6 +36,7 @@ export { ConstraintViolatedError } from "#core/errors/constraint-violated.error"
 export { TransactionConflictError } from "#core/errors/transaction-conflict.error";
 export { translateDbError } from "#core/functions/translate-db-error.function";
 export { maintainPartitions } from "#core/functions/maintain-partitions.function";
+export { pruneRecords } from "#core/functions/prune-records.function";
 export { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 export { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 export { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
@@ -77,6 +78,7 @@ export type { CompiledMigration } from "#core/types/compiled-migration.type";
 export type { CompiledStep } from "#core/types/compiled-step.type";
 export type { DatabaseOptions } from "#core/types/database-options.type";
 export type { NativeWrite } from "#core/types/native-write.type";
+export type { PruneReport } from "#core/types/prune-report.type";
 export type { NativeWriteWatcher } from "#core/types/native-write-watcher.type";
 export type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
 export type { GraphOptions } from "#core/types/graph-options.type";

@@ -36,6 +36,7 @@ describe("OutboxConfig", () => {
     expect(config.driver).toBe("postgres");
     expect(config.batchWindowSeconds).toBe(0);
     expect(config.changeRetentionDays).toBe(7);
+    expect(config.pruneAfterDays).toBe(30);
   });
 
   it("takes a runway value and a host override", () => {

@@ -375,6 +375,20 @@ id (a value already set, as by a seed, is kept); on an update `updatedAt` moves 
 themselves. The actor comes from the call's `ContextStorage` through the resolver `connectVisibilityFilter` named; a
 `system` actor or a write outside a call stamps no principal.
 
+## Retention
+
+`PruneRecordsAction` (`record.prune`, `./node`, 03:00 UTC once per scope, system only) runs `pruneRecords(Model, now)`
+for every registered model with `Retention({ keep, basis, policy })` or `SoftDeletes` (ADR 0134 decision 3, ADR 0189
+decision 4):
+
+- `Retention` with `policy: "hard"` deletes rows whose `basis` date is older than `keep`; `"soft"` sets `deletedAt`
+  (needs `SoftDeletes`), `"archive"` sets `archivedAt` (needs `Archivable`; a missing trait is a `TypeError`).
+- Every `SoftDeletes` model's rows soft-deleted more than 30 days ago are deleted for good.
+- Deletes go in keyset chunks of 500 by primary key; each chunk asks the `HoldRegistry` with `Disposal.Retention`
+  and the registered subject links, and a held row stays (counted as `held`). Archiving and soft-deleting keep the row
+  and ask no hold. Every statement reaches the `NativeWriteWatcher`.
+- Per-scope tightening of a default ("a tenant may change a default within bounds") is not built yet.
+
 ## Native writes and the change feed
 
 `increment`, `delete` (soft and archive), `restore`, `repath` and `purge` write with a native statement, which fires no

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `OutboxOptions`, the shape of `OutboxConfig`: the one driver choice for the message store, the inbox and
- *          the change log, the relay's batch window, and the change log's retention.
+ *          the change log, the relay's batch window, the change log's retention, and the dead-letter and inbox prune window.
  * Boundary: a schema class registered with the shipped `OUTBOX_CONFIG_SCHEMA` (gen compiles it once it compiles
  *           packages); the initializer equals the schema's default.
  * Runtime: isomorphic
@@ -42,6 +42,16 @@ export class OutboxOptions extends Schema {
     max: 400,
   })
   changeRetentionDays = 7;
+
+  /**
+   * After how many days (1 to 400) the `outbox_message.prune` job deletes a dead-lettered message (from its dead time)
+   * and a received event id of the inbox (from its receipt). The inbox window must outlast every producer's retries.
+   */
+  @Int({
+    min: 1,
+    max: 400,
+  })
+  pruneAfterDays = 30;
 
   /** Which driver runs: `postgres` keeps messages and ids in the service's database; `memory` in the process. */
   driver: DriverName<OutboxDriver> = "postgres";

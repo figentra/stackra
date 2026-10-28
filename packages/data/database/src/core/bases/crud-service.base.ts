@@ -62,6 +62,7 @@ import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
+import { watchedNativeWrite } from "#core/functions/watched-native-write.function";
 import { Database } from "#core/ports/database.port";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
 import type { NativeWrite } from "#core/types/native-write.type";
@@ -509,32 +510,25 @@ export abstract class CrudService<M extends object> extends Service implements R
     return Number(row?.["total"] ?? 0);
   }
 
-  /**
-   * Runs a native write. With a connected watcher that watches the model, it first reads the matching ids (with
-   * `filters`), narrows the statement to them, so a row inserted after the read is never written unreported, and
-   * reports them after it; otherwise it runs the statement on `filter` alone.
-   */
-  private async watched(
+  /** Runs a native write of this service's model through `watchedNativeWrite`. */
+  private watched(
     kind: NativeWrite["kind"],
     fields: readonly string[],
     filter: object,
     write: (filter: object) => Promise<number>,
     filters?: Readonly<Record<string, boolean>>,
   ): Promise<number> {
-    const model = this.model();
-    const watcher = NATIVE_WRITE_HOST.watcher;
-    if (watcher === undefined || !watcher.watches(model)) return write(filter);
-    const em = this.em();
-    const [key = "id"] = em.getMetadata(model).primaryKeys;
-    const rows = (await em.find(model, filter as never, {
-      fields: [key] as never,
-      ...(filters === undefined ? {} : { filters }),
-    })) as Record<string, unknown>[];
-    const ids = rows.map((row) => String(row[key]));
-    if (ids.length === 0) return 0;
-    const count = await write({ $and: [filter, { [key]: { $in: ids } }] });
-    await watcher.written({ em, model, kind, ids, fields });
-    return count;
+    return watchedNativeWrite(
+      {
+        em: this.em(),
+        model: this.model(),
+        kind,
+        fields,
+        filter,
+        ...(filters === undefined ? {} : { filters }),
+      },
+      write,
+    );
   }
 
   /** Reports a native write whose ids are already known to the connected watcher, when it watches the model. */

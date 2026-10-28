@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `PostgresOutboxDriver`, the server's `OutboxDriver`: messages are rows of `outbox.messages`, written in the
  *          caller's transaction with the transaction's scope, listed for the relay oldest first, deleted once
- *          delivered, and counted, rescheduled or dead-lettered when a delivery fails.
+ *          delivered, counted, rescheduled or dead-lettered when a delivery fails, and pruned once long dead.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
  *           and every result row read through zod. The table is the service's outbox, read by the relay across scopes
  *           (it opens each message's scope itself), so it has no row-level-security policy. Payload, metadata and last
@@ -118,6 +118,17 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
         `update ${TABLE} set attempts = attempts + 1, available_at = ?, last_error = ?::jsonb where id = ?`,
         [availableAt, JSON.stringify(error), id],
       );
+  }
+
+  /** Implements `OutboxDriver.pruneDead`, documented there. */
+  async pruneDead(before: Date): Promise<number> {
+    // raw-sql: the outbox has no model; one parameterised delete of old dead letters, counted by `returning`
+    const rows = await this.database
+      .em()
+      .execute(`delete from ${TABLE} where dead_at is not null and dead_at < ? returning id`, [
+        before,
+      ]);
+    return Array.isArray(rows) ? rows.length : 0;
   }
 
   /** Implements `OutboxDriver.deadLetter`, documented there. */
