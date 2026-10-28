@@ -1,0 +1,7 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators-react`: the drivers name `PeripheralsConfig`, whose shape typechecks @stackra/validation's source (legacy
+// field decorators, ADR 0005) and reaches @stackra/platform's source, whose entries name React and DOM types. This
+// package has no TSX. The source keeps to erasable syntax (no parameter properties).
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators-react" }

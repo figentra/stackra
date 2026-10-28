@@ -4,7 +4,8 @@
  *          exactly this package's driver names, the unions the template's generated desktop wiring declares.
  * Boundary: test only; type assertions, checked by the typecheck of the testing workflow.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0442.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0442;
+ *                     ADR 0478.
  */
 import "#core/types/peripheral-driver-registry.type";
 import type { DriverName } from "@stackra/container";
@@ -20,7 +21,7 @@ import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 describe("peripherals DriverRegistry entries", () => {
   it("narrows each port to its own drivers", () => {
     expectTypeOf<DriverName<ReceiptPrinter>>().toEqualTypeOf<
-      "escpos" | "memory" | "sunmi" | "pax" | "imin"
+      "escpos" | "memory" | "epson" | "star" | "sunmi" | "pax" | "imin"
     >();
     expectTypeOf<DriverName<CashDrawer>>().toEqualTypeOf<
       "printer_kick" | "memory" | "sunmi" | "pax" | "imin"

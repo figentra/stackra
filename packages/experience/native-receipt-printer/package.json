@@ -1,0 +1,119 @@
+{
+  "name": "@stackra/native-receipt-printer",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Stackra native receipt printer: the Expo module that drives Epson, Star, Sunmi and PAX receipt printers from an Expo app behind the ReceiptPrinter port of @stackra/peripherals, with its config plugin that links only the vendor families an app lists",
+  "keywords": [
+    "epson",
+    "experience",
+    "expo-module",
+    "pax",
+    "point-of-sale",
+    "receipt-printer",
+    "stackra",
+    "star",
+    "sunmi"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/experience/native-receipt-printer#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
+  "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/experience/native-receipt-printer"
+  },
+  "files": [
+    "dist",
+    "src",
+    "ios",
+    "android",
+    "plugin",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "stackra.manifest.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#plugin/*": [
+      "./plugin/*",
+      "./plugin/*.ts",
+      "./plugin/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./plugin": {
+      "@stackra/source": "./plugin/index.ts",
+      "types": "./dist/plugin.d.mts",
+      "default": "./dist/plugin.mjs"
+    },
+    "./app.plugin.js": "./app.plugin.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/peripherals": "workspace:*",
+    "@stackra/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "expo": "catalog:mobile",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "expo": "catalog:mobile"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "experience",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ],
+    "summary": "Use it when an Expo app prints receipts on an Epson, Star, Sunmi or PAX printer through the ReceiptPrinter port."
+  }
+}

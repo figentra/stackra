@@ -6,13 +6,14 @@
  * Boundary: a module augmentation only; the stand-in for the entries this package's generated wiring writes (ADR 0263
  *           decision 9). `PeripheralsOptions` imports this file so the augmentation travels with the shape.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0449; STA-965; ADR 0377; ADR 0442.
+ * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9); ADR 0449; STA-965; ADR 0377; ADR 0442;
+ *                     ADR 0478.
  */
 import type { PERIPHERAL_DRIVERS } from "#core/constants/peripheral-drivers.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `ReceiptPrinter` (`memory`, `escpos`, `sunmi`, `pax`, `imin`). */
+    /** The driver names of `ReceiptPrinter` (`memory`, `escpos`, `epson`, `star`, `sunmi`, `pax`, `imin`). */
     "peripherals.ReceiptPrinter": (typeof PERIPHERAL_DRIVERS.printer)[number];
     /** The driver names of `CashDrawer` (`memory`, `printer_kick`, `sunmi`, `pax`, `imin`). */
     "peripherals.CashDrawer": (typeof PERIPHERAL_DRIVERS.drawer)[number];

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["StackraReceiptPrinterModule"]
+  },
+  "android": {
+    "modules": ["com.figentra.stackra.receiptprinter.StackraReceiptPrinterModule"]
+  }
+}

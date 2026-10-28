@@ -10,7 +10,7 @@
  *           `memory` driver and no device, so a member that never configures peripherals touches no hardware.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0253 (decision 4); ADR 0266 (decisions 1 and 5); ADR
- *                     0449 (decisions 1 to 4); STA-965; ADR 0442 (decision 4).
+ *                     0449 (decisions 1 to 4); STA-965; ADR 0442 (decision 4); ADR 0478 (decision 5).
  */
 import "#core/types/peripheral-driver-registry.type";
 import type { DriverName } from "@stackra/container";
@@ -78,8 +78,9 @@ export class PeripheralsOptions extends Schema {
   drawerPin: DrawerPin = 2;
 
   /**
-   * The receipt printer driver: `escpos` (desktop), `sunmi`, `pax` or `imin` (the Android till's built-in printer) or
-   * `memory`.
+   * The receipt printer driver: `escpos` (desktop), `epson` or `star` (a network printer from an Expo app), `sunmi`,
+   * `pax` or `imin` (the Android till's built-in printer) or `memory`. The native receipt printer package
+   * (`@stackra/native-receipt-printer`) ships `epson`, `star`, `sunmi` and `pax`.
    */
   printer: DriverName<ReceiptPrinter> = "memory";
 
