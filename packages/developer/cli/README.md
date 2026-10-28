@@ -166,7 +166,8 @@ models are registered. No model reindexes every registered one; `--scope-id`/`--
 platform-wide); `--since <ISO 8601>` indexes only rows updated since then; `--semantic` backfills the vector passages
 instead. A full rebuild records its cursor in `search.indexes`, so a stopped one resumes. `stackra search:status`
 prints each index's state (`valid`, `invalid` after a facet change, `rebuilding`), document count, resume cursor and
-last rebuild (`searchStatus`). Both read `DATABASE_URL` from the member's environment.
+last rebuild (`searchStatus`). Both connect with `directDatabaseUrl()` of `@stackra/database/node`: the member's
+`DATABASE_DIRECT_URL`, else its `DATABASE_URL` (ADR 0473).
 
 ## Not here yet
 
