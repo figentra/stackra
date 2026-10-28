@@ -17,7 +17,10 @@
  * export const hasCarrierCapability = capabilityGuard<CarrierCapabilityGateways>();
  * if (hasCarrierCapability(gateway, CarrierCapability.Pickups)) await gateway.schedulePickup(request);
  */
-export function capabilityGuard<M>(): <G extends { readonly capabilities: readonly string[] }, K extends keyof M & string>(
+export function capabilityGuard<M>(): <
+  G extends { readonly capabilities: readonly string[] },
+  K extends keyof M & string,
+>(
   gateway: G,
   capability: K,
 ) => gateway is G & M[K] {

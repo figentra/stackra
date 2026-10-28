@@ -90,7 +90,11 @@ describe("MemoryPlatformDriver", () => {
     const platform = new MemoryPlatformDriver();
     expect((await platform.badge.set(3)).ok).toBe(false);
     platform.configure({
-      capabilities: [PlatformCapability.Badge, PlatformCapability.Share, PlatformCapability.Haptics],
+      capabilities: [
+        PlatformCapability.Badge,
+        PlatformCapability.Share,
+        PlatformCapability.Haptics,
+      ],
       canInstall: true,
     });
     await platform.badge.set(3);

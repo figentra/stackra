@@ -127,7 +127,12 @@ describe("AccountService", () => {
   });
 
   it("credits nothing for a sub-point purchase", async () => {
-    expect(await accounts.earn(memberId("usr_1"), { ...purchase, amount: { minor: 50, currency: "SAR" } })).toBe(0);
+    expect(
+      await accounts.earn(memberId("usr_1"), {
+        ...purchase,
+        amount: { minor: 50, currency: "SAR" },
+      }),
+    ).toBe(0);
     expect(await ledger.balance(memberId("usr_1"))).toBe(0);
   });
 

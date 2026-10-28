@@ -58,7 +58,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 
 | Data                   | Where                              | Handling                                                         |
 | ---------------------- | ---------------------------------- | ---------------------------------------------------------------- |
-| Push tokens            | `PlatformPushTransport.register()`         | Per-device addresses; handed to the devices module, never logged |
+| Push tokens            | `PlatformPushTransport.register()` | Per-device addresses; handed to the devices module, never logged |
 | Shared payloads        | IndexedDB `share_inbox`            | On the device only; read once by the share page                  |
 | Picked folder paths    | the app disk (`platform/folders/`) | On the user's machine only                                       |
 | `TURNSTILE_SECRET_KEY` | `SecretStore`                      | Read by name, sent only to Cloudflare, never logged              |

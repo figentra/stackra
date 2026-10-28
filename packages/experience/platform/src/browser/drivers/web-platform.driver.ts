@@ -70,7 +70,8 @@ const DETECT: Readonly<Record<string, () => boolean>> = {
   [PlatformCapability.Share]: () => "share" in navigator,
   [PlatformCapability.Haptics]: () => "vibrate" in navigator,
   [PlatformCapability.InstallPrompt]: () => "onbeforeinstallprompt" in globalThis,
-  [PlatformCapability.Scanner]: () => "BarcodeDetector" in globalThis && "mediaDevices" in navigator,
+  [PlatformCapability.Scanner]: () =>
+    "BarcodeDetector" in globalThis && "mediaDevices" in navigator,
   [PlatformCapability.Camera]: () => "mediaDevices" in navigator,
   [PlatformCapability.Microphone]: () => "mediaDevices" in navigator,
   [PlatformCapability.Usb]: () => "usb" in navigator,
@@ -212,12 +213,14 @@ export class WebPlatformDriver extends Driver(Platform) {
     const badging = (inBrowser ? navigator : {}) as BrowserExtras;
     this.badge = {
       set: async (count) => {
-        if (badging.setAppBadge === undefined) return refuse(PlatformCapability.Badge, "unavailable");
+        if (badging.setAppBadge === undefined)
+          return refuse(PlatformCapability.Badge, "unavailable");
         await (count === 0 ? badging.clearAppBadge?.() : badging.setAppBadge(count));
         return DONE;
       },
       clear: async () => {
-        if (badging.clearAppBadge === undefined) return refuse(PlatformCapability.Badge, "unavailable");
+        if (badging.clearAppBadge === undefined)
+          return refuse(PlatformCapability.Badge, "unavailable");
         await badging.clearAppBadge();
         return DONE;
       },
@@ -225,7 +228,8 @@ export class WebPlatformDriver extends Driver(Platform) {
 
     this.share = {
       share: async ({ files, ...rest }) => {
-        if (!this.has(PlatformCapability.Share)) return refuse(PlatformCapability.Share, "unavailable");
+        if (!this.has(PlatformCapability.Share))
+          return refuse(PlatformCapability.Share, "unavailable");
         const data: globalThis.ShareData =
           files === undefined ? rest : { ...rest, files: [...files] };
         if (files !== undefined && navigator.canShare?.(data) === false)

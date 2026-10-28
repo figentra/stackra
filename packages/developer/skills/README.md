@@ -25,7 +25,7 @@ documents themselves). Depends on `@stackra/contracts`, zod and yaml.
 | `.`           | `AgentDocumentKind`, `HookEvent`                                                                                              | enums                                                    |
 | `.`           | `AgentDocumentInvalidError`                                                                                                   | error naming the file and every invalid path             |
 | `.`           | `AgentDocument`, `SkillDocument`, `RuleDocument`, `SubagentDocument`, …                                                       | types                                                    |
-| `./contracts` | `StackraKind`, `StackraPackageField`, `CatalogueItem`, `CataloguePage`, `ItemsLock`                                               | the registry item shapes (ADR 0453)                      |
+| `./contracts` | `StackraKind`, `StackraPackageField`, `CatalogueItem`, `CataloguePage`, `ItemsLock`                                           | the registry item shapes (ADR 0453)                      |
 | `./contracts` | `StackraTier`, `StackraCategory`, `StackraRuntime`                                                                            | the vocabularies of a `package` item's `stackra` field   |
 | `./contracts` | `STACKRA_MANIFEST_SCHEMA`, `CATALOGUE_ITEM_SCHEMA`, `CATALOGUE_PAGE_SCHEMA`, `ITEMS_LOCK_SCHEMA`, `ITEM_PACKAGE_NAME_PATTERN` | their checks                                             |
 | `./node`      | `loadSkillSet(root?)`                                                                                                         | every document under a root; defaults to the shipped set |

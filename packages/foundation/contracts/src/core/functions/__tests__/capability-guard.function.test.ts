@@ -34,7 +34,8 @@ describe("capabilityGuard", () => {
   });
 
   it("narrows to the capability's interface and refuses a code outside the map", () => {
-    if (hasGatewayCapability(gateway, "refunds")) expectTypeOf(gateway).toMatchTypeOf<RefundGateway>();
+    if (hasGatewayCapability(gateway, "refunds"))
+      expectTypeOf(gateway).toMatchTypeOf<RefundGateway>();
     // @ts-expect-error -- not a capability of the map
     expect(hasGatewayCapability(gateway, "payouts")).toBe(false);
   });

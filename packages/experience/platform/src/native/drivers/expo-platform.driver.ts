@@ -183,7 +183,8 @@ export class ExpoPlatformDriver extends Driver(Platform) {
 
     this.share = {
       share: async ({ title, text, url, files }) => {
-        if (files !== undefined && files.length > 0) return refuse(PlatformCapability.Share, "unavailable");
+        if (files !== undefined && files.length > 0)
+          return refuse(PlatformCapability.Share, "unavailable");
         // iOS takes the link as its own field; Android has only the message.
         const content =
           Os.OS === "ios"

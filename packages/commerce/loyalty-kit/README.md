@@ -129,7 +129,7 @@ stampCardProgress(balance, settings.stampsPerCard); // the renderers' card
   `loyalty_kit.maxRedeemPercent` (default `50`, 0 to 100). Config holds none of them (STA-1323). `LoyaltyService` stays
   isomorphic by taking them as arguments: `quoteEarn(amountMinor, earnPerMinor)`, `pointsFor(amountMinor,
 pointValueMinor)` and `quote(member, requested, total, rates)` (`total` and the quote's `amount` are `@stackra/money`
-MoneyAmounts; the stored redeem input keeps `totalMinor` and the workflow adds the run's currency); a resolved settings group is a `RedemptionRates`
+  MoneyAmounts; the stored redeem input keeps `totalMinor` and the workflow adds the run's currency); a resolved settings group is a `RedemptionRates`
   as it is. `AccountService.earn` and `RedeemPointsWorkflow` read them per call.
 - **Tiers:** `RecalculateTierListener` asks the `LoyaltyTierPolicy` port which tier an earn earns and only ever raises
   one. The kit's driver, `threshold`, reads `loyalty_kit.tiers`; a host applies its own tier rules with

@@ -34,7 +34,9 @@ describe("usePushPermission", () => {
   it("reads, requests and opens the settings", async () => {
     const push = new MemoryPushTransportDriver();
     push.status = "denied";
-    const container = await Container.create([], { overrides: new Map([[PlatformPushTransport, push]]) });
+    const container = await Container.create([], {
+      overrides: new Map([[PlatformPushTransport, push]]),
+    });
     const { result } = renderHook(() => usePushPermission(), { wrapper: wrapperOf(container) });
     await waitFor(() => expect(result.current?.status).toBe("denied"));
     expect(result.current?.isGranted).toBe(false);

@@ -61,7 +61,8 @@ export class WebPushTransportDriver extends Driver(PlatformPushTransport) {
   async register(): Promise<CapabilityResult<PushRegistration>> {
     if (!("PushManager" in globalThis) || !("serviceWorker" in navigator))
       return refuse(PlatformCapability.Push, "unavailable");
-    if (browserPermission() !== "granted") return refuse(PlatformCapability.Push, "permission_denied");
+    if (browserPermission() !== "granted")
+      return refuse(PlatformCapability.Push, "permission_denied");
     if (this.config.vapidPublicKey === "")
       throw new TypeError(
         "platform.push.vapidPublicKey is empty: the web transport cannot subscribe",

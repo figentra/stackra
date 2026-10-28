@@ -23,30 +23,30 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 
 ## What is here
 
-| Entry         | Symbol                                                                 | Use                                                                      |
-| ------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `./contracts` | `FieldType`, `Operator`                                                | the field types and the operator set each one fixes (IAM may reuse it)   |
-| `./contracts` | `FactSource`, `FactField`                                              | what a consumer registers (types); a geo fact is `@stackra/contracts` `GeoPoint` |
-| `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                            | the outcomes a consumer registers; what a seed did                       |
-| `./contracts` | `FIELD_KEY`                                                            | the one key casing (camelCase) every registry tests keys with            |
-| `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition     |
-| `.`           | `evaluate`                                                             | the evaluator: deterministic, explained by tree path                     |
-| `.`           | `Condition`, `RuleFacts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                               |
-| `.`           | `decide`, `RuleDecision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard      |
-| `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`       | the consumer's handlers per outcome kind                                 |
-| `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                       | default rule sets as a versioned seed document                           |
-| `.`           | `RuleOutcome`, `RuleOutcomeClass`                                      | a declared outcome kind gen lists in the manifest's `outcomes`           |
-| `.`           | `Condition$`, `FactSource$`, `rules.conditionSchema()`                 | untrusted condition trees: shape only, or against a field registry       |
-| `.`           | `FloorValue`, `rules.floorProblems`, `checkOutcomes(input, floors)`    | money floors with their currency; refusing a value past a floor at save  |
-| `.`           | `ConditionInvalidError`, `OutcomeInvalidError`, `RuleSetChangedError`  | refusals (400, 400, 409)                                                 |
-| `.`           | `RuleSetPublished`                                                     | the domain event of a published revision                                 |
-| `.`           | `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf`                    | the AI action permission matrix as a rule set, and its reader            |
-| `.`           | `packApprovalFloorOf`, `APPROVAL_FLOOR_KEY`                            | a market pack's AI approval floor (`ai.approval_floor`) for the resolver |
-| `.`           | `packRuleSetOf`, `rules.register`                                      | a pack's default rule set with no scope; an edition's fact sources       |
-| `.`           | `FactProvider`, `factsFrom`, `FactSubject`                             | an add-on's facts about a subject (segment membership), keyed by source  |
-| `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service                 |
-| `./node`      | `ConditionField`, `ConditionFieldService`                              | the cross-service condition-field registry (`rules.condition_fields`)    |
-| `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                  |
+| Entry         | Symbol                                                                     | Use                                                                              |
+| ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `./contracts` | `FieldType`, `Operator`                                                    | the field types and the operator set each one fixes (IAM may reuse it)           |
+| `./contracts` | `FactSource`, `FactField`                                                  | what a consumer registers (types); a geo fact is `@stackra/contracts` `GeoPoint` |
+| `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                                | the outcomes a consumer registers; what a seed did                               |
+| `./contracts` | `FIELD_KEY`                                                                | the one key casing (camelCase) every registry tests keys with                    |
+| `.`           | `Rules`                                                                    | one consumer's registry of fact sources and the check of a condition             |
+| `.`           | `evaluate`                                                                 | the evaluator: deterministic, explained by tree path                             |
+| `.`           | `Condition`, `RuleFacts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                                       |
+| `.`           | `decide`, `RuleDecision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard              |
+| `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`           | the consumer's handlers per outcome kind                                         |
+| `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                           | default rule sets as a versioned seed document                                   |
+| `.`           | `RuleOutcome`, `RuleOutcomeClass`                                          | a declared outcome kind gen lists in the manifest's `outcomes`                   |
+| `.`           | `Condition$`, `FactSource$`, `rules.conditionSchema()`                     | untrusted condition trees: shape only, or against a field registry               |
+| `.`           | `FloorValue`, `rules.floorProblems`, `checkOutcomes(input, floors)`        | money floors with their currency; refusing a value past a floor at save          |
+| `.`           | `ConditionInvalidError`, `OutcomeInvalidError`, `RuleSetChangedError`      | refusals (400, 400, 409)                                                         |
+| `.`           | `RuleSetPublished`                                                         | the domain event of a published revision                                         |
+| `.`           | `ACTION_PERMISSION_RULES`, `actionPermissionRowsOf`                        | the AI action permission matrix as a rule set, and its reader                    |
+| `.`           | `packApprovalFloorOf`, `APPROVAL_FLOOR_KEY`                                | a market pack's AI approval floor (`ai.approval_floor`) for the resolver         |
+| `.`           | `packRuleSetOf`, `rules.register`                                          | a pack's default rule set with no scope; an edition's fact sources               |
+| `.`           | `FactProvider`, `factsFrom`, `FactSubject`                                 | an add-on's facts about a subject (segment membership), keyed by source          |
+| `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                             | versioned rule sets on `HasRevisions`, and their service                         |
+| `./node`      | `ConditionField`, `ConditionFieldService`                                  | the cross-service condition-field registry (`rules.condition_fields`)            |
+| `./react`     | `RuleBuilder`, `RuleBuilderProps`                                          | the rule-builder panel on `@stackra/ui`                                          |
 
 `.` and `./contracts` are isomorphic: a browser previews an evaluation with the server's code.
 

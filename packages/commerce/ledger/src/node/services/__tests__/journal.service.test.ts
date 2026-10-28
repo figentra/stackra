@@ -553,7 +553,9 @@ describe("Journal with a currency field", () => {
     await expect(
       journal.append({ account: "a1", amount: 1, kind: "x", reference: "o1", at: day(1) }),
     ).rejects.toThrow(RangeError);
-    await expect(journal.append(money("a1", 1, "eur" as CurrencyCode, "o1"))).rejects.toThrow(RangeError);
+    await expect(journal.append(money("a1", 1, "eur" as CurrencyCode, "o1"))).rejects.toThrow(
+      RangeError,
+    );
     await expect(journal.balance({ account: "a1" })).rejects.toThrow(TypeError);
   });
 

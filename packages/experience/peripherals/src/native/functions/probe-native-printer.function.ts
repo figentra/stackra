@@ -26,7 +26,8 @@ export async function probeNativePrinter(family: PosDeviceFamily): Promise<Capab
   if (module === undefined) return refuse(PlatformCapability.Print, "unavailable");
   try {
     const status = await module.printerStatus();
-    if (!family.printerReady.includes(status)) return refuse(PlatformCapability.Print, "unavailable");
+    if (!family.printerReady.includes(status))
+      return refuse(PlatformCapability.Print, "unavailable");
     return { ok: true, data: undefined };
   } catch {
     return refuse(PlatformCapability.Print, "unavailable");

@@ -19,7 +19,7 @@ optional peer of `./react`.
 | `.`         | `StoreStorage`, `StoreStorageArea`         | the structural storage contract `@stackra/storage` satisfies             |
 | `.`         | `StoreClass`, `StoreOptions`, `StorePatch` | types                                                                    |
 | `./react`   | `useStore`                                 | `const ui = useStore(UiStore)` re-renders after every change             |
-| `./react`   | `signal`, `useSignal`, `StateSignal`            | one shared reactive value and the hook that reads it                     |
+| `./react`   | `signal`, `useSignal`, `StateSignal`       | one shared reactive value and the hook that reads it                     |
 | `./testing` | `createStore`                              | `await createStore(PreferencesStore, { storage })`, hydrated             |
 | `./testing` | `mountStore`                               | `const { store, prefs } = mountStore(UiStore)` over memory storage       |
 

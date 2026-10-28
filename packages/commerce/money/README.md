@@ -8,10 +8,10 @@ loses a minor unit, and the `money()` and `currencyCode()` codecs that generated
 
 ## Entry points
 
-| Import                     | Holds                        | Exports                                                                                                                                                                   |
-| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Import                     | Holds                        | Exports                                                                                                                                                       |
+| -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@stackra/money`           | `src/core/`: isomorphic code | `Money`, `money`, `currencyCode`, `CurrencyCode`, `ExchangeRate`, `CashRounding`, `CashRoundingRule`, `UnitPrice`, `decimalProduct`, `MemoryRateSourceDriver` |
-| `@stackra/money/contracts` | `src/contracts/`: the port   | `RateSource`, `RatePair`, `RateSnapshot`                                                                                                                                  |
+| `@stackra/money/contracts` | `src/contracts/`: the port   | `RateSource`, `RatePair`, `RateSnapshot`                                                                                                                      |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.

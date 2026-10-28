@@ -14,7 +14,12 @@
  *          ADR 0060 (light, dark, RTL).
  */
 import type { Tone } from "@stackra/contracts";
-import type { ResourceAction, ResourceQuery, SortDescriptor, TableColumn } from "@stackra/ui/contracts";
+import type {
+  ResourceAction,
+  ResourceQuery,
+  SortDescriptor,
+  TableColumn,
+} from "@stackra/ui/contracts";
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { Ellipsis } from "@stackra/icons/react/lucide-icons";

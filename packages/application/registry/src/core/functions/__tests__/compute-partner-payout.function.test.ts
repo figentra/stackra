@@ -46,11 +46,17 @@ describe("computePartnerPayout", () => {
   });
 
   it("refuses bad amounts and rates", () => {
-    expect(() => computePartnerPayout(sar(-1), { basisPoints: 0, fixedMinor: 0 })).toThrow(RangeError);
-    expect(() => computePartnerPayout(sar(1.5), { basisPoints: 0, fixedMinor: 0 })).toThrow(RangeError);
+    expect(() => computePartnerPayout(sar(-1), { basisPoints: 0, fixedMinor: 0 })).toThrow(
+      RangeError,
+    );
+    expect(() => computePartnerPayout(sar(1.5), { basisPoints: 0, fixedMinor: 0 })).toThrow(
+      RangeError,
+    );
     expect(() => computePartnerPayout(sar(1), { basisPoints: 10_001, fixedMinor: 0 })).toThrow(
       RangeError,
     );
-    expect(() => computePartnerPayout(sar(1), { basisPoints: 0, fixedMinor: -1 })).toThrow(RangeError);
+    expect(() => computePartnerPayout(sar(1), { basisPoints: 0, fixedMinor: -1 })).toThrow(
+      RangeError,
+    );
   });
 });

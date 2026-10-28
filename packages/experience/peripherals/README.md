@@ -225,12 +225,12 @@ export class PeripheralsConfig extends BasePeripheralsConfig {
 
 Web APIs first, native modules only on evidence (ADR 0253 decisions 2 and 3). What each target can do today:
 
-| Peripheral      | Desktop (Electron main, shipped)                                                                      | PWA and web (Chromium)                                                                         | Safari, Firefox, mobile  |
-| --------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------ |
-| Receipt printer | `escpos` over TCP or a device path; a USB printer on macOS needs a network address (no native module) | WebUSB can reach an ESC/POS printer's bulk endpoint behind `PlatformCapability.Usb`; not shipped       | no WebUSB: `memory` only |
-| Cash drawer     | `printer_kick` through the bound printer                                                              | through a WebUSB printer, once that driver exists                                              | none                     |
-| Barcode scanner | `hid`: keyboard-wedge keystrokes read from every window's `before-input-event`                        | a wedge scanner types into the focused field with no permission; WebHID (POS mode) not shipped | wedge typing only        |
-| Scale           | none: a serial line needs a native module in main (ADR 0253 decision 3)                               | WebSerial behind `PlatformCapability.Serial`; not shipped                                              | none                     |
+| Peripheral      | Desktop (Electron main, shipped)                                                                      | PWA and web (Chromium)                                                                           | Safari, Firefox, mobile  |
+| --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
+| Receipt printer | `escpos` over TCP or a device path; a USB printer on macOS needs a network address (no native module) | WebUSB can reach an ESC/POS printer's bulk endpoint behind `PlatformCapability.Usb`; not shipped | no WebUSB: `memory` only |
+| Cash drawer     | `printer_kick` through the bound printer                                                              | through a WebUSB printer, once that driver exists                                                | none                     |
+| Barcode scanner | `hid`: keyboard-wedge keystrokes read from every window's `before-input-event`                        | a wedge scanner types into the focused field with no permission; WebHID (POS mode) not shipped   | wedge typing only        |
+| Scale           | none: a serial line needs a native module in main (ADR 0253 decision 3)                               | WebSerial behind `PlatformCapability.Serial`; not shipped                                        | none                     |
 
 On the Android till (Sunmi, PAX, iMin) the receipt printer, drawer and scanner are the `./native` drivers above.
 

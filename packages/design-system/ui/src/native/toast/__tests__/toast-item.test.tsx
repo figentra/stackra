@@ -84,16 +84,19 @@ describe("ToastItem (native)", () => {
     hide.mockClear();
   });
 
-  it.each(Enum.values(Tone))("hands HeroUI Native the %s tone as variant and its live region", (tone) => {
-    render(item({ tone }));
-    const { role } = FEEDBACK_BY_TONE[tone];
-    expect(propsOf("toast")).toMatchObject({
-      id: "t1",
-      variant: tone,
-      role,
-      "aria-live": role === "alert" ? "assertive" : "polite",
-    });
-  });
+  it.each(Enum.values(Tone))(
+    "hands HeroUI Native the %s tone as variant and its live region",
+    (tone) => {
+      render(item({ tone }));
+      const { role } = FEEDBACK_BY_TONE[tone];
+      expect(propsOf("toast")).toMatchObject({
+        id: "t1",
+        variant: tone,
+        role,
+        "aria-live": role === "alert" ? "assertive" : "polite",
+      });
+    },
+  );
 
   it("shows the message and the description as text parts", () => {
     render(item({ title: "Order saved", description: "It ships on Monday." }));

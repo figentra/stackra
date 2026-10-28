@@ -63,7 +63,10 @@ const KIND_COPY = {
     title: "Something went wrong",
     description: "We could not load this page. Try again in a moment.",
   },
-} as const satisfies Record<ErrorStateKind, { readonly title: string; readonly description: string }>;
+} as const satisfies Record<
+  ErrorStateKind,
+  { readonly title: string; readonly description: string }
+>;
 
 /** The error the details sample shows, as a failed request would throw it. */
 const FAILURE = new Error("The order service did not answer in time (order_unavailable).");

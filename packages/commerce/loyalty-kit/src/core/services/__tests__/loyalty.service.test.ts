@@ -56,7 +56,10 @@ describe("LoyaltyService", () => {
       points: 300,
       amount: { minor: 300, currency: "SAR" },
     });
-    expect(await loyalty.quote(usr1, 50, TOTAL, RATES)).toEqual({ points: 50, amount: { minor: 50, currency: "SAR" } });
+    expect(await loyalty.quote(usr1, 50, TOTAL, RATES)).toEqual({
+      points: 50,
+      amount: { minor: 50, currency: "SAR" },
+    });
     expect(await loyalty.quote(memberId("usr_2"), 50, TOTAL, RATES)).toEqual({
       points: 0,
       amount: { minor: 0, currency: "SAR" },

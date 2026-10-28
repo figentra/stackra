@@ -461,7 +461,9 @@ export class PaymentService extends Service {
    */
   async paymentMethods(market: string): Promise<readonly string[] | null> {
     const gateway = await this.gateways.forMarket(market, [PaymentCapability.Checkout]);
-    return hasPaymentCapability(gateway, PaymentCapability.Methods) ? gateway.paymentMethods() : null;
+    return hasPaymentCapability(gateway, PaymentCapability.Methods)
+      ? gateway.paymentMethods()
+      : null;
   }
 
   /**

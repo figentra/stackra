@@ -67,15 +67,18 @@ describe("Alert (native)", () => {
     received.props = {};
   });
 
-  it.each(Enum.values(Tone))("hands HeroUI Native the %s tone as status and its live region", (tone) => {
-    render(<Alert tone={tone} title="Heads up" />);
-    const { role } = FEEDBACK_BY_TONE[tone];
-    expect(propsOf("alert")).toMatchObject({
-      status: tone,
-      role,
-      "aria-live": role === "alert" ? "assertive" : "polite",
-    });
-  });
+  it.each(Enum.values(Tone))(
+    "hands HeroUI Native the %s tone as status and its live region",
+    (tone) => {
+      render(<Alert tone={tone} title="Heads up" />);
+      const { role } = FEEDBACK_BY_TONE[tone];
+      expect(propsOf("alert")).toMatchObject({
+        status: tone,
+        role,
+        "aria-live": role === "alert" ? "assertive" : "polite",
+      });
+    },
+  );
 
   it("is a default alert without a tone", () => {
     render(<Alert title="Heads up" />);

@@ -53,7 +53,9 @@ describe("@stackra/payments/contracts", () => {
     expectTypeOf<PaymentCapabilityGateways["terminal_pin"]>().toEqualTypeOf<TerminalGateway>();
     expectTypeOf<PaymentCapabilityGateways["soft_pos"]>().toEqualTypeOf<TerminalGateway>();
     expectTypeOf<PaymentCapabilityGateways["pre_auth"]>().toEqualTypeOf<PreAuthGateway>();
-    expectTypeOf<PaymentCapabilityGateways["incremental_auth"]>().toEqualTypeOf<IncrementalAuthGateway>();
+    expectTypeOf<
+      PaymentCapabilityGateways["incremental_auth"]
+    >().toEqualTypeOf<IncrementalAuthGateway>();
   });
 
   it("types the four connection modes", () => {

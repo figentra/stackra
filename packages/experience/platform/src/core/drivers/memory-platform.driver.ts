@@ -133,7 +133,8 @@ export class MemoryPlatformDriver extends Driver(Platform) {
       handOver(props.onBarcode);
       return null;
     }
-    const isCameraPresent = (): boolean => this.has(PlatformCapability.Scanner) && this.cameraPresent;
+    const isCameraPresent = (): boolean =>
+      this.has(PlatformCapability.Scanner) && this.cameraPresent;
     this.scanner = {
       View: MemoryScannerView,
       get isAvailable() {
@@ -144,7 +145,9 @@ export class MemoryPlatformDriver extends Driver(Platform) {
       },
       requestPermission: async () => {
         const next: PermissionStatus =
-          isCameraPresent() && permissionOf(PlatformCapability.Scanner) !== "denied" ? "granted" : "denied";
+          isCameraPresent() && permissionOf(PlatformCapability.Scanner) !== "denied"
+            ? "granted"
+            : "denied";
         this.permissions.set(PlatformCapability.Scanner, next);
         return next;
       },
@@ -169,12 +172,14 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.badge = {
       count,
       set: async (value) => {
-        if (!this.has(PlatformCapability.Badge)) return refuse(PlatformCapability.Badge, "unavailable");
+        if (!this.has(PlatformCapability.Badge))
+          return refuse(PlatformCapability.Badge, "unavailable");
         count.set(value);
         return DONE;
       },
       clear: async () => {
-        if (!this.has(PlatformCapability.Badge)) return refuse(PlatformCapability.Badge, "unavailable");
+        if (!this.has(PlatformCapability.Badge))
+          return refuse(PlatformCapability.Badge, "unavailable");
         count.set(0);
         return DONE;
       },
@@ -183,7 +188,8 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.share = {
       shared,
       share: async (data) => {
-        if (!this.has(PlatformCapability.Share)) return refuse(PlatformCapability.Share, "unavailable");
+        if (!this.has(PlatformCapability.Share))
+          return refuse(PlatformCapability.Share, "unavailable");
         shared.push(data);
         return { ok: true, data: true };
       },
@@ -192,7 +198,8 @@ export class MemoryPlatformDriver extends Driver(Platform) {
     this.haptics = {
       impacts,
       impact: async (strength = "medium") => {
-        if (!this.has(PlatformCapability.Haptics)) return refuse(PlatformCapability.Haptics, "unavailable");
+        if (!this.has(PlatformCapability.Haptics))
+          return refuse(PlatformCapability.Haptics, "unavailable");
         impacts.push(strength);
         return DONE;
       },

@@ -25,7 +25,9 @@ describe("PlatformPushTransport", () => {
 
   it("is keyed platform.PlatformPushTransport and types its calls", () => {
     expectTypeOf<PlatformPushTransport["~key"]>().toEqualTypeOf<"platform.PlatformPushTransport">();
-    expectTypeOf<PlatformPushTransport["permission"]>().returns.toEqualTypeOf<Promise<PermissionStatus>>();
+    expectTypeOf<PlatformPushTransport["permission"]>().returns.toEqualTypeOf<
+      Promise<PermissionStatus>
+    >();
     expectTypeOf<PlatformPushTransport["register"]>().returns.toEqualTypeOf<
       Promise<CapabilityResult<PushRegistration>>
     >();

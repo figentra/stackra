@@ -10,12 +10,7 @@ import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type {
-  BrandKit,
-  BrandKitOptions,
-  BrandOutput,
-  KitStatus,
-} from "#contracts/index";
+import type { BrandKit, BrandKitOptions, BrandOutput, KitStatus } from "#contracts/index";
 
 describe("@stackra/brand-kit/contracts", () => {
   it("exports exactly its values", () => {

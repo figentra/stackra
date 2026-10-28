@@ -73,7 +73,9 @@ describe("Document", () => {
     expect(() => Document({ kind: ExperienceKind.Page, path: "sales", blocks: [] })).toThrow(
       TypeError,
     );
-    expect(() => Document({ kind: "report" as typeof ExperienceKind.Page, blocks: [] })).toThrow(TypeError);
+    expect(() => Document({ kind: "report" as typeof ExperienceKind.Page, blocks: [] })).toThrow(
+      TypeError,
+    );
     // a document kind of the builder that is not a panel document
     expect(() =>
       Document({ kind: ExperienceKind.Screen as typeof ExperienceKind.Page, blocks: [] }),

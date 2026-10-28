@@ -86,7 +86,7 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 
 | Data        | Where                                  | Handling                                                                          |
 | ----------- | -------------------------------------- | --------------------------------------------------------------------------------- |
-| RuleFacts       | `RuleFacts` passed to `evaluate`           | Possibly personal (an email, a location); read in memory, never stored or logged. |
+| RuleFacts   | `RuleFacts` passed to `evaluate`       | Possibly personal (an email, a location); read in memory, never stored or logged. |
 | Conditions  | `content.revisions.data` of a rule set | Scope configuration; may name a value such as an email domain; never logged.      |
 | Explanation | `Evaluation.steps`                     | Paths, fields and operators only; no fact value.                                  |
 | Outcomes    | `content.revisions.data` of a rule set | Scope configuration (days, amounts, codes); never logged.                         |

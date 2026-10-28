@@ -8,8 +8,8 @@
  * Governing contract: ADR 0079 (decision 6: the coordinator builds on @stackra/state); ADR 0084 (the coordinator row).
  */
 // oxlint-disable-next-line no-restricted-imports -- reason: `signal` is React-free but @stackra/state exports it from `./react` only (ADR 0079 decision 6 puts this package on it); drop this line when state exports it from `.`
-
 import type { StateSignal } from "@stackra/state/react";
+
 import type { ElectionMethod } from "#core/enums/election-method.enum";
 
 /** One participant in a named leader election. */

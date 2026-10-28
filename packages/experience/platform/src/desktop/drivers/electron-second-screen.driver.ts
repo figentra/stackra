@@ -53,7 +53,8 @@ export class ElectronSecondScreenDriver extends Driver(SecondScreen) {
     const external = screen.getAllDisplays().find((display) => display.id !== primary.id);
     const main = BrowserWindow.getAllWindows().find((window) => window !== this.window);
     const base = main?.webContents.getURL() ?? "";
-    if (external === undefined || base === "") return refuse(PlatformCapability.Window, "unavailable");
+    if (external === undefined || base === "")
+      return refuse(PlatformCapability.Window, "unavailable");
     const url = new URL(route, base).href;
     if (this.window === undefined || this.window.isDestroyed()) {
       const { x, y, width, height } = external.bounds;

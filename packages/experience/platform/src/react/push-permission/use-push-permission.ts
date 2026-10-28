@@ -23,7 +23,9 @@ import type { PushPermission } from "#react/push-permission/push-permission.type
  */
 export function usePushPermission(): PushPermission | null {
   const container = useContainer();
-  const transport = container.has(PlatformPushTransport) ? container.get(PlatformPushTransport) : null;
+  const transport = container.has(PlatformPushTransport)
+    ? container.get(PlatformPushTransport)
+    : null;
   const [status, setStatus] = useState<PermissionStatus>("prompt");
 
   useEffect(() => {

@@ -68,7 +68,9 @@ describe("Avatar page", () => {
     renderPage();
     for (const variant of AvatarVariant) {
       const samples = [...document.querySelectorAll(`[data-variant="${variant}"]`)];
-      expect(samples.map((sample) => sample.getAttribute("data-tone"))).toEqual([...Enum.values(Tone)]);
+      expect(samples.map((sample) => sample.getAttribute("data-tone"))).toEqual([
+        ...Enum.values(Tone),
+      ]);
       for (const sample of samples) expect(sample.textContent).toBe("AL");
     }
   });

@@ -12,7 +12,10 @@ import type { Party } from "#core/types/party.type";
 describe("Party", () => {
   it("takes any subset of its parts", () => {
     const empty: Party = {};
-    const customer: Party = { name: "Sara Ali", address: { lines: ["12 King Road"], country: "SA" } };
+    const customer: Party = {
+      name: "Sara Ali",
+      address: { lines: ["12 King Road"], country: "SA" },
+    };
     expect([empty, customer]).toHaveLength(2);
   });
 

@@ -68,21 +68,24 @@ describe("StatusBadge (native)", () => {
     received.props = {};
   });
 
-  it.each(Enum.values(Tone))("is a neutral chip with a %s dot in the tone's theme colour", (tone) => {
-    const { container } = render(<StatusBadge tone={tone}>Active</StatusBadge>);
-    expect(propsOf("chip")).toMatchObject({ variant: "secondary", color: "default" });
-    expect(propsOf("view")["style"]).toEqual({
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: `color:${STATUS_DOT_ROLE[tone]}`,
-    });
-    // The dot comes first, then the label, inside the chip's provider.
-    const provider = container.querySelector('[data-testid="provider"]');
-    expect([...(provider?.children ?? [])].map((node) => node.getAttribute("data-testid"))).toEqual(
-      ["view", "label"],
-    );
-  });
+  it.each(Enum.values(Tone))(
+    "is a neutral chip with a %s dot in the tone's theme colour",
+    (tone) => {
+      const { container } = render(<StatusBadge tone={tone}>Active</StatusBadge>);
+      expect(propsOf("chip")).toMatchObject({ variant: "secondary", color: "default" });
+      expect(propsOf("view")["style"]).toEqual({
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: `color:${STATUS_DOT_ROLE[tone]}`,
+      });
+      // The dot comes first, then the label, inside the chip's provider.
+      const provider = container.querySelector('[data-testid="provider"]');
+      expect(
+        [...(provider?.children ?? [])].map((node) => node.getAttribute("data-testid")),
+      ).toEqual(["view", "label"]);
+    },
+  );
 
   it("draws a neutral dot without a tone", () => {
     render(<StatusBadge>Draft</StatusBadge>);
