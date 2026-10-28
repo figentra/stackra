@@ -13,7 +13,13 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as reports from "#core/index";
 import { MeasureKind, Report, ReportMetric, ReportRunner, TimeGrain } from "#core/index";
-import type { ReportClass, ReportRequest, ReportResult } from "#core/index";
+import type {
+  ReportClass,
+  ReportPivot,
+  ReportRequest,
+  ReportResult,
+  ReportSubtotal,
+} from "#core/index";
 
 interface Ticket {
   openedAt: Date;
@@ -79,5 +85,7 @@ describe("@stackra/reports", () => {
       readonly { readonly key: string; readonly direction: "asc" | "desc" }[] | undefined
     >();
     expectTypeOf<ReportResult["cursor"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<NonNullable<ReportResult["subtotals"]>[number]>().toEqualTypeOf<ReportSubtotal>();
+    expectTypeOf<NonNullable<ReportResult["pivot"]>>().toEqualTypeOf<ReportPivot>();
   });
 });

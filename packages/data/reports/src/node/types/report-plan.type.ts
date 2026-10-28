@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `ReportPlan`, what `compileReport` makes of a report and a request: the select list, the grouping sets, the
- *          conditions, the money measures whose currencies are checked, and the page to read.
+ * Purpose: `ReportPlan`, what `compileReport` makes of a report and a request: the select list, the grouping sets (with
+ *          the subtotal or pivot shape they serve), the conditions, the money measures whose currencies are checked,
+ *          and the page to read.
  * Boundary: a type only. The select and grouping text carries no bound values (grains and the time zone are checked
  *           literals), so the grouping expressions match the selected ones exactly; every caller value is in `where`.
  * Runtime: node
@@ -29,7 +30,13 @@ export interface ReportPlan {
   /** `<expression> as "<alias>"` items; with dimensions also `"~grouping"` and `"~rank"`. */
   readonly selects: readonly string[];
 
-  /** `grouping sets ((<dimensions>), ())`; absent without dimensions. */
+  /** Subtotals per leading prefix of the dimensions were asked for. */
+  readonly subtotals?: true;
+
+  /** The pivot axes, when the request pivots; a pivot reads every cell up to the row cap and is not paged. */
+  readonly pivot?: { readonly rows: readonly string[]; readonly columns: readonly string[] };
+
+  /** The grouping sets: the full grouping, the subtotal prefixes or pivot margins, and `()`; absent without dimensions. */
   readonly groupBy?: string;
 
   /** The default filter and the request's filters ANDed; absent when there is none. */

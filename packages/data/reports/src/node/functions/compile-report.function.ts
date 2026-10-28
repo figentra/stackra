@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `compileReport(declaration, request, options)`, the plan of one report run: it checks the request against
  *          the declaration, then builds the select list (dimensions, bucketed by grain in the call's time zone, and
- *          measures, formulas included), the grouping sets that put the grand totals in the same statement, a
+ *          measures, formulas included), the grouping sets that put the grand totals, the subtotals per leading
+ *          dimension or the pivot margins in the same statement, a
  *          `row_number()` rank in the requested sort for paging, the money currency checks, and the conditions of the
  *          default filter and the request's filters.
  * Boundary: internal; pure apart from `options.column`, which resolves a path through the generated metadata (and
@@ -24,9 +25,13 @@ import { PAGE_CURSOR } from "#node/constants/page-cursor.constant";
 import { ReportRequestInvalidError } from "#node/errors/report-request-invalid.error";
 import { filterSql } from "#node/functions/filter-sql.function";
 import { formulaSql } from "#node/functions/formula-sql.function";
+import { groupingMask } from "#node/functions/grouping-mask.function";
 import type { CompileReportOptions } from "#node/types/compile-report-options.type";
 import type { ReportPlan } from "#node/types/report-plan.type";
 import type { SqlFragment } from "#node/types/sql-fragment.type";
+
+/** The most dimensions a request takes: Postgres `grouping()` returns a 32-bit integer. */
+const MAX_DIMENSIONS = 31;
 
 /** The most sort keys a request takes. */
 const MAX_SORT_KEYS = 3;
@@ -67,6 +72,8 @@ export function compileReport(
   const dimensions = request.dimensions ?? [];
   if (new Set(dimensions.map((item) => item.name)).size !== dimensions.length)
     throw refuse("a dimension is named twice");
+  if (dimensions.length > MAX_DIMENSIONS)
+    throw refuse(`a request groups by at most ${MAX_DIMENSIONS} dimensions`);
   if (!TIME_ZONE.test(options.timeZone))
     throw refuse(`the time zone ${JSON.stringify(options.timeZone)} is not an IANA zone name`);
   const dimensionSql = new Map<string, string>();
@@ -143,13 +150,27 @@ export function compileReport(
   });
   for (const expression of dimensionSql.values()) order.push(`${expression} asc`);
 
-  if (request.pivot !== undefined)
-    for (const axis of [...request.pivot.rows, ...request.pivot.columns])
+  // Grouping sets: the full grouping and the grand total, plus the subtotal prefixes or the pivot margins.
+  const names = [...dimensionSql.keys()];
+  const { pivot } = request;
+  let sets: string[][] = [names, []];
+  if (pivot !== undefined) {
+    const axes = [...pivot.rows, ...pivot.columns];
+    for (const axis of axes)
       if (!dimensionSql.has(axis))
         throw refuse(`pivot axis "${axis}" is not a requested dimension`);
+    if (names.length === 0 || new Set(axes).size !== axes.length || axes.length !== names.length)
+      throw refuse("a pivot puts every requested dimension on exactly one axis");
+    if (request.subtotals === true) throw refuse("a pivot carries its own totals; drop subtotals");
+    if (request.cursor !== undefined) throw refuse("a pivot is not paged; drop the cursor");
+    sets = [names, [...pivot.rows], [...pivot.columns], []];
+  } else if (request.subtotals === true)
+    sets = [...names.map((_, index) => names.slice(0, names.length - index)), []];
+  const masks = sets.map((set) => groupingMask(names, set));
+  sets = sets.filter((_, index) => masks.indexOf(masks[index] ?? 0) === index);
 
-  // The page: a capped size and an offset the cursor carries, both within the row cap.
-  const limit = request.limit ?? options.pageSize;
+  // The page: a capped size and an offset the cursor carries, both within the row cap; a pivot reads to the cap.
+  const limit = pivot === undefined ? (request.limit ?? options.pageSize) : options.maxRows;
   if (!Number.isInteger(limit) || limit < 1) throw refuse("limit is a whole number of at least 1");
   const offset = request.cursor === undefined ? 0 : PAGE_CURSOR.decode(request.cursor);
   if (offset === undefined) throw refuse("the cursor is not one this report returned");
@@ -193,7 +214,19 @@ export function compileReport(
       (name) => declaration.measures[name]?.metric === ReportMetric.Money,
     ),
     selects,
-    ...(dimensionSql.size === 0 ? {} : { groupBy: `grouping sets ((${grouped}), ())` }),
+    ...(pivot === undefined
+      ? {}
+      : { pivot: { rows: [...pivot.rows], columns: [...pivot.columns] } }),
+    ...(request.subtotals === true && pivot === undefined && names.length > 1
+      ? { subtotals: true as const }
+      : {}),
+    ...(dimensionSql.size === 0
+      ? {}
+      : {
+          groupBy: `grouping sets (${sets
+            .map((set) => `(${set.map((name) => dimensionSql.get(name)).join(", ")})`)
+            .join(", ")})`,
+        }),
     ...(conditions.length === 0
       ? {}
       : {

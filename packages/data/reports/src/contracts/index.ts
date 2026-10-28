@@ -23,9 +23,11 @@ export type { FunnelStepResult } from "#contracts/types/funnel-step-result.type"
 export type { ReportEngineDeclaration } from "#contracts/types/report-engine-declaration.type";
 export type { ReportEngineDimension } from "#contracts/types/report-engine-dimension.type";
 export type { ReportEngineMeasure } from "#contracts/types/report-engine-measure.type";
+export type { ReportEnginePivot } from "#contracts/types/report-engine-pivot.type";
 export type { ReportEngineQuery } from "#contracts/types/report-engine-query.type";
 export type { ReportEngineRequest } from "#contracts/types/report-engine-request.type";
 export type { ReportEngineResult } from "#contracts/types/report-engine-result.type";
+export type { ReportEngineSubtotal } from "#contracts/types/report-engine-subtotal.type";
 export type { RetentionCohortRow } from "#contracts/types/retention-cohort-row.type";
 export type { RetentionQuery } from "#contracts/types/retention-query.type";
 export type { RetentionResult } from "#contracts/types/retention-result.type";

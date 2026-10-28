@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `compileReport`: dimensions (with a grain bucketed in the time zone) and measures (formulas
  *          inlined, money with its currency check) become one select list with grouping sets for the grand totals and
- *          a rank in the requested sort; the default filter and the request's filters become bound conditions; the
- *          page is capped by the row cap and the cursor; and every undeclared name, grain, sort, pivot axis, bad
- *          limit, foreign cursor or bad time zone is refused with `report_request_invalid`.
+ *          a rank in the requested sort; subtotals add every leading prefix and a pivot its two margins as further
+ *          grouping sets (a pivot reads to the row cap, unpaged); the default filter and the request's filters become bound conditions; the
+ *          page is capped by the row cap and the cursor; and every undeclared name, grain, sort, pivot axis, pivot
+ *          that misses a dimension or takes a cursor or subtotals, bad limit, foreign cursor or bad time zone is
+ *          refused with `report_request_invalid`.
  * Boundary: test only; pure, with a column resolver that maps a path to `row."<path>"`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0470 (decisions 2 and 3); ADR 0160.
@@ -73,6 +75,41 @@ describe(compileReport, () => {
     expect(plan.selects.join(" ")).not.toContain("?");
   });
 
+  it("adds a grouping set per leading prefix for subtotals", () => {
+    const plan = compile({
+      dimensions: [{ name: "status" }, { name: "placedAt", grain: TimeGrain.Day }],
+      measures: ["orders"],
+      subtotals: true,
+    });
+    const day = `date_trunc('day', row."placedAt", 'Asia/Riyadh')`;
+    expect(plan.groupBy).toBe(`grouping sets ((row."status", ${day}), (row."status"), ())`);
+    expect(plan.subtotals).toBe(true);
+    expect(
+      compile({ dimensions: [{ name: "status" }], measures: ["orders"], subtotals: true }),
+    ).not.toHaveProperty("subtotals");
+  });
+
+  it("adds the row and column margins for a pivot and reads it unpaged", () => {
+    const plan = compile({
+      dimensions: [{ name: "status" }, { name: "placedAt", grain: TimeGrain.Month }],
+      measures: ["orders"],
+      limit: 10,
+      pivot: { rows: ["placedAt"], columns: ["status"] },
+    });
+    const month = `date_trunc('month', row."placedAt", 'Asia/Riyadh')`;
+    expect(plan.groupBy).toBe(
+      `grouping sets ((row."status", ${month}), (${month}), (row."status"), ())`,
+    );
+    expect(plan.pivot).toEqual({ rows: ["placedAt"], columns: ["status"] });
+    expect([plan.offset, plan.limit]).toEqual([0, 1000]);
+    const oneAxis = compile({
+      dimensions: [{ name: "status" }],
+      measures: ["orders"],
+      pivot: { rows: ["status"], columns: [] },
+    });
+    expect(oneAxis.groupBy).toBe('grouping sets ((row."status"), ())');
+  });
+
   it("inlines a formula and checks the money it reads", () => {
     const plan = compile({ dimensions: [], measures: ["perOrder"] });
     expect(plan.selects[0]).toBe(
@@ -119,6 +156,28 @@ describe(compileReport, () => {
       { dimensions: [], measures: ["orders"], filters: { total: 1 } },
       { dimensions: [], measures: ["orders"], sort: [{ key: "revenue", direction: "asc" }] },
       { dimensions: [], measures: ["orders"], pivot: { rows: ["status"], columns: [] } },
+      {
+        dimensions: [{ name: "status" }, { name: "placedAt", grain: TimeGrain.Day }],
+        measures: ["orders"],
+        pivot: { rows: ["status"], columns: [] },
+      },
+      {
+        dimensions: [{ name: "status" }],
+        measures: ["orders"],
+        pivot: { rows: ["status"], columns: ["status"] },
+      },
+      {
+        dimensions: [{ name: "status" }],
+        measures: ["orders"],
+        subtotals: true,
+        pivot: { rows: ["status"], columns: [] },
+      },
+      {
+        dimensions: [{ name: "status" }],
+        measures: ["orders"],
+        cursor: PAGE_CURSOR.encode(10),
+        pivot: { rows: ["status"], columns: [] },
+      },
       { dimensions: [], measures: ["orders"], limit: 0 },
       { dimensions: [], measures: ["orders"], cursor: "not-ours" },
       { dimensions: [], measures: ["orders"], cursor: PAGE_CURSOR.encode(1000) },

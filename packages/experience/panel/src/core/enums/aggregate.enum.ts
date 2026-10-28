@@ -1,31 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `Aggregate`, how a saved view totals a column per group: a count of rows, or the sum, average, minimum or
- *          maximum of a number.
- * Boundary: an enum (`Enum.of`) written in a saved view's `totals`; `groupRows` applies it.
+ * Purpose: `Aggregate`, how a saved view totals a column per group: `@stackra/database`'s enum (`count`, `sum`, `avg`,
+ *          `min`, `max`, `distinct`), re-exported so a view's totals, the metrics reader and the report vocabulary share
+ *          one set of codes.
+ * Boundary: a re-export; the panel's own enum (with `average`) is gone (ADR 0470 consequences: the two `Aggregate`
+ *           enums merge into the database one, extended). A saved view's `totals` are served by the server group-by;
+ *           `groupRows` applies them only to a fully loaded relation table.
  * Runtime: isomorphic
- * Governing contract: ADR 0359 (decision 14: grouping, sub-grouping and totals); ADR 0294 (decision 16: Enum).
+ * Governing contract: ADR 0470 (decision 4 and consequences); ADR 0359 (decision 14); ADR 0294 (decision 16: Enum).
  */
-import { Enum } from "@stackra/contracts";
-
-/**
- * How a total column folds its rows.
- *
- * @example
- * { totals: [{ key: "totals.totalMinor", aggregate: Aggregate.Sum }] }
- */
-export const Aggregate = Enum.of({
-  /** The rows in the group. */
-  Count: "count",
-  /** The sum of the number. */
-  Sum: "sum",
-  /** The mean of the number. */
-  Average: "average",
-  /** The least number. */
-  Min: "min",
-  /** The greatest number. */
-  Max: "max",
-});
-
-/** One of the codes above. */
-export type Aggregate = Enum.Value<typeof Aggregate>;
+export { Aggregate } from "@stackra/database";

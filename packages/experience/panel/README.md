@@ -118,7 +118,7 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
 ## Saved views
 
 A saved view (ADR 0359 decision 14, reopening rule 13) is a person's filter, sort and columns for a resource, plus a
-grouping (`group: { by, then? }`), totals per group (`count`, `sum`, `average`, `min`, `max` of a row path) and its
+grouping (`group: { by, then? }`), totals per group (`count`, `sum`, `avg`, `min`, `max`, `distinct` of a row path; `Aggregate` is `@stackra/database`'s) and its
 sharing (`private`; `role`, a role copy for the holders of `role`; or everyone in the owner's `scope` who may read the
 resource). It has a `layout` (`table`, `board`, `gallery`, `calendar`, `chart`; a board or calendar names its `layoutBy`
 path) and a `version` for optimistic concurrency (ADR 0271 decisions 2, 3 and 8). It stores declared keys only, and the

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `groupRows`: one group of every row without grouping, groups in first-met order with counts
- *          and totals, sub-groups, missing values grouped as null, and totals that skip non-numbers and are null when
- *          no number is there.
+ *          and totals, sub-groups, missing values grouped as null, totals that skip non-numbers and are null when no
+ *          number is there, and `distinct` counting distinct non-null values.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0359 (decision 14).
@@ -25,9 +25,14 @@ const totals = [
 
 describe("groupRows", () => {
   it("makes one group of every row without grouping", () => {
-    expect(
-      groupRows(rows, { totals: [{ key: "totals.totalMinor", aggregate: "average" }] }),
-    ).toEqual([{ value: null, count: 4, totals: { "average:totals.totalMinor": 1500 }, rows }]);
+    expect(groupRows(rows, { totals: [{ key: "totals.totalMinor", aggregate: "avg" }] })).toEqual([
+      { value: null, count: 4, totals: { "avg:totals.totalMinor": 1500 }, rows },
+    ]);
+  });
+
+  it("counts distinct non-null values", () => {
+    const [all] = groupRows(rows, { totals: [{ key: "status", aggregate: "distinct" }] });
+    expect(all?.totals).toEqual({ "distinct:status": 2 });
   });
 
   it("groups in first-met order with counts and totals", () => {

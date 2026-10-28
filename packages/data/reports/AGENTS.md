@@ -47,6 +47,10 @@ report engine, stackra-390 and stackra-398).
   metadata (checked identifiers), grains are enum values, the time zone is checked, and every filter value is bound.
   Keep the select and grouping text free of bound values so the grouping expressions match.
 - Never import `@mikro-orm/*` here (ADR 0097); read the ORM through `Database.em()` and `@stackra/database` exports.
+- Groups, subtotals, pivot margins and the grand total are grouping sets of one statement; a row's `"~grouping"` mask
+  (`groupingMask`) says which. Never total or pivot in JavaScript over a page; `pageSql` keeps every caller value bound.
+- `MeasureKind` takes its aggregate codes from `@stackra/database`'s `Aggregate` (the only aggregate enum); never
+  declare another.
 
 ## Rules that fail the build
 

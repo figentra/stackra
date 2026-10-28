@@ -4,10 +4,12 @@
  *          `paid.series(Aggregate.Sum, "total.minor", MetricGrain.Week)`.
  * Boundary: an `Enum.of` value plus the type of the same name; each code names the SQL aggregate the metrics reader
  *           writes (`distinct` is `count(distinct ...)`). Every aggregate but `count` needs a field path; `sum`, `avg`,
- *           `min` and `max` read a numeric field and are 0 over no rows.
+ *           `min` and `max` read a numeric field and are 0 over no rows. The one aggregate enum of the platform: the
+ *           panel re-exports it for saved-view totals and `@stackra/reports` takes its measure codes from it (ADR 0470
+ *           consequences).
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 16: metrics computed by `CrudService.metrics()`); ADR 0294 (decision 16);
- *                     reporting gap 10.
+ *                     reporting gaps 4 and 10; ADR 0470 (consequences: the two `Aggregate` enums merge here).
  */
 import { Enum } from "@stackra/contracts";
 

@@ -21,5 +21,7 @@ export type { ReportDimension } from "#core/types/report-dimension.type";
 export type { ReportMeasure } from "#core/types/report-measure.type";
 export type { ReportOptions } from "#core/types/report-options.type";
 export type { ReportPath } from "#core/types/report-path.type";
+export type { ReportPivot } from "#core/types/report-pivot.type";
 export type { ReportRequest } from "#core/types/report-request.type";
 export type { ReportResult } from "#core/types/report-result.type";
+export type { ReportSubtotal } from "#core/types/report-subtotal.type";

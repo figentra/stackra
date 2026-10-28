@@ -140,6 +140,13 @@ zone (UTC outside a call) and hands the run to the configured `ReportEngine`.
 - **Server grouping.** Time grains bucket with `date_trunc(grain, column, timeZone)` in the call's time zone (UTC
   outside a call). `grouping sets ((dimensions), ())` returns the groups and the grand totals in the same statement, and
   a `row_number()` rank in the requested sort pages them; formulas compile to SQL with `nullif` on every divisor.
+- **Subtotals.** `subtotals: true` adds a grouping set per leading prefix of the dimensions (`(region, status)`,
+  `(region)`): `ReportResult.subtotals` holds `{ level, values }` for the prefixes of the groups on this page only,
+  deepest first, from the same statement.
+- **Pivot.** `pivot: { rows, columns }` puts every requested dimension on exactly one axis and adds the row and column
+  margins as grouping sets. `ReportResult.pivot` is `{ rows, columns, cells, rowTotals, columnTotals }` (keys are the
+  axis values in order; an empty cell is `null`), and `totals` is the grand total. A pivot is not paged: it reads every
+  cell up to `maxRows` and refuses beyond it, and it takes no cursor or `subtotals`.
 - **Visibility.** The source's visible keys (`visibleKeysQuery`, the same conditions `CrudService` reads apply) narrow
   the rows; row-level security holds because the run uses the caller's transaction settings, which `onReplica` replays.
 - **Mixed-currency guard.** A money measure (and any money a formula reads) is checked per group and for the total;
@@ -167,8 +174,7 @@ Generated wiring binds `ReportRunner` to `EngineReportRunnerDriver` (`deps: [Rep
   (stackra-416), funnel breakdowns, property filters on retention events, cohorts of several criteria and saved
   cohorts; the analytics client does not yet put the scope id on events (`scope_id`), which the `posthog` driver
   filters by.
-- Subtotals per level and the pivot matrix (stackra-391): pivot axes are checked, not laid out; column visibility
-  (stackra-395); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
+- Column visibility (stackra-395); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
   (stackra-417).
 - A projection-row source (the runner reads registered models only) and a `Link<T>` path that is not an ORM relation.
 - Named date ranges in report filters (the run carries no period).

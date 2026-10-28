@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ReportEngineRequest`, the caller's request as an engine reads it: dimensions (with a grain value), measures,
- *          filters by dimension name, sort, page size, cursor and pivot axes.
+ *          filters by dimension name, sort, page size, cursor,
+ *          the subtotals flag and pivot axes.
  * Boundary: a type only, engine-neutral; the core `ReportRequest` the generated query takes is assignable to it. The
  *           engine checks every name against the declaration; the cursor is the engine's own and opaque.
  * Runtime: isomorphic
@@ -29,6 +30,9 @@ export interface ReportEngineRequest {
   /** The cursor of the previous page's result. */
   readonly cursor?: string;
 
-  /** The dimensions laid out as rows and as columns of a pivot. */
+  /** Also return a subtotal for every leading prefix of the dimensions (not with a pivot, which has its margins). */
+  readonly subtotals?: boolean;
+
+  /** The dimensions laid out as rows and as columns of a pivot: every requested dimension on exactly one axis. */
   readonly pivot?: { readonly rows: readonly string[]; readonly columns: readonly string[] };
 }
