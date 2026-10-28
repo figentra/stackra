@@ -33,6 +33,9 @@ import {
   HasPublicId,
   Model,
   SoftDeletes,
+  Timestamps,
+  UserStamps,
+  Versioned,
 } from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -44,6 +47,7 @@ import { connectNativeWriteWatcher } from "#core/functions/connect-native-write-
 import type { NativeWrite } from "#core/types/native-write.type";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { StaleVersionError } from "#core/errors/stale-version.error";
+import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
@@ -85,10 +89,17 @@ class Contact extends Model.with(HasPublicId("con"), HasEncryptedFields("email")
 
 class ContactService extends CrudService<Contact> {}
 
+class Invoice extends Model.with(HasPublicId("inv"), Timestamps, UserStamps, Versioned) {
+  total = 0;
+}
+
+class InvoiceService extends CrudService<Invoice> {}
+
 registerModelPartners([
   [OrderService, Order],
   [LedgerEntryService, LedgerEntry],
   [ContactService, Contact],
+  [InvoiceService, Invoice],
 ]);
 
 const metadata = {
@@ -816,5 +827,59 @@ describe("CrudService bulk verbs and the offset page (stackra-280)", () => {
       await expect(new OrderService().page(input)).rejects.toSatisfy((error: unknown) =>
         isRefusal(error, TableFilterInvalidError),
       );
+  });
+});
+
+/** The refused field and write of a rejected call, or undefined when it passed. */
+async function refusal(call: () => unknown): Promise<[string, string] | undefined> {
+  try {
+    await call();
+    return undefined;
+  } catch (error) {
+    if (!isRefusal(error, SystemFieldWriteError)) throw error;
+    const { field, operation } = error as SystemFieldWriteError;
+    return [field, operation];
+  }
+}
+
+describe("CrudService system fields (stackra-287)", () => {
+  it("refuses a caller's stamps, version or id change on every write", async () => {
+    connect();
+    const service = new InvoiceService();
+    expect(await refusal(() => service.create({ total: 1, createdBy: "usr_1" } as never))).toEqual([
+      "createdBy",
+      "create",
+    ]);
+    expect(await refusal(() => service.insert({ updatedAt: new Date() } as never))).toEqual([
+      "updatedAt",
+      "insert",
+    ]);
+    expect(
+      await refusal(() => service.insertMany([{ total: 1 }, { version: 4 }] as never)),
+    ).toEqual(["version", "insertMany"]);
+    expect(await refusal(() => service.update({ id: "inv_1" }, { id: "inv_2" } as never))).toEqual([
+      "id",
+      "update",
+    ]);
+    expect(await refusal(() => service.updateWhere({}, { version: 9 } as never))).toEqual([
+      "version",
+      "updateWhere",
+    ]);
+    expect(
+      await refusal(() =>
+        service.upsert([{ id: "inv_1", createdAt: new Date() }] as never, { by: ["id"] }),
+      ),
+    ).toEqual(["createdAt", "upsert"]);
+  });
+
+  it("lets a create mint its own id, and leaves a model without the traits alone", async () => {
+    const em = connect();
+    expect(
+      await refusal(() => new InvoiceService().create({ id: "inv_1", total: 2 } as never)),
+    ).toBe(undefined);
+    expect(em.create).toHaveBeenCalledTimes(1);
+    expect(await refusal(() => new OrderService().updateWhere({}, { createdAt: new Date() }))).toBe(
+      undefined,
+    );
   });
 });

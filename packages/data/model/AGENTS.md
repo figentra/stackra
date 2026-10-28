@@ -44,6 +44,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   `RelationSource` brand.
 - Never import @stackra/rules or @stackra/iam either (both reach this package): `@Visibility` names attributes and
   relations only, and the rules, their evaluation and the query filter are IAM's (ADR 0333).
+- `SYSTEM_FIELDS` (stackra-287) is the one list of system-written fields, keyed by trait name; a new trait that adds
+  a field the system writes adds its entry there in the same change. Never keep a second list (experience/panel's
+  `CreateInput` derives from `SystemField`). `ValidateOnFlush` is a marker; the check lives in @stackra/database.
 - Marker traits (`AppendOnly`, `Commentable`, `HasAttachments`) add no column; the owning package acts on them
   (ADR 0321). `HasCorrections` stays apart from `AppendOnly` so existing append-only tables keep their columns.
 - Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,

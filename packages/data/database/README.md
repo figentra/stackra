@@ -464,6 +464,19 @@ decision 4):
   and ask no hold. Every statement reaches the `NativeWriteWatcher`.
 - Per-scope tightening of a default ("a tenant may change a default within bounds") is not built yet.
 
+## System fields and validation on flush
+
+Every `CrudService` write (`create`, `insert`, `insertMany`, `upsert`, `update`, `updateWhere`) refuses data that
+sets a system field of the model, `SYSTEM_FIELDS` of `@stackra/model` by its traits, with `SystemFieldWriteError`
+(`system_field_write`, 400): stamps come from the actor, the version from the optimistic lock (pass the caller's as
+`expectedVersion`), the delete markers from `delete`/`restore`. A create may mint the id of the new row; an upsert may
+also name its `by` fields.
+
+A model with `ValidateOnFlush` has each created or changed row encoded through its generated `X$` by
+`ValidateOnFlushSubscriber` before the flush writes it; a failure refuses the flush with `ModelInvalidError`
+(`model_invalid`, the issues as `path: message`). The generated boot adds the subscriber; a model with the trait and no
+registered schema throws at flush. Native statements (`updateWhere`, `increment`) write no entity and are not checked.
+
 ## Native writes and the change feed
 
 `increment`, `delete` (soft and archive), `restore`, `repath` and `purge` write with a native statement, which fires no

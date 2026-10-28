@@ -26,7 +26,9 @@
  *           (retention, erasure) still remove them. The bulk verbs match the flush path: `insertMany` and `upsert` write
  *           through one flush (stamps, encryption and change records from the subscribers), `updateWhere` is one native
  *           statement with stamps and a change report (a flush when it sets an encrypted field), `deleteWhere` is
- *           `delete`; `each`/`chunk` walk by keyset and `page` reads a numbered page with its total.
+ *           `delete`; `each`/`chunk` walk by keyset and `page` reads a numbered page with its total. No write takes a
+ *           system field (`SYSTEM_FIELDS` of the model's traits) from its caller: `SystemFieldWriteError`, except the
+ *           id of a new row.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
@@ -34,7 +36,7 @@
  *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
- *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`).
+ *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -52,11 +54,12 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
-import { encryptedFieldsOf, traitsOf } from "@stackra/model";
+import { encryptedFieldsOf, systemFieldsOf, traitsOf } from "@stackra/model";
 
 import { BULK_LIMITS } from "#core/constants/bulk-limits.constant";
 import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
+import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
@@ -96,6 +99,9 @@ import type { UpsertResult } from "#core/types/upsert-result.type";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
+
+/** The system field a create may set: a caller may mint the id of a new row (a dedup row, an idempotent import). */
+const CREATE_ALLOWED: readonly string[] = ["id"];
 
 /** The most keys a table sort takes before the primary key; each one needs an index to stay fast. */
 const MAX_SORT_KEYS = 3;
@@ -231,13 +237,23 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
-  /** Implements `Repository.create`, documented there. */
+  /**
+   * Implements `Repository.create`, documented there.
+   *
+   * @throws SystemFieldWriteError when `data` sets a system field other than the id.
+   */
   create(data: RequiredEntityData<M>): M {
+    this.refuseSystemFields("create", data, CREATE_ALLOWED);
     return this.em().create(this.model(), data);
   }
 
-  /** Implements `Repository.insert`, documented there. */
+  /**
+   * Implements `Repository.insert`, documented there.
+   *
+   * @throws SystemFieldWriteError when `data` sets a system field other than the id.
+   */
   insert(data: RequiredEntityData<M>, options: TransactionOptions = {}): Promise<M> {
+    this.refuseSystemFields("insert", data, CREATE_ALLOWED);
     return this.writeNow(options, async (em) => {
       const row = em.create(this.model(), data);
       await em.flush();
@@ -249,11 +265,14 @@ export abstract class CrudService<M extends object> extends Service implements R
    * Implements `Repository.insertMany`, documented there: every row is created in the unit of work and flushed at once
    * in a savepoint (or its own transaction), so the ORM batches the insert statements and the flush subscribers stamp,
    * seal the encrypted fields and record each row's change, as for `insert`.
+   *
+   * @throws SystemFieldWriteError when a row sets a system field other than the id.
    */
   async insertMany(
     rows: readonly RequiredEntityData<M>[],
     options: TransactionOptions = {},
   ): Promise<M[]> {
+    for (const row of rows) this.refuseSystemFields("insertMany", row, CREATE_ALLOWED);
     if (rows.length === 0) return [];
     return this.writeNow(options, async (em) => {
       const created = rows.map((data) => em.create(this.model(), data));
@@ -271,6 +290,7 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws TypeError when `by` is empty, a row lacks a `by` value, or two rows share one key.
    * @throws AppendOnlyWriteError for an `AppendOnly` model, whose rows are never changed.
+   * @throws SystemFieldWriteError when a row sets a system field other than the id or a `by` field.
    */
   async upsert(
     rows: readonly RequiredEntityData<M>[],
@@ -279,6 +299,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     const { by } = options;
     if (by.length === 0) throw new TypeError("upsert matches rows by at least one field");
     this.refuseAppendOnly("upsert");
+    for (const row of rows) this.refuseSystemFields("upsert", row, [...CREATE_ALLOWED, ...by]);
     const keys = rows.map((row, index) => {
       const key = rowKey(row, by);
       if (key === undefined)
@@ -326,9 +347,11 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @returns how many rows changed.
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
+   * @throws SystemFieldWriteError when `data` sets a system field.
    */
   async updateWhere(where: Where<M>, data: EntityData<M>): Promise<number> {
     this.refuseAppendOnly("updateWhere");
+    this.refuseSystemFields("updateWhere", data);
     const fields = Object.keys(data);
     if (fields.length === 0) return 0;
     const model = this.model();
@@ -543,9 +566,11 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws NotFoundError when no row matches.
    * @throws StaleVersionError when the row's version is not `expectedVersion`.
    * @throws AppendOnlyWriteError for an `AppendOnly` model, before anything is read.
+   * @throws SystemFieldWriteError when `data` sets a system field (pass the version as `expectedVersion`).
    */
   async update(where: Where<M>, data: EntityData<M>, options: UpdateOptions = {}): Promise<M> {
     this.refuseAppendOnly("update");
+    this.refuseSystemFields("update", data);
     if (options.requiresNew === true) {
       const model = this.model();
       const filter = await visibleFilter(model, where);
@@ -731,6 +756,24 @@ export abstract class CrudService<M extends object> extends Service implements R
   private refuseAppendOnly(operation: string): void {
     const model = this.model();
     if (isAppendOnly(model)) throw AppendOnlyWriteError.create({ model: model.name, operation });
+  }
+
+  /**
+   * Refuses `operation` when `data` sets one of the model's system fields (`SYSTEM_FIELDS` of its traits) outside
+   * `allowed`.
+   *
+   * @throws SystemFieldWriteError naming the first such field.
+   */
+  private refuseSystemFields(
+    operation: string,
+    data: object,
+    allowed: readonly string[] = [],
+  ): void {
+    const model = this.model();
+    const given = new Set(Object.keys(data));
+    const field = systemFieldsOf(model).find((name) => given.has(name) && !allowed.includes(name));
+    if (field !== undefined)
+      throw SystemFieldWriteError.create({ model: model.name, field, operation });
   }
 
   /** The keep-the-row policy of the model: its filter and field, or `undefined` for a hard delete. */

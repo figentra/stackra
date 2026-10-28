@@ -84,6 +84,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   record; `updateWhere` goes through `watched` with `stampFields` (and the `version` step), and falls back to the unit
   of work when it sets an encrypted field. Never add a bulk path that skips one of the three; never `em.upsert` or
   `em.insertMany` (no flush events fire). `each`/`chunk` walk by keyset, never by offset; `page` is the only offset read.
+- System fields (stackra-287): every `CrudService` write that takes data runs `refuseSystemFields` against
+  `systemFieldsOf(model)`; never read a second list, and never let a new write verb skip it. `ValidateOnFlushSubscriber`
+  encodes (never decodes) the entity through `schemaOf(model)`, and only for `ValidateOnFlush` models.
 - Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
   `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
   A refusal carries the constraint name, never a row value.

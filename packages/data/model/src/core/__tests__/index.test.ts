@@ -142,6 +142,7 @@ describe("@stackra/model", () => {
       "PrivilegedDataClass",
       "PublicIdType",
       "Retention",
+      "SYSTEM_FIELDS",
       "SearchSnippet",
       "Searchable",
       "SoftDeletes",
@@ -153,6 +154,7 @@ describe("@stackra/model", () => {
       "Translated",
       "TranslatedType",
       "UserStamps",
+      "ValidateOnFlush",
       "Versioned",
       "Visibility",
       "changeCaptureOf",
@@ -161,6 +163,7 @@ describe("@stackra/model", () => {
       "encryptedFieldsOf",
       "encryptedSubjectOf",
       "publicIdToUuid",
+      "systemFieldsOf",
       "traitsOf",
       "uuidToPublicId",
     ]);
