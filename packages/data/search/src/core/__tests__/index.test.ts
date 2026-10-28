@@ -32,6 +32,7 @@ describe("@stackra/search", () => {
       "SearchCursorInvalidError",
       "SearchHealthIndicatorDriver",
       "SearchIndex",
+      "SearchIndexState",
       "SearchOptions",
       "SearchSettings",
       "arabiziOf",

@@ -3,7 +3,7 @@
  * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the db commands, the seed-pack
- *          command, the settings pack commands, the offline audit check, ls, the local MCP and agent-file commands,
+ *          command, the settings pack commands, the search reindex and status commands, the offline audit check, ls, the local MCP and agent-file commands,
  *          and the registry item commands (add, publish; ADR 0453).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
@@ -23,6 +23,8 @@ import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
 import { MCP_SYNC_COMMAND } from "#node/constants/mcp-sync-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
 import { PUBLISH_COMMAND } from "#node/constants/publish-command.constant";
+import { SEARCH_REINDEX_COMMAND } from "#node/constants/search-reindex-command.constant";
+import { SEARCH_STATUS_COMMAND } from "#node/constants/search-status-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
@@ -73,6 +75,8 @@ export const COMMANDS: readonly CliCommand[] = [
   SEED_PACK_COMMAND,
   SETTINGS_DIFF_COMMAND,
   SETTINGS_APPLY_COMMAND,
+  SEARCH_REINDEX_COMMAND,
+  SEARCH_STATUS_COMMAND,
   AUDIT_VERIFY_COMMAND,
   LS_COMMAND,
   MCP_COMMAND,

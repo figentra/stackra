@@ -20,10 +20,18 @@ describe("@stackra/search/node", () => {
       "HttpEmbedderDriver",
       "PgvectorVectorIndexDriver",
       "PostgresSearchDriver",
+      "ReindexSearchAction",
+      "ReindexSearchInput",
+      "ReindexSearchOutput",
+      "ReindexSemanticAction",
+      "SearchIndexRegistry",
       "SearchableChangeService",
       "SearchableMacro",
       "SemanticChangeService",
       "registerSearchableModels",
+      "searchFacetHashOf",
+      "searchReindex",
+      "searchStatus",
     ]);
   });
 

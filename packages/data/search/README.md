@@ -206,6 +206,24 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
   (`new Map([[Product, { status: ProductStatus.Active }]])`), since each model lists its own filter paths; a model with
   no entry is read unfiltered.
 
+## Index registry and reindex jobs
+
+`search.indexes` (migration `search.0005_create_search_indexes`) keeps one row per model and scope: its state
+(`SearchIndexState`: `valid`, `invalid`, `rebuilding`), the SHA-256 of the `@Searchable` facet its last rebuild used
+(`searchFacetHashOf`), its document count, the cursor a stopped rebuild resumes after, and when it was last rebuilt.
+`SearchIndexRegistry` (`./node`) reads and writes it: `list()`, `invalidateChanged(models)` (call it at boot: an index
+whose facet changed turns `invalid`), and `begin`/`progress`/`finish` for a run.
+
+Rebuilds run as jobs (ADR 0404 d3), queued by `stackra search:reindex` (the `searchReindex` runner) or by code:
+
+- `ReindexSearchAction` rebuilds one model (every registered model when none is named) in the job's scope, in batches
+  of 500 through `SearchIndex.reindex({ after, onBatch })`, recording each batch's cursor; a stopped run resumes after
+  it when the facet is unchanged. `since` (ISO 8601) indexes only rows updated since then and leaves the registry alone.
+- `ReindexSemanticAction` backfills the vector passages of the semantic models through `SemanticChangeService.index`.
+  It is its own job so a service without an embedder never builds one for a plain reindex.
+
+`stackra search:status` (the `searchStatus` runner) prints the registry.
+
 ## Scopes on engines outside the database
 
 Postgres keeps the index in the model's own table, so row-level security isolates scopes and `PostgresSearchDriver`

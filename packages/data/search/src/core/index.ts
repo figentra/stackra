@@ -19,6 +19,7 @@ export { SEARCH_CONFIG_SCHEMA as SearchConfig$ } from "#core/constants/search-co
 export { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 export { MemoryVectorIndexDriver } from "#core/drivers/memory-vector-index.driver";
 export { SearchHealthIndicatorDriver } from "#core/drivers/search-health-indicator.driver";
+export { SearchIndexState } from "#core/enums/search-index-state.enum";
 export { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 export { arabiziOf } from "#core/functions/arabizi-of.function";
 export { searchWordsOf } from "#core/functions/search-words-of.function";
@@ -29,5 +30,7 @@ export type { SearchAcrossOptions } from "#core/types/search-across-options.type
 export type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 export type { SearchFindOptions } from "#core/types/search-find-options.type";
 export type { SearchHit } from "#core/types/search-hit.type";
+export type { SearchIndexStatus } from "#core/types/search-index-status.type";
 export type { SearchPageOptions } from "#core/types/search-page-options.type";
+export type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
 export { SearchIndex } from "#core/values/search-index.value";

@@ -48,6 +48,8 @@ describe("COMMANDS", () => {
         "seed-pack",
         "settings:diff",
         "settings:apply",
+        "search:reindex",
+        "search:status",
         "audit:verify",
         "add",
         "publish",

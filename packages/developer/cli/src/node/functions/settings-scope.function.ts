@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `settingsScope(values)`, the scope node a `stackra settings:*` command targets, from `--scope-id` (the node's
- *          public id) and `--scope-path` (its `ltree` path).
+ * Purpose: `settingsScope(values)`, the scope node a `stackra settings:*` or `search:reindex` command targets, from
+ *          `--scope-id` (the node's public id) and `--scope-path` (its `ltree` path).
  * Boundary: pure over the parsed options; checks the spelling only. Whether the node exists, and whether it is a
  *           sandbox, is the database's and tenancy's to answer.
  * Runtime: node

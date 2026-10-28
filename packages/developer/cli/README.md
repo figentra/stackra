@@ -21,32 +21,34 @@ and `yaml`.
 
 ## Commands
 
-| Command                                | Does                                                                                     |
-| -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`  |
-| `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest         |
-| `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify        |
-| `stackra dev --surface <surface>`      | a product surface in its real shell (published or `--os` checkout), Vite with hot reload |
-| `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run  |
-| `stackra start`                        | gen, then `vite preview` of an app's web build                                           |
-| `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                 |
-| `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)        |
-| `stackra lint`                         | `oxlint .`                                                                               |
-| `stackra check [flags]`                | the quality gate: every check phase in order at the workspace root (see below)           |
-| `stackra validate`                     | `check --only config,structure,docs,catalogues,spec`                                     |
-| `stackra verify`                       | `check --with-tests`                                                                     |
-| `stackra code:check` / `code:fix`      | `check --only format,lint` (`code:fix` adds `--fix`)                                     |
-| `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants |
-| `stackra settings:diff <pack.yaml>`    | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)         |
-| `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)            |
-| `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…) |
-| `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process              |
-| `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                           |
-| `stackra mcp exec [--env] [--path] --` | start an MCP server with its secrets, expanded by its own shell under `infisical run`    |
-| `stackra agents sync`                  | write the project's generated agent files (`.mcp.json`)                                  |
-| `stackra agents check`                 | fail when `.mcp.json` drifted from `.mcp.yaml`                                           |
-| `stackra add <kind> <name>[@version]`  | install a registry skill, agent, MCP server, plugin or package (see below)               |
-| `stackra publish [--dry-run]`          | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry  |
+| Command                                | Does                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`     |
+| `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest            |
+| `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify           |
+| `stackra dev --surface <surface>`      | a product surface in its real shell (published or `--os` checkout), Vite with hot reload    |
+| `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run     |
+| `stackra start`                        | gen, then `vite preview` of an app's web build                                              |
+| `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                    |
+| `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)           |
+| `stackra lint`                         | `oxlint .`                                                                                  |
+| `stackra check [flags]`                | the quality gate: every check phase in order at the workspace root (see below)              |
+| `stackra validate`                     | `check --only config,structure,docs,catalogues,spec`                                        |
+| `stackra verify`                       | `check --with-tests`                                                                        |
+| `stackra code:check` / `code:fix`      | `check --only format,lint` (`code:fix` adds `--fix`)                                        |
+| `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants    |
+| `stackra settings:diff <pack.yaml>`    | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)            |
+| `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)               |
+| `stackra search:reindex [Model]`       | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`) |
+| `stackra search:status`                | each search index's state, document count and rebuild progress                              |
+| `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)    |
+| `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process                 |
+| `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                              |
+| `stackra mcp exec [--env] [--path] --` | start an MCP server with its secrets, expanded by its own shell under `infisical run`       |
+| `stackra agents sync`                  | write the project's generated agent files (`.mcp.json`)                                     |
+| `stackra agents check`                 | fail when `.mcp.json` drifted from `.mcp.yaml`                                              |
+| `stackra add <kind> <name>[@version]`  | install a registry skill, agent, MCP server, plugin or package (see below)                  |
+| `stackra publish [--dry-run]`          | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry     |
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
@@ -155,6 +157,16 @@ existing `runway.yaml` (ports and sizes are authored), and the templates write n
 `stackra settings:apply` (with `--author <id>` and an optional `--reason`) makes the node's own values equal the pack
 through `settingsApply`: one sandbox revision per changed group, locks checked, and a group with a legal floor refused,
 since the runner cannot see the holder's market (ADR 0395). Live configuration changes only by promotion.
+
+## Search indexes
+
+`stackra search:reindex [Model]` hands the request to the member's `@stackra/search/node` runner (`searchReindex`),
+which queues one reindex job in the member's queue and returns; the member's workers run it, where its `@Searchable`
+models are registered. No model reindexes every registered one; `--scope-id`/`--scope-path` run it in that scope (else
+platform-wide); `--since <ISO 8601>` indexes only rows updated since then; `--semantic` backfills the vector passages
+instead. A full rebuild records its cursor in `search.indexes`, so a stopped one resumes. `stackra search:status`
+prints each index's state (`valid`, `invalid` after a facet change, `rebuilding`), document count, resume cursor and
+last rebuild (`searchStatus`). Both read `DATABASE_URL` from the member's environment.
 
 ## Not here yet
 

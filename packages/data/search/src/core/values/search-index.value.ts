@@ -42,6 +42,7 @@ import { SearchSettings } from "#core/search.settings";
 import type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
+import type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
 
 /** The session's granted scope paths, `null` outside a scope session. */
 const SCOPE_PATHS = z.array(z.object({ paths: z.string().nullable() }));
@@ -233,29 +234,33 @@ export class SearchIndex<M extends object> {
 
   /**
    * Indexes every row the caller's scope session can see, in primary key order, in batches; the backfill after
-   * `t.searchable(...)` added the columns, or after the facet changed.
+   * `t.searchable(...)` added the columns, or after the facet changed. `after` resumes a stopped run, `since` limits it
+   * to rows updated since then (a partial reindex), and `onBatch` sees each stored batch with its cursor.
    *
    * @returns how many rows were indexed.
    */
-  async reindex(): Promise<number> {
+  async reindex(options: SearchReindexOptions<M> = {}): Promise<number> {
     const { key } = this.shape();
     let count = 0;
-    let after: unknown;
-    // shortcut: the rows stay in the context's identity map; run it as a job in its own context, and fork per batch
-    // if a table outgrows the job's memory.
+    let after: unknown = options.after;
+    const since = options.since === undefined ? {} : { updatedAt: { $gte: options.since } };
+    // shortcut: the rows stay in the context's identity map; the reindex job runs it in its own context, and forks per
+    // batch if a table outgrows the job's memory.
     for (;;) {
       const rows = await this.database
         .em()
         // reason: a filter and an order on the primary key named at run time, which MikroORM's types cannot follow
-        .find(this.model, (after === undefined ? {} : { [key]: { $gt: after } }) as never, {
-          orderBy: { [key]: "asc" } as never,
-          limit: REINDEX_BATCH,
-        });
+        .find(
+          this.model,
+          { ...since, ...(after === undefined ? {} : { [key]: { $gt: after } }) } as never,
+          { orderBy: { [key]: "asc" } as never, limit: REINDEX_BATCH },
+        );
       const last = rows.at(-1);
       if (last === undefined) return count;
       await this.index(rows);
       count += rows.length;
       after = this.keyOf(last, key);
+      await options.onBatch?.(rows, String(after));
     }
   }
 

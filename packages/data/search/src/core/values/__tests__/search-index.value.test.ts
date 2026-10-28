@@ -242,6 +242,22 @@ describe(SearchIndex, () => {
     await expect(products.reindex()).resolves.toBe(3);
     expect(await products.find("shirt")).toHaveLength(3);
   });
+
+  it("resumes a reindex after a cursor and reports each batch's cursor", async () => {
+    const driver = new MemorySearchDriver();
+    const { database } = databaseOver(ROWS);
+    const products = new SearchIndex(driver, database, Product);
+    const batches: string[] = [];
+    await expect(
+      products.reindex({
+        after: "prd_1",
+        onBatch: async (rows, cursor) => {
+          batches.push(`${rows.length}:${cursor}`);
+        },
+      }),
+    ).resolves.toBe(2);
+    expect(batches).toEqual(["2:prd_3"]);
+  });
 });
 
 describe("SearchIndex Arabizi, visibility and snippets", () => {
