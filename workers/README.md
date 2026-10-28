@@ -1,13 +1,16 @@
+<!-- Purpose: the index of the Cloudflare Worker members and the rules every Worker member follows. Boundary: folder index only; each Worker documents itself in its own README. Runtime: docs. Governing contract: ADR 0284, ADR 0453, ADR 0026. -->
+
 # `workers/`
 
 Cloudflare Worker members, one workspace member each
 ([ADR 0284](../apps/docs/src/docs/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). A Worker is
 deployed, so it reuses the app tier: `tier:app` in its `turbo.jsonc`.
 
-| Worker                       | Package                        | What it is                                                                                     |
-| ---------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| [`static`](static)           | `@figentra/worker-static`      | `stackra-static`: the hosted static files at `static.stackra.figentra.com` (`/schemas/…`)      |
-| [`turbo-cache`](turbo-cache) | `@figentra/worker-turbo-cache` | `stackra-turbo-cache`: the Turborepo remote cache, turbo's v8 artifacts API over R2 (ADR 0026) |
+| Worker                       | Package                        | What it is                                                                                                   |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| [`registry`](registry)       | `@figentra/worker-registry`    | `stackra-registry`: the Stackra registry at `npm.stackra.figentra.com`, npm protocol and licences (ADR 0453) |
+| [`static`](static)           | `@figentra/worker-static`      | `stackra-static`: the hosted static files at `static.stackra.figentra.com` (`/schemas/…`)                    |
+| [`turbo-cache`](turbo-cache) | `@figentra/worker-turbo-cache` | `stackra-turbo-cache`: the Turborepo remote cache, turbo's v8 artifacts API over R2 (ADR 0026)               |
 
 ## Rules
 
