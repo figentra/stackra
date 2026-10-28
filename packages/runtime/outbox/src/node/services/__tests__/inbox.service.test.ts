@@ -6,7 +6,9 @@
  *          claimed envelope once (an unknown wire name included), a throwing relay rolls the receipt back and
  *          `disconnect` drops the relays; a
  *          consumed service's event class (an `IntegrationEvent` built by its payload schema, as gen writes it into
- *          `#stackra/clients/<service>`) is rebuilt and delivered to its typed listener.
+ *          `#stackra/clients/<service>`) is rebuilt and delivered to its typed listener; an older version is lifted by
+ *          its change's `up` and runs the listener once with the current version, and a newer version than this
+ *          process reads is left unclaimed (stackra-403).
  * Boundary: test only; the memory inbox, the real bus with a fixed clock, and a stand-in database that records the
  *           scopes it opens.
  * Runtime: node (vitest)
@@ -17,6 +19,7 @@ import type { Database } from "@stackra/database";
 import { EventBus, IntegrationEvent, Listener, type ListenerContext } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
+import { Change, registerChanges } from "@stackra/versioning";
 import { z } from "zod";
 
 import type { EventEnvelope } from "#contracts/index";
@@ -32,11 +35,15 @@ const clock = { now: () => new Date(NOON) } as Clock;
 
 const SCOPE: ScopeRef = { id: "scp_1", path: "platform.acme" };
 
-class OrderPaid extends IntegrationEvent({ name: "order.paid" }) {
+class OrderPaid extends IntegrationEvent({
+  name: "order.paid",
+}) {
   orderId!: string;
 }
 
-class OrderShipped extends IntegrationEvent({ name: "order.shipped" }) {
+class OrderShipped extends IntegrationEvent({
+  name: "order.shipped",
+}) {
   orderId!: string;
 }
 
@@ -212,5 +219,89 @@ describe(InboxService, () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]).toBeInstanceOf(AppApproved);
     expect({ ...(seen[0] as object) }).toEqual({ appId: "app_1" });
+  });
+
+  describe("versions", () => {
+    class PointsEarned extends IntegrationEvent({
+      name: "points.earned",
+      version: 2,
+    }) {
+      memberId!: string;
+
+      tier!: string;
+    }
+
+    class PointsEarnedV1Change extends Change<PointsEarned>({
+      from: 1,
+      sunset: "2027-04-01",
+    }) {
+      memberId!: string;
+
+      up(v1: PointsEarnedV1Change): PointsEarned {
+        return PointsEarned.create({ memberId: v1.memberId, tier: "bronze" });
+      }
+
+      down(v2: PointsEarned): PointsEarnedV1Change {
+        return PointsEarnedV1Change.create({ memberId: v2.memberId });
+      }
+    }
+
+    registerSchemas([
+      [PointsEarned, z.object({ memberId: z.string(), tier: z.string() })],
+      [PointsEarnedV1Change, z.object({ memberId: z.string() })],
+    ]);
+    registerEventNames([{ type: PointsEarned, name: "loyalty.points.earned.v2" }]);
+    registerChanges([[PointsEarned, PointsEarnedV1Change]]);
+
+    /** An inbox whose bus records every `PointsEarned` it delivers. */
+    function versionedInbox() {
+      const seen: PointsEarned[] = [];
+      class PointsListener extends Listener {
+        async handle(event: PointsEarned): Promise<void> {
+          seen.push(event);
+        }
+      }
+      const { inbox, driver } = inboxWithListener();
+      (inbox as unknown as { bus: EventBus }).bus.subscribe(PointsEarned, new PointsListener());
+      return { inbox, driver, seen };
+    }
+
+    it("lifts an older version with its change and runs the listener once across both versions", async () => {
+      const { inbox, seen } = versionedInbox();
+      await expect(
+        inbox.receive(
+          envelope({ id: "evt_V", type: "loyalty.points.earned.v1", data: { memberId: "mem_1" } }),
+        ),
+      ).resolves.toBe(true);
+      await expect(
+        inbox.receive(
+          envelope({
+            id: "evt_V",
+            type: "loyalty.points.earned.v2",
+            data: { memberId: "mem_1", tier: "gold" },
+          }),
+        ),
+      ).resolves.toBe(false);
+      expect(seen).toHaveLength(1);
+      expect(seen[0]).toBeInstanceOf(PointsEarned);
+      expect({ ...seen[0] }).toEqual({ memberId: "mem_1", tier: "bronze" });
+    });
+
+    it("leaves a newer version unclaimed, so the older copy of the same id still runs", async () => {
+      const { inbox, seen } = versionedInbox();
+      await expect(
+        inbox.receive(envelope({ id: "evt_W", type: "loyalty.points.earned.v3", data: {} })),
+      ).resolves.toBe(false);
+      await expect(
+        inbox.receive(
+          envelope({
+            id: "evt_W",
+            type: "loyalty.points.earned.v2",
+            data: { memberId: "mem_1", tier: "gold" },
+          }),
+        ),
+      ).resolves.toBe(true);
+      expect(seen).toHaveLength(1);
+    });
   });
 });

@@ -4,7 +4,9 @@
  *          the event id and, only on the first claim, hands the event to the in-process bus and drains it, all in one
  *          transaction in the event's scope, so a redelivered event runs its listeners once.
  * Boundary: a platform service over the `InboxDriver` port, @stackra/events' `EventBus`, the `Database` and the
- *           `Clock`. The generated subscription of a consuming service calls `receive`, and so does the in-process
+ *           `Clock`. Another version of a known event is read through @stackra/versioning (stackra-403): an older one is
+ *           lifted by its `Change.up` (`upgrade`) to the class this process has; a newer one is left unclaimed, since
+ *           its producer publishes the older version beside it under the same id until the change's sunset. The generated subscription of a consuming service calls `receive`, and so does the in-process
  *           publisher. An unknown wire name is refused before the claim, so the event stays unreceived for a later
  *           release. A failing listener is recorded on its delivery (the bus's rule) and the event still counts as
  *           received; a claim whose transaction rolls back is released. Every receipt runs inside `withScope`, the
@@ -22,12 +24,13 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
-import type { EventBus, EventClass, Listener, ListenerContext } from "@stackra/events";
+import type { Event, EventBus, Listener, ListenerContext } from "@stackra/events";
+import { upgrade } from "@stackra/versioning";
 
 import type { EventEnvelope, InboxDriver } from "#contracts/index";
-import { EVENT_NAMES } from "#core/constants/event-names.constant";
 import { RELAYS } from "#core/constants/relays.constant";
 import { UnknownEventError } from "#core/errors/unknown-event.error";
+import { wireVersionOf } from "#core/functions/wire-version-of.function";
 
 /**
  * Receives integration events once each.
@@ -91,15 +94,24 @@ export class InboxService extends Service {
    * Runs the listeners of the event in `envelope`, and hands the envelope to each relay, unless its id was received
    * before.
    *
-   * @returns `true` when this call ran it, `false` when it had been received.
+   * @returns `true` when this call ran it, `false` when it had been received or carries a newer version than this
+   *          process reads (the producer publishes the older one too, under the same id).
    * @throws UnknownEventError when its wire name names no integration event of this process and no relay is connected.
-   * @throws ZodError when its data breaks the event's schema.
+   * @throws ZodError when its data breaks the schema of the version it carries.
+   * @throws RangeError when it carries an older version whose `Change` is not registered (its sunset passed).
    */
   async receive(envelope: EventEnvelope): Promise<boolean> {
-    const type = EVENT_NAMES.byName.get(envelope.type) as EventClass | undefined;
-    if (type === undefined && this.relays.length === 0)
+    const wire = wireVersionOf(envelope.type);
+    // A newer version than this process reads: its producer publishes the older one under the same id, so wait for it.
+    if (wire !== undefined && wire.version > wire.current) return false;
+    if (wire === undefined && this.relays.length === 0)
       throw UnknownEventError.create({ type: envelope.type });
-    const event = type?.create(envelope.data as never);
+    let event: Event | undefined;
+    if (wire !== undefined)
+      event =
+        wire.version === wire.current
+          ? wire.type.create(envelope.data as never)
+          : upgrade(wire.type, envelope.data, wire.version);
     const meta = { ...envelope.meta, id: envelope.id, occurredAt: new Date(envelope.occurredAt) };
     return this.database.withScope(envelope.scope ?? [], async () => {
       if (!(await this.driver.claim(envelope.id, this.clock.now()))) return false;

@@ -9,7 +9,8 @@
  *          change log after that consumer's cursor and hands it each run of one model's changes in one scope
  *          (`consumeMany` with the run coalesced, or `consume` one by one), saving the cursor after the run; a failed
  *          consumer retries from its cursor after the same backoff and stalls (logged, nothing dropped) after its last
- *          attempt, while every other consumer moves on.
+ *          attempt, while every other consumer moves on. An event is published at its current version and then at
+ *          each older version a live `Change` still serves (ADR 0141, stackra-403), all under the same id.
  * Boundary: a platform service over the `OutboxDriver` and `EventPublisher` ports, @stackra/locking's `Locks`, the
  *           `Database` and the `Clock`; `connect(container)` gives it the container its change consumers and logger are
  *           resolved from (the runtime and a test call it, as they call `EventBus.connect`). Delivery is at least once:
@@ -50,6 +51,7 @@ import type {
 } from "#contracts/index";
 import { CHANGE_CONSUMERS } from "#core/constants/change-consumers.constant";
 import { coalesceChanges } from "#core/functions/coalesce-changes.function";
+import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
 
@@ -169,7 +171,6 @@ export class OutboxRelayService extends Service {
       const due = await this.driver.due(now, OUTBOX_DEFAULTS.batchSize);
       if (!this.holds(due, now))
         for (const message of due) {
-          // oxlint-disable-next-line no-await-in-loop -- in order, each recorded before the next is delivered
           await this.deliver(message, now, resolver);
           handled += 1;
         }
@@ -190,11 +191,9 @@ export class OutboxRelayService extends Service {
     this.connected();
     while (!options.signal.aborted) {
       try {
-        // oxlint-disable-next-line no-await-in-loop -- one tick at a time
         if ((await this.relay()) === 0) await this.pause(options.signal);
       } catch (error) {
         this.logger()?.error(OUTBOX_LOG_EVENTS.relayFailed, { cause: error });
-        // oxlint-disable-next-line no-await-in-loop -- see above
         await this.pause(options.signal);
       }
     }
@@ -212,7 +211,7 @@ export class OutboxRelayService extends Service {
   private async deliver(message: OutboxMessage, now: Date, resolver: Resolver): Promise<void> {
     try {
       await (message.kind === MessageKind.Event
-        ? this.publisher.publish(this.envelopeOf(message))
+        ? this.publish(this.envelopeOf(message), now)
         : this.consume(message, resolver));
       await this.driver.remove(message.id);
     } catch (error) {
@@ -319,9 +318,14 @@ export class OutboxRelayService extends Service {
     for (const type of CHANGE_CONSUMERS.get(change.model)?.consumers ?? []) {
       if (!resolver.has(type)) continue;
       const consumer = resolver.get(type);
-      // oxlint-disable-next-line no-await-in-loop -- consumers run in registration order
       await this.database.withScope(message.scope ?? [], () => consumer.consume(change));
     }
+  }
+
+  /** Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141). */
+  private async publish(envelope: EventEnvelope, now: Date): Promise<void> {
+    await this.publisher.publish(envelope);
+    for (const older of olderEnvelopes(envelope, now)) await this.publisher.publish(older);
   }
 
   /** The wire form of an event message. */

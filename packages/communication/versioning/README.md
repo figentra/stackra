@@ -14,6 +14,7 @@ The class's fields are the old shape. While only the latest version exists, the 
 | `Change`                                                                                             | the kind base: an event change (`from: 1`) or a dated response change (`from: "2027-03-01"`)      |
 | `registerChanges`                                                                                    | links each subject to its changes; gen emits the call                                             |
 | `downgrade`                                                                                          | shapes a current value for an older dated version or event version (`down`)                       |
+| `publishedVersions`                                                                                  | the older versions of an event still published on a day (live changes)                            |
 | `upgrade`                                                                                            | reads an old integration event payload as the current version (`up`)                              |
 | `resolveVersion`                                                                                     | picks a request's version: `Stackra-Version` header, then the pin, then the fallback              |
 | `applyVersionHeaders`                                                                                | writes the resolved `Deprecation` and `Sunset` on a response and adds `Stackra-Version` to `Vary` |
@@ -104,5 +105,6 @@ that reads a field the subject lost.
 
 - Sending `Stackra-Version` from a client: `stackraVersion` in `@stackra/transport`.
 - The versioning config (`supported`, `fallback`): the service's own `Config({ schema })` class.
-- Publishing both versions of an event until the sunset: the outbox.
+- Publishing both versions of an event until the sunset, and reading another version on receipt: the outbox's relay
+  and inbox (stackra-403), through `publishedVersions`, `downgrade` and `upgrade`.
 - The gen checks (a change date missing from the config, a version bump with no change, a change past its sunset).

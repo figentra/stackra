@@ -104,6 +104,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/validation": "workspace:*",
+    "@stackra/versioning": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

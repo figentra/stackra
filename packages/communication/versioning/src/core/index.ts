@@ -17,6 +17,7 @@ export { UnsupportedVersionError } from "#core/errors/unsupported-version.error"
 export { VersionSunsetError } from "#core/errors/version-sunset.error";
 export { applyVersionHeaders } from "#core/functions/apply-version-headers.function";
 export { downgrade } from "#core/functions/downgrade.function";
+export { publishedVersions } from "#core/functions/published-versions.function";
 export { registerChanges } from "#core/functions/register-changes.function";
 export { resolveVersion } from "#core/functions/resolve-version.function";
 export { upgrade } from "#core/functions/upgrade.function";

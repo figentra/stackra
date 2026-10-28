@@ -30,6 +30,7 @@ describe("@stackra/versioning", () => {
       "VersionSunsetError",
       "applyVersionHeaders",
       "downgrade",
+      "publishedVersions",
       "registerChanges",
       "resolveVersion",
       "upgrade",

@@ -16,8 +16,8 @@ own cursor; the inbox runs each received event once.
 
 **Tier:** `tier:lib` (`packages/runtime/outbox`). Entries `.`, `./contracts` and `./node`. Depends on
 `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
-`@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/model`, `@stackra/queue`, `@stackra/validation`
-and zod.
+`@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/model`, `@stackra/queue`, `@stackra/validation`,
+`@stackra/versioning` and zod.
 
 ## What is here
 
@@ -89,6 +89,12 @@ sets it in runway (the audit read trail uses `5`); every other service keeps `0`
 only, delivers it to the bus and drains it, all in one transaction in the event's scope. The in-process publisher calls
 it, and so does a consuming service's generated subscription. A redelivery runs nothing; an unknown wire name is refused
 before the claim, so a later release can still receive it.
+
+Event versions (`@stackra/versioning`, stackra-403): the relay publishes an event at its current version and then, for
+each `Change` whose sunset has not come, at that older version (`<base>.v<from>`, its data run through `down`), all
+under the same id. The inbox reads another version of an event it knows: an older one is lifted with `up` (`upgrade`)
+to the class this process has, and a newer one is left unclaimed, because its older copy of the same id arrives too.
+Either way the listeners run once per id. An older version whose change is gone (past its sunset) fails the receipt.
 
 The claim compares ids as exact strings. Ids are minted by `@stackra/contracts`' `mintPublicId("evt")` (lowercase,
 UUIDv7, ADR 0135); ids stored in the older forms (the outbox's uppercase ULID, actions' random form) are still

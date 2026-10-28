@@ -7,7 +7,8 @@
  *          another relay holds the lock; refuses to run before `connect`; `work` ticks until aborted. From the change
  *          log it hands each bound consumer the changes after its cursor run by run in each run's scope (coalesced to
  *          `consumeMany` when the consumer has it), saves the cursor, keeps the log, backs a failed consumer off from
- *          its kept progress and stalls it (logged) after the last attempt, and skips a stalled cursor.
+ *          its kept progress and stalls it (logged) after the last attempt, and skips a stalled cursor. An event with a
+ *          live change is published again at the older version, same id, its data run through `down` (stackra-403).
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
@@ -19,7 +20,11 @@ import { type AnyClass, Driver } from "@stackra/container";
 import { type Clock, Duration, Logger, type PublicId, type ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { IntegrationEvent } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
+import { registerSchemas } from "@stackra/validation";
+import { Change, registerChanges } from "@stackra/versioning";
+import { z } from "zod";
 
 import { OutboxConfig } from "#config/outbox.config";
 import { EventPublisher, MessageKind, RowChangeKind } from "#contracts/index";
@@ -27,6 +32,7 @@ import type { EventEnvelope, OutboxMessage, RowChange } from "#contracts/index";
 import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
+import { registerEventNames } from "#core/functions/register-event-names.function";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";
 
 const NOON = new Date(Date.UTC(2026, 9, 25, 12));
@@ -99,6 +105,37 @@ registerChangeConsumers([
   [Order, BatchConsumer],
 ]);
 
+class PointsEarned extends IntegrationEvent({
+  name: "points.earned",
+  version: 2,
+}) {
+  memberId!: string;
+
+  tier!: string;
+}
+
+class PointsEarnedV1Change extends Change<PointsEarned>({
+  from: 1,
+  sunset: "2027-04-01",
+}) {
+  memberId!: string;
+
+  up(v1: PointsEarnedV1Change): PointsEarned {
+    return PointsEarned.create({ memberId: v1.memberId, tier: "bronze" });
+  }
+
+  down(v2: PointsEarned): PointsEarnedV1Change {
+    return PointsEarnedV1Change.create({ memberId: v2.memberId });
+  }
+}
+
+registerSchemas([
+  [PointsEarned, z.object({ memberId: z.string(), tier: z.string() })],
+  [PointsEarnedV1Change, z.object({ memberId: z.string() })],
+]);
+registerEventNames([{ type: PointsEarned, name: "loyalty.points.earned.v2" }]);
+registerChanges([[PointsEarned, PointsEarnedV1Change]]);
+
 /** An event message due at noon. */
 function eventMessage(fields: Partial<OutboxMessage> = {}): OutboxMessage {
   return {
@@ -170,6 +207,28 @@ describe(OutboxRelayService, () => {
         meta: { correlationId: "call-1" },
         data: { orderId: "ord_1" },
       },
+    ]);
+    expect(store.stored()).toEqual([]);
+  });
+
+  it("publishes an event again at each older version a live change serves, under the same id", async () => {
+    const { relay, store, publisher } = relayOf();
+    await store.write([
+      eventMessage({
+        type: "loyalty.points.earned.v2",
+        data: { memberId: "mem_1", tier: "gold" },
+      }),
+    ]);
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(
+      publisher.published.map(({ id, type, data }) => ({
+        id,
+        type,
+        data: { ...(data as object) },
+      })),
+    ).toEqual([
+      { id: "evt_A", type: "loyalty.points.earned.v2", data: { memberId: "mem_1", tier: "gold" } },
+      { id: "evt_A", type: "loyalty.points.earned.v1", data: { memberId: "mem_1" } },
     ]);
     expect(store.stored()).toEqual([]);
   });

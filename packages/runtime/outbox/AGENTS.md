@@ -38,6 +38,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - The inbox hands every claimed envelope to the relays `registerRelays` named and `connect` resolved, before the bus
   runs the typed listeners; without a relay an unknown wire name is still refused before the claim (ADR 0260
   decision 4). A relay is never keyed by wire name. The generated boot calls `connect` and, on shutdown, `disconnect`.
+- Event versions go through `@stackra/versioning` only (`publishedVersions`, `downgrade`, `upgrade`): the relay
+  publishes every live older version under the same event id, and the inbox lifts an older one and leaves a newer one
+  unclaimed. Never mint a second id for another version, and never convert a payload by hand here.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
 - `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
