@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitSchemas`: one `X$` per enum and shape in dependency order, the codecs and rules of each
  *          field type, `.exactOptional()`, `.nullable()` and constant defaults, the `X$Check` assertions, the
- *          `{ input, output }` of each action and query, the config alias, a member base `.extend`ed, a package base
+ *          `{ input, output }` of each action and query, the config alias (none for one the member ships), a member base `.extend`ed, a package base
  *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
  *          `registerSchemas` call of gap G1, the `registerChanges` call beside it, and the translated and upload
  *          kinds (STA-1218), and a package's shipped `X$` imported as `ShippedX$` (STA-1290), and a hatch's imports
@@ -67,6 +67,26 @@ describe("emitSchemas", () => {
     const commerce = emitSchemas(COMMERCE_IR, "commerce");
     expect(commerce).toContain('  gateway: z.enum(["stripe"]).default("stripe"),');
     expect(commerce).toContain("export const CommerceConfig$ = CommerceOptions$;");
+  });
+
+  it("declares no config alias the member ships itself, so a hatch importing it reads the shipped one", () => {
+    const shipped = emitSchemas(
+      {
+        ...COMMERCE_IR,
+        files: [
+          ...COMMERCE_IR.files,
+          {
+            file: "src/config/commerce-config-schema.constant.ts",
+            importPath: "#config/commerce-config-schema.constant",
+            folder: "config",
+            names: [{ name: "CommerceConfig$", typeOnly: false }],
+          },
+        ],
+      },
+      "commerce",
+    );
+    expect(shipped).not.toContain("export const CommerceConfig$");
+    expect(shipped).toContain("export const CommerceOptions$ = z.object({");
   });
 
   it("extends member bases, reuses package bases and refers across modules", () => {

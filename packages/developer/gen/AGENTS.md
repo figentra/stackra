@@ -166,7 +166,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `TranslatedStrings` are `translated`; `Upload<Bucket>` is `upload` and its argument must be a Bucket class.
   Any other `@stackra/*` type whose `<Type>$` a `.` or `./contracts` barrel exports is `shipped` (STA-1290): imported
   as `Shipped<Type>$`, never compiled again; its JSON Schema is `x-stackra-schema`. Never add a hand-kept table of
-  shipped schemas: the barrels are the source (`shippedSpecifier`).
+  shipped schemas: the barrels are the source (`shippedSpecifier`). An `X$` the member ships itself (`SeoConfig$` beside
+  `SeoOptions`) is never declared again in its schemas file nor exported from it: a second declaration shadows the
+  import a field hatch uses and reads it before its initialization.
 - `handle`'s output is a Schema class of the member, or `ReplicaPage` (any type argument) declared in a `@stackra/*`
   package for a replica query (ADR 0338): the reader records `handle.replica` and `buildManifest` writes
   `REPLICA_PAGE_SCHEMA` as `<module>.ReplicaPage`. Keep that constant in step with `ReplicaPage` in

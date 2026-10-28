@@ -3,7 +3,7 @@
  * Purpose: `emitPackageEntries`, a package's entry barrels (`.stackra/entry/{index,contracts,node,react,native,
  *          testing}.ts`, which package.json `exports` point at): named re-exports of every export of the entry's
  *          folders, plus the shipped `X$` of the shapes, enums, configs, actions and queries declared there (in a
- *          module `schemaModules` gives a schemas file), and the
+ *          module `schemaModules` gives a schemas file, and not an `X$` the member ships itself), and the
  *          generated `<Key>Module` in `node` when the package authors none, and in `node` each module's entity
  *          schemas (`<MODULE>_ENTITIES`) for the host to register.
  * Boundary: pure. `.` holds `src/config` and `src/core`; `node` holds `src/node` except `database/factories` and
@@ -57,10 +57,12 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
   const lines = new Map<string, string[]>(ENTRIES.map(([entry]) => [entry, []]));
   const schemaNames = new Map<string, Map<string, string[]>>();
   // Only a module gen writes a schemas file for ships its `X$` (an enum-only member gets none).
+  // An `X$` the member ships itself is exported from its own file above, never from the schemas file too.
   const written = new Set(schemaModules(ir));
+  const own = new Set(ir.files.flatMap((file) => file.names.map((entry) => entry.name)));
   const addSchema = (file: string, module: string, name: string): void => {
     const entry = entryOf(file);
-    if (entry === undefined || !written.has(module)) return;
+    if (entry === undefined || !written.has(module) || own.has(`${name}$`)) return;
     const byModule = schemaNames.get(entry) ?? new Map<string, string[]>();
     byModule.set(module, [...(byModule.get(module) ?? []), `${name}$`]);
     schemaNames.set(entry, byModule);

@@ -3,7 +3,7 @@
  * Purpose: `emitSchemas`, the shape compiler's output for one module: `.stackra/gen/schemas/<module>.ts`, reached as
  *          `#stackra/schemas/<module>`, with one `X$` per enum and shape, a type `X$Check` per shape that makes the type
  *          checker prove the schema's output equals the class's fields, an `X$` alias per config class naming its
- *          schema, one `registerSchemas` call linking each class to its `X$` (gap G1), and beside it one
+ *          schema (none when the member ships that `X$` itself), one `registerSchemas` call linking each class to its `X$` (gap G1), and beside it one
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides; zod is imported only when the file builds a schema. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
@@ -323,9 +323,17 @@ export function emitSchemas(ir: MemberIR, module: string): string {
     body.push(...shapeOf(context, shape));
     use(imports, shape.importPath, shape.name, shape.kind === "config");
   }
+  // A config's `X$` the member ships itself (`SeoConfig$`, which a field hatch may import here) is never declared again:
+  // a second `SeoConfig$` would shadow the import and read it before its initialization.
+  const shipped = new Set(ir.files.flatMap((file) => file.names.map((entry) => entry.name)));
   for (const declaration of ir.classes) {
     const schema = declaration.options["schema"] as ClassValue | undefined;
-    if (declaration.kind !== "config" || declaration.module !== module || schema === undefined)
+    if (
+      declaration.kind !== "config" ||
+      declaration.module !== module ||
+      schema === undefined ||
+      shipped.has(`${declaration.name}$`)
+    )
       continue;
     const target = ir.shapes.find((shape) => shape.name === schema.$class);
     if (target === undefined) continue;

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitPackageEntries`: each entry holds its folders' exports and their shipped `X$`, seeders
+ * Purpose: unit tests of `emitPackageEntries`: each entry holds its folders' exports and their shipped `X$` (one the
+ *          member ships itself only from its own file), seeders
  *          go to `testing`, stand-in barrels are skipped, type-only names print as types, the generated module and
  *          each module's entity list go to `node`, no symbol appears in two entries, and a non-package writes no
  *          entry.
@@ -41,6 +42,26 @@ describe("emitPackageEntries", () => {
       'export { LoyaltyKitConfig$, LoyaltyKitOptions$ } from "#stackra/schemas/loyalty_kit";',
     );
     expect(entry("index")).not.toContain("#core/index");
+  });
+
+  it("exports an X$ the member ships from its own file only, never from the schemas file too", () => {
+    const shipped = emitPackageEntries({
+      ...LOYALTY_KIT_IR,
+      files: [
+        ...LOYALTY_KIT_IR.files,
+        {
+          file: "src/core/constants/loyalty-kit-config-schema.constant.ts",
+          importPath: "#core/constants/loyalty-kit-config-schema.constant",
+          folder: "core",
+          names: [{ name: "LoyaltyKitConfig$", typeOnly: false }],
+        },
+      ],
+    });
+    const index = shipped.find((file) => file.path === ".stackra/entry/index.ts")?.content ?? "";
+    expect(index).toContain(
+      'export { LoyaltyKitConfig$ } from "#core/constants/loyalty-kit-config-schema.constant";',
+    );
+    expect(index).toContain('export { LoyaltyKitOptions$ } from "#stackra/schemas/loyalty_kit";');
   });
 
   it("places contracts, node, react and testing", () => {
