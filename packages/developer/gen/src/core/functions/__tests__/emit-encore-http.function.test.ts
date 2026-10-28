@@ -14,6 +14,9 @@ import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
+/** The entry import of a generated .stackra/encore/<service>/ file; a constant so validate does not read it as this test's own import. */
+const GENERATED_ENTRY = "../../entry/server";
+
 describe(emitEncoreHttp, () => {
   it("writes the CORS adapter of a service that runs @stackra/app", () => {
     const file = emitEncoreHttp(BILLING_IR);
@@ -21,7 +24,7 @@ describe(emitEncoreHttp, () => {
     const content = file?.content ?? "";
     for (const line of [
       'import { CorsConfig, corsHeaders } from "@stackra/app/server";',
-      'import { app } from "../../entry/server";',
+      `import { app } from "${GENERATED_ENTRY}";`,
       "  return app.handlers.run(async (container) => {",
       "    const cors = corsHeaders(request, container.get(CorsConfig));",
       '    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
