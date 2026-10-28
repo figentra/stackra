@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `structureFindings(context, options)`, the `structure` phase of `stackra check` (what `pnpm validate` ran
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
- *          the runway schemas and files, member imports, the Expo form factor and window sizing, the native module
- *          packages (ADR 0478), the brand NOTICE, and
+ *          the runway schemas and files, member imports, raw SQL reasons, the Expo form factor and window sizing, the
+ *          native module packages (ADR 0478), the brand NOTICE, and
  *          per member its manifest, required files and service shape, and in the Stackra repository its npm and
  *          `stackra` metadata.
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
@@ -11,17 +11,20 @@
  *           `options.ci` and the member is local, otherwise a notice through `options.warn`.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
- *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478.
+ *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478;
+ *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { RAW_SQL_BASELINE } from "#node/constants/raw-sql-baseline.constant";
 import { checkImports } from "#node/functions/check-imports.function";
 import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
+import { checkRawSql } from "#node/functions/check-raw-sql.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
@@ -32,6 +35,7 @@ import { checkWindowSizing } from "#node/functions/check-window-sizing.function"
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
+import { isRawSqlSource } from "#node/functions/is-raw-sql-source.function";
 import { isRunwayFile } from "#node/functions/is-runway-file.function";
 import { listMembers } from "#node/functions/list-members.function";
 import { readJsonc } from "#node/functions/read-jsonc.function";
@@ -142,6 +146,8 @@ export async function structureFindings(
       );
   }
   for (const p of files.filter(isMemberSource)) report("imports", "", checkImports(p, text(p)));
+  for (const p of files.filter(isRawSqlSource))
+    report("raw-sql", "", checkRawSql(p, text(p), RAW_SQL_BASELINE[p] ?? 0));
   for (const p of files.filter(isExpoAppConfig))
     report("ios-form-factor", "", checkIosFormFactor(p, text(p)));
   report(

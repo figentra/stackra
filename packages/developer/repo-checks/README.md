@@ -18,12 +18,12 @@ TypeScript 6 compiler API the doc standard parses with).
 
 ## Phases
 
-| Phase (`stackra check`) | Runner              | Checks                                                                                            |
-| ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------- |
-| `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored |
-| `structure`             | `structureFindings` | test placement, runway schemas and files, imports, Expo form factor, members' manifests and files |
-| `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                   |
-| `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                       |
+| Phase (`stackra check`) | Runner              | Checks                                                                                                             |
+| ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
+| `structure`             | `structureFindings` | test placement, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files |
+| `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
+| `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                                        |
 
 Each runner takes a `RepoContext` (`readRepoContext(root)`: the root and its git file list, or, when git cannot list it, the files `walkRepoFiles`
 finds honouring `.gitignore`) and returns `RawFinding`s
@@ -35,13 +35,18 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 `stackra` field and its turbo tags of ADR 0453 decision 11, run in the Stackra repository only, with the built
 `STACKRA_MANIFEST_SCHEMA` of `@stackra/skills`), `checkExports`, `checkService`,
 `checkTestPlacement`, `checkJsonConfigs`, `checkRunwaySchemas`, `checkRunwayFiles`, `checkYamlFlowMaps`,
-`checkImports`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`), and so
+`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
 
 `checkMember` refuses any `@stackra-pro/*` dependency in every member, apps included (`PRO_SCOPE`): the Pro packages,
 `@stackra-pro/ui` among them, live in figentra/stackra-pro (ADR 0461). HeroUI Pro (`PRO_DEPENDENCIES`) stays apps-only
 (ADR 0310).
+
+`checkRawSql` (rule `raw-sql`, ADR 0160 decision 1, stackra-288) holds every raw SQL call in member source (not tests):
+an `.execute(...)` with a literal statement, or a `raw(...)` imported from the ORM or `@stackra/database`, carries a
+`// raw-sql: <why>` comment on its line, inside its statement, or in the comment lines directly above the statement.
+`RAW_SQL_BASELINE` lists the calls that had no reason when the check landed, per file; it only goes down.
 
 ## Not here yet
 

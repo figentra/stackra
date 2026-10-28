@@ -10,6 +10,10 @@
 //          oxlint does not merge one rule across overrides: the LAST matching override's options replace the
 //          earlier ones. So the no-restricted-imports overrides run general → specific and each one repeats the
 //          patterns of the broader ones it narrows (STA-167). Keep that when adding a pattern.
+//          The ORM ban (ADR 0097 decision 2, amended 2026-10-29, stackra-288): no file imports @mikro-orm/* except
+//          @stackra/database; @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM
+//          adapters (src/core/orm, whereEncrypted, the re-seal job) the rest. The exemption blocks at the end repeat
+//          each layer's patterns without the ban.
 // Owner: the owner · Secrets: forbidden
 {
   "extends": ["./node.jsonc"],
@@ -25,6 +29,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": ["@stackra/*", "@stackra/*/*"],
@@ -53,6 +61,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -97,6 +109,10 @@
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
               {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
                 "group": [
                   "@*/service-*",
                   "@*/service-*/*",
@@ -133,6 +149,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -173,6 +193,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -233,6 +257,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -300,6 +328,10 @@
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
               {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
                 "group": [
                   "**/apps/**",
                   ".*/**/services/**",
@@ -353,6 +385,10 @@
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
               {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
                 "group": [
                   "**/apps/**",
                   ".*/**/services/**",
@@ -396,6 +432,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -444,6 +484,10 @@
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
               {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
                 "group": [
                   "**/apps/**",
                   ".*/**/services/**",
@@ -484,6 +528,10 @@
               {
                 "group": ["@stackra/*/src/*"],
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
               },
               {
                 "group": [
@@ -528,6 +576,10 @@
                 "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
               {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
                 "group": [
                   "**/apps/**",
                   ".*/**/services/**",
@@ -565,6 +617,504 @@
         "**/packages/*/*/src/*/**/__tests__/**/*.ts",
         "**/packages/*/*/src/*/**/__tests__/**/*.tsx",
         "**/packages/*/*/src/*/**/__fixtures__/**/*.ts",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // ORM boundary (ADR 0097 decision 2, amended 2026-10-29): @stackra/database imports @mikro-orm/* freely. Each block repeats its layer's patterns without the ORM ban, because the last matching override wins.
+    {
+      "files": [
+        "**/packages/data/database/src/core/**/*.ts",
+        "**/packages/data/database/src/core/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": [
+                  "#application",
+                  "#application/*",
+                  "#infrastructure",
+                  "#infrastructure/*",
+                  "#presentation",
+                  "#presentation/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                ],
+                "message": "core is isomorphic domain meaning: it imports no other layer, no runtime entry (node/, react/, native/, testing/) and no host library (ADR-0004 \u00a71, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/database contracts: the contracts layer rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/database/src/contracts/**/*.ts",
+        "**/packages/data/database/src/contracts/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": [
+                  "#core",
+                  "#core/*",
+                  "#config",
+                  "#config/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
+                ],
+                "message": "contracts is the leaf entry: types, ports and enums only. It imports no other entry and no host library (ADR 0117, ADR 0294).",
+              },
+              {
+                "group": ["react", "react-dom", "react-native"],
+                "allowTypeImports": true,
+                "message": "contracts imports a host library for types only: use `import type` (ADR 0117, ADR 0310).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/database node: the node layer rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/database/src/node/**/*.ts",
+        "**/packages/data/database/src/node/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["#react", "#react/*", "#native", "#native/*", "#testing", "#testing/*"],
+                "message": "node/ is a runtime entry beside react/ and native/: it imports contracts, core and config, never a sibling runtime entry or testing/ (ADR 0117, ADR 0294).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/database testing: the package tier rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/database/src/testing/**/*.ts",
+        "**/packages/data/database/src/testing/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/database tests: the test rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/database/src/*/**/__tests__/**/*.ts",
+        "**/packages/data/database/src/*/**/__tests__/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/model core: Collection, Ref and Reference from @mikro-orm/core only (the owner's decision 10 of 2026-10-28).
+    {
+      "files": [
+        "**/packages/data/model/src/core/**/*.ts",
+        "**/packages/data/model/src/core/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mikro-orm/core",
+                "allowImportNames": ["Collection", "Ref", "Reference"],
+                "message": "@stackra/model's model surface takes only Collection, Ref and Reference from @mikro-orm/core (ADR 0097 amendment of 2026-10-29); an ORM adapter belongs in src/core/orm, and the rest in @stackra/database.",
+              },
+            ],
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": [
+                  "#application",
+                  "#application/*",
+                  "#infrastructure",
+                  "#infrastructure/*",
+                  "#presentation",
+                  "#presentation/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                ],
+                "message": "core is isomorphic domain meaning: it imports no other layer, no runtime entry (node/, react/, native/, testing/) and no host library (ADR-0004 \u00a71, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*", "!@mikro-orm/core"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/model's ORM adapters (custom types, the embeddable schema, the encrypted-fields subscriber, the re-seal job and whereEncrypted): the core rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/model/src/core/orm/**/*.ts",
+        "**/packages/data/model/src/core/functions/where-encrypted.function.ts",
+        "**/packages/data/model/src/core/services/encrypted-fields-reseal.service.ts",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": [
+                  "#application",
+                  "#application/*",
+                  "#infrastructure",
+                  "#infrastructure/*",
+                  "#presentation",
+                  "#presentation/*",
+                  "#node",
+                  "#node/*",
+                  "#react",
+                  "#react/*",
+                  "#native",
+                  "#native/*",
+                  "#testing",
+                  "#testing/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                ],
+                "message": "core is isomorphic domain meaning: it imports no other layer, no runtime entry (node/, react/, native/, testing/) and no host library (ADR-0004 \u00a71, ADR 0117).",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/model tests: the test rule with the model's ORM allowance.
+    {
+      "files": [
+        "**/packages/data/model/src/*/**/__tests__/**/*.ts",
+        "**/packages/data/model/src/*/**/__tests__/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mikro-orm/core",
+                "allowImportNames": ["Collection", "Ref", "Reference"],
+                "message": "@stackra/model's model surface takes only Collection, Ref and Reference from @mikro-orm/core (ADR 0097 amendment of 2026-10-29); an ORM adapter belongs in src/core/orm, and the rest in @stackra/database.",
+              },
+            ],
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  ".*/**/services/**",
+                  "**/workers/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["@stackra/*", "@stackra/*/*"],
+                "importNames": [
+                  "defineConfig",
+                  "defineToken",
+                  "defineDriver",
+                  "Injectable",
+                  "Inject",
+                ],
+                "message": "Retired: no @Injectable/@Inject (a class is a provider by its kind; the parameter type names the dependency) and define* only for defineApp/Service/Package/Worker (ADR 0294 R6, ADR 0305 r3).",
+              },
+              {
+                "group": ["@mikro-orm/*", "@mikro-orm/*/*", "!@mikro-orm/core"],
+                "message": "Only @stackra/database imports the ORM (ADR 0097 decision 2). @stackra/model takes Collection, Ref and Reference from @mikro-orm/core, and its ORM adapters the rest (ADR 0097 amendment of 2026-10-29); anything else goes through @stackra/database or a structural type.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // @stackra/model adapter tests: the test rule without the ORM ban.
+    {
+      "files": [
+        "**/packages/data/model/src/core/orm/__tests__/**/*.ts",
+        "**/packages/data/model/src/core/functions/__tests__/where-encrypted.function.test.ts",
+        "**/packages/data/model/src/core/services/__tests__/encrypted-fields-reseal.service.test.ts",
       ],
       "rules": {
         "no-restricted-imports": [

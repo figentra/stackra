@@ -72,6 +72,10 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   subscriber and the re-seal job read the id the same way and refuse a row without one. Never fall back to the
   unbound context, and never add a second scope-binding cast (`ScopeKeyCast` is retired). The blind index stays
   unbound.
+- Lint holds the ORM boundary (ADR 0097 amendment of 2026-10-29, stackra-288): the model surface imports only
+  `Collection`, `Ref` and `Reference` from `@mikro-orm/core`. Anything else from the ORM belongs in an adapter under
+  `src/core/orm/` (or in `@stackra/database`); `whereEncrypted` and `EncryptedFieldsResealService` are the two named
+  exceptions outside that folder.
 - `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 - `changeCaptureOf` is the one place that decides which fields a change may carry a value for: it always drops

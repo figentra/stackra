@@ -7,6 +7,12 @@
   (`presets.test.ts` checks it). JS plugins load from their source file (ADR 0421).
 - `no-restricted-imports` does not merge across overrides: every override in `boundaries.jsonc` repeats the
   deep-src and retired-import patterns, and each new pattern needs a banned line in `src/__tests__/fixtures/`.
+- The ORM ban (ADR 0097 decision 2 as amended 2026-10-29, stackra-288) is in every override: no `@mikro-orm/*`
+  import. The exemption blocks at the end lift it for `@stackra/database` (per layer) and narrow it for
+  `@stackra/model` (`Collection`, `Ref`, `Reference` from `@mikro-orm/core` through `paths` `allowImportNames`; its
+  ORM adapters in `src/core/orm`, `whereEncrypted` and the re-seal job take the rest). When you change a layer's
+  patterns, change its copy in those blocks too. An allowed import in a fixture is written as `export … from`, so
+  the fixture test does not expect it to be reported.
 - The rule-gap cheap set (N-1 to N-10, stackra-229) is in `base.jsonc` at error; a new site is fixed or carries a
   reasoned `oxlint-disable-next-line <rule> -- <reason>`, never a lower severity. The `.tsx` override carries the
   react and jsx-a11y rules, because no member extends `react.jsonc`.
