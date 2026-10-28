@@ -21,6 +21,7 @@ describe("FILESYSTEM_CONFIG_SCHEMA", () => {
       url: null,
       s3: DEFAULT_S3,
       gcs: { bucket: "", projectId: null },
+      health: { timeout: "PT2S", critical: true, path: ".health" },
     });
   });
 

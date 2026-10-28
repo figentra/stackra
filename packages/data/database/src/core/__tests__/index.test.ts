@@ -178,7 +178,7 @@ describe("@stackra/database", () => {
       "Database",
       "DatabaseConfig",
       "DatabaseConfig$",
-      "DatabaseOptions",
+      "DatabaseConfigOptions",
       "EntitySchema",
       "Extension",
       "GraphQuery",

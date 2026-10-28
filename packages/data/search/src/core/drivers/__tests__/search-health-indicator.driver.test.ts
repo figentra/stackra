@@ -9,7 +9,7 @@
  *                     17); registry gap R-27.
  */
 import { buildConfig } from "@stackra/config";
-import { HealthIndicator } from "@stackra/contracts";
+import { Duration, HealthIndicator } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -34,7 +34,7 @@ function indicator(
   const config = buildConfig(SearchConfig, {
     values: {
       health: {
-        timeout: "PT2S",
+        timeout: Duration.seconds(2),
         critical: true,
         table: "catalog.products",
         primaryKey: "id",
@@ -82,7 +82,7 @@ describe("SearchHealthIndicatorDriver", () => {
   it("is down once the probe runs past the configured timeout", async () => {
     vi.useFakeTimers();
     const pending = indicator("hang", {
-      timeout: "PT1S" as SearchConfig["health"]["timeout"],
+      timeout: Duration.seconds(1),
     }).check();
     await vi.advanceTimersByTimeAsync(1000);
     expect(await pending).toEqual({

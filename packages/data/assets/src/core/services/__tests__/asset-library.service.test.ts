@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `AssetLibrary`: a service that resolves a public asset to the disk URL of
  *          `<module>/<kind>/<path>` with its key and source file, refuses a URL for a non-public asset or a disk with
- *          no public URL, reads the published bytes and UTF-8 text of any asset, and
+ *          no public URL (the disk's own refusal), reads the published bytes and UTF-8 text of any asset, and
  *          checks a data asset's bytes against its hash.
  * Boundary: test only; a memory disk from @stackra/filesystem stands in for the CDN bucket, with a fixed clock.
  * Runtime: node (vitest)
@@ -51,10 +51,10 @@ const Assets = assets({
   },
 });
 
-/** A memory disk serving from `url`. */
-function disk(url: string | null = "https://cdn.test/assets/"): MemoryFileSystemDriver {
+/** A memory disk serving from the CDN base. */
+function disk(): MemoryFileSystemDriver {
   return new MemoryFileSystemDriver(
-    buildConfig(FilesystemConfig, { values: { url } }),
+    buildConfig(FilesystemConfig, { values: { url: "https://cdn.test/assets/" } }),
     new FixedClock(),
   );
 }
@@ -88,7 +88,15 @@ describe("AssetLibrary", () => {
   });
 
   it("refuses a URL when the disk has no public URL", () => {
-    const library = new AssetLibrary(disk(null));
+    // the memory disk falls back to https://files.invalid since stackra-226; a disk with no URL refuses, as S3 does
+    class PrivateDisk extends MemoryFileSystemDriver {
+      override url(): string {
+        throw new Error("This disk has no public URL: set `filesystem.url` to serve its files");
+      }
+    }
+    const library = new AssetLibrary(
+      new PrivateDisk(buildConfig(FilesystemConfig), new FixedClock()),
+    );
     expect(() => library.resolve(Assets.orders.public.logo_svg)).toThrow(/no public URL/);
   });
 

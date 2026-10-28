@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}` with no `disk` (ADR 0465),
- *          only this package's driver names, an upload lifetime above zero and at most seven days, and the OCR and C2PA settings.
+ *          only this package's driver names, an upload lifetime above zero and at most seven days (either duration form, stored canonical), and the OCR and C2PA settings.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -52,7 +52,8 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
     expect(MEDIA_CONFIG_SCHEMA.parse({ uploadExpiresIn: Duration.days(7) }).uploadExpiresIn).toBe(
       "P7D",
     );
-    for (const lifetime of ["PT0S", "P8D", "1h", 3_600])
+    expect(MEDIA_CONFIG_SCHEMA.parse({ uploadExpiresIn: "1h" }).uploadExpiresIn).toBe("PT1H");
+    for (const lifetime of ["PT0S", "P8D", "8d", "an hour", 3_600])
       expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploadExpiresIn: lifetime }).success).toBe(false);
   });
 

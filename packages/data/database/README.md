@@ -327,7 +327,7 @@ schema.create("parties", (t) => {
 
 ## Health check
 
-`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseOptions` from `.`), which holds only `health`; the connection URL stays the process's `DATABASE_URL`. Bind it and
+`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds only `health`; the connection URL stays the process's `DATABASE_URL`. Bind it and
 `@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
 
 | Field      | Default | Meaning                                                                   |

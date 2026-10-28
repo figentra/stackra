@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/database until `stackra gen` writes the entry barrels (STA-339).
  *          The template's old `./orm` entry is folded in (ADR 0127 2026-10-24 note): `EntitySchema`, `OptionalProps`
  *          and `UniqueViolation` are MikroORM's own, re-exported, so generated entity metadata and `instanceof` checks
- *          use the classes the ORM throws and reads. `DatabaseConfig` (with `DatabaseConfig$` and `DatabaseOptions`)
+ *          use the classes the ORM throws and reads. `DatabaseConfig` (with `DatabaseConfig$` and `DatabaseConfigOptions`)
  *          holds the health probe's settings.
  * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
  *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. `Projection` is the read-model kind base (its versions table's migration is found by path). The migration records, the registries, the name helpers, the
@@ -56,7 +56,7 @@ export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
 export { HoldSubscriber } from "#core/orm/hold.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
-export { DatabaseOptions } from "#core/schemas/database-options.schema";
+export { DatabaseConfigOptions } from "#core/schemas/database-config-options.schema";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
 export type { Blueprint } from "#core/types/blueprint.type";

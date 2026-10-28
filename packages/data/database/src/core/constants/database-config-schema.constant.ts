@@ -4,7 +4,7 @@
  *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `DatabaseConfig$` can `.extend` it. The defaults equal
- *           `DatabaseOptions`' initializers (tested). No credential: the connection URL is the process's
+ *           `DatabaseConfigOptions`' initializers (tested). No credential: the connection URL is the process's
  *           `DATABASE_URL`, read by the app's boot.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); registry gap R-27; gap analysis devx-ops

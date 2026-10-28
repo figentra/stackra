@@ -4,7 +4,7 @@
  *          client's uploader, how long an upload stays valid, where the HTTP uploader asks for
  *          one, the in-region OCR service and the C2PA signing slot.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
- *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days,
+ *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days, read in either duration form (stackra-223) and stored canonical,
  *           the SigV4 limit of a signed URL. No `disk` field: media stores on the one `FileSystem` disk that
  *           `filesystem.disk` picks (ADR 0465, stackra-226). The C2PA
  *           certificate and key are `@Secret` names (empty strings until set), never values in a layer.
@@ -21,26 +21,27 @@ import { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
 /** The longest a signed URL may live. */
 const SEVEN_DAYS = Duration.toMilliseconds(Duration.days(7));
 
-/** Whether `value` is a duration longer than zero and at most seven days. */
-function isUploadLifetime(value: unknown): value is Duration {
-  if (typeof value !== "string") return false;
+/** A duration longer than zero and at most seven days, in ISO 8601 (`PT1H`) or the short form (`1h`), read into its
+ * canonical form so the signer can time it. */
+const UPLOAD_LIFETIME = z.string().transform((text, context): Duration => {
   try {
-    const milliseconds = Duration.toMilliseconds(Duration.parse(value));
-    return milliseconds > 0 && milliseconds <= SEVEN_DAYS;
+    const lifetime = Duration.parse(text);
+    const milliseconds = Duration.toMilliseconds(lifetime);
+    if (milliseconds > 0 && milliseconds <= SEVEN_DAYS) return lifetime;
   } catch {
-    return false;
+    // not a duration: the issue below
   }
-}
+  context.addIssue({
+    code: "custom",
+    message: `"${text}" is not a duration longer than zero and at most seven days, such as PT1H or 1h`,
+  });
+  return z.NEVER;
+});
 
 /** The shipped `MediaConfig$`. */
 export const MEDIA_CONFIG_SCHEMA = z.object({
   uploader: z.enum(MEDIA_UPLOADERS).default("memory"),
-  uploadExpiresIn: z
-    .custom<Duration>(isUploadLifetime, {
-      message:
-        "Expected an ISO 8601 duration longer than zero and at most seven days, such as PT1H",
-    })
-    .default(Duration.hours(1)),
+  uploadExpiresIn: UPLOAD_LIFETIME.default(Duration.hours(1)),
   uploadEndpoint: z.string().min(1).default("/api/uploads"),
   scanner: z.enum(MEDIA_SCANNERS).default("memory"),
   clamav: z

@@ -39,6 +39,7 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
       localRelayAddress: "",
       localRelayPeers: [],
       localRelayProbeMs: 1500,
+      health: { timeout: Duration.seconds(2), critical: true },
     });
   });
 

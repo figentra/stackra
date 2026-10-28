@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DatabaseOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
+ * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
  *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness).
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
@@ -21,7 +21,7 @@ import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.c
  *   override health = { timeout: Duration.seconds(1), critical: true };
  * }
  */
-export class DatabaseOptions extends Schema {
+export class DatabaseConfigOptions extends Schema {
   /** How `DatabaseHealthIndicatorDriver` probes the database for `/readyz`. */
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
   @Field(DATABASE_CONFIG_SCHEMA.shape.health)
@@ -33,4 +33,4 @@ export class DatabaseOptions extends Schema {
   } = { timeout: Duration.seconds(2), critical: true };
 }
 
-registerSchemas([[DatabaseOptions, DATABASE_CONFIG_SCHEMA]]);
+registerSchemas([[DatabaseConfigOptions, DATABASE_CONFIG_SCHEMA]]);

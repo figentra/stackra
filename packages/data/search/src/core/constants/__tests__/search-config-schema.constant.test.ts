@@ -15,6 +15,7 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
     expect(SEARCH_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "postgres",
       embedder: { url: null, model: "", dimensions: 1024, tokenSecret: null },
+      health: { timeout: "PT2S", critical: true, table: "", primaryKey: "id" },
     });
   });
 

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `DatabaseConfig`, the database configuration (key `database`): the `/readyz` probe's timeout and whether
  *          a failed probe fails readiness.
- * Boundary: a configuration class over `DatabaseOptions` with no env map; runway's `config.database` layer sets it.
+ * Boundary: a configuration class over `DatabaseConfigOptions` with no env map; runway's `config.database` layer sets it.
  *           The connection URL is not here: it is the process's `DATABASE_URL`. A host overrides it as
  *           `class DatabaseConfig extends BaseDatabaseConfig` with `override` members only.
  * Runtime: isomorphic
@@ -11,7 +11,7 @@
  */
 import { Config } from "@stackra/config";
 
-import { DatabaseOptions } from "#core/schemas/database-options.schema";
+import { DatabaseConfigOptions } from "#core/schemas/database-config-options.schema";
 
 /**
  * The database configuration.
@@ -23,4 +23,4 @@ import { DatabaseOptions } from "#core/schemas/database-options.schema";
  *   override health = { timeout: Duration.seconds(1), critical: true };
  * }
  */
-export class DatabaseConfig extends Config({ schema: DatabaseOptions }) {}
+export class DatabaseConfig extends Config({ schema: DatabaseConfigOptions }) {}

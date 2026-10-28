@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `DatabaseConfig`: a configuration over `DatabaseOptions` keyed `database`, built
+ * Purpose: unit and type tests of `DatabaseConfig`: a configuration over `DatabaseConfigOptions` keyed `database`, built
  *          with its defaults and a runway values layer, refusing a timeout that is not a duration.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -8,7 +8,7 @@
  *                     20).
  */
 import { buildConfig, Config, ConfigInvalidError, configKey } from "@stackra/config";
-import type { Duration } from "@stackra/contracts";
+import { Duration } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { DatabaseConfig } from "#config/database.config";
@@ -28,10 +28,12 @@ describe("DatabaseConfig", () => {
   });
 
   it("takes a runway values layer and refuses a timeout that is not a duration", () => {
-    const values = { health: { timeout: "PT1S", critical: false } };
+    const values = { health: { timeout: Duration.seconds(1), critical: false } };
     expect(buildConfig(DatabaseConfig, { values }).health).toEqual(values.health);
     expect(() =>
-      buildConfig(DatabaseConfig, { values: { health: { timeout: "2s", critical: true } } }),
+      buildConfig(DatabaseConfig, {
+        values: { health: { timeout: "two seconds" as Duration, critical: true } },
+      }),
     ).toThrow(ConfigInvalidError);
   });
 });
