@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `gcpRuntimeConfig`: production's Postgres server in KSA with a standby, 35 daily backups and
  *          seven days of point-in-time recovery on its VPC; staging's with Cloud SQL's default backups and no recovery
- *          window; a dedicated tenant's in its own project; no server where the runway declares none; a server
- *          without a tier or version refused.
+ *          window; a dedicated tenant's in its own project; pgaudit on by default, sized by the runway or off on
+ *          `false`, an unknown class refused; no server where the runway declares none; a server without a tier or
+ *          version refused.
  * Boundary: test only; roots are built through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
@@ -25,6 +26,7 @@ describe("gcpRuntimeConfig", () => {
       highAvailability: true,
       retainedBackups: 35,
       pitr: { days: 7 },
+      pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
       network: "ref:gcp.network.prod",
     });
   });
@@ -36,6 +38,7 @@ describe("gcpRuntimeConfig", () => {
       highAvailability: false,
       retainedBackups: null,
       pitr: false,
+      pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
       network: null,
     });
   });
@@ -45,6 +48,28 @@ describe("gcpRuntimeConfig", () => {
     expect(config.deployment).toBe("acme-firm");
     expect(config.cloudProject.id).toBe("acme-firm");
     expect(config.database?.pitr).toEqual({ days: 7 });
+  });
+
+  it("audits with pgaudit by default, takes the runway's classes and days, and turns it off on false", () => {
+    const sized = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared", "database").pgaudit = {
+        log: ["ddl", "role", "write"],
+        retentionDays: 730,
+      };
+      at(draft, "environments", "staging", "shared", "database").pgaudit = false;
+    });
+
+    expect(gcpRuntimeConfig(sized, "production").database?.pgaudit).toEqual({
+      log: ["ddl", "role", "write"],
+      retentionDays: 730,
+    });
+    expect(gcpRuntimeConfig(sized, "staging").database?.pgaudit).toBe(false);
+    const unknown = gcpRoot((draft) => {
+      at(draft, "environments", "staging", "shared", "database").pgaudit = { log: ["all"] };
+    });
+    expect(() => gcpRuntimeConfig(unknown, "staging")).toThrow(
+      /environments\.staging\.shared\.database\.pgaudit/,
+    );
   });
 
   it("gives no server where the runway declares none and refuses one without a tier or version", () => {

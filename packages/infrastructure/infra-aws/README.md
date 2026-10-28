@@ -122,6 +122,9 @@ An account id is a quoted string or a `ref:`: YAML reads an unquoted one as a nu
 
 ## Not here
 
-The VPC, the database server, caches and queues are Encore Cloud's or the runtime stack's (ADR 0171 decision 5). Serving
+The VPC, the database server, caches and queues are Encore Cloud's or the runtime stack's (ADR 0171 decision 5). pgaudit
+(ADR 0212 decision 5) is not configured on AWS: it needs the database's parameter group (`shared_preload_libraries`,
+`pgaudit.log`) and its CloudWatch log export, and Encore Cloud owns that instance; `@stackra/infra-gcp` configures it on
+Cloud SQL. Serving
 `public/` media through a CDN, a pull-request preview role, organisation service control policies and the Bedrock
 budget are open (see the spec).

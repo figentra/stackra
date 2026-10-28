@@ -17,7 +17,7 @@ job, driven by `stackra runway infra` (ADR 0354 decision 5).
 | `.`         | `gcpBaselineConfig(root, env, origins)`                                                                     | one environment's typed config, plain JSON (gen writes it to a file)                                        |
 | `.`         | `gcpRuntimeConfig(root, env, dedicated?)`, `serviceAccountId`, `GcpHealthIndicatorDriver`, `InfraGcpConfig` | the runtime config (Cloud SQL); the 30-character guard; the health driver; its target is `config.infra_gcp` |
 | `./node`    | `gcpBaseline(config)`                                                                                       | the environment stack                                                                                       |
-| `./node`    | `gcpRuntime(config, { keyId? })`                                                                            | the runtime stack: Cloud SQL Postgres with backups and recovery                                             |
+| `./node`    | `gcpRuntime(config, { keyId? })`                                                                            | the runtime stack: Cloud SQL Postgres with backups, recovery and pgaudit                                    |
 | `./node`    | `resolveRef(value)`                                                                                         | a `ref:<path>` value read from the stack config                                                             |
 | `./testing` | `mockPulumi(config?)`, `outputOf(output)`                                                                   | Pulumi's mocks and an output reader, for tests of a composed program                                        |
 
@@ -101,6 +101,17 @@ not. Cloud SQL backups are always on and stored in the server's region; the runw
 is refused unless the environment states `cryptoShredded: true` (ADR 0188 decision 3: a backup must not outlive an
 erasure, or erasure must destroy the data key that reads it).
 
+pgaudit is on for every server unless `shared.database.pgaudit: false` (ADR 0212 decision 5): the Cloud SQL flags
+`cloudsql.enable_pgaudit` and `pgaudit.log` (`ddl,role` by default; set `pgaudit.log` to other classes), and a sink that
+routes the server's `PgAuditEntry` logs into the log bucket `<prefix>-pgaudit` in the server's region, kept
+`pgaudit.retentionDays` (400 by default, about the thirteen months hot of ADR 0212 decision 6). Switching it on restarts
+the server once.
+
+```yaml
+database:
+  pgaudit: { log: [ddl, role], retentionDays: 400 } # or false
+```
+
 The stack exports `egressIps` (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the
 deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self links the network's Cloud NAT takes as
 `natIps` with `natIpAllocateOption: MANUAL_ONLY`).
@@ -113,6 +124,8 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 - Re-link a project's billing after the spend stop detached it, once the cause is fixed.
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
+- Run `create extension pgaudit` in each database once the flag is on, and set `pgaudit.log = 'write'` on the roles
+  people sign in with (`alter role ... set pgaudit.log`), so their writes are audited and the app's are not.
 - Point the deploy job's auth step at `workloadIdentityProvider` and `infraServiceAccount`.
 - Enable the Compute Engine API where `egress` is set, send `egressIps` to each partner that allow-lists our calls, and
   give `egressAddresses` to the network's Cloud NAT. Release an address by hand only once no partner lists it.

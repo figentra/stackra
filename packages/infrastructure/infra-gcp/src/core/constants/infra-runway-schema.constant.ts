@@ -4,7 +4,7 @@
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
  *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
  *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
- *          database server and backups, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
+ *          database server, its backups and pgaudit, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -15,9 +15,11 @@
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
  *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
  *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses), ADR 0188
- *                     (decision 3: backups kept 35 days or less, or crypto-shredded).
+ *                     (decision 3: backups kept 35 days or less, or crypto-shredded), ADR 0212 (decision 5: pgaudit).
  */
 import { z } from "zod";
+
+import { PGAUDIT_CLASSES } from "#core/constants/pgaudit-classes.constant";
 
 /** A `ref:<path>` value, resolved from the stack config at infra time. */
 const REF = "ref:[A-Za-z0-9_.-]+";
@@ -95,6 +97,18 @@ const BACKUPS = z
     },
   );
 
+/**
+ * The pgaudit of a Cloud SQL server: `false` turns it off; otherwise the statement classes logged server-wide and the
+ * days the audit log bucket keeps them (defaults in `PGAUDIT_DEFAULTS`).
+ */
+const PGAUDIT = z.union([
+  z.literal(false),
+  z.looseObject({
+    log: z.array(z.enum(PGAUDIT_CLASSES)).min(1).optional(),
+    retentionDays: z.int().min(30).max(3650).optional(),
+  }),
+]);
+
 /** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
@@ -120,6 +134,7 @@ const ENVIRONMENT = z.looseObject({
             .regex(/^POSTGRES_\d+$/, "Expected a Cloud SQL Postgres version such as POSTGRES_17")
             .optional(),
           backups: BACKUPS.optional(),
+          pgaudit: PGAUDIT.optional(),
         })
         .optional(),
       network: z

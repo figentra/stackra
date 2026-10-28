@@ -3,14 +3,17 @@
  * Purpose: `gcpRuntime(config, options?, opts?)`, the Pulumi program of one deployment's GCP runtime: a provider pinned
  *          to its project and region, and its Cloud SQL Postgres server with daily backups kept in the deployment's
  *          region, point-in-time recovery when the runway asks, a standby when highly available, a private IP on the
- *          runway's VPC (else reachable only through the Cloud SQL connector over TLS), deletion protection, and the
- *          deployment's data key when one is passed.
+ *          runway's VPC (else reachable only through the Cloud SQL connector over TLS), deletion protection, the
+ *          deployment's data key when one is passed, and pgaudit (unless the runway turns it off): the Cloud SQL flags
+ *          and a sink routing the server's pgaudit entries into a log bucket in its region, kept the runway's days.
  * Boundary: creates resources only through Pulumi; agents preview or run it under mocks, never `pulumi up`. The
  *           backup location is the instance's own region, so a backup never leaves the jurisdiction (ADR 0186). The
  *           data key comes from the foundation stack (`dataKeyId`); the Cloud SQL service agent is granted it here.
- *           Database users, caches and queues are not here.
+ *           Database users, caches and queues are not here, nor `create extension pgaudit` and per-role
+ *           `pgaudit.log`, which run inside the database. Switching pgaudit on restarts the server once.
  * Runtime: node
- * Governing contract: ADR 0186 (decisions 1 and 4), ADR 0238, ADR 0354 (open question 1, database only), ADR 0401.
+ * Governing contract: ADR 0186 (decisions 1 and 4), ADR 0238, ADR 0354 (open question 1, database only), ADR 0401,
+ *                     ADR 0212 (decisions 5 and 6: pgaudit, kept hot thirteen months), ADR 0227 (pgaudit, not CDC).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as gcp from "@pulumi/gcp";
@@ -79,6 +82,12 @@ export function gcpRuntime(
         availabilityType: database.highAvailability ? "REGIONAL" : "ZONAL",
         deletionProtectionEnabled: true,
         userLabels: { ...config.labels },
+        ...(database.pgaudit !== false && {
+          databaseFlags: [
+            { name: "cloudsql.enable_pgaudit", value: "on" },
+            { name: "pgaudit.log", value: database.pgaudit.log.join(",") },
+          ],
+        }),
         backupConfiguration: {
           enabled: true,
           location: region,
@@ -104,5 +113,31 @@ export function gcpRuntime(
     },
     { ...scoped, dependsOn: grants },
   );
+  if (database.pgaudit !== false) {
+    // The bucket sits in the server's region so the audit trail stays in its jurisdiction, like the backups.
+    const bucketId = `${prefix}-pgaudit`;
+    const bucket = new gcp.logging.ProjectBucketConfig(
+      bucketId,
+      {
+        project: cloud.id,
+        location: region,
+        bucketId,
+        retentionDays: database.pgaudit.retentionDays,
+        description: "pgaudit entries of the deployment's Cloud SQL server (ADR 0212)",
+      },
+      scoped,
+    );
+    new gcp.logging.ProjectSink(
+      bucketId,
+      {
+        project: cloud.id,
+        name: bucketId,
+        destination: `logging.googleapis.com/projects/${cloud.id}/locations/${region}/buckets/${bucketId}`,
+        filter: pulumi.interpolate`resource.type="cloudsql_database" AND resource.labels.database_id="${cloud.id}:${instance.name}" AND protoPayload.request.@type="type.googleapis.com/google.cloud.sql.audit.v1.PgAuditEntry"`,
+        uniqueWriterIdentity: true,
+      },
+      { ...scoped, dependsOn: [bucket] },
+    );
+  }
   return { databaseInstance: instance.name, databaseConnection: instance.connectionName };
 }

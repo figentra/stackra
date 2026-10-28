@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: `GcpRuntimeConfig`, the typed config of one deployment's GCP runtime stack, derived from the root runway by
  *          `gcpRuntimeConfig` and read by `gcpRuntime`: the deployment, and its Cloud SQL Postgres server with its
- *          backups and point-in-time recovery.
+ *          backups, point-in-time recovery and pgaudit.
  * Boundary: type only; plain JSON. The VPC may still be `ref:<path>`; no value is a secret (Cloud SQL users are made
  *           by the database stack's IAM sign-in, not here).
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (open question 1 answered for the database only), ADR 0186 (backups in the region),
- *                     ADR 0238 (one database server per environment), ADR 0401.
+ *                     ADR 0238 (one database server per environment), ADR 0401, ADR 0212 (decision 5: pgaudit).
  */
 import type { GcpDeployment } from "#core/types/gcp-deployment.type";
 
@@ -25,6 +25,11 @@ export type GcpRuntimeConfig = GcpDeployment & {
     readonly retainedBackups: number | null;
     /** Point-in-time recovery: the days of transaction log kept (`null` for Cloud SQL's default), or `false` when off. */
     readonly pitr: { readonly days: number | null } | false;
+    /**
+     * pgaudit: the statement classes logged server-wide and the days its log bucket keeps them, or `false` when the
+     * runway turns it off.
+     */
+    readonly pgaudit: { readonly log: readonly string[]; readonly retentionDays: number } | false;
     /** The VPC the server joins on a private IP (`ref:<path>`), or `null` to reach it only through the connector. */
     readonly network: string | null;
   } | null;

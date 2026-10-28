@@ -31,6 +31,8 @@ program) and `./testing` (Pulumi's mocks).
   the runway's `config.infra_gcp` sets it. Never a constructor options object (gen's `token_not_a_class`).
 - Backups are kept 35 days or less, or the runway states `cryptoShredded: true` (ADR 0188 decision 3); the runway
   schema refuses anything else. Never raise the ceiling in code.
+- pgaudit is on unless the runway says `pgaudit: false`; its log bucket stays in the server's region. Classes and days
+  are runway values (`PGAUDIT_DEFAULTS` only fills what the runway leaves out).
 
 ## PII
 

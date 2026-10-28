@@ -3,7 +3,8 @@
  * Purpose: unit tests of `gcpRuntime` under Pulumi's mocks: production's Cloud SQL server keeps its backups in its own
  *          region with point-in-time recovery, a standby, deletion protection and a private IP on the resolved VPC;
  *          a passed data key encrypts it after the Cloud SQL agent is granted the key; a server without a VPC is
- *          reachable only over TLS through the connector; no database means no instance.
+ *          reachable only over TLS through the connector; pgaudit sets its flags and routes its entries into a log bucket
+ *          in the region, and is absent when off; no database means no instance.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
@@ -32,6 +33,7 @@ const PRODUCTION: GcpRuntimeConfig = {
     highAvailability: true,
     retainedBackups: 35,
     pitr: { days: 7 },
+    pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
     network: "ref:gcp.network.prod",
   },
 };
@@ -120,6 +122,47 @@ describe("gcpRuntime", () => {
       sslMode: "ENCRYPTED_ONLY",
       authorizedNetworks: [],
     });
+  });
+
+  it("switches pgaudit on and routes its entries into a log bucket in the region", async () => {
+    const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+    gcpRuntime(PRODUCTION);
+
+    const settings = (await engine.find("DatabaseInstance", "acme-production-postgres")).inputs[
+      "settings"
+    ] as Record<string, unknown>;
+    expect(settings["databaseFlags"]).toEqual([
+      { name: "cloudsql.enable_pgaudit", value: "on" },
+      { name: "pgaudit.log", value: "ddl,role" },
+    ]);
+    expect(
+      (await engine.find("ProjectBucketConfig", "acme-production-pgaudit")).inputs,
+    ).toMatchObject({
+      project: "acme-prod",
+      location: "me-central2",
+      bucketId: "acme-production-pgaudit",
+      retentionDays: 400,
+    });
+    const sink = (await engine.find("ProjectSink", "acme-production-pgaudit")).inputs;
+    expect(sink["destination"]).toBe(
+      "logging.googleapis.com/projects/acme-prod/locations/me-central2/buckets/acme-production-pgaudit",
+    );
+    expect(sink["filter"]).toContain('resource.type="cloudsql_database"');
+    expect(sink["filter"]).toContain("google.cloud.sql.audit.v1.PgAuditEntry");
+  });
+
+  it("sets no pgaudit flag, bucket or sink when the runway turns it off", async () => {
+    const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+    const database = { ...(PRODUCTION.database as NonNullable<GcpRuntimeConfig["database"]>) };
+    gcpRuntime({ ...PRODUCTION, database: { ...database, pgaudit: false } });
+
+    const settings = (await engine.find("DatabaseInstance", "acme-production-postgres")).inputs[
+      "settings"
+    ] as Record<string, unknown>;
+    expect(settings["databaseFlags"]).toBeUndefined();
+    const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
+    expect(types).not.toContain("ProjectBucketConfig");
+    expect(types).not.toContain("ProjectSink");
   });
 
   it("creates no instance without a database", async () => {
