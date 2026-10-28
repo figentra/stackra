@@ -83,5 +83,6 @@ function print(value: unknown, indent: number, start: number, tail: number): str
  * // '{\n  "runtimes": ["node", "browser"]\n}\n'
  */
 export function formatJson(value: unknown): string {
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- the round trip drops undefined and functions as JSON.stringify does; structuredClone throws on functions
   return `${print(JSON.parse(JSON.stringify(value)) as unknown, 0, 0, 0)}\n`;
 }
