@@ -17,7 +17,8 @@
  *          and announces it in `WorkflowRunStarted` and `WorkflowRunEnded`; `cancel` ends a waiting run `cancelled`
  *          (never advanced again, announced) and refuses an ended or unknown one.
  * Boundary: test only; the memory journal and lock driver, a settable clock, a map resolver, recording stand-ins for
- *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero so a retry does not wait.
+ *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero, and the retry
+ *           test runs its wait on fake timers, so a retry does not wait.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decision 6: conformance);
  *                     ADR 0152 (0294 note).
@@ -315,7 +316,22 @@ describe(NativeWorkflowRunnerDriver, () => {
     order.failures.push(new TypeError("gateway timeout"));
     const { runner } = engineWith([[OrderWorkflow, order]]);
 
-    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+    // The back-off wait is a real timer; the `backoffDelay` mock misses once a setup file has loaded
+    // @stackra/contracts, so the wait runs on fake timers.
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      const state = { settled: false };
+      const started = runner
+        .start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN)
+        .finally(() => {
+          state.settled = true;
+        });
+      // Advance until the run settles: the retry's timer is set only after the first attempt's awaits.
+      while (!state.settled) await vi.advanceTimersByTimeAsync(60_000);
+      await started;
+    } finally {
+      vi.useRealTimers();
+    }
 
     const run = await runner.last(OrderWorkflow);
     expect(run?.status).toBe(WorkflowRunStatus.Completed);
