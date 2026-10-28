@@ -557,7 +557,7 @@ describe("emitWiring's defaults for a package's own tests", () => {
           : declared,
       ),
     };
-    expect(table(emitWiring(marked), "loyalty_kit.Pricer")).toContain('default: "region-map",');
+    expect(table(emitWiring(marked), "loyalty_kit.Pricer")).toContain('default: "region_map",');
   });
 
   it("never lists an internal driver as a candidate", () => {
