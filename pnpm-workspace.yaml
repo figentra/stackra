@@ -181,6 +181,9 @@ catalogs:
     expo-tracking-transparency: 57.0.2
     expo-battery: 57.0.3
     expo-background-task: 57.0.21
+    # The permission helper's location and photos (owner 2026-10-29, STA-1536), at the SDK 57 bundled versions. MIT.
+    expo-location: 57.0.22
+    expo-media-library: 57.0.5
     # Code-based navigation (no expo-router routes): React Navigation 7 + Callstack's native tab bar,
     # which drives UITabBarController so iOS 26 draws the Liquid Glass tab bar.
     "@react-navigation/native": 7.5.1
