@@ -28,7 +28,7 @@ describe("CreateStoredViewsMigration", () => {
   it("creates the table with every column stated and commented", () => {
     expect(sql).toContain('create table "panel"."stored_views"');
     expect(sql).toContain('"tenant_id" varchar(33) not null');
-    expect(sql).toContain('"version" integer not null');
+    expect(sql).toContain('"version" integer default 1 not null');
     expect(sql).toContain('"resource" varchar(200) not null');
     expect(sql).toContain('"owner" varchar(64) not null');
     expect(sql).toContain('"sharing" text not null');

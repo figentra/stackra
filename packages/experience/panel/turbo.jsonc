@@ -10,5 +10,6 @@
     "runtime:isomorphic",
     "runtime:browser",
     "runtime:react-native",
+    "runtime:node",
   ],
 }

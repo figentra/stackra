@@ -5,18 +5,18 @@ description: "Accepted, amended by 0141, 0148, 0260, 0270, 0294 · 2026-10-19 ·
 
 <Note>
   Amended 2026-10-28 (STA-1458, owner decision 2 of the data-layer questionnaire): decision 4's
-  outbox gains a retained **change feed** for row changes. A watched model's committed changes
-  (a model with `CapturesChanges`, or one a `@ConsumesChanges` service watches) go to
-  `outbox.changes`, a day-partitioned log kept for `outbox.changeRetentionDays` (7 by default)
-  whether or not every consumer read it, instead of an `outbox.messages` row deleted on delivery.
-  Each change consumer reads the log from its own cursor (`outbox.change_cursors`), so a new
-  consumer replays the retained window, `ChangeFeedService.replay` moves a cursor back,
-  `backfill` scans older rows, and a failing consumer stalls without holding back the others.
-  `RowChange` gains opt-in `before`/`after` values; encrypted and `@Classified` fields never carry
-  one. `CrudService`'s native writes report their rows through `NativeWriteWatcher`, so they reach
-  the feed too; raw SQL still does not. Integration events keep delete-on-deliver. Debezium, logical
-  replication slots and WAL readers stay rejected ([0227](/adr/0227-rejected-and-deferred-technologies-refreshed)):
-  they bypass row-level security and scope. Decisions 1 to 3 and 5 to 9 are unchanged.
+  outbox gains a retained **change feed** for row changes. A watched model's committed changes (a
+  model with `CapturesChanges`, or one a `@ConsumesChanges` service watches) go to `outbox.changes`,
+  a day-partitioned log kept for `outbox.changeRetentionDays` (7 by default) whether or not every
+  consumer read it, instead of an `outbox.messages` row deleted on delivery. Each change consumer
+  reads the log from its own cursor (`outbox.change_cursors`), so a new consumer replays the
+  retained window, `ChangeFeedService.replay` moves a cursor back, `backfill` scans older rows, and
+  a failing consumer stalls without holding back the others. `RowChange` gains opt-in
+  `before`/`after` values; encrypted and `@Classified` fields never carry one. `CrudService`'s
+  native writes report their rows through `NativeWriteWatcher`, so they reach the feed too; raw SQL
+  still does not. Integration events keep delete-on-deliver. Debezium, logical replication slots and
+  WAL readers stay rejected ([0227](/adr/0227-rejected-and-deferred-technologies-refreshed)): they
+  bypass row-level security and scope. Decisions 1 to 3 and 5 to 9 are unchanged.
 </Note>
 
 <Note>

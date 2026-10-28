@@ -144,7 +144,7 @@ components:
     type: database
     label: data
     sublabel: browser, isomorphic, node, react-native
-    tag: 11 packages
+    tag: 12 packages
     row: 4
     col: 0
     size: *a1
@@ -280,7 +280,7 @@ cards:
       - "commerce: fiscal, ledger, loyalty-kit, money, payments, pricing, shipping"
       - "communication: integrations, notifications, versioning, webhooks"
       - "cross-cutting: analytics, seo"
-      - "data: assets, content, data-transfer, database, documents, filesystem, media, model, search, state-machine, storage"
+      - "data: assets, content, data-transfer, database, documents, filesystem, media, model, reports, search, state-machine, storage"
       - "design-system: icons, tokens, ui"
       - "developer: brand-kit, cli, coding-standard, devtools-kit, gen, mcp, renderers, repo-checks, runway, skills, testing, vite-plugin"
       - "experience: builder, collaboration, experience, native-card-terminal, native-cash-drawer, native-receipt-printer, native-scale, navigation, panel, peripherals, platform, shortcuts"

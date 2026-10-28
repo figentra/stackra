@@ -337,10 +337,15 @@ describe("SchedulerService.fire and tick({ crons: false })", () => {
   it("fires a per-scope cron once per scope, with its input", async () => {
     const { jobs, scheduler } = setup({}, [acme, globex]);
     await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(2);
-    expect((await stored(jobs)).map((job) => [job.scope?.id, job.input])).toEqual([
-      ["scp_acme", { batchSize: 100 }],
-      ["scp_globex", { batchSize: 100 }],
-    ]);
+    // The fair queue hands scopes out in turn, so the order is the queue's, not the scheduler's.
+    const fired = (await stored(jobs)).map((job) => [job.scope?.id, job.input]);
+    expect(fired).toHaveLength(2);
+    expect(fired).toEqual(
+      expect.arrayContaining([
+        ["scp_acme", { batchSize: 100 }],
+        ["scp_globex", { batchSize: 100 }],
+      ]),
+    );
   });
 
   it("refuses a key that is not a registered cron action", async () => {

@@ -270,7 +270,7 @@ describe("emitReports", () => {
     );
     expect(file).toContain('import { Query } from "@stackra/actions";');
     expect(file).toContain(
-      'import { ReportRunner, type ReportRequest, type ReportResult } from "@stackra/reports";',
+      'import { type ReportRequest, type ReportResult, ReportRunner } from "@stackra/reports";',
     );
     expect(file).toContain(
       'import { OrderSalesReport } from "#modules/orders/reports/order-sales.report";',

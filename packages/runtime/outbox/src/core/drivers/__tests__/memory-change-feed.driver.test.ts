@@ -45,7 +45,7 @@ describe(MemoryChangeFeedDriver, () => {
     const feed = await feedOf();
     const all = await feed.read(undefined, ["Product"], 10);
     expect(all.map((entry) => entry.change.id)).toEqual(["prd_1", "prd_2"]);
-    expect(all[0]?.position < (all[1]?.position ?? "")).toBe(true);
+    expect((all[0]?.position ?? "") < (all[1]?.position ?? "")).toBe(true);
     const after = await feed.read(all[0]?.position, ["Product", "Order"], 1);
     expect(after.map((entry) => entry.change.id)).toEqual(["ord_1"]);
   });

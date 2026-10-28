@@ -6,8 +6,8 @@ description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456), 2026-10-28
 <Note>
   Amended 2026-10-28 (STA-1458): decision 5's indexing through the outbox reads the retained change
   feed of [0078](/adr/0078-messaging-layer-eight-packages) (as amended the same day) from the
-  indexer's own cursor, so a rebuilt or new index replays the retained window instead of waiting
-  for new writes. A consumer with `consumeMany` gets each run of one model's changes coalesced to one
+  indexer's own cursor, so a rebuilt or new index replays the retained window instead of waiting for
+  new writes. A consumer with `consumeMany` gets each run of one model's changes coalesced to one
   change per row; changes may carry opt-in `before`/`after` values. The five-second lag target and
   the other decisions stand.
 </Note>
