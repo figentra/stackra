@@ -170,6 +170,17 @@ catalogs:
     # The iOS scene lifecycle the iOS 27 SDK and resizable windows need (ios.enableSceneSupport, STA-461);
     # SDK 58 builds it in, so the entry and its plugin go with the SDK 58 bump (STA-460).
     expo-build-properties: 57.0.22
+    # The phone follows the system (owner 2026-10-29, STA-1534 to 1536), at the SDK 57 bundled versions. MIT.
+    # expo-localization: the device's languages, region and calendar; expo-updates: reload after a right-to-left switch;
+    # expo-intent-launcher: open Android's per-app language screen directly.
+    expo-localization: 57.0.2
+    expo-updates: 57.0.26
+    expo-intent-launcher: 57.0.1
+    # expo-tracking-transparency: the iOS tracking prompt into @stackra/consent; expo-battery: Low Power Mode;
+    # expo-background-task: whether background refresh may run.
+    expo-tracking-transparency: 57.0.2
+    expo-battery: 57.0.3
+    expo-background-task: 57.0.21
     # Code-based navigation (no expo-router routes): React Navigation 7 + Callstack's native tab bar,
     # which drives UITabBarController so iOS 26 draws the Liquid Glass tab bar.
     "@react-navigation/native": 7.5.1
