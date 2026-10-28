@@ -7,6 +7,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel and config-entry decisions.
  */
 export { TokensConfig } from "#config/tokens.config";
+export { FONT_FAMILY_VARIABLES } from "#core/constants/font-family-variables.constant";
 export { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 export type { MaterialModeFactors } from "#contracts/types/material-mode-factors.type";
 export { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
@@ -23,6 +24,7 @@ export { deriveTheme } from "#core/functions/derive-theme.function";
 export { diffTheme } from "#core/functions/diff-theme.function";
 export { exportThemeDiff } from "#core/functions/export-theme-diff.function";
 export { exportThemeJson } from "#core/functions/export-theme-json.function";
+export { fontStackOf } from "#core/functions/font-stack-of.function";
 export { materialModeVariables } from "#core/functions/material-mode-variables.function";
 export { mergeTheme } from "#core/functions/merge-theme.function";
 export { motionTiming } from "#core/functions/motion-timing.function";

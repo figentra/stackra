@@ -3,7 +3,7 @@
  * Purpose: validates a theme before it is used or rendered: every colour role, font stack, shadow and radius is
  *          present and non-empty, hex values are hex, token names are kebab-case, no two tokens render the same CSS
  *          custom property, and every value matches the grammar of its kind (colour, length, font stack, shadow,
- *          duration, easing), and the glass material's shares sit between 0 and 1 with px blurs. The grammars are allow-lists, so no value can escape its CSS declaration. A product's
+ *          duration, easing; the optional display font stacks only when given), and the glass material's shares sit between 0 and 1 with px blurs. The grammars are allow-lists, so no value can escape its CSS declaration. A product's
  *          own theme goes through it, as the stackra theme does.
  * Boundary: checks and returns the theme unchanged; renders nothing.
  * Runtime: isomorphic
@@ -13,6 +13,7 @@ import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import type { ColorToken } from "#contracts/types/color-token.type";
 import type { Theme } from "#contracts/types/theme.type";
+import { FONT_FAMILY_VARIABLES } from "#core/constants/font-family-variables.constant";
 import { MATERIAL_PROPERTIES } from "#core/constants/material-properties.constant";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
 
@@ -50,6 +51,9 @@ const PX = new RegExp(`^${NUMBER}px$`);
 const UNITLESS_OR_PX = new RegExp(`^${NUMBER}(px)?$`);
 const EM_OR_PX = new RegExp(`^${NUMBER}(px|em)?$`);
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
+// The display stacks may be left out (they default to sans and arabic); when given they are checked like the rest.
+const OPTIONAL_FONT_FAMILIES = ["display", "displayArabic"] as const;
+const FAMILY_NAMES = Object.keys(FONT_FAMILY_VARIABLES);
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -93,6 +97,9 @@ export function defineTheme(theme: Theme): Theme {
 
   for (const family of FONT_FAMILIES)
     value(`fontFamily.${family}`, theme.fontFamily?.[family], "fontStack");
+  for (const family of OPTIONAL_FONT_FAMILIES)
+    if (theme.fontFamily?.[family] !== undefined)
+      value(`fontFamily.${family}`, theme.fontFamily[family], "fontStack");
 
   const typographyKeys = names("typography", theme.typography);
   for (const key of typographyKeys) {
@@ -122,8 +129,8 @@ export function defineTheme(theme: Theme): Theme {
       )
         problems.push(`${path}.${field} is not ${said}, which the native type scale needs`);
     }
-    if (!(FONT_FAMILIES as readonly string[]).includes(style.family))
-      problems.push(`${path}.family is not one of ${FONT_FAMILIES.join(", ")}`);
+    if (!FAMILY_NAMES.includes(style.family))
+      problems.push(`${path}.family is not one of ${FAMILY_NAMES.join(", ")}`);
   }
 
   const spacingKeys = names("spacing", theme.spacing);
@@ -177,7 +184,7 @@ export function defineTheme(theme: Theme): Theme {
     ...ColorRole,
     ...paletteKeys,
     ...SHADOWS.map((shadow) => `${shadow}-shadow`),
-    ...FONT_FAMILIES.map((family) => `font-${family}`),
+    ...Object.values(FONT_FAMILY_VARIABLES),
     ...typographyKeys.flatMap((key) => [key, `${key}-letter-spacing`]),
     ...spacingKeys.map((key) => `space-${key}`),
     "radius",

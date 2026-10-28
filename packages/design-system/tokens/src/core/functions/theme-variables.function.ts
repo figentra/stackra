@@ -3,7 +3,9 @@
  * Purpose: a theme as its web CSS custom properties, split into HeroUI's own (the colour roles, the three shadows,
  *          `--radius`, `--field-radius`) and Stackra's additions (palette, fonts, type, spacing, radius steps, motion and
  *          the glass material), each with its mode-independent set and one per colour mode. `renderWebCss` writes
- *          these; the Theme Studio sets them inline on its preview and exports them as JSON.
+ *          these; the Theme Studio sets them inline on its preview and exports them as JSON. Every font stack is
+ *          written, the display ones resolved (`--font-display` is the sans stack when the theme sets none, and
+ *          `--font-display-arabic` the arabic one), and a text style names its stack's property.
  * Boundary: a pure function from a Theme to property names (with their leading `--`) and values; it validates
  *          nothing (`defineTheme` does). The material's fills and filters sit in the colour sets, so an element that
  *          sets a mode's set computes them again from its own surface.
@@ -12,13 +14,15 @@
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
+import type { FontFamilyName } from "#contracts/types/font-family-name.type";
 import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeVariables } from "#contracts/types/theme-variables.type";
+import { FONT_FAMILY_VARIABLES } from "#core/constants/font-family-variables.constant";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
+import { fontStackOf } from "#core/functions/font-stack-of.function";
 import { materialModeVariables } from "#core/functions/material-mode-variables.function";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
-const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
 
 /** The least fill share of a level: the mode's floor, and for the thick level, which muted text sits on, its own too. */
 const floorOf = (level: MaterialLevel) =>
@@ -80,13 +84,16 @@ export function themeVariables(theme: Theme): ThemeVariables {
     stackra: {
       root: {
         ...Object.fromEntries(
-          FONT_FAMILIES.map((family) => [`--font-${family}`, theme.fontFamily[family]]),
+          Object.entries(FONT_FAMILY_VARIABLES).map(([family, name]) => [
+            `--${name}`,
+            fontStackOf(theme, family as FontFamilyName),
+          ]),
         ),
         ...Object.fromEntries(
           Object.entries(theme.typography).flatMap(([name, style]) => [
             [
               `--${name}`,
-              `${style.weight} ${style.size}/${style.lineHeight} var(--font-${style.family})`,
+              `${style.weight} ${style.size}/${style.lineHeight} var(--${FONT_FAMILY_VARIABLES[style.family]})`,
             ],
             [`--${name}-letter-spacing`, style.letterSpacing],
           ]),

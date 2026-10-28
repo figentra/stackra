@@ -3,6 +3,8 @@
 @theme {
   --radius: 0.25rem;
   --field-radius: var(--radius);
+  --font-display: "Geist";
+  --font-display-arabic: "IBM Plex Sans Arabic";
 }
 
 @theme inline static {

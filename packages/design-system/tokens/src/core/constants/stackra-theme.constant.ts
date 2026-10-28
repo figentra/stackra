@@ -11,6 +11,9 @@
  *          0.03 or less, with paper or ink on the accent at 4.5:1 or more; the link and the signal stay neutral.
  *          Graphite carries the neutral states and, as an alias, the dark `segment` role. The environment banners and the chart set are ADR 0340 decision 9's
  *          tokens. The theme names no product or family (decision 8): the amber bar a mark draws is `amber-strong`.
+ *          The display text and the headings (display, h1 to h6 and their Arabic twins) are set in the `display` and
+ *          `displayArabic` stacks, which this theme leaves to their defaults (Geist and IBM Plex Sans Arabic), so a
+ *          brand that sets its display faces changes its headings (STA-1386, brand rules §33).
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved); ADR 0340
  *          (decisions 8 and 9); ADR 0463 (the neutral steel accent; ADR 0319 decisions 2 and 3 stand).
@@ -122,6 +125,7 @@ export const STACKRA_THEME = defineTheme({
     "chart-4": color("oklch(0.62 0.15 55)", "oklch(0.78 0.14 60)"),
     "chart-5": color("oklch(0.55 0.17 355)", "oklch(0.72 0.15 355)"),
   },
+  // No display stacks: they default to sans and arabic, and a brand's theme.json sets its own (brand rules §33).
   fontFamily: {
     sans: '"Geist", ui-sans-serif, system-ui, sans-serif',
     mono: '"Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace',
@@ -132,16 +136,40 @@ export const STACKRA_THEME = defineTheme({
       weight: 600,
       size: "56px",
       lineHeight: "1.05",
-      family: "sans",
+      family: "display",
       letterSpacing: "-0.035em",
     },
-    h1: { weight: 600, size: "40px", lineHeight: "1.1", family: "sans", letterSpacing: "-0.03em" },
-    h2: { weight: 600, size: "28px", lineHeight: "1.2", family: "sans", letterSpacing: "-0.02em" },
-    h3: { weight: 600, size: "20px", lineHeight: "1.3", family: "sans", letterSpacing: "-0.015em" },
+    h1: {
+      weight: 600,
+      size: "40px",
+      lineHeight: "1.1",
+      family: "display",
+      letterSpacing: "-0.03em",
+    },
+    h2: {
+      weight: 600,
+      size: "28px",
+      lineHeight: "1.2",
+      family: "display",
+      letterSpacing: "-0.02em",
+    },
+    h3: {
+      weight: 600,
+      size: "20px",
+      lineHeight: "1.3",
+      family: "display",
+      letterSpacing: "-0.015em",
+    },
     // h4 to h6 are ADR 0303 decision 9: HeroUI's own h4 is 20px, the size of our h3, so the scale defines its tail.
-    h4: { weight: 600, size: "18px", lineHeight: "1.4", family: "sans", letterSpacing: "-0.01em" },
-    h5: { weight: 600, size: "16px", lineHeight: "1.5", family: "sans", letterSpacing: "0em" },
-    h6: { weight: 600, size: "14px", lineHeight: "1.5", family: "sans", letterSpacing: "0em" },
+    h4: {
+      weight: 600,
+      size: "18px",
+      lineHeight: "1.4",
+      family: "display",
+      letterSpacing: "-0.01em",
+    },
+    h5: { weight: 600, size: "16px", lineHeight: "1.5", family: "display", letterSpacing: "0em" },
+    h6: { weight: 600, size: "14px", lineHeight: "1.5", family: "display", letterSpacing: "0em" },
     body: { weight: 400, size: "16px", lineHeight: "1.6", family: "sans", letterSpacing: "0em" },
     small: { weight: 400, size: "14px", lineHeight: "1.5", family: "sans", letterSpacing: "0em" },
     caption: { weight: 500, size: "12px", lineHeight: "1.4", family: "sans", letterSpacing: "0em" },
@@ -157,28 +185,28 @@ export const STACKRA_THEME = defineTheme({
       weight: 600,
       size: "52px",
       lineHeight: "1.3",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "h1-ar": {
       weight: 600,
       size: "38px",
       lineHeight: "1.35",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "h2-ar": {
       weight: 600,
       size: "30px",
       lineHeight: "1.4",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "h3-ar": {
       weight: 600,
       size: "21px",
       lineHeight: "1.5",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     // The Arabic twins of h4 to h6 are one pixel and 0.2 of line height above their Latin style (decision 9).
@@ -186,21 +214,21 @@ export const STACKRA_THEME = defineTheme({
       weight: 600,
       size: "19px",
       lineHeight: "1.6",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "h5-ar": {
       weight: 600,
       size: "17px",
       lineHeight: "1.7",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "h6-ar": {
       weight: 600,
       size: "15px",
       lineHeight: "1.7",
-      family: "arabic",
+      family: "displayArabic",
       letterSpacing: "0em",
     },
     "body-ar": {

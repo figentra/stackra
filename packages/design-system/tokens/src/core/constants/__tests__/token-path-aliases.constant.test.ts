@@ -3,7 +3,8 @@
  * Purpose: the path-stability test of ADR 0340 decision 6: every token path the stackra theme has published still
  *          resolves, as itself or through `TOKEN_PATH_ALIASES` to a live path, so a stored layer naming it is never
  *          refused after a rename; no alias source is live again; and every live path is in the published list, so a new
- *          token joins it (and a later rename of it needs an alias).
+ *          token joins it (and a later rename of it needs an alias). Also proves the brand theme.json spelling
+ *          `fontFamily.sansArabic` (brand rules §33) lands on the arabic stack.
  * Boundary: in-memory theme; the published list below only grows.
  * Runtime: node
  * Governing contract: ADR 0340 (decision 6); ADR 0022 (test placement).
@@ -170,5 +171,16 @@ describe("TOKEN_PATH_ALIASES", () => {
   it("moves the mark's amber bar to its neutral name in token set 1", () => {
     expect(TOKEN_SET_VERSION).toBe(1);
     expect(TOKEN_PATH_ALIASES["palette.cursor"]).toBe("palette.amber-strong");
+  });
+
+  // @covers sta-1386
+  it("reads brand rules §33's sansArabic as the arabic stack", () => {
+    expect(
+      aliasThemeDiff({
+        fontFamily: { sansArabic: '"Markazi Text", serif' },
+      } as unknown as ThemeDiff),
+    ).toEqual({
+      fontFamily: { arabic: '"Markazi Text", serif' },
+    });
   });
 });

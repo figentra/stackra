@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the theme exports and the import round-trip: a full export and a changes-only export each read
  *          back to the theme they came from, a bare theme reads too, and text that is too long, not JSON, of an
- *          unknown format or not a usable theme is refused with InvalidThemeError. Also proves the DTCG export's
+ *          unknown format or not a usable theme is refused with InvalidThemeError, and a brand's §33 font keys
+ *          (display, displayArabic, sansArabic) land on the theme's stacks. Also proves the DTCG export's
  *          shape: colours by mode, font lists, dimensions without `var()` and the material levels.
  * Boundary: in-memory themes only.
  * Runtime: node
@@ -42,6 +43,35 @@ describe("theme JSON", () => {
     expect(file).toMatchObject({ format: THEME_JSON_FORMATS.diff, base: "stackra", name: "acme" });
     expect(Object.keys(file.changes)).toEqual(["name", "colors", "palette"]);
     expect(parseThemeJson(JSON.stringify(file), STACKRA_THEME)).toEqual(ACME);
+  });
+
+  // @covers sta-1386
+  it("reads a brand's §33 font keys, sansArabic as the arabic stack, and keeps the base for a key left out", () => {
+    const file = {
+      format: THEME_JSON_FORMATS.diff,
+      tokenSet: 1,
+      base: "stackra",
+      name: "velora",
+      changes: {
+        name: "velora",
+        fontFamily: {
+          display: '"Cormorant Garamond", serif',
+          displayArabic: '"Markazi Text", serif',
+          sansArabic: '"Markazi Text", "IBM Plex Sans Arabic", sans-serif',
+        },
+      },
+    };
+    expect(parseThemeJson(JSON.stringify(file), STACKRA_THEME).fontFamily).toEqual({
+      sans: STACKRA_THEME.fontFamily.sans,
+      mono: STACKRA_THEME.fontFamily.mono,
+      arabic: '"Markazi Text", "IBM Plex Sans Arabic", sans-serif',
+      display: '"Cormorant Garamond", serif',
+      displayArabic: '"Markazi Text", serif',
+    });
+    const bare = { ...file, changes: { name: "velora" } };
+    expect(parseThemeJson(JSON.stringify(bare), STACKRA_THEME).fontFamily).toEqual(
+      STACKRA_THEME.fontFamily,
+    );
   });
 
   it("reads a bare theme", () => {

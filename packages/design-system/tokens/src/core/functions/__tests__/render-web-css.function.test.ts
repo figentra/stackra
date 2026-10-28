@@ -4,7 +4,8 @@
  *          under the selectors HeroUI's theming docs prescribe, that one `@layer components` block draws HeroUI's
  *          Typography classes in the theme's type scale (with Arabic twins and the weight modifiers) and the glass
  *          material's classes, that the material's levels, modes and fallbacks are written (ADR 0320), and that the committed
- *          assets/public/themes/stackra/web.css equals its output byte for byte.
+ *          assets/public/themes/stackra/web.css equals its output byte for byte. The headings draw the display stacks
+ *          (STA-1386).
  * Boundary: renders in memory; `vitest run -u` rewrites the committed stylesheet.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0165 (HeroUI v3 on the web); ADR 0022 (test placement).
@@ -46,7 +47,10 @@ describe("renderWebCss", () => {
   it("puts fonts, type, spacing, radius and motion on :root once", () => {
     const root = blockOf(":root");
     expect(root).toContain('  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;');
-    expect(root).toContain("  --h1-ar: 600 38px/1.35 var(--font-arabic);");
+    expect(root).toContain('  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;');
+    expect(root).toContain("  --h1: 600 40px/1.1 var(--font-display);");
+    expect(root).toContain("  --h1-ar: 600 38px/1.35 var(--font-display-arabic);");
+    expect(root).toContain("  --body-ar: 400 17px/1.8 var(--font-arabic);");
     expect(root).toContain("  --label-letter-spacing: 0.06em;");
     expect(root).toContain("  --space-4: 16px;");
     expect(root).toContain("  --radius: 0.25rem;\n  --field-radius: var(--radius);");

@@ -7,7 +7,8 @@
  *          material's classes (`.material`, `.material-thin`, `.material-thick`). The material's levels sit in the colour
  *          blocks, its modes on `[data-material]` (solid, frosted, glass, liquid), and it turns solid under reduced
  *          transparency, more contrast or no backdrop filter (ADR 0320). HeroUI's skeleton motion follows the reading
- *          direction and stops under reduced motion.
+ *          direction and stops under reduced motion. The headings take their face from the type styles, which name the
+ *          display stacks (`--font-display`, `--font-display-arabic`), so a brand's display faces reach them (STA-1386).
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
  *          The properties come from `themeVariables`, HeroUI's before Stackra's in each block.
  * Runtime: isomorphic

@@ -45,6 +45,31 @@ accent steps (`accent-soft`, `accent-soft-foreground`, `accent-hover`) replace H
 as they do on the web, and the rest are classes such as `bg-accent-pressed`. Expo cannot load woff2, so native text uses the system face until TTF builds of the
 fonts are added.
 
+## Font stacks and the display faces
+
+`fontFamily` holds five stacks, each a CSS `font-family` list, rendered on the web as custom properties:
+
+| Key             | Custom property         | Sets                                    | When absent        |
+| --------------- | ----------------------- | --------------------------------------- | ------------------ |
+| `sans`          | `--font-sans`           | Latin body and UI text                  | required           |
+| `mono`          | `--font-mono`           | code, labels and figures                | required           |
+| `arabic`        | `--font-arabic`         | Arabic body text, and `:lang(ar)` pages | required           |
+| `display`       | `--font-display`        | Latin headings and display text         | the `sans` stack   |
+| `displayArabic` | `--font-display-arabic` | Arabic headings and display text        | the `arabic` stack |
+
+The stackra theme sets its `display` and `h1` to `h6` styles in `display`, and their `-ar` twins in `displayArabic`, so
+HeroUI's headings (`.typography--h1` to `--h6`) follow a brand's display faces; body, small and caption stay in `sans`
+and `arabic`. The stackra theme leaves both display stacks out, so its headings are Geist and IBM Plex Sans Arabic.
+`fontStackOf(theme, family)` gives a family's stack with those defaults applied; `FONT_FAMILY_VARIABLES` names each
+family's property. The native file registers the two display faces in `@theme` as `--font-display` and
+`--font-display-arabic` (Uniwind's `font-display` and `font-display-arabic` classes), each the first family of its
+stack, because React Native sets one family.
+
+A brand's `theme.json` (a `stackra.theme-diff/2` file) names its faces under `changes.fontFamily` with the keys of
+brand rules §33: `display`, `displayArabic`, `sans` (only when not Geist), `sansArabic` (only when not IBM Plex Sans
+Arabic) and `mono`. `parseThemeJson` reads `sansArabic` as the `arabic` stack (through `TOKEN_PATH_ALIASES`), and a key
+the file leaves out keeps the base theme's stack.
+
 ## Bring your own theme
 
 ```ts
@@ -87,14 +112,14 @@ keyword, `cubic-bezier()`, `steps()` or `linear()`), so no value can escape its 
 
 ## Entry points
 
-| Import                      | Holds                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/tokens`           | `STACKRA_THEME`, `MATERIAL_MODES`, `THEME_JSON_FORMATS`, `defineTheme`, `deriveTheme`, `diffTheme`, `mergeTheme`, `themeVariables`, `materialModeVariables`, `renderWebCss`, `renderNativeCss`, `themeToDtcg`, `exportThemeJson`, `exportThemeDiff`, `parseThemeJson`, `oklchToHex`, `contrastRatio`, `motionTiming`, `InvalidThemeError`, `TokensConfig` |
-| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ThemeMaterials`, `ColorRole`, `MaterialLevel`, `MaterialMode`, `MotionTiming`, and the part types                                                                                                                                                                                                      |
-| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                                                                                                                                                                                                                                           |
-| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                                                                                                                                                                                                                                          |
-| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                                                                                                                                                                                                                                       |
-| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                                                                                                                                                                                                                                                  |
+| Import                      | Holds                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/tokens`           | `STACKRA_THEME`, `MATERIAL_MODES`, `THEME_JSON_FORMATS`, `FONT_FAMILY_VARIABLES`, `defineTheme`, `fontStackOf`, `deriveTheme`, `diffTheme`, `mergeTheme`, `themeVariables`, `materialModeVariables`, `renderWebCss`, `renderNativeCss`, `themeToDtcg`, `exportThemeJson`, `exportThemeDiff`, `parseThemeJson`, `oklchToHex`, `contrastRatio`, `motionTiming`, `InvalidThemeError`, `TokensConfig` |
+| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ThemeMaterials`, `ColorRole`, `MaterialLevel`, `MaterialMode`, `MotionTiming`, and the part types                                                                                                                                                                                                                                              |
+| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                                                                                                                                                                                                                                                                                   |
+| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                                                                                                                                                                                                                                                                                  |
+| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                                                                                                                                                                                                                                                                               |
+| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                                                                                                                                                                                                                                                                                          |
 
 `.` and `./contracts` name stand-in barrels (`src/core/index.ts`, `src/contracts/index.ts`) until `stackra gen` writes
 the entry barrels (STA-339). `exports` point at source through the `@stackra/source` condition; `tsdown` builds `dist/`

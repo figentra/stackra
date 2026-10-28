@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves themeVariables splits a theme's web custom properties by owner (HeroUI's colour roles, shadows and
  *          radii; Stackra's palette, fonts, type, spacing, steps, motion and material) for both modes, that renderWebCss
- *          writes every one of them, and that materialModeVariables gives each mode's factors.
+ *          writes every one of them, that the display font stacks default to sans and arabic and carry the headings
+ *          (STA-1386), and that materialModeVariables gives each mode's factors.
  * Boundary: in-memory themes only.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0320; ADR 0022 (test placement).
@@ -33,6 +34,26 @@ describe("themeVariables", () => {
     expect(stackra.root["--material-regular-blur"]).toBe("20px");
     expect(stackra.dark["--material-thick-share"]).toBe("0.92");
     for (const name of Object.keys(heroui.light)) expect(stackra.light[name]).toBeUndefined();
+  });
+
+  // @covers sta-1386
+  it("writes the display stacks, defaulting to sans and arabic, and draws the headings in them", () => {
+    expect(stackra.root["--font-display"]).toBe(STACKRA_THEME.fontFamily.sans);
+    expect(stackra.root["--font-display-arabic"]).toBe(STACKRA_THEME.fontFamily.arabic);
+    expect(stackra.root["--h1"]).toBe("600 40px/1.1 var(--font-display)");
+    expect(stackra.root["--h1-ar"]).toBe("600 38px/1.35 var(--font-display-arabic)");
+    expect(stackra.root["--body"]).toBe("400 16px/1.6 var(--font-sans)");
+    const brand = themeVariables({
+      ...STACKRA_THEME,
+      fontFamily: {
+        ...STACKRA_THEME.fontFamily,
+        display: '"Cormorant Garamond", serif',
+        displayArabic: '"Markazi Text", serif',
+      },
+    });
+    expect(brand.stackra.root["--font-display"]).toBe('"Cormorant Garamond", serif');
+    expect(brand.stackra.root["--font-display-arabic"]).toBe('"Markazi Text", serif');
+    expect(brand.stackra.root["--font-sans"]).toBe(STACKRA_THEME.fontFamily.sans);
   });
 
   it("is what renderWebCss writes", () => {

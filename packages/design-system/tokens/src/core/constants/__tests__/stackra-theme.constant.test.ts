@@ -10,7 +10,8 @@
  *          - The banners stand apart from the status colours; the accent, being near grey, carries no hue a status
  *            could be read as (ADR 0463 decision 2).
  *          - Every hex is the sRGB of its oklch.
- *          - The fonts moved with the theme beside their OFL licences.
+ *          - The fonts moved with the theme beside their OFL licences; the headings are set in the display stacks,
+ *            which default to sans and arabic (STA-1386).
  * Boundary: in-memory theme, and the fonts in assets/public/fonts; contrast is computed from the oklch values through
  *          sRGB, as the kit's contrast report was.
  * Runtime: node
@@ -175,7 +176,21 @@ describe("STACKRA_THEME", () => {
     expect(pick("h4-ar")).toEqual(["19px", "1.6", 600, "0em"]);
     expect(pick("h5-ar")).toEqual(["17px", "1.7", 600, "0em"]);
     expect(pick("h6-ar")).toEqual(["15px", "1.7", 600, "0em"]);
-    expect(typography["h4-ar"]?.family).toBe("arabic");
+    expect(typography["h4-ar"]?.family).toBe("displayArabic");
+  });
+
+  // @covers sta-1386
+  it("sets the headings in the display stacks and leaves them to their sans and arabic defaults", () => {
+    const { typography, fontFamily } = STACKRA_THEME;
+    for (const name of ["display", "h1", "h2", "h3", "h4", "h5", "h6"]) {
+      expect(typography[name]?.family, name).toBe("display");
+      expect(typography[`${name}-ar`]?.family, `${name}-ar`).toBe("displayArabic");
+    }
+    for (const name of ["body", "small", "caption"]) {
+      expect(typography[name]?.family, name).toBe("sans");
+      expect(typography[`${name}-ar`]?.family, `${name}-ar`).toBe("arabic");
+    }
+    expect(Object.keys(fontFamily)).toEqual(["sans", "mono", "arabic"]);
   });
 
   // @covers sta-348:FR-004

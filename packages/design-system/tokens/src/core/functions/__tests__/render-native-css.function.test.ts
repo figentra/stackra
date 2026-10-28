@@ -5,7 +5,7 @@
  *          and that the committed assets/public/themes/stackra/native.css equals its output byte for byte. The
  *          palette lands as Uniwind colours, so the accent steps native paints hold their label at 4.5:1 (STA-455).
  *          It also proves the type scale is written in absolute px on HeroUI Native's text classes, with the Arabic
- *          twins as `type-<token>-ar`.
+ *          twins as `type-<token>-ar`, and the display faces in `@theme` as one family each (STA-1386).
  * Boundary: renders in memory; `vitest run -u` rewrites the committed stylesheet.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0165 (HeroUI Native and Uniwind on native); ADR 0022 (test placement).
@@ -83,9 +83,25 @@ describe("renderNativeCss", () => {
     expect(failures).toEqual([]);
   });
 
-  it("sets the base and field radius in @theme and leaves web-only tokens out", () => {
-    expect(css).toContain("@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n}");
-    expect(css).not.toMatch(/--font-|--space-|--duration-|--material-/);
+  it("sets the radii and the display faces in @theme and leaves web-only tokens out", () => {
+    expect(css).toContain(
+      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n}',
+    );
+    expect(css).not.toMatch(/--font-(sans|mono|arabic)\b|--space-|--duration-|--material-/);
+  });
+
+  // @covers sta-1386
+  it("registers a brand's display faces, one family each", () => {
+    const own = renderNativeCss({
+      ...STACKRA_THEME,
+      fontFamily: {
+        ...STACKRA_THEME.fontFamily,
+        display: '"Bricolage Grotesque", sans-serif',
+        displayArabic: '"Baloo Bhaijaan 2", sans-serif',
+      },
+    });
+    expect(own).toContain('  --font-display: "Bricolage Grotesque";\n');
+    expect(own).toContain('  --font-display-arabic: "Baloo Bhaijaan 2";\n');
   });
 
   it("restyles HeroUI Native's text classes in absolute px", () => {

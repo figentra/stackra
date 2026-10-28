@@ -5,7 +5,9 @@
  *          - a changes-only export (`stackra.theme-diff/2`, or `/1` before the token set was versioned), whose
  *            `changes` move through the path aliases (ADR 0340 decision 6) and are applied to `base`;
  *          - a bare theme object.
- *          This is the Theme Studio's import.
+ *          This is the Theme Studio's import, and the reader of each brand's theme.json: its `fontFamily` keys
+ *          (brand rules §33) are `display`, `displayArabic`, `sans`, `mono` and `sansArabic`, the last an alias of the
+ *          `arabic` stack; a key the file leaves out keeps the base's stack (STA-1386).
  * Boundary: pure. The text is untrusted (a person pastes it), so it is size-capped, parsed as JSON only, merged
  *          without following unsafe keys (`mergeTheme`) and checked value by value (`defineTheme`); a diff written
  *          for a newer token set than this package's is refused. Any failure is an InvalidThemeError that lists what

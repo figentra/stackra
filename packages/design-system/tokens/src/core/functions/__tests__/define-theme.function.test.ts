@@ -3,7 +3,7 @@
  * Purpose: proves the token schema is enforced: a complete theme passes unchanged, and a missing role, an empty
  *          value, a bad hex, a non-kebab name, two tokens that write one CSS property, or a value outside its kind's
  *          grammar (each CSS injection attempt among them), or a glass material out of its ranges fail with
- *          InvalidThemeError naming the token.
+ *          InvalidThemeError naming the token; the optional display font stacks are checked only when given.
  * Boundary: calls defineTheme on in-memory themes only.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0022 (test placement).
@@ -36,6 +36,11 @@ const withEasing = (easing: string): unknown => ({
 const withFont = (sans: string): unknown => ({
   ...STACKRA_THEME,
   fontFamily: { ...STACKRA_THEME.fontFamily, sans },
+});
+
+const withFonts = (fonts: Readonly<Record<string, string>>): unknown => ({
+  ...STACKRA_THEME,
+  fontFamily: { ...STACKRA_THEME.fontFamily, ...fonts },
 });
 
 // @covers sta-350:FR-001 sta-350:FR-020
@@ -179,8 +184,26 @@ describe("defineTheme", () => {
     };
     expect(problemsOf({ ...STACKRA_THEME, typography })).toEqual([
       "typography.body.weight is not 100 to 900",
-      "typography.body.family is not one of sans, mono, arabic",
+      "typography.body.family is not one of sans, mono, arabic, display, displayArabic",
     ]);
+  });
+
+  // @covers sta-1386
+  it("takes the display stacks as optional and checks them when given", () => {
+    expect(problemsOf(withFonts({ display: '"Bricolage Grotesque", sans-serif' }))).toEqual([]);
+    expect(
+      problemsOf(withFonts({ display: "x; } body { color: red", displayArabic: " " })),
+    ).toEqual(["fontFamily.display is not a CSS fontStack", "fontFamily.displayArabic is empty"]);
+  });
+
+  it("refuses a text style token that would write a display font property", () => {
+    const typography = {
+      ...STACKRA_THEME.typography,
+      "font-display": STACKRA_THEME.typography["body"],
+    };
+    expect(problemsOf({ ...STACKRA_THEME, typography })).toContain(
+      "--font-display is written by two tokens",
+    );
   });
 
   it("is a validation refusal with the snake_case code and every problem in its details", () => {
