@@ -20,6 +20,7 @@ its resolver, and imports it; it never re-exports it.
 | `.`           | `ChainScopeResolverDriver`                                                         | the chain: header, claim, root; `scope_unresolved` when none answers  |
 | `.`           | `MemoryScopeResolverDriver`                                                        | `memory`: the claim, then the root; no header (STA-1308)              |
 | `.`           | `MemoryScopeTreeDriver`                                                            | a `ScopeTree` over the list `seed` sets (tests, local runs, a client) |
+| `.`           | `ScopeCacheNamespaceDriver`                                                        | `scope`: @stackra/cache keys namespaced by the call's scope id        |
 | `.`           | `ActiveScopeService`, `SCOPE_PATH_HEADER`                                          | the client's current scope and the one header that carries it         |
 | `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)             |
 | `.`           | `childLevelsOf`, `isScopePath`, `isWithinScope`, `scopeLevelLabel`                 | the level rule, the path rule, the grant test, a level's lang key     |
@@ -111,6 +112,21 @@ await database.withScope(scope, () => pipeline.execute(type, input, { actor }));
 
 No answer refuses `scope_unresolved` (403). A deployment adds a step (tenancy's goes before the root) with a host
 override of `ChainScopeResolverDriver` that overrides `steps()`.
+
+## Cache namespaces
+
+`ScopeCacheNamespaceDriver` is the `scope` driver of @stackra/cache's `CacheNamespace` port: every cache key is put
+behind the running call's `scope.id`, so one scope never reads, overwrites or forgets another's entry. A platform call
+(no scope) and code outside every call (the `/readyz` probe) use the shared namespace `""`. A member with scopes
+selects it in config:
+
+```ts
+export class CacheConfig extends BaseCacheConfig {
+  override namespace: DriverName<CacheNamespace> = "scope";
+}
+```
+
+It reads the call's context through @stackra/actions' `ContextStorage`, so it runs where the action pipeline does.
 
 ## On a device
 

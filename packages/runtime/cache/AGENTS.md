@@ -32,6 +32,9 @@ driver).
   driver over an outside store hands a `CacheStore` to `storedCache` (`src/core/functions/`) instead of repeating that.
 - `./worker` code reads Worker bindings only through `workerBinding` (`src/worker/functions/`), which tests mock.
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.
+- `cache.namespace` selects the `CacheNamespace` driver (`shared`, or `scope` from @stackra/scope); keep
+  `CACHE_NAMESPACE_DRIVERS`, the schema enum and the `DriverRegistry` entry together. A new `Cache` driver joins
+  `DRIVERS` in `cache-namespace.conformance.test.ts` (ADR 0150 enforcement, STA-1442).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - `CacheHealthIndicatorDriver` is the `HealthIndicator` driver: it reads one key that is never written, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
 

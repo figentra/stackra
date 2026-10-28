@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `CacheOptions`, the shape of `CacheConfig`: which driver runs, how many entries the memory driver keeps
+ * Purpose: `CacheOptions`, the shape of `CacheConfig`: which driver runs, which namespace driver keys it, how many entries the memory driver keeps
  *          before it drops the least recently read one, the Valkey server and key prefix, and the Workers KV binding.
  *          `health` tunes `CacheHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`CACHE_CONFIG_SCHEMA`) for itself when the module
@@ -19,6 +19,7 @@ import { Duration } from "@stackra/contracts";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import type { Cache } from "#contracts/ports/cache.port";
+import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
 import { CACHE_CONFIG_SCHEMA } from "#core/constants/cache-config-schema.constant";
 
 /**
@@ -67,6 +68,12 @@ export class CacheOptions extends Schema {
 
   /** Which driver runs; names are the driver file prefixes. `memory` keeps values in this process only. */
   driver: DriverName<Cache> = "memory";
+
+  /**
+   * Which `CacheNamespace` driver names each call's namespace: `shared` (one for every call) or `scope` (the call's
+   * scope id; needs @stackra/scope). Two candidates and no selector would leave the port unresolved at boot.
+   */
+  namespace: DriverName<CacheNamespace> = "shared";
 }
 
 registerSchemas([[CacheOptions, CACHE_CONFIG_SCHEMA]]);

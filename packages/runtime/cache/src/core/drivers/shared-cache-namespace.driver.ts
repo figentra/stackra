@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the default driver of the `CacheNamespace` port: one shared namespace for every call, for a member with no
  *          scopes.
- * Boundary: returns `""` always. A member with scopes binds the tenancy package's driver instead, so its keys are
- *           prefixed with the call's scope.
+ * Boundary: returns `""` always; the `shared` name, config `cache.namespace`'s default. A member with scopes
+ *           selects @stackra/scope's `scope` driver instead, so its keys are prefixed with the call's scope id.
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decision 2); ADR 0266 (one default driver).
  */

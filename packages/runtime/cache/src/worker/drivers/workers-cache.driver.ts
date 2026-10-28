@@ -39,7 +39,7 @@ export class WorkersCacheDriver extends Driver(Cache) {
 
   /**
    * @param config - the binding name of the KV namespace (`workers.binding`).
-   * @param namespace - the prefix of every key; the shared namespace unless the tenancy package binds its driver.
+   * @param namespace - the prefix of every key; the shared namespace unless config `cache.namespace` selects another.
    * @param clock - the time source of expiry.
    * @throws TypeError when the Worker has no KV namespace bound under that name.
    */

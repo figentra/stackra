@@ -48,6 +48,10 @@ active scope (ADR 0327). Member at `packages/security/scope` (`tier:lib`), in th
   `ScopeTree`, and refuses `scope_unresolved` like the chain. It needs no `GrantedScopes`, so it never reads the
   untrusted `X-Scope-Path` header; a test of the header step binds `chain`.
 
+- `scope` CacheNamespace (STA-1442): `ScopeCacheNamespaceDriver` answers the call context's `scope.id` (never the
+  path, which a move changes) and `""` when there is none; it never throws, because `/readyz` reads the cache outside
+  every call. Keep it a one-field read: the cache calls it on every operation.
+
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.

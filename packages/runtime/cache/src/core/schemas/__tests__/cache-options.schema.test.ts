@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `CacheOptions` and its shipped schema: the class's initializers equal the schema's
  *          defaults, the schema's output is exactly the class's fields (the generated `X$Check`), the schema is
- *          registered for the class, the driver takes exactly the shipped driver names, `valkeyUrl` is the
+ *          registered for the class, the driver and the namespace take exactly their driver names, `valkeyUrl` is the
  *          `CACHE_VALKEY_URL` secret, and a bound below one, a fraction or an empty binding is refused.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -16,6 +16,7 @@ import type { z } from "zod";
 
 import { CACHE_CONFIG_SCHEMA } from "#core/constants/cache-config-schema.constant";
 import { CACHE_DRIVERS } from "#core/constants/cache-drivers.constant";
+import { CACHE_NAMESPACE_DRIVERS } from "#core/constants/cache-namespace-drivers.constant";
 import { CacheOptions } from "#core/schemas/cache-options.schema";
 
 /** The check gen writes for a shape and its schema. */
@@ -26,6 +27,7 @@ describe("CacheOptions", () => {
     expect({ ...new CacheOptions() }).toEqual(CACHE_CONFIG_SCHEMA.parse({}));
     expect(CACHE_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "memory",
+      namespace: "shared",
       maxEntries: 10_000,
       valkeyUrl: "",
       valkey: { keyPrefix: "cache:" },
@@ -47,6 +49,12 @@ describe("CacheOptions", () => {
     for (const driver of CACHE_DRIVERS)
       expect(CACHE_CONFIG_SCHEMA.safeParse({ driver }).success).toBe(true);
     expect(CACHE_CONFIG_SCHEMA.safeParse({ driver: "encore" }).success).toBe(false);
+  });
+
+  it("takes exactly the namespace driver names, shared by default", () => {
+    expect(CACHE_NAMESPACE_DRIVERS).toEqual(["shared", "scope"]);
+    expect(CACHE_CONFIG_SCHEMA.parse({ namespace: "scope" }).namespace).toBe("scope");
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ namespace: "tenant" }).success).toBe(false);
   });
 
   it("marks the Valkey URL as the CACHE_VALKEY_URL secret", () => {

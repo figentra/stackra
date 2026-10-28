@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/scope (the configuration with its shipped schema, the header
- *          and claim names, the path functions, the resolver steps and chain, the memory tree, the client's active
+ *          and claim names, the path functions, the resolver steps and chain, the memory tree, the `scope` cache namespace driver, the client's active
  *          scope and the refusals) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `ScopeConfig` lives in the `src/config/` entry folder;
  *           `ScopeOptions` stays internal. Isomorphic: nothing here touches a database, a DOM or a Node API.
@@ -18,6 +18,7 @@ export { HeaderScopeResolverDriver } from "#core/drivers/header-scope-resolver.d
 export { MemoryScopeResolverDriver } from "#core/drivers/memory-scope-resolver.driver";
 export { MemoryScopeTreeDriver } from "#core/drivers/memory-scope-tree.driver";
 export { RootScopeResolverDriver } from "#core/drivers/root-scope-resolver.driver";
+export { ScopeCacheNamespaceDriver } from "#core/drivers/scope-cache-namespace.driver";
 export { ScopeLabelInvalidError } from "#core/errors/scope-label-invalid.error";
 export { ScopeLevelInvalidError } from "#core/errors/scope-level-invalid.error";
 export { ScopeMoveInvalidError } from "#core/errors/scope-move-invalid.error";

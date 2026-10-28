@@ -45,7 +45,7 @@ export class ValkeyCacheDriver extends Driver(Cache) {
 
   /**
    * @param config - the server (`valkeyUrl`, the `CACHE_VALKEY_URL` secret) and the key prefix (`valkey.keyPrefix`).
-   * @param namespace - the prefix of every key; the shared namespace unless the tenancy package binds its driver.
+   * @param namespace - the prefix of every key; the shared namespace unless config `cache.namespace` selects another.
    * @param clock - the time source of expiry.
    * @throws TypeError when the `CACHE_VALKEY_URL` secret is not set.
    */

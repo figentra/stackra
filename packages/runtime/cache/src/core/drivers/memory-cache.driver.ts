@@ -40,7 +40,7 @@ export class MemoryCacheDriver extends Driver(Cache) {
 
   /**
    * @param config - the entry bound.
-   * @param namespace - the prefix of every key; the shared namespace unless the tenancy package binds its driver.
+   * @param namespace - the prefix of every key; the shared namespace unless config `cache.namespace` selects another.
    * @param clock - the time source of expiry.
    */
   constructor(config: CacheConfig, namespace: CacheNamespace, clock: Clock) {

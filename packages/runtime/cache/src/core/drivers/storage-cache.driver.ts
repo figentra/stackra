@@ -35,7 +35,7 @@ export class StorageCacheDriver extends Driver(Cache) {
 
   /**
    * @param storage - the client storage; this driver uses its `cache` area only.
-   * @param namespace - the prefix of every key; the shared namespace unless the tenancy package binds its driver.
+   * @param namespace - the prefix of every key; the shared namespace unless config `cache.namespace` selects another.
    * @param clock - the time source of expiry.
    */
   constructor(storage: Storage, namespace: CacheNamespace, clock: Clock) {

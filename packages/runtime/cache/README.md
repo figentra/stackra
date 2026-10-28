@@ -60,8 +60,16 @@ ctx.afterCommit(() => this.cache.forget(CacheKey.of(Product, product.id)));
 ## Namespaces
 
 Every driver puts `CacheNamespace.current()` in front of each key, so two namespaces never read, write or forget each
-other's entries. `SharedCacheNamespaceDriver` names one shared namespace; the tenancy package binds the driver that
-names the call's scope.
+other's entries. `cache.namespace` picks the `CacheNamespace` driver:
+
+| Name     | Driver                                         | Namespace                                                        |
+| -------- | ---------------------------------------------- | ---------------------------------------------------------------- |
+| `shared` | `SharedCacheNamespaceDriver` (default)         | `""` for every call                                              |
+| `scope`  | `ScopeCacheNamespaceDriver` (`@stackra/scope`) | the running call's scope id; `""` for a platform call or no call |
+
+A member with scopes sets `cache.namespace: "scope"`; otherwise the first `remember` shares entries across scopes. The
+conformance test (`src/contracts/ports/__tests__/cache-namespace.conformance.test.ts`) runs every driver with two
+namespaces over one store.
 
 ## Drivers
 
