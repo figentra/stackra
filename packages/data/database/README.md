@@ -133,6 +133,22 @@ Besides `integer` (32-bit), `t.bigint(name)` is a 64-bit count or minor-unit amo
 `t.decimal(name, precision, scale)` an exact `numeric` reading or bound (precision 1 to 1000, scale 0 to precision);
 money is always `t.money`.
 
+### Running migrations
+
+`stackra db migrate` (`migrate` from `./node`) applies the compiled `.stackra/migrations` files in order:
+
+- It holds a session-level `pg_advisory_lock` for the whole run, so a second pod or job waits instead of applying the
+  same files.
+- `schema_migrations(version, dirty)` keeps golang-migrate's shape; `schema_migrations_history(version, name,
+checksum, applied_at)` records each applied file's SHA-256. A run refuses to start when an applied file's text no
+  longer matches (a frozen migration was edited); files applied before the ledger existed are recorded on the first
+  run. A dev `rollback` removes the reverted rows.
+- Sessions run with `lock_timeout 5s` and `statement_timeout 5min`; a file whose leading comment lines hold
+  `-- stackra:timeout=30min` runs with its own statement timeout.
+- When a file fails, the INVALID indexes it named (a failed `create index concurrently`) are dropped and the version
+  goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
+  version dirty.
+
 ## Scope isolation
 
 Isolation stays in the database: row-level security, never an application WHERE filter (ADR 0327 d9,

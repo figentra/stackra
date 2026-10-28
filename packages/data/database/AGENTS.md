@@ -60,6 +60,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger
   (`database.seed_records`) are this package's own tables, written only by their drivers and the seed runner (ADR 0396).
   No row-level security on them: an action-store key is already scoped, and product defaults are not tenant-owned.
+- The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
+  `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
+  anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
 - Collations: `schema.createCollation(name, locale)` creates an ICU collation in the module schema and
   `.collate(name)` names it on a text column; the locale is the migration's literal, never chosen in this package.
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other

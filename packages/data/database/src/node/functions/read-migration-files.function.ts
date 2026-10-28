@@ -1,17 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: `readMigrationFiles(directory)`, the compiled migration files of a member in apply order: each
- *          `<seq>_<name>.up.sql` with its `.down.sql` inverse (when gen wrote one) and whether it runs in a transaction.
+ *          `<seq>_<name>.up.sql` with its `.down.sql` inverse (when gen wrote one), whether it runs in a transaction,
+ *          its step timeout and its checksum.
  * Boundary: reads the folder and nothing else. A file is non-transactional when its first line is
- *           `-- stackra:transactional=false`. The batch of a file is its name without the sequence and without a
+ *           `-- stackra:transactional=false`; a `-- stackra:timeout=<interval>` header line (Postgres interval, e.g.
+ *           `30min`) overrides the session's statement timeout for that step. The batch of a file is its name without the sequence and without a
  *           trailing step number, so the steps of one migration revert together.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24: the `N_name.up.sql` numbering).
  */
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { MigrationFile } from "#node/types/migration-file.type";
+
+/** A step's timeout header: a `-- stackra:timeout=<interval>` line among the leading comment lines. */
+const TIMEOUT_HEADER = /^(?:--.*\n)*?-- stackra:timeout=(\w+)(?:\n|$)/;
 
 /**
  * Lists the folder's migration files in sequence order.
@@ -35,7 +41,9 @@ export function readMigrationFiles(directory: string): readonly MigrationFile[] 
         name: file.replace(/\.up\.sql$/, ""),
         batch: name.replace(/_\d+$/, ""),
         transactional: !sql.startsWith("-- stackra:transactional=false"),
+        timeout: TIMEOUT_HEADER.exec(sql)?.[1],
         sql,
+        checksum: createHash("sha256").update(sql).digest("hex"),
         inverse: existsSync(down) ? readFileSync(down, "utf8") : undefined,
       };
     })

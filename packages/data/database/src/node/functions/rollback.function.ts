@@ -3,7 +3,8 @@
  * Purpose: `rollback({ cwd, environment })`, `stackra db rollback`: reverts the last migration (all its step files),
  *          last step first, through the `.down.sql` inverses gen wrote.
  * Boundary: refuses outside dev, preview and test, and stops at a step with no inverse (irreversible), leaving the
- *           version at that step.
+ *           version at that step. A reverted step's `schema_migrations_history` row goes with it, so re-applying an
+ *           edited dev file is not refused.
  * Runtime: node
  * Governing contract: ADR 0159 (2026-10-23 and 2026-10-24 notes: rollback on dev, preview and test only).
  */
@@ -44,6 +45,7 @@ export async function rollback(options: {
           : `update schema_migrations set version = ${previous}, dirty = false`,
         true,
       );
+      await execute(`delete from schema_migrations_history where version = ${file.version}`, true);
       reverted.push(file.name);
     }
     return { reverted };
