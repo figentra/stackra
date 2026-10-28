@@ -27,9 +27,18 @@ driver).
 
 ## This package
 
-- Every driver prefixes keys with the URI-encoded `CacheNamespace.current()` and `/`, forgets with `coversKey`, and
-  single-flights `remember` per scoped key; a `put` or `forget` marks a covered flight stale so it is not stored. A
-  driver over an outside store hands a `CacheStore` to `storedCache` (`src/core/functions/`) instead of repeating that.
+- Every driver is `storedCache` (`src/core/functions/`) over a `CacheEntryStore`: `memoryEntryStore`, or
+  `textEntryStore` over an outside `CacheStore`. `storedCache` owns the namespace prefix, `coversKey`, tags, the stale
+  window, the `CacheLock` fill, jitter, metrics and single-flight; a `put`, `forget` or `forgetTag` marks a covered
+  load (or background reload) stale so it is not stored. Never repeat that in a driver.
+- A store that lists a prefix cheaply gives `keys`; one that cannot (Valkey) leaves it out and `storedCache` indexes
+  each key under every covering key instead. Never `SCAN` or list a whole store. Set names start `k/` (covered keys)
+  or `t/` (tags) and are kept apart from entry keys by `#` (Valkey) or marker keys under `#` (`markerSets`).
+- A metric carries the key's owner only (`keyOwner`), never a key part, the namespace or a value, and a throwing
+  metrics driver never changes an answer.
+- `cache.lock` and `cache.metrics` select the `CacheLock` and `CacheMetrics` drivers; keep `CACHE_LOCK_DRIVERS`,
+  `CACHE_METRICS_DRIVERS`, the schema enums and the `DriverRegistry` entries together. `locks` lives in
+  @stackra/locking (`LocksCacheLockDriver`), which depends on this package; never the reverse.
 - `./worker` code reads Worker bindings only through `workerBinding` (`src/worker/functions/`), which tests mock.
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.
 - `cache.namespace` selects the `CacheNamespace` driver (`shared`, or `scope` from @stackra/scope); keep
@@ -49,3 +58,5 @@ driver).
 | Data          | Where                                                                     | Handling                                                                      |
 | ------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Cached values | process memory, the client `cache` area, Valkey or Workers KV (by driver) | Whatever the caller stores, kept until expiry or eviction; never logged here. |
+| Tags          | the same store as the values                                              | Keys from `CacheKey.of`; no personal data unless a caller puts it in a key.   |
+| Metrics       | `CacheMetrics` drivers (counters, debug lines)                            | Key owner and numbers only.                                                   |

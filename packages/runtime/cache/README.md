@@ -1,8 +1,9 @@
 # @stackra/cache
 
 Stackra cache: the `Cache` port for a cached value inside a service, driver or listener, `CacheKey.of` to build its
-keys, the `CacheNamespace` port that keeps namespaces apart, the `CacheConfig` configuration, and the memory, storage,
-Valkey and Workers KV drivers.
+keys and tags, the `CacheNamespace` port that keeps namespaces apart, the `CacheLock` port that shares a fill across
+instances, the `CacheMetrics` port that counts hits, misses, loads and evictions, the `CacheConfig` configuration, and
+the memory, storage, Valkey and Workers KV drivers.
 
 **Tier:** `tier:lib` (`packages/runtime/cache`). Entries `.`, `./contracts`, `./node` and `./worker`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, `@stackra/storage`, zod and
@@ -10,18 +11,26 @@ Valkey and Workers KV drivers.
 
 ## What is here
 
-| Symbol                        | Entry         | Use                                                                     |
-| ----------------------------- | ------------- | ----------------------------------------------------------------------- |
-| `Cache`                       | `./contracts` | the port: `get`, `put`, `remember`, `forget`                            |
-| `CacheNamespace`              | `./contracts` | the port naming the current call's namespace, put in front of every key |
-| `CacheKey`                    | `.`           | `CacheKey.of(Model, ...parts)`, the only maker of a key, and its type   |
-| `CacheConfig`, `CacheConfig$` | `.`           | key `cache.cache`: the driver and each driver's settings (below)        |
-| `CacheOptions`                | `.`           | the shape of `CacheConfig`                                              |
-| `MemoryCacheDriver`           | `.`           | the `memory` driver of `Cache`                                          |
-| `StorageCacheDriver`          | `.`           | the `storage` driver of `Cache`, for client targets                     |
-| `SharedCacheNamespaceDriver`  | `.`           | the default driver of `CacheNamespace`: one shared namespace            |
-| `ValkeyCacheDriver`           | `./node`      | the `valkey` driver of `Cache`, for services                            |
-| `WorkersCacheDriver`          | `./worker`    | the `workers` driver of `Cache`, for a web member on Cloudflare Workers |
+| Symbol                                                   | Entry         | Use                                                                          |
+| -------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
+| `Cache`                                                  | `./contracts` | the port: `get`, `put`, `remember`, `forget`, `forgetTag`                    |
+| `CacheNamespace`                                         | `./contracts` | the port naming the current call's namespace, put in front of every key      |
+| `CacheLock`                                              | `./contracts` | the port that runs a `remember(..., { lock: true })` fill on one instance    |
+| `CacheMetrics`                                           | `./contracts` | the port that receives a `CacheMetric` per hit, stale hit, miss, load, evict |
+| `CachePutOptions`, `CacheRememberOptions`, `CacheMetric` | `./contracts` | types: `tags`; `stale` and `lock`; one observation                           |
+| `CacheKey`                                               | `.`           | `CacheKey.of(Model, ...parts)`, the only maker of a key, and its type        |
+| `CacheConfig`, `CacheConfig$`                            | `.`           | key `cache.cache`: the driver and each driver's settings (below)             |
+| `CacheOptions`                                           | `.`           | the shape of `CacheConfig`                                                   |
+| `MemoryCacheDriver`                                      | `.`           | the `memory` driver of `Cache`                                               |
+| `StorageCacheDriver`                                     | `.`           | the `storage` driver of `Cache`, for client targets                          |
+| `SharedCacheNamespaceDriver`                             | `.`           | the default driver of `CacheNamespace`: one shared namespace                 |
+| `LocalCacheLockDriver`                                   | `.`           | the default driver of `CacheLock` (`local`): no lock, always fills           |
+| `NoneCacheMetricsDriver`                                 | `.`           | the default driver of `CacheMetrics` (`none`): records nothing               |
+| `CountingCacheMetricsDriver`                             | `.`           | `counting`: counters per key owner in this process, `snapshot()`             |
+| `LoggerCacheMetricsDriver`                               | `.`           | `logger`: a `cache.load` and `cache.evict` debug line through `Logger`       |
+| `CacheCounters`                                          | `.`           | type: one owner's counters in `snapshot()`                                   |
+| `ValkeyCacheDriver`                                      | `./node`      | the `valkey` driver of `Cache`, for services                                 |
+| `WorkersCacheDriver`                                     | `./worker`    | the `workers` driver of `Cache`, for a web member on Cloudflare Workers      |
 
 `Cache` is exported from `./contracts` only (one symbol, one entry; ADR 0294 decision 15).
 
@@ -57,6 +66,62 @@ ctx.afterCommit(() => this.cache.forget(CacheKey.of(Product, product.id)));
 - A cached **read** is the query's `cache:` option (ADR 0305 rule 31), not this port. There is no `@Cached` and no
   `ctx.cache`.
 
+## Tags
+
+A key groups entries by its own path; a tag groups them across owners. `put` and `remember` take `tags`, and
+`forgetTag(tag)` drops every entry of the current namespace stored with that tag:
+
+```ts
+await this.cache.remember(
+  CacheKey.of(Product, id, locale),
+  Duration.minutes(10),
+  () => this.load(id, locale),
+  {
+    tags: [CacheKey.of(Category, product.categoryId)],
+  },
+);
+
+// when the category changes: every product view tagged with it goes
+ctx.afterCommit(() => this.cache.forgetTag(CacheKey.of(Category, category.id)));
+```
+
+- A tag is a `CacheKey`, named after its owner like any key. Tags match exactly: `CacheKey.of(Category, id)` does not
+  drop entries tagged `CacheKey.of(Category, id, "en")`.
+- Tags live in the namespace: a `forgetTag` in one scope never reaches another's entries.
+- A `remember` load in flight that carries the tag still answers its callers but is not stored.
+
+## Stale-while-revalidate, one fill across instances, jitter
+
+```ts
+await this.cache.remember(CacheKey.of(PriceList, id), Duration.minutes(5), () => this.load(id), {
+  stale: Duration.minutes(1), // after 5 minutes, answer the old list for up to 1 more while one call reloads it
+  lock: true, // on a miss, one instance loads; the others wait for its value
+});
+```
+
+- `stale`: an entry past its lifetime but inside the window is answered at once, and one background load per key
+  replaces it. A failed reload leaves the stale entry; the first call past the window loads in the open. `get` never
+  returns a stale value, and a `remember` without `stale` treats it as a miss.
+- `lock`: with config `cache.lock: locks` (@stackra/locking's `LocksCacheLockDriver`), a miss runs the load on the
+  instance that takes the fill lock; the others read the store every `fill.poll` for up to `fill.wait` (default 5 s,
+  every 50 ms), then load themselves. A stale reload under `lock` runs on one instance only. The default `local` lock
+  takes nothing, so single-flight stays per process; the memory and storage drivers ignore `lock`.
+- `jitter` (0 to 1, default `0`): each lifetime is shortened at random by up to that fraction, so entries written
+  together do not all expire together. `0.1` is a sensible value for a shared store.
+
+## Metrics
+
+`cache.metrics` picks the `CacheMetrics` driver. Every observation carries the key's owner (its first part, the class
+`CacheKey.of` was given), never a key part, the namespace or the value.
+
+| Name       | Driver                       | Records                                                                                         |
+| ---------- | ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `none`     | `NoneCacheMetricsDriver`     | nothing (default)                                                                               |
+| `counting` | `CountingCacheMetricsDriver` | hits, stale hits, misses, loads, load milliseconds, evictions, by owner; read with `snapshot()` |
+| `logger`   | `LoggerCacheMetricsDriver`   | one `cache.load` (owner, milliseconds) and `cache.evict` (owner, count) debug line each         |
+
+An exporter (OTLP, a devtools panel) reads `snapshot()`; this package ships no vendor SDK.
+
 ## Namespaces
 
 Every driver puts `CacheNamespace.current()` in front of each key, so two namespaces never read, write or forget each
@@ -74,8 +139,8 @@ namespaces over one store.
 ## Drivers
 
 `cache.driver` picks the driver; the names are the driver file prefixes. Every driver scopes keys by
-`CacheNamespace`, forgets a key with every key it covers, and runs one `remember` load per key at a time in its process
-(single-flight is not shared across instances).
+`CacheNamespace`, forgets a key with every key it covers and a tag with every entry carrying it, and runs one `remember`
+load per key at a time in its process; `lock: true` shares one across instances through `CacheLock`.
 
 | Driver    | Entry      | Where values live                                    | Config                                        |
 | --------- | ---------- | ---------------------------------------------------- | --------------------------------------------- |
@@ -84,17 +149,25 @@ namespaces over one store.
 | `valkey`  | `./node`   | a Valkey (Redis protocol) server shared by instances | secret `CACHE_VALKEY_URL`; `valkey.keyPrefix` |
 | `workers` | `./worker` | the Workers KV namespace bound by name               | `workers.binding` (default `CACHE`)           |
 
+Every driver also reads `jitter`, `fill.wait` and `fill.poll`, and takes the `CacheLock` (`cache.lock`) and
+`CacheMetrics` (`cache.metrics`) drivers.
+
 - `memory` keeps values by reference, so treat what you read as immutable. The other drivers store JSON, so store plain
   data: a `Date` comes back as its string, a class instance as a plain object.
 - Expiry is read from the `Clock` for every driver. The other drivers keep the expiry instant beside each value; the
   store's own expiry (the area's time-to-live, Valkey `PX`, KV `expirationTtl`) only reclaims space.
 - `valkey`: the URL carries the password, so it is the `CACHE_VALKEY_URL` secret, never a config value; the driver
-  refuses to start without it. Set `valkey.keyPrefix` per member when members share one server. `forget` walks
-  `SCAN MATCH`, so it needs one endpoint, not cluster mode. A command is retried once and then rejects: when the server
-  is down, the cache call fails rather than queueing.
+  refuses to start without it. Set `valkey.keyPrefix` per member when members share one server. Each write indexes the
+  key in a sorted set `<keyPrefix>#k/<covering key>` under every key that covers it, and in `<keyPrefix>#t/<tag>` for
+  each tag, scored with the instant the entry may go; a write drops members past their instant and keeps the set alive
+  for its longest member. `forget` and `forgetTag` read one set: no `SCAN`, and no command touches two keys. A command is
+  retried once and then rejects: when the server is down, the cache call fails rather than queueing.
+- `memory`, `storage` and `workers` list the keys under a prefix for `forget`, so they write no index; a tag's members
+  are an in-memory set (`memory`) or one empty marker key per member under `#` that expires with its entry (`storage`,
+  `workers`).
 - `workers`: the KV namespace is found through `cloudflare:workers` by `workers.binding` when the driver is built, and a
   missing binding fails the boot. KV keeps a key at least 60 seconds, so a shorter lifetime ends on the clock instead.
-  KV is eventually consistent: a write or a `forget` reaches other locations within about a minute.
+  KV is eventually consistent: a write, a `forget` or a `forgetTag` reaches other locations within about a minute.
 - A failure of the store (`storage`, `valkey`, `workers`) rejects the call; no driver falls back to the load or hides
   the error.
 
@@ -105,8 +178,8 @@ other keyspaces, confirmed in the 1.58 types), but this package has no driver ov
 
 - A package never imports `encore.dev` (ADR 0124); an Encore driver would need a port that the generated Encore app
   binds to a cluster it declares, and gen's Encore target declares no cache cluster.
-- An Encore keyspace deletes by exact key only and has no prefix scan, so `forget` could not drop the keys a key covers
-  (`CacheKey.of(Product, id)` covering every locale's view) without a separate key index.
+- An Encore keyspace deletes by exact key only and has no prefix scan, so `forget` would need the index sets the
+  Valkey driver keeps, which an Encore keyspace has no type for.
 
 A service on Encore that needs a shared cache uses the `valkey` driver.
 

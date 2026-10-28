@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `Cache` port: an abstract class that extends `Port`, carries the port brand, is
- *          implemented by `Driver(Cache)`, takes only a `CacheKey` and a `Duration`, and is a container token a test
+ *          implemented by `Driver(Cache)`, takes only a `CacheKey`, a `Duration` and the put and remember options
+ *          (tags, stale window, lock), and is a container token a test
  *          can override.
  * Boundary: test only; the driver here is a test-local map driver with no expiry.
  * Runtime: node (vitest)
@@ -14,6 +15,8 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Cache } from "#contracts/ports/cache.port";
 import type { CacheKey } from "#contracts/types/cache-key.type";
+import type { CachePutOptions } from "#contracts/types/cache-put-options.type";
+import type { CacheRememberOptions } from "#contracts/types/cache-remember-options.type";
 
 class MapCacheDriver extends Driver(Cache) {
   readonly values = new Map<string, unknown>();
@@ -38,6 +41,10 @@ class MapCacheDriver extends Driver(Cache) {
     this.values.delete(key);
     return Promise.resolve();
   }
+
+  forgetTag(_tag: CacheKey): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 const KEY = "Product:prd_1" as CacheKey;
@@ -53,7 +60,7 @@ describe("Cache", () => {
   });
 
   it("makes a driver implement every member", () => {
-    // @ts-expect-error -- get, put, remember and forget are abstract and not implemented
+    // @ts-expect-error -- get, put, remember, forget and forgetTag are abstract and not implemented
     class EmptyDriver extends Driver(Cache) {}
     expect(EmptyDriver).toBeTypeOf("function");
   });
@@ -61,6 +68,11 @@ describe("Cache", () => {
   it("takes a CacheKey and a Duration, never plain values", () => {
     expectTypeOf<Parameters<Cache["forget"]>[0]>().toEqualTypeOf<CacheKey>();
     expectTypeOf<Parameters<Cache["remember"]>[1]>().toEqualTypeOf<Duration>();
+    expectTypeOf<Parameters<Cache["forgetTag"]>[0]>().toEqualTypeOf<CacheKey>();
+    expectTypeOf<Parameters<Cache["put"]>[3]>().toEqualTypeOf<CachePutOptions | undefined>();
+    expectTypeOf<Parameters<Cache["remember"]>[3]>().toEqualTypeOf<
+      CacheRememberOptions | undefined
+    >();
     expectTypeOf<[string]>().not.toExtend<Parameters<Cache["forget"]>>();
   });
 

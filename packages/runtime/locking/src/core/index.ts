@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/locking (the `Locks` service, the memory driver, the busy
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/locking (the `Locks` service, the memory driver, the `locks` driver of @stackra/cache's `CacheLock`, the busy
  *          refusal, and the configuration with its shape and shipped schema) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
@@ -11,6 +11,7 @@
  */
 export { LockingConfig } from "#config/locking.config";
 export { LOCKING_CONFIG_SCHEMA as LockingConfig$ } from "#core/constants/locking-config-schema.constant";
+export { LocksCacheLockDriver } from "#core/drivers/locks-cache-lock.driver";
 export { MemoryLockDriver } from "#core/drivers/memory-lock.driver";
 export { LockUnavailableError } from "#core/errors/lock-unavailable.error";
 export { LockingOptions } from "#core/schemas/locking-options.schema";

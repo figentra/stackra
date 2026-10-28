@@ -51,6 +51,8 @@ class ForgettingCache extends Driver(Cache) {
     const scope = (this.storage.current() as { scope?: ScopeRef } | undefined)?.scope;
     this.forgotten.push(`${scope?.id ?? ""}/${key}`);
   }
+
+  async forgetTag(): Promise<void> {}
 }
 
 /** The context of an event delivered in `scopeId`. */

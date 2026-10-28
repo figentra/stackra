@@ -3,7 +3,9 @@
  * Purpose: unit tests of `MemoryCacheDriver`: get and put, expiry on the clock, a zero lifetime, single-flight
  *          `remember` (one load for concurrent calls, nothing stored on rejection or a synchronous throw), `forget` of a
  *          key and every key it covers (the template's every-locale forget), a covered load in flight not stored, a
- *          `put` winning over a load in flight, namespace isolation, and the least-recently-read bound.
+ *          `put` winning over a load in flight, namespace isolation, the least-recently-read bound (which also drops
+ *          an evicted entry from its tags), `forgetTag`, a stale entry served while it reloads, and loads reported to
+ *          the metrics port.
  * Boundary: test only; builds `CacheConfig` through `buildConfig` as the runtime does, with a settable clock and a
  *           settable namespace.
  * Runtime: node (vitest)
@@ -19,6 +21,7 @@ import { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";
 import { CacheNamespace } from "#contracts/ports/cache-namespace.port";
 import { CacheKey } from "#core/constants/cache-key.constant";
+import { CountingCacheMetricsDriver } from "#core/drivers/counting-cache-metrics.driver";
 import { MemoryCacheDriver } from "#core/drivers/memory-cache.driver";
 
 class ManualClock extends Clock {
@@ -39,20 +42,25 @@ class SettableCacheNamespace extends CacheNamespace {
 
 class Product {}
 
-/** A driver bounded at `maxEntries`, with its clock and namespace. */
+class Category {}
+
+/** A driver bounded at `maxEntries`, with its clock, namespace and counting metrics. */
 function setup(maxEntries = 100): {
   cache: MemoryCacheDriver;
   clock: ManualClock;
   namespace: SettableCacheNamespace;
+  metrics: CountingCacheMetricsDriver;
 } {
   const clock = new ManualClock();
   const namespace = new SettableCacheNamespace();
+  const metrics = new CountingCacheMetricsDriver();
   const cache = new MemoryCacheDriver(
     buildConfig(CacheConfig, { values: { maxEntries } }),
     namespace,
     clock,
+    metrics,
   );
-  return { cache, clock, namespace };
+  return { cache, clock, namespace, metrics };
 }
 
 /** Stands in for `resolve` until the promise executor sets it. */
@@ -216,5 +224,39 @@ describe("MemoryCacheDriver", () => {
     await expect(cache.get(one)).resolves.toBe(1);
     await expect(cache.get(two)).resolves.toBeUndefined();
     await expect(cache.get(three)).resolves.toBe(3);
+  });
+  it("forgets every entry carrying a tag, and an evicted entry leaves its tag", async () => {
+    const { cache } = setup(2);
+    const tag = CacheKey.of(Category, "cat_1");
+    await cache.put(CacheKey.of(Product, "1"), 1, TEN_MINUTES, { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "2"), 2, TEN_MINUTES, { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "3"), 3, TEN_MINUTES);
+    await cache.forgetTag(tag);
+    await expect(cache.get(CacheKey.of(Product, "2"))).resolves.toBeUndefined();
+    await expect(cache.get(CacheKey.of(Product, "3"))).resolves.toBe(3);
+  });
+
+  it("serves a stale entry while it reloads, and keeps it until the window passes", async () => {
+    const { cache, clock } = setup();
+    const key = CacheKey.of(Product, "prd_1");
+    const options = { stale: Duration.minutes(1) };
+    await cache.remember(key, TEN_MINUTES, () => "old", options);
+    clock.time += Duration.toMilliseconds(TEN_MINUTES);
+    const gate = deferred<string>();
+    await expect(cache.remember(key, TEN_MINUTES, () => gate.promise, options)).resolves.toBe(
+      "old",
+    );
+    gate.resolve("new");
+    await vi.waitFor(async () => {
+      await expect(cache.get(key)).resolves.toBe("new");
+    });
+  });
+
+  it("reports to its metrics port by owner", async () => {
+    const { cache, metrics } = setup();
+    const key = CacheKey.of(Product, "prd_1");
+    await cache.remember(key, TEN_MINUTES, () => 1);
+    await cache.remember(key, TEN_MINUTES, () => 1);
+    expect(metrics.snapshot().get("Product")).toMatchObject({ hits: 1, misses: 1, loads: 1 });
   });
 });

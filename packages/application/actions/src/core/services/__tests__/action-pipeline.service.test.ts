@@ -1784,6 +1784,8 @@ class MapCache extends Driver(Cache) {
         this.entries.delete(known);
   }
 
+  async forgetTag(): Promise<void> {}
+
   private at(key: CacheKey): string {
     const scope = (this.storage.current() as { scope?: ScopeRef } | undefined)?.scope;
     const at = `${scope?.id ?? ""}/${key}`;

@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `CacheOptions` and its shipped schema: the class's initializers equal the schema's
  *          defaults, the schema's output is exactly the class's fields (the generated `X$Check`), the schema is
- *          registered for the class, the driver and the namespace take exactly their driver names, `valkeyUrl` is the
- *          `CACHE_VALKEY_URL` secret, and a bound below one, a fraction or an empty binding is refused.
+ *          registered for the class, the driver, namespace, lock and metrics fields take exactly their driver names,
+ *          `valkeyUrl` is the `CACHE_VALKEY_URL` secret, a bound below one, a fraction or an empty binding is refused,
+ *          the jitter stays within 0 to 1, and the fill wait and poll read either duration form and refuse zero.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 26).
@@ -16,6 +17,8 @@ import type { z } from "zod";
 
 import { CACHE_CONFIG_SCHEMA } from "#core/constants/cache-config-schema.constant";
 import { CACHE_DRIVERS } from "#core/constants/cache-drivers.constant";
+import { CACHE_LOCK_DRIVERS } from "#core/constants/cache-lock-drivers.constant";
+import { CACHE_METRICS_DRIVERS } from "#core/constants/cache-metrics-drivers.constant";
 import { CACHE_NAMESPACE_DRIVERS } from "#core/constants/cache-namespace-drivers.constant";
 import { CacheOptions } from "#core/schemas/cache-options.schema";
 
@@ -28,7 +31,11 @@ describe("CacheOptions", () => {
     expect(CACHE_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "memory",
       namespace: "shared",
+      lock: "local",
+      metrics: "none",
       maxEntries: 10_000,
+      jitter: 0,
+      fill: { wait: "PT5S", poll: "PT0.05S" },
       valkeyUrl: "",
       valkey: { keyPrefix: "cache:" },
       workers: { binding: "CACHE" },
@@ -69,5 +76,30 @@ describe("CacheOptions", () => {
     expect(CACHE_CONFIG_SCHEMA.safeParse({ maxEntries: 1 }).success).toBe(true);
     expect(CACHE_CONFIG_SCHEMA.safeParse({ maxEntries: 0 }).success).toBe(false);
     expect(CACHE_CONFIG_SCHEMA.safeParse({ maxEntries: 1.5 }).success).toBe(false);
+  });
+  it("takes exactly the lock and metrics driver names", () => {
+    expect(CACHE_LOCK_DRIVERS).toEqual(["local", "locks"]);
+    expect(CACHE_METRICS_DRIVERS).toEqual(["none", "counting", "logger"]);
+    expect(CACHE_CONFIG_SCHEMA.parse({ lock: "locks", metrics: "counting" })).toMatchObject({
+      lock: "locks",
+      metrics: "counting",
+    });
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ lock: "redlock" }).success).toBe(false);
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ metrics: "prometheus" }).success).toBe(false);
+  });
+
+  it("keeps the jitter within 0 to 1", () => {
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ jitter: 0.2 }).success).toBe(true);
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ jitter: -0.1 }).success).toBe(false);
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ jitter: 1.5 }).success).toBe(false);
+  });
+
+  it("reads the fill wait and poll in either form and refuses zero or text", () => {
+    expect(CACHE_CONFIG_SCHEMA.parse({ fill: { wait: "2s", poll: "PT0.1S" } }).fill).toEqual({
+      wait: "PT2S",
+      poll: "PT0.1S",
+    });
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ fill: { wait: "0s" } }).success).toBe(false);
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ fill: { poll: "soon" } }).success).toBe(false);
   });
 });

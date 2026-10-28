@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: `Locks` (which the template's `StockService` injects and its wiring
- *          lists as a platform class) is exported with the memory driver, the busy refusal, the configuration, its
+ *          lists as a platform class) is exported with the memory driver, the cache fill lock driver, the busy refusal, the configuration, its
  *          shape and its shipped schema under the generated name `LockingConfig$`, and nothing else is a value.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -21,6 +21,7 @@ describe("@stackra/locking", () => {
       "LockingConfig$",
       "LockingOptions",
       "Locks",
+      "LocksCacheLockDriver",
       "MemoryLockDriver",
     ]);
   });

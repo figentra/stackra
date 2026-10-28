@@ -53,6 +53,10 @@ class StickyCache extends Driver(Cache) {
   async forget(): Promise<void> {
     this.stored = false;
   }
+
+  async forgetTag(): Promise<void> {
+    this.stored = false;
+  }
 }
 
 class PriceListQuery extends Query({

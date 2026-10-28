@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `StorageCacheDriver`: it is the `Cache` port, it keeps each entry in the storage `cache` area
  *          under `cache.` and the namespaced key with the lifetime as the area's time-to-live, it serves a value until
- *          its lifetime passes on the clock, `remember` loads once, and `forget` drops the covered keys while the
- *          area's other keys stay.
+ *          its lifetime passes on the clock, `remember` loads once, `forget` drops the covered keys while the area's
+ *          other keys stay, and `forgetTag` drops the tagged entries and their marker keys.
  * Boundary: test only; the storage is the real in-memory driver from `@stackra/storage/testing`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing; fakes are real drivers);
@@ -16,6 +16,7 @@ import { vi } from "vitest";
 
 import { Cache } from "#contracts/ports/cache.port";
 import { CacheKey } from "#core/constants/cache-key.constant";
+import { NoneCacheMetricsDriver } from "#core/drivers/none-cache-metrics.driver";
 import { SharedCacheNamespaceDriver } from "#core/drivers/shared-cache-namespace.driver";
 import { StorageCacheDriver } from "#core/drivers/storage-cache.driver";
 
@@ -29,6 +30,8 @@ class ManualClock extends Clock {
 
 class Product {}
 
+class Category {}
+
 const TEN_MINUTES = Duration.minutes(10);
 
 /** A driver over a fresh in-memory storage. */
@@ -40,7 +43,12 @@ function setup(): {
   const storage = fakeStorage();
   const clock = new ManualClock();
   return {
-    cache: new StorageCacheDriver(storage, new SharedCacheNamespaceDriver(), clock),
+    cache: new StorageCacheDriver(
+      storage,
+      new SharedCacheNamespaceDriver(),
+      clock,
+      new NoneCacheMetricsDriver(),
+    ),
     storage,
     clock,
   };
@@ -86,5 +94,18 @@ describe("StorageCacheDriver", () => {
     await cache.put(CacheKey.of(Product, "prd_10"), "other", TEN_MINUTES);
     await cache.forget(CacheKey.of(Product, "prd_1"));
     expect(storage.cache.keys().sort()).toEqual(["cache./Product:prd_10", "query.page_1"]);
+  });
+  it("forgets a tag's entries and its marker keys, leaving the rest", async () => {
+    const { cache, storage } = setup();
+    const tag = CacheKey.of(Category, "cat_1");
+    await cache.put(CacheKey.of(Product, "prd_1"), "one", TEN_MINUTES, { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "prd_2"), "two", TEN_MINUTES);
+    expect(storage.cache.keys().sort()).toEqual([
+      `cache.#${encodeURIComponent("t//Category:cat_1")}//Product:prd_1`,
+      "cache./Product:prd_1",
+      "cache./Product:prd_2",
+    ]);
+    await cache.forgetTag(tag);
+    expect(storage.cache.keys()).toEqual(["cache./Product:prd_2"]);
   });
 });

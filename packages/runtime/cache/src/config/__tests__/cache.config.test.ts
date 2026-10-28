@@ -45,6 +45,8 @@ describe("CacheConfig", () => {
     expectTypeOf(config.maxEntries).toEqualTypeOf<number>();
     expectTypeOf(config.driver).toEqualTypeOf<"memory" | "storage" | "valkey" | "workers">();
     expectTypeOf(config.namespace).toEqualTypeOf<"shared" | "scope">();
+    expectTypeOf(config.lock).toEqualTypeOf<"local" | "locks">();
+    expectTypeOf(config.metrics).toEqualTypeOf<"none" | "counting" | "logger">();
     const { valkeyUrl, ...defaults } = CACHE_CONFIG_SCHEMA.parse({});
     expect({ ...config }).toEqual(defaults);
     expect(config.valkeyUrl).toBe(valkeyUrl);

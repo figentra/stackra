@@ -8,7 +8,8 @@ Runtime: none
 Governing contract: ADR 0103; ADR 0149; owner D10 2026-10-28 (stackra-223: one RetryPolicy, backoffDelay and Duration).
 -->
 
-Named server-side locks: the `Locks` service, the `LockDriver` port, the memory and Postgres drivers and the
+Named server-side locks: the `Locks` service, the `LockDriver` port, the memory and Postgres drivers, the cache fill
+lock driver (`LocksCacheLockDriver`) and the
 token-sequence migration (ADR 0103, ADR 0149). Member at `packages/runtime/locking` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 
@@ -46,6 +47,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - The Valkey driver's scripts compare the stored `<owner>:<token>` before they renew or delete, so a lapsed lease never
   touches its successor's key. Its URL is the `LOCKING_VALKEY_URL` secret, never a value.
 - No tenant word here (final review R-59, ADR 0323), and no `@WithLock` (registry A9).
+- `LocksCacheLockDriver` is @stackra/cache's `CacheLock` driver `locks`; it imports only `@stackra/cache/contracts`.
+  @stackra/cache never depends on this package (the dependency runs one way).
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

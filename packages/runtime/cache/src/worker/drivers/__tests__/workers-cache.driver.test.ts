@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `WorkersCacheDriver`: it is the `Cache` port, it finds its KV namespace by the configured
  *          binding name and refuses to start without one, it writes with an `expirationTtl` of at least KV's 60
- *          seconds while a shorter lifetime still ends on the clock, and `forget` follows every `list` page, dropping
- *          only the covered keys.
+ *          seconds while a shorter lifetime still ends on the clock, `forget` follows every `list` page, dropping
+ *          only the covered keys, and `forgetTag` drops the tagged entries with their marker keys.
  * Boundary: test only; the binding lookup (`cloudflare:workers`) is mocked with an in-memory KV namespace.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0297 (decision 3);
@@ -17,6 +17,8 @@ import { vi } from "vitest";
 import { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";
 import { CacheKey } from "#core/constants/cache-key.constant";
+import { LocalCacheLockDriver } from "#core/drivers/local-cache-lock.driver";
+import { NoneCacheMetricsDriver } from "#core/drivers/none-cache-metrics.driver";
 import { SharedCacheNamespaceDriver } from "#core/drivers/shared-cache-namespace.driver";
 import { WorkersCacheDriver } from "#worker/drivers/workers-cache.driver";
 
@@ -59,6 +61,8 @@ class ManualClock extends Clock {
 
 class Product {}
 
+class Category {}
+
 /** A driver over the `PAGE_CACHE` binding (or `binding`), with an empty namespace. */
 function setup(binding = "PAGE_CACHE"): { cache: WorkersCacheDriver; clock: ManualClock } {
   worker.values.clear();
@@ -67,7 +71,14 @@ function setup(binding = "PAGE_CACHE"): { cache: WorkersCacheDriver; clock: Manu
   const config = buildConfig(CacheConfig, {
     values: { driver: "workers", workers: { binding } },
   });
-  return { cache: new WorkersCacheDriver(config, new SharedCacheNamespaceDriver(), clock), clock };
+  const cache = new WorkersCacheDriver(
+    config,
+    new SharedCacheNamespaceDriver(),
+    clock,
+    new LocalCacheLockDriver(),
+    new NoneCacheMetricsDriver(),
+  );
+  return { cache, clock };
 }
 
 describe("WorkersCacheDriver", () => {
@@ -115,5 +126,16 @@ describe("WorkersCacheDriver", () => {
     await cache.forget(CacheKey.of(Product, "prd_1"));
     expect(worker.kv.list).toHaveBeenCalledTimes(4);
     expect([...worker.values.keys()]).toEqual(["/Product:prd_10"]);
+  });
+  it("forgets a tag's entries and their marker keys", async () => {
+    const { cache } = setup();
+    const ttl = Duration.minutes(10);
+    await cache.put(CacheKey.of(Product, "prd_1"), "one", ttl, {
+      tags: [CacheKey.of(Category, "c")],
+    });
+    await cache.put(CacheKey.of(Product, "prd_2"), "two", ttl);
+    expect(worker.values.size).toBe(3);
+    await cache.forgetTag(CacheKey.of(Category, "c"));
+    expect([...worker.values.keys()]).toEqual(["/Product:prd_2"]);
   });
 });

@@ -4,7 +4,7 @@ Stackra locking: the `Locks` service that runs work under named server-side lock
 the memory driver, the Postgres advisory-lock driver and the `LockingConfig` configuration (ADR 0103, ADR 0149).
 
 **Tier:** `tier:lib` (`packages/runtime/locking`). Entries `.`, `./contracts` and `./node`. Depends on
-`@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/database`, `@stackra/errors`,
+`@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/cache` (the `CacheLock` port), `@stackra/database`, `@stackra/errors`,
 `@stackra/validation` and zod.
 
 ## What is here
@@ -16,6 +16,7 @@ the memory driver, the Postgres advisory-lock driver and the `LockingConfig` con
 | `LockingConfig`, `LockingConfig$` | `.`           | key `locking`: `driver` (`postgres` default, `memory`)                             |
 | `LockingOptions`                  | `.`           | the shape of `LockingConfig`                                                       |
 | `MemoryLockDriver`                | `.`           | the driver for tests and a single process                                          |
+| `LocksCacheLockDriver`            | `.`           | @stackra/cache's `CacheLock` driver `locks`: a cache fill under `tryWith`          |
 | `LockDriver`, `LockLease`         | `./contracts` | the port a driver implements, and the lease it gives                               |
 | `PostgresLockDriver`              | `./node`      | the default driver: transaction-level advisory locks and a WAL-position token      |
 
@@ -55,6 +56,14 @@ const ran = await this.locks.tryWith(`scheduler.cron:${job}`, Duration.minutes(1
 ```
 
 `tryWith` runs the work only when every key is free now, and gives `true` when it ran. Every instance tries; one runs.
+
+## One cache fill across instances
+
+`LocksCacheLockDriver` is the `locks` driver of @stackra/cache's `CacheLock` port. With `cache.lock: locks`, a
+`cache.remember(key, ttl, load, { lock: true })` miss runs `load` under `tryWith("cache.fill:<namespaced key>", fill.wait,
+...)` on one instance; the others read the cache until the value lands (STA-1435). With the Postgres driver the lock
+joins the running transaction and holds until it ends; the fill writes the cache before that, so the waiting instances
+still see the value.
 
 ## Fencing tokens
 

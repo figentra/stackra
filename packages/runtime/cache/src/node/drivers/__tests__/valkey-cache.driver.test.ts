@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `ValkeyCacheDriver`: it is the `Cache` port, it refuses to start without the
  *          `CACHE_VALKEY_URL` secret, it connects to that URL with one retry per command, it writes each entry under
- *          the key prefix with `PX` milliseconds, reads it back until the lifetime passes on the clock, and `forget`
- *          walks every `SCAN` page with the prefix's glob characters escaped, dropping only the covered keys.
- * Boundary: test only; `iovalkey` is mocked by an in-memory client, so no server runs.
+ *          the key prefix with `PX` milliseconds, reads it back until the lifetime passes on the clock, indexes each key
+ *          in a sorted set under every key that covers it (dropping members past their instant, keeping the set alive
+ *          for its longest member), `forget` drops only the covered keys from that set without a `SCAN`, and
+ *          `forgetTag` drops the tagged entries.
+ * Boundary: test only; `iovalkey` is mocked by an in-memory client (strings and sorted sets), so no server runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0150 (decisions 1, 2
  *                     and 4); ADR 0173 (secrets by name).
@@ -18,33 +20,18 @@ import { vi } from "vitest";
 import { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";
 import { CacheKey } from "#core/constants/cache-key.constant";
+import { LocalCacheLockDriver } from "#core/drivers/local-cache-lock.driver";
+import { NoneCacheMetricsDriver } from "#core/drivers/none-cache-metrics.driver";
 import { SharedCacheNamespaceDriver } from "#core/drivers/shared-cache-namespace.driver";
 import { ValkeyCacheDriver } from "#node/drivers/valkey-cache.driver";
 
 /** The in-memory server the mocked client talks to, and what the client was built with. */
 const server = vi.hoisted(() => ({
   values: new Map<string, string>(),
+  sets: new Map<string, Map<string, number>>(),
+  expiries: [] as unknown[][],
   options: [] as unknown[],
-  patterns: [] as string[],
 }));
-
-/** A glob of `MATCH` as a regular expression: a backslash makes the next character literal, `*` is anything. */
-const matcher = vi.hoisted(() => (glob: string): RegExp => {
-  let source = "";
-  for (let index = 0; index < glob.length; index += 1) {
-    let char = glob.charAt(index);
-    if (char === "*") {
-      source += ".*";
-      continue;
-    }
-    if (char === "\\") {
-      index += 1;
-      char = glob.charAt(index);
-    }
-    source += char.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-  return new RegExp(`^${source}$`);
-});
 
 vi.mock("iovalkey", () => ({
   default: class {
@@ -55,16 +42,32 @@ vi.mock("iovalkey", () => ({
       return "OK";
     });
 
-    del = vi.fn(async (key: string) => (server.values.delete(key) ? 1 : 0));
-
-    // One key per page, so the driver must follow the cursor.
-    scan = vi.fn(async (cursor: string, _match: string, pattern: string) => {
-      server.patterns.push(pattern);
-      const keys = [...server.values.keys()].filter((key) => matcher(pattern).test(key));
-      const index = Number(cursor);
-      const next = index + 1 >= keys.length ? "0" : String(index + 1);
-      return [next, keys.slice(index, index + 1)];
+    del = vi.fn(async (key: string) => {
+      const had = server.values.delete(key) || server.sets.delete(key);
+      return had ? 1 : 0;
     });
+
+    zadd = vi.fn(async (key: string, _gt: string, score: number, member: string) => {
+      const set = server.sets.get(key) ?? new Map<string, number>();
+      set.set(member, Math.max(score, set.get(member) ?? Number.NEGATIVE_INFINITY));
+      server.sets.set(key, set);
+      return 1;
+    });
+
+    zremrangebyscore = vi.fn(async (key: string, _min: string, max: number) => {
+      const set = server.sets.get(key);
+      for (const [member, score] of set ?? []) if (score <= max) set?.delete(member);
+      return 0;
+    });
+
+    zrange = vi.fn(async (key: string) => [...(server.sets.get(key)?.keys() ?? [])]);
+
+    pexpire = vi.fn(async (...args: unknown[]) => {
+      server.expiries.push(args);
+      return 1;
+    });
+
+    scan = vi.fn();
 
     constructor(...args: unknown[]) {
       server.options.push(args);
@@ -89,19 +92,33 @@ class ValkeySecrets extends SecretStore {
 
 class Product {}
 
+class Category {}
+
+/** A driver over `config` with the shared namespace, the local lock and no metrics. */
+function driver(config: CacheConfig, clock: Clock): ValkeyCacheDriver {
+  return new ValkeyCacheDriver(
+    config,
+    new SharedCacheNamespaceDriver(),
+    clock,
+    new LocalCacheLockDriver(),
+    new NoneCacheMetricsDriver(),
+  );
+}
+
 const TEN_MINUTES = Duration.minutes(10);
 
 /** A driver over a fresh server, with the prefix `keyPrefix`. */
 function setup(keyPrefix = "commerce:"): { cache: ValkeyCacheDriver; clock: ManualClock } {
   server.values.clear();
+  server.sets.clear();
+  server.expiries.length = 0;
   server.options.length = 0;
-  server.patterns.length = 0;
   const clock = new ManualClock();
   const config = buildConfig(CacheConfig, {
     values: { driver: "valkey", valkey: { keyPrefix } },
     secrets: new ValkeySecrets(),
   });
-  return { cache: new ValkeyCacheDriver(config, new SharedCacheNamespaceDriver(), clock), clock };
+  return { cache: driver(config, clock), clock };
 }
 
 describe("ValkeyCacheDriver", () => {
@@ -112,9 +129,7 @@ describe("ValkeyCacheDriver", () => {
 
   it("refuses to start without the CACHE_VALKEY_URL secret", () => {
     const config = buildConfig(CacheConfig, { values: { driver: "valkey" } });
-    expect(
-      () => new ValkeyCacheDriver(config, new SharedCacheNamespaceDriver(), new ManualClock()),
-    ).toThrow(/CACHE_VALKEY_URL/);
+    expect(() => driver(config, new ManualClock())).toThrow(/CACHE_VALKEY_URL/);
   });
 
   it("writes under the key prefix with PX milliseconds and reads back until the lifetime passes", async () => {
@@ -132,18 +147,47 @@ describe("ValkeyCacheDriver", () => {
     await expect(cache.get(key)).resolves.toBeUndefined();
   });
 
-  it("forgets every covered key across SCAN pages, matching the prefix literally", async () => {
-    const { cache } = setup("app*[1]:");
+  it("indexes each key under the keys that cover it, with its instant and the set's lifetime", async () => {
+    const { cache, clock } = setup();
+    await cache.put(CacheKey.of(Product, "prd_1", "en"), "en", TEN_MINUTES);
+    expect([...(server.sets.get("commerce:#k//Product:prd_1") ?? [])]).toEqual([
+      ["/Product:prd_1:en", clock.time + 600_000],
+    ]);
+    expect(server.sets.has("commerce:#k//Product")).toBe(true);
+    expect(server.expiries).toContainEqual(["commerce:#k//Product", 600_000, "NX"]);
+    expect(server.expiries).toContainEqual(["commerce:#k//Product", 600_000, "GT"]);
+  });
+
+  it("drops members past their instant when the set is written again", async () => {
+    const { cache, clock } = setup();
+    await cache.put(CacheKey.of(Product, "prd_1", "en"), "en", Duration.seconds(1));
+    clock.time += 1000;
+    await cache.put(CacheKey.of(Product, "prd_2", "en"), "en", TEN_MINUTES);
+    expect([...(server.sets.get("commerce:#k//Product")?.keys() ?? [])]).toEqual([
+      "/Product:prd_2:en",
+    ]);
+  });
+
+  it("forgets every covered key from its index set, without a SCAN, and nothing else", async () => {
+    const { cache } = setup();
     await cache.put(CacheKey.of(Product, "prd_1"), "base", TEN_MINUTES);
     await cache.put(CacheKey.of(Product, "prd_1", "en"), "en", TEN_MINUTES);
     await cache.put(CacheKey.of(Product, "prd_1", "ar"), "ar", TEN_MINUTES);
     await cache.put(CacheKey.of(Product, "prd_10"), "other", TEN_MINUTES);
-    server.values.set("appX1:/Product:prd_1", "a lookalike under another prefix");
     await cache.forget(CacheKey.of(Product, "prd_1"));
-    expect(server.patterns[0]).toBe("app\\*\\[1\\]:/Product:prd_1*");
-    expect([...server.values.keys()].sort()).toEqual([
-      "app*[1]:/Product:prd_10",
-      "appX1:/Product:prd_1",
-    ]);
+    expect([...server.values.keys()]).toEqual(["commerce:/Product:prd_10"]);
+    expect(server.sets.has("commerce:#k//Product:prd_1")).toBe(false);
+    expect(cache.client.scan).not.toHaveBeenCalled();
+  });
+
+  it("forgets the entries carrying a tag", async () => {
+    const { cache } = setup();
+    const tag = CacheKey.of(Category, "cat_1");
+    await cache.put(CacheKey.of(Product, "prd_1"), "one", TEN_MINUTES, { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "prd_2"), "two", TEN_MINUTES);
+    await cache.forgetTag(tag);
+    await expect(cache.get(CacheKey.of(Product, "prd_1"))).resolves.toBeUndefined();
+    await expect(cache.get(CacheKey.of(Product, "prd_2"))).resolves.toBe("two");
+    expect(server.sets.has("commerce:#t//Category:cat_1")).toBe(false);
   });
 });
