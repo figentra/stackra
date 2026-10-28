@@ -175,6 +175,10 @@ describe("handleRequest", () => {
       ]);
     });
 
+    it("accepts a base64 provenance attachment as well as npm's JSON text", async () => {
+      expect((await registry.publish(CORE, { provenanceEncoding: "base64" })).status).toBe(201);
+    });
+
     it("refuses an existing version", async () => {
       await registry.publish(CORE);
       expect((await registry.publish(CORE)).status).toBe(409);

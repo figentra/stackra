@@ -105,6 +105,8 @@ export async function publishBody(
     readonly repository?: string;
     readonly tags?: Readonly<Record<string, string>>;
     readonly provenance?: boolean;
+    /** How the `.sigstore` attachment's data is sent: JSON text as npm does (default), or base64. */
+    readonly provenanceEncoding?: "json" | "base64";
     readonly integrity?: string;
   } = {},
 ): Promise<Record<string, unknown>> {
@@ -119,13 +121,17 @@ export async function publishBody(
       length: tgz.length,
     },
   };
-  if (options.provenance !== false)
+  if (options.provenance !== false) {
+    const bundle = sigstoreBundle(computed.sha256, identityOf(repository));
     attachments[`${pkg.name}-${pkg.version}.sigstore`] = {
       content_type: "application/vnd.dev.sigstore.bundle.v0.3+json",
-      data: toBase64(
-        new TextEncoder().encode(sigstoreBundle(computed.sha256, identityOf(repository))),
-      ),
+      data:
+        options.provenanceEncoding === "base64"
+          ? toBase64(new TextEncoder().encode(bundle))
+          : bundle,
+      length: bundle.length,
     };
+  }
   return {
     _id: pkg.name,
     name: pkg.name,

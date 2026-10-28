@@ -163,7 +163,10 @@ export async function putPackage(
   let bundle: string | null = null;
   if (typeof sigstore?.data === "string") {
     try {
-      bundle = new TextDecoder().decode(fromBase64(sigstore.data));
+      // npm's libnpmpublish sends the bundle as JSON text; base64 is kept for other clients.
+      bundle = sigstore.data.trimStart().startsWith("{")
+        ? sigstore.data
+        : new TextDecoder().decode(fromBase64(sigstore.data));
     } catch {
       return failure(400, "the provenance attachment is not base64");
     }
