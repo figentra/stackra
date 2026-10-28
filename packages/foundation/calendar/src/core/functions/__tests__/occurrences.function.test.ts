@@ -25,10 +25,9 @@ const calendar: BusinessCalendar = {
   uncertainDays: "working",
 };
 
-const count = (rule: string): number => occurrences({ ...base, rule }).length;
-
 describe("occurrences", () => {
   const base = { start: "2026-01-04", time: "10:00", timeZone: "Asia/Riyadh", to: "2026-12-31" };
+  const count = (rule: string): number => occurrences({ ...base, rule }).length;
 
   it("expands a weekly rule with COUNT in the time zone", () => {
     expect(occurrences({ ...base, rule: "RRULE:FREQ=WEEKLY;COUNT=3" })).toEqual([

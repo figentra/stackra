@@ -77,11 +77,10 @@ const ISSUE = {
 const licenceOf = async (response: Response): Promise<RegistryLicence> =>
   (await response.json()) as RegistryLicence;
 
-const issue = (body: unknown) => send("POST", "/-/stackra/v1/licences", { body });
-
 describe("licence API", () => {
   let registry: Registry;
   let send: Awaited<ReturnType<typeof setUp>>["send"];
+  const issue = (body: unknown) => send("POST", "/-/stackra/v1/licences", { body });
   let read: Awaited<ReturnType<typeof setUp>>["read"];
 
   beforeEach(async () => {
