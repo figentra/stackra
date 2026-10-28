@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/skills until `stackra gen` writes the entry barrels
- *          (STA-339): the registry item kinds (`StackraKind`), the `stackra` field (`StackraManifest`) and its package
+ *          (STA-339): the registry item kinds (`StackraKind`), the `stackra` field (`StackraPackageField`) and its package
  *          vocabularies (`StackraTier`, `StackraCategory`, `StackraRuntime`), the catalogue
  *          API shapes (`CatalogueItem`, `CataloguePage`), the `stackra-items.lock.yaml` shape (`ItemsLock`) and their
  *          schemas, shared by the registry Worker and the CLI.
@@ -23,4 +23,4 @@ export type { CatalogueItem } from "#contracts/types/catalogue-item.type";
 export type { CataloguePage } from "#contracts/types/catalogue-page.type";
 export type { ItemsLock } from "#contracts/types/items-lock.type";
 export type { ItemsLockEntry } from "#contracts/types/items-lock-entry.type";
-export type { StackraManifest } from "#contracts/types/stackra-manifest.type";
+export type { StackraPackageField } from "#contracts/types/stackra-package-field.type";

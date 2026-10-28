@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: exactly its values, `StackraKind`'s five codes, the
  *          package vocabularies (`StackraTier`, `StackraCategory`, `StackraRuntime`), and the shapes of
- *          `StackraManifest`, `CatalogueItem`, `CataloguePage` and `ItemsLock`.
+ *          `StackraPackageField`, `CatalogueItem`, `CataloguePage` and `ItemsLock`.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0453 (decisions 11 and 12, amendment of
@@ -17,7 +17,7 @@ import type {
   CataloguePage,
   ItemsLock,
   ItemsLockEntry,
-  StackraManifest,
+  StackraPackageField,
 } from "#contracts/index";
 import { StackraCategory, StackraKind, StackraRuntime, StackraTier } from "#contracts/index";
 
@@ -69,17 +69,17 @@ describe("@stackra/skills/contracts", () => {
   });
 
   it("types the manifest, the catalogue and the lock", () => {
-    expectTypeOf<StackraManifest["kind"]>().toEqualTypeOf<StackraKind>();
-    expectTypeOf<Extract<StackraManifest, { kind: "mcp" }>["mcp"]>().toEqualTypeOf<
+    expectTypeOf<StackraPackageField["kind"]>().toEqualTypeOf<StackraKind>();
+    expectTypeOf<Extract<StackraPackageField, { kind: "mcp" }>["mcp"]>().toEqualTypeOf<
       Readonly<Record<string, unknown>>
     >();
-    type PackageField = Extract<StackraManifest, { kind: "package" }>;
+    type PackageField = Extract<StackraPackageField, { kind: "package" }>;
     expectTypeOf<PackageField["tier"]>().toEqualTypeOf<StackraTier | undefined>();
     expectTypeOf<PackageField["category"]>().toEqualTypeOf<StackraCategory | undefined>();
     expectTypeOf<PackageField["runtimes"]>().toEqualTypeOf<readonly StackraRuntime[] | undefined>();
     expectTypeOf<PackageField["summary"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<CatalogueItem["access"]>().toEqualTypeOf<"open" | "licensed">();
-    expectTypeOf<CatalogueItem["stackra"]>().toEqualTypeOf<StackraManifest>();
+    expectTypeOf<CatalogueItem["stackra"]>().toEqualTypeOf<StackraPackageField>();
     expectTypeOf<CataloguePage["next"]>().toEqualTypeOf<string | null>();
     expectTypeOf<ItemsLock["lockfileVersion"]>().toEqualTypeOf<1>();
     expectTypeOf<ItemsLockEntry["kind"]>().toEqualTypeOf<"skill" | "agent" | "mcp" | "plugin">();

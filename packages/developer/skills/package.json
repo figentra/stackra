@@ -113,6 +113,6 @@
       "isomorphic",
       "node"
     ],
-    "summary": "Use it to write or load the agent-neutral skills and rules, parse their Markdown frontmatter format, or validate registry items against the StackraManifest contract in ./contracts."
+    "summary": "Use it to write or load the agent-neutral skills and rules, parse their Markdown frontmatter format, or validate registry items against the StackraPackageField contract in ./contracts."
   }
 }

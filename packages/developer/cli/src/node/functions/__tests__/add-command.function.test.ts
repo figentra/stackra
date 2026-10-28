@@ -8,12 +8,12 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 11).
  */
+import type { CatalogueItem, StackraPackageField } from "@stackra/skills/contracts";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
-import type { CatalogueItem, StackraManifest } from "@stackra/skills/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { parse } from "yaml";
 
@@ -38,7 +38,7 @@ const tgz = (files: Record<string, string>) => {
   return gzipSync(Buffer.concat([...blocks, new Uint8Array(1024)]));
 };
 
-const catalogueItem = (name: string, stackra: StackraManifest): CatalogueItem => ({
+const catalogueItem = (name: string, stackra: StackraPackageField): CatalogueItem => ({
   name,
   scope: name.split("/")[0] ?? "",
   kind: stackra.kind,
@@ -58,7 +58,7 @@ const catalogueItem = (name: string, stackra: StackraManifest): CatalogueItem =>
 
 /** A fake registry: the items it holds and the tarball files of each; records every call with all its arguments. */
 const fakeClient = (
-  items: Record<string, { stackra: StackraManifest; files: Record<string, string> }>,
+  items: Record<string, { stackra: StackraPackageField; files: Record<string, string> }>,
 ) => {
   const calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
   const accesses: RegistryAccess[] = [];

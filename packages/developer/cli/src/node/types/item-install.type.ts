@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0453 (decision 11).
  */
-import type { StackraKind, StackraManifest } from "@stackra/skills/contracts";
+import type { StackraKind, StackraPackageField } from "@stackra/skills/contracts";
 
 /** One item to install. */
 export type ItemInstall = {
@@ -17,5 +17,5 @@ export type ItemInstall = {
   /** The tarball's files by path, `package/` removed. */
   readonly files: ReadonlyMap<string, Uint8Array>;
   /** The `stackra` field of the tarball's own `package.json`, read by the kind's installer. */
-  readonly manifest: StackraManifest;
+  readonly manifest: StackraPackageField;
 };

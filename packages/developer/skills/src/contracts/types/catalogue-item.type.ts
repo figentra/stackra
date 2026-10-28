@@ -7,7 +7,7 @@
  * Governing contract: ADR 0453 (decisions 11 and 12).
  */
 import type { StackraKind } from "#contracts/enums/stackra-kind.enum";
-import type { StackraManifest } from "#contracts/types/stackra-manifest.type";
+import type { StackraPackageField } from "#contracts/types/stackra-package-field.type";
 
 /** One registry item in the catalogue. */
 export type CatalogueItem = {
@@ -38,7 +38,7 @@ export type CatalogueItem = {
   /** The deprecation message, when the latest version is deprecated. */
   readonly deprecated: string | null;
   /** The `stackra` field of the latest version's `package.json`. */
-  readonly stackra: StackraManifest;
+  readonly stackra: StackraPackageField;
   /** Every published version, oldest first; only on `GET /-/stackra/v1/catalogue/@scope/name`. */
   readonly versions?: readonly string[] | undefined;
 };

@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `StackraManifest`, the `stackra` field of a registry item's `package.json`, per kind: every kind carries
+ * Purpose: `StackraPackageField`, the `stackra` field of a registry item's `package.json`, per kind: every kind carries
  *          `kind`; a `package` also carries what an agent reads to place it (`tier`, `category`, `runtimes`,
  *          `summary`); an `mcp` item also carries `mcp`, its `.mcp.yaml` server entry.
  * Boundary: type only; `STACKRA_MANIFEST_SCHEMA` checks it. Not the generated `stackra.manifest.json` of a member,
  *           which is `@stackra/contracts`' `StackraManifest`.
  * Runtime: isomorphic
- * Governing contract: ADR 0453 (decision 11, amendment of 2026-10-27).
+ * Governing contract: ADR 0453 (decision 11, amendment of 2026-10-27);
+ *                     STA-1383 (renamed from StackraManifest, which is contracts' stackra.manifest.json type).
  */
 import type { StackraCategory } from "#contracts/enums/stackra-category.enum";
 import type { StackraKind } from "#contracts/enums/stackra-kind.enum";
@@ -14,7 +15,7 @@ import type { StackraRuntime } from "#contracts/enums/stackra-runtime.enum";
 import type { StackraTier } from "#contracts/enums/stackra-tier.enum";
 
 /** The `stackra` field of an item's `package.json`. */
-export type StackraManifest =
+export type StackraPackageField =
   | {
       /** `package` when the field or the kind is missing. */
       readonly kind: "package";

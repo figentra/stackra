@@ -16,13 +16,13 @@ import { StackraCategory } from "#contracts/enums/stackra-category.enum";
 import { StackraKind } from "#contracts/enums/stackra-kind.enum";
 import { StackraRuntime } from "#contracts/enums/stackra-runtime.enum";
 import { StackraTier } from "#contracts/enums/stackra-tier.enum";
-import type { StackraManifest } from "#contracts/types/stackra-manifest.type";
+import type { StackraPackageField } from "#contracts/types/stackra-package-field.type";
 
 /** The values of one `Enum.of` as a zod enum. */
 const oneOf = <T extends string>(values: readonly T[]) => z.enum(values as [T, ...T[]]);
 
 /** The `stackra` field of an item's `package.json`; parse `{}` when the field is missing. */
-export const STACKRA_MANIFEST_SCHEMA: z.ZodType<StackraManifest> = z.union([
+export const STACKRA_MANIFEST_SCHEMA: z.ZodType<StackraPackageField> = z.union([
   z.object({
     kind: z.literal(StackraKind.Package).default(StackraKind.Package),
     tier: oneOf(Enum.values(StackraTier)).optional(),
