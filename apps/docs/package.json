@@ -32,6 +32,7 @@
     "lint": "stackra lint",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "test": "vitest run",
     "clean": "rm -rf .stackra .turbo"
   },
   "dependencies": {
@@ -42,9 +43,11 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
     "@types/node": "catalog:",
     "mint": "catalog:docs",
-    "oxfmt": "catalog:quality"
+    "oxfmt": "catalog:quality",
+    "vitest": "catalog:quality"
   },
   "engines": {
     "node": ">=24.0.0"

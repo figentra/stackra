@@ -1,3 +1,5 @@
+<!-- Purpose: agent rules for @figentra/docs: where pages, ADRs, config and scripts go, the generated system and architecture maps, and the tasks. Boundary: member rules only. Runtime: docs. Governing contract: ADR 0002, ADR 0452. -->
+
 # @figentra/docs
 
 <!--
@@ -50,7 +52,7 @@ Mintlify documentation site. Tier tag `tier:app`.
 
 ## Tasks
 
-`pnpm dev`, `build`, `lint`, `format`, `clean`.
+`pnpm dev`, `build`, `lint`, `format`, `test` (the `scripts/` tests), `clean`.
 
 ## PII
 
