@@ -86,6 +86,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - A filter operator MikroORM has no typed form for (jsonb contains or path, `ltree` ancestor or descendant) is a
   function returning a parameterised fragment for `$raw` (`jsonContains`, `jsonPath`, `ancestorOf`, `descendantOf`);
   never widen `Where` with a custom `$` key, and never use one for isolation.
+- A table read's filter values pass through `filterCondition` only: the closed `TableFilter` vocabulary (value, list,
+  range, dateRange, comparison, contains, isNull). Never pass a caller's object to the ORM as a condition; add an
+  operator there instead. A sort takes three keys at most, the primary key always last.
 - A counter is `increment(where, field, by)` (one `col = col + ?` statement), never read-modify-write; a single-flight
   step (token refresh) is `lock(where)` inside a transaction, then a re-check of what it reads (STA-1239).
 - Replica reads go only through `Database.onReplica`, which replays the running `app.*` settings in a read-only replica

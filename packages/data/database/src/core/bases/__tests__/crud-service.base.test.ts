@@ -5,7 +5,7 @@
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
  *          `update` assigns (now, in its own transaction, with `requiresNew`), `lock` reads again under a pessimistic
- *          write lock, `increment` adds in one parameterised statement, `table` builds the cursor read, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
+ *          write lock, `increment` adds in one parameterised statement, `table` builds the cursor read (a multi-key sort, operator filters, a refused fourth key or unknown operator), `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
@@ -235,6 +235,51 @@ describe(CrudService, () => {
     });
     expect(page).toMatchObject({ hasMore: true, nextCursor: "c2" });
     expect(page.items).toHaveLength(1);
+  });
+
+  it("reads a multi-key sort and compiles operator filters, refusing a fourth key", async () => {
+    const em = connect();
+    await new OrderService().table(
+      {
+        limit: 20,
+        sort: [
+          { key: "status", direction: SortDirection.Asc },
+          { key: "createdAt", direction: SortDirection.Desc },
+        ],
+        filter: {
+          createdAt: { op: "dateRange", from: "2026-10-01", to: "2026-10-01" },
+          status: { op: "ne", value: "void" },
+        },
+      },
+      { where: { id: { $ne: "ord_0" } } },
+    );
+    expect(em.findByCursor).toHaveBeenLastCalledWith(Order, {
+      where: {
+        $and: [
+          { id: { $ne: "ord_0" } },
+          {
+            createdAt: {
+              $gte: new Date("2026-10-01T00:00:00Z"),
+              $lt: new Date("2026-10-02T00:00:00Z"),
+            },
+          },
+          { status: { $ne: "void" } },
+        ],
+      },
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+      first: 20,
+      includeCount: false,
+    });
+    const keys = ["status", "createdAt", "id", "hits"].map((key) => ({
+      key,
+      direction: SortDirection.Asc,
+    }));
+    await expect(new OrderService().table({ limit: 20, sort: keys })).rejects.toMatchObject({
+      code: "table_filter_invalid",
+    });
+    await expect(
+      new OrderService().table({ limit: 20, filter: { status: { $like: "%" } } }),
+    ).rejects.toMatchObject({ code: "table_filter_invalid" });
   });
 
   it("sums a field and hands metrics to a reader", async () => {

@@ -23,7 +23,8 @@
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
  *           `model_tenancy_missing`, stackra-258) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
- *           `surface_targets_conflict`, ADR 0436) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
+ *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
  * Runtime: isomorphic
@@ -44,6 +45,7 @@ import { checkSemanticSearch } from "#core/functions/check-semantic-search.funct
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
+import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
 import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
@@ -140,6 +142,7 @@ export function generateMember(
     ...checkModelScope(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
+    ...checkTableIndexes(ir, previous),
   );
   if (all.length > 0) return { files: [], errors: all, manifest };
 

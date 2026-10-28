@@ -5,7 +5,7 @@
  * Boundary: a type only; chainable, each call returns the same builder. Gen runs the member once and compiles the result
  *           into the list query's closed `TableInput`.
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rules 1, 2, 5 and 12).
+ * Governing contract: ADR 0307 (rules 1, 2, 5 and 12); reporting gap 5 (multi-key sort).
  */
 import type { SortDirection } from "@stackra/contracts";
 
@@ -26,7 +26,8 @@ import type { TableNode } from "#core/types/table-node.type";
  *   return t
  *     .columns((c) => [c.from("id").copyable(), c.money("totals.totalMinor", { currency: "totals.currency" })])
  *     .filters((f) => [f.from("status").pinned()])
- *     .defaultSort("createdAt", SortDirection.Desc);
+ *     .defaultSort("status", SortDirection.Asc)
+ *     .thenSort("createdAt", SortDirection.Desc);
  * }
  */
 export interface Table<R> extends Built<TableNode> {
@@ -38,6 +39,9 @@ export interface Table<R> extends Built<TableNode> {
 
   /** Sets the sort a fresh list starts with. */
   defaultSort: (key: Path<R>, direction: SortDirection) => this;
+
+  /** Adds a key the default sort continues with when rows tie (a multi-key sort); at most two. */
+  thenSort: (key: Path<R>, direction: SortDirection) => this;
 
   /** Sets how rows are counted; estimated by default. */
   count: (count: Count) => this;

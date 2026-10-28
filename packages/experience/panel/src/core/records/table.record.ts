@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `TableRecord<R>`, the builder a resource's `table(t)` member receives: the runtime side of `Table<R>`.
- * Boundary: internal: the runtime side of the public builder type; no entry exports it. A later call of the same method replaces the earlier one.
+ * Boundary: internal: the runtime side of the public builder type; no entry exports it. A later call of the same method replaces the earlier one,
+ *           except `thenSort`, which adds a tiebreak key each call (two at most).
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rules 1, 2, 5 and 12).
+ * Governing contract: ADR 0307 (rules 1, 2, 5 and 12); reporting gap 5 (multi-key sort).
  */
 import type { SortDirection } from "@stackra/contracts";
 
@@ -30,6 +31,9 @@ export class TableRecord<R> implements Table<R> {
   /** The default sort. */
   private sort: SortNode | undefined;
 
+  /** The tiebreak keys of the default sort. */
+  private tiebreaks: readonly SortNode[] = [];
+
   /** The count mode. */
   private counted: Count = Count.Estimated;
 
@@ -51,6 +55,18 @@ export class TableRecord<R> implements Table<R> {
     return this;
   }
 
+  /**
+   * Adds a tiebreak key to the default sort.
+   *
+   * @throws RangeError past two tiebreak keys: the server sorts by three keys at most.
+   */
+  thenSort(key: Path<R>, direction: SortDirection): this {
+    if (this.tiebreaks.length >= 2)
+      throw new RangeError("a default sort takes at most two tiebreak keys");
+    this.tiebreaks = Object.freeze([...this.tiebreaks, Object.freeze({ key, direction })]);
+    return this;
+  }
+
   /** Sets the count mode. */
   count(count: Count): this {
     this.counted = count;
@@ -63,6 +79,7 @@ export class TableRecord<R> implements Table<R> {
       columns: Object.freeze(this.columnSteps.map((step) => step.toNode())),
       filters: Object.freeze(this.filterSteps.map((step) => step.toNode())),
       ...(this.sort === undefined ? {} : { defaultSort: this.sort }),
+      ...(this.tiebreaks.length === 0 ? {} : { thenSort: this.tiebreaks }),
       count: this.counted,
     });
   }

@@ -6,9 +6,10 @@
  * Boundary: internal to the resource pages. Holds the list state (search, filters, sort, cursor history, selection)
  *           and reads one page with `useQuery`; `tableInput` builds the closed input, so only declared sorts and
  *           filters are sent. Enum codes show as codes and a value filter is a text filter until gen writes enum labels
- *           and filter kinds; a principal column shows the principal's name.
+ *           and filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
+ *           yes or no, and contains and compare as text. A principal column shows the principal's name.
  * Runtime: browser
- * Governing contract: ADR 0307 (rules 1, 2, 11 and 12); ADR 0164.
+ * Governing contract: ADR 0307 (rules 1, 2, 11 and 12); ADR 0164; reporting gap 5.
  */
 import { useQuery } from "@stackra/clients/react";
 import { Enum, SortDirection } from "@stackra/contracts";
@@ -113,6 +114,11 @@ export function ResourceTable({
         ],
       };
     const filterLabel = t(resourceLabel(resourceKey, "filters", filter.key));
+    // `tableInput` turns each drawn value into the kind's wire form (`filterWireValue`).
+    if (filter.kind === "range") return { id: filter.key, kind: "number", label: filterLabel };
+    if (filter.kind === "dateRange")
+      return { id: filter.key, kind: "date-range", label: filterLabel };
+    if (filter.kind === "isNull") return { id: filter.key, kind: "boolean", label: filterLabel };
     return filter.enum === undefined
       ? { id: filter.key, kind: "text", label: filterLabel }
       : {

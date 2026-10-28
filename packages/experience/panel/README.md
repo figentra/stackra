@@ -24,27 +24,27 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 
 ## What is here
 
-| Entry      | Symbol                                                                                                                                                      | Use                                                            |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                        | the four kinds                                                 |
-| `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                  | what the builder members receive                               |
-| `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                        | metric output shapes and the period input, with their schemas  |
-| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentLayout`, `ExportFormat`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
-| `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                      | binds, drill-downs, date filter values, document blocks        |
-| `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                           | the data constructors gen writes into `#stackra/resources`     |
-| `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`      |
-| `.`        | `registerResources`                                                                                                                                         | hands the generated resource trees to the resource pages       |
-| `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                         | shell slots a product fills (ADR 0438)                         |
-| `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                   | what gen records; the placement layer rule                     |
-| `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                       | saved views with grouping, sub-grouping, totals and sharing    |
-| `.`        | `fieldsForMode`                                                                                                                                             | the form fields a display mode shows                           |
-| `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                            | the one line editor of a `LineEntry` slot; inert contributions |
-| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                  | the panel frame and its trail (navigation's, re-exported)      |
-| `./react`  | `registerPanelPages`                                                                                                                                        | gives navigation the pages `toPanel` and `toResource` render   |
-| `./react`  | `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage`, `RelationManager`                                                                               | the generic List, View, Create and Edit pages and relations    |
-| `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                   | the widget grid of a panel's slots, one widget as a card       |
-| `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                        | run any action through its declared confirmation               |
-| `./native` | `WidgetSlot`                                                                                                                                                | a slot's widgets on mobile                                     |
+| Entry      | Symbol                                                                                                                                                                          | Use                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                                            | the four kinds                                                 |
+| `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                                      | what the builder members receive                               |
+| `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                                            | metric output shapes and the period input, with their schemas  |
+| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentLayout`, `ExportFormat`, `FilterComparison`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
+| `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                          | binds, drill-downs, date filter values, document blocks        |
+| `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                               | the data constructors gen writes into `#stackra/resources`     |
+| `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                          | what gen calls in `#stackra/slots`, `panels`, `resources`      |
+| `.`        | `registerResources`                                                                                                                                                             | hands the generated resource trees to the resource pages       |
+| `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                             | shell slots a product fills (ADR 0438)                         |
+| `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                       | what gen records; the placement layer rule                     |
+| `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                           | saved views with grouping, sub-grouping, totals and sharing    |
+| `.`        | `fieldsForMode`                                                                                                                                                                 | the form fields a display mode shows                           |
+| `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                                | the one line editor of a `LineEntry` slot; inert contributions |
+| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                      | the panel frame and its trail (navigation's, re-exported)      |
+| `./react`  | `registerPanelPages`                                                                                                                                                            | gives navigation the pages `toPanel` and `toResource` render   |
+| `./react`  | `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage`, `RelationManager`                                                                                                   | the generic List, View, Create and Edit pages and relations    |
+| `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                       | the widget grid of a panel's slots, one widget as a card       |
+| `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                            | run any action through its declared confirmation               |
+| `./native` | `WidgetSlot`                                                                                                                                                                    | a slot's widgets on mobile                                     |
 
 ## Declaring a resource
 
@@ -65,8 +65,13 @@ export class OrderResource extends Resource<Order, OrderView>({
         c.from("id").copyable(),
         c.money("totals.totalMinor", { currency: "totals.currency" }),
       ])
-      .filters((f) => [f.from("status").pinned()])
-      .defaultSort("createdAt", SortDirection.Desc);
+      .filters((f) => [
+        f.from("status").pinned(),
+        f.dateRange("createdAt").default(TimeRange.Last30Days),
+        f.compare("totals.totalMinor", FilterComparison.Gte),
+      ])
+      .defaultSort("status", SortDirection.Asc)
+      .thenSort("createdAt", SortDirection.Desc);
   }
 
   override actions(a: Actions<OrderView, OrderView>) {
@@ -175,6 +180,12 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
   declared filters (an enum filter as a select, the trashed filter), cursor pagination (`nextCursor`, `hasMore`),
   row actions and the bulk bar. The read is the closed input `{ limit, cursor?, sort?, filter?, search? }`
   (`CrudService.table`); only declared sorts and filters are sent. `pageSize` defaults to 25.
+  Filters beyond a value: `f.range` (a number range, sent as `{ op: "range", from, to }`), `f.dateRange` (two
+  calendar days, or a `TimeRange` code the server resolves in the call's time zone), `f.compare(key, operator)`,
+  `f.contains` (case-insensitive, needs a pg_trgm index) and `f.isNull` (yes or no). `tableInput` sends each in the
+  wire form `@stackra/database`'s `TableFilter` reads. `.thenSort(key, direction)` adds up to two tiebreak keys to the
+  default sort (a multi-key sort); a clicked column sorts alone. Gen refuses a sortable column, default sort key or
+  filter on an unindexed path (`sort_not_indexed`, `filter_not_indexed`).
 - **View** (`ResourceViewPage`): the get query read with the record id under its input key (`id`, `orderId`,
   `accountId`), the infolist's entries and sections in a `PropertyList`, the header actions and every relation manager.
 - **Create and Edit** (`ResourceFormPage`, `mode`): the recorded form fields in a schema form over the create or update

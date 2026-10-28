@@ -46,6 +46,7 @@ export { Count } from "#core/enums/count.enum";
 export { DisplayKind } from "#core/enums/display-kind.enum";
 export { DocumentLayout } from "#core/enums/document-layout.enum";
 export { ExportFormat } from "#core/enums/export-format.enum";
+export { FilterComparison } from "#core/enums/filter-comparison.enum";
 export { ImportMode } from "#core/enums/import-mode.enum";
 export { Place } from "#core/enums/place.enum";
 export { PlacementLayer } from "#core/enums/placement-layer.enum";

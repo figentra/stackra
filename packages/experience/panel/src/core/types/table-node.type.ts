@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `TableNode`, a recorded resource table: its columns, filters, default sort and count mode.
+ * Purpose: `TableNode`, a recorded resource table: its columns, filters, default sort (with its tiebreak keys) and count
+ *          mode.
  * Boundary: a type only; gen compiles it into the closed `TableInput` of the list query.
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rules 1, 2 and 12).
+ * Governing contract: ADR 0307 (rules 1, 2 and 12); reporting gap 5 (multi-key sort).
  */
 import type { Count } from "#core/enums/count.enum";
 import type { ColumnNode } from "#core/types/column-node.type";
@@ -20,6 +21,9 @@ export interface TableNode {
 
   /** The sort a fresh list starts with. */
   readonly defaultSort?: SortNode;
+
+  /** The keys the default sort continues with when rows tie, in order (at most two; the server takes three keys). */
+  readonly thenSort?: readonly SortNode[];
 
   /** How the rows are counted. */
   readonly count: Count;

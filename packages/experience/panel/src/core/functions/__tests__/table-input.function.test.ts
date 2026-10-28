@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `tableInput`: the closed list input keeps declared filters, a sortable column's sort (else
- *          the default sort), a trimmed search and the cursor, and passes everything when no table is recorded.
+ * Purpose: unit tests of `tableInput`: the closed list input keeps declared filters (operator kinds in wire form, empty
+ *          ones dropped), a sortable column's sort (else the default sort with its tiebreak keys), a trimmed search and
+ *          the cursor, and passes everything when no table is recorded.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 2); reporting gap 5.
  */
 import { SortDirection } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -51,6 +52,32 @@ describe("tableInput", () => {
         limit: 10,
       }),
     ).toEqual({ limit: 10, sort: { key: "createdAt", direction: SortDirection.Desc } });
+  });
+
+  it("sends operator filters in wire form and the default sort with its tiebreak keys", () => {
+    const multi: TableNode = {
+      ...table,
+      filters: [
+        { kind: "range", key: "total" },
+        { kind: "contains", key: "name" },
+      ],
+      thenSort: [{ key: "id", direction: SortDirection.Asc }],
+    };
+    expect(
+      tableInput(multi, {
+        search: "",
+        filters: { total: { min: 5, max: null }, name: " " },
+        sort: null,
+        limit: 20,
+      }),
+    ).toEqual({
+      limit: 20,
+      sort: [
+        { key: "createdAt", direction: SortDirection.Desc },
+        { key: "id", direction: SortDirection.Asc },
+      ],
+      filter: { total: { op: "range", from: 5 } },
+    });
   });
 
   it("passes every value through without a recorded table", () => {

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `CrudService<M>`, the kind base of a module service over one model: `class OrderService extends
  *          CrudService<Order>` inherits the repository reads and writes, `update`, the table read of a resource
- *          (`table(input, { where })`) and the metrics of a KPI (`metrics(period, { on })`).
+ *          (`table(input, { where, period })`, with range, date-range, comparison, contains and null filters and a
+ *          multi-key sort) and the metrics of a KPI (`metrics(period, { on })`).
  * Boundary: a service (it extends container's `Service`, so its binding kind is `service`); its own constructor
  *           dependencies are the subclass's, and it calls `super()` with none. The model comes from the type argument,
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
@@ -22,7 +23,7 @@
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
- *                     atomic increment, `update` with `requiresNew`);
+ *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
@@ -43,11 +44,13 @@ import { NotFoundError } from "@stackra/errors";
 import { traitsOf } from "@stackra/model";
 
 import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
+import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
 import { LTREE_PATH } from "#core/constants/ltree-path.constant";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
+import { filterCondition } from "#core/functions/filter-condition.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { modelOf } from "#core/functions/model-of.function";
@@ -62,11 +65,15 @@ import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
 import type { DeletedReadOptions } from "#core/types/deleted-read-options.type";
+import type { TableSort } from "#core/types/table-sort.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import type { UpdateOptions } from "#core/types/update-options.type";
 import { Disposal } from "#contracts/enums/disposal.enum";
 import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
+
+/** The most keys a table sort takes before the primary key; each one needs an index to stay fast. */
+const MAX_SORT_KEYS = 3;
 
 /** A nested object for a dotted path: `nest("totals.totalMinor", "desc")` is `{ totals: { totalMinor: "desc" } }`. */
 function nest(path: string, value: unknown): Record<string, unknown> {
@@ -327,8 +334,11 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * One page of a resource table: the input's filters and the caller's `where` applied, sorted by the input's key
-   * then the primary key (so ties page stably), read by cursor.
+   * One page of a resource table: the input's filters (each a `TableFilter`) and the caller's `where` applied, sorted by
+   * the input's keys (up to three) then the primary key (so ties page stably), read by cursor.
+   *
+   * @throws TableFilterInvalidError for a filter value outside the `TableFilter` vocabulary, or more than three sort
+   *         keys.
    */
   async table<H extends string = never>(
     input: TableQuery,
@@ -337,16 +347,23 @@ export abstract class CrudService<M extends object> extends Service implements R
     const em = this.em();
     const model = this.model();
     const [primary = "id"] = em.getMetadata(model).primaryKeys;
-    const direction = input.sort?.direction ?? SortDirection.Desc;
+    const sorts: readonly TableSort[] =
+      input.sort === undefined ? [] : "key" in input.sort ? [input.sort] : input.sort;
+    if (sorts.length > MAX_SORT_KEYS)
+      throw TableFilterInvalidError.create({
+        key: sorts.map((sort) => sort.key).join(","),
+        reason: `a sort takes at most ${MAX_SORT_KEYS} keys`,
+      });
+    const direction = sorts[0]?.direction ?? SortDirection.Desc;
     const filters = Object.entries(input.filter ?? {})
       .filter(([, value]) => value !== undefined)
-      .map(([path, value]) => nest(path, Array.isArray(value) ? { $in: value } : value));
+      .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
     const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
     const cursor = await em.findByCursor(model, {
       where: { $and: [visible, ...filters] } as Where<M>,
       orderBy: [
-        ...(input.sort === undefined ? [] : [nest(input.sort.key, direction)]),
-        { [primary]: direction },
+        ...sorts.map((sort) => nest(sort.key, sort.direction)),
+        ...(sorts.some((sort) => sort.key === primary) ? [] : [{ [primary]: direction }]),
       ] as NonNullable<FindOptions<M>["orderBy"]>,
       first: input.limit,
       ...(input.cursor === undefined ? {} : { after: input.cursor }),

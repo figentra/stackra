@@ -44,6 +44,7 @@ describe("@stackra/panel", () => {
       "Entry",
       "ExportFormat",
       "Filter",
+      "FilterComparison",
       "FormField",
       "FormStep",
       "ImportMode",

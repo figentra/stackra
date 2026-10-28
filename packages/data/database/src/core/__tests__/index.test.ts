@@ -200,6 +200,7 @@ describe("@stackra/database", () => {
       "StackraNamingStrategy",
       "StaleVersionError",
       "StampSubscriber",
+      "TableFilterInvalidError",
       "TransactionConflictError",
       "UniqueViolation",
       "ancestorOf",
@@ -236,6 +237,7 @@ describe("@stackra/database", () => {
       "HOLD_LINK_FIELDS",
       "holdLinksOf",
       "visibleFilter",
+      "filterCondition",
       "mintSequenceBlockId",
       "CreateSequenceTablesMigration",
     ])

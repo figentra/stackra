@@ -39,6 +39,7 @@ export { maintainPartitions } from "#core/functions/maintain-partitions.function
 export { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 export { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 export { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
+export { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 export { ancestorOf } from "#core/functions/ancestor-of.function";
 export { compileMigration } from "#core/functions/compile-migration.function";
 export { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
@@ -106,8 +107,10 @@ export type { Table } from "#core/types/table.type";
 export type { TableIndex } from "#core/types/table-index.type";
 export type { TableOptions } from "#core/types/table-options.type";
 export type { TablePage } from "#core/types/table-page.type";
+export type { TableFilter } from "#core/types/table-filter.type";
 export type { TableQuery } from "#core/types/table-query.type";
 export type { SessionTimeouts } from "#core/types/session-timeouts.type";
+export type { TableSort } from "#core/types/table-sort.type";
 export type { TransactionOptions } from "#core/types/transaction-options.type";
 export type { UpdateOptions } from "#core/types/update-options.type";
 export type { PartitionReport } from "#core/types/partition-report.type";
