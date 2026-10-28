@@ -131,6 +131,20 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
+      # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
+      - name: Turborepo remote cache (Infisical OIDC)
+        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/turbo
+          export-type: env
+
       # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
       # and a broken build never reaches Cloudflare.
       - name: Test and build

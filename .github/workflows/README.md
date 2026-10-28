@@ -18,5 +18,9 @@
   ([ADR 0009](../../apps/docs/src/docs/adr/0009-secrets-two-mechanisms.mdx)).
 - Third-party actions are pinned to a commit SHA, with the version in a comment.
 - The toolchain comes from `mise.toml`, so CI runs the same versions as a contributor.
+- Turborepo remote cache (STA-1393): every job that runs turbo first logs in to Infisical by OIDC with the org variable
+  `INFISICAL_TURBO_IDENTITY_ID`, from the project in `INFISICAL_TURBO_PROJECT_ID`, and exports `TURBO_API`, `TURBO_TOKEN`, `TURBO_TEAM` and
+  `TURBO_REMOTE_CACHE_SIGNATURE_KEY` from `/ci/turbo`. Either variable unset, or a fork pull request: the step is skipped and
+  turbo uses its local cache only.
 
 Runbooks: [CI](../../apps/docs/src/docs/runbooks/ci.mdx), [release](../../apps/docs/src/docs/runbooks/release.mdx).
