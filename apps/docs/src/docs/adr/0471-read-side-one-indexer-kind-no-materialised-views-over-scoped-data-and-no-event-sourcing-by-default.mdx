@@ -1,9 +1,22 @@
 ---
 title: "0471 — Read side: one Indexer kind, no materialised views over scoped data, and no event sourcing by default"
-description: "Accepted · 2026-10-28"
+description: "Accepted · 2026-10-28 · noted 2026-10-29 (STA-1475)"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0471 (Accepted 2026-10-28, owner decisions 14 and 15 of the data-layer questionnaire), naming one `Indexer` kind on the outbox change feed for derived index tables and rollups, limiting materialised views to platform-wide tables, refusing pg_ivm and pg_cron, and rejecting event sourcing as a platform default. Boundary: decision text only; the code is batch stackra-399 (`@stackra/database`, `@stackra/outbox`, `@stackra/gen`, `@stackra/cli`) and its followers stackra-400, stackra-414; the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0078, 0089, 0104, 0160, 0163, 0221, 0260, 0294, 0470; notes handover/gap-analysis/data-layer (index-tables-cqrs.md gaps 1, 7 and 10; DECISIONS.md 14 and 15). */}
+{/* Stackra file contract. Purpose: ADR 0471 (Accepted 2026-10-28, owner decisions 14 and 15 of the data-layer questionnaire), naming one `Indexer` kind on the outbox change feed for derived index tables and rollups, limiting materialised views to platform-wide tables, refusing pg_ivm and pg_cron, and rejecting event sourcing as a platform default; noted 2026-10-29 by stackra-333 (STA-1475) as the event-sourcing rejection record of gap cdc11. Boundary: decision text only; the code is batch stackra-399 (`@stackra/database`, `@stackra/outbox`, `@stackra/gen`, `@stackra/cli`) and its followers stackra-400, stackra-414; the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0078, 0089, 0104, 0160, 0163, 0221, 0260, 0294, 0470; notes handover/gap-analysis/data-layer (index-tables-cqrs.md gaps 1, 7 and 10; DECISIONS.md 14 and 15). */}
+
+<Note>
+  Noted 2026-10-29 (STA-1475, batch stackra-333, gap cdc11 of the data-layer analysis): this ADR is
+  the event-sourcing rejection record the gap asked for, so no separate ADR is added (data-layer
+  decision 12 puts it here). Decision 6 is read with what already stands in for an event store: the
+  `AppendOnly`, `Versioned` and `HasCorrections` traits of `@stackra/model` keep history and
+  corrections as rows; a `Projection` of `@stackra/database` keeps a read model of another service's
+  data from its integration events, readable as of a past moment; and
+  `ChangeFeedService.replay(consumer, from)` of `@stackra/outbox` replays the change feed from a
+  point in time into one consumer. The revival trigger below holds only when none of these can
+  express the aggregate, and the product's ask names that aggregate and why each of them falls
+  short.
+</Note>
 
 <Note>
   Reserved number: 0471, assigned to batch stackra-381 (STA-1481) for the data-layer wave 1 round of
