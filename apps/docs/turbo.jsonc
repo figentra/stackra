@@ -5,4 +5,8 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:app", "runtime:browser"],
+  "tasks": {
+    // `stackra lint` runs the built CLI (packages/developer/cli/dist), so unlike the root lint this one waits for it.
+    "lint": { "dependsOn": ["@stackra/cli#build"] },
+  },
 }
