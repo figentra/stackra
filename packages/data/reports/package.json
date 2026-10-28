@@ -2,7 +2,7 @@
   "name": "@stackra/reports",
   "version": "0.0.0",
   "private": false,
-  "description": "Stackra reports: the Report<Source>({ key, dimensions, measures, defaultFilter, permission }) kind base over a model or projection, with typed dimensions (time grains, Link paths) and a closed set of measures (count, countDistinct, sum, avg, min, max and formulas over other measures), the ReportRequest and ReportResult contract of the generated report query, and the ReportRunner port its compiler implements",
+  "description": "Stackra reports: the Report<Source>({ key, dimensions, measures, defaultFilter, permission }) kind base over a model or projection, with typed dimensions (time grains, Link paths) and a closed set of measures (count, countDistinct, sum, avg, min, max and formulas over other measures), the ReportRequest and ReportResult contract of the generated report query, and the ReportRunner port, and in ./node the Postgres report compiler (one parameterised statement with grouping sets for grand totals, record visibility and row-level security, the mixed-currency guard, the read replica, a statement timeout and a row cap)",
   "keywords": [
     "analytics",
     "data",
@@ -36,6 +36,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -43,6 +48,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {
@@ -60,8 +70,14 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
-    "@stackra/contracts": "workspace:*"
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
@@ -84,7 +100,8 @@
     "tier": "lib",
     "category": "data",
     "runtimes": [
-      "isomorphic"
+      "isomorphic",
+      "node"
     ],
     "summary": "Use it when a module ships reports: grouped, totalled and pivoted reads over declared dimensions and measures of a model or projection, which REST, MCP, the panel and agents run through one generated query."
   }

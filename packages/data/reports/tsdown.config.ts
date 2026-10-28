@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: build config of @stackra/reports: one tsdown entry per package.json export (core `.` is `index`),
+ * Purpose: build config of @stackra/reports: one tsdown entry per package.json export (core `.` is `index`, `./node`
+ *          is `node`, with the legacy-decorator transform for its config schema),
  *          naming the stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339).
  * Boundary: build configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
  * Runtime: node
@@ -8,4 +9,7 @@
  */
 import { library } from "@stackra/tsdown-config";
 
-export default library({ index: "src/core/index.ts" });
+export default library(
+  { index: "src/core/index.ts", node: "src/node/index.ts" },
+  { decorators: true },
+);
