@@ -2367,6 +2367,7 @@ export function createSourceReader(
       !direct ||
       heritage.call === undefined ||
       heritage.method === "with" ||
+      heritage.method === "global" ||
       heritage.method === "of"
         ? undefined
         : info.kind === "driver" || info.kind === "model_addition" || heritage.method === "place"
@@ -2467,7 +2468,7 @@ export function createSourceReader(
         statics[nameOf(member.name)] = host.text(member.initializer);
 
     const traits =
-      direct && heritage.method === "with"
+      direct && (heritage.method === "with" || heritage.method === "global")
         ? (heritage.call?.arguments ?? []).map((argument) =>
             host.kind(argument) === "CallExpression"
               ? {
@@ -2501,6 +2502,10 @@ export function createSourceReader(
       traits,
       ...(renamed !== undefined ? { renamed } : {}),
       ...(isAbstract ? { abstract: true as const } : {}),
+      // `Model.global(...)`: global by design (stackra-258).
+      ...(direct && info.kind === "model" && heritage.method === "global"
+        ? { global: true as const }
+        : {}),
     };
   };
 

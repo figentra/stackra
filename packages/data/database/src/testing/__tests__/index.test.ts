@@ -40,6 +40,7 @@ describe("@stackra/database/testing", () => {
       "DATABASE_TESTING_PLUGIN",
       "Factory",
       "MemoryDatabaseDriver",
+      "assertRowSecurity",
       "usePostgres",
     ]);
     expect("FAKER" in testing).toBe(false);

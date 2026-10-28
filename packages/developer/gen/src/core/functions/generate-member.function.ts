@@ -20,7 +20,8 @@
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), an encryption mismatch or a write past the unit of work on an encrypted
- *           model (`checkEncryptedFields`, stackra-262) or a slot fill that breaks its slot's contract (`checkSlotFills`,
+ *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
+ *           `model_tenancy_missing`, stackra-258) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
@@ -38,6 +39,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
@@ -46,6 +48,7 @@ import { checkSurfaces } from "#core/functions/check-surfaces.function";
 import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
+import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
@@ -134,6 +137,7 @@ export function generateMember(
     ...checkConventions(ir, manifest),
     ...checkSemanticSearch(ir),
     ...checkEncryptedFields(ir),
+    ...checkModelScope(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
   );
@@ -173,6 +177,7 @@ export function generateMember(
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/settings.ts", emitSettings(ir)],
+    [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [

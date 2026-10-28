@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `usePostgres()`, the integration-tier fixture: one Testcontainers Postgres per test file, connected as
- *          `Database.current()`, with the compiled migrations applied once (or the schema created from the
- *          entities), and stopped after the file.
+ *          `Database.current()`, with the compiled migrations applied once (given compiled, or read from a folder
+ *          of `.up.sql` files with `migrationsDirectory`; without either the schema is created from the entities),
+ *          and stopped after the file.
  * Boundary: registers `beforeAll` and `afterAll` from @stackra/testing; call it at the top level of a `.int.test.ts`
  *           file. Needs Docker, which only the integration task provides. Each compiled step runs as written: a
  *           transactional step in one transaction, an online step on its own.
@@ -15,6 +16,7 @@ import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
+import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 import type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 import type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
 
@@ -39,11 +41,14 @@ export function usePostgres(options: UsePostgresOptions = {}): PostgresFixture {
       ...(options.entities === undefined ? {} : { entities: options.entities }),
     });
     const { schema } = state.database.orm;
-    if (options.migrations === undefined) await schema.create();
-    else
-      for (const migration of options.migrations)
-        for (const step of migration.steps)
-          await schema.execute(step.sql.join(";\n"), { wrap: step.transactional });
+    if (options.migrations === undefined && options.migrationsDirectory === undefined)
+      await schema.create();
+    for (const migration of options.migrations ?? [])
+      for (const step of migration.steps)
+        await schema.execute(step.sql.join(";\n"), { wrap: step.transactional });
+    if (options.migrationsDirectory !== undefined)
+      for (const file of readMigrationFiles(options.migrationsDirectory))
+        await schema.execute(file.sql, { wrap: file.transactional });
   }, BOOT_TIMEOUT_MS);
   afterAll(async () => {
     await state.database?.close();

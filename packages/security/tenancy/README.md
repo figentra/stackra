@@ -13,29 +13,29 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 
 ## What is here
 
-| Entry       | Symbol                                                           | Use                                                                      |
-| ----------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `.`         | `TenantSwitcher`                                                 | the client's memberships, active tenant and switch                       |
-| `.`         | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                            | the tenant level's code and the level a deployment adds to `ScopeConfig` |
-| `.`         | `TENANT_SCOPE_ALIAS`                                             | the level's lang key (`tenancy::levels.tenant`)                          |
-| `.`         | `TenantScopeResolverDriver`                                      | the tenancy step of the scope resolver chain                             |
-| `.`         | `TenancyCronScopesDriver`                                        | the scheduler's `CronScopes`: a per-scope cron runs for every tenant     |
-| `.`         | `isTenantId`                                                     | whether a string is a tenant id                                          |
-| `.`         | `TenantRequiredError`, `TenantMembershipMissingError`            | refusals                                                                 |
-| `.`         | `TenantEnvironment`, `SandboxTenantService`                      | live or sandbox; register, list, retire a live tenant's sandboxes        |
-| `.`         | `SandboxTenants`, `MemorySandboxTenantsDriver`                   | the sandbox store port and its memory driver                             |
-| `.`         | `TenantShareService`, `ShareStatus`, `RevokedCopy`               | consented cross-tenant shares: propose, accept, revoke, flow, release    |
-| `.`         | `TenantShares`, `TransferCheck`, `MemoryTenantSharesDriver`      | the share store, the cross-region transfer rules, the memory store       |
-| `.`         | `revocationPlan`                                                 | keep (severed) or delete each received copy on revocation                |
-| `.`         | `TenantTokenService`, `TenantTokens`, `MemoryTenantTokensDriver` | anonymous tenant resolution by token (an iCal feed, a public link)       |
-| `.`         | `TenantBillingContacts`, `MemoryTenantBillingContactsDriver`     | who a tenant's billing messages go to                                    |
-| `./node`    | `BelongsToTenant`                                                | the trait of a tenant-owned model (`tenantId`)                           |
-| `./node`    | `BelongsToTenantOrPlatform`                                      | the nullable form: `tenantId` or `null` for a platform row               |
-| `./node`    | `BelongsToTenantMacro`                                           | `t.belongsToTenant()`: the column and the equality policy                |
-| `./node`    | `TenantIsolationService`                                         | `withTenant(actor, work)`: `app.tenant_id` for one unit of work          |
-| `./react`   | `useTenant`, `useTenantSwitcher`                                 | the active membership; the memberships and the switch                    |
-| `./react`   | `TenantMembership`                                               | one membership: tenant id, path, name, roles                             |
-| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`                     | a fresh tenant id, a tenant user, a tenant call without a database       |
+| Entry       | Symbol                                                                 | Use                                                                                                           |
+| ----------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `.`         | `TenantSwitcher`                                                       | the client's memberships, active tenant and switch                                                            |
+| `.`         | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                                  | the tenant level's code and the level a deployment adds to `ScopeConfig`                                      |
+| `.`         | `TENANT_SCOPE_ALIAS`                                                   | the level's lang key (`tenancy::levels.tenant`)                                                               |
+| `.`         | `TenantScopeResolverDriver`                                            | the tenancy step of the scope resolver chain                                                                  |
+| `.`         | `TenancyCronScopesDriver`                                              | the scheduler's `CronScopes`: a per-scope cron runs for every tenant                                          |
+| `.`         | `isTenantId`                                                           | whether a string is a tenant id                                                                               |
+| `.`         | `TenantRequiredError`, `TenantMembershipMissingError`                  | refusals                                                                                                      |
+| `.`         | `TenantEnvironment`, `SandboxTenantService`                            | live or sandbox; register, list, retire a live tenant's sandboxes                                             |
+| `.`         | `SandboxTenants`, `MemorySandboxTenantsDriver`                         | the sandbox store port and its memory driver                                                                  |
+| `.`         | `TenantShareService`, `ShareStatus`, `RevokedCopy`                     | consented cross-tenant shares: propose, accept, revoke, flow, release                                         |
+| `.`         | `TenantShares`, `TransferCheck`, `MemoryTenantSharesDriver`            | the share store, the cross-region transfer rules, the memory store                                            |
+| `.`         | `revocationPlan`                                                       | keep (severed) or delete each received copy on revocation                                                     |
+| `.`         | `TenantTokenService`, `TenantTokens`, `MemoryTenantTokensDriver`       | anonymous tenant resolution by token (an iCal feed, a public link)                                            |
+| `.`         | `TenantBillingContacts`, `MemoryTenantBillingContactsDriver`           | who a tenant's billing messages go to                                                                         |
+| `./node`    | `BelongsToTenant`                                                      | the trait of a tenant-owned model (`tenantId`)                                                                |
+| `./node`    | `BelongsToTenantOrPlatform`                                            | the nullable form: `tenantId` or `null` for a platform row                                                    |
+| `./node`    | `BelongsToTenantMacro`                                                 | `t.belongsToTenant()`: the column and the equality policy                                                     |
+| `./node`    | `TenantIsolationService`                                               | `withTenant(actor, work)`: `app.tenant_id` for one unit of work                                               |
+| `./react`   | `useTenant`, `useTenantSwitcher`                                       | the active membership; the memberships and the switch                                                         |
+| `./react`   | `TenantMembership`                                                     | one membership: tenant id, path, name, roles                                                                  |
+| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`, `tenantIsolationOptions` | a fresh tenant id, a tenant user, a tenant call without a database, the tenant options of `assertRowSecurity` |
 
 ## Sandbox tenants
 

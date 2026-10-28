@@ -94,6 +94,13 @@ both.
 like a relation) and the manifest's JSON Schema, so it never reaches an action output, OpenAPI or a tool schema
 (stackra-260). `@Visible({ audience })` is read by no target yet.
 
+`model_tenancy_missing` (`checkModelScope`, full pass only, stackra-258): in a service that declares
+`@stackra/tenancy`, a model with neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor a `Model.global(...)` base is
+refused (a model extending an own model takes its base's answer). The reader reads the traits of `Model.global(...)`
+and marks the class `global`, which the manifest's model records. Such a service with an owned model and
+`@stackra/testing` also gets `.stackra/tests/tenant-isolation.int.test.ts` (`emitIsolationTest`): its compiled
+migrations, then `assertRowSecurity(postgres.database, tenantIsolationOptions())`.
+
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
 `@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder

@@ -231,6 +231,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   lint when either changes. An abstract class is never `event_base_abstract` and its constructor is never read; a
   class without one inherits its chain's nearest. `usesContainer` false (a member declaring packages without
   `@stackra/container`) means no wiring, no member module and a container-free setup.
+- `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
+  `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
+  `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
 - `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`
   (the reader puts the `@Classified` code on `FieldIR.classified`) and `encrypted_native_write` over
   `MemberIR.nativeWrites` (`readNativeWrites`, a same-line text scan). `emitBoot` adds the `EncryptedFieldsSubscriber`

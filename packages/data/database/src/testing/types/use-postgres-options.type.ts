@@ -21,4 +21,10 @@ export interface UsePostgresOptions {
 
   /** Compiled migrations to apply in order; when absent the schema is created from the entities. */
   readonly migrations?: readonly CompiledMigration[];
+
+  /**
+   * A folder of compiled migration files (`.stackra/migrations`, written by `stackra gen`), applied in sequence order
+   * after `migrations`; a service's generated isolation test passes its own (stackra-258).
+   */
+  readonly migrationsDirectory?: string;
 }

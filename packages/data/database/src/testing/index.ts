@@ -13,8 +13,10 @@
 export { Factory } from "#testing/bases/factory.base";
 export { DATABASE_TESTING_PLUGIN } from "#testing/constants/database-testing-plugin.constant";
 export { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
+export { assertRowSecurity } from "#testing/functions/assert-row-security.function";
 export type { Counted } from "#testing/types/counted.type";
 export type { Faker } from "#testing/types/faker.type";
 export type { PostgresFixture } from "#testing/types/postgres-fixture.type";
+export type { RowSecurityOptions } from "#testing/types/row-security-options.type";
 export type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
 export { usePostgres } from "#testing/use-postgres";

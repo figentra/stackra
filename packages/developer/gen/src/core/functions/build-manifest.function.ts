@@ -487,6 +487,7 @@ export function buildManifest(ir: MemberIR): {
       ...(typeof publicId === "string" ? { publicId } : {}),
       ...(hosts !== undefined ? { hosts } : {}),
       traits: declared.traits.map((trait) => trait.name),
+      ...(declared.global === true ? { global: true } : {}),
       ...(declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class")
         ? { searchable: true }
         : {}),

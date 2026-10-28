@@ -84,4 +84,6 @@ export interface DeclaredClass {
 
   /** Set when the class is `abstract`: a kind base other classes extend, never built, so never a driver candidate. */
   readonly abstract?: true;
+  /** A model whose base is `Model.global(...)`: global by design, no scope column (ADR 0210; stackra-258). */
+  readonly global?: true;
 }
