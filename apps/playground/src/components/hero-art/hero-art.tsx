@@ -25,6 +25,9 @@ interface Tile {
   readonly face: ReactNode;
 }
 
+/** Glyph specimens and the brand mark: drawn shapes, not translatable text. */
+const GLYPHS = { mark: "st", latin: "Aa", arabic: "أب" } as const;
+
 const SIZE = {
   sm: "size-[clamp(2rem,5vw,3.75rem)]",
   md: "size-[clamp(2.5rem,7vw,5.25rem)]",
@@ -34,7 +37,7 @@ const SIZE = {
 /** The st tile, as the brand draws it small: the two letters in the artwork colour. */
 const ST_TILE = (
   <span className="font-mono text-[clamp(1.25rem,3vw,2.25rem)] font-medium tracking-[-0.04em] text-[var(--stk-ink)]">
-    st
+    {GLYPHS.mark}
   </span>
 );
 
@@ -46,13 +49,13 @@ const SWITCH = (
 
 const FACES = (
   <span className="flex items-baseline gap-1 font-semibold">
-    <span className="text-[clamp(1.1rem,2.6vw,2rem)]">Aa</span>
+    <span className="text-[clamp(1.1rem,2.6vw,2rem)]">{GLYPHS.latin}</span>
     <span
       lang="ar"
       dir="rtl"
       className="font-[family-name:var(--font-arabic)] text-[clamp(1rem,2.3vw,1.75rem)]"
     >
-      أب
+      {GLYPHS.arabic}
     </span>
   </span>
 );

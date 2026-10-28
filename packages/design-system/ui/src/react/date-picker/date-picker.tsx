@@ -82,7 +82,7 @@ export function DatePicker({
   errorMessage,
   variant = "primary",
   isFullWidth = true,
-  calendarButtonLabel,
+  calendarButtonLabel: calendarButtonLabelProp,
   minValue,
   maxValue,
   isDateUnavailable,
@@ -94,7 +94,7 @@ export function DatePicker({
   ...rest
 }: DatePickerProps) {
   const t = useUiText();
-  calendarButtonLabel ??= t(UI_KEYS.ui.date_picker.calendar);
+  const calendarButtonLabel = calendarButtonLabelProp ?? t(UI_KEYS.ui.date_picker.calendar);
   // The picker hands its bounds to the calendar through context, but HeroUI's calendar always passes bounds of its own
   // (1900 to 2099) as props, and props win over context, so the calendar must be given the bounds itself.
   const bounds = omitUndefined({ minValue, maxValue });

@@ -30,7 +30,7 @@ export function Link({
   onPress,
   isDisabled,
   label,
-  externalLabel,
+  externalLabel: externalLabelProp,
   className,
   target,
   rel,
@@ -38,7 +38,7 @@ export function Link({
   ...rest
 }: LinkProps) {
   const t = useUiText();
-  externalLabel ??= t(UI_KEYS.ui.link.opens_in_new_tab);
+  const externalLabel = externalLabelProp ?? t(UI_KEYS.ui.link.opens_in_new_tab);
   // Written out in full: Tailwind finds `text-link` and `underline` here, and `default` has no entry in the map.
   const toneClass = tone === "default" ? "text-link" : TONE_CLASS_NAME[tone];
   const own = underline === "always" ? `${toneClass} underline` : toneClass;

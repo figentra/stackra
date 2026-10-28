@@ -36,7 +36,7 @@ export function Section({
   description,
   headingLevel = 2,
   actions,
-  moreActionsLabel,
+  moreActionsLabel: moreActionsLabelProp,
   startContent,
   endContent,
   label,
@@ -44,7 +44,7 @@ export function Section({
   ...rest
 }: SectionProps): ReactElement {
   const t = useUiText();
-  moreActionsLabel ??= t(UI_KEYS.ui.section.more_actions);
+  const moreActionsLabel = moreActionsLabelProp ?? t(UI_KEYS.ui.section.more_actions);
   const name = label ?? (typeof title === "string" ? title : undefined);
   return (
     <Card role="group" {...(name ? { accessibilityLabel: name } : {})} {...rest}>

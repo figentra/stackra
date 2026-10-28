@@ -72,7 +72,7 @@ function TokenLabel({ prefix, token }: { prefix?: string; token: string }) {
     <Text type="caption" tone="muted">
       <bdi dir="ltr">
         {prefix ? `${prefix} · ` : ""}
-        <code>{token}</code> · {metrics(token)} · ar {metrics(`${token}-ar`)}
+        <code>{token}</code> · {metrics(token)} · {`ar ${metrics(`${token}-ar`)}`}
       </bdi>
     </Text>
   );

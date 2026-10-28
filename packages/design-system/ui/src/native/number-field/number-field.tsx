@@ -70,8 +70,8 @@ export function NumberField({
   step,
   formatOptions,
   hasSteppers = true,
-  incrementLabel,
-  decrementLabel,
+  incrementLabel: incrementLabelProp,
+  decrementLabel: decrementLabelProp,
   // `name` is the form adapter's key; a native text input has no form to submit under it.
   name: _name,
   className,
@@ -81,8 +81,8 @@ export function NumberField({
   ...rest
 }: NumberFieldProps) {
   const t = useUiText();
-  incrementLabel ??= t(UI_KEYS.ui.number_field.increment);
-  decrementLabel ??= t(UI_KEYS.ui.number_field.decrement);
+  const incrementLabel = incrementLabelProp ?? t(UI_KEYS.ui.number_field.increment);
+  const decrementLabel = decrementLabelProp ?? t(UI_KEYS.ui.number_field.decrement);
   const { locale } = useDesignSystem();
   // Inside a sheet the keyboard must move the sheet; outside one these handlers do nothing.
   const sheet = useBottomSheetAwareHandlers();

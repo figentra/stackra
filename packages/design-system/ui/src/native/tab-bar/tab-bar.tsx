@@ -97,9 +97,15 @@ function Tab({ item, follow }: TabProps): ReactElement {
  * The phone's bottom tab bar: one tab for each of the first five items. Name it with `label` when the screen holds
  * more than one. The current tab is announced as selected.
  */
-export function TabBar({ items, label, className, style, ...rest }: TabBarProps): ReactElement {
+export function TabBar({
+  items,
+  label: labelProp,
+  className,
+  style,
+  ...rest
+}: TabBarProps): ReactElement {
   const t = useUiText();
-  label ??= t(UI_KEYS.ui.tab_bar.label);
+  const label = labelProp ?? t(UI_KEYS.ui.tab_bar.label);
   const navigate = use(RouterContext);
   const insets = useSafeAreaInsets();
   if (items.length > MAX_TABS && process.env.NODE_ENV !== "production") {

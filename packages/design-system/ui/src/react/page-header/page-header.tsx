@@ -42,13 +42,13 @@ export function PageHeader({
   actions,
   startContent,
   endContent,
-  moreActionsLabel,
+  moreActionsLabel: moreActionsLabelProp,
   label,
   className,
   ...rest
 }: PageHeaderProps): ReactElement {
   const t = useUiText();
-  moreActionsLabel ??= t(UI_KEYS.ui.page_header.more_actions);
+  const moreActionsLabel = moreActionsLabelProp ?? t(UI_KEYS.ui.page_header.more_actions);
   return (
     <header
       {...rest}

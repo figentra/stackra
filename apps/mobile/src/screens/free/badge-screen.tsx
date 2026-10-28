@@ -84,7 +84,7 @@ export function BadgeScreen() {
                     variant={variant}
                     label={STRINGS.variants.label(tone, variant)}
                   >
-                    5
+                    {5}
                   </Badge>
                 </Badge.Anchor>
               ))}
@@ -152,7 +152,7 @@ export function BadgeScreen() {
           <Badge.Anchor>
             <Anchor />
             <Badge tone="accent" label={STRINGS.content.number}>
-              8
+              {8}
             </Badge>
           </Badge.Anchor>
           <Badge.Anchor>

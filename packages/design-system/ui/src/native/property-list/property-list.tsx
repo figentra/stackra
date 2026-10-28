@@ -33,13 +33,13 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns: _columns,
   emptyValue = "–",
-  copiedLabel,
+  copiedLabel: copiedLabelProp,
   onCopy,
   className,
   ...rest
 }: PropertyListProps<TItem>): ReactElement {
   const t = useUiText();
-  copiedLabel ??= t(UI_KEYS.ui.property_list.copied);
+  const copiedLabel = copiedLabelProp ?? t(UI_KEYS.ui.property_list.copied);
   return (
     <View role="list" className={["gap-4", className].filter(Boolean).join(" ")} {...rest}>
       {items.map((item) => {

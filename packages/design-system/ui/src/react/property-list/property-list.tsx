@@ -47,13 +47,13 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns = 1,
   emptyValue = "–",
-  copiedLabel,
+  copiedLabel: copiedLabelProp,
   onCopy,
   className,
   ...rest
 }: PropertyListProps<TItem>): ReactElement {
   const t = useUiText();
-  copiedLabel ??= t(UI_KEYS.ui.property_list.copied);
+  const copiedLabel = copiedLabelProp ?? t(UI_KEYS.ui.property_list.copied);
   const [copiedId, setCopiedId] = useState<string | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);

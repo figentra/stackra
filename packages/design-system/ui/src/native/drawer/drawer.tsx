@@ -16,6 +16,8 @@
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native
  *          on native); owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
+/* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
+   root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import { BottomSheet } from "heroui-native";
 import type { ReactElement } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

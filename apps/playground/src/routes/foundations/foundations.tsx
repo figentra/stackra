@@ -19,6 +19,8 @@ import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::foundations.*` keys.
 const STRINGS = {
+  specimen: "Aa",
+  contrast: (ratio: string, level: string) => `${ratio}:1 (${level})`,
   documentTitle: `${FoundationsRoute.title} · Stackra Playground`,
   intro:
     "The stackra theme as the renderer wrote it: each sample is painted with the theme's CSS variables in the current colour scheme.",
@@ -152,13 +154,13 @@ export function Foundations() {
                 className="rounded border border-border px-2 py-1 font-semibold"
                 style={{ background: cssVar(pair.background), color: cssVar(pair.foreground) }}
               >
-                Aa
+                {STRINGS.specimen}
               </span>
             ) : null}
             <span>
               <bdi dir="ltr">
-                <code>{pair.foreground}</code> / <code>{pair.background}</code>: {ratio.toFixed(2)}
-                :1 ({levelOf(ratio, pair.minimum)})
+                <code>{pair.foreground}</code> / <code>{pair.background}</code>:{" "}
+                {STRINGS.contrast(ratio.toFixed(2), levelOf(ratio, pair.minimum))}
               </bdi>
             </span>
           </div>
@@ -220,9 +222,7 @@ export function Foundations() {
           {Object.entries(STACKRA_THEME.spacing).map(([name, size]) => (
             <li key={name} className="flex items-center gap-3">
               <span className="w-24 shrink-0 font-mono text-xs">
-                <bdi dir="ltr">
-                  space-{name} {size}
-                </bdi>
+                <bdi dir="ltr">{`space-${name} ${size}`}</bdi>
               </span>
               <span
                 className="block h-3 rounded-sm bg-foreground"
@@ -260,7 +260,7 @@ export function Foundations() {
                 style={{ boxShadow: cssVar(`${name}-shadow`) }}
               />
               <span className="font-mono text-xs">
-                <bdi dir="ltr">{name}-shadow</bdi>
+                <bdi dir="ltr">{`${name}-shadow`}</bdi>
               </span>
             </li>
           ))}

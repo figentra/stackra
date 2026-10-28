@@ -17,6 +17,8 @@ import { Section } from "#src/components/ui/section";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
+  paid: "Paid",
+  priority: "Priority",
   basics: {
     title: "Basics",
     description: "One column of label and value pairs; a phone always draws a single column.",
@@ -60,8 +62,12 @@ const GAPS: readonly PropertyListItem[] = [
 
 /** The rows whose values are elements. */
 const ELEMENTS: readonly PropertyListItem[] = [
-  { id: "status", label: "Status", value: <StatusBadge tone="success">Paid</StatusBadge> },
-  { id: "tags", label: "Tags", value: <Chip size="sm">Priority</Chip> },
+  {
+    id: "status",
+    label: "Status",
+    value: <StatusBadge tone="success">{STRINGS.paid}</StatusBadge>,
+  },
+  { id: "tags", label: "Tags", value: <Chip size="sm">{STRINGS.priority}</Chip> },
 ];
 
 /** The rows with a copy button. */

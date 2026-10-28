@@ -51,13 +51,13 @@ export function AppShell({
   defaultOpen = false,
   onOpenChange,
   isEmbedded = false,
-  skipLabel,
+  skipLabel: skipLabelProp,
   mainId = "main-content",
   className,
   ...rest
 }: AppShellProps): ReactElement {
   const t = useUiText();
-  skipLabel ??= t(UI_KEYS.ui.app_shell.skip);
+  const skipLabel = skipLabelProp ?? t(UI_KEYS.ui.app_shell.skip);
   const [ownOpen, setOwnOpen] = useState(defaultOpen);
   const open = isOpen ?? ownOpen;
   const setOpen = (next: boolean) => {

@@ -32,7 +32,7 @@ export function SearchField({
   variant,
   isFullWidth,
   isLoading,
-  clearLabel,
+  clearLabel: clearLabelProp,
   isRequired,
   isInvalid,
   isDisabled,
@@ -46,7 +46,7 @@ export function SearchField({
   ...rest
 }: SearchFieldProps) {
   const t = useUiText();
-  clearLabel ??= t(UI_KEYS.ui.search_field.clear);
+  const clearLabel = clearLabelProp ?? t(UI_KEYS.ui.search_field.clear);
   return (
     <HeroSearchField
       {...rest}

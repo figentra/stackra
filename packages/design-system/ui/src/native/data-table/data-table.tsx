@@ -84,10 +84,10 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   errorKind,
   isMessageShown,
   onRetry,
-  retryLabel,
+  retryLabel: retryLabelProp,
   headingLevel = 3,
-  paginationLabel,
-  bulkActionsLabel,
+  paginationLabel: paginationLabelProp,
+  bulkActionsLabel: bulkActionsLabelProp,
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
@@ -96,9 +96,9 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   ...rest
 }: DataTableProps<TItem>) {
   const t = useUiText();
-  retryLabel ??= t(UI_KEYS.ui.data_table.retry);
-  paginationLabel ??= t(UI_KEYS.ui.data_table.pagination, { label });
-  bulkActionsLabel ??= t(UI_KEYS.ui.data_table.bulk_actions, { label });
+  const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
+  const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });
+  const bulkActionsLabel = bulkActionsLabelProp ?? t(UI_KEYS.ui.data_table.bulk_actions, { label });
   const actionsColumn: TableColumn = {
     id: ACTIONS_COLUMN_ID,
     label: t(UI_KEYS.ui.data_table.actions_column),

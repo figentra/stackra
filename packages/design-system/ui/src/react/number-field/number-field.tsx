@@ -41,16 +41,16 @@ export function NumberField({
   variant = "primary",
   isFullWidth = true,
   hasSteppers = true,
-  incrementLabel,
-  decrementLabel,
+  incrementLabel: incrementLabelProp,
+  decrementLabel: decrementLabelProp,
   value,
   defaultValue,
   onChange,
   ...rest
 }: NumberFieldProps) {
   const t = useUiText();
-  incrementLabel ??= t(UI_KEYS.ui.number_field.increment);
-  decrementLabel ??= t(UI_KEYS.ui.number_field.decrement);
+  const incrementLabel = incrementLabelProp ?? t(UI_KEYS.ui.number_field.increment);
+  const decrementLabel = decrementLabelProp ?? t(UI_KEYS.ui.number_field.decrement);
   return (
     <HeroNumberField
       {...omitUndefined(rest)}

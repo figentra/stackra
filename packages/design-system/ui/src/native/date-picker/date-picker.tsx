@@ -21,8 +21,11 @@ import type { DatePickerProps } from "#native/date-picker/date-picker.props";
  * A labelled field over one day with a calendar button. Pair `value` with `onChange` to control the day and `isOpen`
  * with `onOpenChange` to control the picker.
  */
-export function DatePicker({ calendarButtonLabel, ...rest }: DatePickerProps): ReactElement {
+export function DatePicker({
+  calendarButtonLabel: calendarButtonLabelProp,
+  ...rest
+}: DatePickerProps): ReactElement {
   const t = useUiText();
-  calendarButtonLabel ??= t(UI_KEYS.ui.date_picker.calendar);
+  const calendarButtonLabel = calendarButtonLabelProp ?? t(UI_KEYS.ui.date_picker.calendar);
   return <DateInput {...rest} calendarButtonLabel={calendarButtonLabel} />;
 }

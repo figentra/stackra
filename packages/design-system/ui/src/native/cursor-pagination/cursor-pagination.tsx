@@ -35,21 +35,21 @@ export function CursorPagination({
   count,
   isLoading = false,
   size,
-  label,
-  previousLabel,
-  nextLabel,
-  loadMoreLabel,
-  countLabel,
+  label: labelProp,
+  previousLabel: previousLabelProp,
+  nextLabel: nextLabelProp,
+  loadMoreLabel: loadMoreLabelProp,
+  countLabel: countLabelProp,
   className,
   ...rest
 }: CursorPaginationProps) {
   const t = useUiText();
   const keys = UI_KEYS.ui.cursor_pagination;
-  label ??= t(keys.label);
-  previousLabel ??= t(keys.previous);
-  nextLabel ??= t(keys.next);
-  loadMoreLabel ??= t(keys.load_more);
-  countLabel ??= (total) => t(keys.count, { count: total });
+  const label = labelProp ?? t(keys.label);
+  const previousLabel = previousLabelProp ?? t(keys.previous);
+  const nextLabel = nextLabelProp ?? t(keys.next);
+  const loadMoreLabel = loadMoreLabelProp ?? t(keys.load_more);
+  const countLabel = countLabelProp ?? ((total) => t(keys.count, { count: total }));
   const isPager = mode === "pager";
   // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
   // end-reached call) is the next page.

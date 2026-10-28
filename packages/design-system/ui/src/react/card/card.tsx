@@ -8,6 +8,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304; owner decision 6 of STA-350
  *          (thin wrappers).
  */
+/* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
+   root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import { Card as HeroCard } from "@heroui/react";
 import type { ReactElement } from "react";
 

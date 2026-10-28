@@ -12,31 +12,16 @@
  * Runtime: react-native
  * Governing contract: ADR 0319 (decisions 2 and 3); ADR 0320 (decision 7); ADR 0302 (decision 3).
  */
-import { GlassView } from "expo-glass-effect";
 import { Button as HeroButton } from "heroui-native";
-import { StyleSheet } from "react-native";
-import { useUniwind } from "uniwind";
 
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 
+import { GlassLayer } from "#native/glass/glass-layer";
 import { useGlassMaterial } from "./use-glass-material";
 import type { GlassButtonLook } from "#native/glass/glass-button-look.type";
 
 /** The variants that draw on glass; the web's glass ghost exists only under a pointer. */
 const GLASS_VARIANTS: ReadonlySet<ButtonVariant> = new Set(["secondary", "tertiary", "outline"]);
-
-/** The Liquid Glass layer, filling the HeroUI Native background container in the current colour scheme. */
-function GlassLayer() {
-  const colorScheme = useUniwind().theme === "dark" ? "dark" : "light";
-  return (
-    <GlassView
-      glassEffectStyle="regular"
-      colorScheme={colorScheme}
-      isInteractive
-      style={StyleSheet.absoluteFill}
-    />
-  );
-}
 
 /**
  * The glass look of `variant`, agreed by Button, IconButton and CloseButton.

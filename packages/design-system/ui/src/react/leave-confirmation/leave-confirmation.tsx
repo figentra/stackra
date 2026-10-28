@@ -44,6 +44,7 @@ export function LeaveConfirmation({
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       // Older browsers read `returnValue` and not `preventDefault`; the text is ignored by every modern one.
+      // oxlint-disable-next-line no-param-reassign -- the beforeunload contract is to set returnValue on the event
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);

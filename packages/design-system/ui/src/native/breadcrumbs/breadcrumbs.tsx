@@ -26,9 +26,9 @@ import type { BreadcrumbsProps } from "#native/breadcrumbs/breadcrumbs.props";
  * The trail from the root to the current page. Every step but the last that has somewhere to go is a link; the last is
  * the current page, drawn as text.
  */
-export function Breadcrumbs({ items, label, className, ...rest }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, label: labelProp, className, ...rest }: BreadcrumbsProps) {
   const t = useUiText();
-  label ??= t(UI_KEYS.ui.breadcrumbs.label);
+  const label = labelProp ?? t(UI_KEYS.ui.breadcrumbs.label);
   return (
     <View
       {...rest}

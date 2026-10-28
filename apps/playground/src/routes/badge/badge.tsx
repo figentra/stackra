@@ -18,6 +18,7 @@ import { BadgeRoute } from "#src/routes/badge/badge.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::badge.*` keys.
 const STRINGS = {
+  new: "New",
   documentTitle: `${BadgeRoute.title} · Stackra Playground`,
   intro:
     "A Badge is a count or dot pinned to a corner of another element. Corners are named by reading direction, so top-end is top right in English and top left in Arabic. A badge is hidden from assistive technology unless it has a label, and it never takes a press.",
@@ -90,7 +91,7 @@ export function Badge() {
                       variant={variant}
                       label={STRINGS.variantLabel(tone, variant)}
                     >
-                      5
+                      {5}
                     </UiBadge>
                   </UiBadge.Anchor>
                 </li>
@@ -171,7 +172,7 @@ export function Badge() {
             <UiBadge.Anchor>
               <Disc />
               <UiBadge tone="success" variant="soft" label={STRINGS.word}>
-                New
+                {STRINGS.new}
               </UiBadge>
             </UiBadge.Anchor>
           </li>

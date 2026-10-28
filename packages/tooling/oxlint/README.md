@@ -26,7 +26,7 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | N-9  | `react/button-has-type`, `no-array-index-key`, `no-object-type-as-default-prop`, `jsx-no-useless-fragment` (expressions allowed)                                                                                                                                                                                                                                                         | every `**/*.tsx`                                                                            |
 | N-10 | `no-console`                                                                                                                                                                                                                                                                                                                                                                             | off for tools, agent hooks, editor plugins, package `scripts/`, apps and workers            |
 
-## The B group: B-1 to B-5 (stackra-230, stackra-231, stackra-232, owner D11)
+## The B group: B-1 to B-6 and B-8 (stackra-230 to stackra-233, owner D11)
 
 | Row | Change                                                                                                                                      | Where                                       |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
@@ -35,6 +35,8 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | B-5 | `no-promise-executor-return`, `unicorn/prefer-code-point`, `unicorn/prefer-structured-clone`, `unicorn/prefer-spread`                       | everywhere                                  |
 | B-3 | `unicorn/numeric-separators-style`, `switch-case-braces`, `prefer-string-replace-all`, `catch-error-name`; `number-literal-case` stays off  | everywhere                                  |
 | B-4 | `typescript/method-signature-style` set to `property`: a method signature is checked bivariantly                                            | everywhere                                  |
+| B-6 | `eqeqeq` (`smart`); `no-param-reassign` (props), `react/display-name`, `react/only-export-components`                                       | eqeqeq everywhere, the rest on `.tsx`       |
+| B-8 | `react/jsx-no-literals` (`ignoreProps`, punctuation in `allowedStrings`)                                                                    | `.tsx` but tests, stories and e2e           |
 
 `toSorted` and `toReversed` are ES2023 and the TypeScript base lib is ES2022, so a TypeScript site that sorts or
 reverses an array it just built carries `oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here,
@@ -52,6 +54,16 @@ B-4 (stackra-232) closes the bivariance hole on ports: a method signature (`find
 bivariantly even under `strictFunctionTypes`, so a driver could take a narrower argument than its port promises. Write
 members as properties (`find: (id: string) => Promise<T>`), in module augmentations too. oxlint has no autofix for it;
 a class method still implements a property member, so only the type side changes.
+
+B-6 and B-8 (stackra-233) are the React hygiene rows. A component never reassigns a prop: a localized default is a new
+const (`const label = labelProp ?? t(UI_KEYS...)`). `no-param-reassign` stays off outside `.tsx`, where domain services
+mutate the record they own and the CLI parsers move a cursor. User-facing JSX text is a lang key in the seven locales;
+the apps keep theirs in the file's `STRINGS` constant until they adopt @stackra/i18n, and token names or glyph
+specimens are expressions. A compound built as `Object.assign(Root, parts)` keeps a reasoned file-level disable of
+`only-export-components`: its export is the root function, which React Refresh takes as a component. The `Field` table
+(`Object.freeze`) is not, so its parts live in their own files. `jsx-a11y/prefer-tag-over-role` is decided off for all
+110 sites: `role="status"` live regions (`<output>` is not announced reliably), React Native views and house components
+(no tag), non-form groups (a fieldset adds form semantics) and the `<kbd role="img">` spoken-name pattern.
 
 `decorators.jsonc` needs no new wiring: `boundaries.jsonc` already applies its `new-cap` and `no-extraneous-class`
 settings to every package and app file, and keeps `consistent-type-imports` on (ADR 0005 d5). N-5 (the

@@ -137,4 +137,19 @@ describe("@stackra/oxlint-config presets", () => {
     const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
     expect(text).toContain('"typescript/method-signature-style": ["error", "property"]');
   });
+
+  it("base.jsonc carries the B-6 React hygiene and B-8 JSX literal rules (stackra-233)", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    expect(text).toContain('"eqeqeq": ["error", "smart"]');
+    expect(text).toContain('"no-param-reassign": ["error", { "props": true }]');
+    for (const rule of ["react/display-name", "react/only-export-components"])
+      expect(text).toContain(`"${rule}": "error"`);
+    expect(text).toMatch(/"react\/jsx-no-literals": \[\s*"error",\s*\{\s*"ignoreProps": true/);
+    // Tests, stories and e2e specs render fixture text and anonymous stand-ins.
+    expect(text).toContain(
+      '"rules": { "react/jsx-no-literals": "off", "react/display-name": "off" }',
+    );
+    // Decided off by class: status live regions, React Native views and house components have no tag to prefer.
+    expect(text).toContain('"jsx-a11y/prefer-tag-over-role": "off"');
+  });
 });

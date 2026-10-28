@@ -18,6 +18,7 @@ import { ListRoute } from "#src/routes/list/list.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::list.*` keys.
 const STRINGS = {
+  active: "Active",
   documentTitle: `${ListRoute.title} · Stackra Playground`,
   intro:
     "A list draws its items as rows: a title, an optional description, a start icon or avatar, content at the end and a chevron. Without a selection mode it is a plain list; with one it is a list box. It never sorts or fetches: the query that fed it did, and it reports when its end is reached.",
@@ -81,7 +82,7 @@ const TEAM = [
     startIcon: <Avatar name="Ada Lovelace" size="sm" />,
     endContent: (
       <Chip size="sm" tone="success">
-        Active
+        {STRINGS.active}
       </Chip>
     ),
     hasChevron: true,

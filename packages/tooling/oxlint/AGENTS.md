@@ -19,6 +19,12 @@
   can shadow an outer `error`; use an `Error`-suffixed name (`caughtError`) there.
 - B-4 (stackra-232): `typescript/method-signature-style` is `property` at error. Interface and type-literal members,
   augmentations included, are `name: (args) => R`, so a driver's parameters are checked strictly against its port.
+- B-6 and B-8 (stackra-233): `eqeqeq` smart everywhere; on `.tsx`, `no-param-reassign` with props (a localized
+  default is `const label = labelProp ?? t(...)`), `react/display-name`, `react/only-export-components` and
+  `react/jsx-no-literals` (ignoreProps, punctuation allowed) at error; the last two React rules are off in tests,
+  stories and e2e. A test override that turns a React rule off must name `"plugins": ["react"]`, or oxlint ignores it.
+  An `Object.assign(Root, parts)` compound carries a reasoned file-level disable of only-export-components (React
+  Refresh takes the root function as the component). `jsx-a11y/prefer-tag-over-role` is decided off.
 - Secrets: forbidden.
 
 ## PII

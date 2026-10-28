@@ -178,12 +178,12 @@ function Items({ items, isCompact, depth, labelledBy }: ItemsProps): ReactElemen
  */
 export function NavigationList({
   items,
-  label,
+  label: labelProp,
   isCompact = false,
   ...rest
 }: NavigationListProps): ReactElement {
   const t = useUiText();
-  label ??= t(UI_KEYS.ui.navigation_list.label);
+  const label = labelProp ?? t(UI_KEYS.ui.navigation_list.label);
   return (
     <nav {...rest} aria-label={label}>
       <Items items={items} isCompact={isCompact} depth={0} />

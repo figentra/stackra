@@ -13,6 +13,8 @@
  *                     decision 6 of STA-350 (thin wrappers); explicit compound type so the declaration emit is
  *                     self-contained (STA-1220).
  */
+/* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
+   root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import {
   Dropdown as HeroDropdown,
   type DropdownMenuProps as HeroDropdownMenuProps,

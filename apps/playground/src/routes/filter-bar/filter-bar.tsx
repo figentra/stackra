@@ -23,6 +23,7 @@ import { FilterBarRoute } from "#src/routes/filter-bar/filter-bar.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::filter-bar.*` keys.
 const STRINGS = {
+  kindLine: (kind: string, editor: string, value: string) => `${kind}: ${editor}; holds ${value}.`,
   documentTitle: `${FilterBarRoute.title} · Stackra Playground`,
   intro:
     "A filter bar is the search and filter row of a resource index: a search box, an add-filter menu, one chip for each filter that is applied, and a clear-all button while anything narrows the list. A chip opens the editor of its filter and has a button that removes it. The bar holds no query: the page owns it, and each change asks for the next one. On a phone the same props draw one row of chips that opens a sheet.",
@@ -328,9 +329,7 @@ export function FilterBar() {
           {STRINGS.kindRows.map(([kind, editor, value]) => (
             <li key={kind}>
               <Text>
-                <bdi>
-                  {kind}: {editor}; holds {value}.
-                </bdi>
+                <bdi>{STRINGS.kindLine(kind, editor, value)}</bdi>
               </Text>
             </li>
           ))}

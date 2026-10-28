@@ -9,6 +9,8 @@
  * Governing contract: ADR 0302 (decisions 3 and 5: parity, adapted form); ADR 0165 (HeroUI Native on native);
  *          ADR 0304; ADR 0060; owner decision 6 of STA-350 (thin wrappers).
  */
+/* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
+   root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 // Uniwind adds `className` to React Native's own components, which the anchor `View` takes; HeroUI Native's
 // components already have it.
 /// <reference types="uniwind/types" />

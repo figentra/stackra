@@ -47,6 +47,9 @@ const NODES: readonly (readonly [number, number])[] = [
   [960, 300],
 ];
 
+/** Glyph specimens and the brand mark: drawn shapes, not translatable text. */
+const GLYPHS = { mark: "st", latin: "Aa", arabic: "أب" } as const;
+
 const SWITCH = (
   <View className="h-[38%] w-[62%] flex-row items-center justify-end rounded-full bg-accent p-[6%]">
     <View className="aspect-square h-full rounded-full bg-accent-foreground" />
@@ -55,8 +58,8 @@ const SWITCH = (
 
 const FACES = (
   <View className="flex-row items-baseline gap-1">
-    <Text className="text-lg font-semibold text-foreground">Aa</Text>
-    <Text className="text-base font-semibold text-foreground">أب</Text>
+    <Text className="text-lg font-semibold text-foreground">{GLYPHS.latin}</Text>
+    <Text className="text-base font-semibold text-foreground">{GLYPHS.arabic}</Text>
   </View>
 );
 
@@ -91,7 +94,9 @@ export function HeroArt() {
       tilt: 12,
       size: 48,
       face: (
-        <Text className="font-mono text-xl font-medium tracking-tighter text-foreground">st</Text>
+        <Text className="font-mono text-xl font-medium tracking-tighter text-foreground">
+          {GLYPHS.mark}
+        </Text>
       ),
     },
     { start: 41, top: 6, tilt: -6, size: 40, face: SWITCH },

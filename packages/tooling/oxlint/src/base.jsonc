@@ -8,7 +8,9 @@
 //          (off for tools, hooks, plugins and apps), and the react, jsx-a11y and small React rules on every .tsx.
 //          The B group rows B-1, B-2 and B-5 (stackra-230, owner D11): no warnings left, no-array-sort outside tests,
 //          and the promise-executor, code-point, structured-clone and spread rules, all at error. B-3 (stackra-231):
-//          the autofix sweep. B-4 (stackra-232): property signatures only, so ports are checked strictly.
+//          the autofix sweep. B-4 (stackra-232): property signatures only, so ports are checked strictly. B-6 and B-8
+//          (stackra-233): smart eqeqeq; on .tsx no prop reassignment, named components, refresh-safe exports and no
+//          literal text in JSX outside tests (user-facing text is a lang key, or an app's STRINGS constant).
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -51,6 +53,8 @@
     "no-sequences": "error",
     "no-empty": "error",
     "no-useless-return": "error",
+    // B-6: strict equality, except `== null` and typeof/literal comparisons ("smart").
+    "eqeqeq": ["error", "smart"],
     "oxc/no-accumulating-spread": "error",
     "typescript/no-dynamic-delete": "error",
     "typescript/no-invalid-void-type": "error",
@@ -239,10 +243,55 @@
         "react/no-object-type-as-default-prop": "error",
         // `<>{node}</>` turns a ReactNode into the ReactElement a component's return type promises.
         "react/jsx-no-useless-fragment": ["error", { "allowExpressions": true }],
-        // 110 sites, nearly all in ui primitives that wrap a role on purpose: the ui React hygiene batch
-        // (stackra-233, rule-gap FB-5) decides each one. Every other jsx-a11y correctness rule is on at error.
+        // B-6 (stackra-233): a component never reassigns or mutates its props; a localized default is a new
+        // const (`const label = labelProp ?? t(...)`). Only on .tsx: domain services mutate the record they own
+        // and the CLI parsers move a cursor parameter (about 105 sites), left for a later pass.
+        "no-param-reassign": ["error", { "props": true }],
+        // Decided off (stackra-233, rule-gap B-6), all 110 sites by class: 80 are `role="status"` live regions,
+        // which stay a role because `<output>` is a form result whose announcement screen readers do not all honour;
+        // the next sit on React Native views or house components (`<Card>`, `<Text>`), which have no tag; the
+        // `role="group"` rows label a set that is not a form (fieldset brings form semantics and a UA border); the
+        // rest are tests or the `<kbd role="img">` spoken-name pattern. Every other jsx-a11y correctness rule is on.
         "jsx-a11y/prefer-tag-over-role": "off",
+        // B-6: a named component shows in devtools and error stacks; a hot-reloadable file exports only components
+        // (an Object.assign compound counts: its export is the root function).
+        "react/display-name": "error",
+        "react/only-export-components": "error",
+        // B-8: user-facing text comes from lang keys (seven locales) or, in the apps, the file's STRINGS
+        // constant; punctuation between expressions is not text.
+        "react/jsx-no-literals": [
+          "error",
+          {
+            "ignoreProps": true,
+            "allowedStrings": [
+              ":",
+              "/",
+              "·",
+              "-",
+              "–",
+              "—",
+              ",",
+              ";",
+              ".",
+              "(",
+              ")",
+              "×",
+              "…",
+              "|",
+              "+",
+              "%",
+              "#",
+            ],
+          },
+        ],
       },
+    },
+    {
+      // B-6 and B-8: a test, story or e2e spec renders fixture text and anonymous stand-in components (vi.mock
+      // factories); neither is shipped UI. The override names the plugin, or oxlint ignores its rules here.
+      "files": ["**/__tests__/**", "**/*.test.*", "**/*.stories.*", "**/e2e/**"],
+      "plugins": ["react"],
+      "rules": { "react/jsx-no-literals": "off", "react/display-name": "off" },
     },
   ],
   "ignorePatterns": [

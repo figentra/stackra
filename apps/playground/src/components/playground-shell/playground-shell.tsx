@@ -48,6 +48,7 @@ import { Icons } from "#src/constants/icons.constant";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
 const STRINGS = {
+  mark: "st",
   brand: "Stackra",
   product: "Playground",
   skip: "Skip to content",
@@ -376,7 +377,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
                 aria-hidden="true"
                 className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent font-mono text-sm font-semibold text-accent-foreground"
               >
-                st
+                {STRINGS.mark}
               </span>
               <span className="font-semibold tracking-tight">{STRINGS.brand}</span>{" "}
               <span className="text-muted max-sm:sr-only">{STRINGS.product}</span>

@@ -37,13 +37,13 @@ export function Link({
   tone = "default",
   underline = "always",
   label,
-  externalLabel,
+  externalLabel: externalLabelProp,
   children,
   accessibilityHint,
   ...rest
 }: LinkProps) {
   const t = useUiText();
-  externalLabel ??= t(UI_KEYS.ui.link.opens_in_browser);
+  const externalLabel = externalLabelProp ?? t(UI_KEYS.ui.link.opens_in_browser);
   const navigate = use(RouterContext);
   const follow = () => {
     onPress?.();

@@ -56,7 +56,7 @@ export function NavigationHeader({
   hasLargeTitle = false,
   onBack,
   backHref,
-  backLabel,
+  backLabel: backLabelProp,
   startContent,
   endContent,
   label,
@@ -66,7 +66,7 @@ export function NavigationHeader({
   ...rest
 }: NavigationHeaderProps): ReactElement {
   const t = useUiText();
-  backLabel ??= t(UI_KEYS.ui.navigation_header.back);
+  const backLabel = backLabelProp ?? t(UI_KEYS.ui.navigation_header.back);
   const insets = useSafeAreaInsets();
   const navigate = use(RouterContext);
   const goBack = () => {

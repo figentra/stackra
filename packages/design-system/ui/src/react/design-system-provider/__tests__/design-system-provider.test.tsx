@@ -15,7 +15,8 @@ import { act, render, screen } from "@testing-library/react";
 import { DesignSystemProvider, useDesignSystem } from "#react/index";
 
 /** A matchMedia stand-in whose `prefers-color-scheme: dark` answer the test flips. */
-function stubSystemScheme(dark: boolean) {
+function stubSystemScheme(initialDark: boolean) {
+  let dark = initialDark;
   const listeners = new Set<() => void>();
   const query = {
     get matches() {

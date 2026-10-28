@@ -61,23 +61,23 @@ export function BulkActionBar({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
-  label,
-  countLabel,
-  clearLabel,
-  selectAllLabel,
-  selectShownLabel,
-  moreActionsLabel,
+  label: labelProp,
+  countLabel: countLabelProp,
+  clearLabel: clearLabelProp,
+  selectAllLabel: selectAllLabelProp,
+  selectShownLabel: selectShownLabelProp,
+  moreActionsLabel: moreActionsLabelProp,
   className,
   ...rest
 }: BulkActionBarProps) {
   const t = useUiText();
   const keys = UI_KEYS.ui.bulk_action_bar;
-  label ??= t(keys.label);
-  countLabel ??= (count) => t(keys.selected, { count });
-  clearLabel ??= t(keys.clear);
-  selectAllLabel ??= (total) => t(keys.select_all, { total });
-  selectShownLabel ??= (count) => t(keys.select_shown, { count });
-  moreActionsLabel ??= t(keys.more_actions);
+  const label = labelProp ?? t(keys.label);
+  const countLabel = countLabelProp ?? ((count) => t(keys.selected, { count }));
+  const clearLabel = clearLabelProp ?? t(keys.clear);
+  const selectAllLabel = selectAllLabelProp ?? ((total) => t(keys.select_all, { total }));
+  const selectShownLabel = selectShownLabelProp ?? ((count) => t(keys.select_shown, { count }));
+  const moreActionsLabel = moreActionsLabelProp ?? t(keys.more_actions);
   const navigate = use(RouterContext);
   const { pending, run } = usePendingActions();
   const [isMoreOpen, setIsMoreOpen] = useState(false);

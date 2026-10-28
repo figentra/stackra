@@ -92,9 +92,13 @@ function Level({ items, depth, follow }: LevelProps): ReactElement {
  * The places of an app as pressable rows. Name it with `label` when the screen holds more than one. The current place is
  * announced as selected.
  */
-export function NavigationList({ items, label, ...rest }: NavigationListProps): ReactElement {
+export function NavigationList({
+  items,
+  label: labelProp,
+  ...rest
+}: NavigationListProps): ReactElement {
   const t = useUiText();
-  label ??= t(UI_KEYS.ui.navigation_list.label);
+  const label = labelProp ?? t(UI_KEYS.ui.navigation_list.label);
   const navigate = use(RouterContext);
   const follow = (item: NavigationItem) => {
     item.onPress?.();

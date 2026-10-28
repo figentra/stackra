@@ -11,6 +11,9 @@ import { Card } from "heroui-native";
 import { Screen } from "../components/ui/screen";
 import type { RootStackParamList } from "../navigation/root-stack-param-list.type";
 
+/** Screen text, in one place until @stackra/i18n. */
+const STRINGS = { description: "Opened with a typed `id` param." } as const;
+
 /** Dynamic route: `id` comes from `navigate("Item", { id })` or the deep link `stackra://items/<id>`. */
 export function ItemScreen({ route }: NativeStackScreenProps<RootStackParamList, "Item">) {
   return (
@@ -18,7 +21,7 @@ export function ItemScreen({ route }: NativeStackScreenProps<RootStackParamList,
       <Card>
         <Card.Body>
           <Card.Title>{`Item ${route.params.id}`}</Card.Title>
-          <Card.Description>Opened with a typed `id` param.</Card.Description>
+          <Card.Description>{STRINGS.description}</Card.Description>
         </Card.Body>
       </Card>
     </Screen>

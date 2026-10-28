@@ -56,21 +56,24 @@ export function BulkActionBar({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
-  label,
-  countLabel,
-  clearLabel,
-  selectAllLabel,
-  selectShownLabel,
+  label: labelProp,
+  countLabel: countLabelProp,
+  clearLabel: clearLabelProp,
+  selectAllLabel: selectAllLabelProp,
+  selectShownLabel: selectShownLabelProp,
   // Native only: web draws every action and has no overflow.
   moreActionsLabel: _moreActionsLabel,
   ...rest
 }: BulkActionBarProps) {
   const t = useUiText();
-  label ??= t(UI_KEYS.ui.bulk_action_bar.label);
-  countLabel ??= (count) => t(UI_KEYS.ui.bulk_action_bar.selected, { count });
-  clearLabel ??= t(UI_KEYS.ui.bulk_action_bar.clear);
-  selectAllLabel ??= (total) => t(UI_KEYS.ui.bulk_action_bar.select_all, { total });
-  selectShownLabel ??= (count) => t(UI_KEYS.ui.bulk_action_bar.select_shown, { count });
+  const label = labelProp ?? t(UI_KEYS.ui.bulk_action_bar.label);
+  const countLabel =
+    countLabelProp ?? ((count) => t(UI_KEYS.ui.bulk_action_bar.selected, { count }));
+  const clearLabel = clearLabelProp ?? t(UI_KEYS.ui.bulk_action_bar.clear);
+  const selectAllLabel =
+    selectAllLabelProp ?? ((total) => t(UI_KEYS.ui.bulk_action_bar.select_all, { total }));
+  const selectShownLabel =
+    selectShownLabelProp ?? ((count) => t(UI_KEYS.ui.bulk_action_bar.select_shown, { count }));
   const { pending, run } = usePendingActions();
   // Choosing all matching makes the total the count; the keys are then only the rows on screen.
   const count = isAllMatchingSelected && totalCount !== undefined ? totalCount : selectedCount;
