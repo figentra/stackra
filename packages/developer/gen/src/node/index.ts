@@ -13,6 +13,7 @@
 export { classComponentsPlugin } from "#node/functions/class-components-plugin.function";
 export { classComponents } from "#node/functions/class-components.function";
 export { compileClassComponents } from "#node/functions/compile-class-components.function";
+export { compileMigrations } from "#node/functions/compile-migrations.function";
 export { discoverMember } from "#node/functions/discover-member.function";
 export { generateDocsSite } from "#node/functions/generate-docs-site.function";
 export { generate } from "#node/functions/generate.function";

@@ -22,22 +22,28 @@
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
  *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
  *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
+ *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
+ *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
+ *           leftover one.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
- *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file).
+ *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file); ADR 0159
+ *                     (the compiled migrations).
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
 
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
+import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
@@ -122,6 +128,22 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
 }
 
 /**
+ * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
+ * unless `check`, so the runner never applies a stale file. `--check` reports them as changed.
+ */
+function staleMigrations(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
+  const dir = join(root, MIGRATIONS_DIR);
+  if (!existsSync(dir)) return [];
+  const kept = new Set(files.map((file) => file.path));
+  const stale = readdirSync(dir)
+    .filter((name) => name.endsWith(".sql"))
+    .map((name) => `${MIGRATIONS_DIR}/${name}`)
+    .filter((path) => !kept.has(path));
+  if (!check) for (const path of stale) rmSync(join(root, path));
+  return stale;
+}
+
+/**
  * Runs gen-core on the member at `root`.
  *
  * @param root - the member root.
@@ -199,8 +221,13 @@ export async function generate(
   // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app outside
   // `.stackra/encore` is refused (STA-1322).
   const encore = encoreApp(root, ir.layout === "service" && options.pass === undefined);
-  const errors = [...hatchErrors(root), ...encore.errors];
-  let files = [...result.files, ...encore.files];
+  // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248).
+  const migrations =
+    ir.layout === "service" && options.pass === undefined
+      ? await compileMigrations(root, ir)
+      : { files: [], errors: [] };
+  const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors];
+  let files = [...result.files, ...encore.files, ...migrations.files];
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (
@@ -227,6 +254,12 @@ export async function generate(
   return {
     errors: [],
     files: result.files,
-    changed: [...new Set([...partial, ...write(root, result.files, check)])],
+    changed: [
+      ...new Set([
+        ...partial,
+        ...write(root, result.files, check),
+        ...staleMigrations(root, result.files, check),
+      ]),
+    ],
   };
 }
