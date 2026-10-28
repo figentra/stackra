@@ -1,25 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `Count`, how a resource table counts its rows.
- * Boundary: an enum (`Enum.of`); a table is estimated unless it says otherwise, and an estimated filtered count shows
+ * Purpose: `Count`, how a resource table counts its rows: `@stackra/database`'s enum, re-exported so a resource's
+ *          `t.count(Count.Exact)` and the table read share one set of codes.
+ * Boundary: a re-export; a table is estimated unless it says otherwise, and an estimated count past 10,000 shows
  *           capped ("10,000+").
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rule 12: estimated counts); ADR 0294 (decision 16: Enum).
+ * Governing contract: ADR 0307 (rule 12: estimated counts; the count lives in `@stackra/database`); ADR 0294
+ *                     (decision 16: Enum); reporting gap 6.
  */
-import { Enum } from "@stackra/contracts";
-
-/**
- * How a table's rows are counted.
- *
- * @example
- * t.columns(...).count(Count.Exact)
- */
-export const Count = Enum.of({
-  /** From the planner's estimate; the default, cheap on any table. */
-  Estimated: "estimated",
-  /** A real count, for a small table where the number matters. */
-  Exact: "exact",
-});
-
-/** One of the codes above. */
-export type Count = Enum.Value<typeof Count>;
+export { Count } from "@stackra/database";

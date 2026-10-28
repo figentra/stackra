@@ -202,7 +202,9 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
   left out, money in its currency, a list as its count), sort on sortable columns, `FilterBar` with search and the
   declared filters (an enum filter as a select, the trashed filter), cursor pagination (`nextCursor`, `hasMore`),
   row actions and the bulk bar. The read is the closed input `{ limit, cursor?, sort?, filter?, search? }`
-  (`CrudService.table`); only declared sorts and filters are sent. `pageSize` defaults to 25.
+  (`CrudService.table`); only declared sorts and filters are sent. `pageSize` defaults to 25. When the page carries a
+  count (`CrudService.table`'s `TableCount`, from the table's `Count` mode), it shows beside the filter bar, capped as
+  "10,000+". `Count` is `@stackra/database`'s enum, re-exported.
   Filters beyond a value: `f.range` (a number range, sent as `{ op: "range", from, to }`), `f.dateRange` (two
   calendar days, or a `TimeRange` code the server resolves in the call's time zone), `f.compare(key, operator)`,
   `f.contains` (case-insensitive, needs a pg_trgm index) and `f.isNull` (yes or no). `tableInput` sends each in the

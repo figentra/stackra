@@ -37,7 +37,9 @@
     "trashed_with": "مع المحذوفة",
     "trashed_only": "المحذوفة فقط",
     "all_views": "الكل",
-    "saved_views": "العروض المحفوظة"
+    "saved_views": "العروض المحفوظة",
+    "count": "{count, plural, zero {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
+    "count_capped": "{count, plural, other {أكثر من # سجل}}"
   },
   "plan_catalogue": {
     "history": "الإصدارات",

@@ -37,7 +37,9 @@
     "trashed_with": "Met verwijderde",
     "trashed_only": "Alleen verwijderde",
     "all_views": "Alles",
-    "saved_views": "Opgeslagen weergaven"
+    "saved_views": "Opgeslagen weergaven",
+    "count": "{count, plural, one {# record} other {# records}}",
+    "count_capped": "{count, plural, other {#+ records}}"
   },
   "plan_catalogue": {
     "history": "Versies",

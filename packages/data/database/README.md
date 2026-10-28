@@ -72,6 +72,10 @@ with columns from gen's `table(...)` constants (ADR 0160).
   `{ op: "isNull", value }`. Any other object is refused with `table_filter_invalid`, so no ORM operator comes from a
   caller. `input.sort` is one key or up to three (`TableSort[]`); the primary key always ends the order. Gen refuses a
   sort or filter on an unindexed path (`sort_not_indexed`, `filter_not_indexed`).
+- `table(input, { count: Count.Estimated })` adds the matching rows' count to the page (`page.count`, a `TableCount`).
+  `Count.Estimated` counts exactly up to `BULK_LIMITS.countCap` (10,000) rows and past it returns
+  `{ value: 10000, capped: true, estimate }`, the planner's estimate from `explain`, so a list shows "10,000+" without
+  a full scan (ADR 0307 rule 12). `Count.Exact` counts every row, for a small table. Without `count` the page has none.
 - `countDistinct(field, where?)` counts the distinct non-null values of a field over the visible matching rows
   (`usage.countDistinct("subjectId", { meterId })`).
 - `lock(where)` reads the row again under `select ... for update`, held until the transaction ends, so a second caller

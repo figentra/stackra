@@ -42,6 +42,10 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   of `CrudService`, `GraphQuery` and `MetricsReader` takes its filter from the internal `visibleFilter`, which ANDs
   the bound `VisibilityFilter` driver's conditions. A new read path calls it too; never let it widen, bypass or carry
   scope isolation, and never decide visibility here (the model's facet and iam's evaluation do).
+- A table count (`tableCount`, ADR 0307 r12) reads through the same filter as its page and calls the builder's
+  `applyFilters()` so hidden rows stay hidden. Keep `Count.Estimated` bounded: the exact part stops at
+  `BULK_LIMITS.countCap` plus one row, and past it only `explain` (never `explain analyze`) runs. Never estimate from
+  `pg_class.reltuples`: it counts every scope's rows, not the caller's.
 - Sequences (ADR 0342): `SequenceService` is the only writer of `database.sequence_counters`, `sequence_blocks` and
   `sequence_voids`. Every change to a series locks its counter row first (a block row is locked before the counter in
   `release`, and nothing that holds a counter lock waits on a held block), so keep that order. `next` and `claim` run

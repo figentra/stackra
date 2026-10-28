@@ -27,6 +27,7 @@ export { Seeder } from "#core/bases/seeder.base";
 export { Sequence } from "#core/bases/sequence.base";
 export { DATABASE_CONFIG_SCHEMA as DatabaseConfig$ } from "#core/constants/database-config-schema.constant";
 export { Aggregate } from "#core/enums/aggregate.enum";
+export { Count } from "#core/enums/count.enum";
 export { Extension } from "#core/enums/extension.enum";
 export { Isolation } from "#core/enums/isolation.enum";
 export { MixedCurrencyError } from "#core/errors/mixed-currency.error";
@@ -125,6 +126,7 @@ export type { SequenceReserveOptions } from "#core/types/sequence-reserve-option
 export type { SequenceSeries } from "#core/types/sequence-series.type";
 export type { Table } from "#core/types/table.type";
 export type { TableIndex } from "#core/types/table-index.type";
+export type { TableCount } from "#core/types/table-count.type";
 export type { TableOptions } from "#core/types/table-options.type";
 export type { TablePage } from "#core/types/table-page.type";
 export type { TableFilter } from "#core/types/table-filter.type";

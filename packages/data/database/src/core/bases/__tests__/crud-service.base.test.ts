@@ -5,7 +5,8 @@
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
  *          `update` assigns (now, in its own transaction, with `requiresNew`), `lock` reads again under a pessimistic
- *          write lock (shared, nowait or skip-locked on request), `increment` adds in one parameterised statement, `table` builds the cursor read (a multi-key sort, operator filters, a refused fourth key or unknown operator), `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
+ *          write lock (shared, nowait or skip-locked on request), `increment` adds in one parameterised statement, `table` builds the cursor read (a multi-key sort, operator filters, a refused fourth key or unknown operator) and adds
+ *          the count it is asked for, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
  *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
@@ -49,6 +50,7 @@ import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
+import { Count } from "#core/enums/count.enum";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
@@ -120,6 +122,8 @@ function fakeEm() {
     where: vi.fn(() => builder),
     andWhere: vi.fn(() => builder),
     execute: vi.fn(async () => ({ total: "42" })),
+    applyFilters: vi.fn(async () => undefined),
+    getCount: vi.fn(async () => 9),
   };
   const em = {
     builder,
@@ -294,6 +298,17 @@ describe(CrudService, () => {
     });
     expect(page).toMatchObject({ hasMore: true, nextCursor: "c2" });
     expect(page.items).toHaveLength(1);
+  });
+
+  it("adds the matching rows' count to a table page when asked", async () => {
+    const em = connect();
+    const page = await new OrderService().table(
+      { limit: 20, filter: { status: "paid" } },
+      { count: Count.Exact },
+    );
+    expect(page.count).toEqual({ value: 9, capped: false });
+    expect(em.builder.where).toHaveBeenLastCalledWith({ $and: [{}, { status: "paid" }] });
+    expect(await new OrderService().table({ limit: 20 })).not.toHaveProperty("count");
   });
 
   it("reads a multi-key sort and compiles operator filters, refusing a fourth key", async () => {

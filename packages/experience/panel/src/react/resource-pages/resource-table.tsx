@@ -9,7 +9,8 @@
  *           and filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
  *           yes or no, and contains and compare as text. A principal column shows the principal's name. A saved view
  *           (`view`) sets the columns shown and the filter values and sort the table starts with (`savedViewState`); the
- *           caller keys the table by view so a new view starts fresh.
+ *           caller keys the table by view so a new view starts fresh. A page that carries a count shows it beside the
+ *           filter bar, capped as "10,000+" (`CrudService.table`'s `TableCount`).
  * Runtime: browser
  * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); reporting gaps 5 and 7.
  */
@@ -22,7 +23,7 @@ import type {
   ResourceQuery,
   TableColumn,
 } from "@stackra/ui/contracts";
-import { DataTable, EmptyState, FilterBar } from "@stackra/ui/react";
+import { DataTable, EmptyState, FilterBar, Text } from "@stackra/ui/react";
 import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
@@ -42,6 +43,7 @@ interface Page {
   readonly items?: readonly Readonly<Record<string, unknown>>[];
   readonly nextCursor?: string;
   readonly hasMore?: boolean;
+  readonly count?: { readonly value: number; readonly capped: boolean };
 }
 
 /** The columns a table without a recording shows: the first row's own scalar keys. */
@@ -164,6 +166,31 @@ export function ResourceTable({
         ? null
         : { column: table.defaultSort.key, direction: toUi(table.defaultSort.direction) }),
   };
+  const count =
+    page.count === undefined ? null : (
+      <Text tone="muted">
+        {t(
+          page.count.capped
+            ? PANEL_KEYS.panel.resources.count_capped
+            : PANEL_KEYS.panel.resources.count,
+          { count: page.count.value },
+        )}
+      </Text>
+    );
+  const filterBar =
+    searchable || filters.length > 0 ? (
+      <>
+        <FilterBar
+          query={shown}
+          onQueryChange={onQueryChange}
+          filters={filters}
+          searchLabel={t(PANEL_KEYS.panel.resources.search)}
+        />
+        {count}
+      </>
+    ) : (
+      count
+    );
   return (
     <DataTable
       label={label}
@@ -185,18 +212,7 @@ export function ResourceTable({
           />
         );
       }}
-      {...(searchable || filters.length > 0
-        ? {
-            filterBar: (
-              <FilterBar
-                query={shown}
-                onQueryChange={onQueryChange}
-                filters={filters}
-                searchLabel={t(PANEL_KEYS.panel.resources.search)}
-              />
-            ),
-          }
-        : {})}
+      {...(filterBar === null ? {} : { filterBar })}
       {...(rowActions === undefined ? {} : { rowActions })}
       {...(bulkActions === undefined
         ? {}

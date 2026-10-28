@@ -37,7 +37,9 @@
     "trashed_with": "Mit gelöschten",
     "trashed_only": "Nur gelöschte",
     "all_views": "Alle",
-    "saved_views": "Gespeicherte Ansichten"
+    "saved_views": "Gespeicherte Ansichten",
+    "count": "{count, plural, one {# Datensatz} other {# Datensätze}}",
+    "count_capped": "{count, plural, other {#+ Datensätze}}"
   },
   "plan_catalogue": {
     "history": "Versionen",

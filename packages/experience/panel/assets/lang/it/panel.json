@@ -37,7 +37,9 @@
     "trashed_with": "Con eliminati",
     "trashed_only": "Solo eliminati",
     "all_views": "Tutto",
-    "saved_views": "Viste salvate"
+    "saved_views": "Viste salvate",
+    "count": "{count, plural, one {# record} other {# record}}",
+    "count_capped": "{count, plural, other {#+ record}}"
   },
   "plan_catalogue": {
     "history": "Versioni",

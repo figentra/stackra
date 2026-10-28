@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `CrudService<M>`, the kind base of a module service over one model: `class OrderService extends
  *          CrudService<Order>` inherits the repository reads and writes, `update`, the table read of a resource
- *          (`table(input, { where, period })`, with range, date-range, comparison, contains and null filters and a
- *          multi-key sort) and the metrics of a KPI (`metrics(period, { on })`).
+ *          (`table(input, { where, period, count })`, with range, date-range, comparison, contains and null filters, a
+ *          multi-key sort and the row count) and the metrics of a KPI (`metrics(period, { on })`).
  * Boundary: a service (it extends container's `Service`, so its binding kind is `service`); its own constructor
  *           dependencies are the subclass's, and it calls `super()` with none. The model comes from the type argument,
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
@@ -33,7 +33,8 @@
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
- *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
+ *                     atomic increment, `update` with `requiresNew`); reporting gaps 5 (filter operators, multi-key sort)
+ *                     and 6 (table counts);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
  *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields).
@@ -75,6 +76,7 @@ import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { rowKey } from "#core/functions/row-key.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
+import { tableCount } from "#core/functions/table-count.function";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { watchedNativeWrite } from "#core/functions/watched-native-write.function";
@@ -641,7 +643,8 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /**
    * One page of a resource table: the input's filters (each a `TableFilter`) and the caller's `where` applied, sorted by
-   * the input's keys (up to three) then the primary key (so ties page stably), read by cursor.
+   * the input's keys (up to three) then the primary key (so ties page stably), read by cursor. With `options.count` the
+   * page also carries the matching rows' count (`Count.Estimated` caps it at 10,000, ADR 0307 rule 12).
    *
    * @throws TableFilterInvalidError for a filter value outside the `TableFilter` vocabulary, or more than three sort
    *         keys.
@@ -657,8 +660,9 @@ export abstract class CrudService<M extends object> extends Service implements R
       .filter(([, value]) => value !== undefined)
       .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
     const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
+    const where = { $and: [visible, ...filters] } as Where<M>;
     const cursor = await em.findByCursor(model, {
-      where: { $and: [visible, ...filters] } as Where<M>,
+      where,
       orderBy,
       first: input.limit,
       ...(input.cursor === undefined ? {} : { after: input.cursor }),
@@ -666,10 +670,16 @@ export abstract class CrudService<M extends object> extends Service implements R
       includeCount: false,
     });
     const next = cursor.hasNextPage ? cursor.endCursor : null;
+    // After the page, not beside it: both statements share the call's connection.
+    const count =
+      options.count === undefined
+        ? undefined
+        : await tableCount(em, model, where as FilterQuery<M>, options.count);
     return {
       items: [...cursor.items] as Loaded<M, H>[],
       hasMore: cursor.hasNextPage,
       ...(next === null ? {} : { nextCursor: next }),
+      ...(count === undefined ? {} : { count }),
     };
   }
 

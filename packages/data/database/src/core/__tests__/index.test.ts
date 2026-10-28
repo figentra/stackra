@@ -175,6 +175,7 @@ describe("@stackra/database", () => {
       "AppendOnlySubscriber",
       "AppendOnlyWriteError",
       "ConstraintViolatedError",
+      "Count",
       "CrudService",
       "Database",
       "DatabaseConfig",
@@ -252,6 +253,7 @@ describe("@stackra/database", () => {
       "holdLinksOf",
       "visibleFilter",
       "filterCondition",
+      "tableCount",
       "mintSequenceBlockId",
       "CreateSequenceTablesMigration",
     ])

@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ResourceListPage`: the recorded columns and their cells, the closed list input (default sort,
  *          page size, the next page's cursor), the header create link, row actions (view, edit, a placed record action
  *          run with the record id, delete) and the bulk bar fanning out per record; a resource with no registered tree
- *          shows the row's own keys; a view store's saved views draw as tabs, a view's columns and sort reach the table.
+ *          shows the row's own keys; a page's row count shows, capped past the limit; a view store's saved views draw as tabs, a view's columns and sort reach the table.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -50,6 +50,7 @@ vi.mock("@stackra/ui/react", async () => {
     Button: (props: Props) =>
       createElement("button", { type: "button", onClick: props.onPress }, props.children),
     EmptyState: (props: Props) => createElement("div", null, props.title, props.actions),
+    Text: (props: Props) => createElement("small", null, props.children),
     FilterBar: (props: Props) =>
       createElement("p", null, props.filters.map((filter: Props) => filter.label).join(",")),
     Tabs: (props: Props) =>
@@ -184,6 +185,34 @@ describe("ResourceListPage", () => {
 
     fireEvent.click(screen.getByText("panel::resources.create"));
     expect(spies.navigate).toHaveBeenCalledWith(Orders.create, {});
+    dispose();
+  });
+
+  it("shows the page's row count beside the filter bar, capped past the limit", () => {
+    const dispose = registerResources({
+      "orders.order": { options: { area: ApiArea.Admin, operations: { list: true } } },
+    });
+    spies.useQuery.mockReturnValue({
+      data: {
+        items: rows,
+        hasMore: true,
+        count: { value: 10_000, capped: true, estimate: 48_210 },
+      },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} pageSize={20} />);
+    expect(screen.getByText("panel::resources.count_capped")).toBeTruthy();
+    cleanup();
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false, count: { value: 2, capped: false } },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} pageSize={20} />);
+    expect(screen.getByText("panel::resources.count")).toBeTruthy();
     dispose();
   });
 

@@ -37,7 +37,9 @@
     "trashed_with": "Avec les supprimés",
     "trashed_only": "Supprimés uniquement",
     "all_views": "Tout",
-    "saved_views": "Vues enregistrées"
+    "saved_views": "Vues enregistrées",
+    "count": "{count, plural, one {# enregistrement} other {# enregistrements}}",
+    "count_capped": "{count, plural, other {#+ enregistrements}}"
   },
   "plan_catalogue": {
     "history": "Versions",
