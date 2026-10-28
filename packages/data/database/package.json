@@ -117,6 +117,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "catalog:",
+    "@electric-sql/pglite-pgvector": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
     "@stackra/testing": "workspace:*",
@@ -128,19 +129,25 @@
     "@vitest/coverage-v8": "catalog:quality",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "testcontainers": "catalog:",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
     "@electric-sql/pglite": "catalog:",
+    "@electric-sql/pglite-pgvector": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
     "@stackra/testing": "workspace:*",
-    "@testcontainers/postgresql": "catalog:"
+    "@testcontainers/postgresql": "catalog:",
+    "testcontainers": "catalog:"
   },
   "peerDependenciesMeta": {
     "@electric-sql/pglite": {
+      "optional": true
+    },
+    "@electric-sql/pglite-pgvector": {
       "optional": true
     },
     "@faker-js/faker": {
@@ -153,6 +160,9 @@
       "optional": true
     },
     "@testcontainers/postgresql": {
+      "optional": true
+    },
+    "testcontainers": {
       "optional": true
     }
   },

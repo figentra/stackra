@@ -711,7 +711,10 @@ sets it per stack. `@stackra/tenancy`'s `RegionGuardDriver` refuses a call whose
 
 Two tiers, one API. The unit tier (`.test.ts`) runs on `MemoryDatabaseDriver`: real Postgres compiled to WASM
 ([PGlite](https://pglite.dev)) in the test process, the `memory` driver of the `Database` port (ADR 0266, memory first).
-The integration tier (`.int.test.ts`) runs on a Testcontainers Postgres through `usePostgres()`.
+The integration tier (`.int.test.ts`) runs on a Testcontainers Postgres through `usePostgres()`. Its default image is
+the Stackra test image, built once per test process from PostGIS 3.6 on Postgres 18 plus the PGDG pgvector package, so
+every approved extension (`Extension`, PostGIS included) can be created (gap db19); `usePostgres({ image })` runs
+another image without the build.
 
 `assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
 `column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a
@@ -734,8 +737,8 @@ usePostgres(); // a Testcontainers Postgres for this .int.test.ts file
 const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2)).create();
 ```
 
-- **Schema.** Before its first query the memory database creates the approved extensions PGlite ships (`ltree`,
-  `pg_trgm`, `citext`, `pgcrypto`; not `vector`) and applies the member's compiled migrations from
+- **Schema.** Before its first query the memory database creates the approved extensions PGlite runs (`vector`
+  through `@electric-sql/pglite-pgvector`, `ltree`, `pg_trgm`, `citext`, `pgcrypto`; not `postgis` yet) and applies the member's compiled migrations from
   `.stackra/migrations` under the working directory; a member with none gets the schema created from the registered
   entities.
 - **Which database.** `DATABASE_TESTING_PLUGIN` connects a fresh memory database on every compile unless another one is
@@ -743,7 +746,8 @@ const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2
   wins. The memory database an earlier module left is closed.
 - **`app.repository(Model)`** is the model's `Repository`, the `repositoryOf(Model)` binding when the wiring has one.
 - **Limits.** PGlite is one connection: a `requiresNew` transaction shares the surrounding session, and tests of
-  concurrent sessions, row-level security under an unprivileged role, or vector columns stay in the integration tier.
+  concurrent sessions, row-level security under an unprivileged role, or geography columns stay in the integration tier.
 
-Faker, Testcontainers, PGlite (`@electric-sql/pglite`) and `@mikro-orm/pglite` are optional peers of `./testing`; a
+Faker, Testcontainers (`@testcontainers/postgresql` and `testcontainers`, which builds the test image), PGlite
+(`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) and `@mikro-orm/pglite` are optional peers of `./testing`; a
 server never loads them.

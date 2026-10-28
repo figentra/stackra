@@ -139,7 +139,11 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   transaction; MikroORM's `preferReadReplicas` stays off, because a read outside that transaction carries no scope.
 - `DatabaseReplicaReadsDriver` keeps the read-your-writes window in instance memory (writer keys only, swept once
   1000 are held); a `lastWriteAt` may only keep reads on the primary, never move them off it.
-- Faker, Testcontainers, `@electric-sql/pglite` and `@mikro-orm/pglite` are imported by `./testing` only.
+- Faker, Testcontainers (`@testcontainers/postgresql`, `testcontainers`), `@electric-sql/pglite`,
+  `@electric-sql/pglite-pgvector` and `@mikro-orm/pglite` are imported by `./testing` only.
+- `usePostgres()` defaults to the image `POSTGRES_TEST_IMAGE` describes (stackra-284); when an extension joins
+  `Extension`, add it to that Dockerfile (and the tag) and to the memory driver's extension list in the same change.
+  Keep `@electric-sql/pglite-pgvector` at the release whose peer is the catalog's PGlite.
 - The unit tier's database is `MemoryDatabaseDriver` (PGlite, ADR 0266 memory first), connected by
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
   and `em` the same as `PostgresDatabaseDriver`'s when either changes.

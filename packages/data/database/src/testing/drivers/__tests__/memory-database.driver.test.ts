@@ -3,10 +3,10 @@
  * Purpose: unit tests of `MemoryDatabaseDriver` on PGlite: building it connects it, the schema comes from the
  *          registered entities (or from the member's compiled migrations when `.stackra/migrations` exists), a
  *          repository writes in a transaction and reads back, a failed transaction rolls back, `withScope` sets the
- *          scope settings, the `ltree` extension is there, and `close` disconnects it and drops the data.
+ *          scope settings, the `ltree` and `vector` extensions are there, and `close` disconnects it and drops the data.
  * Boundary: unit tier: PGlite runs in this process, no Docker. The working directory is stubbed for the migration case.
  * Runtime: node (vitest)
- * Governing contract: ADR 0266 (memory first); ADR 0159; ADR 0160; ADR 0022; ADR 0269.
+ * Governing contract: ADR 0266 (memory first); ADR 0159; ADR 0160; ADR 0022; ADR 0269; gap db19 (stackra-284).
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -88,6 +88,14 @@ describe(MemoryDatabaseDriver, { timeout: 60_000 }, () => {
         ),
     );
     expect(rows[0]).toEqual({ id: shop.id, path: shop.path, ancestor: true });
+  });
+
+  it("has the vector extension", async () => {
+    const database = new MemoryDatabaseDriver();
+    const rows = await database
+      .em()
+      .execute<{ distance: number }[]>("select '[1,2]'::vector <-> '[1,3]'::vector as distance");
+    expect(rows[0]).toEqual({ distance: 1 });
   });
 
   it("applies the member's compiled migrations when it has them", async () => {

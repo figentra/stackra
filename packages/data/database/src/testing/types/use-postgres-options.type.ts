@@ -5,7 +5,7 @@
  * Boundary: a type only. Without migrations the schema is created from the entity metadata, which has no column
  *           comments and no row-level-security policies; an isolation test passes the compiled migrations.
  * Runtime: node
- * Governing contract: ADR 0269 (decision 3); ADR 0182 (the integration tier); ADR 0159.
+ * Governing contract: ADR 0269 (decision 3); ADR 0182 (the integration tier); ADR 0159; gap db19 (stackra-284).
  */
 import type { EntitySchema } from "@mikro-orm/core";
 
@@ -13,7 +13,10 @@ import type { CompiledMigration } from "#core/types/compiled-migration.type";
 
 /** The fixture options. */
 export interface UsePostgresOptions {
-  /** The Postgres image; `postgres:18-alpine` when absent. */
+  /**
+   * The Postgres image; when absent, the Stackra test image (PostGIS 3.6 on Postgres 18 with pgvector), built once per
+   * process.
+   */
   readonly image?: string;
 
   /** The entity schemas; the registered ones when absent. */
