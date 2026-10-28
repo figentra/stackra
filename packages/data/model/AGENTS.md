@@ -68,6 +68,10 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 - A blind index (stackra-313) is named by `blindIndexProperty` and made by `blindIndexOf` only; the subscriber, the
   re-seal job and `whereEncrypted` all go through them. `lookup` never combines with `subject`: an index under the
   scope's key would outlive a shred.
+- A `HasEncryptedFields({ scope })` value (stackra-330, ADR 0476) is bound to `@<scope id>` from the row; the
+  subscriber and the re-seal job read the id the same way and refuse a row without one. Never fall back to the
+  unbound context, and never add a second scope-binding cast (`ScopeKeyCast` is retired). The blind index stays
+  unbound.
 - `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 - `changeCaptureOf` is the one place that decides which fields a change may carry a value for: it always drops

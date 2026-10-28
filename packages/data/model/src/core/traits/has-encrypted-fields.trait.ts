@@ -4,17 +4,19 @@
  *          encrypted: the table holds only their sealed form, and the model holds their plain text in memory. With
  *          `{ subject }`, each row's fields are sealed under the key of the data subject that property names, so
  *          erasing the subject crypto-shreds them (`ErasureMethod.Shred` of @stackra/privacy needs this). With
- *          `{ lookup }`, the named fields also keep a blind index for `whereEncrypted`.
+ *          `{ lookup }`, the named fields also keep a blind index for `whereEncrypted`. With `{ scope }`, each value is bound
+ *          to the scope that owns its row (`<model key>.<field>@<scope id>`), so it does not open in another scope's row.
  * Boundary: adds no field (the model declares each field itself, typed `string` or `string | null`; a subject-sealed
  *           field reads as null once its subject is erased); it records the field names, and the subject property
- *           when given, in the trait registry, which `encryptedFieldsOf` and `encryptedSubjectOf` read. Sealing and
+ *           when given, in the trait registry, which `encryptedFieldsOf` and `encryptedSubjectOf` read (and the scope property,
+ *           which `encryptedScopeOf` reads). Sealing and
  *           opening are `EncryptedFieldsSubscriber`'s, through the `FieldCipher` port, or the `SubjectCipherResolver`
  *           port for a subject-sealed model. An encrypted field cannot be searched, sorted or indexed by its value;
  *           a `lookup` field can be found by equal value through its `<field>Bidx` property, which the model declares
  *           and the subscriber writes. `lookup` and `subject` exclude each other.
  * Runtime: isomorphic
  * Governing contract: ADR 0096 (decisions 1 and 4); ADR 0294 (decision 27); ADR 0188 (decision 2); ADR 0212; registry
- *                     gap R-36 (owner decision 23); gap gov2 (stackra-263); gap gov9 (stackra-313).
+ *                     gap R-36 (owner decision 23); gap gov2 (stackra-263); gap gov9 (stackra-313); gap gov8 (stackra-330); ADR 0476.
  */
 import { createTrait } from "#core/functions/create-trait.function";
 import type { EncryptedFieldsOptions } from "#core/types/encrypted-fields-options.type";
@@ -32,13 +34,15 @@ export function HasEncryptedFields(...fields: readonly string[]): Trait;
 
 /**
  * The encrypted-fields trait over `fields` with options: each row sealed under the key of the subject
- * `options.subject` names, or a blind index kept for each of `options.lookup`.
+ * `options.subject` names, a blind index kept for each of `options.lookup`, or each value bound to the scope
+ * `options.scope` names.
  *
- * @param options - `subject`, the property holding the subject's public id; or `lookup`, the fields that keep a
- *                  blind index (`<field>Bidx`, declared by the model) for `whereEncrypted`.
+ * @param options - `subject`, the property holding the subject's public id; `lookup`, the fields that keep a
+ *                  blind index (`<field>Bidx`, declared by the model) for `whereEncrypted`; `scope`, the property
+ *                  holding the owning scope's id.
  * @param fields - the names of the model's string fields that rest encrypted, at least one, each once.
- * @throws TypeError when `fields` is empty, names a field twice or names the subject property, the subject is empty,
- *         options name neither, or `lookup` is empty, repeats a field, names a field not encrypted or comes with
+ * @throws TypeError when `fields` is empty, names a field twice or names the subject property, the subject or scope is empty or encrypted,
+ *         options name none of them, or `lookup` is empty, repeats a field, names a field not encrypted or comes with
  *         `subject`.
  * @example
  * export class Contact extends Model.with(HasPublicId("con"), HasEncryptedFields({ subject: "userId" }, "email")) {
@@ -46,6 +50,9 @@ export function HasEncryptedFields(...fields: readonly string[]): Trait;
  *   userId!: string;
  *
  *   email: string | null = null;
+ * }
+ * export class Message extends Model.with(BelongsToTenant, HasEncryptedFields({ scope: "tenantId" }, "content")) {
+ *   content!: string;
  * }
  * export class Lead extends Model.with(HasPublicId("led"), HasEncryptedFields({ lookup: ["email"] }, "email")) {
  *   email: string | null = null;
@@ -67,9 +74,20 @@ export function HasEncryptedFields(...args: readonly (EncryptedFieldsOptions | s
   if (new Set(fields).size !== fields.length)
     throw new TypeError(`HasEncryptedFields names a field twice: ${fields.join(", ")}`);
   const record: Record<string, unknown> = { fields: Object.freeze([...fields]) };
-  const { subject, lookup } = options ?? {};
-  if (options !== undefined && subject === undefined && lookup === undefined)
-    throw new TypeError("HasEncryptedFields options name a subject or lookup fields");
+  const { subject, lookup, scope } = options ?? {};
+  if (options !== undefined && subject === undefined && lookup === undefined && scope === undefined)
+    throw new TypeError("HasEncryptedFields options name a subject, lookup fields or a scope");
+  if (scope !== undefined) {
+    if (typeof scope !== "string" || scope === "")
+      throw new TypeError(
+        "HasEncryptedFields({ scope }) names the property holding the owning scope's id",
+      );
+    if (fields.includes(scope))
+      throw new TypeError(
+        `HasEncryptedFields cannot encrypt ${scope}: it names the scope the other fields are bound to`,
+      );
+    record["scope"] = scope;
+  }
   if (subject !== undefined) {
     if (typeof subject !== "string" || subject === "")
       throw new TypeError(

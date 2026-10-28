@@ -11,7 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 import * as node from "#node/index";
 
 describe("@stackra/ai/node", () => {
-  it("exports exactly its models, stores and cast", () => {
+  it("exports exactly its models and stores", () => {
     expect(Object.keys(node).sort()).toEqual([
       "A2aTask",
       "Conversation",
@@ -21,7 +21,6 @@ describe("@stackra/ai/node", () => {
       "Run",
       "RunApproval",
       "RunStep",
-      "ScopeKeyCast",
       "ToolCall",
     ]);
   });

@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `EncryptedFieldsOptions`, the options `HasEncryptedFields({ subject } | { lookup }, ...fields)` takes: the
- *          property that names the data subject each row's encrypted fields are sealed for, or the fields that keep a
- *          blind index for equality lookup.
+ * Purpose: `EncryptedFieldsOptions`, the options `HasEncryptedFields({ subject, lookup, scope }, ...fields)` takes:
+ *          the property that names the data subject each row's encrypted fields are sealed for, the fields that keep a
+ *          blind index for equality lookup, and the property naming the scope each row is bound to.
  * Boundary: a type only; `HasEncryptedFields` checks it when the model is defined and records it in the trait registry.
  * Runtime: isomorphic
  * Governing contract: ADR 0188 (decision 2); ADR 0212 (crypto-shredding); gap gov2 (stackra-263); gap gov9
- *                     (stackra-313).
+ *                     (stackra-313); gap gov8 (stackra-330); ADR 0476.
  */
 
 /** How a model's encrypted fields are keyed. */
@@ -23,4 +23,11 @@ export interface EncryptedFieldsOptions {
    * `subject`: an index under the scope's key would outlive the subject's shred.
    */
   readonly lookup?: readonly string[] | undefined;
+
+  /**
+   * The property holding the id of the scope that owns the row (`tenantId` on a `BelongsToTenant` model). Each value
+   * is then bound to `<model key>.<field>@<scope id>`, so a sealed value copied into another scope's row does not open
+   * (ADR 0476). The property must hold an id whenever a value is sealed or opened.
+   */
+  readonly scope?: string | undefined;
 }

@@ -8,11 +8,13 @@
  *          cipher, creates no salt for a row of nulls, reseals every field when its subject changes, loads an erased
  *          subject's fields as null, and is refused without a resolver or a subject id. A lookup field gets its blind
  *          index written with each seal and nulled with the field, and is refused without a key provider or without
- *          its declared `<field>Bidx` property.
+ *          its declared `<field>Bidx` property. A scope-bound model seals and opens under `<model key>.<field>@<scope id>`,
+ *          so a value copied into another scope's row does not open, reseals every field when its scope changes, and
+ *          is refused when the row holds no scope id.
  * Boundary: test only; stand-in event arguments shaped like the ORM's, and an in-test `FieldCipher` that is
  *           reversible, not a cipher.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0096 (decision 4); registry gap R-36.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0096 (decision 4); registry gap R-36; ADR 0476.
  */
 import type { EventArgs } from "@mikro-orm/core";
 import { FieldCipher, KeyProvider } from "@stackra/contracts";
@@ -394,5 +396,60 @@ describe("EncryptedFieldsSubscriber with lookup fields", () => {
         leadArgs(newLead(), ["email", "phone"]),
       ),
     ).rejects.toThrow(/declares emailBidx/);
+  });
+});
+
+class ScopedMessage extends Model.with(
+  HasEncryptedFields({ scope: "scopeId" }, "content", "title"),
+) {
+  scopeId!: string;
+
+  content!: string;
+
+  title: string | null = null;
+}
+
+/** A message of `scopeId` as `em.create` gives it. */
+function messageOf(scopeId: string, content: string): ScopedMessage {
+  return Object.assign(new ScopedMessage(), { scopeId, content, title: null });
+}
+
+describe("EncryptedFieldsSubscriber with a scope binding", () => {
+  it("binds each value to the row's scope and opens it only in that scope's row", async () => {
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher());
+    const message = messageOf("scp_a", "hello");
+
+    await subscriber.beforeCreate(argsOf(message, ScopedMessage, { schema: "ai" }));
+    expect(message.content).toBe("sealed(ai.scoped_message.content@scp_a)olleh");
+    const sealed = message.content;
+
+    const own = Object.assign(new ScopedMessage(), { scopeId: "scp_a", content: sealed });
+    await subscriber.onLoad(argsOf(own, ScopedMessage, { schema: "ai" }));
+    expect(own.content).toBe("hello");
+
+    const copied = Object.assign(new ScopedMessage(), { scopeId: "scp_b", content: sealed });
+    await expect(
+      subscriber.onLoad(argsOf(copied, ScopedMessage, { schema: "ai" })),
+    ).rejects.toThrow("Cannot open");
+  });
+
+  it("reseals every field when an update changes the scope", async () => {
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher());
+    const message = Object.assign(messageOf("scp_b", "hello"), { title: "hi" });
+
+    await subscriber.beforeUpdate(
+      argsOf(message, ScopedMessage, { schema: "ai", payload: { scopeId: "scp_b" } }),
+    );
+    expect(message.content).toBe("sealed(ai.scoped_message.content@scp_b)olleh");
+    expect(message.title).toBe("sealed(ai.scoped_message.title@scp_b)ih");
+  });
+
+  it.each([undefined, ""])("refuses a row whose scope id is %j", async (scopeId) => {
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher());
+    const message = Object.assign(new ScopedMessage(), { scopeId, content: "hello" });
+
+    await expect(
+      subscriber.beforeCreate(argsOf(message, ScopedMessage, { schema: "ai" })),
+    ).rejects.toThrow(/must hold an id/);
   });
 });

@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresConversationStoreDriver`, the `ConversationStore` over `ai.conversations` and `ai.messages`: opens
- *          conversations, appends messages in order with their content sealed by `ScopeKeyCast` (bound to the
- *          owning tenant), and reads them back opened.
+ *          conversations, appends messages in order and reads them back; `Message.content` rests sealed and bound
+ *          to the owning tenant by `HasEncryptedFields({ scope })`, so this driver handles only plain text.
  * Boundary: a driver over `Repository<Conversation>` and `Repository<Message>`, so every read and write runs in the
  *           caller's tenant session under row-level security; a conversation of another tenant is never visible. A
  *           message's position is the next after the stored ones; two writers racing on one conversation collide on
- *           the unique (conversation, position) index rather than interleave.
+ *           the unique (conversation, position) index rather than interleave. Sealing and opening are the
+ *           `EncryptedFieldsSubscriber`'s, which the generated boot registers; the repository writes through the unit of
+ *           work, so the content is never written in clear.
  * Runtime: node
- * Governing contract: ADR 0100 (decisions 9 and 10); ADR 0188 (decision 2); ADR 0399; STA-781.
+ * Governing contract: ADR 0100 (decisions 9 and 10); ADR 0188 (decision 2); ADR 0399; STA-781; ADR 0476.
  */
 import { Driver } from "@stackra/container";
 import type { Repository } from "@stackra/database";
@@ -17,12 +19,8 @@ import type { ModelMessage } from "ai";
 import { ConversationStore } from "#contracts/ports/conversation-store.port";
 import type { ConversationRecord } from "#contracts/types/conversation-record.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
-import type { ScopeKeyCast } from "#node/casts/scope-key.cast";
 import type { Conversation } from "#node/models/conversation.model";
 import type { Message } from "#node/models/message.model";
-
-/** The column a message's content is sealed for. */
-const CONTENT = "ai.messages.content";
 
 /** A conversation row as the port's record. */
 function recordOf(row: Conversation): ConversationRecord {
@@ -51,22 +49,14 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
 
   private readonly rows: Repository<Message>;
 
-  private readonly cast: ScopeKeyCast;
-
   /**
    * @param conversations - the conversation rows.
    * @param rows - the message rows.
-   * @param cast - seals and opens message content with the tenant's key.
    */
-  constructor(
-    conversations: Repository<Conversation>,
-    rows: Repository<Message>,
-    cast: ScopeKeyCast,
-  ) {
+  constructor(conversations: Repository<Conversation>, rows: Repository<Message>) {
     super();
     this.conversations = conversations;
     this.rows = rows;
-    this.cast = cast;
   }
 
   /** Implements `ConversationStore.open`, documented there. */
@@ -100,14 +90,7 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
         orderBy: { position: "asc" },
       } as never,
     )) as Message[];
-    return Promise.all(
-      rows.map(
-        async (row) =>
-          JSON.parse(
-            await this.cast.open(row.content, { column: CONTENT, scopeId: row.tenantId }),
-          ) as ModelMessage,
-      ),
-    );
+    return rows.map((row) => JSON.parse(row.content) as ModelMessage);
   }
 
   /**
@@ -126,16 +109,12 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
     if (conversation === null) throw new RangeError(`No conversation ${conversationId}`);
     let position = await this.rows.count({ conversationId } as never);
     for (const message of messages) {
-      const content = await this.cast.seal(JSON.stringify(message), {
-        column: CONTENT,
-        scopeId: conversation.tenantId,
-      });
       await this.rows.insert({
         conversationId,
         runId,
         position,
         role: message.role,
-        content,
+        content: JSON.stringify(message),
         at: new Date(),
       });
       position += 1;

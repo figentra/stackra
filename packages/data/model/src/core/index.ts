@@ -37,6 +37,7 @@ export { changeCaptureOf } from "#core/functions/change-capture-of.function";
 export { currentRows } from "#core/functions/current-rows.function";
 export { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
 export { encryptedLookupOf } from "#core/functions/encrypted-lookup-of.function";
+export { encryptedScopeOf } from "#core/functions/encrypted-scope-of.function";
 export { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 export { systemFieldsOf } from "#core/functions/system-fields-of.function";
 export { traitsOf } from "#core/functions/traits-of.function";

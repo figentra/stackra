@@ -16,11 +16,13 @@
  *           the caller stores it (the import-ledger pattern) to resume. Registering it as a queued job per model is
  *           the host's (gen's) wiring; this package ships the work. A `lookup` field's blind index is rewritten with
  *           its value, and a row whose index is missing (written before the field kept one) or made under another key
- *           counts as stale, so a run also backfills and rotates the indexes `whereEncrypted` matches.
+ *           counts as stale, so a run also backfills and rotates the indexes `whereEncrypted` matches. A
+ *           `HasEncryptedFields({ scope })` model's values are opened and sealed in `<model key>.<field>@<scope id>`,
+ *           the id read from the row (ADR 0476).
  * Runtime: node
  * Governing contract: ADR 0188 (decision 2); ADR 0212; ADR 0294 (decisions 16 and 17); ADR 0367 (decisions 7 to 9);
  *                     ADR 0465 (decision 5: a re-seal job before any merge of the two encryption paths); gap gov7
- *                     (stackra-312); gap gov9 (stackra-313).
+ *                     (stackra-312); gap gov9 (stackra-313); gap gov8 (stackra-330); ADR 0476.
  */
 import type { EntityManager, EntityMetadata, EntityProperty } from "@mikro-orm/core";
 import { Service } from "@stackra/container";
@@ -31,6 +33,7 @@ import { blindIndexProperty } from "#core/functions/blind-index-property.functio
 import { encryptedFieldContext } from "#core/functions/encrypted-field-context.function";
 import { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
 import { encryptedLookupOf } from "#core/functions/encrypted-lookup-of.function";
+import { encryptedScopeOf } from "#core/functions/encrypted-scope-of.function";
 import { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 import { sealedKeyId } from "#core/functions/sealed-key-id.function";
 import type { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
@@ -51,6 +54,7 @@ interface Plan {
   readonly fields: readonly string[];
   readonly subject: string | undefined;
   readonly lookup: readonly string[];
+  readonly scope: string | undefined;
 }
 
 /**
@@ -150,14 +154,21 @@ export class EncryptedFieldsResealService extends Service {
     if (ciphers === undefined) return false;
     const where: Row = { [plan.key]: row[plan.key] };
     const data: Row = {};
+    const scopeId =
+      plan.scope === undefined ? undefined : this.idOf(em, plan, row, plan.scope, "scope");
     for (const field of fields) {
       const sealed = row[field] as string;
-      const context = encryptedFieldContext(plan.meta, field);
+      const context = encryptedFieldContext(plan.meta, field, scopeId);
       const plain = await ciphers.opening.open(sealed, context);
       data[field] = await ciphers.sealing.seal(plain, context);
       where[field] = sealed;
+      // the blind index stays bound to the field only, as the subscriber writes it
       if (plan.lookup.includes(field))
-        data[blindIndexProperty(field)] = await blindIndexOf(this.keys, plain, context);
+        data[blindIndexProperty(field)] = await blindIndexOf(
+          this.keys,
+          plain,
+          encryptedFieldContext(plan.meta, field),
+        );
     }
     const result = await em
       .getDriver()
@@ -179,19 +190,7 @@ export class EncryptedFieldsResealService extends Service {
     row: Row,
   ): Promise<{ readonly opening: FieldCipher; readonly sealing: FieldCipher } | undefined> {
     if (plan.subject === undefined) return { opening: this.cipher, sealing: this.cipher };
-    const property = (plan.meta.properties as Record<string, EntityProperty<object> | undefined>)[
-      plan.subject
-    ];
-    const raw = row[plan.subject];
-    // the subscriber keys a subject by the property's JS value, so a custom-typed id (a public id) is converted back
-    const subject =
-      property?.customType === undefined
-        ? raw
-        : property.customType.convertToJSValue(raw, em.getPlatform());
-    if (typeof subject !== "string" || subject === "")
-      throw new TypeError(
-        `${plan.meta.className}.${plan.subject} names the subject its encrypted fields are sealed for, so it must hold an id`,
-      );
+    const subject = this.idOf(em, plan, row, plan.subject, "subject");
     if (this.subjects === undefined)
       throw new TypeError(
         `${plan.meta.className} is sealed per subject, so EncryptedFieldsResealService needs a SubjectCipherResolver`,
@@ -199,6 +198,36 @@ export class EncryptedFieldsResealService extends Service {
     const opening = await this.subjects.opening(subject);
     if (opening === undefined) return undefined;
     return { opening, sealing: await this.subjects.sealing(subject) };
+  }
+
+  /**
+   * The id a row's subject or scope property holds, as the subscriber reads it from the entity.
+   *
+   * @throws TypeError when the property holds no id.
+   */
+  private idOf(
+    em: EntityManager,
+    plan: Plan,
+    row: Row,
+    name: string,
+    role: "subject" | "scope",
+  ): string {
+    const property = (plan.meta.properties as Record<string, EntityProperty<object> | undefined>)[
+      name
+    ];
+    const raw = row[name];
+    // the subscriber reads the property's JS value, so a custom-typed id (a public id) is converted back
+    const id =
+      property?.customType === undefined
+        ? raw
+        : property.customType.convertToJSValue(raw, em.getPlatform());
+    if (typeof id !== "string" || id === "")
+      throw new TypeError(
+        role === "subject"
+          ? `${plan.meta.className}.${name} names the subject its encrypted fields are sealed for, so it must hold an id`
+          : `${plan.meta.className}.${name} names the scope its encrypted fields are bound to, so it must hold an id`,
+      );
+    return id;
   }
 
   /**
@@ -233,7 +262,10 @@ export class EncryptedFieldsResealService extends Service {
     return id;
   }
 
-  /** One page of raw rows after `after`, in primary-key order: the key, the encrypted fields and the subject. */
+  /**
+   * One page of raw rows after `after`, in primary-key order: the key, the encrypted fields, the blind indexes, the
+   * subject and the scope.
+   */
   private page(
     em: EntityManager,
     plan: Plan,
@@ -245,6 +277,7 @@ export class EncryptedFieldsResealService extends Service {
       ...plan.fields,
       ...plan.lookup.map(blindIndexProperty),
       ...(plan.subject === undefined ? [] : [plan.subject]),
+      ...(plan.scope === undefined ? [] : [plan.scope]),
     ];
     const where = after === undefined || after === null ? {} : { [plan.key]: { $gt: after } };
     // the model's own type is erased here, so the driver's typed options are passed through `never`
@@ -281,6 +314,7 @@ export class EncryptedFieldsResealService extends Service {
       fields,
       subject: encryptedSubjectOf(type),
       lookup: encryptedLookupOf(type),
+      scope: encryptedScopeOf(type),
     };
   }
 }

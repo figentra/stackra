@@ -1,23 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresConversationStoreDriver`: it opens conversations with their record, appends messages
- *          at the next positions with the content sealed for the owning tenant (no plain text in the row), reads them
- *          back opened in order, refuses an append to an unseen conversation, and forgets a principal's conversations
- *          (a held message keeps its conversation).
- * Boundary: test only; the repositories are in-memory stand-ins with the tenant the trait would fill, and the cast is
- *           the real one over the AES-GCM cipher and a fixed test key. The SQL side is the migration's test.
+ *          at the next positions as JSON content, reads them back in order, refuses an append to an unseen conversation,
+ *          and forgets a principal's conversations (a held message keeps its conversation); and `Message` declares its
+ *          content encrypted and bound to the owning tenant, so the `EncryptedFieldsSubscriber` seals it (its own tests
+ *          cover the sealing).
+ * Boundary: test only; the repositories are in-memory stand-ins with the tenant the trait would fill, and they bypass the
+ *           unit of work, so the content stays plain here. The SQL side is the migration's test.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 9 and 10); ADR 0399.
+ * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 9 and 10); ADR 0399; ADR 0476.
  */
-import { AesGcmFieldCipherDriver, MemoryKeyProviderDriver } from "@stackra/contracts";
 import type { Repository } from "@stackra/database";
+import { encryptedFieldsOf, encryptedScopeOf } from "@stackra/model";
 import { describe, expect, it } from "@stackra/testing";
 
 import { ConversationStore } from "#contracts/ports/conversation-store.port";
-import { ScopeKeyCast } from "#node/casts/scope-key.cast";
 import { PostgresConversationStoreDriver } from "#node/drivers/postgres-conversation-store.driver";
 import type { Conversation } from "#node/models/conversation.model";
-import type { Message } from "#node/models/message.model";
+import { Message } from "#node/models/message.model";
 
 /**
  * An in-memory repository: equality and `$in` `where`, one `orderBy` key, ids minted with `prefix`, and a `purge` that
@@ -71,15 +71,15 @@ function rowsOf<M extends object>(
 }
 
 describe(PostgresConversationStoreDriver, () => {
-  it("seals messages for the owning tenant and reads them back in order", async () => {
+  it("declares a message's content encrypted and bound to its tenant", () => {
+    expect(encryptedFieldsOf(Message)).toEqual(["content"]);
+    expect(encryptedScopeOf(Message)).toBe("tenantId");
+  });
+
+  it("appends messages at the next positions and reads them back in order", async () => {
     const conversations = rowsOf<Conversation>("aiconv");
     const messages = rowsOf<Message>("aimsg");
-    const cast = new ScopeKeyCast(
-      new AesGcmFieldCipherDriver(
-        new MemoryKeyProviderDriver([{ id: "k1", key: new Uint8Array(32).fill(3) }]),
-      ),
-    );
-    const store = new PostgresConversationStoreDriver(conversations, messages, cast);
+    const store = new PostgresConversationStoreDriver(conversations, messages);
     expect(store).toBeInstanceOf(ConversationStore);
     const opened = await store.open({
       agent: "matter_assistant",
@@ -95,7 +95,10 @@ describe(PostgresConversationStoreDriver, () => {
       { role: "assistant", content: "Privileged answer" },
     ]);
     expect(messages.rows.map((row) => row.position)).toEqual([0, 1]);
-    expect(messages.rows.some((row) => row.content.includes("Privileged"))).toBe(false);
+    expect(JSON.parse(messages.rows[0]?.content ?? "null")).toEqual({
+      role: "user",
+      content: "Privileged question",
+    });
     expect(await store.messages(opened.id)).toEqual([
       { role: "user", content: "Privileged question" },
       { role: "assistant", content: "Privileged answer" },
@@ -107,12 +110,7 @@ describe(PostgresConversationStoreDriver, () => {
   it("forgets a principal's conversations and messages, keeping a held message's conversation", async () => {
     const conversations = rowsOf<Conversation>("aiconv");
     const messages = rowsOf<Message>("aimsg");
-    const cast = new ScopeKeyCast(
-      new AesGcmFieldCipherDriver(
-        new MemoryKeyProviderDriver([{ id: "k1", key: new Uint8Array(32).fill(3) }]),
-      ),
-    );
-    const store = new PostgresConversationStoreDriver(conversations, messages, cast);
+    const store = new PostgresConversationStoreDriver(conversations, messages);
     const first = await store.open({ agent: "assistant", principalId: "usr_1" });
     const second = await store.open({ agent: "assistant", principalId: "usr_1" });
     const other = await store.open({ agent: "assistant", principalId: "usr_2" });

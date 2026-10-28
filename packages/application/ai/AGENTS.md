@@ -12,7 +12,7 @@ The AI kinds of a module's `ai/` group (`Prompt`, `Skill`, `Facts<M>`), the tool
 `Approval`, `approvalFor`) and `decide()` on AI SDK core. Member at `packages/application/ai` (`tier:lib`), in the
 programming model v3.1 shape (ADR 0294, 0305). Entries `.` (plus `retrieve`, the Facts retrieval helper over the
 `@stackra/search` ports, and the agent runtime), `./contracts` (the runtime's ports and run vocabulary) and `./node` (the
-ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399).
+ADR 0100 tables, the Postgres stores; storage home: ADR 0399).
 
 ## Where code goes
 
@@ -49,7 +49,8 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
 - Configuration, not code: a floor tag, a recipient limit, a provider, a region, a warning share or a redaction pattern
   is data the caller passes (platform floor, market pack, product and tenant settings). The resolver, the router and
   the checks hold only mechanism.
-- Text lives only in conversations, sealed with `ScopeKeyCast`; runs, steps and tool calls hold hashes, codes and
+- Text lives only in conversations, sealed by `HasEncryptedFields({ scope: "tenantId" }, "content")` on `Message`
+  (bound to the owning tenant, ADR 0476; `ScopeKeyCast` is retired, add no cast of your own); runs, steps and tool calls hold hashes, codes and
   counts (ADR 0100 decision 9). A tool call is always an action dispatch through `ToolDispatcher` (ADR 0100 d3).
 - `ModelProviders` (`.` entry) is only the token that collects `ModelProviderDriver`s; the Bedrock and Anthropic
   drivers and the driver that lists them are the ai service's (OS ai). Add no provider driver here.

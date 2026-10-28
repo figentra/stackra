@@ -20,11 +20,15 @@
  *           sealed under the scope's key, which would make a later shred a false erasure. A `lookup` field also
  *           gets its blind index (`blindIndexOf`, under the bound `KeyProvider`) written to `<field>Bidx` whenever
  *           the field is sealed, and null when the field is written null; without a `KeyProvider`, or when the model
- *           does not declare the property, the write is refused.
+ *           does not declare the property, the write is refused. A `HasEncryptedFields({ scope })` model binds each
+ *           value to `<model key>.<field>@<scope id>`, the id read from the row's scope property (ADR 0476), so a value
+ *           copied into another scope's row does not open; a row without that id is refused, and an update that
+ *           changes it seals every field again. The blind index stays bound to `<model key>.<field>` (under the
+ *           scope's key already), so `whereEncrypted` needs no row.
  * Runtime: node
  * Governing contract: ADR 0096 (decision 4: traits run as ORM subscribers); ADR 0097 (decision 4); ADR 0294
  *                     (decisions 20 and 27); ADR 0173; ADR 0188 (decision 2); ADR 0212; registry gap R-36 (owner
- *                     decision 23); gap gov2 (stackra-263); gap gov9 (stackra-313).
+ *                     decision 23); gap gov2 (stackra-263); gap gov9 (stackra-313); gap gov8 (stackra-330); ADR 0476.
  */
 import type { EventArgs, EventSubscriber } from "@mikro-orm/core";
 import { wrap } from "@mikro-orm/core";
@@ -35,6 +39,7 @@ import { blindIndexProperty } from "#core/functions/blind-index-property.functio
 import { encryptedFieldContext } from "#core/functions/encrypted-field-context.function";
 import { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
 import { encryptedLookupOf } from "#core/functions/encrypted-lookup-of.function";
+import { encryptedScopeOf } from "#core/functions/encrypted-scope-of.function";
 import { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 import type { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 
@@ -73,14 +78,17 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
     await this.seal(args, encryptedFieldsOf(args.meta.class));
   }
 
-  /** The ORM's `beforeUpdate`: seals the encrypted fields the update writes, or all of them when the subject changes. */
+  /**
+   * The ORM's `beforeUpdate`: seals the encrypted fields the update writes, or all of them when the subject or the
+   * scope changes.
+   */
   async beforeUpdate(args: EventArgs<object>): Promise<void> {
     const payload: object = args.changeSet?.payload ?? {};
     const fields = encryptedFieldsOf(args.meta.class);
-    const subject = encryptedSubjectOf(args.meta.class);
+    const keyed = [encryptedSubjectOf(args.meta.class), encryptedScopeOf(args.meta.class)];
     await this.seal(
       args,
-      subject !== undefined && subject in payload
+      keyed.some((property) => property !== undefined && property in payload)
         ? fields
         : fields.filter((field) => field in payload),
     );
@@ -138,14 +146,13 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
         throw new TypeError(`${meta.className}.${field} is encrypted, so it must hold a string`);
       // resolved once per row and only when a value is sealed, so a row of nulls creates no subject salt
       cipher ??= await this.sealingCipher(entity, meta);
-      const context = this.contextOf(meta, field);
       if (lookup.includes(field))
         record[this.indexOf(meta, field)] = await blindIndexOf(
           this.lookupKeys(meta),
           value,
-          context,
+          encryptedFieldContext(meta, field),
         );
-      const sealed = await cipher.seal(value, context);
+      const sealed = await cipher.seal(value, this.contextOf(entity, meta, field));
       written.set(field, [value, sealed]);
       record[field] = sealed;
     }
@@ -183,7 +190,8 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
       if (typeof value !== "string") continue;
       // null: the subject was erased, so the field is shredded and reads as null
       cipher ??= (await this.openingCipher(entity, meta)) ?? null;
-      const plain = cipher === null ? null : await cipher.open(value, this.contextOf(meta, field));
+      const plain =
+        cipher === null ? null : await cipher.open(value, this.contextOf(entity, meta, field));
       record[field] = plain;
       this.snapshot(entity, field, plain);
     }
@@ -272,8 +280,20 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
     if (original !== undefined) original[field] = plain;
   }
 
-  /** The cipher context of `field`: `<model key>.<field>` (`encryptedFieldContext`). */
-  private contextOf(meta: EventArgs<object>["meta"], field: string): string {
-    return encryptedFieldContext(meta, field);
+  /**
+   * The cipher context of `field` in this row: `<model key>.<field>`, with `@<scope id>` for a scope-bound model
+   * (`encryptedFieldContext`).
+   *
+   * @throws TypeError when a scope-bound row's scope property holds no id.
+   */
+  private contextOf(entity: object, meta: EventArgs<object>["meta"], field: string): string {
+    const property = encryptedScopeOf(meta.class);
+    if (property === undefined) return encryptedFieldContext(meta, field);
+    const scopeId = (entity as Record<string, unknown>)[property];
+    if (typeof scopeId !== "string" || scopeId === "")
+      throw new TypeError(
+        `${meta.className}.${property} names the scope its encrypted fields are bound to, so it must hold an id`,
+      );
+    return encryptedFieldContext(meta, field, scopeId);
   }
 }

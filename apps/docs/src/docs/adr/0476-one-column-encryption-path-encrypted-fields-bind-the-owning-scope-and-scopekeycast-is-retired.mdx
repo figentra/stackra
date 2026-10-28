@@ -1,0 +1,69 @@
+---
+title: "0476 — One column-encryption path: EncryptedFields bind the owning scope, and ScopeKeyCast is retired"
+description: "Accepted · 2026-10-29"
+---
+
+{/* Stackra file contract. Purpose: ADR 0476 (Accepted 2026-10-29, owner decision 12 of the data-layer questionnaire, "merge encryption paths"), under ADR 0465 decision 5: `HasEncryptedFields({ scope })` binds each sealed value to the scope that owns its row, the ai tables move onto it, and `ScopeKeyCast` of `@stackra/ai` is removed. Boundary: decision text only; the code is batch stackra-330 (STA-1466) in packages/data/model and packages/application/ai; the ADR index row belongs to the docs owner. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0465, 0188, 0100, 0173, 0212; notes handover/gap-analysis/data-layer (governance.md gap 8, DECISIONS.md 12). */}
+
+<Note>
+  Reserved number: 0476, assigned to batch stackra-330 (STA-1466) for the data-layer P2 round of
+  2026-10-28. It settles the merge that [0465](/adr/0465-one-store-per-job-storage-vectors-and-sentry-merged-audit-and-column-encryption-kept-apart)
+  decision 5 deferred.
+</Note>
+
+## Context
+
+[0465](/adr/0465-one-store-per-job-storage-vectors-and-sentry-merged-audit-and-column-encryption-kept-apart)
+decision 5 kept two column-encryption paths. `EncryptedFields` (`@stackra/model`: the `HasEncryptedFields` trait and
+`EncryptedFieldsSubscriber`) seals a model field transparently in the unit of work, bound to the context
+`<model key>.<field>`. `ScopeKeyCast` (`@stackra/ai`) sealed the ai message content by hand in the conversation store,
+bound to `<schema>.<table>.<column>@<scopeId>`, so a value copied into another scope's row did not open. A merge
+needed, first, a scope binding in `EncryptedFields` and a re-seal job. The re-seal job and the key-usage report landed
+with stackra-312 (`EncryptedFieldsResealService`). The owner asked for the merge on 2026-10-28 (data-layer
+decision 12).
+
+## Decision
+
+1. **`HasEncryptedFields({ scope })` binds the owning scope.** The option names the property holding the id of the
+   scope that owns the row (`tenantId` on a `BelongsToTenant` model). Each value of such a model is sealed and opened
+   in `<model key>.<field>@<scope id>`, the id read from the row; `encryptedFieldContext(meta, field, scopeId)` is the
+   only place the context is made, shared by the subscriber and the re-seal job. A row whose scope property holds no
+   id is refused, never sealed in the unbound context. An update that writes the scope property seals every field
+   again under the new scope. `scope` combines with `subject` and `lookup`. The blind index stays bound to
+   `<model key>.<field>`: it is made under the scope's key already, and `whereEncrypted` has no row to read a scope
+   from.
+2. **The ai tables use it, and `ScopeKeyCast` is removed.** `Message` declares
+   `HasEncryptedFields({ scope: "tenantId" }, "content")`; `PostgresConversationStoreDriver` writes and reads plain
+   JSON through the repository, and the subscriber seals it. `ScopeKeyCast` and its export from `@stackra/ai/node` are
+   deleted. There is one column-encryption path; a reviewer refuses a second cast.
+3. **No crypto migration of existing ai rows.** The context changes from `ai.messages.content@<scope>` to
+   `ai.message.content@<scope>`. No release shipped sealed ai rows (0.1.0 is not published), so no job moves them. A
+   host holding such rows from a pre-release build drops or re-creates them; `EncryptedFieldsResealService` re-seals
+   key rotations only, never a context change.
+
+## Consequences
+
+- One sealing path for every model, with one context function, one subscriber and one re-seal job; the ai store is
+  smaller and no longer needs a cipher of its own.
+- The ai service's boot must register `EncryptedFieldsSubscriber`. Gen already does so for a member that declares a
+  `HasEncryptedFields` model or depends on a package whose manifest has one (stackra-262); the ai package's manifest
+  lists `Message` with the trait once it is generated again.
+- A scope-bound value cannot be moved between scopes by copying it; a subtree move (`repath`) of such rows would need
+  them opened and sealed again. Today the ai tables are append-only, so they do not move.
+- Adding `scope` to a model that already has sealed rows breaks those rows the same way; do it before data exists.
+
+## Enforcement
+
+Tests beside the code (stackra-330): `encrypted-field-context.function.test.ts` (the `@<scope id>` context and the
+empty-id refusal), `encrypted-scope-of.function.test.ts`, `has-encrypted-fields.trait.test.ts` (the scope option and
+its refusals), `encrypted-fields.subscriber.test.ts` (a value copied into another scope's row does not open; a scope
+change reseals; a row without a scope id is refused), `encrypted-fields-reseal.service.test.ts` (the scope-bound
+re-seal), and `postgres-conversation-store.driver.test.ts` and the `@stackra/ai/node` barrel test (no `ScopeKeyCast`).
+
+## Supersedes and sources
+
+Supersedes: [0465](/adr/0465-one-store-per-job-storage-vectors-and-sentry-merged-audit-and-column-encryption-kept-apart)
+decision 5 (two paths). Related: [0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy) (decision 2: data
+keys per environment and scope), [0100](/adr/0100-ai-model-and-ownership) (decision 9: conversations are encrypted),
+[0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention). Sources: owner answers to the data-layer questionnaire, 2026-10-28
+(decision 12); notes `handover/gap-analysis/data-layer/governance.md` (gap 8); Linear STA-1466.

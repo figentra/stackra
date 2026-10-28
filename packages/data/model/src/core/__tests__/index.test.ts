@@ -166,6 +166,7 @@ describe("@stackra/model", () => {
       "currentRows",
       "encryptedFieldsOf",
       "encryptedLookupOf",
+      "encryptedScopeOf",
       "encryptedSubjectOf",
       "publicIdToUuid",
       "systemFieldsOf",

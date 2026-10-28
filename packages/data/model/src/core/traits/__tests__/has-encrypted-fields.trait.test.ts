@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `HasEncryptedFields`: it records the encrypted field names (and the subject property when
  *          given, and the lookup fields), adds no field, and refuses an empty or repeated list, an empty subject, an
- *          encrypted subject, empty options, and a lookup that is empty, repeated, not encrypted or subject-sealed.
+ *          encrypted subject, empty options, and a lookup that is empty, repeated, not encrypted or subject-sealed; it records
+ *          the scope property and refuses an empty or encrypted one.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0096; registry gap R-36.
@@ -75,6 +76,30 @@ describe(HasEncryptedFields, () => {
     );
     expect(() => HasEncryptedFields({ subject: "userId", lookup: ["email"] }, "email")).toThrow(
       /outlive the shred/,
+    );
+  });
+
+  it("records the scope property, alone or with a subject or lookup fields", () => {
+    class Message extends Model.with(HasEncryptedFields({ scope: "scopeId" }, "content")) {
+      scopeId!: string;
+
+      content!: string;
+    }
+    expect(traitsOf(Message)).toEqual([
+      { name: "has_encrypted_fields", options: { fields: ["content"], scope: "scopeId" } },
+    ]);
+    expect(() =>
+      HasEncryptedFields({ scope: "scopeId", subject: "userId" }, "email"),
+    ).not.toThrow();
+    expect(() =>
+      HasEncryptedFields({ scope: "scopeId", lookup: ["email"] }, "email"),
+    ).not.toThrow();
+  });
+
+  it("refuses an empty scope and a scope that is itself encrypted", () => {
+    expect(() => HasEncryptedFields({ scope: "" }, "content")).toThrow(TypeError);
+    expect(() => HasEncryptedFields({ scope: "scopeId" }, "scopeId", "content")).toThrow(
+      /scope the other fields are bound to/,
     );
   });
 });

@@ -6,11 +6,12 @@
  *          erased subject, converts a custom-typed subject, returns a cursor that resumes, and refuses a model
  *          without encrypted fields, a composite key, an unsealed value, a bad limit, and a subject-sealed model
  *          without a resolver. A lookup field's blind index is rewritten with its value, and a missing or rotated
- *          index makes a row stale even when its value is on the current key.
+ *          index makes a row stale even when its value is on the current key. A scope-bound row is re-sealed in its
+ *          `@<scope id>` context, and one without a scope id is refused.
  * Boundary: test only; a stand-in entity manager whose driver pages an in-memory table by primary key, and an
  *           in-test cipher that writes the `v1.<keyId>.<iv>.<body>` form reversibly, not a cipher.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0465 (decision 5); gap gov7 (stackra-312).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0465 (decision 5); gap gov7 (stackra-312); gap gov8 (stackra-330); ADR 0476.
  */
 import type { EntityManager } from "@mikro-orm/core";
 import { FieldCipher, KeyProvider } from "@stackra/contracts";
@@ -88,6 +89,14 @@ class Lead extends Model.with(HasEncryptedFields({ lookup: ["email"] }, "email")
   email: string | null = null;
 
   emailBidx: string | null = null;
+}
+
+class Message extends Model.with(HasEncryptedFields({ scope: "scopeId" }, "content")) {
+  id!: string;
+
+  scopeId!: string;
+
+  content!: string;
 }
 
 class Note extends Model {
@@ -342,5 +351,25 @@ describe(EncryptedFieldsResealService, () => {
     expect(rows[1]?.["emailBidx"]).toBe(await blindIndexOf(keys, "b@x.io", "crm.lead.email"));
     expect(rows[2]?.["emailBidx"]).toBeNull();
     expect((await service.usage(em, Lead)).stale).toBe(0);
+  });
+
+  it("re-seals a scope-bound row in its scope's context and refuses one without a scope id", async () => {
+    const keys = new RotatingKeys();
+    keys.id = "k1";
+    const sealed = await new FormCipher(keys).seal("hello", "crm.message.content@scp_a");
+    keys.id = "k2";
+    const rows: Row[] = [{ id: "a", scopeId: "scp_a", content: sealed }];
+    const { em } = managerOf(Message, rows);
+    const cipher = new FormCipher(keys);
+    const service = new EncryptedFieldsResealService(cipher, keys);
+
+    expect(await service.reseal(em, Message)).toMatchObject({ resealed: 1, skipped: 0 });
+    expect(rows[0]?.["content"]).toMatch(/^v1\.k2\./);
+    expect(await cipher.open(rows[0]?.["content"] as string, "crm.message.content@scp_a")).toBe(
+      "hello",
+    );
+
+    const { em: unscoped } = managerOf(Message, [{ id: "b", scopeId: null, content: sealed }]);
+    await expect(service.reseal(unscoped, Message)).rejects.toThrow(/must hold an id/);
   });
 });
