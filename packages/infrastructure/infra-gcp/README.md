@@ -134,5 +134,6 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 
 The network (the Cloud Router and Cloud NAT that send egress from the reserved addresses), caches and queues belong to
 the runtime stack, and the GCP compute runtime is not decided (ADR 0354 open question 1); the database server is
-`gcpRuntime`'s. There is no GCP state backend: the stack state stays in the AWS state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and
+`gcpRuntime`'s. Its `databaseConnection` output is what the Cloud SQL connector dials, the GCP connection path of
+ADR 0473 decision 1; the connector itself runs in the service process, so nothing more is created here. There is no GCP state backend: the stack state stays in the AWS state backend of `figentra/infra` (ADR 0354 consequences). Copies to a backup project and a project per product and
 region created by the program (ADR 0354 open question 2) are owner decisions (see the spec).

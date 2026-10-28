@@ -1,0 +1,69 @@
+---
+title: "0473 — Connection pooling: a managed proxy per cloud, a pool budget per service, and a direct URL for session tools"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0473 (Accepted 2026-10-28, owner decision 5 of the data-layer questionnaire), closing ADR 0238 implementation notes 2 and 3: the connection proxy per cloud, how a service's runway pool budget becomes the pool of each instance, and the direct URL the session-mode tools use. Boundary: decision text only; the code is batch stackra-254 (`@stackra/database`, `@stackra/gen`, `@stackra/runway`, the infra READMEs). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0238, 0159, 0136, 0168, 0296; notes handover/gap-analysis/data-layer (database-migrations.md gap 11, scale-performance.md gap 6, DECISIONS.md 5). */}
+
+<Note>
+  Reserved number: 0473, assigned to batch stackra-254 (STA-1409) for the data-layer wave 3 round of
+  2026-10-28. It closes [0238](/adr/0238-database-and-connection-model) implementation notes 2 and 3.
+</Note>
+
+## Context
+
+[0238](/adr/0238-database-and-connection-model) gave every service its own logical database on one server per
+environment, and left pooling open: note 2 named a transaction-mode proxy and a pool budget per deployable group in
+`runway.yaml`, and note 3 deferred the budget sizes until the first deployable existed. That is now. Runway already
+accepts `database.poolBudget` per service (and `defaults.service.database.poolBudget` at the root), but nothing read
+it: `PostgresDatabaseDriver.connect` left MikroORM's pool at its defaults, so every instance could open ten connections
+whatever the topology scaled it to. The migration and seed runners hold a session advisory lock and session `SET`s,
+which a transaction-mode proxy does not keep, and they had only the pooled `DATABASE_URL`. The owner answered on
+2026-10-28 (data-layer decision 5): a managed proxy per cloud.
+
+## Decision
+
+1. **The proxy is the cloud's managed one.** On AWS the runtime connects through RDS Proxy; on GCP through the Cloud
+   SQL connector, dialling the instance connection name `gcpRuntime` exports. No self-run PgBouncer. The proxy is a
+   deployment fact: application code never knows whether one stands in front.
+2. **The budget is per service; the pool is per instance.** `database.poolBudget` in a service runway (else the root's
+   `defaults.service.database.poolBudget`) is the most connections all instances of that service hold together on its
+   database. One instance's pool `max` is the budget divided by the most instances its topology group may run, rounded
+   down (`poolMaxOf` in `@stackra/runway`; one instance for a monolith, a split member or an isolated one unless a group
+   states more). A budget below the instance count is refused, since an instance would get no connection. The deploy
+   hands the share to the process as `DATABASE_POOL_MAX`; the generated boot passes `DatabaseConfig.pool` with that
+   value over its `max`, and `PostgresDatabaseDriver.connect({ pool })` sizes the primary and each replica with it.
+   Without a budget the pool is `DatabaseConfig.pool` (the `pg` defaults: ten, none kept, ten seconds idle).
+3. **Session tools go direct.** A tool that holds session state (the migration runner's advisory lock and timeouts, the
+   seed runner's `SET`s, any CLI like them) connects with `directDatabaseUrl()` from `@stackra/database/node`:
+   `DATABASE_DIRECT_URL`, the server past the proxy, else `DATABASE_URL` when no proxy stands in front (local, test
+   containers). The runtime never uses the direct URL.
+4. **Scope stays transaction-local.** The scope settings stay `set_config(..., true)` inside the action transaction
+   ([0136](/adr/0136-action-runtime-contract)), which a transaction-mode proxy keeps; no runtime code
+   uses a session `SET`. This confirms 0238 note 1.
+
+## Consequences
+
+- The server's connection limit is planned per environment as the sum of the service budgets plus the direct
+  sessions of migrations and seeds; scaling a group up shrinks each instance's pool instead of exhausting the server.
+- RDS Proxy pins a session that issues a session `SET` or an advisory lock, which is why decision 3 keeps those off
+  it.
+- The GCP connector runs inside the service process, so GCP needs no proxy resource; AWS needs one.
+- On AWS the RDS instance is Encore Cloud's, so the RDS Proxy cannot be created by `@stackra/infra-aws` today (the
+  same limit as pgaudit, data-layer decision 6). Until it exists, both URLs reach the server and each instance keeps to
+  its share of the budget on its own.
+
+## Enforcement
+
+`poolMaxOf` tests (budget divided by instances, the root default, the refusal); `poolConfig` and `DatabaseConfig.pool`
+tests; the `emitBoot` test for `DATABASE_POOL_MAX`; the `directDatabaseUrl` test, and both runners read it (stackra-254).
+planned — the deploy provider setting `DATABASE_POOL_MAX` and `DATABASE_DIRECT_URL` per service, and the RDS Proxy on
+AWS.
+
+## Supersedes and sources
+
+Supersedes: none. Closes [0238](/adr/0238-database-and-connection-model) implementation notes 2 and 3. Related:
+[0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) (the runner's session timeouts),
+[0136](/adr/0136-action-runtime-contract). Sources: owner answers to the data-layer questionnaire,
+2026-10-28 (decision 5); notes `handover/gap-analysis/data-layer/database-migrations.md` (gap 11) and
+`scale-performance.md` (gap 6); Linear STA-1409.

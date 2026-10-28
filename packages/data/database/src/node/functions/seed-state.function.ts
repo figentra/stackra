@@ -4,7 +4,7 @@
  *          record of `pack` the seed ledger holds, with its owner and the hash of the seeded content it holds, so the
  *          CLI plans which records are new, changed, current or kept.
  * Boundary: reads `database.seed_records` only; it writes nothing. `cwd` and `environment` name the member and the
- *           runway environment for the CLI's report; the connection is the member's `DATABASE_URL`.
+ *           runway environment for the CLI's report; the connection is `directDatabaseUrl()` (ADR 0473).
  * Runtime: node
  * Governing contract: ADR 0396 (decision 1); ADR 0325 (decision 7: seeds are resumable); config-model sections 3
  *                     and 6.
@@ -14,7 +14,7 @@ import { openSeedSession } from "#node/functions/open-seed-session.function";
 /**
  * The stored records of a seed pack.
  *
- * @throws Error when `DATABASE_URL` is not set or the ledger table is missing (run `stackra db migrate` first).
+ * @throws Error when no database URL is set or the ledger table is missing (run `stackra db migrate` first).
  * @example
  * const state = await seedState({ cwd: "services/commerce", environment: "dev", pack: "seed-pack:commerce" });
  */

@@ -28,6 +28,7 @@ export { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempoten
 export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-store.driver";
 export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.driver";
 export { applySeed } from "#node/functions/apply-seed.function";
+export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
 export { rollback } from "#node/functions/rollback.function";
 export { seedState } from "#node/functions/seed-state.function";

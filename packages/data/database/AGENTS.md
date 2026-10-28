@@ -103,6 +103,9 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
   and `em` the same as `PostgresDatabaseDriver`'s when either changes.
 - `DatabaseHealthIndicatorDriver` is the `HealthIndicator` driver: it runs `select 1`, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
+- The pool comes from `DatabaseConfig.pool` (and `DATABASE_POOL_MAX` over its `max`, ADR 0473); never hard-code a
+  pool size in a driver. A tool that holds session state (a session `SET`, a session advisory lock) connects with
+  `directDatabaseUrl()`, never the pooled `DATABASE_URL`, since a transaction-mode proxy cannot keep it.
 - `assertRowSecurity` (`./testing`, stackra-258) is owner-agnostic: it takes the column, setting, role and probe
   values and names no tenant; `@stackra/tenancy/testing` supplies the tenant form. Its probe always rolls back.
 

@@ -1,6 +1,6 @@
 ---
 title: "0238 — Database and connection model: one server per environment, one logical database per service"
-description: "Accepted, amended by 0334 · 2026-10-20"
+description: "Accepted, amended by 0334, notes 2-3 closed by 0473 · 2026-10-20"
 ---
 
 <Note>
@@ -10,6 +10,13 @@ description: "Accepted, amended by 0334 · 2026-10-20"
   Postgres schema (0294), so runway topology may move a module to its own logical database with no
   code change, and MikroORM then holds one connection per module. Decision 2, one logical database
   per service, is the default and stands.
+</Note>
+
+<Note>
+  Notes 2 and 3 closed 2026-10-28 by
+  [0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools)
+  (stackra-254): the proxy is the cloud's managed one (RDS Proxy on AWS, the Cloud SQL connector on GCP), the runway
+  pool budget is per service and divided per instance, and session tools use a direct URL.
 </Note>
 
 <Note>

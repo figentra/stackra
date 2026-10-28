@@ -4,18 +4,20 @@
  *          the runner's advisory lock, with the lock and statement timeouts set, the `schema_migrations(version, dirty)`
  *          table and the `schema_migrations_history` ledger ensured, and the member's compiled files read; closed (and
  *          the lock released) when `run` ends.
- * Boundary: the only runner file that connects. The connection string is the `DATABASE_URL` the member's runway and
- *           config put in the environment, never an argument. One pooled connection, so the session settings and the
+ * Boundary: the only runner file that connects. The connection string is `directDatabaseUrl()` (`DATABASE_DIRECT_URL`,
+ *           past the pooling proxy, else `DATABASE_URL`), never an argument (ADR 0473 decision 3). One pooled connection, so the session settings and the
  *           session-level advisory lock hold; a second runner (another pod or job) waits on the lock instead of
  *           applying the same files. `schema_migrations` keeps golang-migrate's shape (Encore's runner reads it); the
  *           checksum and `applied_at` live in the separate history table, so that shape never changes.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3 and the 2026-10-24 note: timeouts per session, `schema_migrations`).
+ * Governing contract: ADR 0159 (decision 3 and the 2026-10-24 note: timeouts per session, `schema_migrations`); ADR
+ *                     0473 (decision 3: the direct URL).
  */
 import { join } from "node:path";
 
 import { MikroORM } from "@mikro-orm/postgresql";
 
+import { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 import type { MigrationSession } from "#node/types/migration-session.type";
 
@@ -28,7 +30,7 @@ const MIGRATION_LOCK_KEY = 4_191_640_377;
 /**
  * Opens a session for `run`.
  *
- * @throws Error when `DATABASE_URL` is not set or the compiled files are missing.
+ * @throws Error when neither `DATABASE_DIRECT_URL` nor `DATABASE_URL` is set or the compiled files are missing.
  * @example
  * await openMigrationSession(".", async ({ files }) => files.length);
  */
@@ -36,8 +38,7 @@ export async function openMigrationSession<T>(
   cwd: string,
   run: (session: MigrationSession) => Promise<T>,
 ): Promise<T> {
-  const url = process.env["DATABASE_URL"];
-  if (url === undefined || url === "") throw new Error("DATABASE_URL is not set for this member");
+  const url = directDatabaseUrl();
   const files = readMigrationFiles(join(cwd, MIGRATIONS_FOLDER));
   const orm = await MikroORM.init({
     clientUrl: url,

@@ -2,17 +2,19 @@
  * Stackra file contract:
  * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
  *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness); `timeouts` are the
- *          statement, lock and idle-in-transaction timeouts every runtime session starts with.
+ *          statement, lock and idle-in-transaction timeouts every runtime session starts with; `pool` is the connection
+ *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`.
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); registry gap R-27; gap analysis devx-ops "Health checks" (P0,
- *                     owner D10).
+ *                     owner D10); ADR 0473 (decision 2: the pool).
  */
 import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.constant";
+import type { DatabasePool } from "#core/types/database-pool.type";
 import type { SessionTimeouts } from "#core/types/session-timeouts.type";
 
 /**
@@ -42,6 +44,14 @@ export class DatabaseConfigOptions extends Schema {
     lock: Duration.seconds(10),
     idleInTransaction: Duration.seconds(60),
   };
+
+  /**
+   * The connection pool of one instance; the boot sets `max` from `DATABASE_POOL_MAX` (the instance's share of the
+   * runway `poolBudget`, ADR 0473) when the deploy hands it over.
+   */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(DATABASE_CONFIG_SCHEMA.shape.pool)
+  pool: DatabasePool = { max: 10, min: 0, idleTimeout: Duration.seconds(10) };
 }
 
 registerSchemas([[DatabaseConfigOptions, DATABASE_CONFIG_SCHEMA]]);

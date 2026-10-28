@@ -3,7 +3,7 @@
  * Purpose: `DatabaseConfig`, the database configuration (key `database`): the `/readyz` probe's timeout and whether
  *          a failed probe fails readiness.
  * Boundary: a configuration class over `DatabaseConfigOptions` with no env map; runway's `config.database` layer sets it.
- *           The connection URL is not here: it is the process's `DATABASE_URL`. A host overrides it as
+ *           The connection URL is not here: it is the Encore database's (the boot's). A host overrides it as
  *           `class DatabaseConfig extends BaseDatabaseConfig` with `override` members only.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 20); ADR 0146 as amended; registry gap R-27; gap analysis

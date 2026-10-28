@@ -114,6 +114,7 @@ export type { TableOptions } from "#core/types/table-options.type";
 export type { TablePage } from "#core/types/table-page.type";
 export type { TableFilter } from "#core/types/table-filter.type";
 export type { TableQuery } from "#core/types/table-query.type";
+export type { DatabasePool } from "#core/types/database-pool.type";
 export type { SessionTimeouts } from "#core/types/session-timeouts.type";
 export type { TableSort } from "#core/types/table-sort.type";
 export type { TransactionOptions } from "#core/types/transaction-options.type";

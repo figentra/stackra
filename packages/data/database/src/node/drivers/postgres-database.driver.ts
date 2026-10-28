@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
  *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions
- *          (with an optional statement timeout), starts every session with the configured timeouts, registers the
+ *          (with an optional statement timeout), starts every session with the configured timeouts, sizes the pool, registers the
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one.
@@ -13,7 +13,7 @@
  *           primary's transaction.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
- *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica).
+ *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool).
  */
 import { RequestContext, TransactionContext, TransactionPropagation } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
@@ -24,6 +24,7 @@ import type { ScopeRef } from "@stackra/contracts";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { deleteFilters } from "#core/functions/delete-filters.function";
+import { poolConfig } from "#core/functions/pool-config.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
@@ -56,6 +57,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    * Connects and makes the driver `Database.current()`.
    *
    * @throws Error when Postgres refuses the connection or an entity schema is invalid.
+   * @throws RangeError when `options.pool` cannot serve a query (`poolConfig`).
    */
   static async connect(options: DatabaseOptions): Promise<PostgresDatabaseDriver> {
     const entities = [...(options.entities ?? REGISTERED_ENTITIES)];
@@ -69,6 +71,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
             })),
           }),
       preferReadReplicas: false,
+      ...(options.pool === undefined ? {} : { pool: poolConfig(options.pool) }),
       entities,
       filters: deleteFilters(entities),
       subscribers: [...(options.subscribers ?? [])],

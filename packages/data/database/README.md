@@ -288,7 +288,7 @@ claim holds before the action's unit of work starts. Selecting them in runway (`
 `database.seed_records` (migration `database.0003_create_seed_records`): one row per pack record with its content
 hash, pack version, profile and owner. `applySeed` writes product defaults in one transaction and never overwrites a
 row whose owner is `tenant`; the owning package flips the owner when someone edits the product default. The
-connection is the member's `DATABASE_URL`, as for `stackra db migrate`, which runs first.
+connection is `directDatabaseUrl()`, as for `stackra db migrate`, which runs first (see Connection pool).
 
 ## Record visibility
 
@@ -445,7 +445,7 @@ schema.create("parties", (t) => {
 
 ## Health check
 
-`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health` and `timeouts`; the connection URL stays the process's `DATABASE_URL`. Bind it and
+`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health`, `timeouts` and `pool`; the connection URL is the Encore database's, handed over by the generated boot. Bind it and
 `@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
 
 | Field      | Default | Meaning                                                                   |
@@ -471,6 +471,26 @@ Runway's `config.database` layer sets them per environment. An action that runs 
 `timeout: Duration.minutes(2)` in `Action({...})`; `DatabaseUnitOfWorkDriver` passes it to
 `Database.transaction(work, { timeout })`, which runs `set local statement_timeout` first, so it lasts until the
 outermost transaction ends. The migration runner keeps its own session timeouts.
+
+## Connection pool
+
+`pool` in the same config is the connection pool of one instance (ADR 0473), passed by the boot as
+`PostgresDatabaseDriver.connect({ url, pool })` and used for the primary and each replica:
+
+| Field         | Default | Meaning                                                   |
+| ------------- | ------- | --------------------------------------------------------- |
+| `max`         | `10`    | The most connections this instance opens                  |
+| `min`         | `0`     | The connections kept open while idle                      |
+| `idleTimeout` | `PT10S` | How long an idle connection above `min` stays open        |
+
+The service's runway `database.poolBudget` is the connections all its instances may hold together. The deploy hands
+each instance its share as `DATABASE_POOL_MAX` (`poolMaxOf` in `@stackra/runway`: the budget divided by the group's
+`instances.max`), and the generated boot puts it over `pool.max`.
+
+In production the runtime URL goes through the cloud's managed proxy (RDS Proxy on AWS, the Cloud SQL connector on
+GCP). Tools that hold session state (the migration and seed runners: a session advisory lock and session `SET`) read
+`directDatabaseUrl()` from `./node` instead: `DATABASE_DIRECT_URL`, the server itself, or `DATABASE_URL` when no proxy
+stands in front (local, test containers).
 
 ## Testing
 

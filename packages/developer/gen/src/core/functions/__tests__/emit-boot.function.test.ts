@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database at the Encore database's url with the
- *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts, and the hold, stamp and outbox writer
+ *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp and outbox writer
  *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
@@ -10,7 +10,7 @@
  *          step only when its package is used; no file for a package, an app or a service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238.
+ * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238; ADR 0473.
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -51,10 +51,13 @@ describe("emitBoot", () => {
         "  );",
         "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
         '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
+        "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
+        '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
         "  await PostgresDatabaseDriver.connect({",
         "    url: database.connectionString,",
         "    replicas,",
         "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
+        '    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },',
         "    subscribers: [new HoldSubscriber(), new StampSubscriber(), container.get(OutboxWriterService)],",
         "  });",
         "  container.get(SegmentService).connect(container);",

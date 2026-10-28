@@ -52,6 +52,7 @@ describe("@stackra/runway", () => {
       "deployTargets",
       "devPorts",
       "parseRunway",
+      "poolMaxOf",
       "productOf",
       "promote",
       "regionsOf",

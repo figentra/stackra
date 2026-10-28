@@ -4,7 +4,8 @@
  *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
  *          drivers (or none), `PostgresDatabaseDriver.connect` with the url of the service's Encore `database`
  *          (`emitEncoreDatabase`), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
- *          the bound `DatabaseConfig`'s session `timeouts` and the subscribers: the legal-hold one, the
+ *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
+ *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` (when a model, own or a declared package's, has
  *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
  *          `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
@@ -23,7 +24,7 @@
  *                     amendment: every disposal path asks the connected `HoldRegistry`); ADR 0394 (decision 1); ADR 0263 (the
  *                     container is ready before anything resolves from it); ADR 0260 (decision 4: typed subscribers
  *                     and relays receive only once connected); ADR 0465 (decision 5: the model encryption path); ADR 0238 (the
- *                     service's own database, stackra-250); ADR 0057 (decision 6: read replicas); ADR 0315 (decision 1: a
+ *                     service's own database, stackra-250); ADR 0473 (decision 2: the pool); ADR 0057 (decision 6: read replicas); ADR 0315 (decision 1: a
  *                     query with `cache.invalidateOn` is live, its refresh sent after commit).
  */
 import type { StackraManifest } from "@stackra/contracts";
@@ -141,10 +142,13 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  );",
       "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
       '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
+      "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
+      '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
       "  await PostgresDatabaseDriver.connect({",
       "    url: database.connectionString,",
       "    replicas,",
       "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
+      '    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },',
       `    subscribers: [new HoldSubscriber(), new StampSubscriber()${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher))" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
       "  });",
     );

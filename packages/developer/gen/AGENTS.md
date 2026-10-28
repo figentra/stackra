@@ -186,8 +186,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   relay. Without the bus and inbox connects, relays and typed subscribers receive nothing. A signal already aborted
   connects nothing. The server entry passes `boot` to `createApp` (`@stackra/app/server`), which aborts the signal on
   `close()`. The database url is the service's Encore `database` (`emitEncoreDatabase`, ADR 0238, stackra-250), never
-  `DATABASE_URL`; the replicas are `DATABASE_REPLICA_URLS` (comma-separated); the timeouts are the bound
-  `DatabaseConfig`'s. `usesDatabase` is the one answer to whether a service has a database: the boot never connects
+  `DATABASE_URL`; the replicas are `DATABASE_REPLICA_URLS` (comma-separated); the timeouts and pool are the bound
+  `DatabaseConfig`'s, with `DATABASE_POOL_MAX` over the pool's `max` (ADR 0473). `usesDatabase` is the one answer to whether a service has a database: the boot never connects
   one Encore does not declare.
 
 - Platform services (ADR 0263): a `@stackra/*` service gen binds where injected is a `PLATFORM_BINDINGS` row

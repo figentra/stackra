@@ -3,13 +3,15 @@
  * Purpose: `openSeedSession(run)`, the connection `seedState` and `applySeed` share: one pooled Postgres connection
  *          with the statement timeouts set, a `query` that binds every value, and a `transaction` around a batch;
  *          closed when `run` ends.
- * Boundary: the only seed runner file that connects. The connection string is the `DATABASE_URL` the member's runway
- *           and config put in the environment, never an argument, as for `migrate`. The seed ledger table comes from
+ * Boundary: the only seed runner file that connects. The connection string is `directDatabaseUrl()` (`DATABASE_DIRECT_URL`,
+ *           past the pooling proxy, else `DATABASE_URL`), never an argument, as for `migrate` (ADR 0473 decision 3). The seed ledger table comes from
  *           this package's migration 0003, so `stackra db migrate` runs first.
  * Runtime: node
- * Governing contract: ADR 0396 (decision 1); ADR 0159 (decision 3: session timeouts); ADR 0325 (decision 7).
+ * Governing contract: ADR 0396 (decision 1); ADR 0159 (decision 3: session timeouts); ADR 0325 (decision 7); ADR 0473.
  */
 import { MikroORM } from "@mikro-orm/postgresql";
+
+import { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 
 /** What the callback works with. */
 interface SeedSession {
@@ -26,13 +28,12 @@ interface SeedSession {
 /**
  * Opens a session for `run`.
  *
- * @throws Error when `DATABASE_URL` is not set or Postgres refuses the connection.
+ * @throws Error when neither `DATABASE_DIRECT_URL` nor `DATABASE_URL` is set or Postgres refuses the connection.
  * @example
  * const rows = await openSeedSession(({ query }) => query("select 1"));
  */
 export async function openSeedSession<T>(run: (session: SeedSession) => Promise<T>): Promise<T> {
-  const url = process.env["DATABASE_URL"];
-  if (url === undefined || url === "") throw new Error("DATABASE_URL is not set for this member");
+  const url = directDatabaseUrl();
   const orm = await MikroORM.init({
     clientUrl: url,
     entities: [],

@@ -16,7 +16,7 @@ import { openSeedSession } from "#node/functions/open-seed-session.function";
 /**
  * Writes planned seed records as product defaults.
  *
- * @throws Error when `DATABASE_URL` is not set or a write fails; nothing of the batch is written then.
+ * @throws Error when no database URL is set or a write fails; nothing of the batch is written then.
  * @example
  * const { written } = await applySeed({ cwd, environment: "dev", pack, version: "1.0.0", profile: "minimal", records });
  */

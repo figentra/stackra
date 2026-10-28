@@ -33,6 +33,7 @@ export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
+export { poolMaxOf } from "#core/functions/pool-max-of.function";
 export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
