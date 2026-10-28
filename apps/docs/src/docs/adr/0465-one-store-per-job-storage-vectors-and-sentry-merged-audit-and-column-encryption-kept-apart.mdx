@@ -3,7 +3,7 @@ title: "0465 — One store per job: storage, vectors and Sentry merged; audit an
 description: "Accepted · 2026-10-28"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0465 (Accepted 2026-10-28, owner decision D10, the gap-analysis redundancy cleanup), recording which overlapping stores were merged (media's MediaDisk into FileSystem, ai.embeddings into search's VectorIndex, logger's Sentry DSN and error rate into SentryConfig), which stay separate and why (the action AuditTrail and the access log; model EncryptedFields and ai ScopeKeyCast), and two naming rules (test doubles, lint-rule homes). Boundary: decision text; the code is batch stackra-226 (STA-1384) in packages/data/{filesystem,media,search}, packages/application/ai, packages/foundation/{errors,logger}; the ADR index row and docs nav belong to stackra-90. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0100, 0160, 0184, 0188, 0212, 0222, 0234, 0266, 0269, 0300, 0409; notes handover/gap-analysis (data R2 and R5, security-identity redundancy 1, devx-ops R1, R4 and R6, cross-redundancy 19). */}
+{/* Stackra file contract. Purpose: ADR 0465 (Accepted 2026-10-28, owner decision D10, the gap-analysis redundancy cleanup), recording which overlapping stores were merged (media's MediaDisk into FileSystem, ai.embeddings into search's VectorIndex, logger's Sentry DSN and error rate into SentryConfig), which stay separate and why (the action AuditTrail and the access log; model EncryptedFields and ai ScopeKeyCast), and two naming rules (test doubles, lint-rule homes). Boundary: decision text; the code is batch stackra-226 (STA-1384) in packages/data/{filesystem,media,search}, packages/application/ai, packages/foundation/{errors,logger}; the ADR index row belongs to stackra-90, which on 2026-10-28 restated the gen consequence once gen's MediaLibrary binding named FileSystem (the Consequences no longer name MediaDisk). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0100, 0160, 0184, 0188, 0212, 0222, 0234, 0266, 0269, 0300, 0409; notes handover/gap-analysis (data R2 and R5, security-identity redundancy 1, devx-ops R1, R4 and R6, cross-redundancy 19). */}
 
 <Note>
   Reserved number: 0465, the next free after 0464 (drafted at 127cee9 on
@@ -86,9 +86,10 @@ beside 123 `memory-*.driver.ts` files) and lint rules (`@stackra/oxlint-config` 
   content type is not signed, so the claim's type check is the only guard there.
 - An upload signed before the change has no record and its claim is refused as incomplete; it expires within
   `media.uploadExpiresIn`. A runway `media.disk` value is ignored; `filesystem.disk` picks the store.
-- Gen's `PLATFORM_BINDINGS` row for `MediaLibrary` still names `MediaDisk` and must name `FileSystem` from
-  `@stackra/filesystem/contracts`; gen's generated Encore bucket driver must forward `signedUploadUrl`. Both are gen's
-  paths, handed to the integration batch; until then a host binds `MediaLibrary` itself.
+- Gen's `PLATFORM_BINDINGS` row binds `MediaLibrary` over `FileSystem` from `@stackra/filesystem/contracts`, so a
+  service that injects it needs no wiring of its own. The Encore bucket disk signs an upload through the `EncoreBucket`
+  port's `signedUploadUrl`, which Encore's own bucket object already has; gen writes no bucket adapter of its own, so
+  nothing sits between them to forward it.
 - The template's telemetry overrides that set `errors.sampleRate` must drop it.
 - Two audit stores and two column-encryption paths remain, each with one stated job; a reviewer refuses a third.
 
