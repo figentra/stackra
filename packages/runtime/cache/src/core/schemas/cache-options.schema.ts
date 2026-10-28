@@ -3,7 +3,7 @@
  * Purpose: `CacheOptions`, the shape of `CacheConfig`: which driver runs, which namespace, fill-lock and metrics drivers
  *          it uses, how many entries the memory driver keeps before it drops the least recently read one, how far
  *          lifetimes are jittered, how long a caller waits for another instance's fill, the Valkey server and key
- *          prefix, and the Workers KV binding.
+ *          prefix, the Postgres tables' schema and sweep size, and the Workers KV binding.
  *          `health` tunes `CacheHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`CACHE_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(CacheConfig)` validates with no generated file. `valkey` and `workers` are nested
@@ -71,6 +71,16 @@ export class CacheOptions extends Schema {
     /** Put in front of every key, so members that share one server never share an entry. */
     keyPrefix: string;
   } = { keyPrefix: "cache:" };
+
+  /** The `postgres` driver's tables. */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(CACHE_CONFIG_SCHEMA.shape.postgres)
+  postgres: {
+    /** The Postgres schema holding the unlogged `entries` and `set_members` tables (snake_case). */
+    schema: string;
+    /** How many dead rows each write reclaims at most (0 to 10000); `0` leaves them. */
+    sweep: number;
+  } = { schema: "cache", sweep: 100 };
 
   /** The `workers` driver's Workers KV namespace. */
   // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules

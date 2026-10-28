@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `CACHE_CONFIG_SCHEMA`, the zod schema this package ships for `CacheConfig` (exported as `CacheConfig$`):
  *          the driver, the namespace, lock and metrics drivers, the memory driver's entry bound, the lifetime jitter,
- *          the cross-instance fill wait, the Valkey server and key prefix, and the Workers KV binding.
+ *          the cross-instance fill wait, the Valkey server and key prefix, the Postgres tables' schema and sweep size,
+ *          and the Workers KV binding.
  *          The `health` field tunes `CacheHealthIndicatorDriver` for `/readyz`.
  * Boundary: the stand-in for what gen writes for this package. Every field and every nested field has a default, so
  *           `.parse({})` gives the full defaults and a host's generated `CacheConfig$` extends it. The defaults equal
@@ -47,6 +48,15 @@ export const CACHE_CONFIG_SCHEMA = z.object({
   valkey: z
     .object({ keyPrefix: z.string().default("cache:") })
     .default(() => ({ keyPrefix: "cache:" })),
+  postgres: z
+    .object({
+      schema: z
+        .string()
+        .regex(/^[a-z][a-z0-9_]*$/, "a snake_case Postgres schema name")
+        .default("cache"),
+      sweep: z.number().int().min(0).max(10_000).default(100),
+    })
+    .default(() => ({ schema: "cache", sweep: 100 })),
   workers: z
     .object({ binding: z.string().min(1).default("CACHE") })
     .default(() => ({ binding: "CACHE" })),

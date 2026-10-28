@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `CacheConfig`, the cache's configuration (key `cache`): the driver, the namespace, fill-lock and metrics
  *          drivers, the memory driver's entry bound, the lifetime jitter, the cross-instance fill wait, the Valkey
- *          server and key prefix, and the Workers KV binding.
+ *          server and key prefix, the Postgres tables' schema and sweep size, and the Workers KV binding.
  * Boundary: a configuration class over `CacheOptions` with no env map; runway's `config.cache` layer sets it per
  *           environment, and the `CACHE_VALKEY_URL` secret comes from the secret store. A host overrides it as
  *           `class CacheConfig extends BaseCacheConfig` with `override` members only.

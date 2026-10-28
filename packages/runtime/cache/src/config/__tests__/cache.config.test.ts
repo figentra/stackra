@@ -43,7 +43,9 @@ describe("CacheConfig", () => {
   it("types its fields on the class and builds with the defaults", () => {
     const config = buildConfig(CacheConfig);
     expectTypeOf(config.maxEntries).toEqualTypeOf<number>();
-    expectTypeOf(config.driver).toEqualTypeOf<"memory" | "storage" | "valkey" | "workers">();
+    expectTypeOf(config.driver).toEqualTypeOf<
+      "memory" | "storage" | "valkey" | "postgres" | "workers"
+    >();
     expectTypeOf(config.namespace).toEqualTypeOf<"shared" | "scope">();
     expectTypeOf(config.lock).toEqualTypeOf<"local" | "locks">();
     expectTypeOf(config.metrics).toEqualTypeOf<"none" | "counting" | "logger">();

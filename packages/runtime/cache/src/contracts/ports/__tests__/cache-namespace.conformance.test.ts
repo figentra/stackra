@@ -1,18 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: the conformance test of the `CacheNamespace` promise (ADR 0150's enforcement): every `Cache` driver this
- *          package ships (memory, storage, valkey, workers), over one store, keeps two namespaces apart. A value put in
+ *          package ships (memory, storage, valkey, postgres, workers), over one store, keeps two namespaces apart. A value put in
  *          one is not read, overwritten, loaded over or forgotten from the other, the shared namespace `""` sees
  *          neither, a namespace that is a prefix of another (`scp_a`, `scp_ab`) or holds `/` stays its own, and a
  *          `forgetTag` reaches only its own namespace's entries.
  * Boundary: test only; one driver per case with a settable namespace, as a scoped deployment has one driver whose
- *           namespace changes per call. `iovalkey` and the Worker binding are mocked in memory, so no server runs.
+ *           namespace changes per call. `iovalkey`, the Worker binding and `CacheSql` are faked in memory, so no server
+ *           runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0150 (decision 2 and
  *                     its enforcement); ADR 0305 (rule 32); STA-1442.
  */
 import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
+import { Driver } from "@stackra/container";
 import { Clock, Duration } from "@stackra/contracts";
 import { fakeStorage } from "@stackra/storage/testing";
 import { describe, expect, it } from "@stackra/testing";
@@ -21,11 +23,13 @@ import { vi } from "vitest";
 import { CacheConfig } from "#config/cache.config";
 import type { Cache } from "#contracts/ports/cache.port";
 import { CacheNamespace } from "#contracts/ports/cache-namespace.port";
+import { CacheSql } from "#contracts/ports/cache-sql.port";
 import { CacheKey } from "#core/constants/cache-key.constant";
 import { LocalCacheLockDriver } from "#core/drivers/local-cache-lock.driver";
 import { MemoryCacheDriver } from "#core/drivers/memory-cache.driver";
 import { NoneCacheMetricsDriver } from "#core/drivers/none-cache-metrics.driver";
 import { StorageCacheDriver } from "#core/drivers/storage-cache.driver";
+import { PostgresCacheDriver } from "#node/drivers/postgres-cache.driver";
 import { ValkeyCacheDriver } from "#node/drivers/valkey-cache.driver";
 import { WorkersCacheDriver } from "#worker/drivers/workers-cache.driver";
 
@@ -105,6 +109,39 @@ class ValkeySecrets extends SecretStore {
 
 class Product {}
 
+/** Runs the Postgres driver's statements over maps; prefix `like` patterns here carry no wildcard but the last `%`. */
+class MapCacheSql extends Driver(CacheSql) {
+  readonly entries = new Map<string, string>();
+
+  readonly members = new Map<string, Set<string>>();
+
+  async query(
+    sql: string,
+    params: readonly unknown[],
+  ): Promise<readonly Record<string, unknown>[]> {
+    const [first, second] = params.map(String);
+    const key = first ?? "";
+    if (sql.startsWith("select body from"))
+      return this.entries.has(key) ? [{ body: this.entries.get(key) }] : [];
+    if (sql.startsWith("select key from")) {
+      const prefix = key.slice(0, -1).replaceAll(/\\(.)/g, "$1");
+      return [...this.entries.keys()]
+        .filter((name) => name.startsWith(prefix))
+        .map((name) => ({ key: name }));
+    }
+    if (sql.startsWith("select member from"))
+      return [...(this.members.get(key) ?? [])].map((member) => ({ member }));
+    if (sql.includes("ctid")) return [];
+    if (sql.startsWith("insert into") && sql.includes('"entries"'))
+      this.entries.set(key, second ?? "");
+    else if (sql.startsWith("insert into"))
+      this.members.set(key, new Set([...(this.members.get(key) ?? []), second ?? ""]));
+    else if (sql.includes('"entries"')) this.entries.delete(key);
+    else this.members.delete(key);
+    return [];
+  }
+}
+
 class Category {}
 
 const TEN_MINUTES = Duration.minutes(10);
@@ -128,6 +165,15 @@ const DRIVERS: Readonly<Record<string, (namespace: CacheNamespace, clock: Clock)
   valkey: (namespace, clock) =>
     new ValkeyCacheDriver(
       buildConfig(CacheConfig, { values: { driver: "valkey" }, secrets: new ValkeySecrets() }),
+      namespace,
+      clock,
+      new LocalCacheLockDriver(),
+      new NoneCacheMetricsDriver(),
+    ),
+  postgres: (namespace, clock) =>
+    new PostgresCacheDriver(
+      buildConfig(CacheConfig, { values: { driver: "postgres" } }),
+      new MapCacheSql(),
       namespace,
       clock,
       new LocalCacheLockDriver(),

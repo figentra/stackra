@@ -11,6 +11,7 @@ export { Cache } from "#contracts/ports/cache.port";
 export { CacheLock } from "#contracts/ports/cache-lock.port";
 export { CacheMetrics } from "#contracts/ports/cache-metrics.port";
 export { CacheNamespace } from "#contracts/ports/cache-namespace.port";
+export { CacheSql } from "#contracts/ports/cache-sql.port";
 export type { CacheMetric } from "#contracts/types/cache-metric.type";
 export type { CacheMetricEvent } from "#contracts/types/cache-metric-event.type";
 export type { CachePutOptions } from "#contracts/types/cache-put-options.type";

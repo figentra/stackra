@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the `Cache` port: a cached value inside a service, driver or listener, under an explicit key and lifetime.
  * Boundary: an abstract class that is its own token, keyed `cache.Cache`; drivers implement it with
- *           `extends Driver(Cache)` and config `cache.driver` picks one (`memory`, `storage`, `valkey`, `workers`).
+ *           `extends Driver(Cache)` and config `cache.driver` picks one (`memory`, `storage`, `valkey`, `postgres`,
+ *           `workers`).
  *           Every driver prefixes each key with `CacheNamespace.current()`, so two namespaces never share an entry,
  *           and runs at most one `remember` load per key at a time (single-flight). Values are whatever the caller
  *           stores; a network driver serialises them, so store plain data. An entry is dropped by its key, by a key

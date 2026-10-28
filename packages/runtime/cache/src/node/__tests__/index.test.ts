@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: exactly `ValkeyCacheDriver`.
+ * Purpose: the consumer contract of the `./node` entry: exactly `PostgresCacheDriver`, `ValkeyCacheDriver` and
+ *          `postgresCacheTables`.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias, with the Valkey client mocked so no
  *           connection opens.
  * Runtime: node (vitest)
@@ -14,7 +15,11 @@ import * as node from "#node/index";
 vi.mock("iovalkey", () => ({ default: class {} }));
 
 describe("@stackra/cache/node", () => {
-  it("exports exactly the Valkey driver", () => {
-    expect(Object.keys(node)).toEqual(["ValkeyCacheDriver"]);
+  it("exports exactly the server drivers and the Postgres tables' statements", () => {
+    expect(Object.keys(node).sort()).toEqual([
+      "PostgresCacheDriver",
+      "ValkeyCacheDriver",
+      "postgresCacheTables",
+    ]);
   });
 });

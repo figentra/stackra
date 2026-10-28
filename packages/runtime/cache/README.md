@@ -3,7 +3,7 @@
 Stackra cache: the `Cache` port for a cached value inside a service, driver or listener, `CacheKey.of` to build its
 keys and tags, the `CacheNamespace` port that keeps namespaces apart, the `CacheLock` port that shares a fill across
 instances, the `CacheMetrics` port that counts hits, misses, loads and evictions, the `CacheConfig` configuration, and
-the memory, storage, Valkey and Workers KV drivers.
+the memory, storage, Valkey, Postgres and Workers KV drivers.
 
 **Tier:** `tier:lib` (`packages/runtime/cache`). Entries `.`, `./contracts`, `./node` and `./worker`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, `@stackra/storage`, zod and
@@ -11,26 +11,29 @@ the memory, storage, Valkey and Workers KV drivers.
 
 ## What is here
 
-| Symbol                                                   | Entry         | Use                                                                          |
-| -------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
-| `Cache`                                                  | `./contracts` | the port: `get`, `put`, `remember`, `forget`, `forgetTag`                    |
-| `CacheNamespace`                                         | `./contracts` | the port naming the current call's namespace, put in front of every key      |
-| `CacheLock`                                              | `./contracts` | the port that runs a `remember(..., { lock: true })` fill on one instance    |
-| `CacheMetrics`                                           | `./contracts` | the port that receives a `CacheMetric` per hit, stale hit, miss, load, evict |
-| `CachePutOptions`, `CacheRememberOptions`, `CacheMetric` | `./contracts` | types: `tags`; `stale` and `lock`; one observation                           |
-| `CacheKey`                                               | `.`           | `CacheKey.of(Model, ...parts)`, the only maker of a key, and its type        |
-| `CacheConfig`, `CacheConfig$`                            | `.`           | key `cache.cache`: the driver and each driver's settings (below)             |
-| `CacheOptions`                                           | `.`           | the shape of `CacheConfig`                                                   |
-| `MemoryCacheDriver`                                      | `.`           | the `memory` driver of `Cache`                                               |
-| `StorageCacheDriver`                                     | `.`           | the `storage` driver of `Cache`, for client targets                          |
-| `SharedCacheNamespaceDriver`                             | `.`           | the default driver of `CacheNamespace`: one shared namespace                 |
-| `LocalCacheLockDriver`                                   | `.`           | the default driver of `CacheLock` (`local`): no lock, always fills           |
-| `NoneCacheMetricsDriver`                                 | `.`           | the default driver of `CacheMetrics` (`none`): records nothing               |
-| `CountingCacheMetricsDriver`                             | `.`           | `counting`: counters per key owner in this process, `snapshot()`             |
-| `LoggerCacheMetricsDriver`                               | `.`           | `logger`: a `cache.load` and `cache.evict` debug line through `Logger`       |
-| `CacheCounters`                                          | `.`           | type: one owner's counters in `snapshot()`                                   |
-| `ValkeyCacheDriver`                                      | `./node`      | the `valkey` driver of `Cache`, for services                                 |
-| `WorkersCacheDriver`                                     | `./worker`    | the `workers` driver of `Cache`, for a web member on Cloudflare Workers      |
+| Symbol                                                   | Entry         | Use                                                                                |
+| -------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `Cache`                                                  | `./contracts` | the port: `get`, `put`, `remember`, `forget`, `forgetTag`                          |
+| `CacheNamespace`                                         | `./contracts` | the port naming the current call's namespace, put in front of every key            |
+| `CacheLock`                                              | `./contracts` | the port that runs a `remember(..., { lock: true })` fill on one instance          |
+| `CacheMetrics`                                           | `./contracts` | the port that receives a `CacheMetric` per hit, stale hit, miss, load, evict       |
+| `CachePutOptions`, `CacheRememberOptions`, `CacheMetric` | `./contracts` | types: `tags`; `stale` and `lock`; one observation                                 |
+| `CacheKey`                                               | `.`           | `CacheKey.of(Model, ...parts)`, the only maker of a key, and its type              |
+| `CacheConfig`, `CacheConfig$`                            | `.`           | key `cache.cache`: the driver and each driver's settings (below)                   |
+| `CacheOptions`                                           | `.`           | the shape of `CacheConfig`                                                         |
+| `MemoryCacheDriver`                                      | `.`           | the `memory` driver of `Cache`                                                     |
+| `StorageCacheDriver`                                     | `.`           | the `storage` driver of `Cache`, for client targets                                |
+| `SharedCacheNamespaceDriver`                             | `.`           | the default driver of `CacheNamespace`: one shared namespace                       |
+| `LocalCacheLockDriver`                                   | `.`           | the default driver of `CacheLock` (`local`): no lock, always fills                 |
+| `NoneCacheMetricsDriver`                                 | `.`           | the default driver of `CacheMetrics` (`none`): records nothing                     |
+| `CountingCacheMetricsDriver`                             | `.`           | `counting`: counters per key owner in this process, `snapshot()`                   |
+| `LoggerCacheMetricsDriver`                               | `.`           | `logger`: a `cache.load` and `cache.evict` debug line through `Logger`             |
+| `CacheCounters`                                          | `.`           | type: one owner's counters in `snapshot()`                                         |
+| `ValkeyCacheDriver`                                      | `./node`      | the `valkey` driver of `Cache`, for services                                       |
+| `PostgresCacheDriver`                                    | `./node`      | the `postgres` driver of `Cache`, for services with no Valkey (on-prem)            |
+| `CacheSql`                                               | `./contracts` | the port the `postgres` driver runs its statements on (@stackra/database binds it) |
+| `postgresCacheTables`                                    | `./node`      | the statements that create its two unlogged tables, for the migration              |
+| `WorkersCacheDriver`                                     | `./worker`    | the `workers` driver of `Cache`, for a web member on Cloudflare Workers            |
 
 `Cache` is exported from `./contracts` only (one symbol, one entry; ADR 0294 decision 15).
 
@@ -142,12 +145,13 @@ namespaces over one store.
 `CacheNamespace`, forgets a key with every key it covers and a tag with every entry carrying it, and runs one `remember`
 load per key at a time in its process; `lock: true` shares one across instances through `CacheLock`.
 
-| Driver    | Entry      | Where values live                                    | Config                                        |
-| --------- | ---------- | ---------------------------------------------------- | --------------------------------------------- |
-| `memory`  | `.`        | this process, by reference; LRU past `maxEntries`    | `maxEntries` (default 10000)                  |
-| `storage` | `.`        | the client storage `cache` area (`@stackra/storage`) | none; keys are `cache.` + the namespaced key  |
-| `valkey`  | `./node`   | a Valkey (Redis protocol) server shared by instances | secret `CACHE_VALKEY_URL`; `valkey.keyPrefix` |
-| `workers` | `./worker` | the Workers KV namespace bound by name               | `workers.binding` (default `CACHE`)           |
+| Driver     | Entry      | Where values live                                    | Config                                                              |
+| ---------- | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
+| `memory`   | `.`        | this process, by reference; LRU past `maxEntries`    | `maxEntries` (default 10000)                                        |
+| `storage`  | `.`        | the client storage `cache` area (`@stackra/storage`) | none; keys are `cache.` + the namespaced key                        |
+| `valkey`   | `./node`   | a Valkey (Redis protocol) server shared by instances | secret `CACHE_VALKEY_URL`; `valkey.keyPrefix`                       |
+| `postgres` | `./node`   | two unlogged tables in the service's own Postgres    | `postgres.schema` (default `cache`), `postgres.sweep` (default 100) |
+| `workers`  | `./worker` | the Workers KV namespace bound by name               | `workers.binding` (default `CACHE`)                                 |
 
 Every driver also reads `jitter`, `fill.wait` and `fill.poll`, and takes the `CacheLock` (`cache.lock`) and
 `CacheMetrics` (`cache.metrics`) drivers.
@@ -162,7 +166,14 @@ Every driver also reads `jitter`, `fill.wait` and `fill.poll`, and takes the `Ca
   each tag, scored with the instant the entry may go; a write drops members past their instant and keeps the set alive
   for its longest member. `forget` and `forgetTag` read one set: no `SCAN`, and no command touches two keys. A command is
   retried once and then rejects: when the server is down, the cache call fails rather than queueing.
-- `memory`, `storage` and `workers` list the keys under a prefix for `forget`, so they write no index; a tag's members
+- `postgres`: for an on-prem or air-gapped service with no Valkey (ADR 0150 decision 1, ADR 0076). Entries live in
+  `<postgres.schema>.entries` and tag members in `<postgres.schema>.set_members`, both **unlogged**: no WAL, so writes
+  are cheap, a crash empties them, and a read replica does not see them. Keys sort in the "C" collation, so `forget`'s
+  prefix `like` (wildcards escaped) reads the primary key. Each entry write sweeps up to `postgres.sweep` dead rows
+  (`0` leaves them). Statements run through the `CacheSql` port, which @stackra/database binds over the service's
+  database, each on its own outside the caller's transaction, every value bound. `postgresCacheTables(schema)` gives
+  the create statements and their inverses for the migration that makes the tables.
+- `memory`, `storage`, `postgres` and `workers` list the keys under a prefix for `forget`, so they write no index; a tag's members
   are an in-memory set (`memory`) or one empty marker key per member under `#` that expires with its entry (`storage`,
   `workers`).
 - `workers`: the KV namespace is found through `cloudflare:workers` by `workers.binding` when the driver is built, and a
@@ -181,7 +192,7 @@ other keyspaces, confirmed in the 1.58 types), but this package has no driver ov
 - An Encore keyspace deletes by exact key only and has no prefix scan, so `forget` would need the index sets the
   Valkey driver keeps, which an Encore keyspace has no type for.
 
-A service on Encore that needs a shared cache uses the `valkey` driver.
+A service on Encore that needs a shared cache uses the `valkey` driver, or `postgres` where no Valkey runs.
 
 ## Health check
 

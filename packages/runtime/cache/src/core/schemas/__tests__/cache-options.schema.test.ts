@@ -38,6 +38,7 @@ describe("CacheOptions", () => {
       fill: { wait: "PT5S", poll: "PT0.05S" },
       valkeyUrl: "",
       valkey: { keyPrefix: "cache:" },
+      postgres: { schema: "cache", sweep: 100 },
       workers: { binding: "CACHE" },
       health: { timeout: "PT2S", critical: true },
     });
@@ -52,7 +53,7 @@ describe("CacheOptions", () => {
   });
 
   it("takes exactly the shipped driver names", () => {
-    expect(CACHE_DRIVERS).toEqual(["memory", "storage", "valkey", "workers"]);
+    expect(CACHE_DRIVERS).toEqual(["memory", "storage", "valkey", "postgres", "workers"]);
     for (const driver of CACHE_DRIVERS)
       expect(CACHE_CONFIG_SCHEMA.safeParse({ driver }).success).toBe(true);
     expect(CACHE_CONFIG_SCHEMA.safeParse({ driver: "encore" }).success).toBe(false);
@@ -101,5 +102,16 @@ describe("CacheOptions", () => {
     });
     expect(CACHE_CONFIG_SCHEMA.safeParse({ fill: { wait: "0s" } }).success).toBe(false);
     expect(CACHE_CONFIG_SCHEMA.safeParse({ fill: { poll: "soon" } }).success).toBe(false);
+  });
+  it("takes a snake_case Postgres schema and a bounded sweep", () => {
+    expect(CACHE_CONFIG_SCHEMA.parse({ postgres: { schema: "database" } }).postgres).toEqual({
+      schema: "database",
+      sweep: 100,
+    });
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ postgres: { schema: 'cache"; drop' } }).success).toBe(
+      false,
+    );
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ postgres: { sweep: 0 } }).success).toBe(true);
+    expect(CACHE_CONFIG_SCHEMA.safeParse({ postgres: { sweep: -1 } }).success).toBe(false);
   });
 });

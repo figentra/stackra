@@ -40,6 +40,11 @@ driver).
   `CACHE_METRICS_DRIVERS`, the schema enums and the `DriverRegistry` entries together. `locks` lives in
   @stackra/locking (`LocksCacheLockDriver`), which depends on this package; never the reverse.
 - `./worker` code reads Worker bindings only through `workerBinding` (`src/worker/functions/`), which tests mock.
+- The `postgres` driver reaches Postgres only through the `CacheSql` port; this package never depends on
+  @stackra/database (that package reaches this one through @stackra/actions, so the dependency would be a cycle).
+  Raw SQL lives in `PostgresCacheDriver` only, each statement with a `// raw-sql:` reason, every value bound, the
+  schema from the validated `postgres.schema`. A change to its tables changes `postgresCacheTables` and needs a new
+  migration.
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.
 - `cache.namespace` selects the `CacheNamespace` driver (`shared`, or `scope` from @stackra/scope); keep
   `CACHE_NAMESPACE_DRIVERS`, the schema enum and the `DriverRegistry` entry together. A new `Cache` driver joins
@@ -55,8 +60,8 @@ driver).
 
 ## PII
 
-| Data          | Where                                                                     | Handling                                                                      |
-| ------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Cached values | process memory, the client `cache` area, Valkey or Workers KV (by driver) | Whatever the caller stores, kept until expiry or eviction; never logged here. |
-| Tags          | the same store as the values                                              | Keys from `CacheKey.of`; no personal data unless a caller puts it in a key.   |
-| Metrics       | `CacheMetrics` drivers (counters, debug lines)                            | Key owner and numbers only.                                                   |
+| Data          | Where                                                                               | Handling                                                                      |
+| ------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Cached values | process memory, the client `cache` area, Valkey, Postgres or Workers KV (by driver) | Whatever the caller stores, kept until expiry or eviction; never logged here. |
+| Tags          | the same store as the values                                                        | Keys from `CacheKey.of`; no personal data unless a caller puts it in a key.   |
+| Metrics       | `CacheMetrics` drivers (counters, debug lines)                                      | Key owner and numbers only.                                                   |
