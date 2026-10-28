@@ -41,6 +41,7 @@ describe("@stackra/runway/node", () => {
       "EdgeKvOptions",
       "EncoreCloudProviderDriver",
       "MintlifyProviderDriver",
+      "NeonPreviewDatabaseDriver",
       "SCREENSHOT_CAPTURE_DEFAULTS",
       "WranglerEdgeKvDriver",
       "bundleSurfaces",

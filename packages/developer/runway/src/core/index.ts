@@ -5,7 +5,8 @@
  *          old `./ports` entry, owner Q4; `productOf` and `brandsOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
  *          check, the duplicate dev port check (`checkPorts`, STA-863), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
- *          deploy lock (`withDeployLock`, ADR 0435), their enums, errors and types.
+ *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
+ *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -15,6 +16,7 @@ export { RunwayConfig } from "#config/runway.config";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
+export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";
 export { RunwayCloud } from "#core/enums/runway-cloud.enum";
 export { RunwayEnvironment } from "#core/enums/runway-environment.enum";
@@ -34,6 +36,8 @@ export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
 export { poolMaxOf } from "#core/functions/pool-max-of.function";
+export { previewDatabaseOf } from "#core/functions/preview-database-of.function";
+export { previewSeedStep } from "#core/functions/preview-seed-step.function";
 export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
@@ -41,6 +45,7 @@ export { rollback } from "#core/functions/rollback.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";
+export { PreviewDatabaseBrancher } from "#core/ports/preview-database-brancher.port";
 export { RunwayProvider } from "#core/ports/runway-provider.port";
 export type { AppRunway } from "#core/types/app-runway.type";
 export type { Brand } from "#core/types/brand.type";
@@ -53,6 +58,7 @@ export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
 export type { PlacementIssue } from "#core/types/placement-issue.type";
 export type { PortIssue } from "#core/types/port-issue.type";
+export type { PreviewDatabase } from "#core/types/preview-database.type";
 export type { Product } from "#core/types/product.type";
 export type { RegionIssue } from "#core/types/region-issue.type";
 export type { RootRunway } from "#core/types/root-runway.type";

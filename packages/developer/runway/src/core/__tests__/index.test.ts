@@ -31,6 +31,8 @@ describe("@stackra/runway", () => {
     expect(Object.keys(runway).sort()).toEqual([
       "CacheEviction",
       "DeployKind",
+      "PreviewDatabaseBrancher",
+      "PreviewDatabaseSource",
       "RequirementEngine",
       "RunwayCloud",
       "RunwayConfig",
@@ -53,6 +55,8 @@ describe("@stackra/runway", () => {
       "devPorts",
       "parseRunway",
       "poolMaxOf",
+      "previewDatabaseOf",
+      "previewSeedStep",
       "productOf",
       "promote",
       "regionsOf",

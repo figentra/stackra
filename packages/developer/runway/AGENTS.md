@@ -75,6 +75,9 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 - A service's pool size is runway data: `database.poolBudget` is what all its instances hold together, and
   `poolMaxOf` is the only place that divides it by the group's `instances.max` (ADR 0473). Never put a pool size in a
   provider or in code.
+- A preview's database source is runway data (`environments.preview.shared.database.from`, `profile`, `branch`),
+  read only through `previewDatabaseOf`. Branching runs the service's own CLI (`neonctl`) behind
+  `PreviewDatabaseBrancher`; never pass an API key as an argument and never log a connection string.
 
 ## PII
 

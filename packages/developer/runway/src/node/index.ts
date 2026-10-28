@@ -4,6 +4,7 @@
  *          (STA-339): the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316) with the command runner they share (ADR 0352 decision 3),
+ *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
  *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), and the publish step (`publishProduct`,
@@ -19,6 +20,7 @@
 export { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";
 export { MintlifyProviderDriver } from "#node/drivers/mintlify-provider.driver";
+export { NeonPreviewDatabaseDriver } from "#node/drivers/neon-preview-database.driver";
 export { WranglerEdgeKvDriver } from "#node/drivers/wrangler-edge-kv.driver";
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";

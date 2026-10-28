@@ -23,40 +23,42 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 
 ## What is here
 
-| Entry       | Symbol                                                                                                            | Use                                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `.`         | `baseUrlOf(member)`                                                                                               | a member's dev origin: the generated Playwright `baseURL`                                                         |
-| `.`         | `devPorts(member)`                                                                                                | dev origin, port, host and Electron dev ports: the generated Electron entry                                       |
-| `.`         | `updateFeed(member)`                                                                                              | the desktop update feed of the build's environment, or `null` in dev                                              |
-| `.`         | `parseRunway(kind, document, source?)`                                                                            | check a parsed runway against its version 3 schema                                                                |
-| `.`         | `checkPlacement(root, members)`                                                                                   | every topology placement failure, for `stackra validate`                                                          |
-| `.`         | `poolMaxOf(root, service, member, environment)`                                                                   | one instance's share of the service's `poolBudget`, handed over as `DATABASE_POOL_MAX` (ADR 0473)                 |
-| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                              | region failures for `stackra validate`; an environment's resolved regions                                         |
-| `.`         | `checkPorts(root, members)`, `PortIssue`                                                                          | every duplicate effective dev port across the repository lanes, both owners                                       |
-| `.`         | `RunwayCloud`                                                                                                     | `aws`, `gcp`: the cloud a region names                                                                            |
-| `.`         | `runwayJsonSchema(kind)`                                                                                          | the zod schemas as JSON Schema, tested against the shipped canonical files                                        |
-| `.`         | `deployTargets(root, environment)`                                                                                | every place a release lands, in release order (regions, dedicated tenants)                                        |
-| `.`         | `deploy`, `promote`, `rollback`                                                                                   | ship, promote and roll back a release through the providers                                                       |
-| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                               | one apply per environment at a time (ADR 0435)                                                                    |
-| `.`         | `RunwayProvider`                                                                                                  | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                        |
-| `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                   | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`) |
-| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                        | the `encore-cloud`, `eas` and `mintlify` providers                                                                |
-| `./node`    | `runCommand`, `CommandRunner`                                                                                     | how a provider runs its CLI, with no shell                                                                        |
-| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                    | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                        |
-| `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`       | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check            |
-| `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, … | the store-screenshot capture job on a Mac CI runner                                                               |
-| `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                        | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary         |
-| `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …        | the shell canary list and health-gated promotion of release and shell canaries                                    |
-| `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                      | the shell compatibility gate and the ops second-reviewer gate                                                     |
-| `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                   | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle       |
-| `./node`    | `WranglerEdgeKvDriver`, `EdgeKvConfig`, `EdgeKvOptions`                                                           | the `wrangler` driver of `EdgeKvWriter` (@stackra/app) and the namespace it writes                                |
-| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                 | what a template line keeps and strips for a product's capability flags                                            |
-| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                           | enums                                                                                                             |
-| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                          | errors                                                                                                            |
-| `./node`    | `definesFor(member, environment)`                                                                                 | the bundler `define` map: public vars and the injected runway facts                                               |
-| `./node`    | `devServer(member)`                                                                                               | the Vite `server` block from the dev facts                                                                        |
-| `./node`    | `readRunway(file, kind)`                                                                                          | read, YAML-parse and check one runway file                                                                        |
-| `./schema/` | `root.json`, `app.json`, `service.json`                                                                           | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                                     |
+| Entry       | Symbol                                                                                                                      | Use                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `.`         | `baseUrlOf(member)`                                                                                                         | a member's dev origin: the generated Playwright `baseURL`                                                           |
+| `.`         | `devPorts(member)`                                                                                                          | dev origin, port, host and Electron dev ports: the generated Electron entry                                         |
+| `.`         | `updateFeed(member)`                                                                                                        | the desktop update feed of the build's environment, or `null` in dev                                                |
+| `.`         | `parseRunway(kind, document, source?)`                                                                                      | check a parsed runway against its version 3 schema                                                                  |
+| `.`         | `checkPlacement(root, members)`                                                                                             | every topology placement failure, for `stackra validate`                                                            |
+| `.`         | `poolMaxOf(root, service, member, environment)`                                                                             | one instance's share of the service's `poolBudget`, handed over as `DATABASE_POOL_MAX` (ADR 0473)                   |
+| `.`         | `previewDatabaseOf(root, branch)`, `previewSeedStep(database, product)`, `PreviewDatabaseBrancher`, `PreviewDatabaseSource` | how a pull request's preview gets its database (seed pack or Neon branch), its seed command, and the branching port |
+| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                                        | region failures for `stackra validate`; an environment's resolved regions                                           |
+| `.`         | `checkPorts(root, members)`, `PortIssue`                                                                                    | every duplicate effective dev port across the repository lanes, both owners                                         |
+| `.`         | `RunwayCloud`                                                                                                               | `aws`, `gcp`: the cloud a region names                                                                              |
+| `.`         | `runwayJsonSchema(kind)`                                                                                                    | the zod schemas as JSON Schema, tested against the shipped canonical files                                          |
+| `.`         | `deployTargets(root, environment)`                                                                                          | every place a release lands, in release order (regions, dedicated tenants)                                          |
+| `.`         | `deploy`, `promote`, `rollback`                                                                                             | ship, promote and roll back a release through the providers                                                         |
+| `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                                         | one apply per environment at a time (ADR 0435)                                                                      |
+| `.`         | `RunwayProvider`                                                                                                            | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                          |
+| `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)   |
+| `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                                  | the `encore-cloud`, `eas` and `mintlify` providers                                                                  |
+| `./node`    | `runCommand`, `CommandRunner`                                                                                               | how a provider runs its CLI, with no shell                                                                          |
+| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                          |
+| `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check              |
+| `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …           | the store-screenshot capture job on a Mac CI runner                                                                 |
+| `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary           |
+| `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                  | the shell canary list and health-gated promotion of release and shell canaries                                      |
+| `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                                | the shell compatibility gate and the ops second-reviewer gate                                                       |
+| `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                             | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle         |
+| `./node`    | `WranglerEdgeKvDriver`, `EdgeKvConfig`, `EdgeKvOptions`                                                                     | the `wrangler` driver of `EdgeKvWriter` (@stackra/app) and the namespace it writes                                  |
+| `./node`    | `NeonPreviewDatabaseDriver`                                                                                                 | the `neon` driver of `PreviewDatabaseBrancher`: `neonctl` creates, connects to and deletes a preview's branch       |
+| `./node`    | `capabilityConfig(catalogue, flags)`, `MobileCapability`, `MobileStoreAccount`, …                                           | what a template line keeps and strips for a product's capability flags                                              |
+| `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction`                                     | enums                                                                                                               |
+| `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                                    | errors                                                                                                              |
+| `./node`    | `definesFor(member, environment)`                                                                                           | the bundler `define` map: public vars and the injected runway facts                                                 |
+| `./node`    | `devServer(member)`                                                                                                         | the Vite `server` block from the dev facts                                                                          |
+| `./node`    | `readRunway(file, kind)`                                                                                                    | read, YAML-parse and check one runway file                                                                          |
+| `./schema/` | `root.json`, `app.json`, `service.json`                                                                                     | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                                       |
 
 The old `./ports` entry is folded into `.` and the old `./vite` entry into `./node` (ADR 0127, 2026-10-24 note).
 
@@ -346,6 +348,35 @@ await withDeployLock(root, "production", locks, () =>
   promote(root, "staging", "production", providers),
 );
 ```
+
+## Preview databases
+
+Each pull request's preview gets its own database, set in the root runway's preview `shared.database`. By default
+(`from: seed-pack`) it is a fresh database: the deploy migrates it, then the job runs `previewSeedStep`, which is
+`stackra seed-pack <product> --profile demo --env preview`. With `from: branch` it is a copy-on-write Neon branch
+`preview-<git branch>` of `parent` (ADR 0238 decision 1 allows Neon): before the deploy the job calls
+`NeonPreviewDatabaseDriver.create` and writes `connectionString` into the preview's database secret, and when the pull
+request closes it calls `remove`. Both are idempotent. The Neon API key is `neonctl`'s own login (`NEON_API_KEY`).
+
+```yaml
+environments:
+  preview:
+    ttl: 7d
+    shared:
+      database:
+        from: branch # or seed-pack (default)
+        profile: demo # the seed-pack profile: minimal, demo or test
+        branch: { provider: neon, project: acme-db, parent: main }
+```
+
+```ts
+const database = previewDatabaseOf(root, process.env.GITHUB_HEAD_REF ?? "");
+if (database.from === "branch") await neon.create(database);
+const seed = previewSeedStep(database, "commerce"); // after the deploy; null for a branch
+```
+
+Not here: the preview deploy workflow that calls these, and rollback-on-preview (`stackra db rollback`, ADR 0159) is
+the CLI's.
 
 ## Event fan-out between services
 
