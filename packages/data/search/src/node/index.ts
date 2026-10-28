@@ -6,7 +6,8 @@
  *          `semantic: true` model, `SemanticChangeService`, and for a model a dotted facet path walks to,
  *          `RelatedChangeService`), the index registry `SearchIndexRegistry` with the reindex
  *          jobs `ReindexSearchAction` and `ReindexSemanticAction`, and the `search:reindex`/`search:status` runner
- *          (`searchReindex`, `searchStatus`) the CLI loads, until `stackra gen` writes the entry barrels (STA-339).
+ *          (`searchReindex`, `searchStatus`) the CLI loads, and `SearchForgetService`, which an erasure uses to drop rows
+ *          from every index (stackra-275), until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: all of it reaches Postgres through
  *           @stackra/database. Migrations are found by their path, as every migration is, so none is re-exported;
  *           the registry of watched models stays internal.
@@ -27,6 +28,7 @@ export { searchStatus } from "#node/functions/search-status.function";
 export { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 export { ReindexSearchOutput } from "#node/schemas/reindex-search-output.schema";
 export { RelatedChangeService } from "#node/services/related-change.service";
+export { SearchForgetService } from "#node/services/search-forget.service";
 export { SearchIndexRegistry } from "#node/services/search-index-registry.service";
 export { SearchableChangeService } from "#node/services/searchable-change.service";
 export { SemanticChangeService } from "#node/services/semantic-change.service";

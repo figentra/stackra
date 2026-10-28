@@ -13,6 +13,7 @@ import type { PublicId } from "@stackra/contracts";
 
 import { OutboxDriver } from "#contracts/index";
 import type { OutboxError, OutboxMessage } from "#contracts/index";
+import { holdsValue } from "#core/functions/holds-value.function";
 
 /** Oldest first, by id within one instant: the relay's order. */
 function byOrder(left: OutboxMessage, right: OutboxMessage): number {
@@ -80,6 +81,26 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
         pruned += 1;
       }
     return Promise.resolve(pruned);
+  }
+
+  /** Implements `OutboxDriver.holding`, documented there. */
+  holding(value: string): Promise<readonly OutboxMessage[]> {
+    const held = [...this.messages.values()]
+      .filter((message) => holdsValue(message.data, value))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort(byOrder);
+    return Promise.resolve(held);
+  }
+
+  /** Implements `OutboxDriver.rewrite`, documented there. */
+  rewrite(id: PublicId<"evt">, data: unknown): Promise<void> {
+    const message = this.messages.get(id);
+    if (message !== undefined) {
+      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose, as in write
+      const json: unknown = JSON.parse(JSON.stringify(data ?? null));
+      this.messages.set(id, Object.freeze({ ...message, data: json }));
+    }
+    return Promise.resolve();
   }
 
   /** Every message kept, dead ones included, in the relay's order; for a test's assertions. */

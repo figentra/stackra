@@ -20,6 +20,7 @@ export { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 export { OutboxEventOutboxDriver } from "#core/drivers/outbox-event-outbox.driver";
 export { UnknownEventError } from "#core/errors/unknown-event.error";
 export { coalesceChanges } from "#core/functions/coalesce-changes.function";
+export { redactSubjectMessages } from "#core/functions/redact-subject-messages.function";
 export { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 export { registerEventNames } from "#core/functions/register-event-names.function";
 export { registerRelays } from "#core/functions/register-relays.function";

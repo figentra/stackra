@@ -3,7 +3,8 @@
  * Purpose: unit tests of `MemoryOutboxDriver`: a write keeps the payload as JSON; `due` lists messages due at `now` that
  *          are not dead, oldest first and by id within one instant, up to the limit; `retry` counts the attempt and
  *          moves the due time; `deadLetter` counts it and hides the message from `due`; `remove` deletes it;
- *          `pruneDead` deletes only messages dead before its cutoff.
+ *          `pruneDead` deletes only messages dead before its cutoff; `holding` finds live and dead messages by a value
+ *          at any depth of their payload; `rewrite` replaces a payload and keeps the delivery state.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4).
@@ -93,5 +94,29 @@ describe(MemoryOutboxDriver, () => {
     await driver.deadLetter("evt_B", FAILURE, LATER);
     await expect(driver.pruneDead(LATER)).resolves.toBe(1);
     expect(driver.stored().map((stored) => stored.id)).toEqual(["evt_B", "evt_C"]);
+  });
+
+  it("finds live and dead messages holding a value at any depth, never by a key", async () => {
+    const driver = new MemoryOutboxDriver();
+    await driver.write([
+      { ...message("evt_A"), data: { order: { lines: [{ customerId: "usr_1" }] } } },
+      { ...message("evt_B"), data: { usr_1: true } },
+      { ...message("evt_C"), data: { customerId: "usr_1" } },
+    ]);
+    await driver.deadLetter("evt_C", FAILURE, NOON);
+    expect((await driver.holding("usr_1")).map((held) => held.id)).toEqual(["evt_A", "evt_C"]);
+  });
+
+  it("rewrites a payload, keeping the delivery state, and ignores an unknown id", async () => {
+    const driver = new MemoryOutboxDriver();
+    await driver.write([message("evt_A")]);
+    await driver.retry("evt_A", LATER, FAILURE);
+    await driver.rewrite("evt_A", { orderId: "ord_1", email: null });
+    await driver.rewrite("evt_Z", {});
+    const [stored] = driver.stored();
+    expect(stored?.data).toEqual({ orderId: "ord_1", email: null });
+    expect(stored?.attempts).toBe(1);
+    expect(stored?.availableAt).toEqual(LATER);
+    expect(driver.stored()).toHaveLength(1);
   });
 });

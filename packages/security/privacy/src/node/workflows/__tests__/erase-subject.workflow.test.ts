@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `EraseSubjectWorkflow`: `erase` deletes delete-rows, anonymises anonymise-rows and leaves
  *          shred-rows to the key; a legal hold keeps its rows and, when they carry shredded fields, keeps the key;
+ *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them;
  *          `receipt` records `SubjectErased` and, when asked, the `ServiceAcked` erasure ack; `output` is the receipt;
  *          a shredded field that is not subject-sealed refuses the erasure before any row is touched.
  * Boundary: test only; the steps are called directly in order with a hand-built run and step context, the memory
- *           store, the salt fake and a hold registry connected through `connectHoldRegistry`.
+ *           store, the salt fake, the memory outbox and a hold registry connected through `connectHoldRegistry`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0189 (decisions 2 and 4); ADR 0134; ADR 0212; STA-1375; stackra-263.
  */
@@ -15,6 +16,8 @@ import { HasEncryptedFields, Model } from "@stackra/model";
 import { connectHoldRegistry } from "@stackra/database";
 import { HoldRegistry } from "@stackra/database/contracts";
 import type { Event } from "@stackra/events";
+import { MemoryOutboxDriver } from "@stackra/outbox";
+import { MessageKind } from "@stackra/outbox/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { ServiceAcked } from "@stackra/workflow";
 import type { StepContext } from "@stackra/workflow";
@@ -92,6 +95,7 @@ async function runAll(
   const results: Record<string, unknown> = {};
   const run = { id: "wfr_1", input, results } as never;
   results["erase"] = await workflow.erase(run);
+  results["redact"] = await workflow.redact(run);
   results["shred"] = await workflow.shred(run);
   results["receipt"] = await workflow.receipt(run, ctx as unknown as StepContext);
   return { output: workflow.output(run), events };
@@ -108,10 +112,13 @@ describe("EraseSubjectWorkflow", () => {
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
-    const { output, events } = await runAll(new EraseSubjectWorkflow(store, salts), {
-      erasureId: "era_1",
-      subject: SUBJECT,
-    });
+    const { output, events } = await runAll(
+      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver()),
+      {
+        erasureId: "era_1",
+        subject: SUBJECT,
+      },
+    );
 
     expect(store.all(Address).map(({ id }) => id)).toEqual(["adr_3"]);
     expect(store.all(Customer).map(({ id, name, phone }) => ({ id, name, phone }))).toEqual([
@@ -141,10 +148,13 @@ describe("EraseSubjectWorkflow", () => {
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
-    const { output } = await runAll(new EraseSubjectWorkflow(store, salts), {
-      erasureId: "era_2",
-      subject: SUBJECT,
-    });
+    const { output } = await runAll(
+      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver()),
+      {
+        erasureId: "era_2",
+        subject: SUBJECT,
+      },
+    );
 
     expect(store.all(Address).map(({ id }) => id)).toEqual(["adr_2", "adr_3"]);
     expect(store.all(Customer).find(({ id }) => id === "cus_2")?.["phone"]).toBe("+966500000001");
@@ -165,13 +175,49 @@ describe("EraseSubjectWorkflow", () => {
     connectHoldRegistry(new ListHoldRegistryDriver(["adr_1"]));
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
-    const { output } = await runAll(new EraseSubjectWorkflow(seeded(), salts), {
-      erasureId: "era_3",
-      subject: SUBJECT,
-    });
+    const { output } = await runAll(
+      new EraseSubjectWorkflow(seeded(), salts, new MemoryOutboxDriver()),
+      {
+        erasureId: "era_3",
+        subject: SUBJECT,
+      },
+    );
 
     expect(output.shredded).toBe(true);
     expect(output.kept).toEqual([{ kind: "crm.address", reason: "hold", count: 1 }]);
+  });
+
+  it("nulls the declared fields of held outbox messages naming the subject and counts them", async () => {
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData]);
+    const outbox = new MemoryOutboxDriver();
+    const at = new Date(NOW);
+    const held = {
+      kind: MessageKind.Event,
+      type: "crm.customer.moved.v1",
+      meta: {},
+      occurredAt: at,
+      attempts: 0,
+      availableAt: at,
+    };
+    await outbox.write([
+      {
+        ...held,
+        id: "evt_A",
+        data: { userId: SUBJECT, line: "1 King Fahd Rd", phone: "+966500000000" },
+      },
+      { ...held, id: "evt_B", data: { userId: "usr_other", line: "3 Tahlia St" } },
+    ]);
+
+    const { output } = await runAll(
+      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([SUBJECT]), outbox),
+      { erasureId: "era_5", subject: SUBJECT },
+    );
+
+    expect(outbox.stored().map(({ data }) => data)).toEqual([
+      { userId: SUBJECT, line: null, phone: null },
+      { userId: "usr_other", line: "3 Tahlia St" },
+    ]);
+    expect(output.erased).toContainEqual({ kind: "outbox.message", method: "anonymise", count: 1 });
   });
 
   it("acks the waiting service with what it kept", async () => {
@@ -179,7 +225,11 @@ describe("EraseSubjectWorkflow", () => {
     connectHoldRegistry(new ListHoldRegistryDriver(["adr_1"]));
 
     const { events } = await runAll(
-      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([])),
+      new EraseSubjectWorkflow(
+        seeded(),
+        SubjectSaltStoreFake.holding([]),
+        new MemoryOutboxDriver(),
+      ),
       { erasureId: "era_4", subject: SUBJECT, ackAs: "commerce" },
     );
 
@@ -193,14 +243,14 @@ describe("EraseSubjectWorkflow", () => {
     const steps = Object.getOwnPropertyNames(EraseSubjectWorkflow.prototype).filter(
       (name) => name !== "constructor",
     );
-    expect(steps).toEqual(["erase", "shred", "receipt", "output"]);
+    expect(steps).toEqual(["erase", "redact", "shred", "receipt", "output"]);
   });
 
   it("refuses to erase anything while a shredded field is not subject-sealed", async () => {
     registerPersonalData("crm", [CustomerPersonalData, NotePersonalData]);
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
-    const workflow = new EraseSubjectWorkflow(store, salts);
+    const workflow = new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver());
 
     await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
       /crm\.note\.body/,

@@ -8,7 +8,9 @@
  *           behaves the same. `write` joins the caller's transaction. One relay runs at a time (it holds a lock), so
  *           `due` reserves nothing. A leaf file: it imports nothing outside `src/contracts` but the `Port` base.
  * Runtime: isomorphic
- * Governing contract: ADR 0078 (decision 4: the outbox table, relay and inbox); data-layer gap gov6 (the prune); ADR 0142 (drivers behind ports);
+ * Governing contract: ADR 0078 (decision 4: the outbox table, relay and inbox); data-layer gap gov6 (the prune, and
+ *                     the erasure redaction of held payloads, stackra-275); ADR 0189 (decision 2); ADR 0142 (drivers
+ *                     behind ports);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type).
  */
 import { Port } from "@stackra/contracts";
@@ -46,4 +48,13 @@ export abstract class OutboxDriver extends Port {
 
   /** Deletes the messages dead-lettered before `before` and says how many; live messages are never pruned. */
   abstract pruneDead(before: Date): Promise<number>;
+
+  /**
+   * Every stored message, due, waiting or dead, whose payload holds the string `value` at any depth (an erased
+   * subject's public id), oldest first and by id within one instant.
+   */
+  abstract holding(value: string): Promise<readonly OutboxMessage[]>;
+
+  /** Replaces the payload of message `id` with `data` (JSON), keeping its delivery state; an unknown id is ignored. */
+  abstract rewrite(id: PublicId<"evt">, data: unknown): Promise<void>;
 }

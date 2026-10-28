@@ -16,6 +16,7 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | An isomorphic driver, service or event         | `src/core/{drivers,services,events}/`                     |
 | A job, the saga, a server driver, schemas      | `src/node/{actions,workflows,drivers,schemas}/`           |
 | A job's permissions (`<model>.permissions.ts`) | `src/node/access/`                                        |
+| A listener of the erasure's events             | `src/node/listeners/`                                     |
 | A function over @stackra/model's registry      | `src/node/functions/`                                     |
 | A migration of `privacy.*`                     | `src/node/database/migrations/<nnnn>-<name>.migration.ts` |
 | A fake or a test helper                        | `src/testing/`                                            |
@@ -38,6 +39,10 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - Never erase while a `shred` field is not subject-sealed (`unsealedShredFields`); the receipt would be false.
 - @stackra/model is imported from `node` only (its runtime is node); `core` and `contracts` stay off it.
 - A salt never leaves `SubjectKeyProviderDriver`: never log, export or put it in an event.
+- Erasure reaches every copy: the outbox through the saga's `redact` step (`redactSubjectMessages` of
+  @stackra/outbox), search through `UnindexErasedSubjectListener`. A new copy kind adds a step or a listener here.
+  @stackra/search and @stackra/outbox never import this package (search is already below it through
+  workflow, rules and ai, so the reverse edge would close a cycle).
 - Receipts and events carry counts and kinds, never row ids or contents. A shape field is typed with a shape class
   (`ErasedRecordsLine`), never a contracts interface, or gen refuses it (`shape_unknown_type`).
 - Every action key needs its permission in a `Permissions` class under `src/node/access/` (`permission_unknown`).

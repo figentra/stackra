@@ -26,6 +26,7 @@ describe("@stackra/outbox", () => {
       "OutboxOptions",
       "UnknownEventError",
       "coalesceChanges",
+      "redactSubjectMessages",
       "registerChangeConsumers",
       "registerEventNames",
       "registerRelays",

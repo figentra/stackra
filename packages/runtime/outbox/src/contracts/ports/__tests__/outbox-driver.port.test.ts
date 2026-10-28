@@ -32,6 +32,12 @@ class NullOutboxDriver extends Driver(OutboxDriver) {
   async pruneDead(): Promise<number> {
     return 0;
   }
+
+  async holding(): Promise<readonly OutboxMessage[]> {
+    return [];
+  }
+
+  async rewrite(): Promise<void> {}
 }
 
 describe("OutboxDriver", () => {

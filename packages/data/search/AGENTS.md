@@ -55,6 +55,9 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   ORM relation path under row-level security. Both consumers skip an update that writes no field the document reads
   (`changeTouches`); a field that decides presence (`SEARCH_PRESENCE_FIELDS`) is never skipped. Add such a field
   there, never in a consumer.
+- A passage id is `passageIdOf(Model, id)` (`<Model>:<id>`); `SemanticChangeService` and `SearchForgetService` both
+  use it. Never import @stackra/privacy here: privacy depends on search (through workflow, rules and ai), so erasure
+  calls `SearchForgetService` from its side.
 - Semantic indexing (`@Searchable({ semantic: true })`) goes through `SemanticChangeService` only: it is
   `Lifetime.Transient` so boot never builds the `Embedder`; keep it so. `semanticPassageOf` runs the `ai: never` guard
   (ADR 0380) on every row before any text reaches the embedder; never embed a field around it. Passage ids are
@@ -102,8 +105,8 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## PII
 
-| Data           | Where                                           | Handling                                                                                        |
-| -------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Indexed text   | the model table's search columns, memory driver | Copies of the facet's text fields; `remove` clears them on erasure; ADR 0134 decides the fields |
-| Search phrases | `SearchRequest.words`                           | Passed to the engine as bound parameters; never stored or logged here                           |
-| Embedder token | `SecretStore` (`search.embedder.tokenSecret`)   | Read at call time by name; never logged, kept or put in an error (ADR 0173)                     |
+| Data           | Where                                           | Handling                                                                                                                                                                        |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Indexed text   | the model table's search columns, memory driver | Copies of the facet's text fields; `remove` clears them on erasure (@stackra/privacy's `UnindexErasedSubjectListener` calls `SearchForgetService`); ADR 0134 decides the fields |
+| Search phrases | `SearchRequest.words`                           | Passed to the engine as bound parameters; never stored or logged here                                                                                                           |
+| Embedder token | `SecretStore` (`search.embedder.tokenSecret`)   | Read at call time by name; never logged, kept or put in an error (ADR 0173)                                                                                                     |

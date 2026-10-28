@@ -25,6 +25,7 @@ describe("@stackra/search/node", () => {
       "ReindexSearchOutput",
       "ReindexSemanticAction",
       "RelatedChangeService",
+      "SearchForgetService",
       "SearchIndexRegistry",
       "SearchableChangeService",
       "SearchableMacro",

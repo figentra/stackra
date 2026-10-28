@@ -27,6 +27,7 @@ import type { ChangeConsumer, RowChange } from "@stackra/outbox/contracts";
 import type { Embedder, VectorIndex, VectorItem } from "#contracts/index";
 import { semanticPassageOf } from "#core/functions/semantic-passage-of.function";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
+import { passageIdOf } from "#node/functions/passage-id-of.function";
 
 /** The metadata `source` of every passage this service stores, so a retrieval can filter search passages in or out. */
 const SOURCE = "search";
@@ -123,7 +124,7 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
     const scopes = full.map((passage) => scopeOf(model, passage.row));
     const vectors = await this.embedder.embed(full.map((passage) => passage.text));
     const items: VectorItem[] = full.map((passage, at) => ({
-      id: `${model.name}:${passage.id}`,
+      id: passageIdOf(model, passage.id),
       scope: scopes[at] as ScopeRef,
       vector: vectors[at] ?? [],
       text: passage.text,
@@ -134,7 +135,7 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
 
   /** Removes the passages of `ids` (an erasure, a deleted row or a row hidden from search). */
   async remove(model: AnyClass, ids: readonly string[]): Promise<void> {
-    if (ids.length > 0) await this.vectors.remove(ids.map((id) => `${model.name}:${id}`));
+    if (ids.length > 0) await this.vectors.remove(ids.map((id) => passageIdOf(model, id)));
   }
 }
 

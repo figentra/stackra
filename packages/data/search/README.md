@@ -41,6 +41,7 @@ one vector store (ADR 0465): `@stackra/ai` reads and writes through it and keeps
 | `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
 | `./node`      | `RelatedChangeService`                                                | re-indexes the parents of a changed related row                    |
 | `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`      |
+| `./node`      | `SearchForgetService`                                                 | `forget(Model, ids)`: drops rows from the search and vector index  |
 | `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes           |
 | `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on        |
 
@@ -77,6 +78,7 @@ export class SearchProductsQuery extends Query({ key: "product.search" }) {
 ```ts
 await this.search.in(Product).index([product]); // after a write, in the same transaction
 await this.search.in(Product).remove([product.id]); // erasure
+await forget.forget(Customer, ["cus_1"]); // SearchForgetService: documents and, for a semantic model, passages
 await database.withScope(scope, () => search.in(Product).reindex()); // the backfill, per scope
 ```
 

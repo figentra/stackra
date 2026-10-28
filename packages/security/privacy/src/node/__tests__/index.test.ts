@@ -29,6 +29,7 @@ describe("@stackra/privacy/node", () => {
       "SaltedSubjectCipherResolverDriver",
       "SubjectExportPermissions",
       "SubjectPermissions",
+      "UnindexErasedSubjectListener",
       "unsealedShredFields",
     ]);
   });

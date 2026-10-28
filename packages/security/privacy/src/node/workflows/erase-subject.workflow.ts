@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `EraseSubjectWorkflow`, the erasure saga (GDPR Art. 17, PDPL Art. 4 right to destruction): `erase` deletes
  *          or anonymises the subject's rows of every registered `PersonalData` declaration that no legal hold covers,
- *          `shred` destroys the subject key's salt so every shredded field is unreadable, and `receipt` records
+ *          `redact` nulls the declared personal fields in the outbox messages still held that name the subject (a
+ *          late delivery or a dead-letter replay would carry them otherwise), `shred` destroys the subject key's salt
+ *          so every shredded field is unreadable, and `receipt` records
  *          `SubjectErased` (and the `ServiceAcked` a cross-service erasure waits on) with what was disposed of and kept.
  * Boundary: the public async methods are the steps, run in declaration order, each its own transaction. Holds are
  *           asked through `disposableIds` before anything is touched (`delete` for a row with a delete field, `edit`
@@ -14,10 +16,12 @@
  * Runtime: node
  * Governing contract: ADR 0189 (decisions 2 and 4); ADR 0134 (legal holds); ADR 0212 (crypto-shredding); ADR 0210
  *                     (decision 6: `ServiceAcked`); ADR 0294 (decisions 16 and 18); ADR 0151; STA-1312; STA-1375; gap
- *                     gov2 (stackra-263).
+ *                     gov2 (stackra-263); gap gov6 (the outbox redaction, stackra-275).
  */
 import { Disposal } from "@stackra/database/contracts";
 import { disposableIds } from "@stackra/database";
+import { redactSubjectMessages } from "@stackra/outbox";
+import type { OutboxDriver } from "@stackra/outbox/contracts";
 import {
   type Run,
   ServiceAcked,
@@ -48,12 +52,22 @@ interface Erased {
   readonly keepKey: boolean;
 }
 
+/** The receipt's kind for the outbox messages `redact` rewrote. */
+const OUTBOX_KIND = "outbox.message";
+
 /** The method a whole row gets: delete beats anonymise beats shred. */
 function rowMethod(fields: Readonly<Record<string, ErasureMethod>>): ErasureMethod {
   const methods = Object.values(fields);
   if (methods.includes(ErasureMethod.Delete)) return ErasureMethod.Delete;
   if (methods.includes(ErasureMethod.Anonymise)) return ErasureMethod.Anonymise;
   return ErasureMethod.Shred;
+}
+
+/** What was disposed of: the rows `erase` reached, then the outbox messages `redact` rewrote. */
+function erasedOf(rows: readonly ErasedRecords[], messages: number): ErasedRecords[] {
+  return messages > 0
+    ? [...rows, { kind: OUTBOX_KIND, method: ErasureMethod.Anonymise, count: messages }]
+    : [...rows];
 }
 
 /**
@@ -69,14 +83,19 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
   /** Destroys the subject key's salt. */
   private readonly salts: SubjectSaltStore;
 
+  /** The service's outbox, whose held messages may still carry the subject's fields. */
+  private readonly outbox: OutboxDriver;
+
   /**
    * @param store - reads and disposes of the subject's rows.
    * @param salts - destroys the subject key's salt.
+   * @param outbox - the service's outbox store.
    */
-  constructor(store: PersonalDataStore, salts: SubjectSaltStore) {
+  constructor(store: PersonalDataStore, salts: SubjectSaltStore, outbox: OutboxDriver) {
     super();
     this.store = store;
     this.salts = salts;
+    this.outbox = outbox;
   }
 
   /**
@@ -122,6 +141,15 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
     return { erased, kept, keepKey };
   }
 
+  /**
+   * Nulls every declared personal field in the held outbox messages that name the subject; the count of rewritten
+   * messages. Held rows do not stop it: a hold preserves the record, not a copy waiting for delivery.
+   */
+  async redact(run: Run<this>): Promise<number> {
+    const named = new Set(personalDataDeclarations().flatMap(({ fields }) => Object.keys(fields)));
+    return redactSubjectMessages(this.outbox, run.input.subject, named);
+  }
+
   /** Destroys the subject key's salt unless a held row still needs its shredded fields readable. */
   async shred(run: Run<this>): Promise<boolean> {
     if (run.results.erase.keepKey) return false;
@@ -131,7 +159,8 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
   /** Records the receipt, and the ack when another service's erasure waits on this one. */
   async receipt(run: Run<this>, ctx: StepContext): Promise<string> {
     const { erasureId, subject, ackAs } = run.input;
-    const { erased, kept } = run.results.erase;
+    const { kept } = run.results.erase;
+    const erased = erasedOf(run.results.erase.erased, run.results.redact);
     const at = ctx.now().toISOString();
     ctx.record(
       SubjectErased.create({ erasureId, subject, erased, kept, shredded: run.results.shred, at }),
@@ -146,7 +175,7 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
     return EraseSubjectOutput.create({
       erasureId: run.input.erasureId,
       subject: run.input.subject,
-      erased: run.results.erase.erased,
+      erased: erasedOf(run.results.erase.erased, run.results.redact),
       kept: run.results.erase.kept,
       shredded: run.results.shred,
       at: run.results.receipt,

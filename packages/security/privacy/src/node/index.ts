@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/privacy (the root module, the DSAR export and erasure jobs,
- *          the erasure saga, the repository store driver, the Postgres salt store and its migration, the per-subject
+ *          the erasure saga and its search listener, the repository store driver, the Postgres salt store and its migration, the per-subject
  *          cipher resolver, the shred check and their schemas) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `contracts` and `core`, never `testing`.
@@ -18,6 +18,7 @@ export { PostgresSubjectSaltStoreDriver } from "#node/drivers/postgres-subject-s
 export { RepositoryPersonalDataStoreDriver } from "#node/drivers/repository-personal-data-store.driver";
 export { SaltedSubjectCipherResolverDriver } from "#node/drivers/salted-subject-cipher-resolver.driver";
 export { unsealedShredFields } from "#node/functions/unsealed-shred-fields.function";
+export { UnindexErasedSubjectListener } from "#node/listeners/unindex-erased-subject.listener";
 export { PrivacyModule } from "#node/privacy.module";
 export { EraseSubjectInput } from "#node/schemas/erase-subject-input.schema";
 export { EraseSubjectOutput } from "#node/schemas/erase-subject-output.schema";

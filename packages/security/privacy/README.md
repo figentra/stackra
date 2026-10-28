@@ -67,6 +67,12 @@ export class PrivacyConfig extends BasePrivacyConfig {
   change nothing in the row and become unreadable when the subject key's salt is destroyed.
 - Before anything is touched, the saga asks the `HoldRegistry` (`disposableIds`, as `delete` or `edit`). Held rows
   are kept and counted in the receipt's `kept` (`reason: "hold"`).
+- After the rows, `redact` nulls every field the declarations name (`email`, `phone`, ...) in each outbox message
+  still held (due, retrying or dead-lettered) whose payload names the subject's public id, so a late delivery or a
+  dead-letter replay carries none of it. The receipt counts them as `{ kind: "outbox.message", method: "anonymise" }`.
+- After `SubjectErased`, `UnindexErasedSubjectListener` removes the subject's remaining rows (shredded or held) from
+  the search index and, for a semantic model, the vector index (`SearchForgetService` of `@stackra/search/node`).
+  Deleted and anonymised rows leave or are re-indexed through the search change consumers already.
 - The key is shredded only when no held row carries a `shred` field: shredding would destroy what the hold keeps.
   The receipt's `shredded` says which.
 - The last step records `SubjectErased` (`privacy.subject.erased.v1`) and, with `ackAs`, the workflow's
@@ -95,6 +101,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `./contracts` | `ErasureMethod`, `PersonalDataStore`, `SubjectSaltStore`                                                           | the enum and the ports                                                 |
 | `./contracts` | `ErasureReceipt`, `ErasedRecords`, `SubjectExport`, `SubjectExportSection`, `SubjectRecord`, `PersonalDataOptions` | types                                                                  |
 | `./node`      | `EraseSubjectWorkflow`, `EraseSubjectAction`                                                                       | the erasure saga and the job that starts it                            |
+| `./node`      | `UnindexErasedSubjectListener`                                                                                     | removes an erased subject's remaining rows from search                 |
 | `./node`      | `ExportSubjectDataAction`, `PurgeSubjectExportsAction`                                                             | the DSAR export job and the nightly export purge                       |
 | `./node`      | `RepositoryPersonalDataStoreDriver`, `PrivacyModule`                                                               | the database store driver; the root module                             |
 | `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |

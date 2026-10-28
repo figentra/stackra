@@ -40,6 +40,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   decision 4). A relay is never keyed by wire name. The generated boot calls `connect` and, on shutdown, `disconnect`.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
+- `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
+  @stackra/privacy's saga): `holding` matches a string value at any payload depth, never a key; `rewrite` replaces
+  the payload and keeps the delivery state. Never import @stackra/privacy here (privacy depends on outbox).
 - `pruneDead` deletes dead letters only; never prune a live (due or retrying) message. The inbox prune window
   (`pruneAfterDays`) must outlast every producer's retries, or a late redelivery runs twice.
 - The batch window (`outbox.batchWindowSeconds`) is the relay's only setting; the rest of `OUTBOX_DEFAULTS` is fixed.

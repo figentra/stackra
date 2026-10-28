@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `PostgresOutboxDriver`: a write goes through the batch insert on the running context's entity
  *          manager; `due` selects live due messages oldest first with every value bound and reads rows back into
- *          messages (scope, failure, dead time); `remove`, `retry`, `deadLetter` and `pruneDead` are one bound
- *          statement each.
+ *          messages (scope, failure, dead time); `remove`, `retry`, `deadLetter`, `pruneDead` and `rewrite` are one
+ *          bound statement each; `holding` narrows by the value's JSON text and keeps only payloads holding it as a
+ *          value.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -138,6 +139,28 @@ describe(PostgresOutboxDriver, () => {
     await expect(new PostgresOutboxDriver(database).pruneDead(NOON)).resolves.toBe(2);
     expect(statements[0]?.sql).toContain("where dead_at is not null and dead_at < ? returning id");
     expect(statements[0]?.params).toEqual([NOON]);
+    expectBound(statements);
+  });
+
+  it("finds held messages by a value in their payload, never by a key", async () => {
+    const { database, statements } = databaseWith([
+      ROW,
+      { ...ROW, id: "evt_B", data: { prd_1: true } },
+    ]);
+    const held = await new PostgresOutboxDriver(database).holding("prd_1");
+    expect(held.map((message) => message.id)).toEqual(["evt_A"]);
+    expect(statements[0]?.sql).toContain(
+      "where position(? in data::text) > 0 order by occurred_at, id",
+    );
+    expect(statements[0]?.params).toEqual(['"prd_1"']);
+    expectBound(statements);
+  });
+
+  it("rewrites a payload with one bound statement", async () => {
+    const { database, statements } = databaseWith();
+    await new PostgresOutboxDriver(database).rewrite("evt_A", { email: null });
+    expect(statements[0]?.sql).toContain("set data = ?::jsonb where id = ?");
+    expect(statements[0]?.params).toEqual([JSON.stringify({ email: null }), "evt_A"]);
     expectBound(statements);
   });
 });

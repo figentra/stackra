@@ -113,8 +113,10 @@
     "@stackra/filesystem": "workspace:*",
     "@stackra/iam": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
+    "@stackra/search": "workspace:*",
     "@stackra/validation": "workspace:*",
     "@stackra/workflow": "workspace:*",
     "zod": "catalog:"

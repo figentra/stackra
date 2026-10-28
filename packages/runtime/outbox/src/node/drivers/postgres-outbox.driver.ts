@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `PostgresOutboxDriver`, the server's `OutboxDriver`: messages are rows of `outbox.messages`, written in the
  *          caller's transaction with the transaction's scope, listed for the relay oldest first, deleted once
- *          delivered, counted, rescheduled or dead-lettered when a delivery fails, and pruned once long dead.
+ *          delivered, counted, rescheduled or dead-lettered when a delivery fails, pruned once long dead, and found
+ *          and rewritten by an erased subject's id (stackra-275).
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
  *           and every result row read through zod. The table is the service's outbox, read by the relay across scopes
  *           (it opens each message's scope itself), so it has no row-level-security policy. Payload, metadata and last
@@ -19,6 +20,7 @@ import { z } from "zod";
 
 import { MessageKind, OutboxDriver } from "#contracts/index";
 import type { OutboxError, OutboxMessage } from "#contracts/index";
+import { holdsValue } from "#core/functions/holds-value.function";
 import { insertMessages } from "#node/functions/insert-messages.function";
 
 /** The message table, in the package's schema. */
@@ -129,6 +131,32 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
         before,
       ]);
     return Array.isArray(rows) ? rows.length : 0;
+  }
+
+  /** Implements `OutboxDriver.holding`, documented there. */
+  async holding(value: string): Promise<readonly OutboxMessage[]> {
+    // raw-sql: the outbox has no model; the jsonb text holds the value as a JSON string, so position() narrows the
+    // scan without a jsonpath (whose `?` would clash with the bindings), and the walk below drops a key that matched
+    const rows = await this.database
+      .em()
+      .execute(
+        `select ${COLUMNS} from ${TABLE} where position(? in data::text) > 0 order by occurred_at, id`,
+        [JSON.stringify(value)],
+      );
+    return ROWS.parse(rows)
+      .map(messageOf)
+      .filter((message) => holdsValue(message.data, value));
+  }
+
+  /** Implements `OutboxDriver.rewrite`, documented there. */
+  async rewrite(id: PublicId<"evt">, data: unknown): Promise<void> {
+    // raw-sql: the outbox has no model; one parameterised update of the payload
+    await this.database
+      .em()
+      .execute(`update ${TABLE} set data = ?::jsonb where id = ?`, [
+        JSON.stringify(data ?? null),
+        id,
+      ]);
   }
 
   /** Implements `OutboxDriver.deadLetter`, documented there. */

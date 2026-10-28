@@ -37,6 +37,7 @@ and zod.
 | `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from  |
 | `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`    |
 | `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]` (gen writes it)       |
+| `redactSubjectMessages`                                                | `.`           | erasure: nulls named fields in held messages naming a subject (`holding`)       |
 | `ConsumesChanges`                                                      | `.`           | `@ConsumesChanges(Product)` on a consumer service; gen registers the pair       |
 | `coalesceChanges`                                                      | `.`           | one change per row of a run, a later change superseding an earlier one          |
 | `MemoryChangeFeedDriver`                                               | `.`           | the change log of a test or a single process                                    |
@@ -159,8 +160,7 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
 
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.
 - Listing and redriving dead messages wait for the console. `outbox_message.prune` (03:15 UTC) deletes dead letters
-  and received event ids older than `outbox.pruneAfterDays` (30 by default); redacting held messages' payloads on
-  erasure is not built.
+  and received event ids older than `outbox.pruneAfterDays` (30 by default).
 - A `stackra changes:replay|resume|backfill` command and a panel for stalled cursors; `ChangeFeedService` is the API.
 - Publishing both versions of an event until a change's sunset (ADR 0141 note) waits for gen's version table.
 
