@@ -36,9 +36,12 @@ export type PublishChannelsOutput$Check = Assert<Same<z.output<typeof PublishCha
 /** action `PublishChannelsAction` (src/node/actions/publish-channels.action.ts): the schemas of its `handle`. */
 export const PublishChannelsAction$ = { input: PublishChannelsInput$, output: PublishChannelsOutput$ } as const;
 
-/** Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1). */
+/**
+ * Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1); a schema the class's own
+ * package already registered (its shipped `X$`, STA-1284) is kept.
+ */
 registerSchemas([
   [ChannelsPublished, ChannelsPublished$],
   [PublishChannelsInput, PublishChannelsInput$],
   [PublishChannelsOutput, PublishChannelsOutput$],
-]);
+], { replace: false });

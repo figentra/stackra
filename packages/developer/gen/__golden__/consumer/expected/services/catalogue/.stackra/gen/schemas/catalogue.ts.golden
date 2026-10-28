@@ -36,9 +36,12 @@ export type PublishCatalogueOutput$Check = Assert<Same<z.output<typeof PublishCa
 /** action `PublishCatalogueAction` (src/node/actions/publish-catalogue.action.ts): the schemas of its `handle`. */
 export const PublishCatalogueAction$ = { input: PublishCatalogueInput$, output: PublishCatalogueOutput$ } as const;
 
-/** Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1). */
+/**
+ * Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1); a schema the class's own
+ * package already registered (its shipped `X$`, STA-1284) is kept.
+ */
 registerSchemas([
   [CataloguePublished, CataloguePublished$],
   [PublishCatalogueInput, PublishCatalogueInput$],
   [PublishCatalogueOutput, PublishCatalogueOutput$],
-]);
+], { replace: false });

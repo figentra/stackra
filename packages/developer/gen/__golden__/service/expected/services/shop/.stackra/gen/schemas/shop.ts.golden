@@ -74,7 +74,10 @@ export const ShopConfig$ = ShopOptions$;
 /** action `CancelOrderAction` (src/node/actions/cancel-order.action.ts): the schemas of its `handle`. */
 export const CancelOrderAction$ = { input: CancelOrderInput$, output: CancelOrderOutput$ } as const;
 
-/** Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1). */
+/**
+ * Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1); a schema the class's own
+ * package already registered (its shipped `X$`, STA-1284) is kept.
+ */
 registerSchemas([
   [ShopOptions, ShopOptions$],
   [OrderPaid, OrderPaid$],
@@ -83,4 +86,4 @@ registerSchemas([
   [Order, Order$],
   [CancelOrderInput, CancelOrderInput$],
   [CancelOrderOutput, CancelOrderOutput$],
-]);
+], { replace: false });

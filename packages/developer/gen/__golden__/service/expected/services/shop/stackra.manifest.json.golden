@@ -7,6 +7,7 @@
     {
       "key": "shop",
       "class": "ShopModule",
+      "file": "src/node/shop.module.ts",
       "exports": ["ShopService"],
       "dependsOn": []
     }
