@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./node` entry of @stackra/data-maintenance (the six system jobs with their input and
+ * Purpose: Stand-in barrel: the `./node` entry of @stackra/data-maintenance (the system jobs with their input and
  *          output schemas: partition upkeep and record retention over @stackra/database, the full-text and semantic
- *          reindex over @stackra/search, change log upkeep and the outbox prune over @stackra/outbox; and
- *          `searchReindex`, the half of the `stackra search:reindex` runner that queues a reindex job) until
+ *          reindex and the search query log over @stackra/search, change log upkeep and the outbox prune over
+ *          @stackra/outbox; `searchReindex`, the half of the `stackra search:reindex` runner that queues a reindex job;
+ *          and `QueuedSearchQueryLogDriver`, the search query log that queues its entries) until
  *          `stackra gen` writes the entry barrels and the generated `DataMaintenanceModule` (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: every job reaches Postgres through the package
  *           that does its work. The permissions are the `.` entry's.
@@ -15,8 +16,10 @@ export { MaintainChangeLogAction } from "#node/actions/maintain-change-log.actio
 export { MaintainPartitionsAction } from "#node/actions/maintain-partitions.action";
 export { PruneOutboxAction } from "#node/actions/prune-outbox.action";
 export { PruneRecordsAction } from "#node/actions/prune-records.action";
+export { RecordSearchQueryAction } from "#node/actions/record-search-query.action";
 export { ReindexSearchAction } from "#node/actions/reindex-search.action";
 export { ReindexSemanticAction } from "#node/actions/reindex-semantic.action";
+export { QueuedSearchQueryLogDriver } from "#node/drivers/queued-search-query-log.driver";
 export { searchReindex } from "#node/functions/search-reindex.function";
 export { MaintainChangeLogInput } from "#node/schemas/maintain-change-log-input.schema";
 export { MaintainChangeLogOutput } from "#node/schemas/maintain-change-log-output.schema";
@@ -26,5 +29,6 @@ export { PruneOutboxInput } from "#node/schemas/prune-outbox-input.schema";
 export { PruneOutboxOutput } from "#node/schemas/prune-outbox-output.schema";
 export { PruneRecordsInput } from "#node/schemas/prune-records-input.schema";
 export { PruneRecordsOutput } from "#node/schemas/prune-records-output.schema";
+export { RecordSearchQueryInput } from "#node/schemas/record-search-query-input.schema";
 export { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 export { ReindexSearchOutput } from "#node/schemas/reindex-search-output.schema";

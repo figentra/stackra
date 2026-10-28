@@ -17,6 +17,7 @@
 export { SearchConfig } from "#config/search.config";
 export { SEARCH_CONFIG_SCHEMA as SearchConfig$ } from "#core/constants/search-config-schema.constant";
 export { MemorySearchDriver } from "#core/drivers/memory-search.driver";
+export { MemorySearchQueryLogDriver } from "#core/drivers/memory-search-query-log.driver";
 export { MemoryVectorIndexDriver } from "#core/drivers/memory-vector-index.driver";
 export { SearchHealthIndicatorDriver } from "#core/drivers/search-health-indicator.driver";
 export { SearchIndexState } from "#core/enums/search-index-state.enum";
@@ -34,4 +35,6 @@ export type { SearchIndexStatus } from "#core/types/search-index-status.type";
 export type { SearchPageOptions } from "#core/types/search-page-options.type";
 export type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
 export type { SearchSimilarOptions } from "#core/types/search-similar-options.type";
+export type { SearchSuggestOptions } from "#core/types/search-suggest-options.type";
+export type { SearchSuggestions } from "#core/types/search-suggestions.type";
 export { SearchIndex } from "#core/values/search-index.value";

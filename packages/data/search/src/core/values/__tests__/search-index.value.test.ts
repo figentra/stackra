@@ -16,7 +16,7 @@
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301; stackra-303;
- *                     stackra-302 (any-of filters, ranges, sort and `when`).
+ *                     stackra-302 (any-of filters, ranges, sort and `when`); stackra-326 (rules, query log, suggest).
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
@@ -29,6 +29,7 @@ import { vi } from "vitest";
 
 import type { Embedder } from "#contracts/index";
 import { MemorySearchDriver } from "#core/drivers/memory-search.driver";
+import { MemorySearchQueryLogDriver } from "#core/drivers/memory-search-query-log.driver";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { SearchIndex } from "#core/values/search-index.value";
 
@@ -581,5 +582,56 @@ describe("SearchIndex field kinds", () => {
     const index = new SearchIndex(new PlainDriver(), database, Lamp);
     await expect(index.find("orbit", { sort: { path: "price" } })).rejects.toThrow(TypeError);
     await expect(index.find("orbit", { filters: { color: ["red"] } })).resolves.toHaveLength(1);
+  });
+});
+
+/** An index over the three products with these search settings and a memory query log. */
+async function ruled(values: Readonly<Record<string, unknown>>) {
+  const driver = new MemorySearchDriver();
+  const { database } = databaseOver(ROWS);
+  const settings = new SettingsReader(new MemorySettingValueStoreDriver().seed("search", values));
+  const queries = new MemorySearchQueryLogDriver();
+  const products = new SearchIndex(driver, database, Product, settings, queries);
+  await products.index(ROWS);
+  return { products, queries };
+}
+
+describe("SearchIndex ranking rules, query log and suggestions", () => {
+  it("pins and hides the rows its rules name for the phrase", async () => {
+    const { products } = await ruled({
+      rules: "products pin linen shirt: prd_2\ncatalogue.products hide linen shirt: prd_3",
+    });
+    expect(await products.find("Linen Shirt")).toEqual([ROWS[1], ROWS[0]]);
+    expect(await products.find("linen")).toEqual([ROWS[0], ROWS[2]]);
+  });
+
+  it("logs every sampled read and click, withholding a personal phrase, and completes from the log", async () => {
+    const { products, queries } = await ruled({ querySample: 1 });
+    await products.find("linen");
+    await products.find("linen shirt");
+    await products.find("sara@example.com");
+    await products.clicked("linen", "prd_1");
+    expect(queries.entries.map(({ phrase, hits, clicked }) => ({ phrase, hits, clicked }))).toEqual(
+      [
+        { phrase: "linen", hits: 2, clicked: undefined },
+        { phrase: "linen shirt", hits: 2, clicked: undefined },
+        { phrase: null, hits: 0, clicked: undefined },
+        { phrase: "linen", hits: undefined, clicked: "prd_1" },
+      ],
+    );
+    expect((await products.suggest("lin")).completions).toEqual(["linen", "linen shirt"]);
+  });
+
+  it("logs nothing when the sample is off", async () => {
+    const { products, queries } = await ruled({});
+    await products.find("linen");
+    expect(queries.entries).toEqual([]);
+  });
+
+  it("suggests a correction only when the prefix finds nothing", async () => {
+    const { products } = await ruled({});
+    expect(await products.suggest("linnen")).toEqual({ completions: [], didYouMean: "linen" });
+    expect(await products.suggest("linen")).toEqual({ completions: [] });
+    expect(await products.suggest("  ")).toEqual({ completions: [] });
   });
 });

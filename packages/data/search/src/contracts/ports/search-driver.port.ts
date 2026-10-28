@@ -14,13 +14,16 @@
  *                     ADR 0089 (decision 6: every query scoped);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type); ADR 0404 (facets);
  *                     stackra-301 (the vector lane); stackra-303 (versioned
- *                     index swap, ADR 0221 decision 7); stackra-302 (field kinds).
+ *                     index swap, ADR 0221 decision 7); stackra-302 (field kinds); stackra-326 (ranking rules,
+ *                     did-you-mean neighbours).
  */
 import { Port } from "@stackra/contracts";
 
 import type { SearchDocument } from "#contracts/types/search-document.type";
 import type { SearchFacetRequest } from "#contracts/types/search-facet-request.type";
 import type { SearchFacets } from "#contracts/types/search-facets.type";
+import type { SearchNeighbourRequest } from "#contracts/types/search-neighbour-request.type";
+import type { SearchNeighbours } from "#contracts/types/search-neighbours.type";
 import type { SearchRequest } from "#contracts/types/search-request.type";
 import type { SearchTable } from "#contracts/types/search-table.type";
 
@@ -54,6 +57,12 @@ export abstract class SearchDriver extends Port {
    */
   readonly fieldKinds: boolean = false;
 
+  /**
+   * Whether the engine applies a request's ranking rules (`pinned`, `hidden`, `boosts`, `recency`); `SearchIndex` passes
+   * none to an engine that does not, which then ranks by relevance alone.
+   */
+  readonly appliesRules: boolean = false;
+
   /** The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit. */
   abstract search(table: SearchTable, request: SearchRequest): Promise<readonly string[]>;
 
@@ -65,6 +74,17 @@ export abstract class SearchDriver extends Port {
 
   /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
   abstract remove(table: SearchTable, ids: readonly string[]): Promise<void>;
+
+  /**
+   * The indexed words closest in spelling to each of `request.words` (did-you-mean), best first, at most
+   * `request.limit` per word, over the rows `request.visible` lets the caller see; a word with none has no entry. The
+   * default knows no vocabulary and answers none.
+   */
+  async neighbours(table: SearchTable, request: SearchNeighbourRequest): Promise<SearchNeighbours> {
+    void table;
+    void request;
+    return {};
+  }
 
   /**
    * Readies version `version` of `table`'s index for a rebuild: an empty shadow index (an engine), or the check that

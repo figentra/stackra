@@ -108,6 +108,40 @@ await search.in(Product).page(input.q, {
   applies them only when its `fieldKinds` is true (memory, Postgres); `SearchIndex` refuses them for any other.
   Declaring a field kind changes the facet hash, so the index registry marks the index `invalid` until a rebuild.
 
+## Ranking rules, query log and suggestions
+
+Ranking rules are settings data (`search.rules`, per scope), one per line, for an index named as synonyms name it:
+
+```text
+# merchandising
+products pin linen shirt: prd_9, prd_4
+products hide linen shirt: prd_7
+products boost featured=true: 2
+products boost stock=0: 0.5
+products recency publishedAt: 30
+```
+
+- `pin` ranks those rows first, in order, for that phrase (when they pass the read's filters, visibility and scope,
+  matching or not); `hide` keeps them out of that phrase's results. At most 10 pins and 100 hides per phrase.
+- `boost <path>=<value>: <factor>` multiplies the relevance of matches holding the value (factor above 0, at most
+  10; `true`/`false` are booleans, numbers numbers). `recency <path>: <days>` halves relevance every that many days
+  of a date field's age. Boosts and recency never admit a row.
+- Rules reach a driver whose `appliesRules` is true (memory, Postgres); any other ranks by relevance alone.
+
+The query log (`SearchQueryLog` port, `search.queries`) records a sample of reads (`search.querySample`, 0 to 1,
+off by default): the model, the normalised phrase, the hit count and the latency; `search.in(Model).clicked(phrase,
+id)` records a click. The phrase is withheld (`null`) when the model's text holds a classified field or the phrase
+looks like an e-mail address or a long number. `SearchIndex` never awaits the log. `PostgresSearchQueryLogDriver`
+(`./node`) is abstract: it writes (`store`), completes and reports, and leaves `record` to a subclass. The bound one is
+`QueuedSearchQueryLogDriver` of `@stackra/data-maintenance`, which queues each entry as `RecordSearchQueryAction`
+(`data_maintenance.query.record`, system-held, ADR 0462 decision 1); the job writes it in the read's scope under
+row-level security, and a platform read with no scope is not logged. `PostgresSearchQueryLogDriver.top`,
+`zeroResults` and `clickThrough` are the reports.
+
+`search.in(Product).suggest(prefix)` returns `completions` (the log's phrases of that scope that start with the prefix
+and found rows, most frequent first) and, when the prefix finds no row, `didYouMean`: each word swapped for its
+closest indexed word (`SearchDriver.neighbours`, trigram similarity at least 0.3 over the rows the caller may see).
+
 ## Keeping the index current
 
 ```ts

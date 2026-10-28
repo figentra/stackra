@@ -11,11 +11,15 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
+  SearchBoost,
   SearchDocument,
   SearchFacetRequest,
   SearchFacets,
   SearchFilterValue,
+  SearchNeighbours,
+  SearchQueryEntry,
   SearchRange,
+  SearchRecency,
   SearchRequest,
   SearchSort,
   SearchTable,
@@ -26,7 +30,12 @@ import type {
 
 describe("@stackra/search/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["Embedder", "SearchDriver", "VectorIndex"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "Embedder",
+      "SearchDriver",
+      "SearchQueryLog",
+      "VectorIndex",
+    ]);
   });
 
   it("resolves its public types", () => {
@@ -35,6 +44,10 @@ describe("@stackra/search/contracts", () => {
     expectTypeOf<SearchRequest["words"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchRange["gte"]>().toEqualTypeOf<number | string | undefined>();
     expectTypeOf<SearchSort["direction"]>().toEqualTypeOf<"asc" | "desc" | undefined>();
+    expectTypeOf<SearchBoost["factor"]>().toEqualTypeOf<number>();
+    expectTypeOf<SearchRecency["halfLifeDays"]>().toEqualTypeOf<number>();
+    expectTypeOf<SearchNeighbours[string]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<SearchQueryEntry["phrase"]>().toEqualTypeOf<string | null>();
     expectTypeOf<SearchDocument["weights"]>().toEqualTypeOf<readonly number[] | undefined>();
     expectTypeOf<SearchFacetRequest["paths"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchFacets[string][string]>().toEqualTypeOf<number>();

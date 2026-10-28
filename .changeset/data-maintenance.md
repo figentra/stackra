@@ -9,4 +9,7 @@ over `@stackra/database`, `data_maintenance.index.reindex` and `data_maintenance
 `data_maintenance.outbox_message.prune` over `@stackra/outbox`. Their permissions are `PartitionPermissions`,
 `RecordPermissions`, `IndexPermissions`, `ChangeLogPermissions` and `OutboxMessagePermissions`: L4 system for the jobs
 that drop or delete data, L2 system for the reindex jobs. `ReindexSearchInput.version` (and
-`searchReindex({ version })`) runs a versioned rebuild and swap of `@stackra/search`.
+`searchReindex({ version })`) runs a versioned rebuild and swap of `@stackra/search`. `data_maintenance.query.record`
+(`RecordSearchQueryAction`, `QueryPermissions.record`, L2 system) writes the search query log, queued by
+`QueuedSearchQueryLogDriver`, the bound `SearchQueryLog` over `@stackra/search`'s abstract
+`PostgresSearchQueryLogDriver`.

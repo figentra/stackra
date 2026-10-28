@@ -18,6 +18,7 @@
 export { SearchableMacro } from "#node/database/macros/searchable.macro";
 export { HttpEmbedderDriver } from "#node/drivers/http-embedder.driver";
 export { PgvectorVectorIndexDriver } from "#node/drivers/pgvector-vector-index.driver";
+export { PostgresSearchQueryLogDriver } from "#node/drivers/postgres-search-query-log.driver";
 export { PostgresSearchDriver } from "#node/drivers/postgres-search.driver";
 export { registerSearchableModels } from "#node/functions/register-searchable-models.function";
 export { reindexSearch } from "#node/functions/reindex-search.function";
@@ -29,4 +30,6 @@ export { SearchForgetService } from "#node/services/search-forget.service";
 export { SearchIndexRegistry } from "#node/services/search-index-registry.service";
 export { SearchableChangeService } from "#node/services/searchable-change.service";
 export { SemanticChangeService } from "#node/services/semantic-change.service";
+export type { SearchQueryReportOptions } from "#node/types/search-query-report-options.type";
+export type { SearchQueryReportRow } from "#node/types/search-query-report-row.type";
 export type { SearchableColumns } from "#node/types/searchable-columns.type";

@@ -17,7 +17,10 @@
  *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team. Each
  *           document carries its row's scope; for an engine that does not isolate scopes in the database, every read
  *           also carries the scope paths of the session (`app.scope_paths`, read from the database, never input), so
- *           pages and facet counts never cross scopes. A filter may name several values (any of them holds), a range
+ *           pages and facet counts never cross scopes. The index's ranking rules (`search.rules`: pins, hides, boosts,
+ *           recency) reach a driver that applies them; a sampled read or click goes to the query log (never awaited,
+ *           its phrase withheld when personal); `suggest` completes a prefix from the log and corrects a prefix that
+ *           finds nothing from the indexed words the caller may see. A filter may name several values (any of them holds), a range
  *           field may be bounded and sortable fields order the rows before relevance, on a driver whose `fieldKinds`
  *           says it applies them; a row the facet's `when` refuses is removed instead of indexed.
  * Runtime: node
@@ -26,9 +29,11 @@
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
  *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
  *                     every query scoped); stackra-301 (the vector lane, `similar`); stackra-303
- *                     (versioned rebuild and swap); stackra-302 (field kinds).
+ *                     (versioned rebuild and swap); stackra-302 (field kinds);
+ *                     stackra-326 (ranking rules, query log, suggest).
  */
 import type { AnyClass } from "@stackra/container";
+import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { visibleKeysQuery } from "@stackra/database";
 import type { Database, TablePage } from "@stackra/database";
 import { Classify, Searchable, SearchSnippet, Translated } from "@stackra/model";
@@ -41,6 +46,7 @@ import type {
   SearchDriver,
   SearchFacets,
   SearchFilterValue,
+  SearchQueryLog,
   SearchRange,
   SearchRequest,
   SearchSort,
@@ -52,6 +58,8 @@ import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.err
 import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
 import { searchPathsOf } from "#core/functions/search-paths-of.function";
+import { searchPhraseWithheld } from "#core/functions/search-phrase-withheld.function";
+import { searchRulesOf } from "#core/functions/search-rules-of.function";
 import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
 import { searchSynonymsOf } from "#core/functions/search-synonyms-of.function";
 import { searchWhenHolds } from "#core/functions/search-when-holds.function";
@@ -62,9 +70,14 @@ import type { SearchFindOptions } from "#core/types/search-find-options.type";
 import type { SearchPageOptions } from "#core/types/search-page-options.type";
 import type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
 import type { SearchSimilarOptions } from "#core/types/search-similar-options.type";
+import type { SearchSuggestOptions } from "#core/types/search-suggest-options.type";
+import type { SearchSuggestions } from "#core/types/search-suggestions.type";
 
 /** The session's granted scope paths, `null` outside a scope session. */
 const SCOPE_PATHS = z.array(z.object({ paths: z.string().nullable() }));
+
+/** The session's own scope node, `null` (or empty) outside a scope session. */
+const SESSION_SCOPE = z.array(z.object({ id: z.string().nullish(), path: z.string().nullish() }));
 
 /** Rows per read when none is asked for. */
 const DEFAULT_LIMIT = 20;
@@ -135,14 +148,19 @@ export class SearchIndex<M extends object> {
   /** The model's `@Searchable` facet. */
   private readonly facet: SearchableOptions;
 
-  /** The reader of the synonym sets; none applies when absent. */
+  /** The reader of the synonym sets, ranking rules and query sample; none applies when absent. */
   private readonly settings: SettingsReader | undefined;
+
+  /** The query log sampled reads and clicks go to, and completions come from; none when absent. */
+  private readonly queries: SearchQueryLog | undefined;
 
   /**
    * @param driver - the engine.
    * @param database - the connected database.
    * @param model - a model class with a `@Searchable` facet.
-   * @param settings - the reader `SearchSettings` (the synonym sets) is read through; no synonyms without one.
+   * @param settings - the reader `SearchSettings` (synonyms, ranking rules, query sample) is read through; none apply
+   *   without one.
+   * @param queries - the query log; no read is logged and no completion offered without one.
    * @throws TypeError when the model has no `@Searchable` facet.
    */
   constructor(
@@ -150,6 +168,7 @@ export class SearchIndex<M extends object> {
     database: Database,
     model: AnyClass<M>,
     settings?: SettingsReader,
+    queries?: SearchQueryLog,
   ) {
     const facet = Searchable.on(model);
     if (facet === undefined)
@@ -159,6 +178,7 @@ export class SearchIndex<M extends object> {
     this.model = model;
     this.facet = facet;
     this.settings = settings;
+    this.queries = queries;
   }
 
   /**
@@ -219,7 +239,8 @@ export class SearchIndex<M extends object> {
     this.checkFilters(options.paths);
     const { filters, anyOf, ranges } = this.narrowingOf(options);
     const visible = await visibleKeysQuery(this.model);
-    const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
+    const settings = await this.settingsOf();
+    const { words, alternatives } = this.wordsOf(phrase, options.locale, options.arabizi, settings);
     const scopePaths = await this.scopePaths();
     return this.driver.facets(this.shape().table, {
       words,
@@ -270,6 +291,55 @@ export class SearchIndex<M extends object> {
       }
     }
     return snippets;
+  }
+
+  /**
+   * Logs a click on result `id` of a read for `phrase` to the query log, sampled like the reads; nothing without a
+   * log. The log write is never awaited.
+   *
+   * @example
+   * await search.in(Product).clicked(input.q, input.productId);
+   */
+  async clicked(phrase: string, id: string): Promise<void> {
+    const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
+    if (words.length > 0) await this.log(phrase, words, await this.settingsOf(), { clicked: id });
+  }
+
+  /**
+   * Suggestions for `prefix` (a search box as the user types): the logged phrases that complete it, and, when it finds
+   * no row, the phrase with each word swapped for its closest indexed word (did-you-mean), from rows the caller may
+   * see.
+   *
+   * @throws RangeError for a limit that is not a whole number from 1 to 100.
+   * @example
+   * const { completions, didYouMean } = await search.in(Product).suggest("linnen sh");
+   */
+  async suggest(prefix: string, options: SearchSuggestOptions = {}): Promise<SearchSuggestions> {
+    const limit = this.limitOf(options.limit);
+    const words = [...new Set(searchWordsOf(prefix))].slice(0, MAX_WORDS);
+    if (words.length === 0) return { completions: [] };
+    const completions =
+      this.queries === undefined
+        ? []
+        : await this.queries.popular(this.model.name, words.join(" "), limit);
+    const visible = await visibleKeysQuery(this.model);
+    const scopePaths = await this.scopePaths();
+    const narrowing = {
+      ...(visible === undefined ? {} : { visible }),
+      ...(scopePaths === undefined ? {} : { scopePaths }),
+    };
+    const { table } = this.shape();
+    const found = await this.driver.search(table, {
+      words,
+      filters: {},
+      offset: 0,
+      limit: 1,
+      ...narrowing,
+    });
+    if (found.length > 0) return { completions };
+    const neighbours = await this.driver.neighbours(table, { words, limit: 1, ...narrowing });
+    const corrected = words.map((word) => neighbours[word]?.[0] ?? word).join(" ");
+    return corrected === words.join(" ") ? { completions } : { completions, didYouMean: corrected };
   }
 
   /** Stores the current document of each row, loading the relations the facet's paths walk first. */
@@ -384,10 +454,13 @@ export class SearchIndex<M extends object> {
     options: SearchFindOptions<M>,
     semantic: boolean,
   ): Promise<TablePage<M>> {
+    const started = Date.now();
     const limit = this.limitOf(options.limit);
     const narrowing = this.narrowingOf(options);
-    const { words, alternatives } = await this.wordsOf(phrase, options.locale, options.arabizi);
+    const settings = await this.settingsOf();
+    const { words, alternatives } = this.wordsOf(phrase, options.locale, options.arabizi, settings);
     if (words.length === 0) return { items: [], hasMore: false };
+    const rules = this.rulesOf(words, settings);
     const vector =
       options.embedder !== undefined && this.facet.semantic === true && this.driver.fusesVectors
         ? await this.vectorOf(words, options.embedder)
@@ -404,8 +477,13 @@ export class SearchIndex<M extends object> {
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
       ...(visible === undefined ? {} : { visible }),
       ...(scopePaths === undefined ? {} : { scopePaths }),
+      ...rules,
     });
     const items = await this.load(ids.slice(0, limit), key, options.populate);
+    await this.log(phrase, words, settings, {
+      hits: items.length,
+      latencyMs: Date.now() - started,
+    });
     return ids.length > limit
       ? { items, hasMore: true, nextCursor: String(offset + limit) }
       : { items, hasMore: false };
@@ -548,16 +626,17 @@ export class SearchIndex<M extends object> {
    * Arabizi and `arabizi` is not `false`, and the other words of the index's synonym sets in `locale`'s language
    * (every language when absent).
    */
-  private async wordsOf(
+  private wordsOf(
     phrase: string,
     locale: string | undefined,
     arabizi: boolean | undefined,
-  ): Promise<{
+    settings: SearchSettings | undefined,
+  ): {
     readonly words: readonly string[];
     readonly alternatives: Readonly<Record<string, readonly string[]>>;
-  }> {
+  } {
     const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
-    const synonyms = await this.synonymsOf(words, locale);
+    const synonyms = this.synonymsOf(words, locale, settings);
     const alternatives = Object.fromEntries(
       words.flatMap((word) => {
         const arabic = arabizi === false ? undefined : arabiziOf(word);
@@ -570,18 +649,96 @@ export class SearchIndex<M extends object> {
     return { words, alternatives };
   }
 
-  /** The synonym sets of this index in `locale`'s language; none without a settings reader or a word. */
-  private async synonymsOf(
+  /** The synonym sets of this index in `locale`'s language; none without settings or a word. */
+  private synonymsOf(
     words: readonly string[],
     locale: string | undefined,
-  ): Promise<ReadonlyMap<string, readonly string[]>> {
-    if (this.settings === undefined || words.length === 0) return new Map();
-    const { synonyms } = await this.settings.get(SearchSettings);
-    if (synonyms === "") return new Map();
+    settings: SearchSettings | undefined,
+  ): ReadonlyMap<string, readonly string[]> {
+    if (settings === undefined || settings.synonyms === "" || words.length === 0) return new Map();
+    return searchSynonymsOf(
+      settings.synonyms,
+      this.indexNames(),
+      locale?.split("-")[0]?.toLowerCase(),
+    );
+  }
+
+  /** The search settings of the running scope; `undefined` without a settings reader. */
+  private async settingsOf(): Promise<SearchSettings | undefined> {
+    return this.settings === undefined ? undefined : this.settings.get(SearchSettings);
+  }
+
+  /** The names the index answers to in settings: its table, bare and schema-qualified. */
+  private indexNames(): readonly string[] {
     const { table } = this.shape();
-    const indexes =
-      table.schema === undefined ? [table.table] : [table.table, `${table.schema}.${table.table}`];
-    return searchSynonymsOf(synonyms, indexes, locale?.split("-")[0]?.toLowerCase());
+    return table.schema === undefined
+      ? [table.table]
+      : [table.table, `${table.schema}.${table.table}`];
+  }
+
+  /**
+   * The ranking rules of `words` as request fields, for a driver that applies them; none without settings, rules or
+   * such a driver.
+   */
+  private rulesOf(
+    words: readonly string[],
+    settings: SearchSettings | undefined,
+  ): Pick<SearchRequest, "pinned" | "hidden" | "boosts" | "recency"> {
+    if (settings === undefined || settings.rules === "" || !this.driver.appliesRules) return {};
+    const { pinned, hidden, boosts, recency } = searchRulesOf(
+      settings.rules,
+      this.indexNames(),
+      words,
+    );
+    return {
+      ...(pinned.length === 0 ? {} : { pinned }),
+      ...(hidden.length === 0 ? {} : { hidden }),
+      ...(boosts.length === 0 ? {} : { boosts }),
+      ...(recency === undefined ? {} : { recency }),
+    };
+  }
+
+  /**
+   * Logs a read or click of `phrase` when a query log is set and the sample (`search.querySample`) picks it. The
+   * phrase is withheld (`null`) when the facet's text holds a classified field or the phrase looks personal. The
+   * session's scope is read here; the log write is handed off and never awaited, so it never holds up the read, and
+   * a failed write is dropped (analytics, never data the read depends on).
+   */
+  private async log(
+    phrase: string,
+    words: readonly string[],
+    settings: SearchSettings | undefined,
+    entry: { readonly hits?: number; readonly latencyMs?: number; readonly clicked?: string },
+  ): Promise<void> {
+    const sample = settings?.querySample ?? 0;
+    if (this.queries === undefined || sample <= 0 || Math.random() >= sample) return;
+    const classes = Classify.members(this.model);
+    const classified = this.facet.text.some((path) => classes.has(path.split(".")[0] ?? ""));
+    const scope = await this.sessionScope();
+    void this.queries
+      .record({
+        model: this.model.name,
+        phrase: classified || searchPhraseWithheld(phrase) ? null : words.join(" "),
+        ...entry,
+        ...(scope === undefined ? {} : { scope }),
+      })
+      .catch(() => undefined);
+  }
+
+  /** The running scope session's own node; `undefined` outside a scope session. */
+  private async sessionScope(): Promise<ScopeRef | undefined> {
+    // raw-sql: the scope session lives in transaction settings, which only `current_setting` reads
+    const [row] = SESSION_SCOPE.parse(
+      await this.database
+        .em()
+        .execute(
+          "select current_setting('app.scope_id', true) as id, current_setting('app.scope_path', true) as path",
+          [],
+        ),
+    );
+    const id = row?.id ?? "";
+    const path = row?.path ?? "";
+    return id === "" || path === "" ? undefined : { id: id as PublicId<"scp">, path };
   }
 
   /** The rows of `ids`, in that order; a row the session cannot see any more is left out. */

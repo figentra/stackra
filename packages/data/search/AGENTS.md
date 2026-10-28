@@ -5,7 +5,8 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap); se9 / stackra-302 (facet field kinds).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap); se9 / stackra-302 (facet field kinds); se11 to se13 / stackra-326 (ranking rules, query log,
+suggest).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -91,6 +92,17 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   (`searchDocumentOf`), so the macro writes no column for them; `boost` reaches a driver as `SearchDocument.weights`.
   Every path a document reads comes from `searchPathsOf` (change consumers, relation hops, populate hints); a new
   field kind joins there. `when` is applied in `SearchIndex` only (a refused row is removed, never indexed).
+- Ranking rules (stackra-326) are settings data (`search.rules`, line form `SEARCH_RULE_LINE`), read per call
+  through `searchRulesOf`; never a code list. They reach only a driver whose `appliesRules` is true. A pin ranks a
+  row first only when it passes the same filters, visibility and scope as every lane; never pin around visibility.
+- The query log is analytics, never data a read depends on: `SearchIndex` never awaits `SearchQueryLog.record`, the
+  bound Postgres driver (`QueuedSearchQueryLogDriver` of @stackra/data-maintenance, over the abstract
+  `PostgresSearchQueryLogDriver` here) queues `RecordSearchQueryAction` there, and `search.queries` sits under
+  row-level security. A phrase is
+  withheld when the facet's text holds a classified field or `searchPhraseWithheld` says it looks personal; add a
+  pattern there, never log a raw phrase elsewhere. Sampling is `search.querySample` (off by default).
+- Did-you-mean neighbours come from rows the caller may see: a driver applies `visible` and scope to
+  `SearchDriver.neighbours` as to a search.
 - Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the
@@ -105,7 +117,8 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   queries `"embedding"::vector(n)` where `vector_dims("embedding") = n`, the partial HNSW index's exact expression and
   predicate (migration 0004 for 1024). Change the query and the index together; `n` is interpolated only as the checked
   configured integer.
-- Raw SQL only in `PostgresSearchDriver` and `PgvectorVectorIndexDriver`, every value bound, identifiers quoted, configuration names from
+- Raw SQL only in `PostgresSearchDriver`, `PostgresSearchQueryLogDriver` and `PgvectorVectorIndexDriver` (plus the
+  registry and the `current_setting` reads of the scope session), every value bound, identifiers quoted, configuration names from
   `TEXT_SEARCH_CONFIGS`, each statement with a `// raw-sql:` reason (ADR 0160).
 - Extensions only through `schema.createExtension` from the approved list (ADR 0160, ADR 0334 rule 3): no `unaccent`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
@@ -125,8 +138,8 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## PII
 
-| Data           | Where                                           | Handling                                                                                                                                                                        |
-| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Indexed text   | the model table's search columns, memory driver | Copies of the facet's text fields; `remove` clears them on erasure (@stackra/privacy's `UnindexErasedSubjectListener` calls `SearchForgetService`); ADR 0134 decides the fields |
-| Search phrases | `SearchRequest.words`                           | Passed to the engine as bound parameters; never stored or logged here                                                                                                           |
-| Embedder token | `SecretStore` (`search.embedder.tokenSecret`)   | Read at call time by name; never logged, kept or put in an error (ADR 0173)                                                                                                     |
+| Data           | Where                                           | Handling                                                                                                                                                                         |
+| -------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Indexed text   | the model table's search columns, memory driver | Copies of the facet's text fields; `remove` clears them on erasure (@stackra/privacy's `UnindexErasedSubjectListener` calls `SearchForgetService`); ADR 0134 decides the fields  |
+| Search phrases | `SearchRequest.words`, `search.queries`         | Bound parameters to the engine; a sampled phrase is logged normalised in `search.queries` under RLS, withheld (null) for a classified text field or a phrase that looks personal |
+| Embedder token | `SecretStore` (`search.embedder.tokenSecret`)   | Read at call time by name; never logged, kept or put in an error (ADR 0173)                                                                                                      |

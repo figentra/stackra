@@ -10,7 +10,7 @@
  *           search from fixed rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane); stackra-303 (versions);
- *                     stackra-302 (field kinds).
+ *                     stackra-302 (field kinds); stackra-326 (ranking rules, neighbours).
  */
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
@@ -490,5 +490,70 @@ describe("PostgresSearchDriver field kinds", () => {
     expect(statements.at(-1)?.sql).toContain(
       `setweight(to_tsvector('simple', ?), 'C') || setweight(to_tsvector('simple', ?), 'A')`,
     );
+  });
+});
+
+describe("PostgresSearchDriver ranking rules and neighbours", () => {
+  it("hides rows in every lane, ranks pins first and scales relevance by boosts and recency", async () => {
+    const { database, statements } = databaseWith(["search_vector"], ["prd_9"]);
+    const driver = new PostgresSearchDriver(database);
+    expect(driver.appliesRules).toBe(true);
+    await driver.search(PRODUCTS, {
+      words: ["shirt"],
+      filters: {},
+      pinned: ["prd_9", "prd_8"],
+      hidden: ["prd_7"],
+      boosts: [{ path: "featured", value: true, factor: 2 }],
+      recency: { path: "publishedAt", halfLifeDays: 30 },
+      offset: 0,
+      limit: 11,
+    });
+    const search = statements.at(-1);
+    expect(search?.sql).toContain(`and not (t."id"::text = any(?::text[]))`);
+    expect(search?.sql).toContain(`array_position(?::text[], t."id"::text) as rank`);
+    expect(search?.sql).toContain("full join pin on pin.id = coalesce(fts.id, trigram.id)");
+    expect(search?.sql).toContain("pin.rank as pin");
+    expect(search?.sql).toContain(`join "catalogue"."products" t on t."id" = fused.id`);
+    expect(search?.sql).toContain(
+      `order by fused.pin asc nulls last, fused.score * (case when t."search_filters" @> ?::jsonb then ?::float8 else 1 end) * (case`,
+    );
+    expect(search?.sql).toContain(`~ '^\\d{4}-\\d{2}-\\d{2}'`);
+    const hidden = [["prd_7"]];
+    expect(search?.params).toEqual([
+      "shirt:*",
+      ...hidden,
+      "shirt",
+      "shirt",
+      ...hidden,
+      ["prd_9", "prd_8"],
+      ["prd_9", "prd_8"],
+      ...hidden,
+      '{"featured":[true]}',
+      2,
+      "publishedAt",
+      "publishedAt",
+      "publishedAt",
+      30,
+      11,
+      0,
+    ]);
+    expect(search?.sql.match(/\?/g) ?? []).toHaveLength(search?.params.length ?? -1);
+  });
+
+  it("reads each word's neighbours from the trigram-near rows under the visibility subquery", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    const neighbours = await new PostgresSearchDriver(database).neighbours(PRODUCTS, {
+      words: ["linnen"],
+      limit: 1,
+      visible: { sql: "select id from visible where team = ?", params: ["team_1"] },
+    });
+    expect(neighbours).toEqual({});
+    const [lookup] = statements;
+    expect(lookup?.sql).toContain(
+      `search.fold(t."search_text") %> ? and t."id" in (select id from visible where team = ?)`,
+    );
+    expect(lookup?.sql).toContain("similarity(s.word, ?) >= 0.3");
+    expect(lookup?.params).toEqual(["linnen", "team_1", "linnen", "linnen", "linnen", 1]);
+    expect(lookup?.sql.match(/\?/g) ?? []).toHaveLength(lookup?.params.length ?? -1);
   });
 });

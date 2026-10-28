@@ -7,7 +7,9 @@
  *           A to D) or, failing that, appears inside its text (weighted lowest), so a SKU fragment still finds its row.
  *           Ties rank by id. A word also matches as any of its alternatives. A document's `weights` replace its fields'
  *           positions as their tiers; any-of filters, ranges (numbers against number bounds, ISO strings against string
- *           bounds) and sort keys (a document's first value, a missing one last) apply as the port describes. It refuses a request that
+ *           bounds) and sort keys (a document's first value, a missing one last) apply as the port describes, and so do
+ *           the ranking rules (pins first, hides out, boosts and recency scaling the score). Did-you-mean neighbours
+ *           are the stored words of the request's scopes, by `pg_trgm`-style trigram similarity. It refuses a request that
  *           carries record visibility, which it cannot apply. It keeps every document it was given, with its scope, and
  *           answers only the documents within a request's `scopePaths` (and those without a scope), so its matches,
  *           pages and facet counts never cross scopes. Nothing survives a restart, so `reindex` refills it. It keeps one
@@ -15,7 +17,8 @@
  *           live index and readable by version.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 9); ADR 0266 (memory drivers first); ADR 0294 (decision 16); ADR 0089
- *                     (decision 6: every query scoped); stackra-303 (versions); stackra-302 (field kinds).
+ *                     (decision 6: every query scoped); stackra-303 (versions); stackra-302 (field kinds);
+ *                     stackra-326 (ranking rules, neighbours).
  */
 import { Driver } from "@stackra/container";
 
@@ -25,6 +28,8 @@ import type {
   SearchFacetRequest,
   SearchFacets,
   SearchFilterValue,
+  SearchNeighbourRequest,
+  SearchNeighbours,
   SearchRange,
   SearchRequest,
   SearchSort,
@@ -70,6 +75,43 @@ function compareSortValues(a: StoredDocument, b: StoredDocument, key: SearchSort
   const order = x < y ? -1 : x > y ? 1 : 0;
   return key.direction === "desc" ? -order : order;
 }
+
+/** The day in milliseconds. */
+const DAY = 86_400_000;
+
+/** The product of the boosts a document earns and its recency decay at `now`; 1 without rules. */
+function ruleFactorOf(
+  document: StoredDocument,
+  request: Pick<SearchRequest, "boosts" | "recency">,
+  now: number,
+): number {
+  let factor = 1;
+  for (const boost of request.boosts ?? [])
+    if (document.filters[boost.path]?.includes(boost.value) === true) factor *= boost.factor;
+  const { recency } = request;
+  const date = recency === undefined ? undefined : document.filters[recency.path]?.[0];
+  const at = typeof date === "string" ? Date.parse(date) : Number.NaN;
+  if (recency !== undefined && !Number.isNaN(at))
+    factor *= 0.5 ** (Math.max(now - at, 0) / DAY / recency.halfLifeDays);
+  return factor;
+}
+
+/** The trigrams of `word`, padded as `pg_trgm` pads a word. */
+const trigramsOf = (word: string): ReadonlySet<string> => {
+  const padded = `  ${word} `;
+  return new Set(Array.from({ length: padded.length - 2 }, (_, at) => padded.slice(at, at + 3)));
+};
+
+/** The trigram similarity of two words, 0 to 1, as `pg_trgm`'s `similarity` counts it. */
+function similarityOf(a: string, b: string): number {
+  const x = trigramsOf(a);
+  const y = trigramsOf(b);
+  const shared = [...x].filter((gram) => y.has(gram)).length;
+  return shared / (x.size + y.size - shared);
+}
+
+/** The least similarity a did-you-mean neighbour needs, `pg_trgm`'s default threshold. */
+const NEIGHBOUR_SIMILARITY = 0.3;
 
 /** The score of a word that starts a word of field 0, 1, 2 and 3 or later; a word only inside the text scores 1. */
 const WEIGHTS: readonly number[] = [8, 6, 4, 2];
@@ -122,6 +164,9 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
   /** It applies any-of filters, ranges, sort keys and field weights. */
   override readonly fieldKinds: boolean = true;
 
+  /** It applies pins, hides, boosts and recency. */
+  override readonly appliesRules: boolean = true;
+
   /** Documents by table key, then by id. */
   private readonly tables = new Map<string, Map<string, StoredDocument>>();
 
@@ -134,10 +179,28 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
    * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
    */
   async search(table: SearchTable, request: SearchRequest): Promise<readonly string[]> {
-    const hits = this.matching(table, request);
+    const hidden = new Set(request.hidden);
+    const pinned = request.pinned ?? [];
+    const matched = this.matching(table, request).filter((hit) => !hidden.has(hit.id));
+    // A pinned row ranks first when it passes the filters and scope, whether or not it matches the words.
+    const pins = pinned.flatMap((id, at) => {
+      if (hidden.has(id) || matched.some((hit) => hit.id === id)) return [];
+      const passes = this.matching(table, { ...request, words: [] }).find((hit) => hit.id === id);
+      return passes === undefined ? [] : [{ ...passes, pin: pinned.length - at }];
+    });
+    const now = Date.now();
+    const hits = [
+      ...pins,
+      ...matched.map((hit) => ({
+        ...hit,
+        pin: pinned.includes(hit.id) ? pinned.length - pinned.indexOf(hit.id) : 0,
+        score: hit.score * ruleFactorOf(hit.document, request, now),
+      })),
+    ];
     const sort = request.sort ?? [];
     hits.sort(
       (a, b) =>
+        b.pin - a.pin ||
         sort.reduce((order, key) => order || compareSortValues(a.document, b.document, key), 0) ||
         b.score - a.score ||
         (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
@@ -163,6 +226,33 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
         return [path, Object.fromEntries(ranked.slice(0, request.limit))];
       }),
     );
+  }
+
+  /**
+   * The indexed words closest in spelling to each of `request.words`, from the documents within its scope paths.
+   *
+   * @throws TypeError when the request carries a visibility subquery, which only a SQL engine can apply.
+   */
+  override async neighbours(
+    table: SearchTable,
+    request: SearchNeighbourRequest,
+  ): Promise<SearchNeighbours> {
+    const vocabulary = new Set(
+      this.matching(table, { ...request, words: [], filters: {} }).flatMap((hit) =>
+        hit.document.fields.flat(),
+      ),
+    );
+    const neighbours: Record<string, readonly string[]> = {};
+    for (const word of request.words) {
+      const near = [...vocabulary]
+        .filter((other) => other !== word)
+        .map((other) => ({ other, similarity: similarityOf(word, other) }))
+        .filter(({ similarity }) => similarity >= NEIGHBOUR_SIMILARITY);
+      near.sort((a, b) => b.similarity - a.similarity || (a.other < b.other ? -1 : 1));
+      if (near.length > 0)
+        neighbours[word] = near.slice(0, request.limit).map(({ other }) => other);
+    }
+    return neighbours;
   }
 
   /**

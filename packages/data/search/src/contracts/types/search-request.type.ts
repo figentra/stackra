@@ -9,14 +9,19 @@
  *           (`app.scope_paths`), never from input.
  * Runtime: isomorphic
  *           `anyOf`, `ranges` and `sort` reach only a driver whose `fieldKinds` is true; `SearchIndex` refuses them for
- *           any other, so no driver ignores them silently.
+ *           any other, so no driver ignores them silently. The ranking rules (`pinned`, `hidden`, `boosts`, `recency`)
+ *           come from the `search.rules` setting, never input, and reach only a driver whose `appliesRules` is true.
+ *           Pinned rows rank first in their listed order when they pass the filters and visibility, matching the words
+ *           or not; hidden rows never rank; boosts and recency scale relevance and never admit a row.
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
  *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language); ADR 0089 (decision 6: every query
  *                     scoped); ADR 0327 (decision 9); stackra-301 (the vector lane); stackra-302 (any-of, ranges and
- *                     sort).
+ *                     sort); stackra-326 (ranking rules).
  */
+import type { SearchBoost } from "#contracts/types/search-boost.type";
 import type { SearchFilterValue } from "#contracts/types/search-filter-value.type";
 import type { SearchRange } from "#contracts/types/search-range.type";
+import type { SearchRecency } from "#contracts/types/search-recency.type";
 import type { SearchSort } from "#contracts/types/search-sort.type";
 import type { SearchVector } from "#contracts/types/search-vector.type";
 
@@ -36,6 +41,18 @@ export interface SearchRequest {
 
   /** The keys the matches are ordered by before relevance, at most three; relevance alone when absent. */
   readonly sort?: readonly SearchSort[];
+
+  /** Row ids ranked first, in this order, when each passes the filters and visibility (a pinned result). */
+  readonly pinned?: readonly string[];
+
+  /** Row ids never ranked for this phrase (a hidden result). */
+  readonly hidden?: readonly string[];
+
+  /** The boost rules that scale the relevance of the matches holding their value. */
+  readonly boosts?: readonly SearchBoost[];
+
+  /** The rule that decays relevance with the age of a date field. */
+  readonly recency?: SearchRecency;
 
   /** How many ranked ids to skip. */
   readonly offset: number;

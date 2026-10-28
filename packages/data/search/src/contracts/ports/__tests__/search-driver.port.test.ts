@@ -51,4 +51,12 @@ describe("SearchDriver", () => {
   it("applies no field kinds unless a driver says so", () => {
     expect(new EchoSearchDriver().fieldKinds).toBe(false);
   });
+
+  it("applies no ranking rules and knows no neighbours unless a driver says so", async () => {
+    const driver = new EchoSearchDriver();
+    expect(driver.appliesRules).toBe(false);
+    await expect(
+      driver.neighbours({ table: "products", primaryKey: "id" }, { words: ["shrit"], limit: 3 }),
+    ).resolves.toEqual({});
+  });
 });

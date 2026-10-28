@@ -19,12 +19,14 @@ import type {
   SearchFacetOptions,
   SearchFindOptions,
   SearchPageOptions,
+  SearchSuggestions,
 } from "#core/index";
 
 describe("@stackra/search", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(search).sort()).toEqual([
       "MemorySearchDriver",
+      "MemorySearchQueryLogDriver",
       "MemoryVectorIndexDriver",
       "Search",
       "SearchConfig",
@@ -52,6 +54,7 @@ describe("@stackra/search", () => {
     expectTypeOf<SearchFacetOptions["paths"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchFindOptions<object>["arabizi"]>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<SearchFacetOptions["arabizi"]>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf<SearchSuggestions["didYouMean"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<SearchAcrossOptions["limit"]>().toEqualTypeOf<number | undefined>();
   });
 

@@ -6,7 +6,8 @@
  *          matching document once per value, most frequent first, and refuse record visibility as a search does.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266; ADR 0404; stackra-303 (versions).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266; ADR 0404; stackra-303 (versions);
+ *                     stackra-326 (ranking rules, neighbours).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -215,5 +216,55 @@ describe("MemorySearchDriver versions", () => {
     const driver = await seeded();
     await expect(driver.swap(PRODUCTS, 3)).rejects.toThrow(TypeError);
     await expect(driver.index({ ...PRODUCTS, version: 3 }, [])).rejects.toThrow(TypeError);
+  });
+});
+
+describe("MemorySearchDriver ranking rules and neighbours", () => {
+  it("ranks pins first in order, drops hides, and scales scores by boosts and recency", async () => {
+    const driver = await seeded();
+    expect(driver.appliesRules).toBe(true);
+    // prd_3 does not match "shirt" but passes no filter, so its pin still ranks it first.
+    expect(
+      await driver.search(
+        PRODUCTS,
+        request(["shirt"], { pinned: ["prd_3", "prd_2"], hidden: ["prd_1"] }),
+      ),
+    ).toEqual(["prd_3", "prd_2"]);
+    expect(
+      await driver.search(
+        PRODUCTS,
+        request(["shirt"], { pinned: ["prd_3"], filters: { status: "active" } }),
+      ),
+    ).toEqual(["prd_1", "prd_2"]);
+    expect(
+      await driver.search(
+        PRODUCTS,
+        request(["shirt"], { boosts: [{ path: "status", value: "active", factor: 0.1 }] }),
+      ),
+    ).toEqual(["prd_1", "prd_2"]);
+    await driver.index(PRODUCTS, [
+      { id: "prd_1", fields: ["linen shirt"], filters: { at: ["2000-01-01T00:00:00.000Z"] } },
+      { id: "prd_2", fields: ["shirt"], filters: { at: [new Date().toISOString()] } },
+    ]);
+    expect(
+      await driver.search(
+        PRODUCTS,
+        request(["shirt"], { recency: { path: "at", halfLifeDays: 30 } }),
+      ),
+    ).toEqual(["prd_2", "prd_1"]);
+  });
+
+  it("finds the closest stored words of other spellings", async () => {
+    const driver = await seeded();
+    expect(await driver.neighbours(PRODUCTS, { words: ["linnen", "linen"], limit: 2 })).toEqual({
+      linnen: ["linen"],
+    });
+    await expect(
+      driver.neighbours(PRODUCTS, {
+        words: ["linnen"],
+        limit: 2,
+        visible: { sql: "x", params: [] },
+      }),
+    ).rejects.toThrow(TypeError);
   });
 });

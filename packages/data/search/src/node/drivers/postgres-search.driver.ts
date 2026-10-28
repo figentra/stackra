@@ -24,11 +24,15 @@
  *           filter is an OR of `search_filters` containments, a range an `exists` over the path's stored values
  *           (numbers as numeric, ISO strings as text), sort keys order the fused matches by each row's first stored
  *           value of the path (missing last) before relevance, and a document's `weights` pick its `setweight` letters.
+ *           Ranking rules: hidden rows leave every lane, pinned rows (passing the same narrowing) rank first in their
+ *           listed order, and boosts and recency multiply the fused relevance. Did-you-mean neighbours are the folded
+ *           words of the rows trigram-near each word.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 3 and 7); ADR 0160 (raw SQL is parameterised; approved extensions);
  *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16); ADR 0333 (amendment);
  *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`); stackra-301 (the vector lane);
- *                     stackra-303 (versioned columns); stackra-302 (field kinds).
+ *                     stackra-303 (versioned columns); stackra-302 (field kinds);
+ *                     stackra-326 (ranking rules, neighbours).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -38,6 +42,8 @@ import type {
   SearchDocument,
   SearchFacetRequest,
   SearchFacets,
+  SearchNeighbourRequest,
+  SearchNeighbours,
   SearchRange,
   SearchRequest,
   SearchSort,
@@ -79,6 +85,15 @@ const FUSION = 60;
 
 /** The most phrases the trigram lane matches: the phrase and its variants with one word swapped for an alternative. */
 const MAX_PHRASES = 8;
+
+/** The rows whose words a did-you-mean lookup reads per word. */
+const NEIGHBOUR_ROWS = 200;
+
+/** The least trigram similarity of a did-you-mean neighbour, `pg_trgm`'s default threshold. */
+const NEIGHBOUR_SIMILARITY = 0.3;
+
+/** The most words of one phrase a did-you-mean lookup reads, one statement each. */
+const MAX_NEIGHBOUR_WORDS = 8;
 
 /** The vector table of migration `search.0002_create_vector_items`, which semantic passages live in. */
 const VECTOR_ITEMS = '"search"."vector_items"';
@@ -142,12 +157,12 @@ const RANGE_BOUNDS = [
 /** The filter, any-of, range and visibility conditions of a lane, each opening with ` and `, and their parameters in order. */
 function narrowingOf(
   table: SearchTable,
-  request: Pick<SearchRequest, "filters" | "anyOf" | "ranges" | "visible">,
+  request: Pick<SearchRequest, "filters" | "anyOf" | "ranges" | "visible" | "hidden">,
 ): { readonly sql: string; readonly params: readonly unknown[] } {
   const filters = Object.entries(request.filters);
   const anyOf = Object.entries(request.anyOf ?? {});
   const ranges = Object.entries(request.ranges ?? {});
-  const { visible } = request;
+  const { visible, hidden = [] } = request;
   return {
     sql:
       (filters.length === 0 ? "" : ` and t."search_filters" @> ?::jsonb`) +
@@ -159,6 +174,9 @@ function narrowingOf(
         )
         .join("") +
       ranges.map(([, range]) => ` and ${rangeOf(range)}`).join("") +
+      (hidden.length === 0
+        ? ""
+        : ` and not (t.${quote(table.primaryKey)}::text = any(?::text[]))`) +
       // Visibility bounds every lane before it ranks or counts (ADR 0333); the subquery is the ORM's, parameterised.
       (visible === undefined ? "" : ` and t.${quote(table.primaryKey)} in (${visible.sql})`),
     params: [
@@ -172,9 +190,33 @@ function narrowingOf(
         path,
         ...RANGE_BOUNDS.flatMap(([bound]) => (range[bound] === undefined ? [] : [range[bound]])),
       ]),
+      ...(hidden.length === 0 ? [] : [[...hidden]]),
       ...(visible?.params ?? []),
     ],
   };
+}
+
+/** The SQL factor of the ranking rules (boosts, recency) over a row joined as `t`, and its parameters in order. */
+function ruleFactorOf(request: Pick<SearchRequest, "boosts" | "recency">): {
+  readonly sql: string;
+  readonly params: readonly unknown[];
+} {
+  const factors: string[] = [];
+  const params: unknown[] = [];
+  for (const boost of request.boosts ?? []) {
+    factors.push(`(case when t."search_filters" @> ?::jsonb then ?::float8 else 1 end)`);
+    params.push(JSON.stringify({ [boost.path]: [boost.value] }), boost.factor);
+  }
+  const { recency } = request;
+  if (recency !== undefined) {
+    // Only an ISO date string is aged; anything else keeps its relevance rather than fail the cast.
+    factors.push(`(case when jsonb_typeof(t."search_filters" -> ? -> 0) = 'string'
+      and (t."search_filters" -> ? ->> 0) ~ '^\\d{4}-\\d{2}-\\d{2}'
+    then power(0.5, greatest(extract(epoch from (now() - (t."search_filters" -> ? ->> 0)::timestamptz)), 0) / 86400.0 / ?::float8)
+    else 1 end)`);
+    params.push(recency.path, recency.path, recency.path, recency.halfLifeDays);
+  }
+  return { sql: factors.map((factor) => ` * ${factor}`).join(""), params };
 }
 
 /**
@@ -229,6 +271,9 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
 
   /** Any-of filters, ranges and sort keys apply in SQL, and a document's weights pick its `setweight` letters. */
   override readonly fieldKinds = true;
+
+  /** Pins, hides, boosts and recency apply in SQL. */
+  override readonly appliesRules = true;
 
   /** The connected database. */
   private readonly database: Database;
@@ -305,20 +350,34 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
       lanes.push("vec");
     }
     if (lanes.length === 0) return [];
-    const [first = "", ...rest] = lanes;
+    const pinned = request.pinned ?? [];
+    if (pinned.length > 0) {
+      // Pinned rows rank first in their listed order when they pass the same narrowing, matching or not.
+      ctes.push(
+        `pin as (
+  select ${key} as id, array_position(?::text[], ${key}::text) as rank
+  from ${qualified(table)} t
+  where ${key}::text = any(?::text[])${narrowing}
+)`,
+      );
+      params.push([...pinned], [...pinned], ...laneParams);
+    }
+    const joined = pinned.length > 0 ? [...lanes, "pin"] : lanes;
+    const [first = "", ...rest] = joined;
     const ids = (upTo: number): string =>
       upTo === 1
         ? `${first}.id`
-        : `coalesce(${lanes
+        : `coalesce(${joined
             .slice(0, upTo)
             .map((lane) => `${lane}.id`)
             .join(", ")})`;
     const sort = request.sort ?? [];
+    const factor = ruleFactorOf(request);
     // Sort keys join the fused matches back to their rows; relevance orders what the keys leave tied.
     // shortcut: a sort orders only the CANDIDATES best matches per lane, from search_filters with no index of its own;
     // add a typed sort column and index when a listing needs to sort beyond that window.
     const sorted =
-      sort.length === 0
+      sort.length === 0 && factor.sql === ""
         ? { from: "", order: "" }
         : {
             from: ` join ${qualified(table)} t on t.${quote(table.primaryKey)} = fused.id`,
@@ -328,13 +387,13 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
     const rows = (await this.database.em().execute(
       `with ${ctes.join(",\n")}
 select fused.id from (
-  select ${ids(lanes.length)} as id,
-    ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score
+  select ${ids(joined.length)} as id,
+    ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score${pinned.length > 0 ? ",\n    pin.rank as pin" : ""}
   from ${first}${rest.map((lane, at) => ` full join ${lane} on ${lane}.id = ${ids(at + 1)}`).join("")}
 ) fused${sorted.from}
-order by ${sorted.order}fused.score desc, fused.id
+order by ${pinned.length > 0 ? "fused.pin asc nulls last, " : ""}${sorted.order}fused.score${factor.sql} desc, fused.id
 limit ? offset ?`,
-      [...params, ...sort.map((by) => by.path), request.limit, request.offset],
+      [...params, ...sort.map((by) => by.path), ...factor.params, request.limit, request.offset],
     )) as unknown as readonly { readonly id: unknown }[];
     return rows.map((row) => String(row.id));
   }
@@ -391,6 +450,37 @@ order by path, rank`,
       if (counts !== undefined) counts[row.value] = Number(row.count);
     }
     return facets;
+  }
+
+  /**
+   * The indexed words closest in spelling to each of `request.words` (did-you-mean): the folded words of the rows whose
+   * `search_text` is trigram-near the word (at most `NEIGHBOUR_ROWS` of them, under row-level security and the
+   * request's visibility), ranked by trigram similarity, at least `pg_trgm`'s default 0.3.
+   */
+  override async neighbours(
+    table: SearchTable,
+    request: SearchNeighbourRequest,
+  ): Promise<SearchNeighbours> {
+    const { sql: narrowing, params: narrowingParams } = narrowingOf(table, {
+      filters: {},
+      ...request,
+    });
+    const neighbours: Record<string, readonly string[]> = {};
+    for (const word of request.words.slice(0, MAX_NEIGHBOUR_WORDS)) {
+      // raw-sql: the vocabulary of the trigram index and its similarity have no ORM form (ADR 0221 d1)
+      const rows = (await this.database.em().execute(
+        `select s.word from (
+  select distinct unnest(string_to_array(${FOLD}(t."search_text"), ' ')) as word
+  from (select t."search_text" from ${qualified(table)} t where ${FOLD}(t."search_text") %> ?${narrowing} limit ${NEIGHBOUR_ROWS}) t
+) s
+where s.word <> ? and similarity(s.word, ?) >= ${NEIGHBOUR_SIMILARITY}
+order by similarity(s.word, ?) desc, s.word
+limit ?`,
+        [word, ...narrowingParams, word, word, word, request.limit],
+      )) as unknown as readonly { readonly word: string }[];
+      if (rows.length > 0) neighbours[word] = rows.map((row) => row.word);
+    }
+    return neighbours;
   }
 
   /**

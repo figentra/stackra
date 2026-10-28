@@ -12,7 +12,7 @@
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as node from "#node/index";
-import type { SearchableColumns } from "#node/index";
+import type { SearchQueryReportRow, SearchableColumns } from "#node/index";
 
 describe("@stackra/search/node", () => {
   it("exports exactly its values", () => {
@@ -20,6 +20,7 @@ describe("@stackra/search/node", () => {
       "HttpEmbedderDriver",
       "PgvectorVectorIndexDriver",
       "PostgresSearchDriver",
+      "PostgresSearchQueryLogDriver",
       "RelatedChangeService",
       "SearchForgetService",
       "SearchIndexRegistry",
@@ -35,6 +36,7 @@ describe("@stackra/search/node", () => {
   });
 
   it("resolves the macro's argument type", () => {
+    expectTypeOf<SearchQueryReportRow["zero"]>().toEqualTypeOf<number>();
     expectTypeOf<SearchableColumns["text"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchableColumns["locales"]>().toEqualTypeOf<readonly string[] | undefined>();
   });
