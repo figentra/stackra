@@ -1,0 +1,176 @@
+# Stackra file contract:
+# Purpose: deploy workers/turbo-cache (the `stackra-turbo-cache` Cloudflare Worker, turbo.stackra.figentra.com, the
+#          Turborepo remote cache of ADR 0026) from CI only (ADR 0284): test and build the member, make sure the R2
+#          bucket `turbo-cache` and its 7-day lifecycle rule exist, `wrangler deploy`, set the TURBO_CACHE_TOKEN Worker
+#          secret from Infisical TURBO_TOKEN, then check `GET /v8/artifacts/status` with that token. Runs on main
+#          pushes that touch the member or this file, and by hand; never on a pull request.
+# Boundary: a standalone job like deploy-registry.yml, not a caller of runway-cloudflare-workers.yml: that provider has
+#           no R2 step and no Worker secret. The bucket steps only create what is missing; @stackra/infra-cloudflare
+#           (src/node/turbo-cache/) declares the same bucket and rule (`expire-after-7-days`) when Pulumi runs.
+#           ci.yml's TURBO_* env belongs to the testing session, not this file.
+# Runtime: GitHub Actions
+# Governing contract: ADR 0026 (decision 2); ADR 0289 (decision 2, RW11); ADR 0284 (decision 8); ADR 0173; ADR 0019.
+# Owner: release-operations
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN and TURBO_TOKEN come from Infisical `prod` `/ci` through GitHub
+#          OIDC with the existing identity INFISICAL_CI_IDENTITY_ID (a repository variable, not a secret), the one
+#          deploy-static.yml and deploy-docs.yml use. Its trust names environment subjects, so this job runs in the
+#          `static` environment (main and schemas@* tags only), whose subject that identity already trusts: no new
+#          identity and no new trust. The gate identity (INFISICAL_GATE_IDENTITY_ID) is not used: it also trusts the
+#          pull_request subject and may read only the two licence tokens (ADR 0310 decisions 9 and 11). Each secret is
+#          fetched right before the step that uses it and blanked where it is not needed. Without the identity id the
+#          job tests, builds, prints a notice and deploys nothing, so main stays green.
+name: Deploy turbo cache
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workers/turbo-cache/**"
+      - ".github/workflows/deploy-turbo-cache.yml"
+  workflow_dispatch:
+
+# One deploy at a time, in order: a newer run waits instead of cancelling one mid-deploy.
+concurrency:
+  group: deploy-turbo-cache
+  cancel-in-progress: false
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs.
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy turbo.stackra.figentra.com
+    # workflow_dispatch can name any branch; only main deploys (ADR 0170 decision 6).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Reused on purpose (see Secrets above): its name is in the OIDC subject INFISICAL_CI_IDENTITY_ID trusts.
+    environment:
+      name: static
+      url: https://turbo.stackra.figentra.com/v8/artifacts/status
+    permissions:
+      contents: read # checkout
+      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci
+    env:
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      INFISICAL_DOMAIN: https://eu.infisical.com
+      CACHE_URL: https://turbo.stackra.figentra.com
+      # The bucket of wrangler.jsonc and its lifecycle rule (ADR 0026: 7 days, as TURBO_CACHE_TTL_SECONDS).
+      BUCKET: turbo-cache
+      LIFECYCLE_RULE: expire-after-7-days
+      EXPIRE_DAYS: "7"
+
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # ADR 0027 D2: node and pnpm come from mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
+      # in are not installed; none of them is deployed here (as deploy-static.yml).
+      - name: Install dependencies
+        run: >-
+          pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+          --filter=!@stackra-pro/ui
+
+      # A broken build or a failing test never reaches Cloudflare. The build writes dist/main.mjs, wrangler's main.
+      - name: Test and build
+        run: pnpm turbo run test build --filter=@figentra/worker-turbo-cache
+
+      - name: Deploy prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: >-
+          echo "::notice title=Deploy skipped::No INFISICAL_CI_IDENTITY_ID repository variable.
+          Built and tested, nothing deployed (runbook: workers/turbo-cache/README.md)."
+
+      # Exports only CLOUDFLARE_API_TOKEN; the secret-name filter keeps every other /ci value out of the job.
+      - name: Cloudflare token (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_DOMAIN }}
+          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: CLOUDFLARE_API_TOKEN
+          export-type: env
+
+      # Idempotent: creates the bucket only when `r2 bucket list` does not show it, and adds the rule only when
+      # `r2 bucket lifecycle list` does not show it (adding twice would append a duplicate rule id).
+      - name: R2 bucket and lifecycle rule
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/turbo-cache
+        # Each listing is captured first: a failed listing fails the step, and grep -q cannot SIGPIPE wrangler under
+        # pipefail into a false "missing".
+        run: |
+          buckets="$(pnpm exec wrangler r2 bucket list)"
+          if grep -Eq "^name:[[:space:]]+${BUCKET}\$" <<<"$buckets"; then
+            echo "R2 bucket ${BUCKET} exists"
+          else
+            pnpm exec wrangler r2 bucket create "$BUCKET"
+          fi
+          rules="$(pnpm exec wrangler r2 bucket lifecycle list "$BUCKET")"
+          if grep -Eq "^name:[[:space:]]+${LIFECYCLE_RULE}\$" <<<"$rules"; then
+            echo "Lifecycle rule ${LIFECYCLE_RULE} exists"
+          else
+            pnpm exec wrangler r2 bucket lifecycle add "$BUCKET" "$LIFECYCLE_RULE" --expire-days "$EXPIRE_DAYS" --force
+          fi
+
+      # Also attaches the Custom Domain of wrangler.jsonc (routes, custom_domain: true).
+      - name: wrangler deploy
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/turbo-cache
+        run: pnpm exec wrangler deploy
+
+      # Fetched only now, so the token is in no earlier step's environment.
+      - name: Cache token (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_DOMAIN }}
+          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: TURBO_TOKEN
+          export-type: env
+
+      # Through stdin, never an argument; setting the same value again is harmless, a rotated value takes effect.
+      - name: TURBO_CACHE_TOKEN secret
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/turbo-cache
+        run: |
+          [ -n "${TURBO_TOKEN:-}" ] || {
+            echo "::error title=TURBO_TOKEN::missing or empty in Infisical prod /ci (runbook: workers/turbo-cache/README.md)"; exit 1; }
+          printf '%s' "$TURBO_TOKEN" | pnpm exec wrangler secret put TURBO_CACHE_TOKEN
+
+      # Readiness, not just liveness (STA-268): /status answers 200 only with the right bearer, so it proves the secret
+      # and the domain together. The header goes through stdin (`-H @-`), never the command line. Each attempt prints
+      # its status; only the end of the budget fails.
+      - name: Smoke test
+        if: env.INFISICAL_IDENTITY_ID != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ""
+        run: |
+          url="${CACHE_URL}/v8/artifacts/status"
+          for attempt in $(seq 1 60); do
+            code="$(printf 'Authorization: Bearer %s\n' "$TURBO_TOKEN" |
+              curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 -H @- "$url" || true)"
+            if [ "$code" = 200 ]; then echo "::notice title=Ready::$url answered 200 on attempt $attempt"; exit 0; fi
+            echo "not serving yet: $url answered ${code:-nothing} (attempt $attempt of 60)"
+            sleep 10
+          done
+          echo "::error title=Smoke test failed::$url did not answer 200 within ten minutes (a new custom domain takes a few minutes for its certificate; 401 means TURBO_CACHE_TOKEN and TURBO_TOKEN differ, 503 an unset secret or setting)"
+          exit 1

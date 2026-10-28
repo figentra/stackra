@@ -1,4 +1,4 @@
-<!-- Purpose: what @figentra/worker-turbo-cache is, its API, settings, layout, deploy and the CI env it needs. Boundary: member documentation only. Runtime: docs. Governing contract: ADR 0026, ADR 0289 (decisions 1 and 2), ADR 0171 (decision 6). -->
+<!-- Purpose: what @figentra/worker-turbo-cache is, its API, settings, layout, deploy, the owner runbook and the CI env it needs. Boundary: member documentation only. Runtime: docs. Governing contract: ADR 0026, ADR 0289 (decisions 1 and 2), ADR 0171 (decision 6), ADR 0284 (decision 8), ADR 0173. -->
 
 # @figentra/worker-turbo-cache
 
@@ -60,13 +60,55 @@ Every limit is a `vars` entry in `wrangler.jsonc` (change it there, or in the da
 | `pnpm --filter @figentra/worker-turbo-cache test`  | the unit tests                             |
 | `typecheck` / `lint` / `format`                    | the usual checks                           |
 
-Never run `wrangler deploy` or `wrangler secret put` by hand. CI deploys.
+## Deploy (CI only)
+
+`.github/workflows/deploy-turbo-cache.yml` deploys on every push to `main` that touches `workers/turbo-cache/**` (or the
+workflow), and by hand (`workflow_dispatch`, main only). Never on a pull request. Its steps:
+
+1. install, then `turbo run test build` for this member (a failing test never reaches Cloudflare);
+2. read `CLOUDFLARE_API_TOKEN` from Infisical `prod` `/ci` over GitHub OIDC;
+3. create the R2 bucket `turbo-cache` if `wrangler r2 bucket list` does not show it, and add the lifecycle rule
+   `expire-after-7-days` (`--expire-days 7`) if `wrangler r2 bucket lifecycle list` does not show it;
+4. `wrangler deploy`, which also attaches the Custom Domain `turbo.stackra.figentra.com` (`routes` in `wrangler.jsonc`);
+5. read `TURBO_TOKEN` from the same path and pipe it into `wrangler secret put TURBO_CACHE_TOKEN` (stdin, never printed);
+   an empty or missing `TURBO_TOKEN` fails the step by name;
+6. smoke: `GET https://turbo.stackra.figentra.com/v8/artifacts/status` with the bearer until it answers 200, ten
+   minutes at most (a new Custom Domain needs a few minutes for its certificate).
+
+Identity: the job reuses the existing Infisical identity `INFISICAL_CI_IDENTITY_ID` (the one `deploy-static.yml` and
+`deploy-docs.yml` use) and runs in the GitHub environment `static`, whose OIDC subject that identity already trusts, so
+no identity, trust or environment is created. The gate identity (`INFISICAL_GATE_IDENTITY_ID`) is not used: it also
+trusts pull requests and may read only the two licence tokens (ADR 0310). Without `INFISICAL_CI_IDENTITY_ID` the job
+tests, builds, prints a notice and deploys nothing.
+
+Never run `wrangler deploy` or `wrangler secret put` by hand.
+
+## Owner runbook
+
+The owner's only steps; everything else is the workflow's.
+
+1. Make two random values on your own machine: `openssl rand -hex 32`, twice (one token, one signature key).
+2. In Infisical, environment `prod`, path `/ci`, add:
+
+   | Secret                             | Value                                |
+   | ---------------------------------- | ------------------------------------ |
+   | `TURBO_TOKEN`                      | the first value                      |
+   | `TURBO_REMOTE_CACHE_SIGNATURE_KEY` | the second value                     |
+   | `TURBO_TEAM`                       | `figentra`                           |
+   | `TURBO_API`                        | `https://turbo.stackra.figentra.com` |
+
+   `CLOUDFLARE_API_TOKEN` is already there (the static and docs deploys use it); it needs the Workers Scripts, Workers
+   Custom Domains (zone `figentra.com`) and R2 edit permissions.
+
+3. Run the workflow once: GitHub, Actions, "Deploy turbo cache", Run workflow on `main`. It ends with the smoke test.
+
+To rotate the token, change `TURBO_TOKEN` in Infisical and run the workflow again; the secret is put on every run.
 
 ## Infrastructure
 
-The bucket `turbo-cache` with its 7-day lifecycle rule and the public host (a Workers Custom Domain) are declared by
-`@stackra/infra-cloudflare` (`src/node/turbo-cache/`, or the core stack's `buckets` and zone `workers` config). No ADR
-names the host; it is a stack setting.
+The deploy job creates the bucket `turbo-cache`, its 7-day lifecycle rule and the Custom Domain when they are missing.
+`@stackra/infra-cloudflare` (`src/node/turbo-cache/`) declares the same bucket and rule for Pulumi; when that stack is
+applied, leave its `domain` unset so the Custom Domain has one owner (wrangler).
 
 ## CI env (owned by the testing session's ci.yml)
 
@@ -74,18 +116,19 @@ From Infisical `/ci` over OIDC (ADR 0026 decision 2):
 
 | Variable                           | Value                                                              |
 | ---------------------------------- | ------------------------------------------------------------------ |
-| `TURBO_API`                        | `https://<cache host>` (the custom domain), no trailing slash      |
+| `TURBO_API`                        | `https://turbo.stackra.figentra.com`, no trailing slash            |
 | `TURBO_TOKEN`                      | the same value as the Worker secret `TURBO_CACHE_TOKEN`            |
 | `TURBO_TEAM`                       | the team key, letters, digits, `_` or `-` (for example `figentra`) |
 | `TURBO_REMOTE_CACHE_SIGNATURE_KEY` | the HMAC key turbo signs artifacts with (`signature: true`)        |
 
 With those set, turbo uses the remote cache on its own (`remoteCache.enabled: true`); no `--remote-cache` flag is
 needed. `--remote-only` skips the local cache; `--cache=local:rw,remote:r` keeps a job read-only (for pull requests from
-forks). The deploy job of this Worker also needs `CLOUDFLARE_API_TOKEN` from `/ci`, a `pnpm build` before
-`wrangler deploy`, and the secret set once with `wrangler secret put TURBO_CACHE_TOKEN`.
+forks). `ci.yml` reads them; this member's deploy job does not change it.
 
 ## Not built
 
-- The deploy workflow and the ci.yml env (testing session).
+- The ci.yml env (testing session).
+- Not checked from here: that the role of `INFISICAL_CI_IDENTITY_ID` reads all of `/ci`. It reads
+  `CLOUDFLARE_API_TOKEN` there for the static deploy; if its role names single secrets, it also needs `TURBO_TOKEN`.
 - Usage events are dropped, not counted; `GET /v2/user` and `/v2/teams` (turbo's `login` flow) are not served.
 - No per-team token: one token reaches every team's namespace.

@@ -1,4 +1,4 @@
-<!-- Purpose: rules for agents working in @figentra/worker-turbo-cache. Boundary: member guidance only. Runtime: docs. Governing contract: ADR 0026, ADR 0289 (decision 2). -->
+<!-- Purpose: rules for agents working in @figentra/worker-turbo-cache. Boundary: member guidance only. Runtime: docs. Governing contract: ADR 0026, ADR 0289 (decision 2), ADR 0284 (decision 8). -->
 
 # AGENTS — @figentra/worker-turbo-cache
 
@@ -13,7 +13,11 @@ entry is `src/main.ts`, built by tsdown into `dist/main.mjs`, which wrangler dep
 
 ## Rules agents follow
 
-- Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account.
+- Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account. Only
+  `.github/workflows/deploy-turbo-cache.yml` deploys (main pushes and `workflow_dispatch`, never a pull request).
+- The host `turbo.stackra.figentra.com` is the `routes` Custom Domain in `wrangler.jsonc`; keep `workers_dev` false.
+- The deploy job reuses `INFISICAL_CI_IDENTITY_ID` in the `static` environment; never switch it to the gate identity,
+  which pull requests can use.
 - Fail closed: a missing token or setting answers 503 before any bucket call. Never add a default token or skip auth.
 - Compare tokens only through `tokensMatch` (constant time); never log a token, header or artifact body.
 - Every limit or TTL is a `vars` entry read by `readSettings`, never a literal in the handler.
