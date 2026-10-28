@@ -40,6 +40,10 @@ Next candidates, each a driver plus a pack entry: Toledo 8217 (scanner-scales, t
 The BLE service and characteristics default to the Nordic UART service most BLE serial bridges expose
 (`bleService`, `bleNotify`, `bleWrite`).
 
+**Third-party licence.** The `usb` link uses `com.github.mik3y:usb-serial-for-android` 3.8.1 (MIT), fetched from JitPack
+at build time and declared only in `android/build.gradle` (ADR 0478 decision 4). The owner approved it for the licence
+allow-list of ADR 0174 decision 3 on 2026-10-29; a version bump keeps the approval while the licence stays MIT.
+
 ## What is here
 
 | Symbol                                                                     | Use                                                                                                            |
