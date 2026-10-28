@@ -37,6 +37,7 @@ import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
+import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
@@ -297,8 +298,10 @@ export function emitWiring(ir: MemberIR): string {
   }
   for (const { package: name, manifest } of ir.dependencies) {
     const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
-    if (entry?.class === undefined || manifest.kind === "app") continue;
-    const type = ref({ name: entry.class, from: `${name}/node` });
+    // A module class without its `file` is generated inside the dependency and exported by no entry.
+    if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
+      continue;
+    const type = ref({ name: entry.class, from: packageSpecifier(name, entry["file"]) });
     moduleLines.push(
       `    ${manifest.member}: { exports: [], dependsOn: ${list(entry.dependsOn.map((edge) => JSON.stringify(edge)))}, ` +
         `from: ${JSON.stringify(name)}, type: ${type} },`,

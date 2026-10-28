@@ -864,8 +864,11 @@ export function buildManifest(ir: MemberIR): {
   const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
   const root = rootModuleOf(ir);
   const modules: Entry[] = ir.modules.map((key) => {
+    const authored = ir.classes.find(
+      (declared) => declared.kind === "module" && declared.module === key,
+    );
     const moduleClass: Pick<DeclaredClass, "name" | "options"> | undefined =
-      ir.classes.find((declared) => declared.kind === "module" && declared.module === key) ??
+      authored ??
       (key === ir.member && root !== undefined ? { name: root.name, options: {} } : undefined);
     const exported = moduleClass?.options["exports"];
     const exports = Array.isArray(exported)
@@ -881,6 +884,8 @@ export function buildManifest(ir: MemberIR): {
     return {
       key,
       ...(moduleClass !== undefined ? { class: moduleClass.name } : {}),
+      // Only an authored module class is importable by a host; a generated one lives in this member's `.stackra/gen`.
+      ...(authored !== undefined ? { file: authored.file } : {}),
       exports,
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       dependsOn: [...dependsOn].sort(),

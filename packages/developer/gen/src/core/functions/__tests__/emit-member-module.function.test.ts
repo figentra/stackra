@@ -19,7 +19,15 @@ const LOYALTY_KIT: StackraManifest = {
   member: "loyalty_kit",
   package: "@acme/loyalty-kit",
   version: "0.4.0",
-  modules: [{ key: "loyalty_kit", class: "LoyaltyKitModule", exports: [], dependsOn: [] }],
+  modules: [
+    {
+      key: "loyalty_kit",
+      class: "LoyaltyKitModule",
+      file: "src/node/loyalty-kit.module.ts",
+      exports: [],
+      dependsOn: [],
+    },
+  ],
 };
 
 describe("emitMemberModule", () => {
@@ -46,6 +54,20 @@ describe("emitMemberModule", () => {
     expect(content).toContain(
       "export class CommerceModule extends Module({ imports: [LoyaltyKitModule] }) {}",
     );
+  });
+
+  it("skips a dependency whose module is generated (no file, exported by no entry)", () => {
+    const generated: StackraManifest = {
+      ...LOYALTY_KIT,
+      modules: [{ key: "loyalty_kit", class: "LoyaltyKitModule", exports: [], dependsOn: [] }],
+    };
+    const content =
+      emitMemberModule({
+        ...COMMERCE_IR,
+        dependencies: [{ package: "@acme/loyalty-kit", manifest: generated }],
+      }) ?? "";
+    expect(content).not.toContain("LoyaltyKitModule");
+    expect(content).toContain("export class CommerceModule extends Module {}");
   });
 
   it("writes nothing when the root module is authored", () => {

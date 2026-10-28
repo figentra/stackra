@@ -111,7 +111,14 @@ describe("emitWiring", () => {
             member: "loyalty_kit",
             package: "@acme/loyalty-kit",
             version: "0.4.0",
-            modules: [{ key: "loyalty_kit", class: "LoyaltyKitModule", dependsOn: [] }],
+            modules: [
+              {
+                key: "loyalty_kit",
+                class: "LoyaltyKitModule",
+                file: "src/node/loyalty-kit.module.ts",
+                dependsOn: [],
+              },
+            ],
           },
         },
       ],

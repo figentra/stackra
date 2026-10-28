@@ -11,6 +11,7 @@
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -30,12 +31,13 @@ export function emitMemberModule(ir: MemberIR): string | undefined {
   const modules: string[] = [];
   for (const { package: name, manifest } of ir.dependencies) {
     if (manifest.kind === "app") continue;
-    const moduleClass = manifest.modules?.find(
-      (candidate) => candidate.key === manifest.member,
-    )?.class;
-    if (moduleClass === undefined || modules.includes(moduleClass)) continue;
+    const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
+    const moduleClass = entry?.class;
+    // A module class without its `file` is generated inside the dependency and exported by no entry.
+    if (moduleClass === undefined || typeof entry?.["file"] !== "string") continue;
+    if (modules.includes(moduleClass)) continue;
     modules.push(moduleClass);
-    imports.set(`${name}/node`, new Map([[moduleClass, false]]));
+    imports.set(packageSpecifier(name, entry["file"]), new Map([[moduleClass, false]]));
   }
   const base = modules.length > 0 ? `Module({ imports: [${modules.join(", ")}] })` : "Module";
   const header = generatedHeader({
