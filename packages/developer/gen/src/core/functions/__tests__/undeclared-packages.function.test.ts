@@ -55,7 +55,10 @@ describe("undeclaredPackages", () => {
     expect(errors.map((error) => error.subject)).toEqual(["zod"]);
     expect(
       undeclaredPackages(
-        { ...COMMERCE_IR, packages: ["@stackra/clients", "@stackra/database", "zod"] },
+        {
+          ...COMMERCE_IR,
+          packages: ["@stackra/clients", "@stackra/database", "@stackra/errors", "zod"],
+        },
         [FILE],
         "schema_dependency_missing",
         ["zod"],
@@ -95,9 +98,11 @@ describe("undeclaredPackages", () => {
       packages: (BILLING_IR.packages ?? []).filter((name) => name !== "zod"),
     });
     expect(files).toEqual([]);
-    expect(errors.map((error) => [error.code, error.subject])).toEqual([
-      ["schema_dependency_missing", "zod"],
-    ]);
+    // One refusal per schemas file, each for zod.
+    expect(errors.length).toBeGreaterThan(0);
+    expect(new Set(errors.map((error) => `${error.code} ${error.subject}`))).toEqual(
+      new Set(["schema_dependency_missing zod"]),
+    );
   });
 
   it("makes generateMember refuse any other generated file importing an undeclared package (STA-1296)", () => {
