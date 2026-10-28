@@ -8,7 +8,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rules 12 and 37); ADR 0110 (decision 2).
  */
 import { queryRef } from "@stackra/clients";
-import type { Branded } from "@stackra/contracts";
+import type { Branded, LocalizedText } from "@stackra/contracts";
 import { describe, expectTypeOf, it } from "@stackra/testing";
 import { Schema } from "@stackra/validation";
 import { z } from "zod";
@@ -16,7 +16,6 @@ import { z } from "zod";
 import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { BlockProps } from "#core/types/block-props.type";
-import type { LocalizedText } from "#core/types/localized-text.type";
 
 /** A stand-in for `@stackra/i18n`'s branded `I18nKey`. */
 type I18nKey = Branded<string, "i18n.I18nKey">;

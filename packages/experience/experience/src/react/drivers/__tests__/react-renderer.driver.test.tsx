@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 4 and 6); ADR 0112 (X5, X9).
  */
 // @vitest-environment jsdom
-import { Port } from "@stackra/contracts";
+import { type LocalizedText, Port } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
@@ -24,7 +24,6 @@ import { BLOCK_ENTRIES } from "#core/constants/block-entries.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import { UnknownBlockError } from "#core/errors/unknown-block.error";
 import { registerBlocks } from "#core/functions/register-blocks.function";
-import type { LocalizedText } from "#core/types/localized-text.type";
 import { ReactRendererDriver } from "#react/drivers/react-renderer.driver";
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: () => ({ data: undefined, error: null }) }));

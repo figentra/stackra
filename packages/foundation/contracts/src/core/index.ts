@@ -63,6 +63,7 @@ export type { Email } from "#core/types/email.type";
 export type { GeoPoint } from "#core/types/geo-point.type";
 export type { HealthReport } from "#core/types/health-report.type";
 export type { Json } from "#core/types/json.type";
+export type { LocalizedText } from "#core/types/localized-text.type";
 export type { PackageDefinition } from "#core/types/package-definition.type";
 export type { RetryPolicy } from "#core/types/retry-policy.type";
 export type { PublicId } from "#core/types/public-id.type";

@@ -10,6 +10,7 @@
  * Governing contract: ADR 0022; ADR 0270 (decisions 6 and 7); ADR 0365 (decision 2).
  */
 import { Driver } from "@stackra/container";
+import type { LocalizedText } from "@stackra/contracts";
 import { PdfEngine, type PdfPage } from "@stackra/documents/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Renamed } from "@stackra/validation";
@@ -21,7 +22,6 @@ import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import { InvalidDocumentError } from "#core/errors/invalid-document.error";
 import { UnknownBlockError } from "#core/errors/unknown-block.error";
-import type { LocalizedText } from "#core/types/localized-text.type";
 import { renderEmailTemplate } from "#server/functions/render-email-template.function";
 import { renderPrintDocument } from "#server/functions/render-print-document.function";
 import { renderServerHtml } from "#server/functions/render-server-html.function";

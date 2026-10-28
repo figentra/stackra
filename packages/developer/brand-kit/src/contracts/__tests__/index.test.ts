@@ -6,6 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
+import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -14,7 +15,6 @@ import type {
   BrandKitOptions,
   BrandOutput,
   KitStatus,
-  LocalizedText,
 } from "#contracts/index";
 
 describe("@stackra/brand-kit/contracts", () => {
@@ -24,7 +24,7 @@ describe("@stackra/brand-kit/contracts", () => {
 
   it("resolves the public types", () => {
     expectTypeOf<BrandKit["status"]>().toEqualTypeOf<KitStatus>();
-    expectTypeOf<BrandKit["name"]>().toEqualTypeOf<LocalizedText>();
+    expectTypeOf<BrandKit["name"]>().toEqualTypeOf<LocalizedText & { readonly en: string }>();
     expectTypeOf<BrandKitOptions["outputs"]>().toEqualTypeOf<readonly BrandOutput[] | undefined>();
   });
 });

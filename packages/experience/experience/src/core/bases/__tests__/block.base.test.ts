@@ -12,6 +12,7 @@
  */
 import { queryRef } from "@stackra/clients";
 import { kindOf } from "@stackra/container";
+import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Int, Renamed } from "@stackra/validation";
 import type { Fields } from "@stackra/validation";
@@ -22,7 +23,6 @@ import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { BlockClass } from "#core/types/block-class.type";
 import type { BlockOptions } from "#core/types/block-options.type";
-import type { LocalizedText } from "#core/types/localized-text.type";
 
 /** A stand-in for the content service's `content.entry.list` client. */
 class ListEntriesQuery extends queryRef("content.entry.list@1", {

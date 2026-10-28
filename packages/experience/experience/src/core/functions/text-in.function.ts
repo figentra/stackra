@@ -8,7 +8,7 @@
  * Governing contract: ADR 0162 (decision 2: the fallback chain); ADR 0305 (lang conventions: regional overlays fall
  *                     back to their base language).
  */
-import type { LocalizedText } from "#core/types/localized-text.type";
+import type { LocalizedText } from "@stackra/contracts";
 
 /**
  * The text of `text` for `locale`.

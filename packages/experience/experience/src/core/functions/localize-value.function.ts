@@ -9,10 +9,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0110 (decision 1); ADR 0294 (decision 26: one zod schema per shape); ADR 0162 (decision 2).
  */
+import type { LocalizedText } from "@stackra/contracts";
 import { z } from "zod";
 
 import { textIn } from "#core/functions/text-in.function";
-import type { LocalizedText } from "#core/types/localized-text.type";
 
 /** Each entry of `record` with `map` applied to its value. */
 const mapEntries = (

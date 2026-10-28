@@ -2,7 +2,7 @@
 
 # AGENTS — @stackra/experience
 
-The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Renderer` port, the web and native
+The `Block` kind (its per-locale props are `@stackra/contracts`' `LocalizedText`), the L2 document format and validator, the `Renderer` port, the web and native
 `DocumentRenderer`, the edge HTML render and the node renderer of email templates and print documents. Member at `packages/experience/experience` (`tier:lib`), in the
 programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./edge`, `./server`, `./react`, `./native`.
 

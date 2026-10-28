@@ -2,7 +2,7 @@
 
 # @stackra/experience
 
-Stackra experience: the `Block` kind, `LocalizedText`, the L2 document format and its validator, the `Renderer` port,
+Stackra experience: the `Block` kind (per-locale props are `@stackra/contracts`' `LocalizedText`), the L2 document format and its validator, the `Renderer` port,
 the web and native `DocumentRenderer`, the edge render of a published document to HTML (`./edge`), and the node
 renderer of email templates and print documents (`./server`, PDF through `@stackra/documents`). A block is
 registered code (a props class and a component); a document is data that names block keys and their props, never
@@ -22,7 +22,6 @@ only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export
 | Entry         | Symbol                                                                                                             | Use                                                                                                            |
 | ------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | `.`           | `Block`, `BlockCategory`                                                                                           | the kind base: `class XBlock extends Block({ category, icon, accepts? }) {}`                                   |
-| `.`           | `LocalizedText`                                                                                                    | a prop written once per locale (`{ en: "…", ar: "…" }`)                                                        |
 | `.`           | `BlockProps`                                                                                                       | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them                                     |
 | `.`           | `registerBlocks`                                                                                                   | the generated wiring's call linking each block to its key and component                                        |
 | `.`           | `registeredBlocks`                                                                                                 | a read-only copy of the registered block classes by key, for the builder                                       |

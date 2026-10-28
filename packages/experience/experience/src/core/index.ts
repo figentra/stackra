@@ -28,7 +28,6 @@ export type { BlockClass } from "#core/types/block-class.type";
 export type { BlockEntry } from "#core/types/block-entry.type";
 export type { BlockOptions } from "#core/types/block-options.type";
 export type { BlockProps } from "#core/types/block-props.type";
-export type { LocalizedText } from "#core/types/localized-text.type";
 export type { ResolvedNode } from "#core/types/resolved-node.type";
 export type { ThemeChange } from "#core/types/theme-change.type";
 export type { ThemeDiff } from "#core/types/theme-diff.type";

@@ -9,6 +9,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0440; app-shells-edge-and-extension.md section 16 (points 1 and 6).
  */
 import { queryRef } from "@stackra/clients";
+import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Renamed } from "@stackra/validation";
 import { z } from "zod";
@@ -16,7 +17,6 @@ import { escapeHtml } from "@stackra/support";
 
 import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { LocalizedText } from "#core/types/localized-text.type";
 import { EdgeRenderFailure } from "#edge/enums/edge-render-failure.enum";
 import { renderEdgeDocument } from "#edge/functions/render-edge-document.function";
 import type { EdgeBlock } from "#edge/types/edge-block.type";

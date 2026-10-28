@@ -10,6 +10,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0110 (decisions 1, 2 and 6); ADR 0294 (decision 26).
  */
 import { queryRef } from "@stackra/clients";
+import type { LocalizedText } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Renamed } from "@stackra/validation";
@@ -22,7 +23,6 @@ import { InvalidDocumentError } from "#core/errors/invalid-document.error";
 import { UnknownBlockError } from "#core/errors/unknown-block.error";
 import { registerBlocks } from "#core/functions/register-blocks.function";
 import { resolveDocument } from "#core/functions/resolve-document.function";
-import type { LocalizedText } from "#core/types/localized-text.type";
 
 /** A stand-in for the content service's `content.entry.list` client. */
 class ListEntriesQuery extends queryRef("content.entry.list@1", {

@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the template imports `Block`, `BlockCategory` and the
- *          `BlockProps` and `LocalizedText` types; the wiring adds `registerBlocks`, the builder `registeredBlocks`,
- *          the validator and its two refusals, the server-side validator and the theme revisions complete it;
+ *          `BlockProps` type (`LocalizedText` is `@stackra/contracts`', STA-1383); the wiring adds `registerBlocks`,
+ *          the builder `registeredBlocks`, the validator and its two refusals, the server-side validator and the theme revisions complete it;
  *          nothing else is exported.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
  */
+import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import type { ExperienceKind } from "#contracts/enums/experience-kind.enum";
@@ -16,7 +17,6 @@ import * as core from "#core/index";
 import type {
   BlockEntry,
   BlockOptions,
-  LocalizedText,
   ResolvedNode,
   Theme,
   ThemeChange,
