@@ -149,7 +149,8 @@
   "dependencies": {
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/tsdown-config": "workspace:*",
