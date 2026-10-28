@@ -1,3 +1,5 @@
+<!-- Purpose: the index of the design-system category (tokens, ui) and the rules its packages follow. Boundary: category index only; each package documents itself. Runtime: docs. Governing contract: ADR 0302, ADR 0461 (decision 3). -->
+
 # `packages/design-system/`
 
 The Stackra Design System: one token schema and one component API for the web and native apps. One folder per
@@ -6,9 +8,10 @@ package, `packages/design-system/<name>`, named `@stackra/<name>`
 
 **Today:** [`tokens`](tokens) (`@stackra/tokens`): the theme schema, the default stackra theme, its HeroUI v3 web CSS
 and its HeroUI Native / Uniwind CSS, and the theme's fonts. [`ui`](ui) (`@stackra/ui`): the component API, contracts
-shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. [`ui-pro`](ui-pro) (`@stackra-pro/ui`, published
-only to Figentra's restricted Keygen channel): the same props vocabulary over HeroUI Pro and HeroUI Native Pro, for Stackra's own apps only
-([ADR 0310](../../apps/docs/src/docs/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers.mdx)).
+shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. The HeroUI Pro wrappers, `@stackra-pro/ui`, moved
+to figentra/stackra-pro and are internal-only on the Stackra registry
+([ADR 0461](../../apps/docs/src/docs/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers.mdx)
+decision 3).
 
 **Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
 assets live in the docs app (`apps/docs/src/assets/brand/`).

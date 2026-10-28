@@ -53,10 +53,9 @@ jobs:
       # subject, so the Infisical identity can trust this job and nothing else.
       environment: static
       sha: ${{ inputs.sha }}
-      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
-      # in are not installed; none of them is deployed here.
-      install-args: >-
-        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra-pro/ui
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
+      # in are not installed; neither is deployed here.
+      install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
       infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
       smoke-url: https://static.stackra.figentra.com/schemas/index.json

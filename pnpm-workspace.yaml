@@ -5,6 +5,7 @@
 # Scope: every member under apps/*, packages/<category>/<name>, services/*, workers/*.
 # Owner: release-operations (the owner reviews catalog changes)
 # Secrets: forbidden
+# Changed: stackra-90 (2026-10-28) dropped the catalogs, peer copies and builds only @stackra-pro/ui used (ADR 0461).
 packages:
   - apps/*
   - packages/*/*
@@ -139,9 +140,8 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
-    # HeroUI Pro for web (ADR 0310) and its optional peers (tiptap, maplibre-gl, the markdown set, shiki, recharts,
-    # number-flow, embla, react-resizable-panels) moved with @stackra-pro/ui to figentra/stackra-pro (stackra-189);
-    # no member here uses them (knip `catalog` is an error, stackra-235). motion stays: free members use it.
+    # Animation for @stackra/ui and the playground. The HeroUI Pro set (@heroui-pro/react and its optional peers)
+    # left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189); figentra/stackra-pro pins it.
     motion: 12.43.0
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
@@ -203,9 +203,8 @@ catalogs:
     react-native-svg: 15.15.4
     "@gorhom/bottom-sheet": 5.2.14
     heroui-native: 1.0.10
-    # HeroUI Native Pro and its optional peers (Skia, victory-native, libphonenumber-js, pager-view, reanimated-dnd)
-    # moved to figentra/stackra-pro with the Pro split (stackra-189); no member here uses them (stackra-235).
-    # The two @internationalized packages stay: free members use them, pinned to what @heroui/react resolves.
+    # Dates and numbers for @stackra/ui, panel and the apps, pinned to what @heroui/react resolves. HeroUI Native Pro
+    # and its optional peers left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189).
     "@internationalized/date": 3.12.4
     "@internationalized/number": 3.6.9
     # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
@@ -313,12 +312,8 @@ overrides:
   "uuid@<11.1.1": "11.1.1"
   "zod@>=4.0.0 <4.6.6": "4.6.6"
 
-# ADR 0310: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
-# so pnpm never sees their peers and links none: a Pro module then resolves the hoisted React of another catalog
-# ("Invalid hook call"). These are the peers of the downloaded 1.0.0-beta.10 / 1.0.0-beta.11 package.json, copied
-# verbatim; update them with each Pro bump. `@types/react` is ours, not Pro's: its .d.ts files import "react", and
-# without a linked peer TypeScript finds the hoisted @types/react of the mobile catalog (19.2.18), so a consumer on the
-# frontend catalog (19.3.0) sees two unrelated `Ref` types (TS2322 in ui-pro's NumberValue).
+# Dependencies a published package uses without declaring. The HeroUI Pro peer copies left core with @stackra-pro/ui
+# (ADR 0461 decision 3, stackra-189); figentra/stackra-pro keeps them.
 packageExtensions:
   # react-native-worklets 0.10.1's Babel plugin requires @babel/generator and @babel/traverse without declaring them,
   # so it resolves pnpm's hidden-hoisted copies: the Babel 8 ones that @babel/core of catalog:build brings. Babel 8's
@@ -329,110 +324,6 @@ packageExtensions:
     dependencies:
       "@babel/generator": ^7.29.0
       "@babel/traverse": ^7.29.0
-  "@heroui-pro/react":
-    peerDependencies:
-      "@types/react": ">=19.0.0"
-      "@heroui/react": ">=3.2.6"
-      "@heroui/styles": ">=3.2.6"
-      "@number-flow/react": ">=0.5.0"
-      "@react-aria/utils": ">=3.34.1"
-      "@tiptap/core": ">=3.23.6"
-      "@tiptap/extension-link": ">=3.23.6"
-      "@tiptap/extension-underline": ">=3.23.6"
-      "@tiptap/extensions": ">=3.23.6"
-      "@tiptap/pm": ">=3.23.6"
-      "@tiptap/react": ">=3.23.6"
-      "@tiptap/starter-kit": ">=3.23.6"
-      "@tiptap/suggestion": ">=3.23.6"
-      embla-carousel: ">=8.6.0"
-      embla-carousel-react: ">=8.6.0"
-      maplibre-gl: ">=6.0.0"
-      marked: ">=18.0.0"
-      motion: ">=12.12.0"
-      react: ">=19.0.0"
-      react-aria: ">=3.52.1"
-      react-aria-components: ">=1.21.1"
-      react-dom: ">=19.0.0"
-      react-markdown: ">=10.1.0"
-      react-resizable-panels: ">=4.10.0"
-      react-stately: ">=3.50.0"
-      recharts: ">=2.0.0"
-      remark-breaks: ">=4.0.0"
-      remark-gfm: ">=4.0.0"
-      shiki: ">=4.0.0"
-      streamdown: ">=2.5.0"
-      tailwind-merge: ">=3.4.0"
-      tailwind-variants: ">=3.3.1"
-      tailwindcss: ">=4.0.0"
-    peerDependenciesMeta:
-      "@types/react":
-        optional: true
-      "@tiptap/core":
-        optional: true
-      "@tiptap/extension-link":
-        optional: true
-      "@tiptap/extension-underline":
-        optional: true
-      "@tiptap/extensions":
-        optional: true
-      "@tiptap/pm":
-        optional: true
-      "@tiptap/react":
-        optional: true
-      "@tiptap/starter-kit":
-        optional: true
-      "@tiptap/suggestion":
-        optional: true
-      maplibre-gl:
-        optional: true
-      marked:
-        optional: true
-      react-markdown:
-        optional: true
-      remark-breaks:
-        optional: true
-      remark-gfm:
-        optional: true
-      streamdown:
-        optional: true
-      "@number-flow/react":
-        optional: true
-      embla-carousel:
-        optional: true
-      embla-carousel-react:
-        optional: true
-      recharts:
-        optional: true
-      shiki:
-        optional: true
-  heroui-native-pro:
-    peerDependencies:
-      "@internationalized/date": "^3.12.0"
-      "@internationalized/number": "^3.6.6"
-      "@shopify/react-native-skia": ">=2.0.0"
-      heroui-native: "^1.0.10"
-      libphonenumber-js: "^1.12.10"
-      react-native-pager-view: ">=6.0.0"
-      react-native-reanimated-dnd: ">=2.0.0"
-      react-native-screens: ">=4.0.0"
-      victory-native: "^41.20.2"
-    peerDependenciesMeta:
-      "@internationalized/date":
-        optional: true
-      "@internationalized/number":
-        optional: true
-      "@shopify/react-native-skia":
-        optional: true
-      libphonenumber-js:
-        optional: true
-      react-native-pager-view:
-        optional: true
-      react-native-reanimated-dnd:
-        optional: true
-      react-native-screens:
-        optional: true
-      victory-native:
-        optional: true
 
 # Dependency lifecycle scripts are blocked by default (pnpm supply-chain security). Every entry here was
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
@@ -458,12 +349,8 @@ allowBuilds:
   cpu-features: false
   # Pulled in by @testcontainers/postgresql too: protobufjs wants a postinstall only for its CLI.
   protobufjs: false
-  # HeroUI Pro (ADR 0310): the postinstall downloads the licensed build from HeroUI's CDN (a CLI login locally,
-  # HEROUI_AUTH_TOKEN in CI); without it the package is an empty shell.
-  "@heroui-pro/react": true
-  heroui-native-pro: true
-  # OS-keychain binding of the heroui-pro CLI (pulled in by the two above); it ships prebuilt binaries, so the
-  # postinstall reads a `heroui-pro login` session without building it.
+  # OS-keychain binding of a Pro CLI login (HeroUI Pro brought it; kept off until the relinked lockfile shows
+  # nothing pulls it in, then it goes too).
   "@zowe/secrets-for-zowe-sdk": false
   # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
   uniwind: true
@@ -471,9 +358,6 @@ allowBuilds:
   # C2PA (stackra-26): its postinstall fetches or builds the native binding. Off until a run that needs the binding
   # proves it and the owner approves the download; the batch's tests run on recorded fixtures.
   "@contentauth/c2pa-node": false
-  # Skia (STA-416, native charts): the postinstall copies the prebuilt Apple and Android libraries from its own
-  # platform packages into libs/, with no download; the native build needs them.
-  "@shopify/react-native-skia": true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"

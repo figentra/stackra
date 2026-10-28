@@ -66,12 +66,11 @@ jobs:
     uses: ./.github/workflows/runway-npm.yml
     with:
       environment: release
-      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
-      # in are not installed; none of them is published.
-      install-args: >-
-        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra-pro/ui
-      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310, 0461) is never published here.
-      build-args: --filter=./packages/** --filter=!@stackra-pro/ui
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
+      # in are not installed; neither is published.
+      install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+      # Only what is published: the packages (@stackra-pro/ui lives in figentra/stackra-pro since ADR 0461).
+      build-args: --filter=./packages/**
       dry-run: ${{ inputs.dry_run == true }}
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
       registry: https://npm.stackra.figentra.com/
@@ -137,9 +136,7 @@ jobs:
           trivy fs --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress .
 
       - name: Install dependencies
-        run: >-
-          pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-          --filter=!@stackra-pro/ui
+        run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
       - name: Build
         env:

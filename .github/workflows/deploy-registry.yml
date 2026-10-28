@@ -67,12 +67,10 @@ jobs:
         with:
           install_args: node pnpm
 
-      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
-      # in are not installed; none of them is deployed here (as deploy-static.yml).
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
+      # in are not installed; neither is deployed here (as deploy-static.yml).
       - name: Install dependencies
-        run: >-
-          pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-          --filter=!@stackra-pro/ui
+        run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
       # A broken build or a failing test never reaches Cloudflare.
       - name: Test and build

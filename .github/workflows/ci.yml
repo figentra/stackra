@@ -73,8 +73,8 @@ jobs:
       - name: Dependency scan (OSV-Scanner)
         run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
-      # Without the licensed builds, @stackra-pro/ui, the playground and the mobile app cannot typecheck or build; stop
-      # here with the reason instead of failing later on missing types.
+      # Without the licensed builds, the playground and the mobile app cannot typecheck or build; stop here with the
+      # reason instead of failing later on missing types.
       - name: Licensed UI prerequisites
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
