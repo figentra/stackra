@@ -13,6 +13,19 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { Dropdown } from "#react/dropdown/dropdown";
 
 describe("Dropdown (web)", () => {
+  beforeAll(() => {
+    // jsdom has no layout, and the menu scrolls the focused item into view on an animation frame that can land after
+    // the test, so the stub stays for the whole file (as in the menu test).
+    Object.defineProperty(Element.prototype, "scrollTo", {
+      value: () => undefined,
+      configurable: true,
+    });
+  });
+
+  afterAll(() => {
+    Reflect.deleteProperty(Element.prototype, "scrollTo");
+  });
+
   it("opens the menu and reports the chosen item", async () => {
     const onAction = vi.fn();
     render(

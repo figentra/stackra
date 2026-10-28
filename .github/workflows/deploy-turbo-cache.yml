@@ -55,6 +55,8 @@ jobs:
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
       INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
       INFISICAL_DOMAIN: https://eu.infisical.com
+      # wrangler.jsonc's account_id; `wrangler r2` does not read it, and the token reaches more than one account.
+      CLOUDFLARE_ACCOUNT_ID: d861f9ac9df28b7f0b1298cc0c89bc9d
       CACHE_URL: https://turbo.stackra.figentra.com
       # The bucket of wrangler.jsonc and its lifecycle rule (ADR 0026: 7 days, as TURBO_CACHE_TTL_SECONDS).
       BUCKET: turbo-cache
