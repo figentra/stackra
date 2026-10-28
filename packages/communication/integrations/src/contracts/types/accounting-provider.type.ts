@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0356 (decision 2); ADR 0355 (decision 1: the driver role); Juristra services-and-packages.
  */
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
 import type { PostedJournal } from "#contracts/types/posted-journal.type";
 
 /**
@@ -23,7 +23,7 @@ export interface AccountingProvider {
    *
    * @returns the provider's journal.
    */
-  post(entry: JournalEntry, idempotencyKey: string): Promise<PostedJournal>;
+  post(entry: AccountingJournalEntry, idempotencyKey: string): Promise<PostedJournal>;
 
   /**
    * The journal posted under `idempotencyKey`, for a call whose answer was lost.

@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0443 (decisions 7 and 8); STA-794.
  */
-import type { JournalEntry, PostedJournal } from "#contracts/index";
+import type { AccountingJournalEntry, PostedJournal } from "#contracts/index";
 import type { RecordedExchange } from "#testing/accounting/recorded-exchange.type";
 
 /**
@@ -26,7 +26,7 @@ export interface AccountingCase {
   readonly certification: "pending" | "sandbox";
 
   /** The journal to post, already in the provider's account and tax codes. */
-  readonly entry: JournalEntry;
+  readonly entry: AccountingJournalEntry;
 
   /** The key it is posted under, both times. */
   readonly idempotencyKey: string;

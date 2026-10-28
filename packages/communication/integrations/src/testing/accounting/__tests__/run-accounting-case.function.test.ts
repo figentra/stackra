@@ -11,7 +11,7 @@
 import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
-import type { AccountingProvider, JournalEntry, PostedJournal } from "#contracts/index";
+import type { AccountingProvider, AccountingJournalEntry, PostedJournal } from "#contracts/index";
 import type { IntegrationApi } from "#core/index";
 import type { AccountingCase } from "#testing/accounting/accounting-case.type";
 import { runAccountingCase } from "#testing/accounting/run-accounting-case.function";
@@ -28,7 +28,7 @@ class LedgerAccounting implements AccountingProvider {
     this.forgetful = forgetful;
   }
 
-  async post(entry: JournalEntry, idempotencyKey: string): Promise<PostedJournal> {
+  async post(entry: AccountingJournalEntry, idempotencyKey: string): Promise<PostedJournal> {
     const body = {
       date: entry.date.toISOString().slice(0, 10),
       memo: entry.narration,
@@ -60,7 +60,7 @@ class LedgerAccounting implements AccountingProvider {
   }
 }
 
-const entry: JournalEntry = {
+const entry: AccountingJournalEntry = {
   date: new Date("2026-10-27T00:00:00Z"),
   narration: "Invoice 1",
   reference: "inv_1",

@@ -70,8 +70,8 @@ export type { FraudScoringConnector } from "#contracts/types/fraud-scoring-conne
 export type { Fulfilment } from "#contracts/types/fulfilment.type";
 export type { FulfilmentProviderConnector } from "#contracts/types/fulfilment-provider-connector.type";
 export type { FulfilmentRequest } from "#contracts/types/fulfilment-request.type";
-export type { JournalEntry } from "#contracts/types/journal-entry.type";
-export type { JournalLine } from "#contracts/types/journal-line.type";
+export type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
+export type { AccountingJournalLine } from "#contracts/types/accounting-journal-line.type";
 export type { ManagedCostEvent } from "#contracts/types/managed-cost-event.type";
 export type { ManagedResource } from "#contracts/types/managed-resource.type";
 export type { OutboundCall } from "#contracts/types/outbound-call.type";

@@ -13,7 +13,7 @@ import type {
   AccountMap,
   AccountMapped,
   AccountingProvider,
-  JournalEntry,
+  AccountingJournalEntry,
   PostedJournal,
 } from "#contracts/index";
 import { postMappedJournal } from "#core/accounting/post-mapped-journal.function";
@@ -21,7 +21,7 @@ import { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
 import { UnbalancedJournalError } from "#core/errors/unbalanced-journal.error";
 
 const sar = (minor: number) => Money.ofMinor(minor, "SAR");
-const entry = (credit: number): JournalEntry => ({
+const entry = (credit: number): AccountingJournalEntry => ({
   date: new Date("2026-10-27"),
   narration: "Invoice 1",
   reference: "inv_1",
@@ -33,7 +33,7 @@ const entry = (credit: number): JournalEntry => ({
 /** Remembers posts by key and holds `accountMap`. */
 function connector(
   accountMap: AccountMap = { accounts: { receivables: "1100", sales: "4000" } },
-): AccountingProvider & AccountMapped & { posted: JournalEntry[] } {
+): AccountingProvider & AccountMapped & { posted: AccountingJournalEntry[] } {
   const byKey = new Map<string, PostedJournal>();
   return {
     posted: [],

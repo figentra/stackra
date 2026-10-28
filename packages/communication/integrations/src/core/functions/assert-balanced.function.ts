@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: Juristra services-and-packages (balanced journals); ADR 0356 (decision 2).
  */
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
 import { UnbalancedJournalError } from "#core/errors/unbalanced-journal.error";
 
 /**
@@ -16,7 +16,7 @@ import { UnbalancedJournalError } from "#core/errors/unbalanced-journal.error";
  * @example
  * assertBalanced({ date, narration, reference: "inv_1", lines: [debit, credit] });
  */
-export function assertBalanced(entry: JournalEntry): void {
+export function assertBalanced(entry: AccountingJournalEntry): void {
   if (entry.lines.length < 2 || entry.lines.some((line) => line.amount.minor <= 0))
     throw UnbalancedJournalError.create({ reference: entry.reference });
   const totals = new Map<string, number>();

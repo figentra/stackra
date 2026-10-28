@@ -9,7 +9,7 @@
  * Governing contract: Juristra services-and-packages (balanced, idempotent journals); ADR 0356 (decision 2).
  */
 import type { AccountingProvider } from "#contracts/types/accounting-provider.type";
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
 import type { PostedJournal } from "#contracts/types/posted-journal.type";
 import { assertBalanced } from "#core/functions/assert-balanced.function";
 
@@ -22,7 +22,7 @@ import { assertBalanced } from "#core/functions/assert-balanced.function";
  */
 export async function postJournal(
   provider: AccountingProvider,
-  entry: JournalEntry,
+  entry: AccountingJournalEntry,
   idempotencyKey: string,
 ): Promise<PostedJournal> {
   assertBalanced(entry);

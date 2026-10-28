@@ -8,8 +8,8 @@
  * Governing contract: ADR 0356 (decision 2); STA-794 (account mapping per Connection).
  */
 import type { AccountMap } from "#contracts/accounting/account-map.type";
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
-import type { JournalLine } from "#contracts/types/journal-line.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
+import type { AccountingJournalLine } from "#contracts/types/accounting-journal-line.type";
 import { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
 
 /**
@@ -19,8 +19,8 @@ import { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
  * @example
  * const posted = await postJournal(accounting, mapJournal(entry, await accounting.accountMap()), key);
  */
-export function mapJournal(entry: JournalEntry, map: AccountMap): JournalEntry {
-  const lines = entry.lines.map((line): JournalLine => {
+export function mapJournal(entry: AccountingJournalEntry, map: AccountMap): AccountingJournalEntry {
+  const lines = entry.lines.map((line): AccountingJournalLine => {
     const account = Object.hasOwn(map.accounts, line.account)
       ? map.accounts[line.account]
       : undefined;

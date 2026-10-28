@@ -10,7 +10,7 @@
  */
 import type { AccountMapped } from "#contracts/accounting/account-mapped.type";
 import type { AccountingProvider } from "#contracts/types/accounting-provider.type";
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
 import type { PostedJournal } from "#contracts/types/posted-journal.type";
 import { mapJournal } from "#core/accounting/map-journal.function";
 import { postJournal } from "#core/functions/post-journal.function";
@@ -24,7 +24,7 @@ import { postJournal } from "#core/functions/post-journal.function";
  */
 export async function postMappedJournal(
   provider: AccountingProvider & AccountMapped,
-  entry: JournalEntry,
+  entry: AccountingJournalEntry,
   idempotencyKey: string,
 ): Promise<PostedJournal> {
   return postJournal(provider, mapJournal(entry, await provider.accountMap()), idempotencyKey);

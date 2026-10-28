@@ -9,12 +9,12 @@
 import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
-import type { AccountMap, JournalEntry } from "#contracts/index";
+import type { AccountMap, AccountingJournalEntry } from "#contracts/index";
 import { mapJournal } from "#core/accounting/map-journal.function";
 import { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
 
 const sar = (minor: number) => Money.ofMinor(minor, "SAR");
-const entry: JournalEntry = {
+const entry: AccountingJournalEntry = {
   date: new Date("2026-10-27"),
   narration: "Invoice 1",
   reference: "inv_1",

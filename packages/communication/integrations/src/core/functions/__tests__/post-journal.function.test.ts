@@ -11,13 +11,13 @@ import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { AccountingProvider } from "#contracts/types/accounting-provider.type";
-import type { JournalEntry } from "#contracts/types/journal-entry.type";
+import type { AccountingJournalEntry } from "#contracts/types/accounting-journal-entry.type";
 import { UnbalancedJournalError } from "#core/errors/unbalanced-journal.error";
 import { assertBalanced } from "#core/functions/assert-balanced.function";
 import { postJournal } from "#core/functions/post-journal.function";
 
 const sar = (minor: number) => Money.ofMinor(minor, "SAR");
-const entry = (lines: JournalEntry["lines"]): JournalEntry => ({
+const entry = (lines: AccountingJournalEntry["lines"]): AccountingJournalEntry => ({
   date: new Date("2026-10-25"),
   narration: "Invoice 1",
   reference: "inv_1",

@@ -10,7 +10,7 @@
 import { Money } from "@stackra/money";
 import { describe, expect, it } from "@stackra/testing";
 
-import type { JournalEntry } from "#contracts/index";
+import type { AccountingJournalEntry } from "#contracts/index";
 import { ProviderRefusedError, UnbalancedJournalError } from "#core/index";
 import { MemoryAccountingConnector } from "#testing/accounting/memory-accounting.connector";
 
@@ -18,7 +18,7 @@ const chart = [
   { code: "1100", name: "Receivables" },
   { code: "4000", name: "Sales" },
 ];
-const entry = (credit: string, minor = 10_000): JournalEntry => ({
+const entry = (credit: string, minor = 10_000): AccountingJournalEntry => ({
   date: new Date("2026-10-27"),
   narration: "Invoice 1",
   reference: "inv_1",

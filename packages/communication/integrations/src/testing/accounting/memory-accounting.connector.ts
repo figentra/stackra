@@ -14,7 +14,7 @@ import type {
   AccountMap,
   AccountMapped,
   AccountingProvider,
-  JournalEntry,
+  AccountingJournalEntry,
   PostedJournal,
 } from "#contracts/index";
 import { assertBalanced, ProviderRefusedError } from "#core/index";
@@ -40,7 +40,7 @@ interface MemoryAccountingOptions {
  */
 export class MemoryAccountingConnector implements AccountingProvider, AccountMapped {
   /** Every journal posted, oldest first. */
-  readonly posted: JournalEntry[] = [];
+  readonly posted: AccountingJournalEntry[] = [];
 
   /** Idempotency key to journal. */
   private readonly journals = new Map<string, PostedJournal>();
@@ -56,7 +56,7 @@ export class MemoryAccountingConnector implements AccountingProvider, AccountMap
   }
 
   /** Posts `entry` once per `idempotencyKey`, refusing an account outside the chart. */
-  async post(entry: JournalEntry, idempotencyKey: string): Promise<PostedJournal> {
+  async post(entry: AccountingJournalEntry, idempotencyKey: string): Promise<PostedJournal> {
     const existing = this.journals.get(idempotencyKey);
     if (existing !== undefined) return existing;
     assertBalanced(entry);
