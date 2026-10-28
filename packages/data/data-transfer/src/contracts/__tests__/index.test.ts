@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the three ports and `ImportRunState` are exported and
+ * Purpose: the consumer contract of the `./contracts` entry: the four ports and `ImportRunState` are exported and
  *          nothing else is, and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -23,6 +23,8 @@ import type {
   TabularSource,
   TabularWriteOptions,
   TransferLimits,
+  WarehouseBatch,
+  WarehouseWriteOptions,
 } from "#contracts/index";
 
 describe("@stackra/data-transfer/contracts", () => {
@@ -34,6 +36,7 @@ describe("@stackra/data-transfer/contracts", () => {
       "RowError$",
       "TabularReader",
       "TabularWriter",
+      "WarehouseSink",
     ]);
   });
 
@@ -43,6 +46,9 @@ describe("@stackra/data-transfer/contracts", () => {
     expectTypeOf<TransferLimits["rows"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<TabularReadOptions["limits"]>().toEqualTypeOf<TransferLimits | undefined>();
     expectTypeOf<TabularWriteOptions["formulaGuard"]>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf<TabularWriteOptions["rowGroupRows"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<WarehouseBatch["day"]>().toEqualTypeOf<string>();
+    expectTypeOf<WarehouseWriteOptions["rowGroupRows"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<TabularSheet["name"]>().toEqualTypeOf<string>();
     expectTypeOf<Uint8Array[]>().toExtend<TabularSource>();
     expectTypeOf<ImportBatchEntry["changes"]>().toEqualTypeOf<readonly ImportChange[]>();

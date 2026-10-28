@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `TabularWriteOptions`, the CSV writer's knobs: the delimiter, the UTF-8 byte order mark and the formula
- *          guard.
- * Boundary: a type only; the workbook writer ignores it.
+ * Purpose: `TabularWriteOptions`, the writers' knobs: the CSV delimiter, the UTF-8 byte order mark and the formula
+ *          guard, and the Parquet row group size.
+ * Boundary: a type only; the workbook writer ignores it, and each other writer reads only its own fields.
  * Runtime: isomorphic
  * Governing contract: ADR 0367 (decision 10).
  */
@@ -17,4 +17,7 @@ export interface TabularWriteOptions {
 
   /** Whether a text cell that a spreadsheet would run as a formula is prefixed with `'`; `true` when absent. */
   readonly formulaGuard?: boolean;
+
+  /** The rows per Parquet row group, so a large sheet is written in parts; the whole sheet is one group when absent. */
+  readonly rowGroupRows?: number;
 }

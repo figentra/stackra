@@ -5,7 +5,7 @@
  * Boundary: names each re-export and declares nothing. The ports, `ImportRunState` and the contract types are exported
  *           from `./contracts` only (ADR 0294 decision 15); the XLSX drivers from `./node` only, so a browser never
  *           pulls exceljs (ADR 0431 decision 5). The CSV parser, decoders, limits, cell conversions and the constants
- *           other than the two profile schemas stay internal.
+ *           other than the two profile schemas stay internal, as do the Thrift and Parquet column encoders.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
@@ -19,6 +19,8 @@ export { JsonLinesWriterDriver } from "#core/drivers/json-lines-writer.driver";
 export { MemoryImportLedgerDriver } from "#core/drivers/memory-import-ledger.driver";
 export { MemoryTabularReaderDriver } from "#core/drivers/memory-tabular-reader.driver";
 export { MemoryTabularWriterDriver } from "#core/drivers/memory-tabular-writer.driver";
+export { ParquetWarehouseSinkDriver } from "#core/drivers/parquet-warehouse-sink.driver";
+export { ParquetWriterDriver } from "#core/drivers/parquet-writer.driver";
 export { ImportRunClosedError } from "#core/errors/import-run-closed.error";
 export { ImportRunNotFoundError } from "#core/errors/import-run-not-found.error";
 export { ImportUndoExpiredError } from "#core/errors/import-undo-expired.error";
@@ -32,8 +34,12 @@ export { normalizeHeader } from "#core/functions/normalize-header.function";
 export { payrollSheet } from "#core/functions/payroll-sheet.function";
 export { previewTabular } from "#core/functions/preview-tabular.function";
 export { sheetImportsOf } from "#core/functions/sheet-imports-of.function";
+export { warehouseBatches } from "#core/functions/warehouse-batches.function";
+export { warehousePath } from "#core/functions/warehouse-path.function";
+export { warehouseSheet } from "#core/functions/warehouse-sheet.function";
 export { writeZip } from "#core/functions/write-zip.function";
 export { ImportRunner } from "#core/services/import-runner.service";
+export { WarehouseChangeSink } from "#core/services/warehouse-change-sink.service";
 export type { ColumnField } from "#core/types/column-field.type";
 export type { ColumnMapping } from "#core/types/column-mapping.type";
 export type { DatevWriteOptions } from "#core/types/datev-write-options.type";
@@ -47,5 +53,7 @@ export type { RevertOptions } from "#core/types/revert-options.type";
 export type { RevertTargets } from "#core/types/revert-targets.type";
 export type { SheetImport } from "#core/types/sheet-import.type";
 export type { TabularPreview } from "#core/types/tabular-preview.type";
+export type { WarehouseSyncOptions } from "#core/types/warehouse-sync-options.type";
+export type { WarehouseSyncReport } from "#core/types/warehouse-sync-report.type";
 export type { WorkbookImportOptions } from "#core/types/workbook-import-options.type";
 export type { ZipEntry } from "#core/types/zip-entry.type";

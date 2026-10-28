@@ -1,4 +1,4 @@
-<!-- Purpose: the reader guide of @stackra/data-transfer: what is exported, an import and its dry run, an export, payroll exports, the zip writer. Boundary: docs of packages/data/data-transfer only. Runtime: none (Markdown). Governing contract: ADR 0367; ADR 0431; ADR 0163; STA-918. -->
+<!-- Purpose: the reader guide of @stackra/data-transfer: what is exported, an import and its dry run, an export, payroll exports, the zip writer, Parquet and the warehouse sink. Boundary: docs of packages/data/data-transfer only. Runtime: none (Markdown). Governing contract: ADR 0367; ADR 0431; ADR 0163; STA-918. -->
 
 # @stackra/data-transfer
 
@@ -6,11 +6,14 @@ Tabular import and export for every product (ADR 0367 and ADR 0431, implementing
 streaming CSV, JSON Lines and XLSX readers and writers, encoding detection with a market-pack fallback, Arabic header
 normalisation, column mapping and mapping profiles, a preview, per-row errors, resumable single- and multi-sheet
 imports recorded in a ledger with a whole-run revert and a before-image purge, payroll pay-input exports (CSV,
-XLSX, DATEV ASCII) from per-provider profiles, and a streaming zip writer (deflate, ZIP64).
+XLSX, DATEV ASCII) from per-provider profiles, a streaming zip writer (deflate, ZIP64), a Parquet writer, and the
+warehouse sink that exports the outbox change feed as Parquet partitions (ADR 0163 d5 and ADR 0190 d3 as amended
+2026-10-29).
 
 **Tier:** `tier:lib` (`packages/data/data-transfer`). Entries `.`, `./contracts` and `./node` (XLSX only, so a browser
 never loads exceljs). Depends on `@stackra/container`,
-`@stackra/contracts`, `@stackra/errors`, `@stackra/support` (`crc32`), `exceljs` and `zod`.
+`@stackra/contracts`, `@stackra/errors`, `@stackra/filesystem` and `@stackra/outbox` (types only, for the warehouse
+sink), `@stackra/support` (`crc32`), `exceljs` and `zod`.
 
 Mechanism only (ADR 0363): row and byte limits, the preview size, the batch size, the undo window and the legacy
 encoding of a market are inputs the caller reads from settings and market packs. The package has no default for any.
@@ -19,7 +22,8 @@ encoding of a market are inputs the caller reads from settings and market packs.
 
 | Entry         | Symbol                                                                                  | Use                                                                                             |
 | ------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `./contracts` | `TabularReader`, `TabularWriter`, `ImportLedger`                                        | the ports                                                                                       |
+| `./contracts` | `TabularReader`, `TabularWriter`, `ImportLedger`, `WarehouseSink`                       | the ports                                                                                       |
+| `./contracts` | `WarehouseBatch`, `WarehouseWriteOptions`                                               | one `scope=/model=/dt=` partition of changes; where it is written                               |
 | `./contracts` | `ImportRunState`                                                                        | `running`, `failed`, `finished`, `reverted`                                                     |
 | `./contracts` | `ImportTarget`, `ImportChange`, `ImportBatchEntry`, `RowError`, `TabularRow` and others | the types the ports name                                                                        |
 | `./contracts` | `ImportChange$`, `RowError$`                                                            | their shipped schemas, for a shape field typed with them                                        |
@@ -32,6 +36,9 @@ encoding of a market are inputs the caller reads from settings and market packs.
 | `.`           | `IMPORT_MAPPING_PROFILE_SCHEMA`, `sheetImportsOf`                                       | a seed-pack mapping profile to `runSheets` sheets                                               |
 | `.`           | `PAYROLL_EXPORT_PROFILE_SCHEMA`, `payrollSheet`, `datevWriteOptionsOf`                  | pay inputs to a provider's file                                                                 |
 | `.`           | `previewTabular`, `matchColumns`, `compileMapping`, `normalizeHeader`, `detectEncoding` | the mapping screen's helpers                                                                    |
+| `.`           | `ParquetWriterDriver`                                                                   | a Parquet file from one sheet; row groups of `rowGroupRows`                                     |
+| `.`           | `WarehouseChangeSink`, `ParquetWarehouseSinkDriver`                                     | the change feed to Parquet partitions on a disk; `sync`, `replay`                               |
+| `.`           | `warehouseBatches`, `warehousePath`, `warehouseSheet`                                   | a log page to partitions, their file keys and their rows                                        |
 | `.`           | `writeZip`, `ZipEntry`                                                                  | a streamed zip of many files: deflate or store, ZIP64                                           |
 | `.`           | `TransferLimitExceededError`, `UnreadableEncodingError`                                 | a file past a limit; a file whose text cannot be read (400)                                     |
 | `.`           | `ImportRunClosedError`, `ImportRunNotFoundError`, `ImportUndoExpiredError`              | a closed run (409); an unknown run (404); past the window (412)                                 |
@@ -147,6 +154,34 @@ const bytes =
 
 An input whose pay item has no code in the profile is refused, so no pay is dropped.
 
+## The warehouse sink
+
+Tenants' BI tools read their data from Parquet files, not from the database (ADR 0190: no analytics on the production
+database). `WarehouseChangeSink` reads the retained outbox change log from its own cursor, splits each page into one
+batch per model, scope and UTC day, and hands each to the bound `WarehouseSink`. The `parquet` driver writes it to a
+`FileSystem` disk (S3, R2, GCS) in the Hive layout query engines read as partitions:
+
+```text
+warehouse/scope=scp_…/model=Order/dt=2026-10-29/<first position>-<last position>.parquet
+```
+
+```ts
+const sink = new WarehouseChangeSink(changeFeed, new ParquetWarehouseSinkDriver(lakeDisk), clock);
+// in the app's scheduled job, every option from settings:
+await sink.sync({
+  models: settings.warehouseModels,
+  limit: settings.warehouseBatch,
+  prefix: "warehouse",
+});
+await sink.replay(since); // re-export what the log still keeps from `since`
+```
+
+Each row is one change: `_position`, `_occurred_at`, `_kind`, `_id`, `_fields`, `_scope_path`, then one column per
+field the model's `CapturesChanges({ values: true })` keeps (after the write; before it for a delete). Encrypted and
+`@Classified` fields are never in the log, so never in the lake. Delivery is at least once: a failed write keeps the
+cursor, and readers dedupe on `_position`. `ParquetWriterDriver` alone serves one-off exports: uncompressed, plain
+encoded, column kinds from the first non-null cell (text, double, boolean, millisecond timestamp).
+
 ## Not here
 
 - Platform importers (Shopify, Magento, Salla, Zid), AI mapping, mapping-profile storage: OS data-exchange.
@@ -154,3 +189,5 @@ An input whose pay item has no code in the profile is refused, so no pay is drop
   exports, signed links, permission filtering of rows, the full tenant export: OS data-exchange.
 - Plain JSON (one array): not streamable, so it stays on the full-tenant export path (ADR 0431 decision 2).
 - Payroll connectors (ZenHR, Kombo, Gusto): `@stackra/integrations`.
+- The warehouse job's schedule and settings (`warehouse.sync`), re-reading whole rows of models that capture no
+  values, compression, and the BigQuery, ClickHouse and Iceberg drivers (Pro, ADR 0461; stackra-320).

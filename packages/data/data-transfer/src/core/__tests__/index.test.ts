@@ -31,6 +31,8 @@ import type {
   RevertTargets,
   SheetImport,
   TabularPreview,
+  WarehouseSyncOptions,
+  WarehouseSyncReport,
   WorkbookImportOptions,
   ZipEntry,
 } from "#core/index";
@@ -58,8 +60,11 @@ describe("@stackra/data-transfer", () => {
       "MemoryTabularReaderDriver",
       "MemoryTabularWriterDriver",
       "PAYROLL_EXPORT_PROFILE_SCHEMA",
+      "ParquetWarehouseSinkDriver",
+      "ParquetWriterDriver",
       "TransferLimitExceededError",
       "UnreadableEncodingError",
+      "WarehouseChangeSink",
       "compileMapping",
       "datevWriteOptionsOf",
       "detectEncoding",
@@ -68,12 +73,16 @@ describe("@stackra/data-transfer", () => {
       "payrollSheet",
       "previewTabular",
       "sheetImportsOf",
+      "warehouseBatches",
+      "warehousePath",
+      "warehouseSheet",
       "writeZip",
     ]);
     expect("XlsxReaderDriver" in dataTransfer).toBe(false);
     expect("TabularReader" in dataTransfer).toBe(false);
     expect("parseCsv" in dataTransfer).toBe(false);
     expect("crc32" in dataTransfer).toBe(false);
+    expect("encodeThrift" in dataTransfer).toBe(false);
   });
 
   it("resolves its public types", () => {
@@ -89,6 +98,8 @@ describe("@stackra/data-transfer", () => {
     >();
     expectTypeOf<RevertTargets>().not.toBeAny();
     expectTypeOf<PayInput["employee"]>().toEqualTypeOf<string>();
+    expectTypeOf<WarehouseSyncOptions["models"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<WarehouseSyncReport["files"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<ZipEntry["method"]>().toEqualTypeOf<"deflate" | "store" | undefined>();
   });
 

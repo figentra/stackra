@@ -4,6 +4,18 @@ description: "Accepted, amended by 0260 · 2026-10-20 · noted 2026-10-26 (STA-1
 ---
 
 <Note>
+  Amended 2026-10-29 (STA-1430, owner decision 17 of the data-layer decisions): decision 5 no longer
+  keeps tenant-facing analytics out of Stackra. A scope's data reaches its warehouse or lake through
+  the `WarehouseSink` port of `@stackra/data-transfer/contracts`, fed by the outbox change feed
+  (`WarehouseChangeSink`, its own cursor, at least once) and never by a connection to the production
+  database. The free `parquet` driver writes Parquet files to a `FileSystem` disk in the Hive layout
+  `scope=/model=/dt=`; a file holds only the values a model's `CapturesChanges` keeps, so never an
+  encrypted or `@Classified` field. `ParquetWriterDriver` joins the export writers of decision 4.
+  The BigQuery, ClickHouse and Iceberg drivers and the `AnalyticsStore` port follow (stackra-320;
+  Pro per ADR 0461). The tenant dashboard builder stays outside Stackra.
+</Note>
+
+<Note>
   Amended 2026-10-28 (STA-1527, owner decision 19 of the data-layer decisions): decision 5 no longer
   keeps product analytics out of Stackra. Funnels, retention tables and behavioural cohorts are
   built in Stackra behind the `ProductAnalytics` port of `@stackra/reports/contracts` (`funnel`,

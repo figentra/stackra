@@ -4,6 +4,16 @@ description: "Accepted, amended by 0294 · 2026-10-20"
 ---
 
 <Note>
+  Amended 2026-10-29 (STA-1430, owner decision 17 of the data-layer decisions): decision 3 is in
+  scope now rather than "only when a read model is too slow". The Parquet half ships as the free
+  `parquet` driver of the `WarehouseSink` port in `@stackra/data-transfer`, which exports the outbox
+  change feed per scope, model and day to a `FileSystem` disk; DuckDB or any engine reads those
+  files. ClickHouse (SaaS) arrives as an `AnalyticsStore` driver in Pro (stackra-320, ADR 0461). The
+  alternative "analytics on the production database" stays rejected: the sink never reads a model's
+  table.
+</Note>
+
+<Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
   programming model v3: seeders live in `database/seeders/` and take their profile from the file
   name: `minimal.seeder.ts`, `demo.seeder.ts` and `test.seeder.ts`. A seeder's identity is

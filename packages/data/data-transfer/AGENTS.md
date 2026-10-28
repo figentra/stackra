@@ -7,18 +7,18 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 
 ## Where code goes
 
-| You are writing…        | It goes in…                                    |
-| ----------------------- | ---------------------------------------------- |
-| A port                  | `src/contracts/ports/<name>.port.ts`           |
-| A contract type or enum | `src/contracts/{types,enums}/<name>.<kind>.ts` |
-| A format or ledger      | `src/core/drivers/<name>.driver.ts`            |
-| An exceljs format       | `src/node/drivers/<name>.driver.ts`            |
-| Seed data (profiles)    | `assets/data/<kind>/<name>.yaml`               |
-| The import engine       | `src/core/services/import-runner.service.ts`   |
-| A function              | `src/core/functions/<name>.function.ts`        |
-| A refusal               | `src/core/errors/<name>.error.ts`              |
-| A type or constant      | `src/core/{types,constants}/<name>.<kind>.ts`  |
-| A test                  | `__tests__/<name>.<kind>.test.ts` beside it    |
+| You are writing…         | It goes in…                                    |
+| ------------------------ | ---------------------------------------------- |
+| A port                   | `src/contracts/ports/<name>.port.ts`           |
+| A contract type or enum  | `src/contracts/{types,enums}/<name>.<kind>.ts` |
+| A format, ledger or sink | `src/core/drivers/<name>.driver.ts`            |
+| An exceljs format        | `src/node/drivers/<name>.driver.ts`            |
+| Seed data (profiles)     | `assets/data/<kind>/<name>.yaml`               |
+| The import engine        | `src/core/services/import-runner.service.ts`   |
+| A function               | `src/core/functions/<name>.function.ts`        |
+| A refusal                | `src/core/errors/<name>.error.ts`              |
+| A type or constant       | `src/core/{types,constants}/<name>.<kind>.ts`  |
+| A test                   | `__tests__/<name>.<kind>.test.ts` beside it    |
 
 ## Entries and barrels
 
@@ -40,6 +40,11 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
   cursor.
 - A dry run (`dryRun: true`) never calls a target's `upsert` and never touches the `ImportLedger` (no `open`,
   `append` or `settle`), so it leaves no run behind; keep any new write path behind the same check.
+- The Parquet writer has no dependency: `encodeThrift` (compact protocol) and `encodeParquetColumn` (plain values,
+  RLE definition levels) stay internal. Keep it uncompressed and flat until a consumer needs more.
+- The warehouse sink reads the change log only (`@stackra/outbox/contracts`, types only), never a model's table, and
+  keeps its own cursor `WarehouseChangeSink`; never register it with the relay. A partition is `scope=` (ADR 0323),
+  never `tenant=`. The batch size, models, prefix and row group size are the caller's settings.
 - `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small
   archive stays readable by every unzip tool.
 - Only add a symbol a consumer imports today (OS data-exchange, a product importer, the registry row).

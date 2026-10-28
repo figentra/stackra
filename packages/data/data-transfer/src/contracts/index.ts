@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/data-transfer, the leaf entry of its ports
- *          (`TabularReader`, `TabularWriter`, `ImportLedger`), the `ImportRunState` enum, the types their signatures
+ *          (`TabularReader`, `TabularWriter`, `ImportLedger`, `WarehouseSink`), the `ImportRunState` enum, the types their signatures
  *          name and the shipped `ImportChange$` and `RowError$` (STA-1284), until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. The ports
@@ -15,6 +15,7 @@ export { ImportRunState } from "#contracts/enums/import-run-state.enum";
 export { ImportLedger } from "#contracts/ports/import-ledger.port";
 export { TabularReader } from "#contracts/ports/tabular-reader.port";
 export { TabularWriter } from "#contracts/ports/tabular-writer.port";
+export { WarehouseSink } from "#contracts/ports/warehouse-sink.port";
 export type { ImportBatchEntry } from "#contracts/types/import-batch-entry.type";
 export type { ImportChange } from "#contracts/types/import-change.type";
 export type { ImportRunRecord } from "#contracts/types/import-run-record.type";
@@ -28,3 +29,5 @@ export type { TabularSheet } from "#contracts/types/tabular-sheet.type";
 export type { TabularSource } from "#contracts/types/tabular-source.type";
 export type { TabularWriteOptions } from "#contracts/types/tabular-write-options.type";
 export type { TransferLimits } from "#contracts/types/transfer-limits.type";
+export type { WarehouseBatch } from "#contracts/types/warehouse-batch.type";
+export type { WarehouseWriteOptions } from "#contracts/types/warehouse-write-options.type";
