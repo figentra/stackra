@@ -4,6 +4,7 @@
  *          pool over IPC and settles it with the pool's answer, so the audited egress stays in the host process.
  * Boundary: node only, internal to the pool's child; never bound in a host. An aborted run rejects what it still waits
  *           on. The `Sandbox` in the child has already checked the run's allow-list.
+ *           Used only inside the sandbox worker; `internal`, so no host selects it (ADR 0266 2026-10-28 note).
  * Runtime: node
  * Governing contract: ADR 0434 (decision 2); ADR 0154 (decision 5); ADR 0294 (decision 17: no constructor value).
  */
@@ -21,7 +22,7 @@ import type { PoolRequest } from "#node/types/pool-request.type";
  * const proxy = new IpcFetchProxyDriver().connect((message) => process.send?.(message));
  * process.on("message", (message: PoolRequest) => proxy.settle(message));
  */
-export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy) {
+export class IpcFetchProxyDriver extends Driver(SandboxFetchProxy, { internal: true }) {
   /** Posts a message to the pool: the process's IPC channel until `connect` names another. */
   private send: (message: PoolReply) => void = (message) => {
     process.send?.(message);

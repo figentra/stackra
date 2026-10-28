@@ -4,6 +4,7 @@
  *          driver (or when boot itself failed), so an unexpected error is still written somewhere a developer looks.
  * Boundary: built by `bootApp` and the target runtimes only, never listed in a wiring; not exported. Writes the error
  *           as it is to `console.error` and never throws.
+ *           The dev fallback this package uses itself; `internal`, so no host selects it (ADR 0266 2026-10-28 note).
  * Runtime: isomorphic
  * Governing contract: ADR 0232 (decision 8); ADR 0294 (decision 16 Driver row).
  */
@@ -16,7 +17,7 @@ import { ErrorReporter } from "@stackra/errors/contracts";
  * @example
  * const reporter = container.has(ErrorReporter) ? container.get(ErrorReporter) : new ConsoleErrorReporterDriver();
  */
-export class ConsoleErrorReporterDriver extends Driver(ErrorReporter) {
+export class ConsoleErrorReporterDriver extends Driver(ErrorReporter, { internal: true }) {
   /** Writes `error` to `console.error`; a failing console is ignored, so reporting never adds a second failure. */
   report(error: unknown): void {
     try {

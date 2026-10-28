@@ -48,6 +48,14 @@ describe("Driver", () => {
     expect(kindOf(JournalLedgerDriver)).toEqual({ kind: "driver", options: { port: Ledger } });
   });
 
+  it("records its options with the kind, for gen's internal and test-default rules", () => {
+    const Base = Driver(Ledger, { internal: true, testDefault: false });
+    expect(kindOf(Base)).toEqual({
+      kind: "driver",
+      options: { internal: true, testDefault: false, port: Ledger },
+    });
+  });
+
   it("gives each call its own base class", () => {
     expect(Driver(Ledger)).not.toBe(Driver(Ledger));
     expect(Driver(Ledger).name).toBe("LedgerDriver");

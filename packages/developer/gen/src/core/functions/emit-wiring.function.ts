@@ -20,7 +20,8 @@
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
  *           own tests register, a port with several candidates and no selector defaults to its `memory` driver, else
- *           to its one `./testing` driver; a service's or app's wiring never gets a default. A package candidate's tokens from a
+ *           to its one `./testing` driver, else to the one driver declared `Driver(Port, { testDefault: true })`; a
+ *           service's or app's wiring never gets a default. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
  *           library the member does not declare are left out, so the wiring never imports an undeclared library. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
@@ -108,6 +109,8 @@ interface Candidate {
   readonly name: string;
   readonly type: ClassRef;
   readonly deps: readonly TokenRef[];
+  /** `Driver(Port, { testDefault: true })`: the member's own tests take it when nothing else decides. */
+  readonly testDefault?: boolean;
 }
 
 /** The drivers of one port in the wiring, with the names the member itself declares. */
@@ -379,8 +382,13 @@ export function emitWiring(ir: MemberIR): string {
   // member's bindings reach, read from that package's manifest (STA-1297). And the config fields that select them.
   const ports = new Map<string, PortTable>();
   for (const declared of ir.classes) {
-    // An abstract driver is a base the candidates extend, never one itself.
-    if (declared.kind !== "driver" || declared.partner === undefined || declared.abstract === true)
+    // An abstract driver is a base the candidates extend, never one itself; an internal one no host may select.
+    if (
+      declared.kind !== "driver" ||
+      declared.partner === undefined ||
+      declared.abstract === true ||
+      declared.options["internal"] === true
+    )
       continue;
     const port: ClassRef = { name: declared.partner.name, from: declared.partner.from };
     const member = port.from.startsWith("#")
@@ -392,7 +400,12 @@ export function emitWiring(ir: MemberIR): string {
     const key = portKey(member, port.name);
     const entry = ports.get(key) ?? { port, key, candidates: [], own: [] };
     const name = driverName(declared.file, port.name);
-    entry.candidates.push({ name, type: own(declared), deps: declared.deps });
+    entry.candidates.push({
+      name,
+      type: own(declared),
+      deps: declared.deps,
+      ...(declared.options["testDefault"] === true ? { testDefault: true } : {}),
+    });
     entry.own.push(name);
     ports.set(key, entry);
   }
@@ -538,7 +551,8 @@ export function emitWiring(ir: MemberIR): string {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
     // A package's own wiring is registered only by its own tests: a port they cannot select gets its memory driver,
-    // else its one testing-entry driver (ADR 0266: the module's tests pass on the memory driver and the fake).
+    // else its one testing-entry driver (ADR 0266: the module's tests pass on the memory driver and the fake), else the
+    // one driver it marks `testDefault`.
     const testing = candidates.filter(
       (candidate) =>
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
@@ -550,7 +564,9 @@ export function emitWiring(ir: MemberIR): string {
           ? "memory"
           : testing.length === 1
             ? testing[0]?.name
-            : undefined;
+            : candidates.filter((candidate) => candidate.testDefault === true).length === 1
+              ? candidates.find((candidate) => candidate.testDefault === true)?.name
+              : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);

@@ -8,6 +8,7 @@
  *           reads through `RegionMapSource` and names no region and no provider. Entries follow the market-pack rule:
  *           a provider code, or an object with `provider` and `status`; a non-`live` entry is never served; a
  *           repeated provider counts once.
+ *           `testDefault`: this package's own tests take it, as ProviderDefaults has no memory driver (ADR 0266 2026-10-28 note).
  * Runtime: isomorphic
  * Governing contract: ADR 0376 (decisions 2 and 7); R3-SO-11; ADR 0356 (decisions 3 and 5).
  */
@@ -24,7 +25,9 @@ import { liveProviderOf } from "#core/functions/live-provider-of.function";
  * @example
  * const choices = await defaults.providers("speech", "me-central-1"); // [{ provider: "…", connectionId: "conn_…" }]
  */
-export class RegionMapProviderDefaultsDriver extends Driver(ProviderDefaults) {
+export class RegionMapProviderDefaultsDriver extends Driver(ProviderDefaults, {
+  testDefault: true,
+}) {
   /** The region-map records and platform Connections. */
   private readonly regions: RegionMapSource;
 

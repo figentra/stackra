@@ -10,7 +10,7 @@
  *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
  *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
  *          constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
- *          abstract driver is no candidate) and the config class that selects one (`config`), which a host's wiring
+ *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a host's wiring
  *          reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a host's wiring
  *          knows its configs without guessing from a name (STA-1308). It reports the identity checks it can see:
  *          `identity_collision`,
@@ -813,9 +813,13 @@ export function buildManifest(ir: MemberIR): {
       ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
       : {}),
   });
-  // An abstract driver (`AreaStorageDriver`) is a base the candidates extend, never one itself.
+  // An abstract driver (`AreaStorageDriver`) is a base the candidates extend, never one itself; an internal one
+  // (`Driver(Port, { internal: true })`) is a helper its package keeps, which no host may select.
   for (const declared of ir.classes.filter(
-    (candidate) => candidate.kind === "driver" && candidate.abstract !== true,
+    (candidate) =>
+      candidate.kind === "driver" &&
+      candidate.abstract !== true &&
+      candidate.options["internal"] !== true,
   )) {
     const port = declared.partner;
     if (port === undefined) continue;

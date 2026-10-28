@@ -13,6 +13,17 @@ description: "Accepted · 2026-10-21"
   capabilities select). It amends none of them.
 </Note>
 
+<Note>
+  2026-10-28 (owner decision, STA-1299): `Driver(Port, options)` takes two options gen reads.
+  `internal: true` marks a helper its package builds itself and does not export (the console error
+  reporter, the no-market context, the sandbox's IPC fetch proxy); it is never a candidate in a
+  manifest or a wiring, so no host can select it. `testDefault: true` marks the driver a package's
+  own tests take for a port with several candidates and no selector when the package ships no
+  `memory` driver or single `./testing` driver (`ProviderDefaults` takes `region-map`). In a
+  package's own wiring the order is: the test's choice, config, `memory`, the one `./testing`
+  driver, the one `testDefault` driver. Hosts are unaffected and select through config as before.
+</Note>
+
 ## Context
 
 Cache, queue, outbox, workflows, realtime and the scheduler are each a capability that a product turns on, and each has a production driver

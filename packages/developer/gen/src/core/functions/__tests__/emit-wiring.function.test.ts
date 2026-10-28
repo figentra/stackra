@@ -11,7 +11,8 @@
  *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
- *          else its one testing driver) where nothing selects one, and the names the container really exports.
+ *          else its one testing driver, else its one testDefault driver) where nothing selects one, no internal driver,
+ *          and the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263; ADR 0457; STA-1385.
@@ -545,5 +546,31 @@ describe("emitWiring's defaults for a package's own tests", () => {
 
   it("gives a service's wiring no default", () => {
     expect(emitWiring({ ...ir, layout: "service" })).not.toContain("default:");
+  });
+
+  it("defaults to the one driver marked testDefault when no memory or testing driver decides", () => {
+    const marked = {
+      ...ir,
+      classes: ir.classes.map((declared) =>
+        declared.name === "RegionMapPricerDriver"
+          ? { ...declared, options: { ...declared.options, testDefault: true } }
+          : declared,
+      ),
+    };
+    expect(table(emitWiring(marked), "loyalty_kit.Pricer")).toContain('default: "region-map",');
+  });
+
+  it("never lists an internal driver as a candidate", () => {
+    const hidden = {
+      ...ir,
+      classes: ir.classes.map((declared) =>
+        declared.name === "CloudSecretVaultDriver"
+          ? { ...declared, options: { ...declared.options, internal: true } }
+          : declared,
+      ),
+    };
+    const content = emitWiring(hidden);
+    expect(content).not.toContain("CloudSecretVaultDriver");
+    expect(content).not.toContain('"cloud":');
   });
 });

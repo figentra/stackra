@@ -33,6 +33,7 @@ export type { DecoratorFunction } from "#core/types/decorator-function.type";
 export type { DiscoveredClass } from "#core/types/discovered-class.type";
 export type { DriverChoice } from "#core/types/driver-choice.type";
 export type { DriverClass } from "#core/types/driver-class.type";
+export type { DriverOptions } from "#core/types/driver-options.type";
 export type { DriverName } from "#core/types/driver-name.type";
 export type { DriverRegistry } from "#core/types/driver-registry.type";
 export type { KindRecord } from "#core/types/kind-record.type";

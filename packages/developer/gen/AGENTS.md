@@ -80,8 +80,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   not declare (`PostgreSqlMikroORM` of the database's `postgres` driver) is listed without tokens, so a wiring never
   imports an undeclared library; such a driver is started by its package, never built by the container.
   A package's own wiring is registered only by its own tests (the generated setup): there a port with several
-  candidates and no selector gets `default`, its `memory` driver, else its one `./testing` driver (ADR 0266), so the
-  container boots; a service's or app's wiring never gets one. A package `*Config` class a reached token names gets a config
+  candidates and no selector gets `default`, its `memory` driver, else its one `./testing` driver, else its one
+  `Driver(Port, { testDefault: true })` driver (ADR 0266), so the container boots; a service's or app's wiring never
+  gets one. A `Driver(Port, { internal: true })` driver is never a candidate, in the manifest or any wiring. A package `*Config` class a reached token names gets a config
   row (key from `configKeyOf` and the package's member) unless the member overrides it. The `DriverRegistry`
   augmentation lists the member's own drivers only: packages augment their own ports. A package manifest written
   before this change has no `classes` and contributes nothing until the package is generated again. Test-only
