@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: exactly its values are exported, the core report types are
- *          assignable to the engine types (so `ReportRunner` hands them on without a cast), and a local engine driver
+ * Purpose: the consumer contract of the `./contracts` entry: exactly its values are exported, `RetentionPeriod` keeps its
+ *          closed set, the core report types are assignable to the engine types (so `ReportRunner` hands them on without a cast), and a local engine driver
  *          answers a run.
  * Boundary: test only; the core types are read here, never by the entry itself.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0470 (decision 8).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0470 (decision 8); ADR 0163 (decision 5 as
+ *                     amended 2026-10-28).
  */
 import { Driver } from "@stackra/container";
+import { Enum } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import { ReportEngine } from "#contracts/index";
+import { ReportEngine, RetentionPeriod } from "#contracts/index";
 import type {
   ReportEngineDeclaration,
   ReportEngineQuery,
@@ -35,7 +37,12 @@ class EchoReportEngineDriver extends Driver(ReportEngine) {
 
 describe("@stackra/reports/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["ReportEngine"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "ProductAnalytics",
+      "ReportEngine",
+      "RetentionPeriod",
+    ]);
+    expect(Enum.values(RetentionPeriod)).toEqual(["day", "week", "month"]);
   });
 
   it("takes the core report types as they are", () => {

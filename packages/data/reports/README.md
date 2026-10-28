@@ -3,10 +3,10 @@
 <!--
 Stackra file contract:
 Purpose: the package's reader guide: the `Report` kind, its closed vocabulary, what gen does with a report, the
-         `ReportRunner` and `ReportEngine` ports and what is not here yet.
+         `ReportRunner`, `ReportEngine` and `ProductAnalytics` ports and what is not here yet.
 Boundary: documentation only; the code and ADR 0470 win on any difference.
 Runtime: none
-Governing contract: ADR 0470 (Reports v2); ADR 0294 (kinds by base class); ADR 0154 (no tenant code or SQL).
+Governing contract: ADR 0470 (Reports v2); ADR 0163 (decision 5 as amended 2026-10-28); ADR 0294 (kinds by base class); ADR 0154 (no tenant code or SQL).
 -->
 
 A module ships its reports as code: a `Report<Source>({...})` class names the dimensions a report may be grouped,
@@ -86,6 +86,42 @@ engine applies record visibility and scope isolation itself and never widens wha
 | `ReportEngineQuery`, `ReportEngineRequest`, `ReportEngineResult`          | one run, the caller's ask, its answer   |
 | `ReportEngineDeclaration`, `ReportEngineDimension`, `ReportEngineMeasure` | the report's declaration as engines see |
 
+## Funnels, retention and cohorts (`ProductAnalytics`)
+
+`ProductAnalytics` (`reports.ProductAnalytics`, in `./contracts`) computes product analytics over the events the
+analytics client sends (ADR 0163 decision 5 as amended 2026-10-28): `funnel` (two to twenty ordered steps within a
+window of days), `retention` (cohorts by start event, people returning per day, week or month) and `cohort` (distinct
+people matching an event per period). Results are counts of people, never who they are. Which store answers is
+`ReportsConfig.productAnalytics`.
+
+```ts
+const funnel = await analytics.funnel({
+  steps: [{ event: "cart_viewed", where: { channel: ["web", "app"] } }, { event: "order_placed" }],
+  range: { from: "2026-10-01", to: "2026-10-28" },
+  windowDays: 7,
+});
+// { steps: [{ event: "cart_viewed", people: 120, conversion: 1, medianSeconds: null }, { ..., conversion: 0.35 }] }
+```
+
+`PosthogProductAnalyticsDriver` (`posthog`, `./node`) posts each query as a structured node (`FunnelsQuery`,
+`RetentionQuery`, a `TrendsQuery` of distinct people) to `<host>/api/projects/<projectId>/query/`; no caller value is
+ever query text. Settings are `reports.posthog` (`host`, `projectId`, `keySecret`, `scopeProperty`): the personal API
+key is read from the runtime `SecretStore` under `keySecret` at call time. **Scope isolation:** every query is ANDed with
+an exact filter on the event property `scopeProperty` (`scope_id`) equal to the call's `scopeId`; a call with no scope is
+refused (`ProductAnalyticsScopeMissingError`), unless `scopeProperty` is `null` for a project holding one scope's events
+(Stackra's own product analytics, ADR 0190 decision 2). The events must therefore carry that property. Buckets fall in
+the PostHog project's time zone. A malformed query is `ProductAnalyticsQueryInvalidError` and never reaches PostHog; an
+unconfigured project, unbound key, error status or unreadable reply is `ProductAnalyticsUnavailableError` (retryable,
+never carrying the key or the reply body).
+
+| Symbol                                                                             | Use                                                |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `ProductAnalytics`, `RetentionPeriod` (`./contracts`)                              | the port and its period enum                       |
+| `FunnelQuery`, `RetentionQuery`, `CohortQuery` and their results                   | the queries and the counts they return             |
+| `AnalyticsEventMatch`, `AnalyticsDateRange`, `AnalyticsPropertyValue`              | an event with property values; a day range         |
+| `PosthogProductAnalyticsDriver` (`./node`)                                         | the `posthog` driver                               |
+| `ProductAnalyticsQueryInvalidError`, `...ScopeMissingError`, `...UnavailableError` | `validation`, `failed precondition`, `unavailable` |
+
 ## Running a report (`@stackra/reports/node`)
 
 `EngineReportRunnerDriver` is the `engine` driver of `ReportRunner`: it reads the report's declaration from its kind
@@ -127,6 +163,10 @@ Generated wiring binds `ReportRunner` to `EngineReportRunnerDriver` (`deps: [Rep
 
 ## Not here yet
 
+- Funnel, retention and cohort report kinds and widgets (stackra-418), a driver over Stackra's own event store
+  (stackra-416), funnel breakdowns, property filters on retention events, cohorts of several criteria and saved
+  cohorts; the analytics client does not yet put the scope id on events (`scope_id`), which the `posthog` driver
+  filters by.
 - Subtotals per level and the pivot matrix (stackra-391): pivot axes are checked, not laid out; column visibility
   (stackra-395); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
   (stackra-417).
@@ -135,4 +175,5 @@ Generated wiring binds `ReportRunner` to `EngineReportRunnerDriver` (`deps: [Rep
 - With no replica connected, the statement timeout is `set local` inside the caller's transaction and lasts until it
   ends.
 - Registering the generated queries as actions (endpoint, MCP tool), the `ReportRunner` and `ReportEngine` driver
-  bindings (`selectedBy: "config:reports.engine"`) and the `registerReportSources` call in the generated wiring.
+  bindings (`selectedBy: "config:reports.engine"`), the `ProductAnalytics` binding
+  (`selectedBy: "config:reports.productAnalytics"`, `deps: [ReportsConfig, SecretStore, ContextStorage]`) and the `registerReportSources` call in the generated wiring.

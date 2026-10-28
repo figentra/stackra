@@ -1,7 +1,8 @@
 # AGENTS — @stackra/reports
 
 Module reports: the `Report<Source>({ key, dimensions, measures, defaultFilter, permission })` kind base, its closed
-vocabulary, the `ReportRunner` port and the `ReportEngine` port (ADR 0470). Member at `packages/data/reports` (`tier:lib`), in the programming
+vocabulary, the `ReportRunner` port, the `ReportEngine` port (ADR 0470) and the `ProductAnalytics`
+port for funnels, retention and cohorts (ADR 0163 decision 5 as amended 2026-10-28). Member at `packages/data/reports` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` (the `ReportEngine` port, stackra-398) and `./node` (the engine runner and the Postgres
 report engine, stackra-390 and stackra-398).
 
@@ -28,7 +29,12 @@ report engine, stackra-390 and stackra-398).
 - `src/contracts/index.ts` is the `./contracts` leaf entry: it imports no other entry of this package, and its types
   stay engine-neutral strings so an engine package needs nothing else; keep `src/contracts/__tests__/index.test.ts` in
   step (it also checks the core types stay assignable).
-- A new engine driver adds its name to `REPORT_ENGINES` (`src/node/constants`) in the same commit as the driver.
+- A new engine driver adds its name to `REPORT_ENGINES` (`src/node/constants`) in the same commit as the driver; a new
+  product analytics driver adds its name to `PRODUCT_ANALYTICS_DRIVERS`.
+- A `ProductAnalytics` driver runs the shared checks (`check-product-analytics-query.function.ts`) before it reaches its
+  store, sends caller values only as structured query values (never HogQL or SQL text), isolates the call's scope
+  itself and refuses a call with none, and returns counts of people only.
+- A credential is a secret name in config read through `SecretStore` at call time; never a value, never in an error.
 
 ## This package
 
@@ -56,6 +62,7 @@ report engine, stackra-390 and stackra-398).
 
 ## PII
 
-| Data        | Where          | Handling                                                                                   |
-| ----------- | -------------- | ------------------------------------------------------------------------------------------ |
-| Report rows | `ReportResult` | Grouped values of declared dimensions and measures only; column visibility is stackra-395. |
+| Data              | Where                                             | Handling                                                                                   |
+| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Report rows       | `ReportResult`                                    | Grouped values of declared dimensions and measures only; column visibility is stackra-395. |
+| Product analytics | `FunnelResult`, `RetentionResult`, `CohortResult` | Counts of people only; no person id or property value is returned.                         |

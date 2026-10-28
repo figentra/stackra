@@ -4,6 +4,17 @@ description: "Accepted, amended by 0260 · 2026-10-20 · noted 2026-10-26 (STA-1
 ---
 
 <Note>
+  Amended 2026-10-28 (STA-1527, owner decision 19 of the data-layer decisions): decision 5 no longer
+  keeps product analytics out of Stackra. Funnels, retention tables and behavioural cohorts are
+  built in Stackra behind the `ProductAnalytics` port of `@stackra/reports/contracts` (`funnel`,
+  `retention`, `cohort`; counts of people only, narrowed to the caller's scope by the driver).
+  PostHog is the first driver (`posthog` in `@stackra/reports/node`, selected by
+  `reports.productAnalytics`), Stackra's own event store a later one, and the Mixpanel, Amplitude
+  and GA4 drivers are Pro (ADR 0461). The report kinds and widgets over the port follow
+  (stackra-418). The tenant dashboard builder of decision 5 is unchanged.
+</Note>
+
+<Note>
   Amended 2026-10-28 (STA-1481) by
   [0471](/adr/0471-read-side-one-indexer-kind-no-materialised-views-over-scoped-data-and-no-event-sourcing-by-default):
   a read model inside one service may be an `Indexer` target (a typed, scoped table built from its

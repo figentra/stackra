@@ -14,6 +14,10 @@ describe("@stackra/reports/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "EngineReportRunnerDriver",
       "PostgresReportEngineDriver",
+      "PosthogProductAnalyticsDriver",
+      "ProductAnalyticsQueryInvalidError",
+      "ProductAnalyticsScopeMissingError",
+      "ProductAnalyticsUnavailableError",
       "ReportRequestInvalidError",
       "ReportsConfig",
       "ReportsConfig$",
