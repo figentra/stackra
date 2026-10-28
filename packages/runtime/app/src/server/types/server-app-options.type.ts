@@ -17,12 +17,12 @@ export interface ServerAppOptions {
   readonly wiring: Wiring & AppSections;
 
   /**
-   * The member's `#stackra/boot`, awaited once the container is ready, with the process's `DATABASE_URL` and the
-   * signal `close()` aborts; none when gen wrote no boot.
+   * The member's `#stackra/boot`, awaited once the container is ready, with the signal `close()` aborts; none when
+   * gen wrote no boot. The boot connects with its Encore database's url, so none is passed (STA-1401).
    */
   readonly boot?: (
     container: Container,
-    options: { readonly url: string; readonly signal: AbortSignal },
+    options: { readonly signal: AbortSignal },
   ) => Promise<void>;
 
   /**

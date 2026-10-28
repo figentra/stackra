@@ -4,7 +4,8 @@
  *          `process.env`, and returns the `ServerApp` the generated Encore app imports. It owns boot order, readiness,
  *          drain, shutdown and the signal handling: SIGTERM or SIGINT drains, closes and exits 0 (1 when shutdown
  *          fails, after reporting it). Once the container is ready it awaits the member's `#stackra/boot` (when given)
- *          with the process's `DATABASE_URL` and a shutdown signal that `close()` aborts after the drain.
+ *          with a shutdown signal that `close()` aborts after the drain; the boot takes its database url from the
+ *          service's Encore database, so no url passes here (STA-1401).
  *          `handlers.guard` runs the contributed `RequestGuard`s on an inbound request. `/readyz` runs the given
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
  *          resolved once after boot.
@@ -14,7 +15,8 @@
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
- *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards).
+ *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
+ *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here).
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator } from "@stackra/contracts";
@@ -43,11 +45,7 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     env: process.env,
   });
   const shutdown = new AbortController();
-  // An empty url only matters to a boot that connects the database, whose driver then refuses it.
-  await options.boot?.(container, {
-    url: process.env["DATABASE_URL"] ?? "",
-    signal: shutdown.signal,
-  });
+  await options.boot?.(container, { signal: shutdown.signal });
 
   const byKind = new Map<string, AnyClass[]>();
   for (const binding of wiring.bindings ?? [])

@@ -115,8 +115,11 @@ root); native `Root` and `hydrateRoute` mount it themselves.
 
 `handlers.run(call)` gives one call a request container and counts it until it settles. `drain()` refuses new calls
 with `AppDrainingError` and waits for those in flight; `close()` drains, then shuts the container down. With `boot`
-(the generated `#stackra/boot`), `createApp` awaits it once the container is ready, with `DATABASE_URL` and a shutdown
-signal; `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops the relay. SIGTERM and
+(the generated `#stackra/boot`), `createApp` awaits it once the container is ready, with a shutdown signal; the boot
+connects with its service's Encore database url, so `createApp` passes no url and never reads `DATABASE_URL`. The migrate
+and seed CLIs connect on their own with `directDatabaseUrl()` of `@stackra/database/node` (`DATABASE_DIRECT_URL`, else
+`DATABASE_URL`, ADR 0473). `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops
+the relay. SIGTERM and
 SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
 ### Readiness

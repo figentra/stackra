@@ -50,7 +50,9 @@ note).
 - Configuration is built by `bootApp` from the target's raw env and bound under the base class; never read
   `process.env` or `import.meta.env` anywhere else.
 - The server `createApp` awaits `options.boot` once the container is ready and aborts its signal in `close()` after
-  the drain and before `container.close()`; the bus, inbox and relay stop there.
+  the drain and before `container.close()`; the bus, inbox and relay stop there. It passes the boot only that signal:
+  the boot connects with its service's Encore database url (STA-1401), and the migrate and seed CLIs use
+  `directDatabaseUrl()` of `@stackra/database/node` (ADR 0473), so nothing here reads `DATABASE_URL`.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.

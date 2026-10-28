@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of the server `createApp`: the app carries the member key and the bound classes by kind, `run`
  *          gives each call a request container, `drain` waits for calls in flight and then refuses new ones, `close`
- *          drains and shuts the container down once, the generated boot gets the ready container, `DATABASE_URL` and
- *          a signal that only `close` aborts, SIGTERM closes and exits 0 (1 after reporting a failed
+ *          drains and shuts the container down once, the generated boot gets the ready container and a
+ *          signal that only `close` aborts (no url: the boot uses its Encore database's), SIGTERM closes and exits 0 (1 after reporting a failed
  *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
  *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named.
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
@@ -148,19 +148,20 @@ describe("createApp (server)", () => {
     expect(app.ready()).toBe(false);
   });
 
-  it("boots with the ready container and DATABASE_URL, and aborts the signal on close", async () => {
+  it("boots with the ready container and only a signal, and aborts the signal on close", async () => {
     vi.stubEnv("DATABASE_URL", "postgres://localhost/commerce");
-    const seen: { container?: Container; url?: string; signal?: AbortSignal } = {};
+    const seen: { container?: Container; keys?: string[]; signal?: AbortSignal } = {};
     const app = await createApp(OrdersModule, {
       wiring,
       boot: async (container, options) => {
         seen.container = container;
-        seen.url = options.url;
+        seen.keys = Object.keys(options);
         seen.signal = options.signal;
       },
     });
     expect(seen.container?.get(LedgerService)).toBeInstanceOf(LedgerService);
-    expect(seen.url).toBe("postgres://localhost/commerce");
+    // the boot takes its url from the service's Encore database, never from DATABASE_URL
+    expect(seen.keys).toEqual(["signal"]);
     expect(seen.signal?.aborted).toBe(false);
     await app.drain();
     expect(seen.signal?.aborted).toBe(false);
