@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `structureFindings(context, options)`, the `structure` phase of `stackra check` (what `pnpm validate` ran
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
- *          the runway schemas and files, member imports, the Expo form factor and window sizing, the brand NOTICE, and
+ *          the runway schemas and files, member imports, the Expo form factor and window sizing, the native module
+ *          packages (ADR 0478), the brand NOTICE, and
  *          per member its manifest, required files and service shape, and in the Stackra repository its npm and
  *          `stackra` metadata.
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
@@ -10,7 +11,7 @@
  *           `options.ci` and the member is local, otherwise a notice through `options.warn`.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
- *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27).
+ *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -22,6 +23,7 @@ import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.functi
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { checkMember } from "#node/functions/check-member.function";
+import { checkNativeModules } from "#node/functions/check-native-modules.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
 import { checkService } from "#node/functions/check-service.function";
@@ -142,6 +144,14 @@ export async function structureFindings(
   for (const p of files.filter(isMemberSource)) report("imports", "", checkImports(p, text(p)));
   for (const p of files.filter(isExpoAppConfig))
     report("ios-form-factor", "", checkIosFormFactor(p, text(p)));
+  report(
+    "native-modules",
+    "",
+    checkNativeModules(
+      files,
+      (dir) => (JSON.parse(maybe(`${dir}/package.json`) ?? "{}") as PackageManifest).files,
+    ),
+  );
   for (const p of files.filter(isAppSource))
     report("window-sizing", "", checkWindowSizing(p, text(p)));
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE (in the docs app since ADR 0302).

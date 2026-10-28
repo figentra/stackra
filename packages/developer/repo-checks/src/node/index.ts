@@ -53,6 +53,7 @@ export { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 export { checkMemberFiles } from "#node/functions/check-member-files.function";
 export { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 export { checkMember } from "#node/functions/check-member.function";
+export { checkNativeModules } from "#node/functions/check-native-modules.function";
 export { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 export { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
 export { checkService } from "#node/functions/check-service.function";

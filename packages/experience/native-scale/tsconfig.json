@@ -2,6 +2,6 @@
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
 // `decorators-react`: `NativeScaleOptions` is a shape, so it typechecks @stackra/validation's source, whose shapes
 // carry legacy field decorators (ADR 0005), and it reaches @stackra/platform's source, whose entries name React and
-// DOM types. The config plugin in `plugin/` is its own project (`plugin/tsconfig.json`), run by `typecheck`.
+// DOM types. The preset's include covers the config plugin in `plugin/` (ADR 0478 decision 2).
 // Owner: release-operations · Secrets: forbidden
 { "extends": "@stackra/typescript-config/decorators-react" }

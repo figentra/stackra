@@ -86,7 +86,9 @@ per capability, behind a TypeScript port with a mock driver. Apps contain no han
 
 ## Enforcement
 
-- planned — a `validate-repository.mjs` check that no app member holds `.swift`, `.kt`, `.java`, `.m` or `.mm` files
-  outside its generated `ios/` and `android/`, and that a package with `expo-module.config.json` has `src/`, `ios/`
-  or `android/`, and `plugin/`, and lists them in `files`.
+- `checkNativeModules` in `@stackra/repo-checks` (the `native-modules` rule of `pnpm validate`): no app member holds
+  `.swift`, `.kt`, `.java`, `.m` or `.mm` files outside its generated `ios/` and `android/` (the mobile app's customer
+  display is exempt until STA-1533 moves it), and a package with `expo-module.config.json` has `src/`, `plugin/` and
+  `ios/` or `android/` in git and lists them in `files`. The root `.gitignore` re-includes `packages/*/*/ios/` and
+  `packages/*/*/android/`.
 - planned — review by `architecture-guardian` until the check lands.

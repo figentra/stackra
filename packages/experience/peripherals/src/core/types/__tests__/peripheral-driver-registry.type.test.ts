@@ -31,6 +31,6 @@ describe("peripherals DriverRegistry entries", () => {
     >();
     expectTypeOf<DriverName<LabelPrinter>>().toEqualTypeOf<"zpl" | "memory">();
     expectTypeOf<DriverName<CustomerDisplay>>().toEqualTypeOf<"channel" | "external" | "memory">();
-    expectTypeOf<DriverName<CardTerminal>>().toEqualTypeOf<"memory" | "ecr">();
+    expectTypeOf<DriverName<CardTerminal>>().toEqualTypeOf<"memory" | "ecr" | "stripe_terminal">();
   });
 });

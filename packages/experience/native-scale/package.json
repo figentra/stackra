@@ -64,7 +64,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p plugin",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

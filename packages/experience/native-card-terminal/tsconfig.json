@@ -2,10 +2,6 @@
 // tsc reads tsconfig.json as JSONC, so the name stays .json.
 // `decorators`: the drivers extend `Driver(Port)` from @stackra/container and reach @stackra/payments' and
 // @stackra/peripherals' sources, which typecheck under it (ADR 0005, ADR 0294 R6). No TSX.
-// shortcut: `include` adds the Expo module's `plugin/` folder (ADR 0478 decision 2), which the library presets do not
-// list; drop it when @stackra/typescript-config gains an `expo-module` preset (integration ask of stackra-430).
+// The preset's include covers the Expo module's `plugin/` folder (ADR 0478 decision 2).
 // Owner: release-operations · Secrets: forbidden
-{
-  "extends": "@stackra/typescript-config/decorators",
-  "include": ["src", "plugin", "tsdown.config.ts", "vitest.config.ts"]
-}
+{ "extends": "@stackra/typescript-config/decorators" }

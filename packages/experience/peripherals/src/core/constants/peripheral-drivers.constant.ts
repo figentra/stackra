@@ -5,7 +5,8 @@
  *          and `ecr` (`./desktop`, the semi-integrated card terminal link of ADR 0377), `imin` for the printer, drawer
  *          and scanner and `sunmi` and `pax` for the scanner (`./native`, the Android till of ADR 0442, ADR 0458 to
  *          0460). The printer's `epson`, `star`, `sunmi` and `pax` are @stackra/native-receipt-printer's drivers and the
- *          drawer's `sunmi` and `pax` @stackra/native-cash-drawer's (ADR 0478 decision 5): their names stay here
+ *          drawer's `sunmi` and `pax` @stackra/native-cash-drawer's, and the card terminal's `stripe_terminal`
+ *          @stackra/native-card-terminal's (ADR 0478 decision 5, ADR 0479): their names stay here
  *          because both augment this package's `DriverRegistry` key. A further card terminal link
  *          (serial, USB, Bluetooth) joins `cardTerminal` with its native transport; a shared
  *          used-receipt store joins `usedReceiptStore` with the venue that needs it; a scanner-scale, bagging-scale,
@@ -25,7 +26,7 @@ export const PERIPHERAL_DRIVERS = Object.freeze({
   scanner: ["memory", "hid", "sunmi", "pax", "imin"],
   labelPrinter: ["memory", "zpl"],
   customerDisplay: ["memory", "channel", "external"],
-  cardTerminal: ["memory", "ecr"],
+  cardTerminal: ["memory", "ecr", "stripe_terminal"],
   accessController: ["memory"],
   kitchenPrinter: ["memory", "escpos"],
   bumpBar: ["memory", "hid"],
