@@ -1,7 +1,8 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
-#          install, Linear key check, format, lint, typecheck, test, build, migration lint (Squawk), docs a11y,
+#          install, Linear key check, format, lint, typecheck, test, build, service gen (`stackra gen`, so each
+#          service's .stackra/migrations exists), migration lint (Squawk), docs a11y,
 #          playground e2e, validate, boundaries, knip, secrets scan, agent sync), plus `Dependency Review` on pull requests.
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
@@ -142,6 +143,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # STA-1403: .stackra is gitignored, so gen compiles each reference service's migrations into its
+      # .stackra/migrations for the Squawk step below. The CLI is the one Build just compiled.
+      - name: Service gen (stackra gen)
+        run: |
+          for service in services/*/; do
+            (cd "$service" && node ../../packages/developer/cli/dist/stackra.mjs gen)
+          done
 
       # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
