@@ -16,6 +16,7 @@ import type { ConsentCategoryEntry } from "#core/index";
 describe("@stackra/consent", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(consent).sort()).toEqual([
+      "CfIpcountryRegionSourceDriver",
       "ConsentAuthorityMissingError",
       "ConsentCategory",
       "ConsentConfig",
@@ -26,7 +27,6 @@ describe("@stackra/consent", () => {
       "ConsentProofService",
       "ConsentRegime",
       "ConsentStatus",
-      "CfIpcountryRegionSourceDriver",
       "CookieConsentStoreDriver",
       "MemoryConsentProofStoreDriver",
       "MemoryConsentStoreDriver",

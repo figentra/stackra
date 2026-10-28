@@ -10,12 +10,12 @@
 import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
-import { DURATION_SCHEMA } from "#core/constants/duration-schema.constant";
+import { CANONICAL_DURATION_SCHEMA } from "#core/constants/canonical-duration-schema.constant";
 
 /** The shipped `health` field: a two second probe whose failure fails readiness. */
 export const HEALTH_CHECK_SCHEMA = z
   .object({
-    timeout: DURATION_SCHEMA.default(Duration.seconds(2)),
+    timeout: CANONICAL_DURATION_SCHEMA.default(Duration.seconds(2)),
     critical: z.boolean().default(true),
   })
   .default(() => ({ timeout: Duration.seconds(2), critical: true }));

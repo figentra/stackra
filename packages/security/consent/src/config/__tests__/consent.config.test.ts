@@ -109,7 +109,7 @@ describe("ConsentConfig", () => {
     ["an empty policy version", { policyVersion: "" }],
     ["no expiry", { expiryDays: 0 }],
     ["an expiry past 400 days", { expiryDays: 401 }],
-    ["an unknown regime", { regionDefaults: { default: "lgpd" } }],
+    ["an unknown regime", { regionDefaults: { default: "unknown_regime" } }],
     [
       "a required category not granted by default",
       {
@@ -131,7 +131,7 @@ describe("ConsentConfig", () => {
       "an unknown category",
       {
         categories: [
-          { category: "marketing", required: false, defaultGranted: false, descriptionKey: null },
+          { category: "telemetry", required: false, defaultGranted: false, descriptionKey: null },
         ],
       },
     ],

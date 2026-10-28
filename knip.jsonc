@@ -87,6 +87,13 @@
       // the MCP server spawns it from PATH (`pnpm exec stackra mcp`) instead of declaring it (a cycle).
       "ignoreBinaries": ["encore", "stackra"],
     },
+    // gen loads the member's own @stackra/database to compile its migrations (`require.resolve` from the member root,
+    // stackra-248): the member declares it, gen must not, or gen would depend on a package it compiles for.
+    "packages/developer/gen": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/database"],
+    },
     // Packages only gen's .stackra output imports (registrations: outbox, queue, scheduler; wiring: actions, content,
     // database), declared for it (generated_dependency_missing).
     // shortcut: gen writes no .stackra for these members while shim_authored refuses them; drop these blocks once

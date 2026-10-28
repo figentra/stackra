@@ -28,6 +28,7 @@
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
+  CountOptions,
   EntityData,
   FilterQuery,
   FindOneOptions,
@@ -133,7 +134,7 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
   async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
-    const [filter, rest] = await this.readOf(where, options);
+    const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
     return rest === undefined
       ? this.em().count(this.model(), filter)
       : this.em().count(this.model(), filter, rest);

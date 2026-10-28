@@ -6,8 +6,8 @@ description: "Accepted · 2026-10-28"
 {/* Stackra file contract. Purpose: ADR 0471 (Accepted 2026-10-28, owner decisions 14 and 15 of the data-layer questionnaire), naming one `Indexer` kind on the outbox change feed for derived index tables and rollups, limiting materialised views to platform-wide tables, refusing pg_ivm and pg_cron, and rejecting event sourcing as a platform default. Boundary: decision text only; the code is batch stackra-399 (`@stackra/database`, `@stackra/outbox`, `@stackra/gen`, `@stackra/cli`) and its followers stackra-400, stackra-414; the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0078, 0089, 0104, 0160, 0163, 0221, 0260, 0294, 0470; notes handover/gap-analysis/data-layer (index-tables-cqrs.md gaps 1, 7 and 10; DECISIONS.md 14 and 15). */}
 
 <Note>
-  Reserved number: 0471, assigned to batch stackra-381 (STA-1481) for the data-layer wave 1 round
-  of 2026-10-28.
+  Reserved number: 0471, assigned to batch stackra-381 (STA-1481) for the data-layer wave 1 round of
+  2026-10-28.
 </Note>
 
 ## Context
@@ -27,7 +27,7 @@ answer and weighed against the outbox, projections and the append-only traits th
 ## Decision
 
 1. **One `Indexer` kind builds derived tables.** `class OrderGrid extends Indexer<OrderGridRow>({ key, target,
-   sources, mode })` lives in a module's `models/` group beside its target, kind base in `@stackra/database`, runtime in
+sources, mode })` lives in a module's `models/` group beside its target, kind base in `@stackra/database`, runtime in
    `@stackra/outbox`.
    - `rows(ids)` builds target rows from the sources in one query; `affected(change)` maps a source row change to the
      target ids it touches.

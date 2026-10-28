@@ -12,14 +12,14 @@
 import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
-import { DURATION_SCHEMA } from "#core/constants/duration-schema.constant";
+import { CANONICAL_DURATION_SCHEMA } from "#core/constants/canonical-duration-schema.constant";
 
 /** The platform floors: 30 s per statement, 10 s waiting for a lock, 60 s idle inside a transaction. */
 export const SESSION_TIMEOUTS_SCHEMA = z
   .object({
-    statement: DURATION_SCHEMA.default(Duration.seconds(30)),
-    lock: DURATION_SCHEMA.default(Duration.seconds(10)),
-    idleInTransaction: DURATION_SCHEMA.default(Duration.seconds(60)),
+    statement: CANONICAL_DURATION_SCHEMA.default(Duration.seconds(30)),
+    lock: CANONICAL_DURATION_SCHEMA.default(Duration.seconds(10)),
+    idleInTransaction: CANONICAL_DURATION_SCHEMA.default(Duration.seconds(60)),
   })
   .default(() => ({
     statement: Duration.seconds(30),

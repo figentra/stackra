@@ -52,7 +52,7 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
 
   it.each([
     ["gating by the necessary category", { consentCategory: "necessary" }],
-    ["an unknown category", { consentCategory: "marketing" }],
+    ["an unknown category", { consentCategory: "telemetry" }],
     ["an unknown driver", { driver: "segment" }],
     ["a negative queue bound", { queueLimit: -1 }],
     ["a queue bound past 1,000", { queueLimit: 1001 }],

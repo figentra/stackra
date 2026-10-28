@@ -3,20 +3,20 @@
  * Purpose: unit tests of `checkEncryptedFields`: an encrypted field must exist and carry `@Classified`, and a native,
  *          query-builder or raw SQL write on an encrypted model (own or a declared package's, by class or table) is
  *          refused; a model without `HasEncryptedFields` is left alone.
- * Boundary: test only; runs on the commerce IR fixture with the first model made encrypted.
+ * Boundary: test only; runs on the billing IR fixture (its models have shapes) with the first model made encrypted.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0465 (decision 5); ADR 0134 (decision 2).
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
-import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 
-const MODEL = COMMERCE_IR.classes.find((declared) => declared.kind === "model") as DeclaredClass;
-const SHAPE = COMMERCE_IR.shapes.find((shape) => shape.name === MODEL.name) as ShapeIR;
+const MODEL = BILLING_IR.classes.find((declared) => declared.kind === "model") as DeclaredClass;
+const SHAPE = BILLING_IR.shapes.find((shape) => shape.name === MODEL.name) as ShapeIR;
 const FIELD = SHAPE.fields[0]?.name ?? "";
 
 /** The fixture with the first model encrypting `fields`, the first field classified when `classified` is set. */
@@ -25,13 +25,13 @@ const encrypted = (
   classified?: string,
   extra: Partial<MemberIR> = {},
 ): MemberIR => ({
-  ...COMMERCE_IR,
-  classes: COMMERCE_IR.classes.map((declared) =>
+  ...BILLING_IR,
+  classes: BILLING_IR.classes.map((declared) =>
     declared === MODEL
       ? { ...declared, traits: [...declared.traits, { name: "HasEncryptedFields", args: fields }] }
       : declared,
   ),
-  shapes: COMMERCE_IR.shapes.map((shape) =>
+  shapes: BILLING_IR.shapes.map((shape) =>
     shape === SHAPE && classified !== undefined
       ? {
           ...shape,
@@ -45,7 +45,7 @@ const encrypted = (
 });
 
 const write = (method: string, target: string): NonNullable<MemberIR["nativeWrites"]>[number] => ({
-  file: "src/modules/orders/services/x.service.ts",
+  file: "src/modules/billing/services/x.service.ts",
   line: 3,
   column: 5,
   method,
@@ -85,7 +85,7 @@ describe("checkEncryptedFields", () => {
 
   it("refuses a raw write on a declared package's encrypted table, with or without its schema", () => {
     const ir: MemberIR = {
-      ...COMMERCE_IR,
+      ...BILLING_IR,
       dependencies: [
         {
           package: "@acme/crm-kit",
@@ -117,7 +117,7 @@ describe("checkEncryptedFields", () => {
 
   it("leaves a model without HasEncryptedFields alone", () => {
     expect(
-      checkEncryptedFields({ ...COMMERCE_IR, nativeWrites: [write("nativeUpdate", MODEL.name)] }),
+      checkEncryptedFields({ ...BILLING_IR, nativeWrites: [write("nativeUpdate", MODEL.name)] }),
     ).toEqual([]);
   });
 });

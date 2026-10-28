@@ -18,6 +18,7 @@ describe("@stackra/gen/node", () => {
       "classComponents",
       "classComponentsPlugin",
       "compileClassComponents",
+      "compileMigrations",
       "discoverMember",
       "generate",
       "generateDocsSite",

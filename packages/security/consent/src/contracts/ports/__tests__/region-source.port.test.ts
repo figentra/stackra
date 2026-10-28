@@ -14,8 +14,8 @@ import { RegionSource } from "#contracts/ports/region-source.port";
 
 /** The smallest driver of the port. */
 class FixedRegionSourceDriver extends Driver(RegionSource) {
-  regionOf(): string | null {
-    return "SA";
+  regionOf(headers: Headers): string | null {
+    return headers.get("cf-ipcountry") ?? "SA";
   }
 }
 

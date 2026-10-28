@@ -2987,6 +2987,9 @@ importers:
 
   packages/data/search:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
@@ -3011,6 +3014,9 @@ importers:
       '@stackra/outbox':
         specifier: workspace:*
         version: link:../../runtime/outbox
+      '@stackra/queue':
+        specifier: workspace:*
+        version: link:../../runtime/queue
       '@stackra/settings':
         specifier: workspace:*
         version: link:../../state/settings
@@ -7624,6 +7630,12 @@ importers:
 
   packages/security/scope:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/cache':
+        specifier: workspace:*
+        version: link:../../runtime/cache
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config

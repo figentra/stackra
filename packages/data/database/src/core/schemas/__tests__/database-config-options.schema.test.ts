@@ -29,6 +29,7 @@ describe("DatabaseConfigOptions", () => {
     expect({ ...new DatabaseConfigOptions() }).toEqual(DATABASE_CONFIG_SCHEMA.parse({}));
     expect(DATABASE_CONFIG_SCHEMA.parse({})).toEqual({
       health: { timeout: "PT2S", critical: true },
+      timeouts: { statement: "PT30S", lock: "PT10S", idleInTransaction: "PT1M" },
     });
   });
 

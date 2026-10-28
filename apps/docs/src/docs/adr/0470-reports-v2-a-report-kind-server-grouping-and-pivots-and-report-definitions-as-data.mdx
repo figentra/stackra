@@ -6,8 +6,8 @@ description: "Accepted · 2026-10-28"
 {/* Stackra file contract. Purpose: ADR 0470 (Accepted 2026-10-28, owner decision 13 of the data-layer questionnaire), replacing the `@Report` decorator with a `Report` kind base, bringing in server-side grouping, totals and pivots over declared dimensions and measures, allowing report definitions saved as data, and settling the grouping conflict between ADR 0307 rule 13 and ADR 0271 decision 1. Boundary: decision text only; the code is batches stackra-389 to stackra-398 (`@stackra/reports`, `@stackra/gen`, `@stackra/panel`, `@stackra/database`); the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0154, 0160, 0163, 0227, 0270, 0271, 0294, 0307, 0341, 0359; notes handover/gap-analysis/data-layer (reporting.md gap 1, DECISIONS.md 13). */}
 
 <Note>
-  Reserved number: 0470, assigned to batch stackra-380 (STA-1478) for the data-layer wave 1 round
-  of 2026-10-28.
+  Reserved number: 0470, assigned to batch stackra-380 (STA-1478) for the data-layer wave 1 round of
+  2026-10-28.
 </Note>
 
 ## Context
@@ -28,7 +28,7 @@ decision 13): reports v2 yes, group-by belongs to views, drop 0307 rule 13. ADR
 ## Decision
 
 1. **A report is a `Report` kind, not a decorator.** `class OrderSales extends Report<Order>({ key, dimensions,
-   measures, defaultFilter, permissions })` lives in a module's `reports/` group and in the `@stackra/reports` package
+measures, defaultFilter, permissions })` lives in a module's `reports/` group and in the `@stackra/reports` package
    (data category). Its source is a model, a `Projection` or an `Indexer` target
    ([0471](/adr/0471-read-side-one-indexer-kind-no-materialised-views-over-scoped-data-and-no-event-sourcing-by-default)).
    Gen records each report in `stackra.manifest.json` under `reports` and emits one generated `Query` per report, so

@@ -685,9 +685,10 @@ describe(compileMigration, () => {
   });
 
   it("refuses an unapproved extension and a raw statement without an inverse", () => {
-    class PostgisMigration extends Migration {
+    // pg_cron is rejected (data-layer decision 7), so it stays an unapproved extension.
+    class CronMigration extends Migration {
       up(schema: SchemaBuilder): void {
-        schema.createExtension("postgis" as Extension);
+        schema.createExtension("pg_cron" as Extension);
       }
     }
     class RawMigration extends Migration {
@@ -695,7 +696,7 @@ describe(compileMigration, () => {
         schema.sql("select 1", {} as { inverse: string });
       }
     }
-    expect(() => compileMigration(PostgisMigration, { schema: "geo" })).toThrow(/needs an ADR/);
+    expect(() => compileMigration(CronMigration, { schema: "geo" })).toThrow(/needs an ADR/);
     expect(() => compileMigration(RawMigration, { schema: "geo" })).toThrow(/needs \{ inverse \}/);
   });
 
