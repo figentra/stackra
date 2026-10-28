@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
- *          trait, money, bigint, decimal, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
+ *          trait, money, bigint, decimal, enum, link and foreign-key columns; the AppendOnly revoke; expand steps; online indexes; raw statements with `after`),
  *          macros installed by name, the generated equality, equals-or-unset, ancestor and inherited row-level-security policies, the
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
@@ -439,6 +439,25 @@ describe(compileMigration, () => {
       'drop table if exists "loyalty"."accounts"',
       'drop extension if exists "pg_trgm"',
     ]);
+  });
+
+  it("revokes update on an append-only table, created or existing (stackra-256)", () => {
+    class CreateEntriesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("entries", (t: Blueprint) => {
+          t.hasPublicId("lpe");
+          t.appendOnly();
+        });
+        schema.table("journals", (t: Blueprint) => {
+          t.appendOnly();
+        });
+      }
+    }
+    const [step] = compileMigration(CreateEntriesMigration, { schema: "ledger" }).steps;
+    expect(step?.sql).toContain('revoke update on "ledger"."entries" from public, current_user');
+    expect(step?.sql).toContain('revoke update on "ledger"."journals" from public, current_user');
+    expect(step?.inverse).toContain('grant update on "ledger"."entries" to current_user');
+    expect(step?.inverse).toContain('grant update on "ledger"."journals" to current_user');
   });
 
   it("writes bigint and exact decimal columns (STA-1240)", () => {

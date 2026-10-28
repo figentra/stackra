@@ -281,6 +281,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   and every `Macro` a declared package exports from `./node`. Ordering (`orderMigrations`) and file layout
   (`emitMigrations`) are pure and keep the layout `readMigrationFiles` reads. A package installed from the registry
   (under node_modules, not a workspace link) does not load, since Node refuses type stripping there.
+- `checkAppendOnly` (stackra-256): an own `AppendOnly` model whose module has migrations must have a compiled
+  `revoke update on "<schema>"."<table>"` (`t.appendOnly()`), else `append_only_not_revoked`. Packages' models are
+  their own gen's. The boot adds `AppendOnlySubscriber` with the database.
 
 ## Shell slots and fills (ADR 0438, stackra-03)
 

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database at the Encore database's url with the
- *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp and outbox writer
+ *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp, append-only (stackra-256) and outbox writer
  *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
@@ -27,7 +27,7 @@ describe("emitBoot", () => {
     expect(boot).toContain('import type { Container } from "@stackra/container";');
     expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database/node";');
     expect(boot).toContain(
-      'import { connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
     expect(boot).toContain('import { database } from "../encore/billing/database";');
     expect(boot).toContain(
@@ -57,8 +57,8 @@ describe("emitBoot", () => {
         "    url: database.connectionString,",
         "    replicas,",
         "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
-        '    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },',
-        "    subscribers: [new HoldSubscriber(), new StampSubscriber(), container.get(OutboxWriterService)],",
+        "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
+        "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],",
         "  });",
         "  container.get(SegmentService).connect(container);",
         "  const bus = container.get(EventBus);",
@@ -81,7 +81,9 @@ describe("emitBoot", () => {
 
   it("writes only the steps whose packages the service runs", () => {
     const boot = emitBoot(COMMERCE_IR) ?? "";
-    expect(boot).toContain("    subscribers: [new HoldSubscriber(), new StampSubscriber()],");
+    expect(boot).toContain(
+      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()],",
+    );
     expect(boot).not.toContain("Outbox");
     expect(boot).not.toContain("SegmentService");
     expect(boot).not.toContain("EventBus");
@@ -120,7 +122,7 @@ describe("emitBoot", () => {
     expect(boot).toContain('import { FieldCipher } from "@stackra/contracts";');
     expect(boot).toContain('import { EncryptedFieldsSubscriber } from "@stackra/model";');
     expect(boot).toContain(
-      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))],",
+      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))],",
     );
   });
 

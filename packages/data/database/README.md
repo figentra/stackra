@@ -329,6 +329,18 @@ archived rows), on `find`, `findOne`, `findOneOrFail` and `count`. `forceDelete(
 rows for good, kept ones included, and a legal hold still protects them. A soft delete or an archive is an update,
 not a disposal. A unique index on a soft-deleted table says `.where("deleted_at is null")`.
 
+## Append-only tables
+
+An `AppendOnly` model (a ledger entry, an audit record) is inserted and never changed; a correction is a new row
+(`HasCorrections`). Three layers hold it:
+
+- `CrudService` refuses `update`, `increment`, `delete`, `restore` and `repath` with `AppendOnlyWriteError`
+  (`append_only_write`, `failed_precondition`). `purge` and `forceDelete` still remove rows: retention and erasure.
+- `AppendOnlySubscriber` (in the generated boot's subscribers) refuses a flush that changes a loaded row (`em.assign`).
+- `t.appendOnly()` in the table's migration revokes `UPDATE` from `public` and the migrating role, so a native or raw
+  write fails in Postgres too. Gen refuses an own `AppendOnly` model whose table no migration revokes it on
+  (`append_only_not_revoked`).
+
 ## Partitioned tables
 
 A table that grows without bound (outbox changes, access log, meter events, audit, projections) is range-partitioned
@@ -477,11 +489,11 @@ outermost transaction ends. The migration runner keeps its own session timeouts.
 `pool` in the same config is the connection pool of one instance (ADR 0473), passed by the boot as
 `PostgresDatabaseDriver.connect({ url, pool })` and used for the primary and each replica:
 
-| Field         | Default | Meaning                                                   |
-| ------------- | ------- | --------------------------------------------------------- |
-| `max`         | `10`    | The most connections this instance opens                  |
-| `min`         | `0`     | The connections kept open while idle                      |
-| `idleTimeout` | `PT10S` | How long an idle connection above `min` stays open        |
+| Field         | Default | Meaning                                            |
+| ------------- | ------- | -------------------------------------------------- |
+| `max`         | `10`    | The most connections this instance opens           |
+| `min`         | `0`     | The connections kept open while idle               |
+| `idleTimeout` | `PT10S` | How long an idle connection above `min` stays open |
 
 The service's runway `database.poolBudget` is the connections all its instances may hold together. The deploy hands
 each instance its share as `DATABASE_POOL_MAX` (`poolMaxOf` in `@stackra/runway`: the budget divided by the group's

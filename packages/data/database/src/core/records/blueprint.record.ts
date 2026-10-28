@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, column changes, indexes,
- *          the primary key and row-level-security policies, installs the member's macros under their names, and
+ *          the primary key, row-level-security policies and the `AppendOnly` revoke of `UPDATE`, installs the member's macros under their names, and
  *          compiles to SQL statements.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
@@ -91,6 +91,9 @@ export class BlueprintRecord {
 
   /** The SQL type of a public-id key column (`hasPublicId`, `belongsTo`, `link`). */
   private readonly publicIdColumn: string;
+
+  /** Whether `appendOnly` was called: the table's `UPDATE` is revoked. */
+  private appendOnlyTable = false;
 
   /** The range-partition column, when `partitionBy` was called. */
   private partitionColumn: string | undefined = undefined;
@@ -298,6 +301,11 @@ export class BlueprintRecord {
       comment: "When the row was archived; null while it is active.",
     });
     return new ColumnGroupRecord([this.add(archivedAt)]);
+  }
+
+  /** Implements `Blueprint.appendOnly`, documented there. */
+  appendOnly(): void {
+    this.appendOnlyTable = true;
   }
 
   /**
@@ -512,6 +520,7 @@ export class BlueprintRecord {
     }
     if (this.policy !== undefined)
       for (const { sql } of this.policySql(qualified, this.policy)) add(sql);
+    statements.push(...this.appendOnlySql(qualified));
     return { statements, online: [] };
   }
 
@@ -575,7 +584,19 @@ export class BlueprintRecord {
       for (const validate of column.validateSql(this.table, qualified))
         online.push({ sql: [validate], transactional: true, inverse: [] });
     if (this.policy !== undefined) statements.push(...this.policySql(qualified, this.policy));
+    statements.push(...this.appendOnlySql(qualified));
     return { statements, online };
+  }
+
+  /** The revoke of `UPDATE` on an `appendOnly` table, with its grant back as the inverse; none otherwise. */
+  private appendOnlySql(qualified: string): readonly CompiledStatement[] {
+    if (!this.appendOnlyTable) return [];
+    return [
+      {
+        sql: `revoke update on ${qualified} from public, current_user`,
+        inverse: [`grant update on ${qualified} to current_user`],
+      },
+    ];
   }
 
   /**

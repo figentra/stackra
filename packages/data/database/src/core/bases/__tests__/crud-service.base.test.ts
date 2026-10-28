@@ -11,7 +11,8 @@
  *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
  *          parameterised statement and refuses a path that is not `ltree` or a move under itself. With a
  *          `NativeWriteWatcher` connected that watches the model, the native verbs read the matching ids first, narrow
- *          the statement to them and report them; a model it does not watch is written as before.
+ *          the statement to them and report them; a model it does not watch is written as before. An `AppendOnly`
+ *          model refuses `update`, `increment`, `delete`, `restore` and `repath`, and still inserts and purges.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
@@ -25,7 +26,7 @@ import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { ActorKind, Realm, SortDirection } from "@stackra/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
-import { Archivable, HasPublicId, Model, SoftDeletes } from "@stackra/model";
+import { AppendOnly, Archivable, HasPublicId, Model, SoftDeletes } from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -34,6 +35,7 @@ import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
 import { connectNativeWriteWatcher } from "#core/functions/connect-native-write-watcher.function";
 import type { NativeWrite } from "#core/types/native-write.type";
+import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerHoldLinks } from "#core/functions/register-hold-links.function";
@@ -63,7 +65,17 @@ class OrderService extends CrudService<Order> {}
 
 class OrphanService extends CrudService<Order> {}
 
-registerModelPartners([[OrderService, Order]]);
+class LedgerEntry extends Model.with(HasPublicId("lpe"), AppendOnly) {}
+
+class LedgerEntryService extends CrudService<LedgerEntry> {}
+
+/** Whether `error` is the append-only refusal. */
+const refused = (error: unknown): boolean => isRefusal(error, AppendOnlyWriteError);
+
+registerModelPartners([
+  [OrderService, Order],
+  [LedgerEntryService, LedgerEntry],
+]);
 
 const metadata = {
   className: "Order",
@@ -217,6 +229,23 @@ describe(CrudService, () => {
       { expectedVersion: 3 },
     );
     expect(updated.status).toBe("paid");
+  });
+
+  it("refuses every change of an append-only row and still inserts and purges", async () => {
+    const em = connect();
+    const service = new LedgerEntryService();
+    await expect(service.update({ id: "lpe_1" }, {})).rejects.toSatisfy(refused);
+    expect(em.findOneOrFail).not.toHaveBeenCalled();
+    for (const write of [
+      () => service.increment({ id: "lpe_1" }, "hits"),
+      () => service.delete({ id: "lpe_1" }),
+      () => service.restore({ id: "lpe_1" }),
+    ])
+      expect(write).toThrow(AppendOnlyWriteError);
+    await expect(service.repath("platform.a", "platform.b")).rejects.toSatisfy(refused);
+    expect(em.nativeUpdate).not.toHaveBeenCalled();
+    await service.insert({} as never);
+    expect(await service.purge({ id: "lpe_1" })).toBe(2);
   });
 
   it("reads one table page by cursor, the sort then the primary key", async () => {

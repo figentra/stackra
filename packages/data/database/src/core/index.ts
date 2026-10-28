@@ -29,6 +29,7 @@ export { DATABASE_CONFIG_SCHEMA as DatabaseConfig$ } from "#core/constants/datab
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Extension } from "#core/enums/extension.enum";
 export { MixedCurrencyError } from "#core/errors/mixed-currency.error";
+export { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 export { RecordHeldError } from "#core/errors/record-held.error";
 export { StaleVersionError } from "#core/errors/stale-version.error";
 export { DuplicateRecordError } from "#core/errors/duplicate-record.error";
@@ -62,6 +63,7 @@ export { repositoryOf } from "#core/functions/repository-of.function";
 export { sql } from "#core/functions/sql.function";
 export { table } from "#core/functions/table.function";
 export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
+export { AppendOnlySubscriber } from "#core/orm/append-only.subscriber";
 export { HoldSubscriber } from "#core/orm/hold.subscriber";
 export { StampSubscriber } from "#core/orm/stamp.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";

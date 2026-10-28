@@ -101,6 +101,13 @@ export interface Blueprint {
   archivable: () => ColumnGroup;
 
   /**
+   * The `AppendOnly` trait: revokes `UPDATE` on the table from `public` and the migrating role (the service's own,
+   * which owns its tables), so no session of the service can change a row; inserts, reads and deletes (retention,
+   * erasure) stay. On a created or an existing table; the inverse grants `UPDATE` back to the migrating role.
+   */
+  appendOnly: () => void;
+
+  /**
    * The `Partitioned` trait: the new table is `partition by range (column)`, with a `<table>_default` partition that
    * catches rows no dated partition covers yet, the column added to the primary key (Postgres requires it), and a
    * BRIN index on it unless `brin: false`. A NOT NULL column of this blueprint; a unique index must include it.

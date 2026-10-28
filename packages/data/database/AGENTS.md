@@ -103,6 +103,9 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
   and `em` the same as `PostgresDatabaseDriver`'s when either changes.
 - `DatabaseHealthIndicatorDriver` is the `HealthIndicator` driver: it runs `select 1`, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
+- An `AppendOnly` model is never changed: every `CrudService` write that changes or soft-removes rows refuses it, and
+  `AppendOnlySubscriber` refuses the flush; only `purge`/`forceDelete` (retention, erasure) remove rows. Its table's
+  migration calls `t.appendOnly()` (gen's `append_only_not_revoked`). Do not grant `UPDATE` back.
 - The pool comes from `DatabaseConfig.pool` (and `DATABASE_POOL_MAX` over its `max`, ADR 0473); never hard-code a
   pool size in a driver. A tool that holds session state (a session `SET`, a session advisory lock) connects with
   `directDatabaseUrl()`, never the pooled `DATABASE_URL`, since a transaction-mode proxy cannot keep it.

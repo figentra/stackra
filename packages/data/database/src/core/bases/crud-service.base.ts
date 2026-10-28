@@ -19,14 +19,16 @@
  *           or archives a `SoftDeletes`/`Archivable` model's rows and hard-deletes any other's, `restore` brings kept
  *           rows back, `forceDelete` and `purge` remove them for good; the drivers' `deleted`/`archived` filters hide
  *           kept rows from every read unless `DeletedReadOptions` asks for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
- *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
+ *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves. An
+ *           `AppendOnly` model's rows are never changed: `update`, `increment`, `delete`, `restore` and `repath` refuse
+ *           with `AppendOnlyWriteError`; `purge` and `forceDelete` (retention, erasure) still remove them.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
  *                     atomic increment, `update` with `requiresNew`); reporting gap 5 (filter operators, multi-key sort);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
- *                     reach the change feed).
+ *                     reach the change feed); mo3 (`AppendOnly` enforced).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -47,6 +49,7 @@ import { NotFoundError } from "@stackra/errors";
 import { traitsOf } from "@stackra/model";
 
 import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
+import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
@@ -57,6 +60,7 @@ import { disposableIds } from "#core/functions/disposable-ids.function";
 import { filterCondition } from "#core/functions/filter-condition.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
+import { isAppendOnly } from "#core/functions/is-append-only.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
@@ -173,9 +177,11 @@ export abstract class CrudService<M extends object> extends Service implements R
    * Implements `Repository.increment`, documented there.
    *
    * @throws TypeError when `by` is not a finite number or `field` is not a single-column field.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
   increment(where: Where<M>, field: string, by = 1): Promise<number> {
     if (!Number.isFinite(by)) throw new TypeError(`increment takes a finite step, got ${by}`);
+    this.refuseAppendOnly("increment");
     const em = this.em();
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
@@ -258,8 +264,11 @@ export abstract class CrudService<M extends object> extends Service implements R
    * Deletes the rows matching `where` by the model's delete policy (ADR 0134 decision 4) and returns how many: a
    * `SoftDeletes` model sets `deletedAt`, an `Archivable` one `archivedAt` (both stamped, one statement, live rows
    * only), and any other model is hard-deleted through `purge`, so a legal hold still protects its rows.
+   *
+   * @throws AppendOnlyWriteError for an `AppendOnly` model, whose rows go only by `purge` (retention, erasure).
    */
   delete(where: Where<M>): Promise<number> {
+    this.refuseAppendOnly("delete");
     const model = this.model();
     const policy = this.keptPolicy();
     if (policy === undefined) return this.purge(where);
@@ -279,8 +288,10 @@ export abstract class CrudService<M extends object> extends Service implements R
    * Brings back the soft-deleted (or archived) rows matching `where` and returns how many.
    *
    * @throws TypeError for a model whose delete policy keeps no row (neither `SoftDeletes` nor `Archivable`).
+   * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
   restore(where: Where<M>): Promise<number> {
+    this.refuseAppendOnly("restore");
     const model = this.model();
     const policy = this.keptPolicy();
     if (policy === undefined)
@@ -315,8 +326,10 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws NotFoundError when no row matches.
    * @throws StaleVersionError when the row's version is not `expectedVersion`.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model, before anything is read.
    */
   async update(where: Where<M>, data: EntityData<M>, options: UpdateOptions = {}): Promise<M> {
+    this.refuseAppendOnly("update");
     if (options.requiresNew === true) {
       const model = this.model();
       const filter = await visibleFilter(model, where);
@@ -351,6 +364,7 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @returns the number of rows moved; 0 when `from` and `to` are the same path.
    * @throws TypeError when either path is not an `ltree` path, `to` lies below `from`, or the model has no
    *         single-column `scopePath`.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
   async repath(from: string, to: string): Promise<number> {
     if (!LTREE_PATH.test(from) || !LTREE_PATH.test(to))
@@ -358,6 +372,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     if (to.startsWith(`${from}.`))
       throw new TypeError(`"${to}" lies below "${from}": a subtree cannot move under itself`);
     if (from === to) return 0;
+    this.refuseAppendOnly("repath");
     const em = this.em();
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), "scopePath"));
@@ -450,6 +465,16 @@ export abstract class CrudService<M extends object> extends Service implements R
     if (expected === undefined) return;
     if ((row as { version?: unknown }).version !== expected)
       throw StaleVersionError.create({ model: this.model().name });
+  }
+
+  /**
+   * Refuses `operation` on an `AppendOnly` model, whose rows are inserted and never changed.
+   *
+   * @throws AppendOnlyWriteError when the model is `AppendOnly`.
+   */
+  private refuseAppendOnly(operation: string): void {
+    const model = this.model();
+    if (isAppendOnly(model)) throw AppendOnlyWriteError.create({ model: model.name, operation });
   }
 
   /** The keep-the-row policy of the model: its filter and field, or `undefined` for a hard delete. */

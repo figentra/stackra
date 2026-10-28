@@ -10,16 +10,18 @@
  *           resolved from the member root so the migration classes and the compiler share one kind registry. Writes
  *           nothing; `generate` writes or checks the files. A migration that does not load or compile is refused
  *           (`migration_load_failed`, `migration_compile_failed`); so is a member with migrations and no
- *           `@stackra/database` (`migration_database_missing`). No migration anywhere: no files and no import.
+ *           `@stackra/database` (`migration_database_missing`), and an own `AppendOnly` model whose table no migration
+ *           revokes `UPDATE` on (`append_only_not_revoked`, `checkAppendOnly`). No migration anywhere: no files and no import.
  * Runtime: node
  * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24); ADR 0294 (decision 20: a
- *                     Postgres schema per module).
+ *                     Postgres schema per module); ADR 0220 and data-layer gap db5 (the append-only revoke, stackra-256).
  */
 import { existsSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { migrationId } from "#core/functions/migration-id.function";
@@ -250,6 +252,7 @@ export async function compileMigrations(
       );
     }
   }
+  errors.push(...checkAppendOnly(ir, units));
   if (errors.length > 0) return { files: [], errors };
   const { ordered, errors: orderErrors } = orderMigrations(units);
   return orderErrors.length > 0

@@ -174,6 +174,8 @@ describe("@stackra/database", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(database).sort()).toEqual([
       "Aggregate",
+      "AppendOnlySubscriber",
+      "AppendOnlyWriteError",
       "ConstraintViolatedError",
       "CrudService",
       "Database",
