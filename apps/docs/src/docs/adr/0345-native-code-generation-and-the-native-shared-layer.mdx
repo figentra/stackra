@@ -19,6 +19,14 @@ description: "Accepted · 2026-10-24"
   [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling).
 </Note>
 
+<Note>
+  Amended by [0478](/adr/0478-native-code-lives-only-in-expo-module-packages-one-per-capability-behind-a-port)
+  (2026-10-28): decision 6 is replaced. Apps hold no hand-written native code and the `src/native-
+  sources/<surface>/` group is retired; hand-written Swift and Kotlin live only in Expo module packages, one per
+  capability. Decision 7 is narrowed: a module package authors its own config plugin. The rest of this page
+  stands.
+</Note>
+
 ## Context
 
 [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) derives native surfaces (widgets,

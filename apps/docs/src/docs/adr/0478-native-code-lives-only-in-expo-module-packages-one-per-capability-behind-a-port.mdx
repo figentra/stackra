@@ -1,0 +1,92 @@
+---
+title: "0478 — Native code lives only in Expo module packages, one per capability, behind a port"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the decision record that hand-written Swift and Kotlin live only in Expo module packages, one package per hardware or OS capability, behind a TypeScript port with a mock driver, and that apps hold no hand-written native code. Boundary: decision text only; the module packages are batches stackra-427 to stackra-430. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0339, 0345, 0442, 0458, 0459. */}
+
+<Note>
+  Accepted by the owner on 2026-10-28 (batch stackra-426). Amends
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decisions 6 and 7,
+  [0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template) decision
+  4, [0458](/adr/0458-sunmi-terminals-the-built-in-printer-drawer-and-scanner-through-the-sunmi-sdk)
+  decision 2 and
+  [0459](/adr/0459-pax-terminals-the-built-in-printer-drawer-and-scanner-through-the-neptunelite-sdk)
+  decision 2.
+</Note>
+
+## Context
+
+Commerce, Mezzora and Jute need receipt printers, cash drawers, scales and card readers on phones, tablets and Android
+tills, which only vendor SDKs (Epson, Star, Sunmi, PAX, Stripe Terminal, scale makers) reach. 0345 decision 6 gave an
+app a `src/native-sources/<surface>/` group for hand-written Swift and Kotlin, and 0458 and 0459 put the Sunmi and PAX
+Kotlin there, inside the till app. That ties vendor SDKs to one app, repeats them in every app that needs the same
+device, and leaves native code that no package test, version or release covers. The alternatives were a native
+rewrite of the apps (rejected: React Native and Expo stay the mobile stack) and a separate Swift Package Manager,
+CocoaPods or Maven publish per device (not needed while every consumer is an Expo app).
+
+## Decision
+
+**Principle:** Native code lives only in Expo module packages (`src/`, `ios/`, `android/`, `plugin/`), one package
+per capability, behind a TypeScript port with a mock driver. Apps contain no hand-written native code.
+
+1. **React Native and Expo stay the mobile stack.** Swift and Kotlin are written only inside Expo module packages,
+   never as a rewrite of an app or a screen.
+2. **One capability, one package.** Each hardware or OS capability is one self-contained Expo Modules API package:
+   `src/` (the TypeScript side: the module binding and the drivers), `ios/` (Swift, holding the vendor SDKs),
+   `android/` (Kotlin, holding the vendor SDKs), `plugin/` (the package's config plugin: permissions, `Info.plist`
+   and manifest entries, and the build-time removal of vendor families an app's runway does not list, as 0442
+   decision 3 requires) and `expo-module.config.json`. Autolinking brings the native code into CocoaPods and Gradle at
+   prebuild. A package that needs only a library Expo already ships (the camera, `expo-glass-effect`, `@expo/ui`)
+   uses it and writes no native code.
+3. **Apps hold no hand-written native code.** An app's `ios/` and `android/` folders are written by `expo prebuild`
+   and never edited by hand; an app has no Swift or Kotlin folder. This replaces 0345 decision 6: the
+   `src/native-sources/<surface>/` group is retired, and a watch screen, an intent body or any other hand-written
+   native surface is an Expo module package of its own. It narrows 0345 decision 7: a module package authors its own
+   config plugin in `plugin/`; members still author no other config plugin, and gen's one plugin still holds every
+   Stackra modification of an app.
+4. **Vendor SDKs only in the module.** A vendor SDK is declared only in that module's podspec and Gradle file, fetched
+   from the vendor's repository at build time under the vendor's terms; this repository holds no vendor binary or
+   source (0458 decision 6 and 0459 keep applying).
+5. **Port and driver.** The ports stay where they are: `ReceiptPrinter`, `CashDrawer`, `Scale`, `BarcodeScanner`,
+   `CardTerminal` and the others in `@stackra/peripherals/contracts` (0253, 0339), injected by type, unchanged. A
+   module package ships one driver per vendor behind its port (`print(receipt)`, `openDrawer()`), and the `memory`
+   drivers of `@stackra/peripherals` are the mock that lets products and tests run without hardware. A call that no
+   device can honour resolves the typed refusal of `CapabilityResult`, never an exception (0253). This replaces 0442
+   decision 4's `./native` entry of `@stackra/peripherals`: native drivers live in the capability's module package,
+   and the Sunmi and PAX drivers and Kotlin of 0458 and 0459 move out of the till app into the printer, drawer and
+   scanner packages, split by capability. The module stays a pass-through; mapping vendor answers to refusals stays
+   in the TypeScript driver.
+6. **Placement and names.** The packages live in the Stackra monorepo beside `@stackra/peripherals`, whose ports they
+   implement: `packages/experience/<name>`, named `@stackra/native-<capability>` (`native-receipt-printer`,
+   `native-cash-drawer`, `native-scale`, `native-card-terminal`). Device identity and telemetry stay in
+   `@stackra/devices` (0235) and device registration in OS devices (STA-725).
+7. **Published like every package.** They publish to the Stackra registry (npm.stackra.figentra.com) with the other
+   packages; the tarball carries `ios/`, `android/`, `plugin/` and `expo-module.config.json`. There is no separate
+   Swift Package Manager, CocoaPods or Maven publish. If a pure-native app ever needs one, the native core splits into
+   its own library and the Expo module becomes a thin wrapper over it.
+8. **First modules.** For Commerce, Mezzora and Jute: receipt printer, cash drawer, scale and card terminal (the owner's
+   "card reader": the existing `CardTerminal` port; each acquirer SDK is still its own ADR, 0442 decision 6). Barcode
+   scanning uses the camera modules first and becomes `@stackra/native-barcode-scanner` only when a built-in scan head
+   (Sunmi, PAX) needs its SDK.
+9. **Other native surfaces follow the same rule.** Widgets, Live Activities, App Intents and Liquid Glass use Expo's
+   own libraries (the Expo widget library, `expo-glass-effect`, `@expo/ui`); hand-written Swift or Kotlin beyond them
+   is an Expo module package under this ADR.
+
+## Consequences
+
+- One printer, drawer, scale or card-terminal package serves every app; a vendor SDK update is one package release.
+- The native code gets a version, a changeset, tests of its TypeScript drivers and a registry release; the Swift and
+  Kotlin themselves are checked on the box and on certified models (STA-739), not on a developer Mac.
+- The till template loses its native-sources folders; the Sunmi and PAX Kotlin move in the printer, drawer and
+  scanner batches.
+- Each module package now owns a config plugin, so a plugin bug is a package bug with a package test.
+- Chore: the workspace-layout rule gains this principle (`.agents/rules/workspace-layout.md`, rendered into AGENTS.md
+  by `pnpm agents:sync`), done by the integration batch because rules are a shared file.
+
+## Enforcement
+
+- planned — a `validate-repository.mjs` check that no app member holds `.swift`, `.kt`, `.java`, `.m` or `.mm` files
+  outside its generated `ios/` and `android/`, and that a package with `expo-module.config.json` has `src/`, `ios/`
+  or `android/`, and `plugin/`, and lists them in `files`.
+- planned — review by `architecture-guardian` until the check lands.

@@ -15,6 +15,14 @@ description: "Proposed · 2026-10-26"
   its own ADR.
 </Note>
 
+<Note>
+  Amended by
+  [0478](/adr/0478-native-code-lives-only-in-expo-module-packages-one-per-capability-behind-a-port)
+  (2026-10-28): decision 4's `./native` entry of `@stackra/peripherals` is replaced. Native drivers
+  live in one Expo module package per capability (`@stackra/native-receipt-printer` and the others),
+  behind the unchanged ports. The rest of this page stands.
+</Note>
+
 ## Context
 
 The owner decided on 2026-10-26 that a native Android till ships in release 1 for Sunmi, PAX and iMin terminals. The
