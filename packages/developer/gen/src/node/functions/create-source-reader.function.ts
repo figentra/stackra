@@ -2007,7 +2007,13 @@ export function createSourceReader(
           declaration === undefined
         )
           continue;
-        if (!isStackra(host.fileName(declaration)) || propertyName.startsWith("~")) continue;
+        // A symbol-keyed member (`[OptionalProps]`) has the checker's internal `__@<name>@<id>` name: no column.
+        if (
+          !isStackra(host.fileName(declaration)) ||
+          propertyName.startsWith("~") ||
+          propertyName.startsWith("__@")
+        )
+          continue;
         const { type, nullable } = readChecker(
           host.typeOfSymbol(property),
           node.name,
