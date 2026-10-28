@@ -24,6 +24,7 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 | An ORM column type or embeddable schema             | `src/core/orm/<name>.type.ts`, `<name>.schema.ts`          |
 | An enum, a function, a constant, a type             | `src/core/{enums,functions,constants,types}/`              |
 | A port this package calls (`SubjectCipherResolver`) | `src/core/ports/<name>.port.ts`                            |
+| A job over a model's rows (`EncryptedFieldsResealService`) | `src/core/services/<name>.service.ts`             |
 | A test                                              | `__tests__/<name>.<kind>.test.ts` beside it                |
 
 ## Entries and barrels
@@ -57,6 +58,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 - A `HasEncryptedFields({ subject })` model is never sealed under the scope's `FieldCipher`: without a bound
   `SubjectCipherResolver` the subscriber refuses it, since a shred of it would otherwise be a false erasure
   (stackra-263). The resolver's implementation is @stackra/privacy's; never import it here.
+- `EncryptedFieldsResealService` (stackra-312) works on the sealed form through the ORM driver, never the unit of
+  work, and shares `encryptedFieldContext` with the subscriber; never derive a cipher context a second way. It never
+  writes a row it did not read unchanged (the update is guarded by the old sealed values).
 - `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 - `changeCaptureOf` is the one place that decides which fields a change may carry a value for: it always drops

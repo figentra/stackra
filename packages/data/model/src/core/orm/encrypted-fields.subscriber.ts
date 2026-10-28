@@ -27,12 +27,10 @@ import type { EventArgs, EventSubscriber } from "@mikro-orm/core";
 import { wrap } from "@mikro-orm/core";
 import type { FieldCipher } from "@stackra/contracts";
 
+import { encryptedFieldContext } from "#core/functions/encrypted-field-context.function";
 import { encryptedFieldsOf } from "#core/functions/encrypted-fields-of.function";
 import { encryptedSubjectOf } from "#core/functions/encrypted-subject-of.function";
 import type { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
-
-/** A module key, which a model's Postgres schema is (ADR 0294 decision 20). */
-const MODULE_KEY = /^[a-z][a-z0-9_]*$/;
 
 /**
  * Seals and opens the fields models name with `HasEncryptedFields`.
@@ -227,19 +225,8 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
     if (original !== undefined) original[field] = plain;
   }
 
-  /**
-   * The cipher context of `field`: `<model key>.<field>`.
-   *
-   * @throws TypeError when the entity has no module schema to derive its model key from.
-   */
+  /** The cipher context of `field`: `<model key>.<field>` (`encryptedFieldContext`). */
   private contextOf(meta: EventArgs<object>["meta"], field: string): string {
-    const schema = meta.schema;
-    if (schema === undefined || !MODULE_KEY.test(schema))
-      throw new TypeError(
-        `${meta.className} has no module schema, so its encrypted fields have no cipher context`,
-      );
-    // the same snake_case gen's `modelKey` gives a class name
-    const model = meta.className.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
-    return `${schema}.${model}.${field}`;
+    return encryptedFieldContext(meta, field);
   }
 }
