@@ -2,7 +2,8 @@
 // Purpose: unused files/exports/dependencies detection. Runs in `pnpm verify`. Workspace globs for members that do
 //          not exist yet are listed on purpose: knip prints a hint, not a failure, and the entry is right the day
 //          the member lands.
-//          Unused catalog entries are errors (stackra-235, rule-gap B-10).
+//          Unused catalog entries are errors (stackra-235, rule-gap B-10). Unlisted dependencies in gen output are
+//          not reported (stackra-247, see `ignoreIssues`).
 // Owner: release-operations · Secrets: forbidden
 {
   "$schema": "./node_modules/knip/schema.json",
@@ -54,8 +55,9 @@
       // stackra.config.ts: the member definition gen reads (ADR 0295 decision 1); it imports `definePackage`, so a
       // member whose src/ never imports @stackra/contracts still uses it. .stackra/: gen's output (wiring, registrations,
       // module, entries, test setup) imports packages src/ never does, which the member declares for it
-      // (generated_dependency_missing); knip reads it when gen has run.
-      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      // (generated_dependency_missing); knip reads it when gen has run. vitest.config.ts: the authored test config
+      // that merges gen's (stackra-163); named so its @stackra/vitest-config import is always seen (stackra-247).
+      "entry": ["stackra.config.ts", "vitest.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
@@ -205,6 +207,15 @@
   // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
   // dist/ is build output (the tooling presets ship tsc-emitted JS and .d.ts); knip checks the src it is built from.
   "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**", "**/dist/**"],
+  // Unlisted dependencies in gen's output only (stackra-247, ADR 0295 decision 5, ADR 0261): the wiring lists every
+  // driver of each package port a member's bindings reach, with that driver's constructor tokens, so it names the
+  // driver's own library (MikroORM from @mikro-orm/postgresql for @stackra/database's postgres driver, the Valkey and
+  // S3 clients) in members that only pick a driver by config. The member does not use that library, the package that
+  // owns the driver declares it, and gen's generated_dependency_missing already holds every @stackra/* import there.
+  // The files stay entries, so the packages they do use still count; only the `unlisted` report is skipped.
+  "ignoreIssues": {
+    "**/.stackra/**": ["unlisted"],
+  },
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
     // A catalog entry no member names is an error (rule-gap B-10, stackra-235): add the entry with its first consumer,
