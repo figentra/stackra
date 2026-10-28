@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
- *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness).
+ *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness); `timeouts` are the
+ *          statement, lock and idle-in-transaction timeouts every runtime session starts with.
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
@@ -12,6 +13,7 @@ import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.constant";
+import type { SessionTimeouts } from "#core/types/session-timeouts.type";
 
 /**
  * The database settings.
@@ -31,6 +33,15 @@ export class DatabaseConfigOptions extends Schema {
     /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
     critical: boolean;
   } = { timeout: Duration.seconds(2), critical: true };
+
+  /** The timeouts every runtime session starts with; the boot hands them to `connect` as `DatabaseOptions.timeouts`. */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(DATABASE_CONFIG_SCHEMA.shape.timeouts)
+  timeouts: SessionTimeouts = {
+    statement: Duration.seconds(30),
+    lock: Duration.seconds(10),
+    idleInTransaction: Duration.seconds(60),
+  };
 }
 
 registerSchemas([[DatabaseConfigOptions, DATABASE_CONFIG_SCHEMA]]);

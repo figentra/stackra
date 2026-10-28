@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `DatabaseOptions`, what `PostgresDatabaseDriver.connect` takes: the connection string, the read replicas'
- *          connection strings, the entities, and the ORM subscribers other packages contribute (the outbox, the audit
+ *          connection strings, the session timeouts, the entities, and the ORM subscribers other packages contribute (the outbox, the audit
  *          trail, the scope column filler).
  * Boundary: a type only. Whether a service has replicas is deployment data (runway's `readReplica`), handed over by the
  *           runtime; no read goes to one unless it asks (`Database.onReplica`). Every connection string is a secret the runtime hands over (the generated Encore app, runway,
@@ -12,6 +12,8 @@
  */
 import type { EntitySchema, EventSubscriber } from "@mikro-orm/core";
 
+import type { SessionTimeouts } from "#core/types/session-timeouts.type";
+
 /** The connection options. */
 export interface DatabaseOptions {
   /** The Postgres connection string of the service's own logical database. */
@@ -19,6 +21,12 @@ export interface DatabaseOptions {
 
   /** The connection strings of the read replicas of that database; none when absent, and every read is primary. */
   readonly replicas?: readonly string[];
+
+  /**
+   * The timeouts every session (primary and replicas) starts with, from `DatabaseConfig.timeouts`; Postgres's own
+   * defaults (none) when absent.
+   */
+  readonly timeouts?: SessionTimeouts;
 
   /** The entity schemas; the registered ones (`registerEntities`) when absent. */
   readonly entities?: readonly EntitySchema[];

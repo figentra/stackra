@@ -4,7 +4,8 @@
  *          differs, the preconditions, interceptors, idempotency and rate limit the pipeline applies, and the surfaces
  *          (`endpoint`, `tool`, `intent`, `job`, `offline`), its effect tags (`effects`), the client rule code it accepts (`accepts`), whether it
  *          changes structural configuration (`structural`), the meter it feeds (`meter`), whether it always needs an
- *          approval gate (`approval`) and the assurance level it needs (`stepUp`).
+ *          approval gate (`approval`), the assurance level it needs (`stepUp`) and the statement timeout of its unit of
+ *          work (`timeout`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -16,7 +17,7 @@
  *                     (`approval`); ADR 0406 (`stepUp`).
  */
 import type { AnyClass } from "@stackra/container";
-import type { ActorKind, ApiArea, AssuranceLevel } from "@stackra/contracts";
+import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/contracts";
 
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
@@ -99,4 +100,10 @@ export interface ActionOptions {
    * call is refused `step_up_required` otherwise. No step-up when absent.
    */
   readonly stepUp?: AssuranceLevel;
+
+  /**
+   * The statement timeout inside its unit of work (`set local statement_timeout`), for an action that is known to run
+   * longer or must fail faster than the configured session timeout (`DatabaseConfig.timeouts.statement`).
+   */
+  readonly timeout?: Duration;
 }

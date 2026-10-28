@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `DATABASE_CONFIG_SCHEMA`, the zod schema this package ships for `DatabaseConfig` (exported as
- *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`.
+ *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`, and the
+ *          `timeouts` every runtime session starts with.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `DatabaseConfig$` can `.extend` it. The defaults equal
  *           `DatabaseConfigOptions`' initializers (tested). No credential: the connection URL is the process's
@@ -13,8 +14,10 @@
 import { z } from "zod";
 
 import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
+import { SESSION_TIMEOUTS_SCHEMA } from "#core/constants/session-timeouts-schema.constant";
 
 /** The shipped `DatabaseConfig$`. */
 export const DATABASE_CONFIG_SCHEMA = z.object({
   health: HEALTH_CHECK_SCHEMA,
+  timeouts: SESSION_TIMEOUTS_SCHEMA,
 });

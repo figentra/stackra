@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `DatabaseUnitOfWorkDriver`, the action pipeline's `UnitOfWork` on the connected database: an action's
  *          `handle` runs in one transaction, so every `CrudService` write it makes commits or rolls back together, and
- *          the models it changed flush once at commit.
+ *          the models it changed flush once at commit, under the action's statement `timeout` when it declares one.
  * Boundary: a driver of the @stackra/actions port (driver name `database`); it reads `Database.current()`, so it needs
  *           no wiring of its own. External calls belong in `afterCommit`, which the pipeline runs after this resolves.
  * Runtime: node
@@ -10,6 +10,7 @@
  */
 import { UnitOfWork } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
+import type { Duration } from "@stackra/contracts";
 
 import { Database } from "#core/ports/database.port";
 
@@ -20,8 +21,9 @@ import { Database } from "#core/ports/database.port";
  * // generated wiring: { port: UnitOfWork, candidates: { database: () => import("@stackra/database/node").then((m) => m.DatabaseUnitOfWorkDriver) } }
  */
 export class DatabaseUnitOfWorkDriver extends Driver(UnitOfWork) {
-  /** Runs `work` in a transaction of the connected database. */
-  transaction<T>(work: () => Promise<T>): Promise<T> {
-    return Database.current().transaction(work);
+  /** Runs `work` in a transaction of the connected database, with the action's statement timeout when given. */
+  transaction<T>(work: () => Promise<T>, options?: { readonly timeout?: Duration }): Promise<T> {
+    const timeout = options?.timeout;
+    return Database.current().transaction(work, timeout === undefined ? {} : { timeout });
   }
 }

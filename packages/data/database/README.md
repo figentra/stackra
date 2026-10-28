@@ -343,7 +343,7 @@ schema.create("parties", (t) => {
 
 ## Health check
 
-`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds only `health`; the connection URL stays the process's `DATABASE_URL`. Bind it and
+`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health` and `timeouts`; the connection URL stays the process's `DATABASE_URL`. Bind it and
 `@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
 
 | Field      | Default | Meaning                                                                   |
@@ -352,6 +352,23 @@ schema.create("parties", (t) => {
 | `critical` | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
 
 A failed probe never throws; its detail names the error type only.
+
+## Session timeouts
+
+`timeouts` in the same config are the timeouts every runtime session starts with. The boot passes them to
+`PostgresDatabaseDriver.connect({ url, timeouts })`, which adds them to the primary and replica connection strings as
+the Postgres startup `options` parameter:
+
+| Field               | Default | Postgres setting                      |
+| ------------------- | ------- | ------------------------------------- |
+| `statement`         | `PT30S` | `statement_timeout`                   |
+| `lock`              | `PT10S` | `lock_timeout`                        |
+| `idleInTransaction` | `PT60S` | `idle_in_transaction_session_timeout` |
+
+Runway's `config.database` layer sets them per environment. An action that runs longer, or must fail faster, declares
+`timeout: Duration.minutes(2)` in `Action({...})`; `DatabaseUnitOfWorkDriver` passes it to
+`Database.transaction(work, { timeout })`, which runs `set local statement_timeout` first, so it lasts until the
+outermost transaction ends. The migration runner keeps its own session timeouts.
 
 ## Testing
 

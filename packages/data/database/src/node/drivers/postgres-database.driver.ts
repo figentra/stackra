@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
- *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions,
- *          sets the scope settings row-level security reads, and runs read-only work on a read replica when the
+ *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions
+ *          (with an optional statement timeout), starts every session with the configured timeouts, sets the scope
+ *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
@@ -22,6 +23,8 @@ import type { ScopeRef } from "@stackra/contracts";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { scopeSettings } from "#core/functions/scope-settings.function";
+import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
+import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
 import type { DatabaseOptions } from "#core/types/database-options.type";
@@ -54,10 +57,14 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    */
   static async connect(options: DatabaseOptions): Promise<PostgresDatabaseDriver> {
     const orm = await MikroORM.init({
-      clientUrl: options.url,
+      clientUrl: sessionTimeoutsUrl(options.url, options.timeouts),
       ...(options.replicas === undefined || options.replicas.length === 0
         ? {}
-        : { replicas: options.replicas.map((clientUrl) => ({ clientUrl })) }),
+        : {
+            replicas: options.replicas.map((url) => ({
+              clientUrl: sessionTimeoutsUrl(url, options.timeouts),
+            })),
+          }),
       preferReadReplicas: false,
       entities: [...(options.entities ?? REGISTERED_ENTITIES)],
       subscribers: [...(options.subscribers ?? [])],
@@ -81,8 +88,14 @@ export class PostgresDatabaseDriver extends Driver(Database) {
 
   /** Implements `Database.transaction`, documented there. */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
+    const { timeout } = options;
     return this.em().transactional(
-      () => work(),
+      async () => {
+        if (timeout !== undefined)
+          // raw-sql: a transaction-local statement timeout, a whole number of milliseconds from the caller's Duration
+          await this.em().execute(`set local statement_timeout = ${timeoutMilliseconds(timeout)}`);
+        return work();
+      },
       options.requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {},
     );
   }

@@ -10,20 +10,12 @@
 import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
-/** A duration in ISO 8601 (`PT2S`) or the short form (`2s`), read into its canonical form so a driver can time it. */
-const TIMEOUT = z.string().transform((text, context): Duration => {
-  try {
-    return Duration.parse(text);
-  } catch {
-    context.addIssue({ code: "custom", message: `"${text}" is not a duration such as PT2S or 2s` });
-    return z.NEVER;
-  }
-});
+import { DURATION_SCHEMA } from "#core/constants/duration-schema.constant";
 
 /** The shipped `health` field: a two second probe whose failure fails readiness. */
 export const HEALTH_CHECK_SCHEMA = z
   .object({
-    timeout: TIMEOUT.default(Duration.seconds(2)),
+    timeout: DURATION_SCHEMA.default(Duration.seconds(2)),
     critical: z.boolean().default(true),
   })
   .default(() => ({ timeout: Duration.seconds(2), critical: true }));

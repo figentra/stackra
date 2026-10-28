@@ -36,6 +36,7 @@ import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constan
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
+import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 
@@ -99,8 +100,14 @@ export class MemoryDatabaseDriver extends Driver(Database) {
 
   /** Implements `Database.transaction`, documented there. */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
+    const { timeout } = options;
     return this.em().transactional(
-      () => work(),
+      async () => {
+        if (timeout !== undefined)
+          // raw-sql: the same transaction-local statement timeout PostgresDatabaseDriver sets
+          await this.em().execute(`set local statement_timeout = ${timeoutMilliseconds(timeout)}`);
+        return work();
+      },
       options.requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {},
     );
   }

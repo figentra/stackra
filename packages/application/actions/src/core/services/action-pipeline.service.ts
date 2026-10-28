@@ -138,6 +138,7 @@ interface Recorded {
   readonly effects?: ActionEffects;
   readonly approval?: boolean;
   readonly stepUp?: AssuranceLevel;
+  readonly timeout?: Duration;
 }
 
 /** What one call accumulates while it runs. */
@@ -536,7 +537,11 @@ export class ActionPipeline {
       call.kind === "action"
         ? () => {
             const unit = this.optional(UnitOfWork);
-            const commit = () => (unit === undefined ? run() : unit.transaction(run));
+            const timeout = call.options.timeout;
+            const commit = () =>
+              unit === undefined
+                ? run()
+                : unit.transaction(run, timeout === undefined ? undefined : { timeout });
             const reservation = this.optional(LimitReservation);
             return reservation === undefined
               ? commit()

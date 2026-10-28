@@ -86,7 +86,9 @@ except permission, which fails closed. Approval runs only when an `ApprovalGate`
 `stepUp: AssuranceLevel.Aal2` (`AssuranceLevel` and the meter's `MeterKind` are `@stackra/contracts`', shared with
 identity and model) is checked right after the permission by the bound `StepUpCheck` (a driver over
 `@stackra/identity`'s `requireAssurance`) against `CallOptions.assurance` (`amr`, `authTime`, `level` from the verified
-token), and fails closed without one; handlers read the same facts as `ctx.assurance`.
+token), and fails closed without one; handlers read the same facts as `ctx.assurance`. An action that declares
+`timeout: Duration.minutes(2)` hands it to `UnitOfWork.transaction(work, { timeout })`, so the database driver bounds
+each statement of that transaction by it instead of the configured session timeout.
 
 The rate-limit step takes one token from the call's area bucket, keyed by the tenant (or, for a platform call, the
 actor), and one from the action's own `rateLimit`. When a `RateLimitBudget` is bound and answers a bucket for the call,

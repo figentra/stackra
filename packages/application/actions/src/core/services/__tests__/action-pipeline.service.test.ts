@@ -255,6 +255,7 @@ class SendMessageAction extends Action({
 class InspectAction extends Action({
   key: "order.inspect",
   actors: [ActorKind.User, ActorKind.Agent],
+  timeout: Duration.seconds(5),
 }) {
   async handle(input: { record?: object; fail?: boolean }, ctx: ActionContext): Promise<object> {
     if (input.record !== undefined) await ctx.authorize(input.record);
@@ -406,8 +407,11 @@ class NotReplicaQuery extends Query({
 }
 
 class Transactions extends Driver(UnitOfWork) {
-  async transaction<T>(work: () => Promise<T>): Promise<T> {
-    log.push("begin");
+  async transaction<T>(
+    work: () => Promise<T>,
+    options?: { readonly timeout?: Duration },
+  ): Promise<T> {
+    log.push(options?.timeout === undefined ? "begin" : `begin:${options.timeout}`);
     try {
       const output = await work();
       log.push("commit");
@@ -550,6 +554,19 @@ describe(ActionPipeline, () => {
       "after-commit:1",
       "after-commit:2",
     ]);
+  });
+
+  it("hands the unit of work the action's timeout, and none for an action without one", async () => {
+    const { pipeline } = setup();
+    await pipeline.execute(InspectAction, {}, { actor: customer });
+    expect(log).toContain(`begin:${Duration.seconds(5)}`);
+    log = [];
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 1 },
+      { actor: customer, idempotencyKey: "t" },
+    );
+    expect(log).toContain("begin");
   });
 
   it("refuses an actor kind the action does not list, before the permission", async () => {
