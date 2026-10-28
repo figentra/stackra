@@ -24,6 +24,7 @@ import { type DiscoveryService, Service } from "@stackra/container";
 import type { Actor, Clock } from "@stackra/contracts";
 import { ForbiddenError, NotFoundError } from "@stackra/errors";
 import {
+  type AssistantContent,
   generateText,
   jsonSchema,
   type LanguageModel,
@@ -126,8 +127,8 @@ function withAnswer(messages: readonly ModelMessage[], text: string): ModelMessa
     if (index !== last || message.role !== "assistant") return message;
     if (typeof message.content === "string") return { ...message, content: text };
     const first = message.content.findIndex((part) => part.type === "text");
-    const content = message.content.flatMap((part, at) =>
-      part.type !== "text" ? [part] : at === first ? [{ ...part, text }] : [],
+    const content = message.content.flatMap<Exclude<AssistantContent, string>[number]>(
+      (part, at) => (part.type !== "text" ? [part] : at === first ? [{ ...part, text }] : []),
     );
     return { ...message, content };
   });

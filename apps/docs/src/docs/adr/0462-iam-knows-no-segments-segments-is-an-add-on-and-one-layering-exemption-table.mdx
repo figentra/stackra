@@ -7,8 +7,8 @@ description: "Accepted · 2026-10-28"
 
 <Note>
   Accepted 2026-10-28 by the owner (STA-1368, batch stackra-211). It replaces the proposal of
-  2026-10-27 (stackra-210), which offered option A or B and recommended B. Reserved number: 0462, the
-  next free after 0461 on every branch and worktree of stackra/core on 2026-10-27.
+  2026-10-27 (stackra-210), which offered option A or B and recommended B. Reserved number: 0462,
+  the next free after 0461 on every branch and worktree of stackra/core on 2026-10-27.
 </Note>
 
 ## Context
@@ -42,7 +42,7 @@ a segment to be like ... an add-on".
 1. **IAM is permission-only and knows no segments; segment targeting is business logic in the rules engine; segments
    is an add-on with its own permissions.** (Owner, 2026-10-28.)
    - **IAM.** An audience of a deny, visibility or field rule is a scope node or a role: `Audience = ScopeRef |
-     RoleRef`. `Audience$` refuses `{ kind: "segment" }`. `PolicySnapshot` carries no segment memberships, and the
+RoleRef`. `Audience$` refuses `{ kind: "segment" }`. `PolicySnapshot` carries no segment memberships, and the
      decision point and the visibility filter match no segment. `@stackra/iam` does not depend on
      `@stackra/segments`. `Permissions`, `Permission` and `Risk` stay in `@stackra/iam`; nothing moves to
      `@stackra/actions`.
@@ -64,11 +64,11 @@ a segment to be like ... an add-on".
 
    Rejected options:
 
-   | Option | What it was | Why rejected |
-   | ------ | ----------- | ------------ |
-   | A | gen accepts a Job- or System-only action without a permission (row E9), with a new `risk:` option as the risk source | A second way to write a job for 66 actions to fix 1; the call loses its permission, risk and IAM record, so the actor list becomes the only gate and a later `User` or `Service` actor silently gets an unguarded action |
-   | B | Move `Permissions`, `Permission` and `Risk` from `@stackra/iam` into `@stackra/actions`, with re-exports from iam (the 2026-10-27 recommendation) | The owner keeps permissions in IAM: a permission is IAM's concept, and the move only worked around an edge that should not exist. It also kept a segment inside IAM's audience, which the owner rejects: a segment is a business level |
-   | Move `SegmentRef` down | Move the `SegmentRef` type into `@stackra/contracts` or iam's own contracts, so iam no longer imports segments | It breaks the cycle but keeps segments as a permission-level audience inside IAM, the coupling the owner rejects; IAM would still evaluate segment membership in every snapshot |
+   | Option                 | What it was                                                                                                                                       | Why rejected                                                                                                                                                                                                                           |
+   | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | A                      | gen accepts a Job- or System-only action without a permission (row E9), with a new `risk:` option as the risk source                              | A second way to write a job for 66 actions to fix 1; the call loses its permission, risk and IAM record, so the actor list becomes the only gate and a later `User` or `Service` actor silently gets an unguarded action               |
+   | B                      | Move `Permissions`, `Permission` and `Risk` from `@stackra/iam` into `@stackra/actions`, with re-exports from iam (the 2026-10-27 recommendation) | The owner keeps permissions in IAM: a permission is IAM's concept, and the move only worked around an edge that should not exist. It also kept a segment inside IAM's audience, which the owner rejects: a segment is a business level |
+   | Move `SegmentRef` down | Move the `SegmentRef` type into `@stackra/contracts` or iam's own contracts, so iam no longer imports segments                                    | It breaks the cycle but keeps segments as a permission-level audience inside IAM, the coupling the owner rejects; IAM would still evaluate segment membership in every snapshot                                                        |
 
 2. **One table of layering exemptions, honoured by every kind check.** gen (`kind_unregistered_base`,
    `kind_suffix_mismatch`, `token_not_a_class`, `event_base_abstract`, `generated_dependency_missing`,

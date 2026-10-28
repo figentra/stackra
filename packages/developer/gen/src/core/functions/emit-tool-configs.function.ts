@@ -120,8 +120,8 @@ export function emitToolConfigs(
     imports.set("@stackra/database", new Map([["registerModelPartners", false]]));
   const setup = [
     generatedHeader({
-      from: "#stackra/wiring, #stackra/registrations and the factories under src/",
-      purpose: `the test setup of ${ir.package}: registrations, the wiring for createTestingModule, factory partners.`,
+      from: `${container ? "#stackra/wiring, " : ""}#stackra/registrations and the factories under src/`,
+      purpose: `the test setup of ${ir.package}: registrations, ${container ? "the wiring for createTestingModule, " : ""}factory partners.`,
       boundary: "loaded by Vitest before every test file; a server never loads it.",
       runtime: "node",
     }),

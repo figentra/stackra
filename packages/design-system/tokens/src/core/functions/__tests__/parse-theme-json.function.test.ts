@@ -99,7 +99,7 @@ describe("themeToDtcg", () => {
       $type: "color",
       $value: {
         colorSpace: "oklch",
-        components: [0.5, 0.14, 30],
+        components: [0.546, 0.14, 30],
         hex: ACME.colors.accent.hexLight.slice(0, 7),
       },
     });

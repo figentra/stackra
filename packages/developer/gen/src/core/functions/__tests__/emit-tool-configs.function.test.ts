@@ -84,7 +84,8 @@ describe("emitToolConfigs", () => {
       packages: ["@stackra/vitest-config"],
     };
     const setup = emitToolConfigs(testing, { entries: [], registrations: false })[1]?.content ?? "";
-    expect(setup).not.toContain("@stackra/");
+    // The header names the member itself; no line imports a @stackra package.
+    expect(setup).not.toMatch(/(from|import) "@stackra\//);
     expect(setup).not.toContain("registerWiring");
     expect(setup).not.toContain("#stackra/wiring");
     const declared = { ...testing, packages: ["@stackra/container", "@stackra/vitest-config"] };

@@ -13,7 +13,10 @@ import { mintPublicId } from "#core/functions/mint-public-id.function";
 
 const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 
-/** Far ahead of the real clock, so no earlier mint in this file is later. */
+/**
+ * Far ahead of the real clock, so no earlier mint in this file is later. Every test mints later than the one before
+ * (the frozen clock reads an hour after NOON), since the minter keeps the latest millisecond across tests.
+ */
 const NOON = Date.UTC(2099, 0, 1, 12);
 
 /** The 16 bytes a public id's body encodes. */
@@ -43,10 +46,10 @@ describe(mintPublicId, () => {
   });
 
   it("reads the clock when no time is given", () => {
-    freezeClock("2099-06-01T09:00:00Z");
+    freezeClock("2099-01-01T13:00:00Z");
     const bytes = bytesOf(mintPublicId("ord"));
     expect(bytes.slice(0, 6).reduce((sum, byte) => sum * 256 + byte, 0)).toBe(
-      Date.parse("2099-06-01T09:00:00Z"),
+      Date.parse("2099-01-01T13:00:00Z"),
     );
   });
 

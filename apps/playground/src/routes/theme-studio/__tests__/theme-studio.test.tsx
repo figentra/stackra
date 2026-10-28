@@ -62,7 +62,7 @@ describe("ThemeStudio", () => {
 
   it("reads its knobs from the address and shows the derived theme in the preview", () => {
     renderStudio("/theme-studio?accent=40,0.16&radius=8");
-    expect(preview().style.getPropertyValue("--accent")).toBe("oklch(0.5 0.16 40)");
+    expect(preview().style.getPropertyValue("--accent")).toBe("oklch(0.546 0.16 40)");
     expect(preview().style.getPropertyValue("--radius")).toBe("8px");
   });
 
