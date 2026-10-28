@@ -27,7 +27,7 @@ import type { IdentitySeed } from "#core/types/identity-seed.type";
 const SOURCE = "the identity seed and root runway";
 
 /** Loopback hosts a native app may call back on over `http://` (RFC 8252 section 7.3). */
-const LOOPBACK = ["127.0.0.1", "localhost", "[::1]"];
+const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
 /**
  * The plan of one ZITADEL instance.
@@ -93,7 +93,7 @@ export function identityPlan(root: RootRunway, seed: IdentitySeed, instance: str
       if (url.hash !== "") return "A callback has no fragment";
       if (url.protocol === "https:") return null;
       if (app.kind === IdentityAppKind.Native) {
-        return url.protocol !== "http:" || LOOPBACK.includes(url.hostname)
+        return url.protocol !== "http:" || LOOPBACK.has(url.hostname)
           ? null
           : "A native app calls back on a custom scheme, https:// or a loopback address";
       }

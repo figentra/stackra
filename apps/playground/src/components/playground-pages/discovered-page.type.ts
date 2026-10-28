@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0305 (rule 10); ADR 0302 (decision 5).
  */
-import { type ReactElement } from "react";
+import type { ReactElement } from "react";
 import type { PageLink } from "#src/types/page-link.type";
 
 /** A discovered page: the link the navigation draws and the element the router renders at its path. */

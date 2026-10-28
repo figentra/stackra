@@ -32,7 +32,7 @@ const PLANS = new WeakMap<AnyClass, WorkflowPlan>();
 const UNDO = /^undo[A-Z]/;
 
 /** The kinds a step may wait for: a signal, or an event a building block correlates. */
-const WAITABLE: readonly string[] = ["signal", "domain_event", "integration_event"];
+const WAITABLE: ReadonlySet<string> = new Set(["signal", "domain_event", "integration_event"]);
 
 /**
  * The milliseconds of `text`, or `undefined` without one.
@@ -97,7 +97,7 @@ function stepOf(
       `${where}: retry.backoff takes a Backoff code, got ${JSON.stringify(backoff)}`,
     );
   const { waitFor, when, correlate } = options;
-  if (waitFor !== undefined && !WAITABLE.includes(kindOf(waitFor)?.kind ?? ""))
+  if (waitFor !== undefined && !WAITABLE.has(kindOf(waitFor)?.kind ?? ""))
     throw new TypeError(`${where}: waitFor takes a class that extends Signal, or an event`);
   const timeout = millisecondsOf(where, "timeout", options.timeout);
   const heartbeat = millisecondsOf(where, "heartbeat", options.heartbeat);

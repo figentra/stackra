@@ -310,7 +310,7 @@ export function scaffold({
   return { dest, rel, files: files.sort() };
 }
 
-const VALUE_FLAGS = [
+const VALUE_FLAGS = new Set([
   "--category",
   "--description",
   "--summary",
@@ -319,7 +319,7 @@ const VALUE_FLAGS = [
   "--port",
   "--entries",
   "--repo",
-];
+]);
 
 function parseArgs(argv) {
   const opts = { _: [] };
@@ -327,7 +327,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--dry-run") opts.dryRun = true;
     else if (a === "--data") opts.data = true;
-    else if (VALUE_FLAGS.includes(a)) {
+    else if (VALUE_FLAGS.has(a)) {
       if (argv[i + 1] === undefined) throw new Error(`${a} needs a value`);
       opts[a.slice(2)] = argv[++i];
     } else if (a.startsWith("--")) throw new Error(`unknown option ${a}`);

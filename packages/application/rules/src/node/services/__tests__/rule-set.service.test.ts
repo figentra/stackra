@@ -257,7 +257,8 @@ function connectSeed(known: RuleSet | null, latest: Revision[] = []) {
     findOneOrFail: vi.fn(async (model: unknown) =>
       model === RuleSet
         ? (known ?? created.find((row) => row instanceof RuleSet))
-        : created.filter((row) => row instanceof Revision).at(-1),
+        : // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
+          created.filter((row) => row instanceof Revision).at(-1),
     ),
     find: vi.fn(async () => latest),
     count: vi.fn(async () => latest.length),

@@ -10,7 +10,7 @@
 import { openMigrationSession } from "#node/functions/open-migration-session.function";
 
 /** The environments a rollback may run in. */
-const ROLLBACK_ENVIRONMENTS = ["dev", "preview", "test"];
+const ROLLBACK_ENVIRONMENTS = new Set(["dev", "preview", "test"]);
 
 /**
  * Reverts the last migration.
@@ -23,7 +23,7 @@ export async function rollback(options: {
   readonly cwd: string;
   readonly environment: string;
 }): Promise<{ readonly reverted: readonly string[] }> {
-  if (!ROLLBACK_ENVIRONMENTS.includes(options.environment))
+  if (!ROLLBACK_ENVIRONMENTS.has(options.environment))
     throw new Error(`rollback is not allowed in ${options.environment}: it rolls forward only`);
   return openMigrationSession(options.cwd, async ({ files, execute, state }) => {
     const current = await state();

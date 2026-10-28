@@ -186,6 +186,7 @@ describe("SpeechService", () => {
   it("meters once when the consumer stops early", async () => {
     const { meter, metered } = recordingMeter();
     const service = new SpeechService(storeWith(), new Regions(), meter);
+    // oxlint-disable-next-line no-unreachable-loop -- reason: the consumer stops after the first transcript on purpose
     for await (const _ of service.listen(chunks(8, 8, 8), request, { drivers: DRIVERS, usage }))
       break;
     expect(metered).toEqual([[1, usage]]);

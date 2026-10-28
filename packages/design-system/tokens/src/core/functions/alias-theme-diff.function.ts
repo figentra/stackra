@@ -31,8 +31,9 @@ function currentPath(path: string, aliases: Readonly<Record<string, string>>): s
   const from = Object.keys(aliases);
   let result = path;
   for (let step = 0; step <= from.length; step += 1) {
+    const current = result;
     const alias = from
-      .filter((old) => result === old || result.startsWith(`${old}.`))
+      .filter((old) => current === old || current.startsWith(`${old}.`))
       .sort((one, two) => two.length - one.length)[0];
     const target = alias === undefined ? undefined : aliases[alias];
     if (alias === undefined || target === undefined) return result;

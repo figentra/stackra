@@ -151,6 +151,7 @@ export class RealtimeConnection extends Service {
         listener(message);
       } catch (error) {
         // Report without breaking the delivery loop or the link.
+        // oxlint-disable-next-line no-console -- reason: realtime has no logger dependency yet; a failing listener must not pass silently
         console.error(`A realtime listener of ${message.name} failed`, error);
       }
     }

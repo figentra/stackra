@@ -31,6 +31,7 @@ export class MemoryConsentProofStoreDriver extends Driver(ConsentProofStore) {
   latest(subject: PublicId, document: string): Promise<ConsentProof | undefined> {
     return Promise.resolve(
       this.proofs
+        // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
         .filter((proof) => proof.subject === subject && proof.document === document)
         .at(-1),
     );

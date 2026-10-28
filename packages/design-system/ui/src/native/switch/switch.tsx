@@ -52,6 +52,7 @@ export function Switch({
     <ControlField
       {...rest}
       {...omitUndefined({ isRequired, isInvalid, isDisabled })}
+      // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props -- reason: React Native reports the checked state through accessibilityState
       role="switch"
       accessibilityState={{
         ...accessibilityState,

@@ -1,19 +1,22 @@
-// The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
-// guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
-// confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, and the asks for a command the guard
-// cannot read are a deny through `unattended`, STA-400; OpenCode denies every ask) and deny. Settings deny and
-// ask rules are the floor; these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`,
-// `npx`, `mise exec --`), which checkout a git command targets, `agent_type`, and quoted prose.
-//
-// Secrets model (ADR 0173, ADR 0257): nobody reads a value. Developer, agent and CI tokens live in Infisical and
-// reach a process through the pnpm script that needs them; there are no `.env` files in this repository.
-//
-// Accident guard, not a boundary: hooks run as the same macOS user and fail open, and text rules miss
-// `node -e`, child_process and wrappers they do not know.
-//
-// Rules are scoped to the operand of a command, never a bare keyword. Prose is not a command: quoted text is
-// blanked (`runs`), heredoc bodies are stripped, and `-m` / `--title` / `--body` values are dropped
-// (`dropMessages`). Substitution bodies, `sh -c` / `eval` strings and function bodies are commands.
+/**
+ * Stackra file contract:
+ * Purpose: The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
+ *          guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
+ *          confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, and the asks for a command the guard
+ *          cannot read are a deny through `unattended`, STA-400; OpenCode denies every ask) and deny. Settings deny and
+ *          ask rules are the floor; these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm
+ *          exec`, `npx`, `mise exec --`), which checkout a git command targets, `agent_type`, and quoted prose.
+ *          Secrets model (ADR 0173, ADR 0257): nobody reads a value. Developer, agent and CI tokens live in Infisical
+ *          and reach a process through the pnpm script that needs them; there are no `.env` files in this repository.
+ *          Accident guard, not a boundary: hooks run as the same macOS user and fail open, and text rules miss `node
+ *          -e`, child_process and wrappers they do not know.  Rules are scoped to the operand of a command, never a
+ *          bare keyword. Prose is not a command: quoted text is blanked (`runs`), heredoc bodies are stripped, and `-m`
+ *          / `--title` / `--body` values are dropped (`dropMessages`). Substitution bodies, `sh -c` / `eval` strings
+ *          and function bodies are commands.
+ * Boundary: decides only; reads git state and the repository layout, writes nothing, fails open.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0293; ADR 0173; ADR 0257; STA-400.
+ */
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
@@ -1007,8 +1010,8 @@ function rmPlace(t, dir, ctx, under = null) {
     if (found === null) return "deny";
     paths.push(...(found.length ? found : [w])); // an unmatched glob stays literal, as in bash
   }
-  const places = paths.map((p) => landing(physical(dir ?? "/", p), ctx, under));
-  for (const p of ["deny", "nested", "own"]) if (places.includes(p)) return p;
+  const places = new Set(paths.map((p) => landing(physical(dir ?? "/", p), ctx, under)));
+  for (const p of ["deny", "nested", "own"]) if (places.has(p)) return p;
   return "ok";
 }
 /** The place (`rmPlace`) of one physical path. */

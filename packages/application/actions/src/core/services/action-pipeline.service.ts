@@ -737,7 +737,7 @@ export class ActionPipeline {
       market: request.market ?? CALL_DEFAULTS.market,
       ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin }),
       abortSignal: request.abortSignal ?? new AbortController().signal,
-      now: () => new Date(at.getTime()),
+      now: () => new Date(at),
       authorize: (record: object) =>
         this.required(AccessControl, IAM).authorize(descriptor, record),
       period: (input: PeriodInput) => periodOf(input, at, timeZone),

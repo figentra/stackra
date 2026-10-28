@@ -11,8 +11,7 @@
  *                     stackra-224 (ageOn from @stackra/support).
  */
 import { Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
-import { type Actor, ActorKind, type PublicId } from "@stackra/contracts";
+import { type Clock, type Actor, ActorKind, type PublicId } from "@stackra/contracts";
 import { ageOn } from "@stackra/support";
 
 import type { Guardianship } from "#contracts/index";

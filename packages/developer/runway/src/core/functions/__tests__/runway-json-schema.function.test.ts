@@ -81,7 +81,7 @@ function normalise(node: unknown, root: unknown): unknown {
   for (const key of ["additionalProperties", "properties"]) {
     const value = out[key];
     if (typeof value === "object" && value !== null && Object.keys(value).length === 0)
-      delete out[key];
+      Reflect.deleteProperty(out, key);
   }
   if ("const" in out || "enum" in out) delete out["type"];
   const names = out["propertyNames"] as Record<string, unknown> | undefined;

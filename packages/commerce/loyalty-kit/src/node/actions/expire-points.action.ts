@@ -68,7 +68,7 @@ export class ExpirePointsAction extends Action({
   /** Visits active accounts oldest-updated first; `ctx.now()` is the frozen pipeline clock, so a test pins the cutoff. */
   async handle(input: ExpirePointsInput, ctx: ActionContext): Promise<ExpirePointsOutput> {
     const { expiryMonths } = await this.settings.get(LoyaltyKitSettings);
-    const cutoff = new Date(ctx.now().getTime());
+    const cutoff = new Date(ctx.now());
     cutoff.setUTCMonth(cutoff.getUTCMonth() - expiryMonths);
     const accounts = await this.accounts.find(
       { isFrozen: false },

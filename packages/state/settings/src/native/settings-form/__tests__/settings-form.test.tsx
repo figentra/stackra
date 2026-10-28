@@ -48,6 +48,7 @@ vi.mock("@stackra/ui/native", async () => {
         "div",
         null,
         createElement("button", {
+          type: "button",
           role: "switch",
           "aria-label": props.label,
           "aria-checked": props.value === true,

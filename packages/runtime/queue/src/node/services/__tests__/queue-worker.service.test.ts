@@ -39,7 +39,7 @@ const NOON = new Date(Date.UTC(2026, 9, 24, 12));
 
 class FixedClock extends Clock {
   now(): Date {
-    return new Date(NOON.getTime());
+    return new Date(NOON);
   }
 }
 

@@ -83,7 +83,7 @@ async function engineWith(
   const clock = {
     at: START,
     now(): Date {
-      return new Date(this.at.getTime());
+      return new Date(this.at);
     },
   } as Clock & { at: Date };
   const ledger = new MemoryLoyaltyLedgerDriver();

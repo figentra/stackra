@@ -1,5 +1,11 @@
-// Shared stdin/stdout protocol helpers for Stackra's agent hooks. Node 24, no
-// dependencies — a hook may run before `pnpm install`.
+/**
+ * Stackra file contract:
+ * Purpose: Shared stdin/stdout protocol helpers for Stackra's agent hooks. Node 24, no dependencies — a hook may run
+ *          before `pnpm install`.
+ * Boundary: stdin and stdout of one hook process only.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0016 (agents source of truth); ADR 0293.
+ */
 
 /** Read and JSON-parse the hook payload the harness writes to stdin. Never throws. */
 export async function readStdin() {

@@ -55,7 +55,7 @@ vi.mock("#native/button/button", async () => {
     Button: (props: Record<string, unknown>) =>
       createElement(
         "button",
-        { onClick: props["onPress"] as () => void },
+        { type: "button", onClick: props["onPress"] as () => void },
         props["children"] as ReactNode,
       ),
   };
@@ -112,6 +112,7 @@ vi.mock("#native/action-menu/action-menu", async () => {
           createElement(
             "button",
             {
+              type: "button",
               key: item.id,
               "data-disabled": item.isDisabled ? "true" : undefined,
               "data-reason": item.disabledReason,
@@ -132,7 +133,7 @@ vi.mock("#native/bulk-action-bar/bulk-action-bar", async () => {
       received.props["bar"] = props;
       return createElement(
         "button",
-        { "data-testid": "bar", onClick: props["onClearSelection"] as () => void },
+        { type: "button", "data-testid": "bar", onClick: props["onClearSelection"] as () => void },
         String(props["selectedCount"]),
       );
     },

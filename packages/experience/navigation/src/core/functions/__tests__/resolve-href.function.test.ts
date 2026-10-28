@@ -7,8 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0297 (decision 4); ADR 0307 (rule 24).
  */
-import { Locale } from "@stackra/i18n";
-import { LocaleUrlStrategy } from "@stackra/i18n";
+import { Locale, LocaleUrlStrategy } from "@stackra/i18n";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { Route } from "#core/bases/route.base";

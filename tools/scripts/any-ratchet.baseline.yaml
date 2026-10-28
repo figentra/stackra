@@ -1,0 +1,8 @@
+# Stackra file contract:
+# Purpose: the committed `no-explicit-any` disable counts per package for tools/scripts/any-ratchet.mjs (rule-gap
+#          N-5, stackra-229). A package not listed has a baseline of 0. Lower a number when a disable goes; never
+#          raise one without the owner.
+# Owner: release-operations · Secrets: forbidden
+packages/communication/notifications: 5
+packages/data/model: 1
+packages/experience/panel: 4

@@ -140,7 +140,7 @@ export class EtaOnboardingDriver extends Driver(FiscalOnboarding) {
     });
     if (response.status >= 500 || NOT_TAKEN.has(response.status))
       throw FiscalAuthorityUnavailableError.create({ driver: DRIVER, status: response.status });
-    let json: unknown = null;
+    let json: unknown;
     try {
       json = JSON.parse(response.body);
     } catch {

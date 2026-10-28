@@ -54,7 +54,7 @@ const REINDEX_BATCH = 500;
 const CURSOR = /^(0|[1-9]\d{0,8})$/;
 
 /** Field kinds that are not relations, so a dotted path through them needs no populate. */
-const NOT_RELATIONS: readonly string[] = ["scalar", "embedded"];
+const NOT_RELATIONS: ReadonlySet<string> = new Set(["scalar", "embedded"]);
 
 /**
  * The offset a cursor stands for.
@@ -385,7 +385,7 @@ export class SearchIndex<M extends object> {
       .filter((path) => path.includes("."))
       .filter((path) => {
         const kind = meta.properties[path.split(".")[0] as keyof typeof meta.properties]?.kind;
-        return kind !== undefined && !NOT_RELATIONS.includes(String(kind));
+        return kind !== undefined && !NOT_RELATIONS.has(String(kind));
       })
       .map((path) => path.slice(0, path.lastIndexOf(".")));
     return [...new Set(hints)];

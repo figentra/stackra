@@ -1009,7 +1009,13 @@ function renderReviewerAgents(names) {
           "\n",
         );
   return [
-    `// generated from ${SOURCE}/agents (reviewer: true) by ${SCRIPT_REL} — edit the sources, not this file`,
+    "/**",
+    " * Stackra file contract:",
+    ` * Purpose: generated from ${SOURCE}/agents (reviewer: true) by ${SCRIPT_REL}; edit the sources, not this file.`,
+    " * Boundary: data only; the agent types the bash guard lets run `pnpm bot:review`.",
+    " * Runtime: node (agent hook)",
+    " * Governing contract: ADR 0230; ADR 0293.",
+    " */",
     "/** Agent types that may run `pnpm bot:review` (ADR 0230, ADR 0293); `guard-bash` denies every other caller. */",
     set,
     "",

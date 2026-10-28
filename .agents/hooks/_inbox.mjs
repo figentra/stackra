@@ -1,7 +1,13 @@
-// Does a path (or glob), or a shell command, reach ~/Secrets-inbox/ or the import confirm key? Shared by
-// guard-bash, guard-paths and the OpenCode guard (decide.ts). An ACCIDENT guard, not a security boundary
-// (ADR 0257): it stops an agent opening the inbox by habit; the guarantee is that `pnpm secrets:import` never
-// outputs a value.
+/**
+ * Stackra file contract:
+ * Purpose: Does a path (or glob), or a shell command, reach ~/Secrets-inbox/ or the import confirm key? Shared by
+ *          guard-bash, guard-paths and the OpenCode guard (decide.ts). An ACCIDENT guard, not a security boundary (ADR
+ *          0257): it stops an agent opening the inbox by habit; the guarantee is that `pnpm secrets:import` never
+ *          outputs a value.
+ * Boundary: pure path and command text checks; reads nothing and writes nothing.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0257; ADR 0293.
+ */
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 

@@ -40,11 +40,11 @@ const MIN_REFRESH_MS = 30_000;
 const PLACEMENT_KEYS: ReadonlySet<string> = new Set(["slot", "order", "size", "params", "layer"]);
 
 /** The layers a placement shadow may be set in. */
-const PLACEMENT_LAYERS: readonly string[] = [
+const PLACEMENT_LAYERS: ReadonlySet<string> = new Set([
   PlacementLayer.Host,
   PlacementLayer.Edition,
   PlacementLayer.App,
-];
+]);
 
 /** What a called form without its type argument fails with. */
 type Hint = "Name the query as a type argument: Widget<OrderKpisQuery>({ ... })";
@@ -129,7 +129,7 @@ function place<W extends PlaceableWidget>(base: W, options: WidgetPlaceOptions):
       );
   checkPlacement(options, "Widget.place");
   const layer = options.layer ?? PlacementLayer.Host;
-  if (!PLACEMENT_LAYERS.includes(layer))
+  if (!PLACEMENT_LAYERS.has(layer))
     throw new TypeError(
       `Widget.place({ layer }) is Host, Edition or App, got ${JSON.stringify(layer)}`,
     );

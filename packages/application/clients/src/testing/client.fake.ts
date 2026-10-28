@@ -68,6 +68,7 @@ export class ClientFake extends ClientTransport {
   constructor() {
     super();
     // Any other lowercase property is a resource of the service client this fake stands in for.
+    // oxlint-disable-next-line no-constructor-return -- reason: the fake is its own proxy, so any resource name resolves
     return new Proxy(this, {
       get: (target, property, receiver) =>
         typeof property === "string" &&

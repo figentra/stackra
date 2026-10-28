@@ -71,7 +71,7 @@ vi.mock("@stackra/ui/react", async () => {
         props.actions.map((action: Props) =>
           createElement(
             "button",
-            { key: action.id, onClick: () => action.onPress?.() },
+            { type: "button", key: action.id, onClick: () => action.onPress?.() },
             action.label,
           ),
         ),

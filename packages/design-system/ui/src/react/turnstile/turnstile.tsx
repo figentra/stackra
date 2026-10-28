@@ -64,6 +64,7 @@ export function Turnstile({
 
   useEffect(() => {
     if (!siteKey) {
+      // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency
       console.warn("@stackra/ui: Turnstile has no site key, so it draws nothing.");
       return undefined;
     }
@@ -79,6 +80,7 @@ export function Turnstile({
             "response-field-name": name,
           });
       })
+      // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency
       .catch((error: unknown) => console.warn(`@stackra/ui: ${String(error)}`));
     return () => {
       isMounted = false;

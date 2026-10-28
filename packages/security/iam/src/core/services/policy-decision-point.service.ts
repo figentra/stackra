@@ -27,8 +27,14 @@
  *                     (decisions 3 and 4); STA-595 (field rules, break-glass, restricted permissions).
  */
 import { Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
-import { type Actor, ActorKind, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
+import {
+  type Clock,
+  type Actor,
+  ActorKind,
+  Enum,
+  type PublicId,
+  type ScopeRef,
+} from "@stackra/contracts";
 import { type Condition, evaluate, type Rules } from "@stackra/rules";
 import { Operator } from "@stackra/rules/contracts";
 import { isWithinScope } from "@stackra/scope";

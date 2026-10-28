@@ -85,6 +85,7 @@ function ResourceForm({
     <Form form={form} submit={submit}>
       {fields.map((node, index) => (
         <ResourceFormField
+          // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
           key={index}
           resourceKey={resource.key}
           schema={action.input}

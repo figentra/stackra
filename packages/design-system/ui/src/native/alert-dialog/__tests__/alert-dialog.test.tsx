@@ -87,6 +87,7 @@ vi.mock("#native/button/button", async () => {
       return createElement(
         "button",
         {
+          type: "button",
           disabled: props["isDisabled"] === true,
           onClick: props["onPress"] as () => void,
         },
@@ -134,6 +135,7 @@ const swipeable = (props: Partial<AlertDialogProps>) => {
 const iconNames = () =>
   screen.queryAllByTestId("slot-icon").map((node) => node.getAttribute("data-name"));
 const lastButton = (label: string) =>
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   received.buttons.filter((props) => props["children"] === label).at(-1);
 
 describe("AlertDialog (native)", () => {

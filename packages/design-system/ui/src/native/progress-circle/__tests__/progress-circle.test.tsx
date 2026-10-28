@@ -110,11 +110,14 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
 }));
 
 const rootProps = () =>
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   state.views.filter((props) => props["accessibilityRole"] === "progressbar").at(-1) ?? {};
 const styleOf = (props: Record<string, unknown> = {}) =>
   props["style"] as Record<string, unknown>[] | Record<string, unknown>;
 /** The track circle has a colour and no animated props; the fill arc has both. */
+// oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
 const trackCircle = () => state.circles.filter((props) => !("animatedProps" in props)).at(-1);
+// oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
 const fillCircle = () => state.circles.filter((props) => "animatedProps" in props).at(-1);
 const dashOffset = () =>
   ((fillCircle() ?? {})["animatedProps"] as { strokeDashoffset: number }).strokeDashoffset;

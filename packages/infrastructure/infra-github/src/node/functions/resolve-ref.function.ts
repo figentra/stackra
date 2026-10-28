@@ -37,7 +37,7 @@ export function resolveRef(value: string, config: pulumi.Config = new pulumi.Con
         : undefined;
   }
   if (typeof node !== "string" && typeof node !== "number") {
-    throw new Error(
+    throw new TypeError(
       `${value} is not set: put a string or a number at "${path.join(".")}" under the stack config key "${key}"`,
     );
   }

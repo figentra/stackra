@@ -303,5 +303,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
     // Never blocks: a Linear or GitHub outage is reported, not failed.
-    (e) => (console.log(`linear-reconcile: ${e.message}`), process.exit(0)),
+    (e) => {
+      console.log(`linear-reconcile: ${e.message}`);
+      process.exit(0);
+    },
   );

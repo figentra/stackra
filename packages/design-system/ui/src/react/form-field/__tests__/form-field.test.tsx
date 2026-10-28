@@ -33,9 +33,12 @@ interface Values {
 /** The form handle the last render produced, so a test can read the state react-hook-form holds. */
 const latest = vi.hoisted(() => ({ form: undefined as UseFormReturn<Values> | undefined }));
 
+/** A submit handler that ignores the values. */
+const ignore = (): undefined => undefined;
+
 /** A form with an email, a boolean and a choice, bound by FormField; `onSubmit` receives the valid values. */
 function Harness({
-  onSubmit = () => undefined,
+  onSubmit = ignore,
   isDisabled = false,
 }: {
   onSubmit?: (values: Values) => void;

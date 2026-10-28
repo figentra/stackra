@@ -10,10 +10,9 @@
 // @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { vi } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";
 import { ROUTE_CONTEXT_PARTS } from "#core/constants/route-context-parts.constant";

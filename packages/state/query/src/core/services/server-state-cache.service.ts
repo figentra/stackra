@@ -16,8 +16,7 @@
  */
 import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import type { RealtimeConnection } from "@stackra/realtime";
-import type { RealtimeEventRef } from "@stackra/realtime";
+import type { RealtimeConnection, RealtimeEventRef } from "@stackra/realtime";
 import { QueryClient } from "@tanstack/query-core";
 
 import type { QueryConfig } from "#config/query.config";

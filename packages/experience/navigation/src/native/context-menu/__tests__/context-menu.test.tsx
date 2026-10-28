@@ -12,10 +12,9 @@
 // @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { vi } from "vitest";
 
 import { Menu } from "#core/bases/menu.base";
 import { MenuKind } from "#core/enums/menu-kind.enum";

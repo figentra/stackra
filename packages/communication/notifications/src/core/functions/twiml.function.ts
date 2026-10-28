@@ -53,6 +53,9 @@ export function twiml(instructions: readonly CallInstruction[]): string {
         return `<Dial${attributes({ callerId: step.callerId, timeout: step.timeoutSeconds })}>${escape(step.to)}</Dial>`;
       case "hang_up":
         return "<Hangup/>";
+      default:
+        step satisfies never;
+        throw new TypeError("twiml: unknown call instruction kind");
     }
   });
   return `<?xml version="1.0" encoding="UTF-8"?><Response>${verbs.join("")}</Response>`;

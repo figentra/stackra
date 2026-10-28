@@ -170,6 +170,7 @@ describe("List page", () => {
       expect(live.getByText(`${loaded} rows`)).toBeTruthy();
       act(() =>
         observers
+          // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
           .filter((observer) => !observer.disconnected)
           .at(-1)
           ?.fire(),

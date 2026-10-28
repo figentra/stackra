@@ -46,6 +46,7 @@ export function createApp(wiring: Wiring & AppSections): Promise<BrowserApp>;
  * export const app = await createApp({ wiring, routes });
  * app.mount(root);
  */
+// oxlint-disable-next-line typescript/unified-signatures -- reason: two documented call forms, a wiring or the options object
 export function createApp(options: BrowserAppOptions): Promise<BrowserApp>;
 
 /** Boots once and builds the app object for either form. */

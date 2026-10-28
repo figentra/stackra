@@ -105,7 +105,7 @@ export class GetBalanceQuery extends Query({
     );
     let nextExpiryAt: Date | null = null;
     if (oldestEarn !== undefined) {
-      nextExpiryAt = new Date(oldestEarn.at.getTime());
+      nextExpiryAt = new Date(oldestEarn.at);
       nextExpiryAt.setUTCMonth(nextExpiryAt.getUTCMonth() + expiryMonths);
     }
     return BalanceView.create({

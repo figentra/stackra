@@ -207,10 +207,10 @@ export function blockers(
       `no AI review PASS for ${sha} (counted verdict: ${verdict ?? "none"}) — the reviewer posts "AI-REVIEW: PASS ${sha} base=${pr.baseRefName}" with \`pnpm bot:review\`${ignored.length ? `; ignored: ${[...new Set(ignored)].join("; ")}` : ""}`,
     );
 
-  const labels = pr.labels.map((l) => l.name);
-  const gated = GATED_LABELS.filter((l) => labels.includes(l));
+  const labels = new Set(pr.labels.map((l) => l.name));
+  const gated = GATED_LABELS.filter((l) => labels.has(l));
   const ownerApproved =
-    (labels.includes(OWNER_LABEL) && ownerLabelled(events)) ||
+    (labels.has(OWNER_LABEL) && ownerLabelled(events)) ||
     reviews.some(
       (r) =>
         r.user?.type === "User" &&
@@ -220,7 +220,7 @@ export function blockers(
     );
   if (gated.length && !ownerApproved)
     reasons.push(
-      `labelled ${gated.join(", ")}: needs an owner approval on ${sha} or the ${OWNER_LABEL} label added by ${OWNER}${labels.includes(OWNER_LABEL) ? ` (the ${OWNER_LABEL} label on it was not added by ${OWNER}, or was removed since)` : ""}`,
+      `labelled ${gated.join(", ")}: needs an owner approval on ${sha} or the ${OWNER_LABEL} label added by ${OWNER}${labels.has(OWNER_LABEL) ? ` (the ${OWNER_LABEL} label on it was not added by ${OWNER}, or was removed since)` : ""}`,
     );
   return reasons;
 }
@@ -321,9 +321,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     };
     const same = samePatchShas(pr, comments, patchOf);
     // Who added owner-approved: read only when it decides the merge; `list` throws (refuse) on an API error.
-    const labels = pr.labels.map((l) => l.name);
+    const labels = new Set(pr.labels.map((l) => l.name));
     const events =
-      labels.includes(OWNER_LABEL) && GATED_LABELS.some((l) => labels.includes(l))
+      labels.has(OWNER_LABEL) && GATED_LABELS.some((l) => labels.has(l))
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
     const reasons = blockers(pr, runs, headCommit, comments, reviews, same, events);

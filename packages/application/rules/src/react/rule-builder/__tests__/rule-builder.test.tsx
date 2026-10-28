@@ -71,6 +71,7 @@ vi.mock("@stackra/ui/react", async () => {
       ),
     Switch: (props: FieldProps) =>
       createElement("button", {
+        type: "button",
         role: "switch",
         "aria-label": props.label,
         "aria-checked": props.value === true,
@@ -79,7 +80,7 @@ vi.mock("@stackra/ui/react", async () => {
       }),
     CheckboxGroup: (props: FieldProps) => createElement("div", { "aria-label": props.label }),
     Button: (props: { children: ReactNode; onPress: () => void }) =>
-      createElement("button", { onClick: props.onPress }, props.children),
+      createElement("button", { type: "button", onClick: props.onPress }, props.children),
     FieldError: (props: { children: ReactNode }) =>
       createElement("div", { role: "alert" }, props.children),
   };

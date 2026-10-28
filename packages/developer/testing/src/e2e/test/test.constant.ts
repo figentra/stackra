@@ -28,6 +28,7 @@ const record = (request: Request): void => {
  *   await page.goto("/quick-order");
  * });
  */
+// oxlint-disable-next-line typescript/no-invalid-void-type -- reason: Playwright types a fixture that yields no value as `void`
 export const test = base.extend<{ recordApiCalls: void }>({
   recordApiCalls: [
     async ({ context }, use) => {

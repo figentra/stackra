@@ -42,6 +42,7 @@ export function ActionMenu({
 }: ActionMenuProps) {
   return (
     // `contents` keeps the wrapper out of layout; it only listens for events that bubble through the React tree.
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- reason: a layout-free wrapper that only stops events bubbling from the menu; it is not a control
     <span className="contents" onClick={stopClick} onKeyDown={stopChoosingKey}>
       <Menu {...rest} placement={placement} align={align}>
         <IconButton

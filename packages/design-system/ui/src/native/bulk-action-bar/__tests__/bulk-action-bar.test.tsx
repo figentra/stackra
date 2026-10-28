@@ -67,6 +67,7 @@ vi.mock("#native/button/button", async () => {
       createElement(
         "button",
         {
+          type: "button",
           "aria-label": props["label"] as string | undefined,
           "data-loading": props["isLoading"] ? "true" : undefined,
           "data-variant": props["variant"] as string,
@@ -83,6 +84,7 @@ vi.mock("#native/icon-button/icon-button", async () => {
   return {
     IconButton: (props: Record<string, unknown>) =>
       createElement("button", {
+        type: "button",
         "aria-label": props["label"] as string,
         "data-loading": props["isLoading"] ? "true" : undefined,
         onClick: props["onPress"] as () => void,
@@ -95,7 +97,11 @@ vi.mock("#native/drawer/drawer", async () => {
   const part = (name: string) => (props: Record<string, unknown>) =>
     createElement("div", { "data-part": name }, props["children"] as ReactNode);
   const Close = (props: Record<string, unknown>) =>
-    createElement("button", { "aria-label": props["label"] as string, "data-part": "close" });
+    createElement("button", {
+      type: "button",
+      "aria-label": props["label"] as string,
+      "data-part": "close",
+    });
   return {
     Drawer: Object.assign(
       (props: Record<string, unknown>) => {

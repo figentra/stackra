@@ -59,7 +59,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
     const pairing: Pairing = {
       pairingId: globalThis.crypto.randomUUID(),
       code,
-      expiresAt: new Date(request.expiresAt.getTime()),
+      expiresAt: new Date(request.expiresAt),
       deviceId: request.deviceId,
       claimed: false,
     };
@@ -93,7 +93,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
       market: facts.market,
       pairedBy: facts.pairedBy,
       status: DeviceStatus.Active,
-      pairedAt: new Date(at.getTime()),
+      pairedAt: new Date(at),
       lastSeenAt: null,
       retiredAt: null,
     };
@@ -133,7 +133,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
     const index = this.devices.findIndex((device) => device.id === deviceId);
     const device = this.devices[index];
     if (device?.status === DeviceStatus.Active)
-      this.devices[index] = { ...device, lastSeenAt: new Date(at.getTime()) };
+      this.devices[index] = { ...device, lastSeenAt: new Date(at) };
   }
 
   /** Retires the device once. */
@@ -145,7 +145,7 @@ export class MemoryDeviceRegistryDriver extends Driver(DeviceRegistry) {
       this.devices[index] = {
         ...device,
         status: DeviceStatus.Retired,
-        retiredAt: new Date(at.getTime()),
+        retiredAt: new Date(at),
       };
     return true;
   }

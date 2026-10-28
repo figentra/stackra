@@ -9,7 +9,7 @@
  * Governing contract: ADR 0393 (decision 2); owner M3-6, RV-52; ADR 0220 (decision 3: one explicit rounding).
  */
 import { Rounding } from "@stackra/contracts";
-import { type Money } from "@stackra/money";
+import type { Money } from "@stackra/money";
 
 import { OfferBenefitKind } from "#core/enums/offer-benefit-kind.enum";
 import type { CatalogueOffer } from "#core/types/catalogue-offer.type";

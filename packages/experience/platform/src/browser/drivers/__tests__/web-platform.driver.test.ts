@@ -86,7 +86,9 @@ describe("WebPlatformDriver", () => {
     });
     stubNavigator(
       "share",
-      vi.fn(async () => Promise.reject(new DOMException("closed", "AbortError"))),
+      vi.fn(async () => {
+        throw new DOMException("closed", "AbortError");
+      }),
     );
     expect(await platform.share.share({ url: "https://acme.test" })).toEqual({
       ok: true,

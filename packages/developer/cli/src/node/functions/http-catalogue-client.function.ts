@@ -51,7 +51,9 @@ export function httpCatalogueClient(
         dist?: { tarball?: unknown; integrity?: unknown };
       };
       if (typeof dist?.tarball !== "string" || typeof dist.integrity !== "string") {
-        throw new Error(`${name}@${version}: the manifest has no dist.tarball or dist.integrity`);
+        throw new TypeError(
+          `${name}@${version}: the manifest has no dist.tarball or dist.integrity`,
+        );
       }
       const file = await get(new URL(dist.tarball, base));
       if (!file.ok) throw new Error(`${name}@${version}: the tarball answered ${file.status}`);

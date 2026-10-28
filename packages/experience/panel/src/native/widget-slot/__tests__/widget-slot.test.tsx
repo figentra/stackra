@@ -84,7 +84,7 @@ vi.mock("@stackra/ui/native", async () => {
         "div",
         null,
         props.title as never,
-        createElement("button", { onClick: retry.onPress }, retry.label),
+        createElement("button", { type: "button", onClick: retry.onPress }, retry.label),
       );
     },
     Select: (props: Props) =>

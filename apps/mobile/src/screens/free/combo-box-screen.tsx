@@ -119,6 +119,7 @@ function LiveComboBox() {
 
   // A pretend round trip for each new search or page; the timer is cleared when another one starts.
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- reason: a demo of a busy state: the effect starts a pretend request and marks it busy
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), SERVER_DELAY);
     return () => clearTimeout(timer);

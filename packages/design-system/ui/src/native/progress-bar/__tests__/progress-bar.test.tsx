@@ -104,6 +104,7 @@ vi.mock("#native/text/text", async () => {
 
 /** The last props handed to the view that matches. */
 const lastView = (matches: (props: Record<string, unknown>) => boolean) =>
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   state.views.filter(matches).at(-1) ?? {};
 const rootProps = () => lastView((props) => props["accessibilityRole"] === "progressbar");
 const trackProps = () => lastView((props) => typeof props["onLayout"] === "function");

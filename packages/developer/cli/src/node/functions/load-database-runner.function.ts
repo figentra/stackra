@@ -43,7 +43,7 @@ export async function loadDatabaseRunner(cwd: string): Promise<DatabaseRunner> {
   }
   const loaded = (await import(pathToFileURL(file).href)) as Partial<DatabaseRunner>;
   if (typeof loaded.migrate !== "function" || typeof loaded.rollback !== "function") {
-    throw new Error(
+    throw new TypeError(
       "@stackra/database/node exports no migrate and rollback: update @stackra/database",
     );
   }

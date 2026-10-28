@@ -97,6 +97,7 @@ export function ConditionEditor(props: ConditionEditorProps): ReactElement {
         {children.map((child, index) => (
           <ConditionEditor
             // Children have no identity but their place; a removal re-keys the ones after it.
+            // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
             key={index}
             rules={rules}
             node={child}

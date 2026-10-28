@@ -18,7 +18,7 @@ const PASS_VERSION = "1";
  * getCacheKey(); // "stackra-class-components@1:<upstream key>"
  */
 export function getCacheKey(): string {
-  let upstream = "";
+  let upstream: string;
   try {
     upstream = upstreamTransformer(process.cwd()).getCacheKey?.() ?? "";
   } catch {

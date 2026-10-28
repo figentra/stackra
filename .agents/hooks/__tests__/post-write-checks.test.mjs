@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `post-write-checks.mjs` to its contract: it reports a file oxfmt would reformat and never blocks.
+ * Boundary: test only; runs the hook as a child process on fixture payloads and temporary directories.
+ * Runtime: node (node:test)
+ * Governing contract: ADR 0016; ADR 0022 (tests live in tests folders).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

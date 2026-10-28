@@ -49,6 +49,7 @@ export async function issueOneTimeCode(input: {
   if (!(policy.ttlSeconds > 0) || !Number.isInteger(policy.maxAttempts) || policy.maxAttempts < 1)
     throw new RangeError("issueOneTimeCode: needs a positive lifetime and attempts from 1");
   let code = "";
+  // oxlint-disable-next-line typescript/prefer-for-of -- reason: `policy.length` is the code length, not an array
   for (let index = 0; index < policy.length; index += 1)
     code += alphabet[randomIndex(alphabet.length)];
   const record: OneTimeCodeRecord = {

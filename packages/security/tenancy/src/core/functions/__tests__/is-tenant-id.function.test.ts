@@ -29,7 +29,7 @@ describe(isTenantId, () => {
   });
 
   it("narrows to a scope node's public id", () => {
-    const value: string = "scp_01j9z3k4m5n6p7q8r9s0t1v2w3";
+    const value = "scp_01j9z3k4m5n6p7q8r9s0t1v2w3" as string;
     if (isTenantId(value)) expectTypeOf(value).toEqualTypeOf<PublicId<"scp">>();
   });
 });

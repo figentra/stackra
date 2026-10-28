@@ -45,7 +45,7 @@ describe("FreezeAccountAction", () => {
       setFrozen,
     } as unknown as AccountService);
     const now = new Date("2026-10-21T00:00:00Z");
-    const ctx = fakeActionContext({ now: () => new Date(now.getTime()) });
+    const ctx = fakeActionContext({ now: () => new Date(now) });
 
     const output = await action.handle(
       FreezeAccountInput.create({ accountId, isFrozen: true }),

@@ -7,6 +7,9 @@
   (`presets.test.ts` checks it). JS plugins load from their source file (ADR 0421).
 - `no-restricted-imports` does not merge across overrides: every override in `boundaries.jsonc` repeats the
   deep-src and retired-import patterns, and each new pattern needs a banned line in `src/__tests__/fixtures/`.
+- The rule-gap cheap set (N-1 to N-10, stackra-229) is in `base.jsonc` at error; a new site is fixed or carries a
+  reasoned `oxlint-disable-next-line <rule> -- <reason>`, never a lower severity. The `.tsx` override carries the
+  react and jsx-a11y rules, because no member extends `react.jsonc`.
 - Secrets: forbidden.
 
 ## PII

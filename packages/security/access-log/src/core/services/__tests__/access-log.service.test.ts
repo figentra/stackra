@@ -24,7 +24,7 @@ const AT = new Date("2026-10-24T08:00:00Z");
 /** Always the same instant. */
 class FixedClock extends Clock {
   now(): Date {
-    return new Date(AT.getTime());
+    return new Date(AT);
   }
 }
 

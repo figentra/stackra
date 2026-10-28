@@ -44,7 +44,7 @@ interface DocumensoDocument {
 }
 
 /** The open statuses. */
-const OPEN: readonly SignatureStatus[] = [SignatureStatus.Sent, SignatureStatus.Viewed];
+const OPEN: ReadonlySet<SignatureStatus> = new Set([SignatureStatus.Sent, SignatureStatus.Viewed]);
 
 /** How many of the newest documents `send` searches for an earlier envelope of the same reference. */
 const RECENT = 100;
@@ -154,7 +154,7 @@ export class DocumensoConnection
    */
   async cancel(envelopeId: string): Promise<SignatureEnvelope> {
     const envelope = await this.status(envelopeId);
-    if (!OPEN.includes(envelope.status))
+    if (!OPEN.has(envelope.status))
       throw SignatureEnvelopeClosedError.create({ envelopeId, status: envelope.status });
     await this.api.delete(`/documents/${envelopeId}`);
     return { ...envelope, status: SignatureStatus.Cancelled, closedAt: new Date().toISOString() };
@@ -182,7 +182,7 @@ export class DocumensoConnection
           : recipients.some((r) => r.readStatus === "OPENED")
             ? SignatureStatus.Viewed
             : SignatureStatus.Sent;
-    const closedAt = OPEN.includes(status) ? undefined : (doc.completedAt ?? undefined);
+    const closedAt = OPEN.has(status) ? undefined : (doc.completedAt ?? undefined);
     return {
       id: String(doc.id),
       reference: reference ?? doc.externalId ?? "",

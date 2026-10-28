@@ -9,11 +9,10 @@
  * Governing contract: ADR 0022; ADR 0294 (decisions 14 and 16); ADR 0297 (decision 4); ADR 0305 (rule 35).
  */
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
-import { vi } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";
 import { Route } from "#core/bases/route.base";

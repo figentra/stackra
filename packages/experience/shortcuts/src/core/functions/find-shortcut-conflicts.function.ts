@@ -16,10 +16,12 @@ import type { ShortcutConflict } from "#core/types/shortcut-conflict.type";
 /** A normal-form step with `mod` replaced by what it is on the platform. */
 function resolveStep(step: string, apple: boolean): string {
   const parts = step.split("+");
-  const modifiers = parts
-    .slice(0, -1)
-    .map((modifier) => (modifier === "mod" ? (apple ? "meta" : "ctrl") : modifier));
-  return [...MODIFIERS.filter((modifier) => modifiers.includes(modifier)), parts.at(-1)].join("+");
+  const modifiers = new Set(
+    parts
+      .slice(0, -1)
+      .map((modifier) => (modifier === "mod" ? (apple ? "meta" : "ctrl") : modifier)),
+  );
+  return [...MODIFIERS.filter((modifier) => modifiers.has(modifier)), parts.at(-1)].join("+");
 }
 
 /** How two resolved step lists clash, if they do. */

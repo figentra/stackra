@@ -95,7 +95,7 @@ export class MemorySettingValueStoreDriver extends Driver(SettingValueStore) {
   async remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
     const holder = this.holderOf(group, target);
     for (const path of paths) {
-      delete holder.values[path];
+      Reflect.deleteProperty(holder.values, path);
       holder.locked.delete(path);
     }
   }

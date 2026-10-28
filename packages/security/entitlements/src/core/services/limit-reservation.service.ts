@@ -12,8 +12,7 @@
  *                     STA-913 (the `where` filter).
  */
 import { kindOf, Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
-import { Duration, type PublicId } from "@stackra/contracts";
+import { type Clock, Duration, type PublicId } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
 

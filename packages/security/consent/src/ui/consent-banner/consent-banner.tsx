@@ -40,7 +40,7 @@ export function ConsentBanner({ policyHref, onManage }: ConsentBannerProps): Rea
     for (const entry of optional) consent.set(entry.category, granted);
   };
   return (
-    <section role="region" aria-label={t("consent::ui.banner.title" as I18nKey)}>
+    <section aria-label={t("consent::ui.banner.title" as I18nKey)}>
       <Card>
         <Card.Content>
           <Heading level={2}>{t("consent::ui.banner.title" as I18nKey)}</Heading>

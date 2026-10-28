@@ -17,5 +17,6 @@ export type SlotHandler<S> =
   S extends AfterSlot<infer V, infer A>
     ? (value: V, ...args: [...A, ctx: ExtensionContext]) => V | Promise<V>
     : S extends BeforeSlot<infer A>
-      ? (...args: [...A, ctx: ExtensionContext]) => A | void | Promise<A | void>
+      ? // oxlint-disable-next-line typescript/no-invalid-void-type -- reason: a before-handler may return nothing to keep the arguments
+        (...args: [...A, ctx: ExtensionContext]) => A | void | Promise<A | void>
       : never;

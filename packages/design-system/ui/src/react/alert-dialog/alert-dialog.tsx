@@ -96,7 +96,12 @@ export function AlertDialog({
               {children}
             </HeroAlertDialog.Body>
             <HeroAlertDialog.Footer>
-              <Button variant="secondary" autoFocus onPress={cancel}>
+              <Button
+                variant="secondary"
+                // oxlint-disable-next-line jsx-a11y/no-autofocus -- reason: an alert dialog focuses its least destructive action (WAI-ARIA alertdialog)
+                autoFocus
+                onPress={cancel}
+              >
                 {cancelLabel}
               </Button>
               <Button

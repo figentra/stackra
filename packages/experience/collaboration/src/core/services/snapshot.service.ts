@@ -69,6 +69,7 @@ export class SnapshotService extends Service {
       timer = undefined;
       this.save(room, replica).catch((error: unknown) => {
         // Report a store outage; the next local change saves the full state again.
+        // oxlint-disable-next-line no-console -- reason: collaboration has no logger dependency yet; the outage must not pass silently
         console.error(`A snapshot of ${room.document} failed`, error);
       });
     };

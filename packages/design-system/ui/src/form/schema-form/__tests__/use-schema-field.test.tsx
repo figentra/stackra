@@ -23,7 +23,7 @@ describe("useSchemaField", () => {
   it("binds the named field and clears a server error on change", () => {
     let form: ReturnType<typeof useBoundField>["form"] | undefined;
     const { result } = renderHook(() => useSchemaField<number>("quantity"), {
-      wrapper: ({ children }) => {
+      wrapper: function Wrapper({ children }) {
         const bound = useBoundField();
         form = bound.form;
         return bound.wrap(children);

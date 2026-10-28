@@ -46,7 +46,7 @@ describe("PurgeAccessLogAction", () => {
 
     const output = await action.handle(
       PurgeAccessLogInput.create({}),
-      fakeActionContext({ now: () => new Date(now.getTime()) }),
+      fakeActionContext({ now: () => new Date(now) }),
     );
 
     expect(output).toBeInstanceOf(PurgeAccessLogOutput);

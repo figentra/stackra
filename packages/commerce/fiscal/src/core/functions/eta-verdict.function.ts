@@ -33,7 +33,7 @@ export function etaVerdict(
   response: TransportResponse,
   reference: string,
 ): SubmissionOutcome | null {
-  let json: unknown = null;
+  let json: unknown;
   try {
     json = JSON.parse(response.body);
   } catch {

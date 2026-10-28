@@ -113,7 +113,8 @@ function connect(automations: Automation[], revisions: Revision[] = []) {
     findOneOrFail: vi.fn(async (model: unknown) =>
       model === Automation
         ? (automations[0] ?? created.find((row) => row instanceof Automation))
-        : (created.filter((row) => row instanceof Revision).at(-1) ?? revisions[0]),
+        : // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
+          (created.filter((row) => row instanceof Revision).at(-1) ?? revisions[0]),
     ),
     find: vi.fn(async (model: unknown) => (model === Automation ? automations : revisions)),
     count: vi.fn(async () => revisions.length),

@@ -163,7 +163,7 @@ export class ZatcaOnboardingDriver extends Driver(FiscalOnboarding) {
     request: Parameters<FiscalTransport["send"]>[0],
   ): Promise<OnboardingStep> {
     const response = assertAnswered(await this.transport.send(request), DRIVER);
-    let json: unknown = null;
+    let json: unknown;
     try {
       json = JSON.parse(response.body);
     } catch {

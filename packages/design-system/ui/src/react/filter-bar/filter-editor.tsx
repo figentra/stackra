@@ -51,6 +51,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <TextField
           aria-label={definition.label}
+          // oxlint-disable-next-line jsx-a11y/no-autofocus -- reason: the editor opens in a popover the user just asked for; its field takes the focus
           autoFocus
           value={filterValueOfKind("text", value) ?? ""}
           onChange={onChange}

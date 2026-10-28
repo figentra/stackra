@@ -39,9 +39,8 @@ describe("commitStore", () => {
   it("calls every listener, even when one unsubscribes another", () => {
     const store = new CartStore();
     const second = vi.fn();
-    let stopSecond: (() => void) | undefined;
-    subscribeStore(store, () => stopSecond?.());
-    stopSecond = subscribeStore(store, second);
+    subscribeStore(store, () => stopSecond());
+    const stopSecond = subscribeStore(store, second);
     commitStore(store);
     expect(second).toHaveBeenCalledTimes(1);
     commitStore(store);

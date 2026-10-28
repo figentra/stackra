@@ -130,9 +130,9 @@ export function readArchitectureInputs(root) {
  * renderArchitectureMap({ members, calls }); // { schema_version: 1, diagram_type: "architecture", ... }
  */
 export function renderArchitectureMap({ members, calls }) {
-  const known = TIERS.map((entry) => entry.tier);
+  const known = new Set(TIERS.map((entry) => entry.tier));
   const extra = [...new Set(members.map((member) => member.tier))]
-    .filter((tier) => !known.includes(tier))
+    .filter((tier) => !known.has(tier))
     .sort(byText);
   const tiers = [
     ...TIERS,

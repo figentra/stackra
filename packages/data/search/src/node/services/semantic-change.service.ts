@@ -32,7 +32,7 @@ import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
 const SOURCE = "search";
 
 /** Field kinds that are not relations, so a dotted path through them needs no populate. */
-const NOT_RELATIONS: readonly string[] = ["scalar", "embedded"];
+const NOT_RELATIONS: ReadonlySet<string> = new Set(["scalar", "embedded"]);
 
 /**
  * Keeps a semantic model's passages current.
@@ -99,7 +99,7 @@ export class SemanticChangeService extends Service implements ChangeConsumer {
           .filter((path) => path.includes("."))
           .filter((path) => {
             const kind = meta.properties[path.split(".")[0] as keyof typeof meta.properties]?.kind;
-            return kind !== undefined && !NOT_RELATIONS.includes(String(kind));
+            return kind !== undefined && !NOT_RELATIONS.has(String(kind));
           })
           .map((path) => path.slice(0, path.lastIndexOf("."))),
       ),

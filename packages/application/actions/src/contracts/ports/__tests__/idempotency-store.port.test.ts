@@ -7,8 +7,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0263 (ports).
  */
 import { Driver } from "@stackra/container";
-import { Duration } from "@stackra/contracts";
-import { Port } from "@stackra/contracts";
+import { Duration, Port } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";

@@ -35,6 +35,7 @@ export function rateLimitFor(
   const windows: readonly [number, ...number[]] = WINDOWS[plan];
   // shortcut: the longest window the plan allows at or below the runway's, the count scaled to the same rate; add
   // the Business windows when a zone moves to that plan.
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   const period = windows.filter((window) => window <= limit.periodSeconds).at(-1) ?? windows[0];
   return {
     period,

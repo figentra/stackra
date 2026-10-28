@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: proves every preset in package.json `exports` exists, that base.jsonc loads every house JS plugin from a
  *          source file that exists and turns on every `stackra/*` rule at error, that @stackra/coding-standard is a
- *          peer, and that the boundary preset still carries the two non-negotiable patterns (packages never import
- *          apps/services; no deep src imports).
+ *          peer, that the boundary preset still carries the two non-negotiable patterns (packages never import
+ *          apps/services; no deep src imports), and that base.jsonc carries the rule-gap cheap set (stackra-229).
  * Boundary: test only; reads the preset files and the plugin's source as text, imports no workspace package.
  * Runtime: node (vitest)
- * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md.
+ * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -69,5 +69,34 @@ describe("@stackra/oxlint-config presets", () => {
     const text = readFileSync(join(root, "src", "boundaries.jsonc"), "utf8");
     expect(text).toContain('"**/apps/**"');
     expect(text).toContain('"@stackra/*/src/*"');
+  });
+
+  it("base.jsonc carries the rule-gap cheap set at error (stackra-229)", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    for (const rule of [
+      "no-console",
+      "typescript/prefer-ts-expect-error",
+      "array-callback-return",
+      "no-fallthrough",
+      "no-loop-func",
+      "oxc/no-accumulating-spread",
+      "typescript/no-dynamic-delete",
+      "typescript/prefer-for-of",
+      "prefer-const",
+      "import/no-duplicates",
+      "unicorn/prefer-set-has",
+      "unicorn/consistent-date-clone",
+      "react/rules-of-hooks",
+      "react/jsx-no-target-blank",
+      "react/button-has-type",
+      "react/no-array-index-key",
+    ])
+      expect(text).toContain(`"${rule}": "error"`);
+    expect(text).toContain('"typescript/ban-ts-comment"');
+    expect(text).toContain('"ts-ignore": true');
+    expect(text).toContain('"ts-expect-error": true');
+    expect(text).toContain('"ts-expect-error": "allow-with-description"');
+    expect(text).toContain('"plugins": ["react", "jsx-a11y"]');
+    expect(text).toContain('"**/tools/scripts/*.mjs"');
   });
 });

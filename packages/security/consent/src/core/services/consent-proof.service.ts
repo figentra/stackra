@@ -18,8 +18,7 @@
  *                     Consequences); STA-1323.
  */
 import { Service } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
-import { type PublicId } from "@stackra/contracts";
+import type { Clock, PublicId } from "@stackra/contracts";
 
 import type { ConsentAuthority } from "#contracts/ports/consent-authority.port";
 import type { ConsentProofStore } from "#contracts/ports/consent-proof-store.port";

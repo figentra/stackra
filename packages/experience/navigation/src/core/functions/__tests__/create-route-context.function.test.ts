@@ -13,9 +13,8 @@ import { Container, type Token } from "@stackra/container";
 import { ErrorKind, Refusal } from "@stackra/errors";
 import { I18nConfig, Locale } from "@stackra/i18n";
 import { Platform } from "@stackra/platform/contracts";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerSchemas, Schema } from "@stackra/validation";
-import { vi } from "vitest";
 import { z } from "zod";
 
 import { Route } from "#core/bases/route.base";

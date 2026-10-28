@@ -68,7 +68,7 @@ describe("AccountService", () => {
       ledger,
       new LoyaltyService(ledger, LoyaltyMembersFake.with([])),
       extensions,
-      { now: () => new Date(NOW.getTime()) } as Clock,
+      { now: () => new Date(NOW) } as Clock,
       { current: () => fakeExtensionContext() } as unknown as RequestContext,
       fakeSettings(),
     );

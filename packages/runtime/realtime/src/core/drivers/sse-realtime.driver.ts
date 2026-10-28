@@ -61,6 +61,7 @@ export class SseRealtimeDriver extends Driver(RealtimeDriver) {
     const token = new URL(request.url).searchParams.get("token") ?? "";
     const encoder = new TextEncoder();
     let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+    // oxlint-disable-next-line prefer-const -- reason: read by the close handler created before it is set; const would put it in the TDZ
     let heartbeat: ReturnType<typeof setInterval> | undefined;
     let closed = false;
     const send = (text: string): void => {
@@ -72,6 +73,7 @@ export class SseRealtimeDriver extends Driver(RealtimeDriver) {
       clearInterval(heartbeat);
       controller?.close();
     };
+    // oxlint-disable-next-line prefer-const -- reason: read by the stream callbacks created before it is set; const would put it in the TDZ
     let leave: (() => void) | undefined;
     // `start` runs synchronously in the constructor, so the controller exists before the hub can deliver.
     const stream = new ReadableStream<Uint8Array>({

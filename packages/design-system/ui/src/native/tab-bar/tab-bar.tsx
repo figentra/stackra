@@ -103,6 +103,7 @@ export function TabBar({ items, label, className, style, ...rest }: TabBarProps)
   const navigate = use(RouterContext);
   const insets = useSafeAreaInsets();
   if (items.length > MAX_TABS && process.env.NODE_ENV !== "production") {
+    // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency
     console.warn(TOO_MANY);
   }
   const follow = (item: NavigationItem) => {

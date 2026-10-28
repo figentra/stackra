@@ -687,10 +687,7 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
     if (tag !== undefined) dialog.remoteTag = tag;
     const contact = sipHeaders(response, "Contact")[0];
     if (contact !== undefined) dialog.target = uriIn(contact);
-    dialog.routes = sipHeaders(response, "Record-Route").reduceRight<string[]>(
-      (routes, route) => [...routes, route],
-      [],
-    );
+    dialog.routes = [...sipHeaders(response, "Record-Route")].reverse();
     this.ack(dialog, cseqNumber(invite));
   }
 

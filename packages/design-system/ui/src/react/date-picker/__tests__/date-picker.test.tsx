@@ -28,7 +28,7 @@ import type { DatePickerProps } from "#react/date-picker/date-picker.props";
 const MARCH_5 = new CalendarDate(2026, 3, 5);
 const press = (element: HTMLElement) => act(() => element.click());
 const key = (element: HTMLElement, name: string) => fireEvent.keyDown(element, { key: name });
-const group = (name: string = "Due date") => screen.getByRole("group", { name });
+const group = (name = "Due date") => screen.getByRole("group", { name });
 const trigger = (name: string | RegExp = /Choose a date/) => screen.getByRole("button", { name });
 const dialog = () => screen.queryByRole("dialog");
 /** A day of the open calendar in 2026, found by its spoken name, for example `day("Friday, March 6")`. */

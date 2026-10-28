@@ -21,8 +21,7 @@
 import type { ExtensionContext } from "@stackra/actions";
 import type { ContextStorage } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
-import { type Actor, type ScopeRef } from "@stackra/contracts";
+import type { Clock, Actor, ScopeRef } from "@stackra/contracts";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import type { Where } from "@stackra/database/contracts";
 import { Visibility } from "@stackra/model";

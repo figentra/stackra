@@ -29,7 +29,7 @@ const NOW = new Date("2026-10-26T10:00:00.000Z");
 /** Always `NOW`. */
 class FixedClockDriver extends Driver(Clock) {
   now(): Date {
-    return new Date(NOW.getTime());
+    return new Date(NOW);
   }
 }
 

@@ -12,8 +12,13 @@
  */
 import { Service } from "@stackra/container";
 
-import type { SettingValueStore } from "#contracts/index";
-import type { SettingLayer, SettingRevision, SettingTarget, SettingsPack } from "#contracts/index";
+import type {
+  SettingValueStore,
+  SettingLayer,
+  SettingRevision,
+  SettingTarget,
+  SettingsPack,
+} from "#contracts/index";
 import { diffSettingsPacks } from "#core/functions/diff-settings-packs.function";
 import { settingHolderOf } from "#core/functions/setting-holder-of.function";
 import type { SettingsResolver } from "#core/services/settings-resolver.service";

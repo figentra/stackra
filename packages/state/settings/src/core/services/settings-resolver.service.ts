@@ -127,7 +127,8 @@ export class SettingsResolver extends Service {
       grantedSettingEntitlements(this.entitlements, keys, target),
     ]);
     const values = { ...mergeSettingLayers(layers).values };
-    for (const path of unentitledSettingPaths(values, keys, granted)) delete values[path];
+    for (const path of unentitledSettingPaths(values, keys, granted))
+      Reflect.deleteProperty(values, path);
     const resolved = validate(type, nestSettingValues(values));
     if (!resolved.success) throw resolved.error;
     return liftFloors(resolved.data, floors);

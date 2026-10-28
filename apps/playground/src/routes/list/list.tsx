@@ -277,6 +277,7 @@ export function List() {
         <div
           role="region"
           aria-label={STRINGS.scrollRegion}
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- reason: a scroll region must take focus so a keyboard user can scroll it (WCAG 2.1.1)
           tabIndex={0}
           className="h-56 overflow-y-auto"
           data-testid="list-scroll"

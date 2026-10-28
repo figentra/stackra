@@ -19,6 +19,7 @@ export function warnUnknownIcon(name: string, label?: string): void {
   if (WARNED.has(name)) return;
   WARNED.add(name);
   const lost = label ? ` (labelled "${label}", so it is meaningful)` : "";
+  // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency
   console.warn(
     `@stackra/ui: the icon "${name}"${lost} is in no registry and draws nothing. Register it with an IconRegistryProvider.`,
   );

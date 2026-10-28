@@ -37,8 +37,8 @@ export interface EntityPickerBaseContractProps {
    * (ADR 0139). The row shows only when `createLabel` is also given.
    */
   readonly onCreate?:
-    | ((text: string) => EntityOption | void | Promise<EntityOption | void>)
-    | undefined;
+    // oxlint-disable-next-line typescript/no-invalid-void-type -- reason: the handler may return nothing when the app handles the result itself
+    ((text: string) => EntityOption | void | Promise<EntityOption | void>) | undefined;
   /** The text of the create-new row from the typed text, for example `(text) => \`Add "${text}"\``. */
   readonly createLabel?: ((text: string) => string) | undefined;
 }

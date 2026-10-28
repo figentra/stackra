@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
- * PreToolUse (Bash): the permission tiers of ADR 0293 for a shell command. The rules live in `_rules.mjs`, shared
+ * Stackra file contract:
+ * Purpose: PreToolUse (Bash): the permission tiers of ADR 0293 for a shell command. The rules live in `_rules.mjs`, shared
  * with the OpenCode guard; this hook only reads the payload (`cwd`, `agent_type`, `session_id`) and reports the
  * decision: deny, ask (a human confirms), or nothing (allow). Only the deletes and deploys in `HUMAN_ASKS` ask;
  * `_rules.mjs` turns every other ask into a deny with a rewrite hint, main thread and subagent alike (STA-400).
  * Accident guard, not a boundary: it fails open on its own errors.
+ * Boundary: reads the hook payload and prints a decision; the rules live in `_rules.mjs`.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0293; STA-400.
  */
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
 import { decideBash, sessionScratchpad } from "./_rules.mjs";

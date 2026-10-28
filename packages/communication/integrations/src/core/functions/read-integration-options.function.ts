@@ -25,13 +25,13 @@ import type { IntegrationOptions } from "#core/types/integration-options.type";
 const PROVIDER = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 
 /** The JWT algorithms the managed client signs with. */
-const JWT_ALGORITHMS: readonly string[] = ["HS256", "RS256", "ES256"];
+const JWT_ALGORITHMS: ReadonlySet<string> = new Set(["HS256", "RS256", "ES256"]);
 
 /** The algorithms a JWT bearer assertion is signed with: a private key, never a shared secret. */
-const ASSERTION_ALGORITHMS: readonly string[] = ["RS256", "ES256"];
+const ASSERTION_ALGORITHMS: ReadonlySet<string> = new Set(["RS256", "ES256"]);
 
 /** The HMAC hashes a webhook signature recipe may name. */
-const HMAC_HASHES: readonly string[] = ["SHA-1", "SHA-256", "SHA-512"];
+const HMAC_HASHES: ReadonlySet<string> = new Set(["SHA-1", "SHA-256", "SHA-512"]);
 
 /** Throws a `TypeError` naming the option unless `ok`. */
 function ensure(ok: boolean, option: string, needs: string): void {
@@ -118,7 +118,7 @@ export function readIntegrationOptions(
       break;
     case AuthType.Jwt:
       ensure(
-        JWT_ALGORITHMS.includes(auth.algorithm) && isText(auth.key),
+        JWT_ALGORITHMS.has(auth.algorithm) && isText(auth.key),
         "auth",
         "of a JWT needs an algorithm and a key",
       );
@@ -158,7 +158,7 @@ export function readIntegrationOptions(
         isHttpUrl(auth.tokenUrl) &&
           isText(auth.key) &&
           isText(auth.issuer) &&
-          (auth.algorithm === undefined || ASSERTION_ALGORITHMS.includes(auth.algorithm)),
+          (auth.algorithm === undefined || ASSERTION_ALGORITHMS.has(auth.algorithm)),
         "auth",
         "of a JWT bearer grant needs tokenUrl, key, issuer and an RS256 or ES256 algorithm",
       );
@@ -255,7 +255,7 @@ export function readIntegrationOptions(
       const timestamped = isText(signature.timestampHeader) || isText(signature.parts?.timestamp);
       ensure(
         isText(signature.header) &&
-          HMAC_HASHES.includes(signature.algorithm) &&
+          HMAC_HASHES.has(signature.algorithm) &&
           ["hex", "base64"].includes(signature.encoding) &&
           (signature.secretEncoding === undefined ||
             ["utf8", "base64"].includes(signature.secretEncoding)) &&

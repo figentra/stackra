@@ -75,7 +75,7 @@ describe("ExpirePointsAction", () => {
 
     const output = await action.handle(
       ExpirePointsInput.create({ batchSize: 2 }),
-      fakeActionContext({ now: () => new Date(now.getTime()) }),
+      fakeActionContext({ now: () => new Date(now) }),
     );
 
     expect(find).toHaveBeenCalledWith(

@@ -72,6 +72,7 @@ export abstract class Fake {
       constructor() {
         super();
         // The proxy is `this` for every subclass too, so their fields and methods sit on the same target.
+        // oxlint-disable-next-line no-constructor-return -- reason: the fake is its own proxy, so a missing member becomes a spy
         return new Proxy<this>(this, { get: spyMissing });
       }
 

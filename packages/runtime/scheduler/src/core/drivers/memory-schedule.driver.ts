@@ -57,7 +57,7 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
 
   /** Sets the watermark of each key to `at` (see `ScheduleDriver.advance`). */
   advance(keys: readonly string[], at: Date): Promise<void> {
-    for (const key of keys) this.marks.set(key, new Date(at.getTime()));
+    for (const key of keys) this.marks.set(key, new Date(at));
     return Promise.resolve();
   }
 }

@@ -79,7 +79,9 @@ function checks() {
     let missing = ["(mise could not read mise.toml — run `mise trust`)"];
     try {
       missing = missingMiseTools(JSON.parse(r.stdout));
-    } catch {}
+    } catch {
+      // unreadable output: keep the `mise trust` hint
+    }
     add(
       "mise tools",
       missing.length ? "fail" : "ok",

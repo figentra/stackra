@@ -32,6 +32,8 @@
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
     ".agents/reference/**",
     ".claude/skills/**",
+    // a copy of .agents/hooks written by agents-sync; the source is linted (rule-gap N-1)
+    ".claude/hooks/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
   ],

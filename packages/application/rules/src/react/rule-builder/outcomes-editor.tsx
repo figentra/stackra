@@ -53,6 +53,7 @@ export function OutcomesEditor({
         const kind = rules.outcomeKind(outcome.kind);
         return (
           // Outcomes have no identity but their place; a removal re-keys the ones after it.
+          // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
           <div key={index} className="flex flex-wrap items-end gap-2">
             <Select
               label={t(KEYS.builder.outcome)}

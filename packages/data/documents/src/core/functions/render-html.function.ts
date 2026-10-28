@@ -136,6 +136,9 @@ export function renderHtml(document: ResolvedDocument): string {
           return `<figure class="${block.align}">${imageHtml(block.image, block.widthMm, block.heightMm, "")}</figure>`;
         case "signature":
           return `<figure class="${block.align}">${imageHtml(block.image, block.widthMm, block.heightMm, block.labels[0] ?? "")}${localized(document, "p", block.align, block.labels.map(escapeHtml))}</figure>`;
+        default:
+          block satisfies never;
+          throw new TypeError("renderHtml: unknown block type");
       }
     })
     .join("");

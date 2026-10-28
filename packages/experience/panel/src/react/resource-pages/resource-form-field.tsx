@@ -81,6 +81,7 @@ export function ResourceFormField({
   const { t } = useTranslation();
   const children = (fields: readonly FieldNode[]) =>
     fields.map((child, index) => (
+      // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
       <ResourceFormField key={index} resourceKey={resourceKey} schema={schema} node={child} />
     ));
   if (node.kind === "grid")

@@ -11,11 +11,10 @@
 // @vitest-environment jsdom
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { vi } from "vitest";
 import { z } from "zod";
 
 import { Route } from "#core/bases/route.base";

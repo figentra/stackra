@@ -63,7 +63,7 @@ vi.mock("@stackra/ui/react", async () => {
       createElement(
         "button",
         {
-          type: props["type"] ?? "button",
+          type: props["type"] === "submit" ? "submit" : "button",
           disabled: props["isDisabled"],
           onClick: props["onPress"] as () => void,
         },

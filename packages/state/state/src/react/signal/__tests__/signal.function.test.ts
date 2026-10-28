@@ -45,9 +45,8 @@ describe("signal", () => {
   it("keeps notifying when one listener unsubscribes another", () => {
     const online = signal(true);
     const second = vi.fn();
-    let stopSecond: (() => void) | undefined;
-    online.subscribe(() => stopSecond?.());
-    stopSecond = online.subscribe(second);
+    online.subscribe(() => stopSecond());
+    const stopSecond = online.subscribe(second);
     online.set(false);
     expect(second).toHaveBeenCalledWith(false);
   });

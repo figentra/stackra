@@ -231,7 +231,7 @@ function clockAt(at: Date): Clock & { at: Date } {
   return {
     at,
     now(): Date {
-      return new Date(this.at.getTime());
+      return new Date(this.at);
     },
   } as Clock & { at: Date };
 }

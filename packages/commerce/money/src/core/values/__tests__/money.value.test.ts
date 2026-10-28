@@ -54,7 +54,7 @@ describe("Money.ofMinor", () => {
   });
 
   it("types the currency as CurrencyCode while taking a plain string", () => {
-    const fromWire: string = "EUR";
+    const fromWire = "EUR" as string;
     const code: CurrencyCode = Money.ofMinor(1, fromWire).currency;
     expect(code).toBe("EUR");
   });

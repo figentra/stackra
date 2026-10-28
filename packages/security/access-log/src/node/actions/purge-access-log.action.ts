@@ -58,7 +58,7 @@ export class PurgeAccessLogAction extends Action({
 
   /** Deletes, in one statement, every record recorded more than `retentionDays` before the call's instant. */
   async handle(_input: PurgeAccessLogInput, ctx: ActionContext): Promise<PurgeAccessLogOutput> {
-    const cutoff = new Date(ctx.now().getTime());
+    const cutoff = new Date(ctx.now());
     cutoff.setUTCDate(cutoff.getUTCDate() - this.config.retentionDays);
     return PurgeAccessLogOutput.create({
       deleted: await this.entries.purge({ at: { $lt: cutoff } }),

@@ -5,7 +5,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0305 (rule 12).
  */
-import { type ReactNode, type Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import type { ScrollView } from "react-native";
 
 /** Props of {@link Screen}. */

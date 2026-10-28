@@ -49,7 +49,7 @@ const KEBAB = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const KINDS = ["package", "service", "seed-pack"];
 
 /** Files `--over` never writes or diffs: release history and the member's authored runtime needs (ports, sizes). */
-const KEEP_OVER = ["CHANGELOG.md", "runway.yaml"];
+const KEEP_OVER = new Set(["CHANGELOG.md", "runway.yaml"]);
 
 /** The `stackra new` command. */
 export const NEW_COMMAND: CliCommand = {
@@ -139,7 +139,7 @@ export const NEW_COMMAND: CliCommand = {
     for (const file of files) {
       const target = join(folder, file.path);
       if (existsSync(target)) {
-        if (KEEP_OVER.includes(file.path)) continue;
+        if (KEEP_OVER.has(file.path)) continue;
         const diff = lineDiff(readFileSync(target, "utf8"), file.content);
         if (diff !== "")
           io.out(`--- ${where}/${file.path} (authored, kept)\n+++ template\n${diff}`);

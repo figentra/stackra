@@ -116,7 +116,8 @@ export async function httpCall(request: ClientRequest, options: HttpCallOptions)
   if (request.scope !== undefined && options.scopeHeader !== undefined) {
     // The call's scope wins over the session's; header names are case-insensitive, so drop any spelling first.
     const name = options.scopeHeader.toLowerCase();
-    for (const key of Object.keys(headers)) if (key.toLowerCase() === name) delete headers[key];
+    for (const key of Object.keys(headers))
+      if (key.toLowerCase() === name) Reflect.deleteProperty(headers, key);
     headers[options.scopeHeader] = request.scope;
   }
   if (request.device !== undefined) headers[DEVICE_ORDER.deviceHeader] = request.device.deviceId;

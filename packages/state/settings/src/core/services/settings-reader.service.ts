@@ -26,8 +26,9 @@ import type {
   SettingEntitlementSource,
   SettingFloorSource,
   SettingValueStore,
+  SettingTarget,
+  SettingValue,
 } from "#contracts/index";
-import type { SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
 import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.constant";
 import { grantedSettingEntitlements } from "#core/functions/granted-setting-entitlements.function";
@@ -91,7 +92,8 @@ export class SettingsReader extends Service {
       grantedSettingEntitlements(this.entitlements, keys, target),
     ]);
     const values = { ...mergeSettingLayers(layers).values };
-    for (const path of unentitledSettingPaths(values, keys, granted)) delete values[path];
+    for (const path of unentitledSettingPaths(values, keys, granted))
+      Reflect.deleteProperty(values, path);
     const resolved = validate(type, nestSettingValues(values));
     if (!resolved.success) throw resolved.error;
     return liftFloors(resolved.data, floors);

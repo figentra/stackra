@@ -14,8 +14,7 @@
  *                     0294 (decisions 16 and 17).
  */
 import { Service } from "@stackra/container";
-import type { StorageAreaHandle } from "@stackra/storage/contracts";
-import type { Storage } from "@stackra/storage/contracts";
+import type { StorageAreaHandle, Storage } from "@stackra/storage/contracts";
 import type { ColorScheme } from "@stackra/ui/contracts";
 
 import type { ThemingConfig } from "#config/theming.config";

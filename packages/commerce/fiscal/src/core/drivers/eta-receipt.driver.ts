@@ -217,7 +217,7 @@ export class EtaReceiptDriver extends Driver(FiscalDriver) {
       }),
       this.key,
     );
-    let json: unknown = null;
+    let json: unknown;
     try {
       json = JSON.parse(response.body);
     } catch {

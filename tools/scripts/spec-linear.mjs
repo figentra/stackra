@@ -96,5 +96,8 @@ async function main([mode, file, ...flags]) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
-    (e) => (console.error(`spec-linear: ${e.message}`), process.exit(1)),
+    (e) => {
+      console.error(`spec-linear: ${e.message}`);
+      process.exit(1);
+    },
   );

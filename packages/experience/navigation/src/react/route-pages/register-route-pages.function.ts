@@ -20,6 +20,6 @@ export function registerRoutePages(pages: Partial<RoutePages>): () => void {
   Object.assign(ROUTE_PAGES, pages);
   return () => {
     for (const kind of Object.keys(pages) as (keyof RoutePages)[])
-      if (ROUTE_PAGES[kind] === pages[kind]) delete ROUTE_PAGES[kind];
+      if (ROUTE_PAGES[kind] === pages[kind]) Reflect.deleteProperty(ROUTE_PAGES, kind);
   };
 }

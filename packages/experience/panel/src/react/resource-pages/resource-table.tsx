@@ -43,6 +43,9 @@ const derived = (rows: readonly Row[]): ColumnNode[] =>
 const toUi = (direction: SortDirection) =>
   direction === SortDirection.Asc ? "ascending" : "descending";
 
+/** One empty input for every render, so a default never changes identity. */
+const NO_INPUT: Readonly<Record<string, unknown>> = {};
+
 /**
  * One list query's rows as a data table.
  *
@@ -53,7 +56,7 @@ export function ResourceTable({
   resourceKey,
   label,
   query,
-  input = {},
+  input = NO_INPUT,
   table,
   pageSize,
   searchable = true,

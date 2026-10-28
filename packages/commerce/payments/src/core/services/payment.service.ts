@@ -69,12 +69,12 @@ import { modeOf } from "#core/functions/mode-of.function";
 import { totalOf } from "#core/functions/total-of.function";
 
 /** States a manager may settle an `unknown` payment to. */
-const RESOLVABLE: readonly PaymentStatus[] = [
+const RESOLVABLE: ReadonlySet<PaymentStatus> = new Set([
   PaymentStatus.Authorized,
   PaymentStatus.Captured,
   PaymentStatus.Failed,
   PaymentStatus.Voided,
-];
+]);
 
 /** States after which a new checkout or terminal session may reuse the reference. */
 const REOPENABLE: readonly PaymentStatus[] = [PaymentStatus.Failed, PaymentStatus.Voided];
@@ -478,7 +478,7 @@ export class PaymentService extends Service {
     resolution: { readonly by: string; readonly reason: string },
   ): Promise<PaymentRecord> {
     const record = await this.load(reference);
-    if (record.status !== PaymentStatus.Unknown || !RESOLVABLE.includes(status))
+    if (record.status !== PaymentStatus.Unknown || !RESOLVABLE.has(status))
       throw InvalidPaymentTransitionError.create({
         reference,
         status: record.status,

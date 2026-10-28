@@ -52,7 +52,7 @@ async function bodyOf(response: Response, maxBytes: number): Promise<Uint8Array 
 
 /** `body` decoded by the charset `contentType` declares, UTF-8 when it declares none or one unknown here. */
 function textOf(body: Uint8Array, contentType: string): string {
-  const charset = /charset\s*=\s*["']?([\w-]+)/i.exec(contentType)?.[1] ?? "utf-8";
+  const charset = /charset\s*=\s*["']?([\w-]+)/i.exec(contentType)?.[1] ?? "utf8";
   try {
     return new TextDecoder(charset).decode(body);
   } catch {

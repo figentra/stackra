@@ -10,11 +10,10 @@
  */
 // @vitest-environment jsdom
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { createMemoryRouter, data, RouterProvider } from "react-router";
-import { vi } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";

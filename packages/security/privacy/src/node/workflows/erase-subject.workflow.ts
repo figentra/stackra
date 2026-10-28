@@ -15,8 +15,13 @@
  */
 import { Disposal } from "@stackra/database/contracts";
 import { disposableIds } from "@stackra/database";
-import { type Run, ServiceAcked, type StepContext, Workflow } from "@stackra/workflow";
-import type { KeptRecords } from "@stackra/workflow";
+import {
+  type Run,
+  ServiceAcked,
+  type StepContext,
+  Workflow,
+  type KeptRecords,
+} from "@stackra/workflow";
 
 import { ErasureMethod } from "#contracts/enums/erasure-method.enum";
 import type { PersonalDataStore } from "#contracts/ports/personal-data-store.port";

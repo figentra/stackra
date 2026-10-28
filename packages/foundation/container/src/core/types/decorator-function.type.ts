@@ -18,5 +18,6 @@ export interface DecoratorFunction {
   (target: object, property: string | symbol): void;
 
   /** On a method: receives the prototype, the method name and its descriptor. */
+  // oxlint-disable-next-line typescript/unified-signatures -- reason: one call signature per decorator target, each with its own doc
   (target: object, property: string | symbol, descriptor: PropertyDescriptor): void;
 }

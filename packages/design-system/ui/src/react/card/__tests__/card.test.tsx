@@ -125,7 +125,7 @@ describe("Card (web)", () => {
     expectTypeOf<CardProps>().toExtend<CardContractProps>();
     expectTypeOf<CardTitleProps>().toExtend<CardTitleContractProps>();
     // @ts-expect-error the title's level owns the element, so `render` is not a prop
-    render(<Card.Title render={(props) => <h2 {...props} />}>Title</Card.Title>);
+    render(<Card.Title render={(props) => <h2 {...props} />}>Title</Card.Title>); // oxlint-disable-line jsx-a11y/heading-has-content -- reason: a type test; the spread props carry the content
     // @ts-expect-error a heading level is 1 to 6
     render(<Card.Title level={7}>Title</Card.Title>);
     // @ts-expect-error the body is `Card.Content` on both runtimes; HeroUI Native's name is not part of the contract

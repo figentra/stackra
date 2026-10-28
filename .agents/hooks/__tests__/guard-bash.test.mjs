@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `guard-bash.mjs` and the bash rules of `_rules.mjs` to their contract.
+ * Boundary: test only; runs the hook as a child process on fixture payloads and temporary directories.
+ * Runtime: node (node:test)
+ * Governing contract: ADR 0293; STA-400; ADR 0022 (tests live in tests folders).
+ */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

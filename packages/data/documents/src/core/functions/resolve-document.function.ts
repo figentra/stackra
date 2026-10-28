@@ -186,6 +186,9 @@ export function resolveDocument(
           ),
         };
       }
+      default:
+        block satisfies never;
+        throw new TypeError(`${at}: unknown block type`);
     }
   });
   return { template, blocks };

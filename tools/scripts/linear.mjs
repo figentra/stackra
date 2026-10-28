@@ -456,5 +456,8 @@ export async function main(argv, { env = process.env, fetch, log = console.log }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
-    (e) => (console.error(`linear: ${e.message}`), process.exit(1)),
+    (e) => {
+      console.error(`linear: ${e.message}`);
+      process.exit(1);
+    },
   );

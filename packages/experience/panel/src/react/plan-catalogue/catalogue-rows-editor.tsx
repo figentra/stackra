@@ -117,6 +117,7 @@ export function CatalogueRowsEditor({
       {rows.map((row, index) => {
         const number = index + 1;
         return (
+          // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
           <Card key={index} variant="secondary">
             <Card.Header>
               <div className="flex items-center justify-between gap-2">

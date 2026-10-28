@@ -35,7 +35,9 @@ describe("ConsentStore", () => {
   it("types its members as synchronous", () => {
     expectTypeOf<ConsentStore["read"]>().returns.toEqualTypeOf<ConsentRecord | null>();
     expectTypeOf<ConsentStore["write"]>().parameters.toEqualTypeOf<[ConsentRecord]>();
+    // oxlint-disable-next-line typescript/no-invalid-void-type -- reason: asserts the port's exact `void` return
     expectTypeOf<ConsentStore["write"]>().returns.toEqualTypeOf<void>();
+    // oxlint-disable-next-line typescript/no-invalid-void-type -- reason: asserts the port's exact `void` return
     expectTypeOf<ConsentStore["clear"]>().returns.toEqualTypeOf<void>();
   });
 });

@@ -3,6 +3,9 @@
 //          house rules shipped as JS plugins are errors: every rule of @stackra/coding-standard (`stackra/*`, ADR 0129,
 //          0294, 0305) and feature-flags/no-plan-targeting (ADR 0213 d7). Files are kebab-case (ADR 0006 d1); the
 //          retired kind decorators and define* helpers are banned at the import (ADR 0294 R6, ADR 0305 r3).
+//          The cheap set of rule-gap N-4, N-7 to N-10 (stackra-229, owner D11): ts-comment bans (ts-expect-error only
+//          in tests, with a description), the small bug-catchers and autofixes at error, no-console in packages
+//          (off for tools, hooks, plugins and apps), and the react, jsx-a11y and small React rules on every .tsx.
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -20,11 +23,53 @@
   "categories": { "correctness": "error", "suspicious": "warn" },
   "env": { "es2024": true },
   "rules": {
-    "no-console": "off",
+    // Libraries log through @stackra/logger; tools, hooks, plugins and apps print (override below). N-10.
+    "no-console": "error",
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
     "typescript/no-non-null-assertion": "error",
+    // N-4: no silenced type error in shipped code. Tests may keep an @ts-expect-error with a description: a type
+    // test asserts the error (rule 6e). The test override below allows it.
+    "typescript/ban-ts-comment": [
+      "error",
+      { "ts-ignore": true, "ts-nocheck": true, "ts-expect-error": true, "ts-check": false },
+    ],
+    "typescript/prefer-ts-expect-error": "error",
+    // N-7: small bug-catchers.
+    "array-callback-return": "error",
+    "no-self-compare": "error",
+    "no-fallthrough": "error",
+    "no-unreachable-loop": "error",
+    "no-useless-assignment": "error",
+    "no-loop-func": "error",
+    "no-constructor-return": "error",
+    "no-sequences": "error",
+    "no-empty": "error",
+    "no-useless-return": "error",
+    "oxc/no-accumulating-spread": "error",
+    "typescript/no-dynamic-delete": "error",
+    "typescript/no-invalid-void-type": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-empty-interface": "error",
+    "typescript/unified-signatures": "error",
+    "typescript/prefer-for-of": "error",
+    // N-8: cheap autofixes.
+    "prefer-const": "error",
+    "import/no-duplicates": "error",
+    "typescript/no-import-type-side-effects": "error",
+    // Schema and settings classes spell their field types for gen; parameters and variables do not.
+    "typescript/no-inferrable-types": ["error", { "ignoreProperties": true }],
+    "unicorn/prefer-set-has": "error",
+    // It also flags `.filter(...).at(-1)`, whose fix `findLast` is ES2023; the base lib is ES2022, so those sites
+    // carry a reasoned disable until the lib moves.
+    "unicorn/prefer-array-find": "error",
+    // Node's spelling. Packages whose contracts carry the WHATWG label `utf-8` as a wire value are exempt below.
+    "unicorn/text-encoding-identifier-case": "error",
+    "unicorn/prefer-at": "error",
+    "unicorn/consistent-date-clone": "error",
+    "unicorn/prefer-type-error": "error",
+    "unicorn/no-useless-promise-resolve-reject": "error",
     // Mutating sort on a freshly-built local array is fine; toSorted() is noise here.
     "unicorn/no-array-sort": "off",
     // Empty files are allowed for placeholders and test setup.
@@ -107,6 +152,67 @@
       // come from, so no constant exists yet. Product code stays under R-56.
       "files": ["**/__tests__/**"],
       "rules": { "stackra/no-raw-key-literal": "off" },
+    },
+    {
+      // N-4: a type test asserts a type error with @ts-expect-error and says which one; ts-ignore stays banned.
+      "files": ["**/__tests__/**", "**/*.test.*", "**/*.test-d.ts"],
+      "rules": {
+        "typescript/ban-ts-comment": [
+          "error",
+          {
+            "ts-ignore": true,
+            "ts-nocheck": true,
+            "ts-expect-error": "allow-with-description",
+            "ts-check": false,
+          },
+        ],
+      },
+    },
+    {
+      // N-8: the WHATWG encoding label `utf-8` is a wire value here: data-transfer's detected encodings (ADR 0367
+      // d3) and fiscal's journal export format (`JournalExport.encoding`). Respelling it would change the contract.
+      "files": ["**/packages/data/data-transfer/src/**", "**/packages/commerce/fiscal/src/**"],
+      "rules": { "unicorn/text-encoding-identifier-case": "off" },
+    },
+    {
+      // N-10: tools, agent hooks, editor plugins, a package's build scripts, apps and workers (tier:app) print by
+      // design; package source uses the logger.
+      "files": [
+        "**/tools/**",
+        "**/.agents/hooks/**",
+        "**/.opencode/plugins/**",
+        "**/packages/*/*/scripts/**",
+        "**/apps/**",
+        "**/workers/**",
+      ],
+      "rules": { "no-console": "off" },
+    },
+    {
+      // N-1: a single-entry CLI (a repo script, an agent hook, an editor plugin) keeps its helpers beside its entry;
+      // splitting them into files buys nothing. Member source keeps the rule.
+      "files": ["**/tools/scripts/*.mjs", "**/.agents/hooks/*.mjs", "**/.opencode/plugins/**"],
+      "rules": { "stackra/one-declaration-per-file": "off" },
+    },
+    {
+      // N-2 and N-9: react.jsonc's rules on every .tsx file, plus the small React rules. Folded in here because a
+      // member never extends react.jsonc (the root entry extends boundaries.jsonc), so its rules reached no file.
+      "files": ["**/*.tsx"],
+      "plugins": ["react", "jsx-a11y"],
+      "env": { "browser": true },
+      "rules": {
+        "react/jsx-no-target-blank": "error",
+        "react/react-in-jsx-scope": "off",
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/button-has-type": "error",
+        "react/no-array-index-key": "error",
+        "react/no-object-type-as-default-prop": "error",
+        // `<>{node}</>` turns a ReactNode into the ReactElement a component's return type promises.
+        "react/jsx-no-useless-fragment": ["error", { "allowExpressions": true }],
+        // 110 sites, nearly all in ui primitives that wrap a role on purpose: the ui React hygiene batch
+        // (stackra-233, rule-gap FB-5) decides each one. Every other jsx-a11y correctness rule is on at error.
+        "jsx-a11y/prefer-tag-over-role": "off",
+      },
     },
   ],
   "ignorePatterns": [

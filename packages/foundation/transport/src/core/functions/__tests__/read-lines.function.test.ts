@@ -71,6 +71,7 @@ describe("readLines", () => {
         cancel,
       }),
     );
+    // oxlint-disable-next-line no-unreachable-loop -- reason: stops after the first line on purpose, to cancel the stream
     for await (const line of readLines(response)) {
       expect(line).toBe("tick");
       break;

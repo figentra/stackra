@@ -42,8 +42,8 @@ function ormType(field: FieldIR): string {
     case "brand":
     case "public_id":
     case "driver_name":
-    // shortcut: a Duration column is read back as its ISO 8601 string; add a Duration ORM type when a model needs one.
     case "duration":
+      // shortcut: a Duration column is read back as its ISO 8601 string; add a Duration ORM type when a model needs one.
       return "string";
     default:
       return "json";

@@ -51,7 +51,9 @@ try {
   lines.push(
     formatLine(evaluate({ today, week: costOf(fetchStats(7, { timeout: 4000 })) }, budget)),
   );
-} catch {}
+} catch {
+  // best effort: the spend line is left out
+}
 
 // Best-effort: open Linear work (In Progress + owner steps). Offline, no vault login or no key → nothing, within ~3s.
 try {
@@ -80,5 +82,7 @@ try {
     .toString()
     .trim();
   if (out) lines.push("Linear (pnpm linear start|review|done keeps it current):", out);
-} catch {}
+} catch {
+  // best effort: the Linear lines are left out
+}
 context("SessionStart", lines.join("\n"));

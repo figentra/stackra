@@ -17,13 +17,22 @@ import { ResourceRoutePage } from "#react/resource-pages/resource-route-page";
 const opened = vi.hoisted(() => [] as unknown[]);
 
 vi.mock("#react/resource-pages/resource-list-page", () => ({
-  ResourceListPage: (props: object) => (opened.push(["list", props]), null),
+  ResourceListPage: (props: object) => {
+    opened.push(["list", props]);
+    return null;
+  },
 }));
 vi.mock("#react/resource-pages/resource-view-page", () => ({
-  ResourceViewPage: (props: object) => (opened.push(["view", props]), null),
+  ResourceViewPage: (props: object) => {
+    opened.push(["view", props]);
+    return null;
+  },
 }));
 vi.mock("#react/resource-pages/resource-form-page", () => ({
-  ResourceFormPage: (props: object) => (opened.push(["form", props]), null),
+  ResourceFormPage: (props: object) => {
+    opened.push(["form", props]);
+    return null;
+  },
 }));
 
 // oxlint-disable-next-line typescript/no-extraneous-class -- reason: a stand-in query ref, read by identity only

@@ -43,7 +43,7 @@ const shiftMonths = (date: Date, amount: number): Date => {
   const month = date.getUTCMonth() + amount;
   // Day 0 of the month after the target is the target's last day.
   const lastDay = new Date(Date.UTC(date.getUTCFullYear(), month + 1, 0)).getUTCDate();
-  const result = new Date(date.getTime());
+  const result = new Date(date);
   result.setUTCFullYear(date.getUTCFullYear(), month, Math.min(date.getUTCDate(), lastDay));
   return result;
 };

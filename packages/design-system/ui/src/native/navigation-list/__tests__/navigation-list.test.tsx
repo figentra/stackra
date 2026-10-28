@@ -57,6 +57,7 @@ vi.mock("#native/list/list-item", () => ({
     className,
   }: Record<string, unknown>) => (
     <button
+      type="button"
       data-testid="row"
       role={accessibilityRole as string | undefined}
       data-icon={startIcon as string | undefined}

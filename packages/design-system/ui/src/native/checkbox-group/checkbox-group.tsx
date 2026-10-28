@@ -20,6 +20,9 @@ import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Checkbox } from "#native/checkbox/checkbox";
 import type { CheckboxGroupProps } from "#native/checkbox-group/checkbox-group.props";
 
+/** One empty list for every render, so a default never changes identity. */
+const NONE: readonly string[] = [];
+
 /**
  * A set of checkboxes that edit one list of keys: the list holds the `value` of every checked option, in the order
  * they were checked. `isDisabled` and `isReadOnly` apply to the whole group; an option's own `isDisabled` to it alone.
@@ -30,7 +33,7 @@ export function CheckboxGroup({
   description,
   errorMessage,
   value,
-  defaultValue = [],
+  defaultValue = NONE,
   onChange,
   isRequired,
   isInvalid,

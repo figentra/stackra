@@ -42,7 +42,7 @@ const RETRY = Object.freeze({
 });
 
 /** Methods that act the same however often they are sent. */
-const IDEMPOTENT_METHODS: readonly string[] = ["GET", "HEAD", "PUT", "DELETE"];
+const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD", "PUT", "DELETE"]);
 
 /** Whether a status means "try again later": a timeout, a rate limit or a server failure. */
 const isTransient = (status: number): boolean => status === 408 || status === 429 || status >= 500;
@@ -158,7 +158,6 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
           auth.token?.header ?? "authorization",
           (auth.token?.format ?? "Bearer {accessToken}").replace("{accessToken}", token),
         );
-        return;
       }
     }
   }
@@ -200,7 +199,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const key = request.idempotencyKey;
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
     const retryable =
-      IDEMPOTENT_METHODS.includes(method) || (key !== undefined && idempotencyHeader !== undefined);
+      IDEMPOTENT_METHODS.has(method) || (key !== undefined && idempotencyHeader !== undefined);
     await authorize(headers, url);
     const init: RequestInit = {
       method,

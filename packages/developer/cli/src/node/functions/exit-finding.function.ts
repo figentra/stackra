@@ -27,6 +27,7 @@ export function exitFinding(
   const last = `${output.stdout}\n${output.stderr}`
     .split("\n")
     .map((line) => line.trim())
+    // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
     .filter(Boolean)
     .at(-1);
   return toolFinding(phase, {

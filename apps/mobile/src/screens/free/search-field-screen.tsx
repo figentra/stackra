@@ -81,6 +81,7 @@ function LiveSearch() {
 
   // The timer is cleared when the text changes again, so only the last search ends the busy state.
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- reason: a demo of a busy state: the effect starts a pretend request and marks it busy
     setIsSearching(true);
     const timer = setTimeout(() => setIsSearching(false), SEARCH_MILLISECONDS);
     return () => clearTimeout(timer);

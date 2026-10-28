@@ -60,6 +60,7 @@ function checkHeader(text: string): string | undefined {
  */
 function docOf(sf: ts.SourceFile, text: string, node: ts.Node): string | undefined {
   const comments = ts.getLeadingCommentRanges(text, node.pos) ?? [];
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   const block = comments.filter((c) => text.startsWith("/**", c.pos)).at(-1);
   if (!block) return undefined;
   const between = text.slice(block.end, node.getStart(sf)).replace(/\/\/[^\n]*/g, "");

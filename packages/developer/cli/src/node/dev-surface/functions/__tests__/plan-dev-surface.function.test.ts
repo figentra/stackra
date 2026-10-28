@@ -91,8 +91,9 @@ describe("planDevSurface", () => {
       { shellOrigin: "not a url" },
       { shellOrigin: "file:///tmp" },
     ];
+    const dir = root;
     for (const options of cases) {
-      expect(() => planDevSurface(root, "console", ENTRY, options)).toThrow(CliUsageError);
+      expect(() => planDevSurface(dir, "console", ENTRY, options)).toThrow(CliUsageError);
     }
     expect(() =>
       planDevSurface(

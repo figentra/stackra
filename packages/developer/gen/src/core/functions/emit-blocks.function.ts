@@ -32,7 +32,7 @@ export function emitBlocks(ir: MemberIR): GeneratedFile[] {
     ]);
     const rows: string[] = [];
     for (const block of blocks) {
-      const folder = block.file.split("/").slice(-2, -1)[0] ?? "";
+      const folder = block.file.split("/").at(-2) ?? "";
       const component = componentBeside(ir, block.file, folder, runtime);
       if (component === undefined) continue;
       for (const target of [{ name: block.name, from: block.importPath }, component])

@@ -28,7 +28,7 @@ describe("CurrencyCode", () => {
     const lower: CurrencyCode = "usd";
     // @ts-expect-error -- XXX has no minor unit
     const none: CurrencyCode = "XXX";
-    const plain: string = "EUR";
+    const plain = "EUR" as string;
     // @ts-expect-error -- a plain string is checked first (Money.ofMinor or currencyCode())
     const unchecked: CurrencyCode = plain;
     expect([lower, none, unchecked]).toEqual(["usd", "XXX", "EUR"]);

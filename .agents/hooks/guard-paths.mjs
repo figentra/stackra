@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
- * PreToolUse (Write|Edit|MultiEdit|NotebookEdit): refuse writes to generated, vendored or secret paths — anything a
+ * Stackra file contract:
+ * Purpose: PreToolUse (Write|Edit|MultiEdit|NotebookEdit): refuse writes to generated, vendored or secret paths — anything a
  * tool other than the agent owns, and source paths whose branch has no answered spec and plan (the plan gate,
  * ADR 0362). PreToolUse (Read|Grep|Glob): refuse the secrets inbox (ADR 0257) and secret files.
  * The path rules live in `_rules.mjs`, shared with the OpenCode guard (ADR 0293); the AGENTS.md block check needs
  * the edit payload, so it stays here.
+ * Boundary: reads the hook payload and prints a decision; the path rules live in `_rules.mjs`.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0293; ADR 0257; ADR 0362.
  */
 import { readStdin, collectStrings, deny, failOpen } from "./_io.mjs";
 import { decidePlanGate, decideRead, decideWrite } from "./_rules.mjs";

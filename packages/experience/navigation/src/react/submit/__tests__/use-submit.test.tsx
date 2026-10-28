@@ -7,11 +7,10 @@
  * Governing contract: ADR 0022; ADR 0165 (form adapters); ADR 0140.
  */
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { vi } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { useSubmit } from "#react/submit/use-submit";

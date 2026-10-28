@@ -109,7 +109,6 @@ function write(doc: Doc, change: EditorChange): void {
       if (!(props instanceof YMap)) return;
       if (change.value === undefined) props.delete(change.name);
       else props.set(change.name, change.value);
-      return;
     }
   }
 }

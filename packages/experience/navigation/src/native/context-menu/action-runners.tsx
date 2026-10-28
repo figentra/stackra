@@ -12,6 +12,9 @@ import type { ActionRef } from "@stackra/clients";
 import { useAction, type UseActionResult } from "@stackra/clients/react";
 import type { ReactElement } from "react";
 
+/** One empty list for every render, so a default never changes identity. */
+const NO_RUNNERS: readonly UseActionResult<ActionRef>[] = [];
+
 /**
  * Renders `children` with a runner for each of `actions`.
  *
@@ -20,7 +23,7 @@ import type { ReactElement } from "react";
  */
 export function ActionRunners({
   actions,
-  runners = [],
+  runners = NO_RUNNERS,
   children,
 }: {
   readonly actions: readonly ActionRef[];

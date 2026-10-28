@@ -44,7 +44,7 @@ export class MemoryDeviceSequenceStoreDriver extends Driver(DeviceSequenceStore)
       Object.freeze({
         deviceId,
         sequence,
-        settledAt: new Date(at.getTime()),
+        settledAt: new Date(at),
         ...(scope === undefined ? {} : { scope }),
       }),
     );

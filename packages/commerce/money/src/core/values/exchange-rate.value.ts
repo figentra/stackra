@@ -61,7 +61,7 @@ export class ExchangeRate {
     this.unit = snapshot.unit;
     this.rate = snapshot.rate;
     this.source = snapshot.source;
-    this.at = new Date(snapshot.at.getTime());
+    this.at = new Date(snapshot.at);
   }
 
   /**
@@ -135,7 +135,7 @@ export class ExchangeRate {
       unit: this.unit,
       rate: this.rate,
       source: this.source,
-      at: new Date(this.at.getTime()),
+      at: new Date(this.at),
     };
   }
 }

@@ -96,7 +96,11 @@ vi.mock("#native/button/button", async () => {
       received.buttons.push(props);
       return createElement(
         "button",
-        { "aria-label": props["label"] as string, onClick: props["onPress"] as () => void },
+        {
+          type: "button",
+          "aria-label": props["label"] as string,
+          onClick: props["onPress"] as () => void,
+        },
         props["children"] as ReactNode,
       );
     },

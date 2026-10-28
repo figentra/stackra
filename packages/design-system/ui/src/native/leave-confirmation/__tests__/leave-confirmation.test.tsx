@@ -33,10 +33,15 @@ vi.mock("#native/alert-dialog/alert-dialog", async () => {
         { role: "alertdialog" },
         createElement("h2", null, props["title"] as ReactNode),
         createElement("p", null, props["description"] as ReactNode),
-        createElement("button", { onClick: () => close(false) }, props["cancelLabel"] as string),
+        createElement(
+          "button",
+          { type: "button", onClick: () => close(false) },
+          props["cancelLabel"] as string,
+        ),
         createElement(
           "button",
           {
+            type: "button",
             onClick: () => {
               (props["onConfirm"] as () => void)();
               close(false);

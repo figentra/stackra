@@ -14,7 +14,7 @@
  * Augment it beside the matcher: `declare module "@stackra/testing" { interface Matchers<R> { toY(arg: A): R } }`,
  * returning `Promise<R>` for an async matcher. `R` is what the assertion returns.
  */
-// oxlint-disable-next-line typescript/no-empty-object-type -- empty until a package augments it with a matcher
+// oxlint-disable-next-line typescript/no-empty-object-type, typescript/no-empty-interface -- empty until a package augments it with a matcher
 export interface Matchers<R> extends Record<never, R> {}
 
 /** Our `Matchers`, named apart so the vitest augmentation below can extend it. */
@@ -22,9 +22,10 @@ type StackraMatchers<R> = Matchers<R>;
 
 declare module "vitest" {
   // The type parameters repeat vitest's own `Matchers` declaration exactly, as declaration merging requires.
-  // oxlint-disable-next-line typescript/no-empty-object-type, no-unused-vars, no-shadow -- merges with vitest's own Matchers, so it repeats its unused params and its name
+  /* oxlint-disable typescript/no-empty-object-type, typescript/no-empty-interface, no-unused-vars, no-shadow -- merges with vitest's own Matchers, so it repeats its unused params and its name */
   interface Matchers<
     R extends void | Promise<void> = void | Promise<void>,
     T = unknown,
   > extends StackraMatchers<R> {}
+  /* oxlint-enable typescript/no-empty-object-type, typescript/no-empty-interface, no-unused-vars, no-shadow */
 }

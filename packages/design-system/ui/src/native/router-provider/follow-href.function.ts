@@ -31,5 +31,6 @@ export function followHref(
     return;
   }
   // The URL stays out of the warning: it may hold a token.
+  // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency
   Linking.openURL(href).catch(() => console.warn(couldNotOpen));
 }

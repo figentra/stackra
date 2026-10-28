@@ -9,8 +9,9 @@
  *           of every member under `packages/`; writes nothing. Two lists exempt a name: `ALLOWED`, the intended
  *           copies (permanent, each with its reason), and `PENDING`, the known duplicates another batch removes
  *           (stackra-225 renames, stackra-223, unfiled gap-analysis rows); a pending entry is deleted when its batch
- *           lands. Run directly it prints the findings and exits 1, plus a note for allow-list entries that no longer
- *           match a duplicate.
+ *           lands. `PENDING` only shrinks (rule-gap N-6, stackra-229): an entry that no longer matches a duplicate is a
+ *           finding, so it is deleted in the change that removed the copy. Run directly it prints the findings and
+ *           exits 1, plus a note for `ALLOWED` entries that no longer match a duplicate.
  * Runtime: node
  * Governing contract: ADR 0305 (one declaration per file, one home per concept); gap analysis cross-redundancy rows
  *                     1, 22 and 23; stackra-224 (STA-1382).
@@ -48,41 +49,15 @@ export const ALLOWED = Object.freeze({
 /** The names stackra-225 (STA-1383) renames or gives one home: its issue list plus gap-analysis row 22. */
 const BY_225 = [
   "Aggregate",
-  "AssuranceLevel",
-  "BlockNode",
-  "Capability",
-  "CapabilityGateways",
-  "CatalogueRow",
   "DecideOptions",
-  "Decision",
-  "ErrorKind",
-  "Facts",
   "FormField",
-  "FormStep",
-  "GeoPoint",
-  "Interval",
-  "JournalEntry",
-  "JournalLine",
-  "LocalizedText",
-  "MeterKind",
-  "OneTimeCodeRecord",
-  "PushTransport",
   "Run",
   "Segment",
-  "Signal",
   "SignatureRequest",
-  "SortDirection",
-  "StackraManifest",
-  "Theme",
-  "ThemeDiff",
-  "Tone",
   "decide",
-  "diffTheme",
-  "hasCapability",
   "providerCodeOf",
   "redact",
   "signal",
-  "visibleFields",
 ];
 
 /** Infrastructure helpers copied between the infra programs (gap-analysis row 14, `@stackra/infra-kit`; no batch yet). */
@@ -163,7 +138,6 @@ const UNREVIEWED = [
 /** Known duplicates another batch removes: name to owner. Delete an entry when its batch lands. */
 export const PENDING = Object.freeze({
   ...Object.fromEntries(BY_225.map((name) => [name, "stackra-225"])),
-  backoffDelay: "stackra-223 (one backoffDelay in contracts)",
   ...Object.fromEntries(
     INFRA_KIT.map((name) => [name, "unfiled: gap-analysis row 14 (infra-kit)"]),
   ),
@@ -224,7 +198,8 @@ export function duplicateExports(root) {
  * exempts. `allowed` and `pending` default to the lists above; tests pass their own.
  */
 export function duplicateExportFindings(root, allowed = ALLOWED, pending = PENDING) {
-  return [...duplicateExports(root)]
+  const duplicates = duplicateExports(root);
+  const copies = [...duplicates]
     .filter(([exported]) => !Object.hasOwn(allowed, exported) && !Object.hasOwn(pending, exported))
     .map(([exported, rows]) => ({
       dir: rows[0].file.split(/[/\\]src[/\\]/)[0],
@@ -233,6 +208,15 @@ export function duplicateExportFindings(root, allowed = ALLOWED, pending = PENDI
         "give it one home and import it (helpers go to @stackra/support), or add it to ALLOWED in " +
         "tools/scripts/duplicate-exports.mjs with the reason",
     }));
+  // PENDING is a ratchet that only shrinks: an entry whose duplicate is gone must leave the list (rule-gap N-6).
+  const stale = Object.keys(pending)
+    .filter((name) => !duplicates.has(name))
+    .sort()
+    .map((name) => ({
+      dir: "tools/scripts",
+      text: `PENDING name ${name} is no longer declared in two packages: delete it from PENDING in duplicate-exports.mjs`,
+    }));
+  return [...copies, ...stale];
 }
 
 /** Allow-list names (either list) that no longer match a duplicate, so the lists can shrink. */
@@ -247,8 +231,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const findings = duplicateExportFindings(root);
   for (const { dir, text } of findings) console.error(`${dir}: ${text}`);
-  const stale = staleAllowListEntries(root);
+  const stale = staleAllowListEntries(root, ALLOWED, {});
   if (stale.length)
-    console.error(`note: no longer duplicated, remove from the allow-list: ${stale.join(", ")}`);
+    console.error(`note: no longer duplicated, remove from ALLOWED: ${stale.join(", ")}`);
   if (findings.length) process.exit(1);
 }

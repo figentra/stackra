@@ -31,14 +31,14 @@ import { BalanceExceededError } from "#core/errors/balance-exceeded.error";
 import type { PaymentService } from "#core/services/payment.service";
 
 /** Payment states that pay a part. */
-const PAID: readonly PaymentStatus[] = [
+const PAID: ReadonlySet<PaymentStatus> = new Set([
   PaymentStatus.Captured,
   PaymentStatus.PartiallyRefunded,
   PaymentStatus.Refunded,
-];
+]);
 
 /** Payment states that free a part's share. */
-const RELEASED: readonly PaymentStatus[] = [PaymentStatus.Failed, PaymentStatus.Voided];
+const RELEASED: ReadonlySet<PaymentStatus> = new Set([PaymentStatus.Failed, PaymentStatus.Voided]);
 
 /**
  * Partial payments. Inject it by class.
@@ -152,7 +152,7 @@ export class PaymentBalanceService extends Service {
         }
         const found = await this.records.find(part.reference);
         const record =
-          found === null || PAID.includes(found.status) || RELEASED.includes(found.status)
+          found === null || PAID.has(found.status) || RELEASED.has(found.status)
             ? found
             : await this.payments.reconcile(part.reference);
         parts.push({ ...part, state: stateOf(record) });
@@ -203,7 +203,7 @@ export class PaymentBalanceService extends Service {
       return await call();
     } catch (error) {
       const record = await this.records.find(part);
-      if (record === null || RELEASED.includes(record.status))
+      if (record === null || RELEASED.has(record.status))
         await this.balances.exclusive(balance, async () => {
           const current = await this.load(balance);
           await this.save({
@@ -245,8 +245,8 @@ export class PaymentBalanceService extends Service {
  */
 function stateOf(record: PaymentRecord | null): BalancePart["state"] {
   if (record === null) return "open";
-  if (PAID.includes(record.status)) return "paid";
-  if (RELEASED.includes(record.status)) return "released";
+  if (PAID.has(record.status)) return "paid";
+  if (RELEASED.has(record.status)) return "released";
   return "open";
 }
 

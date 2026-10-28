@@ -253,6 +253,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
   };
 
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- reason: a click on the scrim closes the dialog; Escape closes it natively
     <dialog
       ref={dialog}
       aria-label={STRINGS.label}
@@ -266,6 +267,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
             <Icon name="search" tone="muted" />
             <input
               type="text"
+              // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props -- reason: aria-controls is spread in only while the list is shown
               role="combobox"
               aria-label={STRINGS.label}
               aria-expanded={flat.length > 0}
@@ -322,6 +324,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
                       {group.items.map((item) => {
                         const isActive = item === current;
                         return (
+                          // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- reason: the input keeps the focus and moves the active option (aria-activedescendant)
                           <div
                             key={item.id}
                             id={optionId(item)}

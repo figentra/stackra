@@ -12,9 +12,8 @@ import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { I18nConfig, Locale } from "@stackra/i18n";
 import { SeoConfig } from "@stackra/seo";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createContext, RouterContextProvider } from "react-router";
-import { vi } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";
 import { routeContext } from "#react/route-context/route-context.function";

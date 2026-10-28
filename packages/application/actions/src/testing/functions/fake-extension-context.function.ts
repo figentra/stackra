@@ -24,7 +24,7 @@ export function fakeExtensionContext(overrides: Partial<ExtensionContext> = {}):
     actor: TEST_ACTOR,
     ...CALL_DEFAULTS,
     abortSignal: new AbortController().signal,
-    now: () => new Date(at.getTime()),
+    now: () => new Date(at),
     ...overrides,
   });
 }

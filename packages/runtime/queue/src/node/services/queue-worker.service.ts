@@ -28,8 +28,7 @@ import type { Actor, Clock } from "@stackra/contracts";
 import { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 
-import type { QueueDriver } from "#contracts/index";
-import type { JobError, QueuedJob } from "#contracts/index";
+import type { QueueDriver, JobError, QueuedJob } from "#contracts/index";
 import { JOB_BACKOFF } from "#core/constants/job-backoff.constant";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";

@@ -3,6 +3,7 @@
  * Purpose: hold `duplicate-exports.mjs` to its contract: a name declared in two packages' `src/` is a finding naming
  *          both; re-exports, tests, `.d.ts` files, one package declaring a value and a type of one name, and members
  *          outside `packages/` do not count; `ALLOWED` and `PENDING` exempt a name; stale allow-list entries are listed;
+ *          a `PENDING` entry with no duplicate left is a finding (shrink-only, rule-gap N-6);
  *          the shipped lists keep the copies stackra-224 removed out of them.
  * Boundary: writes fixture workspaces into temp directories; reads nothing of this checkout.
  * Runtime: node
@@ -113,6 +114,20 @@ test("ALLOWED and PENDING exempt a name, and stale entries are listed", () => {
   ]);
 });
 
+test("a PENDING entry whose duplicate is gone is a finding, so the list only shrinks", () => {
+  const root = workspace(MEMBERS, {
+    "packages/foundation/support/src/core/a.ts": "export const one = 1;\n",
+    "packages/data/documents/src/core/b.ts": "export const one = 1;\nexport const solo = 2;\n",
+  });
+  assert.deepEqual(duplicateExportFindings(root, {}, { one: "stackra-225", solo: "stackra-225" }), [
+    {
+      dir: "tools/scripts",
+      text: "PENDING name solo is no longer declared in two packages: delete it from PENDING in duplicate-exports.mjs",
+    },
+  ]);
+  assert.deepEqual(duplicateExportFindings(root, { gone: "intended" }, { one: "stackra-225" }), []);
+});
+
 test("the shipped lists never exempt a helper stackra-224 gave one home", () => {
   for (const name of [
     "ageOn",
@@ -130,5 +145,5 @@ test("the shipped lists never exempt a helper stackra-224 gave one home", () => 
     assert.equal(Object.hasOwn(ALLOWED, name) || Object.hasOwn(PENDING, name), false, name);
   }
   for (const reason of Object.values(ALLOWED)) assert.ok(reason.length > 20);
-  assert.equal(PENDING.GeoPoint, "stackra-225");
+  assert.equal(PENDING.Aggregate, "stackra-225");
 });

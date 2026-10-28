@@ -23,7 +23,7 @@ import type { Gs1ElementString } from "#core/types/gs1-element-string.type";
 const GS = "\u001d";
 
 /** The AIM symbology identifiers of the GS1 symbologies: GS1-128, DataBar, DataMatrix, QR Code, DotCode. */
-const GS1_SYMBOLOGIES = ["]C1", "]e0", "]d2", "]Q3", "]J1"];
+const GS1_SYMBOLOGIES = new Set(["]C1", "]e0", "]d2", "]Q3", "]J1"]);
 
 /** The identifiers whose last digit is a GS1 check digit. */
 const CHECKED = ["00", "01", "02"];
@@ -38,7 +38,7 @@ const CHECKED = ["00", "01", "02"];
  */
 export function parseGs1ElementString(code: string): Gs1ElementString | null {
   const symbology = code.startsWith("]") ? code.slice(0, 3) : null;
-  if (symbology !== null && !GS1_SYMBOLOGIES.includes(symbology)) return null;
+  if (symbology !== null && !GS1_SYMBOLOGIES.has(symbology)) return null;
   const body = symbology === null ? code : code.slice(3);
   const pairs = body.startsWith("(") ? bracketed(body) : raw(body);
   if (pairs === null || pairs.length === 0) return null;

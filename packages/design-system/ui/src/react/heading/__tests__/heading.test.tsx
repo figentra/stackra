@@ -84,6 +84,6 @@ describe("Heading (web)", () => {
     // @ts-expect-error the level is required
     void (<Heading>Title</Heading>);
     // @ts-expect-error the level owns the element
-    void (<Heading level={1} render={(props) => <h2 {...props} />} />);
+    void (<Heading level={1} render={(props) => <h2 {...props} />} />); // oxlint-disable-line jsx-a11y/heading-has-content -- reason: a type test; the spread props carry the content
   });
 });

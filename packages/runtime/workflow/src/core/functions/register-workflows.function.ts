@@ -17,7 +17,12 @@ import type { AnyClass } from "@stackra/container";
 import { WORKFLOW_KEYS } from "#core/constants/workflow-keys.constant";
 
 /** The kinds a key may name: a workflow, a signal, and an event a step waits for. */
-const KINDS: readonly string[] = ["workflow", "signal", "domain_event", "integration_event"];
+const KINDS: ReadonlySet<string> = new Set([
+  "workflow",
+  "signal",
+  "domain_event",
+  "integration_event",
+]);
 
 /** The version of a workflow class (1 unless its options say otherwise); `undefined` for another kind. */
 function versionOf(type: AnyClass): number | undefined {
@@ -42,7 +47,7 @@ export function registerWorkflows(
   rows: readonly { readonly type: AnyClass; readonly key: string }[],
 ): void {
   for (const { type, key } of rows) {
-    if (!KINDS.includes(kindOf(type)?.kind ?? ""))
+    if (!KINDS.has(kindOf(type)?.kind ?? ""))
       throw new TypeError(
         `registerWorkflows: ${type.name} is not a workflow, a signal or an event`,
       );

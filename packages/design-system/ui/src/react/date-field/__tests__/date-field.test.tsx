@@ -27,8 +27,7 @@ import type { DateFieldProps } from "#react/date-field/date-field.props";
 const MARCH_5 = new CalendarDate(2026, 3, 5);
 const key = (element: HTMLElement, name: string) => fireEvent.keyDown(element, { key: name });
 // HeroUI's group and React Aria's date input both carry the field's group role and name, one inside the other.
-const group = (name: string = "Due date") =>
-  screen.getAllByRole("group", { name })[0] as HTMLElement;
+const group = (name = "Due date") => screen.getAllByRole("group", { name })[0] as HTMLElement;
 const segments = () => screen.getAllByRole("spinbutton");
 /** The text of each segment, for example `["3", "5", "2026"]`. */
 const shown = () => segments().map((segment) => segment.textContent);

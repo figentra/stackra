@@ -1484,7 +1484,7 @@ export function createSourceReader(
       return "relation";
     const hatch = decorators.find((use) => use.name === "Field");
     let type: TypeDesc;
-    let nullable = false;
+    let nullable: boolean;
     if (hatch !== undefined) {
       if (!quiet && !/\/\/\s*reason:/.test(host.leading(declaration)))
         fail(
@@ -1715,7 +1715,7 @@ export function createSourceReader(
     traitFields: readonly string[],
   ): EntityIR => {
     // Base-most first, as `fieldsOf` reads a chain: a base's declaration holds the decorators.
-    const baseFirst = chain.reduceRight<TsNode[]>((links, link) => [...links, link], []);
+    const baseFirst = [...chain].reverse();
     const properties = baseFirst.flatMap(propertiesOf);
     const declarations = new Map<string, TsNode>();
     for (const property of properties)

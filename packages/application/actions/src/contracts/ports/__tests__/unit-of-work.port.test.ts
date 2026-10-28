@@ -36,9 +36,11 @@ describe("UnitOfWork", () => {
   it("is implemented by a driver", async () => {
     const driver = new LogDriver();
     expect(await driver.transaction(async () => 1)).toBe(1);
-    await expect(driver.transaction(async () => Promise.reject(new Error("boom")))).rejects.toThrow(
-      "boom",
-    );
+    await expect(
+      driver.transaction(async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
     expect(driver.log).toEqual(["begin", "commit", "begin", "rollback"]);
   });
 });

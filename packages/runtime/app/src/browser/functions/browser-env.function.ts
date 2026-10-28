@@ -13,6 +13,7 @@ declare global {
   interface ImportMeta {
     readonly env: ImportMetaEnv;
   }
+  // oxlint-disable-next-line typescript/no-empty-interface, typescript/no-empty-object-type -- reason: an app's env typing merges its keys into this global
   interface ImportMetaEnv {}
 }
 

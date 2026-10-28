@@ -77,7 +77,7 @@ export function pagesPlugin(pages: readonly Page[]): Plugin {
             isRelativeBase && typeof asset.source === "string"
               ? relocate(asset.source, depthOf(generated), depthOf(fileName))
               : asset.source;
-          delete bundle[generated];
+          Reflect.deleteProperty(bundle, generated);
           this.emitFile({ type: "asset", fileName, source });
         }
       },

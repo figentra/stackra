@@ -262,6 +262,7 @@ export class RealtimeRooms extends Service {
     const token = new URL(request.url).searchParams.get("token") ?? "";
     const encoder = new TextEncoder();
     let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+    // oxlint-disable-next-line prefer-const -- reason: read by the close handler created before it is set; const would put it in the TDZ
     let heartbeat: ReturnType<typeof setInterval> | undefined;
     let closed = false;
     const send = (text: string): void => {

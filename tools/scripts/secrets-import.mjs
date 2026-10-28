@@ -509,6 +509,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ["SIGINT", 130],
     ["SIGTERM", 143],
   ])
+    // oxlint-disable-next-line no-loop-func -- reason: the handler must read the live `liveTemp` when the signal arrives
     process.once(sig, () => {
       if (liveTemp) rmSync(liveTemp, { recursive: true, force: true });
       process.exit(code);

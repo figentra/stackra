@@ -52,10 +52,13 @@ function StandInField({ binding }: { binding: FormFieldBinding<string> }) {
   );
 }
 
+/** A submit handler that ignores the values. */
+const ignore = (): undefined => undefined;
+
 /** A form with one required email field bound by FormField. */
 function Harness({
   isDisabled = false,
-  onSubmit = () => undefined,
+  onSubmit = ignore,
 }: {
   isDisabled?: boolean;
   onSubmit?: (values: Values) => void;

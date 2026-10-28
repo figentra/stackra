@@ -92,6 +92,7 @@ export class ChannelLoggerDriver extends Driver(Logger) {
     try {
       this.reporter.report(record);
     } catch (error) {
+      // oxlint-disable-next-line no-console -- reason: the logger's last-resort sink when its reporter throws
       console.error(
         JSON.stringify({
           time: record.time,

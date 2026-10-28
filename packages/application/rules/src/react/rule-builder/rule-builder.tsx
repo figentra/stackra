@@ -18,6 +18,9 @@ import { ConditionEditor } from "#react/rule-builder/condition-editor";
 import { OutcomesEditor } from "#react/rule-builder/outcomes-editor";
 import type { RuleBuilderProps } from "#react/rule-builder/rule-builder.props";
 
+/** One empty list for every render, so a default never changes identity. */
+const NO_OUTCOMES: NonNullable<RuleBuilderProps["outcomes"]> = [];
+
 /**
  * The rule builder.
  *
@@ -31,7 +34,7 @@ export function RuleBuilder({
   rules,
   value,
   onChange,
-  outcomes = [],
+  outcomes = NO_OUTCOMES,
   onOutcomesChange,
   floors,
   isReadOnly = false,

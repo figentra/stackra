@@ -44,6 +44,7 @@ vi.mock("#native/icon/icon", () => ({
 }));
 vi.mock("#native/link/link", () => ({
   Link: ({ children, href, onPress }: Record<string, unknown> & { children?: ReactNode }) => (
+    // oxlint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- reason: a test stand-in for the native Link; it only records the press
     <a
       data-testid="link"
       data-href={href as string | undefined}

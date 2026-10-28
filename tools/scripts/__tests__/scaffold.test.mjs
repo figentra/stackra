@@ -315,9 +315,14 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
     for (const glass of ["expo-blur", "expo-glass-effect"])
       assert.ok(!(glass in dependencies), `${kind}: ${glass}`);
     // Beside the root module, src/ holds only the stand-ins gen replaces; the entry is marked (ADR 0294 d14).
-    const STAND_INS = ["src/main.ts", "src/main.tsx", "src/app.tsx", "src/window-options.ts"];
+    const STAND_INS = new Set([
+      "src/main.ts",
+      "src/main.tsx",
+      "src/app.tsx",
+      "src/window-options.ts",
+    ]);
     for (const f of files.filter((file) => /^src\/[^/]+(?<!\.d)\.tsx?$/.test(file)))
-      assert.ok(f === `src/${names[kind]}.module.ts` || STAND_INS.includes(f), `${kind}: ${f}`);
+      assert.ok(f === `src/${names[kind]}.module.ts` || STAND_INS.has(f), `${kind}: ${f}`);
     const entry = files.find((f) => /^src\/main\.tsx?$/.test(f));
     // Accepted stand-in: the removal trigger is STA-339, when gen writes the entries.
     assert.match(

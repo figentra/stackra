@@ -38,10 +38,15 @@ vi.mock("@stackra/ui/react", async () => {
   type Props = Record<string, any>;
   const buttons = (actions: { id: string; label: string; onPress?: () => void }[] = []) =>
     actions.map((action) =>
-      createElement("button", { key: action.id, onClick: () => action.onPress?.() }, action.label),
+      createElement(
+        "button",
+        { type: "button", key: action.id, onClick: () => action.onPress?.() },
+        action.label,
+      ),
     );
   return {
-    Button: (props: Props) => createElement("button", { onClick: props.onPress }, props.children),
+    Button: (props: Props) =>
+      createElement("button", { type: "button", onClick: props.onPress }, props.children),
     EmptyState: (props: Props) => createElement("div", null, props.title, props.actions),
     FilterBar: (props: Props) =>
       createElement("p", null, props.filters.map((filter: Props) => filter.label).join(",")),
@@ -65,10 +70,10 @@ vi.mock("@stackra/ui/react", async () => {
                 buttons(props.rowActions?.(item)),
               ),
             ),
-        createElement("button", { onClick: props.onNext }, "next"),
+        createElement("button", { type: "button", onClick: props.onNext }, "next"),
         createElement(
           "button",
-          { onClick: () => props.onSelectionChange?.(["ord_1", "ord_2"]) },
+          { type: "button", onClick: () => props.onSelectionChange?.(["ord_1", "ord_2"]) },
           "select",
         ),
         createElement("nav", null, buttons(props.bulkActions)),

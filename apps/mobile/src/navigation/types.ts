@@ -149,6 +149,7 @@ export type HomeStackParamList = {
 
 declare global {
   namespace ReactNavigation {
+    // oxlint-disable-next-line typescript/no-empty-interface, typescript/no-empty-object-type -- reason: React Navigation's global param list is typed by merging this interface
     interface RootParamList extends RootStackParamList {}
   }
 }

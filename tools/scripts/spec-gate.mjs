@@ -139,9 +139,9 @@ export function checkPlan(plan, spec) {
     else if (/^N\/A$/i.test(result) && !note)
       problems.push(`plan.md: Constitution Check \`${law}\` is N/A without a reason`);
   }
-  const modes = tableRows(section("Deploy modes")).map(([m]) => m.toLowerCase());
+  const modes = new Set(tableRows(section("Deploy modes")).map(([m]) => m.toLowerCase()));
   for (const mode of ["saas", "on-prem", "air-gapped"])
-    if (!modes.includes(mode)) problems.push(`plan.md: Deploy modes has no \`${mode}\` row`);
+    if (!modes.has(mode)) problems.push(`plan.md: Deploy modes has no \`${mode}\` row`);
   const validated = new Set([...properties(plan).values()].flat());
   const frLines = definedLines(spec, "FR");
   for (const fr of definedIds(spec, "FR").live)
@@ -420,7 +420,9 @@ export function tripwire(root = ROOT) {
     let speckit;
     try {
       speckit = JSON.parse(workflows).workflows?.speckit;
-    } catch {}
+    } catch {
+      // unreadable workflows file: nothing is enabled
+    }
     if (speckit && speckit.enabled !== false)
       problems.push(
         "the bundled `speckit` workflow is enabled (`specify workflow disable speckit`)",
@@ -577,7 +579,9 @@ function main([mode, ...args]) {
     let branch = "";
     try {
       branch = execFileSync("git", ["branch", "--show-current"], { cwd: ROOT, encoding: "utf8" });
-    } catch {}
+    } catch {
+      // not a git checkout: no branch, so --key and --slug decide
+    }
     const { dir, error } = specDir({ branch: branch.trim(), key: opt("key"), slug: opt("slug") });
     if (error) {
       console.error(`spec-gate: ${error}`);

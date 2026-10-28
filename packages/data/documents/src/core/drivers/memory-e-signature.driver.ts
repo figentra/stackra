@@ -19,7 +19,7 @@ import { SignatureEnvelopeNotFoundError } from "#core/errors/signature-envelope-
 import { SignatureNotCompleteError } from "#core/errors/signature-not-complete.error";
 
 /** The statuses an envelope can still leave. */
-const OPEN: readonly SignatureStatus[] = [SignatureStatus.Sent, SignatureStatus.Viewed];
+const OPEN: ReadonlySet<SignatureStatus> = new Set([SignatureStatus.Sent, SignatureStatus.Viewed]);
 
 /**
  * Keeps envelopes in memory.
@@ -89,9 +89,9 @@ export class MemoryESignatureDriver extends Driver(ESignatureProvider) {
    */
   settle(envelopeId: string, status: SignatureStatus): SignatureEnvelope {
     const entry = this.entry(envelopeId);
-    if (!OPEN.includes(entry.envelope.status))
+    if (!OPEN.has(entry.envelope.status))
       throw SignatureEnvelopeClosedError.create({ envelopeId, status: entry.envelope.status });
-    const envelope: SignatureEnvelope = OPEN.includes(status)
+    const envelope: SignatureEnvelope = OPEN.has(status)
       ? { ...entry.envelope, status }
       : { ...entry.envelope, status, closedAt: new Date().toISOString() };
     this.envelopes.set(envelopeId, { ...entry, envelope });

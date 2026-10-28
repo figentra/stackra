@@ -71,13 +71,21 @@ vi.mock("@stackra/ui/native", async () => {
     seen.props["closeButton"] = props;
     return createElement(
       "button",
-      { onClick: props["onPress"] as () => void, "aria-label": props["label"] as string },
+      {
+        type: "button",
+        onClick: props["onPress"] as () => void,
+        "aria-label": props["label"] as string,
+      },
       null,
     );
   };
   const drawerClose = (props: Record<string, unknown>) => {
     seen.props["drawerClose"] = props;
-    return createElement("button", { "aria-label": props["label"] as string }, null);
+    return createElement(
+      "button",
+      { type: "button", "aria-label": props["label"] as string },
+      null,
+    );
   };
   return {
     Drawer: Object.assign(record("drawer"), {

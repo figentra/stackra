@@ -52,7 +52,10 @@ const MATCHES: readonly RowLevelSecurityOptions["match"][] = [
 ];
 
 /** The matches on an id column; the others are on an `ltree` path column. */
-const ID_MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "equalsOrUnset"];
+const ID_MATCHES: ReadonlySet<RowLevelSecurityOptions["match"]> = new Set([
+  "equals",
+  "equalsOrUnset",
+]);
 
 /** A declared row-level-security policy. */
 interface PolicySeed {
@@ -512,7 +515,7 @@ export class BlueprintRecord {
       throw new TypeError(
         `rowLevelSecurity("${name}") needs the ${name} column in the same ${this.table} blueprint`,
       );
-    if (!ID_MATCHES.includes(options.match) && column.type !== "ltree")
+    if (!ID_MATCHES.has(options.match) && column.type !== "ltree")
       throw new TypeError(
         `${this.table}.${name} is not ltree, so it takes no ${options.match} match`,
       );

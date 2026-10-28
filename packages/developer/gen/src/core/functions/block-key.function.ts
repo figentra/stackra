@@ -15,5 +15,5 @@ import { snakeCase } from "@stackra/support";
  * blockKey("web", "src/blocks/cta-banner/cta-banner.block.ts"); // "web.cta_banner"
  */
 export function blockKey(member: string, file: string): string {
-  return `${member}.${snakeCase(file.split("/").slice(-2, -1)[0] ?? "")}`;
+  return `${member}.${snakeCase(file.split("/").at(-2) ?? "")}`;
 }

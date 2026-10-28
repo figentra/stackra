@@ -35,7 +35,7 @@ const ANSWER = z
  * return zatcaOutcome(assertAnswered(await this.transport.send(request), this.key));
  */
 export function zatcaOutcome(response: TransportResponse): SubmissionOutcome {
-  let json: unknown = null;
+  let json: unknown;
   try {
     json = JSON.parse(response.body);
   } catch {

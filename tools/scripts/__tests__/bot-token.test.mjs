@@ -120,7 +120,10 @@ async function slowServer(plan) {
   return {
     url: `http://127.0.0.1:${server.address().port}/`,
     hits: () => hits,
-    close: () => (server.closeAllConnections(), server.close()),
+    close: () => {
+      server.closeAllConnections();
+      server.close();
+    },
   };
 }
 

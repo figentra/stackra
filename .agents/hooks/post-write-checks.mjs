@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-// PostToolUse (Write|Edit|MultiEdit): report (never fix, never block) a written file
-// that oxfmt would reformat. Best-effort only — a missing binary, an unbuilt workspace
-// or any other failure is swallowed via failOpen; the write already happened.
+/**
+ * Stackra file contract:
+ * Purpose: PostToolUse (Write|Edit|MultiEdit): report (never fix, never block) a written file that oxfmt would
+ *          reformat. Best-effort only — a missing binary, an unbuilt workspace or any other failure is swallowed via
+ *          failOpen; the write already happened.
+ * Boundary: reports only; runs the repository oxfmt in check mode on the written file, never writes.
+ * Runtime: node (agent hook)
+ * Governing contract: ADR 0016 (agents source of truth).
+ */
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve, sep } from "node:path";

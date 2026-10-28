@@ -1,8 +1,15 @@
-// The differential test (STA-330 review round 4): the guard's decision for a generated matrix of wrappers and guarded
-// commands, a hand-written list of ordinary agent commands that must stay allowed, and a time bound per decision, so
-// CI catches a regression instead of a review round. In-process (`decideBash`) in a temporary repository: main, the
-// session's own linked worktree `a` (feature/x, the cwd) and another agent's `b` (feature/y). Test data holds no real
-// secret, token or private path: `$MAIN`, `$WT`, `$OTHER` and `$SCRATCH` are filled in from the temporary repository.
+/**
+ * Stackra file contract:
+ * Purpose: The differential test (STA-330 review round 4): the guard's decision for a generated matrix of wrappers and
+ *          guarded commands, a hand-written list of ordinary agent commands that must stay allowed, and a time bound
+ *          per decision, so CI catches a regression instead of a review round. In-process (`decideBash`) in a temporary
+ *          repository: main, the session's own linked worktree `a` (feature/x, the cwd) and another agent's `b`
+ *          (feature/y). Test data holds no real secret, token or private path: `$MAIN`, `$WT`, `$OTHER` and `$SCRATCH`
+ *          are filled in from the temporary repository.
+ * Boundary: test only; builds a temporary repository and calls decideBash in process.
+ * Runtime: node (node:test)
+ * Governing contract: ADR 0293; STA-330; ADR 0022 (tests live in tests folders).
+ */
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import childProcess from "node:child_process";

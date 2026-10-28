@@ -150,7 +150,7 @@ describe("renderSystemMap", () => {
     const gapped = systemGraph([
       { nodes: [node("os", "orders", { calls: ["ghost"] })], flows: [] },
     ]);
-    const [index] = renderSystemMap(gapped, { base: "/map" }).filter(
+    const index = renderSystemMap(gapped, { base: "/map" }).find(
       (item) => item.path === "index.mdx",
     );
     expect(index?.content).toContain("- os.orders calls ghost, which no node in the graph answers");

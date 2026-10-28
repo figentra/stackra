@@ -130,14 +130,14 @@ interface Target {
 }
 
 /** The class kinds `hold` takes: a signal, or an event a step waits for. */
-const HOLDABLE: readonly string[] = ["signal", "domain_event", "integration_event"];
+const HOLDABLE: ReadonlySet<string> = new Set(["signal", "domain_event", "integration_event"]);
 
 /** The run statuses a tick advances. */
-const ACTIVE: readonly WorkflowRunStatus[] = [
+const ACTIVE: ReadonlySet<WorkflowRunStatus> = new Set([
   WorkflowRunStatus.Running,
   WorkflowRunStatus.Waiting,
   WorkflowRunStatus.Compensating,
-];
+]);
 
 /** The guard of an undo: never aborted, no watchdog. */
 const IDLE: Guard = Object.freeze({
@@ -394,7 +394,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * @throws TypeError when `signal` is neither a signal class nor an event class.
    */
   async hold(signal: AnyClass, payload: object, correlation?: string | object): Promise<void> {
-    if (!HOLDABLE.includes(kindOf(signal)?.kind ?? ""))
+    if (!HOLDABLE.has(kindOf(signal)?.kind ?? ""))
       throw new TypeError(`${signal.name} is not a signal: extend Signal`);
     const receivedAt = this.clock.now();
     const scope = await this.journal.currentScope();
@@ -567,7 +567,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     let advanced = false;
     await this.locks.tryWith(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
       const run = await this.journal.find(id);
-      if (run === undefined || !ACTIVE.includes(run.status)) return;
+      if (run === undefined || !ACTIVE.has(run.status)) return;
       const target = this.targetOf(run);
       if (target === undefined) return;
       await this.advance(run, target.instance, target.plan, now);
@@ -766,7 +766,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       const guard = guardOf(step);
       const current = run;
       try {
-        // oxlint-disable-next-line no-await-in-loop -- one attempt at a time
+        // oxlint-disable-next-line no-await-in-loop, no-loop-func -- one attempt at a time; the callback runs inside this attempt
         const done = await this.journal.transaction(current.scope, async () => {
           if (wait !== undefined && step.waitFor !== undefined) {
             const held = await this.journal.take(
@@ -887,7 +887,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     now: Date,
   ): Promise<Outcome> {
     let run = start;
-    const backwards = plan.steps.reduceRight<StepPlan[]>((list, step) => [...list, step], []);
+    const backwards = [...plan.steps].reverse();
     for (const step of backwards) {
       const record = recordOf(run, step.name);
       const { undo } = step;
@@ -943,7 +943,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     return Object.freeze({
       ...run.origin,
       abortSignal: guard.signal,
-      now: () => new Date(at.getTime()),
+      now: () => new Date(at),
       runId: run.id,
       step: method,
       stepKey: `${run.id}:${method}`,

@@ -263,6 +263,7 @@ class InspectAction extends Action({
     });
     return {
       now: ctx.now(),
+      // oxlint-disable-next-line no-self-compare -- reason: two calls, asserting the clock is fixed for the call
       sameNow: ctx.now().getTime() === ctx.now().getTime(),
       key: ctx.key,
       locale: ctx.locale,

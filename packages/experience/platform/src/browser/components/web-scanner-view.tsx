@@ -35,7 +35,9 @@ export function WebScannerView({
 }: ScannerViewProps): ReactNode {
   const video = useRef<HTMLVideoElement>(null);
   const handler = useRef(onBarcode);
-  handler.current = onBarcode;
+  useEffect(() => {
+    handler.current = onBarcode;
+  });
   const names = (formats ?? []).map((format) => BARCODE_DETECTOR_FORMATS[format]).join(",");
 
   useEffect(() => {

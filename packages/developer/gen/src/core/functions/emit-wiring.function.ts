@@ -470,10 +470,8 @@ export function emitWiring(ir: MemberIR): string {
     }
   }
   const added = new Set<string>();
-  for (let index = 0; index < used.length; index += 1) {
-    const entry = used[index];
-    if (entry === undefined) continue;
-    const { module, dep } = entry;
+  // The array iterator reads the live length, so the links pushed below are walked too.
+  for (const { module, dep } of used) {
     for (const next of link(dep)) used.push({ module, dep: next });
     const factory = dep.of;
     const deps: readonly (ClassRef | TokenRef)[] | undefined =
