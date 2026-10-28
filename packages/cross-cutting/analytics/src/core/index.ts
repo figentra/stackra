@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/analytics (the configuration with its shipped schema, the
- *          delivery state, the `AnalyticsClient` and the `none`, `memory` and `posthog` drivers) until `stackra gen` writes the entry barrels
+ *          delivery state, the `AnalyticsClient`, the `AnalyticsDestination` type and the `none`, `memory` and `posthog`
+ *          drivers, with the `none` driver lookup) until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. The port and the delivery type are the `./contracts` entry's;
  *           the native PostHog driver is the `./native` entry's (one symbol, one entry). The shipped schema is re-exported
@@ -17,6 +18,7 @@ export { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
 export { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
 export { MemoryAnalyticsOfflineQueueDriver } from "#core/drivers/memory-analytics-offline-queue.driver";
 export { NoneAnalyticsDriver } from "#core/drivers/none-analytics.driver";
+export { NoneAnalyticsDriverLookupDriver } from "#core/drivers/none-analytics-driver-lookup.driver";
 export { NoneAnalyticsOfflineQueueDriver } from "#core/drivers/none-analytics-offline-queue.driver";
 export { PosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
 export { StorageAnalyticsIdentityDriver } from "#core/drivers/storage-analytics-identity.driver";
@@ -24,4 +26,5 @@ export { StorageAnalyticsOfflineQueueDriver } from "#core/drivers/storage-analyt
 export { AnalyticsState } from "#core/enums/analytics-state.enum";
 export { AnalyticsOptions } from "#core/schemas/analytics-options.schema";
 export { AnalyticsClient } from "#core/services/analytics-client.service";
+export type { AnalyticsDestination } from "#core/types/analytics-destination.type";
 export type { AnalyticsDriverName } from "#core/types/analytics-driver-name.type";

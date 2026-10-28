@@ -24,6 +24,7 @@ describe("@stackra/analytics/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AnalyticsDeliveryKind",
       "AnalyticsDriver",
+      "AnalyticsDriverLookup",
       "AnalyticsIdentity",
       "AnalyticsOfflineQueue",
     ]);

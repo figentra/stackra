@@ -4,7 +4,8 @@
  *          how many events may wait for a decision, what a vendor driver captures on its own, where it sends, which
  *          property names never leave the device, the PostHog project key and host the `posthog` driver sends to, and
  *          where and how long the visitor's identity is kept after consent, and
- *          how the delivery engine batches, retries, samples and keeps events offline.
+ *          how the delivery engine batches, retries, samples and keeps events offline, and the destinations: named
+ *          driver instances and the list of destinations, each gated by its own consent category (stackra-407).
  * Boundary: a shape class; it registers this package's own schema (`ANALYTICS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(AnalyticsConfig)` validates with no generated file. The defaults send
  *           nothing anywhere: the `none` driver, gated by `analytics`, nothing captured automatically, no cookies.
@@ -16,12 +17,13 @@
  */
 import { ConsentCategory } from "@stackra/consent";
 import type { DriverName } from "@stackra/container";
-import { Int, Num, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, Num, registerSchemas, Schema } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
 import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
+import type { AnalyticsDestination } from "#core/types/analytics-destination.type";
 
 /**
  * The analytics settings.
@@ -111,11 +113,28 @@ export class AnalyticsOptions extends Schema {
   })
   sampleRates: Record<string, number> = {};
 
-  /** The registered `AnalyticsDriver` that sends; `none` sends nothing, `memory` keeps events, `posthog` sends there. */
+  /**
+   * Where deliveries go, each destination gated by its own consent category and routed by event name; empty sends to
+   * the `default` instance gated by `consentCategory`.
+   */
+  // reason: an array of objects a host override replaces whole; the shipped schema already states its rule
+  @Field(ANALYTICS_CONFIG_SCHEMA.shape.destinations)
+  destinations: AnalyticsDestination[] = [];
+
+  /**
+   * The registered `AnalyticsDriver` that sends (the `default` destination); `none` sends nothing, `memory` keeps
+   * events, `posthog` sends there.
+   */
   driver: DriverName<AnalyticsDriver> = "none";
 
-  /** The consent category that must be granted before any event leaves the device; never `necessary`. */
+  /**
+   * The consent category that gates the `default` destination when `destinations` is empty, and that must be granted
+   * before the visitor's identity is kept; never `necessary`.
+   */
   consentCategory: ConsentCategory = ConsentCategory.Analytics;
+
+  /** Named driver instances, instance name to driver name (`{ segment: "segment" }`), that destinations send to. */
+  drivers: Record<string, DriverName<AnalyticsDriver>> = {};
 
   /** A vendor driver records a page (or screen) view per navigation. */
   autocapturePageviews = false;

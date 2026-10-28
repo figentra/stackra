@@ -14,6 +14,7 @@ import { schemaOf } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
+import type { AnalyticsDestination } from "#core/types/analytics-destination.type";
 import { AnalyticsOptions } from "#core/schemas/analytics-options.schema";
 
 describe("AnalyticsOptions", () => {
@@ -32,5 +33,9 @@ describe("AnalyticsOptions", () => {
     expectTypeOf<AnalyticsOptions["ingestOrigin"]>().toEqualTypeOf<string>();
     expectTypeOf<AnalyticsOptions["posthogKey"]>().toEqualTypeOf<string | null>();
     expectTypeOf<AnalyticsOptions["posthogHost"]>().toEqualTypeOf<string>();
+    expectTypeOf<AnalyticsOptions["drivers"]>().toEqualTypeOf<
+      Record<string, DriverName<AnalyticsDriver>>
+    >();
+    expectTypeOf<AnalyticsOptions["destinations"]>().toEqualTypeOf<AnalyticsDestination[]>();
   });
 });

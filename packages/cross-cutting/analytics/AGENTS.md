@@ -11,6 +11,8 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 | The configuration (`AnalyticsConfig`) | `src/config/analytics.config.ts`                            |
 | Its shape and shipped `X$`            | `src/core/schemas/`, `src/core/constants/`                  |
 | The port and the delivery type        | `src/contracts/{ports,types}/`                              |
+| A destination's shape                 | `src/core/types/analytics-destination.type.ts`              |
+| A driver lookup driver                | `src/core/drivers/<name>-analytics-driver-lookup.driver.ts` |
 | A driver a host selects               | `src/core/drivers/<name>-analytics.driver.ts`               |
 | An identity driver                    | `src/core/drivers/<name>-analytics-identity.driver.ts`      |
 | An offline queue driver               | `src/core/drivers/<name>-analytics-offline-queue.driver.ts` |
@@ -48,6 +50,10 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
   formula), sampling and the offline queue. A driver sends once and rejects on failure; never add a retry loop to a
   driver (the native PostHog buffer resolves once it holds the events, so the client never resends them). Only
   deliveries that passed consent reach the buffer or the offline queue, and a refusal clears both.
+- Destinations (stackra-407): each destination is a lane in the client with its own consent category, routing,
+  queue, buffer and retries; never let one lane's consent or failure reach another. Every lane shares the event id
+  and visitor ids. The identity store follows `consentCategory` only. `include`/`exclude` route tracked events only;
+  `identify` and `group` go to every granted lane.
 - Production code never imports `./testing`; a driver a host can select ships in `.` (or `./native`).
 - `AnalyticsEvent` belongs to `@stackra/events`; never redefine it here.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

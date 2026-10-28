@@ -26,6 +26,7 @@ describe("@stackra/analytics", () => {
       "MemoryAnalyticsIdentityDriver",
       "MemoryAnalyticsOfflineQueueDriver",
       "NoneAnalyticsDriver",
+      "NoneAnalyticsDriverLookupDriver",
       "NoneAnalyticsOfflineQueueDriver",
       "PosthogAnalyticsDriver",
       "StorageAnalyticsIdentityDriver",
@@ -36,6 +37,8 @@ describe("@stackra/analytics", () => {
   it("keeps the port and the internals out of the entry", () => {
     for (const name of [
       "AnalyticsDriver",
+      "AnalyticsDriverLookup",
+      "ANALYTICS_DEFAULT_DESTINATION",
       "AnalyticsIdentity",
       "ANALYTICS_CONFIG_SCHEMA",
       "ANALYTICS_IDENTITY_SCHEMA",

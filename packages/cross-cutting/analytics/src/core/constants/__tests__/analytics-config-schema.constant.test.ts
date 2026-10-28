@@ -17,6 +17,8 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     expect(ANALYTICS_CONFIG_SCHEMA.parse({})).toEqual({
       driver: "none",
       consentCategory: "analytics",
+      drivers: {},
+      destinations: [],
       queueLimit: 100,
       autocapturePageviews: false,
       autocaptureClicks: false,
@@ -63,10 +65,35 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     expect(parsed.consentCategory).toBe("crash_replay");
   });
 
+  it("fills a destination's routing lists", () => {
+    const parsed = ANALYTICS_CONFIG_SCHEMA.parse({
+      drivers: { segment: "posthog" },
+      destinations: [{ driver: "segment", category: "marketing", include: ["order.placed"] }],
+    });
+    expect(parsed.destinations).toEqual([
+      { driver: "segment", category: "marketing", include: ["order.placed"], exclude: [] },
+    ]);
+  });
+
   it.each([
     ["gating by the necessary category", { consentCategory: "necessary" }],
     ["an unknown category", { consentCategory: "telemetry" }],
     ["an unknown driver", { driver: "segment" }],
+    ["an instance named default", { drivers: { default: "posthog" } }],
+    ["an unknown driver for an instance", { drivers: { segment: "segment" } }],
+    [
+      "a destination gated by the necessary category",
+      { destinations: [{ driver: "default", category: "necessary" }] },
+    ],
+    [
+      "one driver instance listed twice",
+      {
+        destinations: [
+          { driver: "default", category: "analytics" },
+          { driver: "default", category: "marketing" },
+        ],
+      },
+    ],
     ["a negative queue bound", { queueLimit: -1 }],
     ["a queue bound past 1,000", { queueLimit: 1001 }],
     ["a fractional queue bound", { queueLimit: 2.5 }],

@@ -22,6 +22,8 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `.`           | `MemoryAnalyticsDriver`                                                                            | the `memory` driver: keeps what it is sent                                             |
 | `.`           | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver: one batch capture request per send, plain `fetch`                |
 | `./contracts` | `AnalyticsDriver`                                                                                  | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type   |
+| `./contracts` | `AnalyticsDriverLookup`                                                                            | the port that finds a named driver instance a destination sends to                     |
+| `.`           | `AnalyticsDestination`, `NoneAnalyticsDriverLookupDriver`                                          | one entry of `destinations`; the default lookup, which knows no named instance         |
 | `./contracts` | `AnalyticsContext`                                                                                 | where a delivery was captured: library, page path or screen, locale, version, region   |
 | `./contracts` | `AnalyticsDeliveryKind`                                                                            | `track`, `identify`, `group`: what a delivery asks the destination to do               |
 | `./contracts` | `AnalyticsIdentity`                                                                                | the port that keeps the visitor's identity after consent (`AnalyticsIdentityRecord`)   |
@@ -91,6 +93,32 @@ Sampling is per visitor: `sampleRate` (0 to 1) keeps the same share of anonymous
 whole, and `sampleRates` gives one event its own rate (`{ "page.scrolled": 0.1 }`). `identify` and `group` are never
 sampled. A refusal drops the buffer and the offline queue.
 
+## Destinations
+
+By default everything goes to one destination: the `driver` instance, gated by `consentCategory`. To send to several,
+name the extra driver instances in `drivers` and list the destinations, each with its own consent category and, when
+it should not take every event, an `include` or `exclude` list of event names:
+
+```ts
+export class AnalyticsConfig extends BaseAnalyticsConfig {
+  override driver: DriverName<AnalyticsDriver> = "posthog";
+  override drivers = { segment: "segment" };
+  override destinations = [
+    { driver: "default", category: ConsentCategory.Analytics },
+    { driver: "segment", category: ConsentCategory.Marketing, include: ["order.placed"] },
+  ];
+}
+```
+
+Each destination is its own lane: its own pre-consent queue, buffer, retries and backoff, so a refused category or a
+destination that is down never holds another. Every destination gets the same `eventId` and visitor ids, so they
+dedup on the same key. `include` and `exclude` match whole event names and apply to tracked events only; `identify`
+and `group` reach every granted destination. The visitor's identity is kept (cookie or storage) only while
+`consentCategory` is granted; the in-memory ids go once no destination is granted. Only the `default` destination
+uses the offline queue: a named destination drops a batch once its retries are spent. A destination naming an
+instance the `AnalyticsDriverLookup` does not know fails at construction. The shipped lookup (`none`) knows none:
+named instances need the host runtime's lookup over the container's named instances (not built yet).
+
 ## Use
 
 ```ts
@@ -135,4 +163,6 @@ from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or
 
 The capture switches (`autocapturePageviews`, `autocaptureClicks`, `webVitals`, `sessionReplay`) are not read by the
 PostHog driver yet: it sends only the events tracked through `AnalyticsClient`. Nothing sets `screen`, `appVersion`
-or `region` in the envelope yet. Hashing the user id per destination belongs to the destinations (stackra-407, 412).
+or `region` in the envelope yet. Hashing the user id per destination belongs to the destination drivers (stackra-412). The container-backed
+`AnalyticsDriverLookup` that hands named instances to the client is not built yet, so only the `default` destination
+sends in a host today.

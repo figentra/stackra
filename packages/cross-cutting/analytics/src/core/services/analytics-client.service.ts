@@ -22,13 +22,19 @@
  *           jitter, `retryBaseMs` to `retryMaxMs`), then kept in the `AnalyticsOfflineQueue` (the `none` default
  *           drops it); when the page hides, the buffer leaves through the driver's `beacon`, or `send` when it has
  *           none. Sampling is per visitor: `sampleRate`, or the event's own `sampleRates` entry; `identify` and `group`
- *           are never sampled. A refusal drops the buffer and the offline queue.
+ *           are never sampled. A refusal drops the buffer and the offline queue. Destinations (stackra-407): each
+ *           entry of `destinations` (or, when empty, the `driver` gated by `consentCategory`) is its own lane with its
+ *           own category, include and exclude lists, pre-consent queue, buffer and retries, so one destination's
+ *           consent or outage never holds another; every lane shares the event id (destinations dedup on it) and the
+ *           visitor ids. The identity is kept only while `consentCategory` is granted; the in-memory ids go once no
+ *           destination is granted. Only the `default` destination uses the offline queue.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1, 2 and 5); ADR 0071 (no identifier before consent); ADR 0305 (rule 20);
  *                     ADR 0294 (decisions 16, 17 and 26); analytics gaps 5 and 6 (identity stitching, stackra-405; the
- *                     delivery engine, stackra-406); owner D10 2026-10-28 (one backoff formula).
+ *                     delivery engine, stackra-406); analytics gap 7 (destinations, stackra-407);
+ *                     owner D10 2026-10-28 (one backoff formula).
  */
-import type { ConsentLedger } from "@stackra/consent";
+import type { ConsentCategory, ConsentLedger } from "@stackra/consent";
 import { ConsentStatus } from "@stackra/consent";
 import { type AnyClass, kindOf, Service } from "@stackra/container";
 import { backoffDelay, Duration, Jitter } from "@stackra/contracts";
@@ -38,15 +44,20 @@ import { schemaOf } from "@stackra/validation";
 import type { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsDriverLookup } from "#contracts/ports/analytics-driver-lookup.port";
 import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
 import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
 import type { AnalyticsContext } from "#contracts/types/analytics-context.type";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
+import { ANALYTICS_DEFAULT_DESTINATION } from "#core/constants/analytics-default-destination.constant";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 import { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
+import { NoneAnalyticsDriverLookupDriver } from "#core/drivers/none-analytics-driver-lookup.driver";
 import { NoneAnalyticsOfflineQueueDriver } from "#core/drivers/none-analytics-offline-queue.driver";
 import { analyticsId } from "#core/functions/analytics-id.function";
 import { sampleScore } from "#core/functions/sample-score.function";
+import type { AnalyticsDestination } from "#core/types/analytics-destination.type";
+import type { AnalyticsLane } from "#core/types/analytics-lane.type";
 
 /** The library name every delivery's context carries. */
 const LIBRARY = "@stackra/analytics";
@@ -64,13 +75,13 @@ type Captured = Omit<AnalyticsDelivery, "anonymousId" | "sessionId">;
 export class AnalyticsClient extends Service {
   private readonly config: AnalyticsConfig;
 
-  private readonly driver: AnalyticsDriver;
-
   private readonly ledger: ConsentLedger;
 
   private readonly identity: AnalyticsIdentity;
 
-  private readonly queue: Captured[] = [];
+  private readonly offline: AnalyticsOfflineQueue;
+
+  private readonly lanes: readonly AnalyticsLane[];
 
   private anonymousId: string | null = null;
 
@@ -80,30 +91,23 @@ export class AnalyticsClient extends Service {
 
   private groups: Readonly<Record<string, string>> = {};
 
-  private stopWatching: (() => void) | null = null;
-
   private stopGuarding: (() => void) | null = null;
 
   private kept: string | null = null;
-
-  private readonly offline: AnalyticsOfflineQueue;
-
-  private readonly buffer: AnalyticsDelivery[] = [];
-
-  private timer: ReturnType<typeof setTimeout> | null = null;
-
-  private failures = 0;
 
   private restored = false;
 
   private hooked = false;
 
   /**
-   * @param config - the driver, the gating category, the queue bound and the deny list.
-   * @param driver - the selected driver that sends.
+   * @param config - the destinations, the gating categories, the queue bound and the deny list.
+   * @param driver - the selected driver that sends: the `default` destination.
    * @param ledger - the consent ledger that decides.
    * @param identity - where the visitor's identity is kept after consent; in memory for this launch when absent.
-   * @param offline - where undelivered batches wait for the next launch; nothing is kept when absent.
+   * @param offline - where the `default` destination's undelivered batches wait for the next launch; nothing is kept
+   *                  when absent.
+   * @param lookup - finds the named driver instances other destinations send to; none when absent.
+   * @throws RangeError when a destination names a driver instance `lookup` does not know.
    */
   constructor(
     config: AnalyticsConfig,
@@ -111,25 +115,47 @@ export class AnalyticsClient extends Service {
     ledger: ConsentLedger,
     identity: AnalyticsIdentity = new MemoryAnalyticsIdentityDriver(),
     offline: AnalyticsOfflineQueue = new NoneAnalyticsOfflineQueueDriver(),
+    lookup: AnalyticsDriverLookup = new NoneAnalyticsDriverLookupDriver(),
   ) {
     super();
     this.config = config;
-    this.driver = driver;
     this.ledger = ledger;
     this.identity = identity;
     this.offline = offline;
+    const destinations: readonly AnalyticsDestination[] =
+      config.destinations.length > 0
+        ? config.destinations
+        : [{ driver: ANALYTICS_DEFAULT_DESTINATION, category: config.consentCategory }];
+    this.lanes = destinations.map((destination) => {
+      const primary = destination.driver === ANALYTICS_DEFAULT_DESTINATION;
+      const sender = primary ? driver : lookup.driver(destination.driver);
+      if (sender === undefined)
+        throw new RangeError(
+          `analytics.destinations names the driver instance "${destination.driver}", which analytics.drivers does not provide`,
+        );
+      return {
+        driver: sender,
+        category: destination.category,
+        include: new Set(destination.include ?? []),
+        exclude: new Set(destination.exclude ?? []),
+        primary,
+        queue: [],
+        buffer: [],
+        stopWatching: null,
+        timer: null,
+        failures: 0,
+      };
+    });
   }
 
   /** Where delivery stands: the consent status of `AnalyticsConfig.consentCategory`, read now. */
   get state(): AnalyticsState {
-    const status = this.ledger.status(this.config.consentCategory);
-    if (status === ConsentStatus.Granted) return AnalyticsState.OptedIn;
-    return status === ConsentStatus.Denied ? AnalyticsState.OptedOut : AnalyticsState.Pending;
+    return this.stateOf(this.config.consentCategory);
   }
 
   /**
-   * Sends `event` once its consent category allows: at once when granted, after the visitor accepts when undecided
-   * (if the queue has room), never when refused.
+   * Sends `event` to each destination that takes its name, once that destination's consent category allows: at once
+   * when granted, after the visitor accepts when undecided (if the queue has room), never when refused.
    *
    * @param event - an instance of an `AnalyticsEvent({ name })` class, built with its `create`.
    * @throws TypeError when `event` is not an analytics event, or its class has no registered schema.
@@ -180,41 +206,53 @@ export class AnalyticsClient extends Service {
   }
 
   /**
-   * Sends everything buffered now, in one batch (a host calls it before a known exit; the engine calls it at
-   * `flushAt` or after `flushIntervalMs`). A failure puts the batch back for a retry and never rejects.
+   * Sends everything buffered now, one batch per destination (a host calls it before a known exit; the engine calls
+   * it at `flushAt` or after `flushIntervalMs`). A failure puts that destination's batch back for a retry and never
+   * rejects.
    */
   async flush(): Promise<void> {
-    this.clearTimer();
-    const batch = this.buffer.splice(0);
-    if (batch.length === 0) return;
-    try {
-      await this.driver.send(batch);
-      this.failures = 0;
-      if (this.buffer.length > 0) this.schedule();
-    } catch {
-      this.retry(batch);
-    }
+    await Promise.all(this.lanes.map((lane) => this.flushLane(lane)));
   }
 
-  /** Sends `delivery` now, queues it while undecided, or drops it on refusal. */
+  /** The consent state of `category`, read now. */
+  private stateOf(category: ConsentCategory): AnalyticsState {
+    const status = this.ledger.status(category);
+    if (status === ConsentStatus.Granted) return AnalyticsState.OptedIn;
+    return status === ConsentStatus.Denied ? AnalyticsState.OptedOut : AnalyticsState.Pending;
+  }
+
+  /** Whether `lane` takes `delivery`: `identify` and `group` always, an event by the include and exclude lists. */
+  private routes(lane: AnalyticsLane, delivery: Captured): boolean {
+    if ((delivery.kind ?? AnalyticsDeliveryKind.Track) !== AnalyticsDeliveryKind.Track) return true;
+    if (lane.exclude.has(delivery.name)) return false;
+    return lane.include.size === 0 || lane.include.has(delivery.name);
+  }
+
+  /** Per destination that takes it: sends `delivery` now, queues it while undecided, or drops it on refusal. */
   private enqueue(delivery: Captured): void {
-    if (this.state !== AnalyticsState.Pending) {
-      this.settle([delivery]);
-      return;
+    for (const lane of this.lanes) {
+      if (!this.routes(lane, delivery)) continue;
+      if (this.stateOf(lane.category) !== AnalyticsState.Pending) {
+        this.settle(lane, [delivery]);
+        continue;
+      }
+      if (lane.queue.length < this.config.queueLimit) lane.queue.push(delivery);
+      lane.stopWatching ??= this.ledger.subscribe(() => this.settle(lane, []));
     }
-    if (this.queue.length < this.config.queueLimit) this.queue.push(delivery);
-    this.stopWatching ??= this.ledger.subscribe(() => this.settle([]));
   }
 
-  /** Once decided: sends what waited, then `latest`, on acceptance; drops both on refusal. Undecided keeps waiting. */
-  private settle(latest: readonly Captured[]): void {
-    const state = this.state;
+  /**
+   * Once `lane`'s category is decided: sends what waited, then `latest`, on acceptance; drops both on refusal.
+   * Undecided keeps waiting.
+   */
+  private settle(lane: AnalyticsLane, latest: readonly Captured[]): void {
+    const state = this.stateOf(lane.category);
     if (state === AnalyticsState.Pending) return;
-    const waited = this.queue.splice(0);
-    this.stopWatching?.();
-    this.stopWatching = null;
+    const waited = lane.queue.splice(0);
+    lane.stopWatching?.();
+    lane.stopWatching = null;
     if (state !== AnalyticsState.OptedIn) {
-      this.forget();
+      this.guard();
       return;
     }
     const captured = [...waited, ...latest];
@@ -222,15 +260,16 @@ export class AnalyticsClient extends Service {
     // Made (or restored) here, after consent; the session id is never stored.
     this.anonymousId ??= this.identity.read()?.anonymousId ?? analyticsId("anon_");
     this.sessionId ??= analyticsId("ses_");
-    this.remember();
+    if (this.state === AnalyticsState.OptedIn) this.remember();
+    this.stopGuarding ??= this.ledger.subscribe(() => this.guard());
     const ids = { anonymousId: this.anonymousId, sessionId: this.sessionId };
     const deliveries = captured
       .map((delivery) => ({ ...delivery, ...ids }))
       .filter((delivery) => this.sampled(delivery));
-    this.restore();
+    if (lane.primary) this.restore(lane);
     for (const delivery of deliveries)
-      if (this.buffer.length < this.config.bufferLimit) this.buffer.push(delivery);
-    this.schedule();
+      if (lane.buffer.length < this.config.bufferLimit) lane.buffer.push(delivery);
+    this.schedule(lane);
   }
 
   /** Whether `delivery` is in the sample: `identify` and `group` always, an event by its rate for this visitor. */
@@ -241,52 +280,78 @@ export class AnalyticsClient extends Service {
     return sampleScore(delivery.anonymousId) < this.config.sampleRate;
   }
 
-  /** Sends the buffer now when it is full or the window is zero, else once the window passes; never during a backoff. */
-  private schedule(): void {
+  /** Sends `lane`'s buffer now when full or the window is zero, else once the window passes; never during a backoff. */
+  private schedule(lane: AnalyticsLane): void {
     this.hookPageHide();
-    if (this.buffer.length === 0 || (this.failures > 0 && this.timer !== null)) return;
-    if (this.buffer.length >= this.config.flushAt || this.config.flushIntervalMs === 0) {
-      void this.flush();
+    if (lane.buffer.length === 0 || (lane.failures > 0 && lane.timer !== null)) return;
+    if (lane.buffer.length >= this.config.flushAt || this.config.flushIntervalMs === 0) {
+      void this.flushLane(lane);
       return;
     }
-    this.timer ??= setTimeout(() => void this.flush(), this.config.flushIntervalMs);
+    lane.timer ??= setTimeout(() => void this.flushLane(lane), this.config.flushIntervalMs);
   }
 
-  /** A failed `batch`: back to the front within the bound and retried after backoff, or kept offline once spent. */
-  private retry(batch: readonly AnalyticsDelivery[]): void {
-    this.failures += 1;
-    if (this.failures > this.config.retryAttempts) {
-      this.failures = 0;
-      this.offline.save([...this.offline.load(), ...batch]);
-      if (this.buffer.length > 0) this.schedule();
+  /** Sends `lane`'s buffer as one batch; a failure puts it back for a retry. */
+  private async flushLane(lane: AnalyticsLane): Promise<void> {
+    this.clearTimer(lane);
+    const batch = lane.buffer.splice(0);
+    if (batch.length === 0) return;
+    try {
+      await lane.driver.send(batch);
+      lane.failures = 0;
+      if (lane.buffer.length > 0) this.schedule(lane);
+    } catch {
+      this.retry(lane, batch);
+    }
+  }
+
+  /**
+   * A failed `batch`: back to the front within the bound and retried after backoff, or, once spent, kept offline
+   * (the `default` destination) or dropped.
+   */
+  private retry(lane: AnalyticsLane, batch: readonly AnalyticsDelivery[]): void {
+    lane.failures += 1;
+    if (lane.failures > this.config.retryAttempts) {
+      lane.failures = 0;
+      this.keep(lane, batch);
+      if (lane.buffer.length > 0) this.schedule(lane);
       return;
     }
-    this.buffer.unshift(...batch);
-    this.buffer.length = Math.min(this.buffer.length, this.config.bufferLimit);
-    this.clearTimer();
+    lane.buffer.unshift(...batch);
+    lane.buffer.length = Math.min(lane.buffer.length, this.config.bufferLimit);
+    this.clearTimer(lane);
     const wait = backoffDelay(
       {
         base: Duration.seconds(this.config.retryBaseMs / 1000),
         max: Duration.seconds(this.config.retryMaxMs / 1000),
         jitter: Jitter.Equal,
       },
-      this.failures,
+      lane.failures,
     );
-    this.timer = setTimeout(() => void this.flush(), wait);
+    lane.timer = setTimeout(() => void this.flushLane(lane), wait);
+  }
+
+  /**
+   * Keeps an undelivered `batch` for the next launch.
+   * shortcut: only the `default` destination has an offline queue (the port keeps one list); a named destination
+   * drops a spent batch. Upgrade with a per-destination offline key when a host needs it.
+   */
+  private keep(lane: AnalyticsLane, batch: readonly AnalyticsDelivery[]): void {
+    if (lane.primary) this.offline.save([...this.offline.load(), ...batch]);
   }
 
   /** Once per launch, after consent: what an earlier launch could not deliver goes to the front of the buffer. */
-  private restore(): void {
+  private restore(lane: AnalyticsLane): void {
     if (this.restored) return;
     this.restored = true;
     const saved = this.offline.load();
     if (saved.length === 0) return;
     this.offline.clear();
-    this.buffer.unshift(...saved);
-    this.buffer.length = Math.min(this.buffer.length, this.config.bufferLimit);
+    lane.buffer.unshift(...saved);
+    lane.buffer.length = Math.min(lane.buffer.length, this.config.bufferLimit);
   }
 
-  /** When the page hides or closes, the buffer leaves at once: by beacon when the driver can, else by `send`. */
+  /** When the page hides or closes, every buffer leaves at once: by beacon when the driver can, else by `send`. */
   private hookPageHide(): void {
     if (this.hooked) return;
     this.hooked = true;
@@ -295,35 +360,37 @@ export class AnalyticsClient extends Service {
       readonly document?: { readonly visibilityState?: string };
     };
     if (typeof scope.addEventListener !== "function") return;
-    const leave = (): void => this.leave();
+    const leave = (): void => {
+      for (const lane of this.lanes) this.leave(lane);
+    };
     scope.addEventListener("pagehide", leave);
     scope.addEventListener("visibilitychange", () => {
       if (scope.document?.visibilityState === "hidden") leave();
     });
   }
 
-  /** Hands the whole buffer to the driver for a closing page; what neither path takes is kept offline. */
-  private leave(): void {
-    this.clearTimer();
-    const batch = this.buffer.splice(0);
+  /** Hands `lane`'s whole buffer to its driver for a closing page; what neither path takes is kept offline. */
+  private leave(lane: AnalyticsLane): void {
+    this.clearTimer(lane);
+    const batch = lane.buffer.splice(0);
     if (batch.length === 0) return;
     let handed: boolean;
     try {
-      handed = this.driver.beacon(batch);
+      handed = lane.driver.beacon(batch);
     } catch {
       handed = false;
     }
     if (handed) return;
-    this.driver.send(batch).catch(() => this.offline.save([...this.offline.load(), ...batch]));
+    lane.driver.send(batch).catch(() => this.keep(lane, batch));
   }
 
-  /** Stops a pending flush or retry. */
-  private clearTimer(): void {
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = null;
+  /** Stops `lane`'s pending flush or retry. */
+  private clearTimer(lane: AnalyticsLane): void {
+    if (lane.timer !== null) clearTimeout(lane.timer);
+    lane.timer = null;
   }
 
-  /** Keeps the identity while consent holds, and watches the ledger so a later refusal removes it at once. */
+  /** Keeps the identity while `consentCategory` holds. */
   private remember(): void {
     if (this.anonymousId === null) return;
     const record = { anonymousId: this.anonymousId, ...this.who() };
@@ -331,23 +398,41 @@ export class AnalyticsClient extends Service {
     // Written only when it changed, so a busy page does not rewrite the cookie on every send.
     if (text !== this.kept) this.identity.write(record);
     this.kept = text;
-    this.stopGuarding ??= this.ledger.subscribe(() => {
-      if (this.state !== AnalyticsState.OptedIn) this.forget();
-    });
   }
 
-  /** Removes the kept identity after a refusal; the in-memory ids go too, so nothing kept survives the refusal. */
-  private forget(): void {
+  /**
+   * After a ledger change: drops the buffer of every destination no longer granted (and the offline queue with the
+   * `default` one), removes the kept identity once `consentCategory` is no longer granted, and the in-memory ids
+   * once no destination is granted, so nothing kept survives a refusal.
+   */
+  private guard(): void {
+    let anyGranted = false;
+    for (const lane of this.lanes) {
+      const status = this.stateOf(lane.category);
+      if (status === AnalyticsState.OptedIn) {
+        anyGranted = true;
+        continue;
+      }
+      this.clearTimer(lane);
+      lane.buffer.length = 0;
+      lane.failures = 0;
+      // An undecided default destination keeps an earlier launch's batches until the visitor answers.
+      if (lane.primary && status === AnalyticsState.OptedOut) this.offline.clear();
+    }
+    const state = this.state;
+    // A decided refusal clears an identity an earlier launch kept; an undecided one only what this launch wrote.
+    if (
+      state === AnalyticsState.OptedOut ||
+      (state === AnalyticsState.Pending && this.kept !== null)
+    ) {
+      this.kept = null;
+      this.identity.clear();
+    }
+    if (anyGranted) return;
     this.stopGuarding?.();
     this.stopGuarding = null;
-    this.clearTimer();
-    this.buffer.length = 0;
-    this.failures = 0;
-    this.offline.clear();
     this.anonymousId = null;
     this.sessionId = null;
-    this.kept = null;
-    this.identity.clear();
   }
 
   /** An `identify` or `group` delivery, captured now with the current identity. */

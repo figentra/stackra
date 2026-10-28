@@ -9,7 +9,9 @@
  *          for the launch), and identity stitching (identify, group, reset, the anonymous id kept only after consent,
  *          restored on a new launch and forgotten on withdrawal), and the delivery engine (batch at `flushAt`, the flush
  *          window, `flush()`, retry with backoff holding later events, the offline queue after spent retries, sampling
- *          per visitor and per event, the beacon on page hide, and the refusal dropping both).
+ *          per visitor and per event, the beacon on page hide, and the refusal dropping both), and the destinations
+ *          (each gated by its own category, include and exclude routing, shared ids, the identity kept only under
+ *          `consentCategory`, an unknown instance refused).
  * Boundary: test only; registers each event's zod schema the way gen does; the memory driver records what left.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1, 2 and 5); ADR 0305 (rule 20).
@@ -32,6 +34,7 @@ import { z } from "zod";
 import { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import { AnalyticsDriverLookup } from "#contracts/ports/analytics-driver-lookup.port";
 import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import type { AnalyticsIdentityRecord } from "#contracts/types/analytics-identity-record.type";
@@ -596,5 +599,122 @@ describe("AnalyticsClient delivery engine (stackra-406)", () => {
     void client.flush();
     expect(driver.batches).toEqual([]);
     expect(offline.load()).toEqual([]);
+  });
+});
+
+/** A lookup that knows the named instances of `drivers`. */
+class MapAnalyticsDriverLookup extends Driver(AnalyticsDriverLookup) {
+  private readonly drivers: Readonly<Record<string, AnalyticsDriver>>;
+
+  constructor(drivers: Readonly<Record<string, AnalyticsDriver>>) {
+    super();
+    this.drivers = drivers;
+  }
+
+  driver(name: string): AnalyticsDriver | undefined {
+    return this.drivers[name];
+  }
+}
+
+/** A client with a `default` (analytics) and a `segment` (marketing) destination, `segment` routed by `routing`. */
+function withDestinations(routing: { include?: string[]; exclude?: string[] } = {}) {
+  const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
+  const primary = new MemoryAnalyticsDriver();
+  const segment = new MemoryAnalyticsDriver();
+  const identity = new MemoryAnalyticsIdentityDriver();
+  const client = new AnalyticsClient(
+    buildConfig(AnalyticsConfig, {
+      values: {
+        ...SEND_AT_ONCE,
+        destinations: [
+          { driver: "default", category: ConsentCategory.Analytics },
+          { driver: "segment", category: ConsentCategory.Marketing, ...routing },
+        ],
+      },
+    }),
+    primary,
+    ledger,
+    identity,
+    undefined,
+    new MapAnalyticsDriverLookup({ segment }),
+  );
+  return { client, ledger, primary, segment, identity };
+}
+
+describe("AnalyticsClient destinations (stackra-407)", () => {
+  it("gates each destination by its own category", () => {
+    const { client, ledger, primary, segment } = withDestinations();
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    ledger.set(ConsentCategory.Analytics, true);
+    expect(sentNames(primary)).toEqual(["lead.submitted"]);
+    expect(segment.delivered()).toEqual([]);
+    ledger.set(ConsentCategory.Marketing, true);
+    expect(sentNames(segment)).toEqual(["lead.submitted"]);
+  });
+
+  it("drops a refused destination's queue while the others still send", () => {
+    const { client, ledger, primary, segment } = withDestinations();
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    ledger.set(ConsentCategory.Marketing, false);
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "team" }));
+    expect(sentNames(primary)).toEqual(["lead.submitted", "lead.submitted"]);
+    expect(segment.delivered()).toEqual([]);
+  });
+
+  it("shares the event id and the visitor ids across destinations", () => {
+    const { client, ledger, primary, segment } = withDestinations();
+    ledger.set(ConsentCategory.Analytics, true);
+    ledger.set(ConsentCategory.Marketing, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    const [a] = primary.delivered();
+    const [b] = segment.delivered();
+    expect(b?.eventId).toBe(a?.eventId);
+    expect(b?.anonymousId).toBe(a?.anonymousId);
+    expect(b?.sessionId).toBe(a?.sessionId);
+  });
+
+  it("routes events by include and exclude, and sends identify everywhere", () => {
+    const included = withDestinations({ include: ["newsletter.joined"] });
+    included.ledger.set(ConsentCategory.Analytics, true);
+    included.ledger.set(ConsentCategory.Marketing, true);
+    included.client.track(LeadSubmitted.create({ plan: "pro" }));
+    included.client.track(NewsletterJoined.create({ source: "footer", email: "a@b.example" }));
+    included.client.identify("usr_1");
+    expect(sentNames(included.segment)).toEqual(["newsletter.joined", "identify"]);
+    expect(sentNames(included.primary)).toEqual([
+      "lead.submitted",
+      "newsletter.joined",
+      "identify",
+    ]);
+
+    const excluded = withDestinations({ exclude: ["lead.submitted"] });
+    excluded.ledger.set(ConsentCategory.Marketing, true);
+    excluded.client.track(LeadSubmitted.create({ plan: "pro" }));
+    excluded.client.track(NewsletterJoined.create({ source: "footer", email: "a@b.example" }));
+    expect(sentNames(excluded.segment)).toEqual(["newsletter.joined"]);
+  });
+
+  it("keeps the identity only under consentCategory, even when another destination sends", () => {
+    const { client, ledger, identity, segment } = withDestinations();
+    ledger.set(ConsentCategory.Marketing, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(segment.delivered()).toHaveLength(1);
+    expect(identity.read()).toBeNull();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "team" }));
+    expect(identity.read()).toEqual({ anonymousId: segment.delivered()[0]?.anonymousId });
+    ledger.set(ConsentCategory.Analytics, false);
+    expect(identity.read()).toBeNull();
+  });
+
+  it("refuses a destination naming an instance the lookup does not know", () => {
+    const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
+    const config = buildConfig(AnalyticsConfig, {
+      values: { destinations: [{ driver: "segment", category: ConsentCategory.Marketing }] },
+    });
+    expect(() => new AnalyticsClient(config, new MemoryAnalyticsDriver(), ledger)).toThrow(
+      RangeError,
+    );
   });
 });
