@@ -10,7 +10,9 @@
  * Boundary: test only; reads `__golden__/`, writes only `.cache/golden/` (gitignored) and, with `UPDATE_GOLDEN=1`,
  *           the fixtures' `expected/` and `refusals.json`. Every golden file carries a `.golden` suffix so no tool
  *           (tsc, oxlint, oxfmt, knip, validate) reads fixture sources or expected output as repository code; the
- *           runner strips it. `input/_modules/` is written as `node_modules/` (git never tracks `node_modules`).
+ *           runner strips it. `input/_modules/` is written as `node_modules/` (git never tracks `node_modules`); the
+ *           fixture's `pnpm-workspace.yaml` bounds `dependencyPath`, so dependency manifests and lang catalogues come
+ *           from those stubs only, never from the repository's packages (types still resolve through gen's own).
  *           Absolute fixture paths are written as `<workspace>`, so the snapshots do not depend on the machine.
  * Runtime: node (vitest)
  * Governing contract: STA-1320 (freeze gen's interface: generated file set, paths and refusal codes); ADR 0294
