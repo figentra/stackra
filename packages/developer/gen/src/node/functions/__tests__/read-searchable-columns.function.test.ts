@@ -29,7 +29,7 @@ describe("readSearchableColumns", () => {
       ].join("\n"),
       "src/modules/catalog/database/migrations/0002-search-products.migration.ts": [
         'schema.table("products", (t: Blueprint) => {',
-        '  t.searchable({ text: ["title"], filters: ["status", "brand.slug"] });',
+        '  t.searchable({ text: ["title"], filters: ["status", "brand.slug"], version: 2 });',
         "});",
       ].join("\n"),
     });
@@ -54,6 +54,7 @@ describe("readSearchableColumns", () => {
         table: "products",
         text: ["title"],
         filters: ["status", "brand.slug"],
+        version: 2,
       },
     ]);
   });

@@ -55,6 +55,12 @@ function stringsOf(object: string, key: string): string[] | undefined {
     : [...array.matchAll(/["'`]([^"'`]+)["'`]/g)].map((match) => match[1] ?? "");
 }
 
+/** The `version` number literal of `object`, as a spreadable field, or none. */
+function versionOf(object: string): { version?: number } {
+  const version = /\bversion\s*:\s*(\d+)/.exec(object)?.[1];
+  return version === undefined ? {} : { version: Number(version) };
+}
+
 /**
  * The `t.searchable` calls in the member at `root`.
  *
@@ -88,6 +94,7 @@ export function readSearchableColumns(
     table: string;
     text: string[];
     filters: string[];
+    version?: number;
   }[] = [];
   for (const { module, dir } of modules)
     for (const path of migrationsOf(dir)) {
@@ -106,6 +113,7 @@ export function readSearchableColumns(
           table,
           text: fields,
           filters: stringsOf(object, "filters") ?? [],
+          ...versionOf(object),
         });
       }
     }

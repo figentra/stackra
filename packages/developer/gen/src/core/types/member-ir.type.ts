@@ -156,6 +156,8 @@ export interface MemberIR {
     readonly table: string;
     readonly text: readonly string[];
     readonly filters: readonly string[];
+    /** The call's `version` literal (a shadow-column rebuild), absent for the live columns. */
+    readonly version?: number;
   }[];
 
   /**

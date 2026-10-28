@@ -78,6 +78,17 @@ describe("checkSearchableDrift", () => {
     expect(error?.fix).toContain("stackra search:reindex Order");
   });
 
+  it("names the expand step one version past the latest call, and the contract step after it", () => {
+    const order = searchableOrder({ text: ["number", "customerName"], filters: ["status"] });
+    const fixOf = (calls: NonNullable<MemberIR["searchableColumns"]>) =>
+      checkSearchableDrift(irOf(order, calls))[0]?.fix ?? "";
+    expect(fixOf([call(FIRST, ["number"])])).toContain(
+      'schema.table("orders", (t) => t.searchable({ text: ["number","customer_name"], filters: ["status"], version: 2 }))',
+    );
+    expect(fixOf([{ ...call(SECOND, ["number"]), version: 2 }])).toContain("version: 3");
+    expect(fixOf([call(FIRST, ["number"])])).toContain("renames the __v2 columns");
+  });
+
   it("does not judge another module's table or a table with no literals", () => {
     const order = searchableOrder({ text: ["number"] });
     expect(checkSearchableDrift(irOf(order, [call(FIRST, ["title"], [], "catalog")]))).toEqual([]);

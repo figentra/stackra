@@ -6,7 +6,9 @@
  * Boundary: pure; reads the IR only (`ir.searchableColumns`, which `readSearchableColumns` fills). A path is compared
  *           with each segment in snake case (`memberId` and `member_id` agree); text fields in order (position is
  *           their weight), filters as a set. A table is matched by its module and name; a model whose table no
- *           migration of the member gives search columns is not judged here.
+ *           migration of the member gives search columns is not judged here. The fix names the expand step of a
+ *           versioned rebuild (`version` one past the latest call's) as a literal for a hand-written migration: gen
+ *           never writes a migration, and the contract step waits on the index registry, which gen cannot read.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 3); ADR 0159 (as amended by ADR 0305: literal snapshots); ADR 0294
  *                     (decision 22: a refusal carries its fix); data-layer gap se10.
@@ -60,6 +62,11 @@ export function checkSearchableDrift(ir: MemberIR): GenError[] {
       new Set(filters).size === new Set(wantFilters).size &&
       filters.every((path) => wantFilters.includes(path));
     if (sameText && sameFilters) continue;
+    // The expand step of a versioned rebuild: shadow columns beside the live ones, so reads never stop.
+    const version = (latest.version ?? 1) + 1;
+    const expand =
+      `schema.table(${JSON.stringify(bare)}, (t) => t.searchable({ text: ${JSON.stringify(text)}, ` +
+      `filters: ${JSON.stringify(filters)}, version: ${version} }))`;
     errors.push({
       code: "searchable_columns_drift",
       file: model.file,
@@ -71,8 +78,9 @@ export function checkSearchableDrift(ir: MemberIR): GenError[] {
         `the latest t.searchable on ${table} (${latest.file}) says text [${wantText.join(", ")}] and filters ` +
         `[${wantFilters.join(", ")}], so the search columns describe other fields than the documents hold`,
       fix:
-        `add a migration that calls t.searchable on ${bare} with the facet's fields (or put the facet back), ` +
-        `then run \`stackra search:reindex ${model.name}\``,
+        `add a migration whose up() is \`${expand}\` (the expand step; or put the facet back), run ` +
+        `\`stackra search:reindex ${model.name}\` until \`stackra search:status\` shows version ${version} valid, ` +
+        `then a migration that renames the __v${version} columns over the live ones (the contract step)`,
     });
   }
   return errors;
