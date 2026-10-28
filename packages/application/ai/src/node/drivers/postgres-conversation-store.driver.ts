@@ -141,4 +141,23 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
       position += 1;
     }
   }
+
+  /**
+   * Implements `ConversationStore.forget`, documented there: purges the messages (`purge` skips held rows, and an
+   * append-only row may still be purged), then each conversation with no message left. Runs under the caller's scope,
+   * so row-level security limits it to the conversations it may see.
+   */
+  async forget(principalId: string): Promise<number> {
+    const owned = (await this.conversations.find({ principalId } as never)) as Conversation[];
+    const ids = owned.map((row) => row.id);
+    if (ids.length === 0) return 0;
+    await this.rows.purge({ conversationId: { $in: ids } } as never);
+    const held = new Set(
+      ((await this.rows.find({ conversationId: { $in: ids } } as never)) as Message[]).map(
+        (row) => row.conversationId,
+      ),
+    );
+    const free = ids.filter((id) => !held.has(id));
+    return free.length === 0 ? 0 : this.conversations.purge({ id: { $in: free } } as never);
+  }
 }

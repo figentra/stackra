@@ -72,4 +72,16 @@ export class MemoryConversationStoreDriver extends Driver(ConversationStore) {
     if (lines === undefined) throw new RangeError(`No conversation ${conversationId}`);
     for (const message of messages) lines.push({ runId, message: structuredClone(message) });
   }
+
+  /** Implements `ConversationStore.forget`, documented there; this store holds no legal hold. */
+  async forget(principalId: string): Promise<number> {
+    let removed = 0;
+    for (const row of this.rows.values()) {
+      if (row.principalId !== principalId) continue;
+      this.rows.delete(row.id);
+      this.lines.delete(row.id);
+      removed += 1;
+    }
+    return removed;
+  }
 }

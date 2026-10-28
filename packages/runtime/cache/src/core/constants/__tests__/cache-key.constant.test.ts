@@ -34,6 +34,13 @@ describe("CacheKey", () => {
     expect(() => CacheKey.of(anonymous)).toThrow(RangeError);
   });
 
+  it("makes the subject tag, which never covers a model key", () => {
+    expect(CacheKey.subject("usr_1")).toBe("~subject:usr_1");
+    expect(CacheKey.subject("a:b")).toBe("~subject:a%3Ab");
+    expect(coversKey(CacheKey.subject("usr_1"), CacheKey.of(Product, "usr_1"))).toBe(false);
+    expect(() => CacheKey.subject("")).toThrow(RangeError);
+  });
+
   it("is frozen and makes the brand", () => {
     expect(Object.isFrozen(CacheKey)).toBe(true);
     expectTypeOf(CacheKey.of(Product, "prd_1")).toEqualTypeOf<Key>();

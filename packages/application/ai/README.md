@@ -46,6 +46,14 @@ the one MCP gateway in the `ai` service serves it.
 | `A2aDirection` (`./contracts`)                                                 | `inbound` or `outbound`: the direction of an `A2aTask` row                                                  |
 | `ApprovalRequested`, `ApprovalResolved`, `RunCompleted`                        | the three integration events of ADR 0100 decision 11 (`ai.approval.requested.v1` and the others)            |
 
+## Erasure
+
+`ConversationStore.forget(principalId)` erases a principal's conversations and their messages (both drivers), for a
+subject's erasure (ADR 0189 decision 2). It runs under the caller's scope, so row-level security limits it to what the
+caller sees; a message a legal hold covers stays (`purge` skips it), and so does its conversation. This package cannot
+import @stackra/privacy (privacy depends on it through workflow and rules), so the `SubjectErased` listener that calls
+it lives in privacy.
+
 ## Retrieval for Facts
 
 `retrieve` is the vector/RAG helper (owner decision 23), not a tool source: it embeds the query with the `Embedder`, asks

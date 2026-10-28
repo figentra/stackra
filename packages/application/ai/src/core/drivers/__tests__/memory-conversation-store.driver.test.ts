@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryConversationStoreDriver`: it is a `ConversationStore`, opens conversations with
- *          `aiconv_` ids, keeps messages in order as copies, and refuses an append to an unknown conversation.
+ *          `aiconv_` ids, keeps messages in order as copies, refuses an append to an unknown conversation, and forgets a
+ *          principal's conversations.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0100 (decision 10); STA-781.
@@ -29,5 +30,17 @@ describe(MemoryConversationStoreDriver, () => {
     expect(read.map((message) => message.role)).toEqual(["user", "assistant"]);
     expect(read[0]).not.toBe(first);
     await expect(store.append("aiconv_missing", "airun_1", [first])).rejects.toThrow(RangeError);
+  });
+
+  it("forgets every conversation of a principal and its messages", async () => {
+    const store = new MemoryConversationStoreDriver();
+    const mine = await store.open({ agent: "assistant", principalId: "usr_1" });
+    const theirs = await store.open({ agent: "assistant", principalId: "usr_2" });
+    await store.append(mine.id, "airun_1", [{ role: "user", content: "Hi" }]);
+    expect(await store.forget("usr_1")).toBe(1);
+    expect(await store.get(mine.id)).toBeUndefined();
+    expect(await store.messages(mine.id)).toEqual([]);
+    expect(await store.get(theirs.id)).toEqual(theirs);
+    expect(await store.forget("usr_1")).toBe(0);
   });
 });

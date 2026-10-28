@@ -97,6 +97,27 @@ ctx.afterCommit(() => this.cache.forgetTag(CacheKey.of(Category, category.id)));
 - Tags live in the namespace: a `forgetTag` in one scope never reaches another's entries.
 - A `remember` load in flight that carries the tag still answers its callers but is not stored.
 
+## Erasure: the subject tag
+
+An entry that holds a person's personal data (a profile view, a per-principal answer) carries
+`CacheKey.subject(subjectId)` among its tags, so an erasure drops every such entry at once instead of waiting for its
+lifetime (ADR 0189 decision 2):
+
+```ts
+await this.cache.remember(CacheKey.of(Customer, id), Duration.minutes(5), () => this.load(id), {
+  tags: [CacheKey.subject(customer.userId)],
+});
+
+// after SubjectErased, in the shared namespace
+await this.cache.forgetTag(CacheKey.subject(event.subject));
+```
+
+- The tag starts with `~`, which no class name does, so it never covers or meets a model key.
+- Tags never cross namespaces: keep subject-tagged entries in the shared namespace (as the query cache does), or the
+  erasure must forget the tag in each namespace that holds one.
+- This package cannot import @stackra/privacy (privacy depends on it), so the `SubjectErased` listener that forgets the
+  tag lives above it.
+
 ## Stale-while-revalidate, one fill across instances, jitter
 
 ```ts

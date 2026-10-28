@@ -45,6 +45,8 @@ driver).
   Raw SQL lives in `PostgresCacheDriver` only, each statement with a `// raw-sql:` reason, every value bound, the
   schema from the validated `postgres.schema`. A change to its tables changes `postgresCacheTables` and needs a new
   migration.
+- `CacheKey.subject(id)` is the only erasure tag (`~subject:<id>`); keep its `~` prefix, which no class name has, so
+  it never covers a model key. Never import @stackra/privacy (it depends on this package).
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.
 - `cache.namespace` selects the `CacheNamespace` driver (`shared`, or `scope` from @stackra/scope); keep
   `CACHE_NAMESPACE_DRIVERS`, the schema enum and the `DriverRegistry` entry together. A new `Cache` driver joins

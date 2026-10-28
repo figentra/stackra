@@ -94,3 +94,4 @@ ADR 0100 tables, the Postgres stores and `ScopeKeyCast`; storage home: ADR 0399)
 | `decide` prompt          | sent to the caller's model  | Not stored or logged here; the caller redacts personal data for third-party models.  |
 | `ContextFacts` (by type) | built by a module's `Facts` | Public ids and what the principal may read only; stored by the ai service, not here. |
 | Guardrail text           | checked in memory           | Never stored or logged; a verdict holds reason codes only, a redaction the text out. |
+| Conversations, messages  | `ConversationStore`         | Erased per principal by `forget(principalId)` (gap gov6); held messages stay.        |

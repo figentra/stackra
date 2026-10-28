@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `CacheKey`, the only maker of a cache key: `CacheKey.of(Model, ...parts)`, plus the key type of the same
- *          name.
+ * Purpose: `CacheKey`, the only maker of a cache key: `CacheKey.of(Model, ...parts)`, and of the erasure tag
+ *          `CacheKey.subject(id)`, plus the key type of the same name.
  * Boundary: a frozen namespace object and the brand type re-stated from `#contracts/types/cache-key.type`. A key is
  *           the model's class name, then each part URI-encoded, joined by `:`, so `:` only ever separates parts and a
  *           shorter key covers exactly the keys that extend it part by part. No namespace here: the driver adds it.
  * Runtime: isomorphic
- * Governing contract: ADR 0305 (rule 32: `CacheKey.of(Model, ...)`); ADR 0150 (decision 2).
+ * Governing contract: ADR 0305 (rule 32: `CacheKey.of(Model, ...)`); ADR 0150 (decision 2); ADR 0189 (decision 2:
+ *                     erasure reaches every copy), data-layer gaps gov6 and ca16 (the subject tag).
  */
 import type { CacheKey as Key } from "#contracts/types/cache-key.type";
 
@@ -37,5 +38,17 @@ export const CacheKey = Object.freeze({
     return [owner.name, ...parts.map((part) => encodeURIComponent(String(part)))].join(
       ":",
     ) as CacheKey;
+  },
+
+  /**
+   * The subject tag of `subject` (a person's public id, `usr_…`): every entry that holds a subject's personal data is
+   * stored with it among its tags, so an erasure drops them all with `forgetTag(CacheKey.subject(subject))`. It starts
+   * with `~`, which no class name does, so it never covers or meets a model key.
+   *
+   * @throws RangeError when `subject` is empty.
+   */
+  subject(subject: string): CacheKey {
+    if (subject === "") throw new RangeError("A subject tag needs the subject's id");
+    return `~subject:${encodeURIComponent(subject)}` as CacheKey;
   },
 });

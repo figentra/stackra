@@ -5,9 +5,10 @@
  * Boundary: an abstract class that is its own token, keyed `ai.ConversationStore`. The Postgres driver in `./node`
  *           stores `ai.conversations` and `ai.messages` under the tenant's row-level security, each message's content
  *           sealed with `ScopeKeyCast`; the memory driver in `.` serves tests and local runs. Messages are AI SDK
- *           `ModelMessage`s, kept in order.
+ *           `ModelMessage`s, kept in order. `forget` erases a principal's conversations for a subject's erasure.
  * Runtime: isomorphic
- * Governing contract: ADR 0100 (decisions 9 and 10); ADR 0399 (storage home); STA-781.
+ * Governing contract: ADR 0100 (decisions 9 and 10); ADR 0399 (storage home); STA-781; ADR 0189 (decision 2: erasure
+ *                     reaches every copy), data-layer gap gov6.
  */
 import { Port } from "@stackra/contracts";
 import type { ModelMessage } from "ai";
@@ -46,4 +47,12 @@ export abstract class ConversationStore extends Port {
     runId: string,
     messages: readonly ModelMessage[],
   ): Promise<void>;
+
+  /**
+   * Erases every visible conversation of `principalId` with its messages, for a subject's erasure; a message a legal
+   * hold covers stays, and so does its conversation. Idempotent.
+   *
+   * @returns how many conversations it removed.
+   */
+  abstract forget(principalId: string): Promise<number>;
 }
