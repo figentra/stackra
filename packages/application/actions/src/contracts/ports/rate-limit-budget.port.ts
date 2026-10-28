@@ -3,14 +3,15 @@
  * Purpose: the `RateLimitBudget` port: the plan-sized area bucket of one call's scope (ADR 0217 decision 2: token
  *          buckets per app and tenant, sized by the plan entitlements). The pipeline's rate-limit step asks it before
  *          the configured area bucket of `RateLimitConfig`.
- * Boundary: an abstract class that is its own token, keyed `actions.RateLimitBudget`. `@stackra/entitlements` is meant
- *           to bind it over `EntitlementValueService`, reading a value entitlement (ADR 0408) per API area for the
- *           call's scope; which entitlement sizes which area is that driver's catalogue data, never code here. An
- *           answer of `undefined` keeps the configured area bucket; an app that binds none uses `RateLimitConfig`
- *           alone. The bucket key stays `area:<area>:<scope or actor>`, so a plan change resizes the same bucket.
+ * Boundary: an abstract class that is its own token, keyed `actions.RateLimitBudget`. `@stackra/entitlements` binds it
+ *           (`EntitlementRateLimitBudgetDriver`) over its `EntitlementSource`, reading the value entitlements (ADR
+ *           0408) `rate_limit.<area>_per_minute` and `rate_limit.<area>_burst` for the call's scope; their numbers
+ *           are plan catalogue data, never code here. An answer of `undefined` keeps the configured area bucket; an
+ *           app that binds none uses `RateLimitConfig` alone. The bucket key is `area:<area>:<app>[:<scope>]` (the
+ *           app is the origin's id, else the actor; STA-1477), so a plan change resizes the same bucket.
  * Runtime: isomorphic
  * Governing contract: ADR 0217 (decision 2); ADR 0382 (decisions 3 and 6: budgets are data); ADR 0408 (value
- *                     entitlements); STA-1277.
+ *                     entitlements); STA-1277; STA-1477.
  */
 import { Port } from "@stackra/contracts";
 

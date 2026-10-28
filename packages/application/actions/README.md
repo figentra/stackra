@@ -90,11 +90,18 @@ token), and fails closed without one; handlers read the same facts as `ctx.assur
 `timeout: Duration.minutes(2)` hands it to `UnitOfWork.transaction(work, { timeout })`, so the database driver bounds
 each statement of that transaction by it instead of the configured session timeout.
 
-The rate-limit step takes one token from the call's area bucket, keyed by the tenant (or, for a platform call, the
-actor), and one from the action's own `rateLimit`. When a `RateLimitBudget` is bound and answers a bucket for the call,
-that bucket sizes the area bucket (ADR 0217 decision 2: per app and tenant, sized by the plan); `@stackra/entitlements`
-is meant to bind it over a value entitlement per area (ADR 0408). When it answers `undefined`, or none is bound, the
-area's `RateLimitConfig` entry applies. The key does not change, so a plan change resizes the same bucket.
+The rate-limit step takes one token from the call's area bucket, keyed by (app, scope): `area:<area>:<app>[:<scope>]`,
+where the app is the origin's id (storefront, API key, agent) or, without one, the actor (ADR 0217 decision 2). It also
+takes one from the action's own `rateLimit`. When a `RateLimitBudget` is bound and answers a bucket for the call, that
+bucket sizes the area bucket (sized by the plan); `@stackra/entitlements` binds `EntitlementRateLimitBudgetDriver`
+over the value entitlements `rate_limit.<area>_per_minute` and `rate_limit.<area>_burst` (ADR 0408). When it answers
+`undefined`, or none is bound, the area's `RateLimitConfig` entry applies. The key does not change with the plan, so a
+plan change resizes the same bucket.
+
+A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
+`remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`
+through `rateLimitHeaders` of `@stackra/errors` (the generated HTTP adapter). When an `EventOutbox` is bound, each
+refusal also writes one `count` usage event on the meter `actions.rate_limited`: limits are metered.
 
 The call carries its scope (ADR 0327 decision 6): the transport passes the `ScopeRef` the resolver chain settled on as
 `CallOptions.scope`, every port reads it on the `CallDescriptor`, a handler reads `ctx.scope`, and a job queued with

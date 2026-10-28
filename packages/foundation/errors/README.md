@@ -16,6 +16,7 @@ typed details, carried on every transport as the one error envelope of ADR 0140.
 | `.`           | `isRefusal`                                                                       | `isRefusal(error)`, `isRefusal(error, ProductNotFoundError)` |
 | `.`           | `ForbiddenError`, `NotFoundError`, `UnauthenticatedError`, ... and `CoreRefusals` | the refusals the platform raises, also keyed by code         |
 | `.`           | `refusalCode`                                                                     | the class-name-to-code derivation gen shares                 |
+| `.`           | `rateLimitHeaders`                                                                | `Retry-After` and `RateLimit-*` of a `RateLimitedError`      |
 | `.`           | `ErrorEnvelope`, `ErrorCategory`, `FieldErrors`, `RefusalClass`, ...              | types                                                        |
 | `./contracts` | `ErrorReporter`                                                                   | the port unexpected errors go to                             |
 | `./react`     | `useErrorReporter`                                                                | `report = useErrorReporter()` in a component                 |

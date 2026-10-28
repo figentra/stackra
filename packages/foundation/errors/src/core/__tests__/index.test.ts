@@ -41,6 +41,7 @@ describe("@stackra/errors", () => {
       "UnauthenticatedError",
       "WorkflowTimedOutError",
       "isRefusal",
+      "rateLimitHeaders",
       "refusalCode",
     ]);
     expect("ErrorReporter" in errors).toBe(false);

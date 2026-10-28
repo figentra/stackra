@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/entitlements (the `Entitlement` kind, its ports, the plan driver
- *          of the pipeline's entitlement step and its limit reservation, the value-entitlement reader, the registration
+ *          of the pipeline's entitlement step and its limit reservation, the plan-sized rate-limit budget, the value-entitlement reader, the registration
  *          gen calls, the by-class-or-key `isEntitled` check, the limit-grant helpers `isLimitGrant` and `limitOf`, `paidPlanDays`,
  *          `LimitReachedError`, the plan-catalogue admin of ADR 0391, and an edition's bundled catalogue `bundleEditionCatalogue`, ADR 0335) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The registry stays internal; `isLimitGrant` and `limitOf` are public
@@ -14,6 +14,7 @@
  *                     `bundleEditionCatalogue`, stackra-64).
  */
 export { Entitlement } from "#core/bases/entitlement.base";
+export { EntitlementRateLimitBudgetDriver } from "#core/drivers/entitlement-rate-limit-budget.driver";
 export { MemoryCatalogueVersionsDriver } from "#core/drivers/memory-catalogue-versions.driver";
 export { MemoryPlanSnapshotsDriver } from "#core/drivers/memory-plan-snapshots.driver";
 export { MemorySeatLedgerDriver } from "#core/drivers/memory-seat-ledger.driver";

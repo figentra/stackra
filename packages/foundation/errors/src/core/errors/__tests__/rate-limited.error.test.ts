@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `RateLimitedError`: a refusal of kind `RateLimited` with code `rate_limited`, category `rate_limited` (HTTP 429),
- *          retryable, carrying no details.
+ *          retryable, carrying no details when raised bare
+ *          and the bucket's `retryAfterMs`, `limit` and `remaining` when given them (STA-1477).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0140.
@@ -27,6 +28,15 @@ describe("RateLimitedError", () => {
       code: "rate_limited",
       category: "rate_limited",
       retryable: true,
+    });
+  });
+
+  it("carries the refusing bucket's numbers as details", () => {
+    expect(RateLimitedError.envelope({ retryAfterMs: 3000, limit: 20, remaining: 0 })).toEqual({
+      code: "rate_limited",
+      category: "rate_limited",
+      retryable: true,
+      details: { retryAfterMs: 3000, limit: 20, remaining: 0 },
     });
   });
 });

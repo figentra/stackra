@@ -36,7 +36,8 @@
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
- *                     (event ids from @stackra/contracts' `mintPublicId`).
+ *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
+ *                     refusal's back-off details, the `rate_limited` usage event).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -95,6 +96,7 @@ import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constan
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
+import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -476,7 +478,10 @@ export class ActionPipeline {
 
   /**
    * Takes a token from the area's bucket (plan-sized by `RateLimitBudget` when it answers, else `RateLimitConfig`)
-   * and from the action's own, refusing when either is empty.
+   * and from the action's own, refusing when either is empty. The area bucket is keyed by (app, scope) (ADR 0217
+   * decision 2): the app is the origin's id (storefront, API key, agent) or, without one, the actor. A refusal carries
+   * the refusing bucket's numbers and, when an `EventOutbox` is bound, writes one `count` usage event on
+   * `RATE_LIMITED_METER` ("limits are metered").
    */
   private async limit(call: Call): Promise<void> {
     const { descriptor, options, at } = call;
@@ -487,13 +492,15 @@ export class ActionPipeline {
       return;
     }
     const holder = descriptor.scopeId ?? descriptor.actor.id;
+    const app = descriptor.origin?.id ?? descriptor.actor.id;
+    const areaKey = `area:${descriptor.area}:${app}${descriptor.scopeId === undefined ? "" : `:${descriptor.scopeId}`}`;
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const area = this.optional(RateLimitConfig)?.areas[descriptor.area];
     const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
-    if (planned !== undefined) takes.push([`area:${descriptor.area}:${holder}`, planned]);
+    if (planned !== undefined) takes.push([areaKey, planned]);
     else if (area !== undefined)
       takes.push([
-        `area:${descriptor.area}:${holder}`,
+        areaKey,
         {
           capacity: area.burst,
           tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
@@ -507,8 +514,18 @@ export class ActionPipeline {
         { capacity: own.perMinute, tokensPerSecond: own.perMinute / 60 },
       ]);
     }
-    for (const [key, bucket] of takes)
-      if (!(await store.take(key, bucket, at)).allowed) throw RateLimitedError.create();
+    for (const [key, bucket] of takes) {
+      const decision = await store.take(key, bucket, at);
+      if (decision.allowed) continue;
+      if (this.optional(EventOutbox) !== undefined)
+        await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
+      throw RateLimitedError.create({
+        // A bucket that never refills (`Infinity`) has no hint: JSON would carry it as null.
+        ...(Number.isFinite(decision.retryAfterMs) ? { retryAfterMs: decision.retryAfterMs } : {}),
+        limit: bucket.capacity,
+        remaining: decision.remaining,
+      });
+    }
   }
 
   /**

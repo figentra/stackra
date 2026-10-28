@@ -48,6 +48,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   usage quotas are data the drivers read. A `structural` action or a `meter` without its port bound is an error.
 - A plan-sized area bucket comes from the bound `RateLimitBudget` (a value entitlement), never from code; its answer
   wins over `RateLimitConfig`, which stays the default when it answers `undefined` or none is bound.
+- The area bucket key is (app, scope), never the actor alone; a rate-limit refusal always carries the refusing
+  bucket's numbers (never its key) and, with an outbox bound, one `actions.rate_limited` usage event (STA-1477).
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.

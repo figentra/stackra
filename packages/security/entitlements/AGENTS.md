@@ -51,6 +51,8 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   read in `PlanEntitlementCheckDriver.check`; never read the descriptor's `scopeId`. The ports keep the id until
   `@stackra/collaboration`, which passes its room's scope id, moves to the `ScopeRef` with them.
 - Seat kinds, allowances, grace dates and ceilings are plan-catalogue data; never name a seat kind or a number in code.
+- Rate-limit buckets are plan data too: `EntitlementRateLimitBudgetDriver` reads `rate_limit.<area>_per_minute` and
+  `rate_limit.<area>_burst` by key in the call's `scope`; never put a request rate in code (STA-1477).
 - Edition bundles (ADR 0335 d6): an edition's base entitlements reach its tiers only through `bundleEditionCatalogue`;
   never grant a base module by name in a driver, and never sell an unbundled one.
 - A check that must never pass a limit holds the limit's lock (`LimitReservationService`, `SeatMeterService`).

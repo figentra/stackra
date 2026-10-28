@@ -30,6 +30,8 @@ shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
 - A refusal keeps no state of its own: kind and options live in the container's kind registry; code, category and
   details are read on demand. Field errors and the cause are non-enumerable so they never count as details.
 - `isRefusal` uses the `Symbol.for` brand, never `instanceof`, so refusals from another bundle count.
+- `RateLimitedError` carries the refusing bucket's `retryAfterMs`, `limit` and `remaining` (all optional, never the
+  bucket key); `rateLimitHeaders` is the one place they become HTTP headers (ADR 0217, STA-1477).
 - A reporter never throws and never awaits in `report`; it sends no request context, input or user (ADR 0184).
 - A new `ErrorKind` is an ADR change (0140). A new core refusal needs a platform step that raises it.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

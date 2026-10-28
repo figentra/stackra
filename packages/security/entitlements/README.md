@@ -35,6 +35,7 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `./contracts` | `CapLiftFacts`; `.` `paidPlanDays`                                                      | the R1-OS-40 cap-lift facts; the paid-plan age from `PlanSnapshot`         |
 | `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
+| `.`           | `EntitlementRateLimitBudgetDriver`                                                      | the driver of `RateLimitBudget`: plan-sized API area buckets               |
 | `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
 | `.`           | `registerEntitlements`, `entitlementKey`                                                | what gen's entry calls at boot; the locked key a keyed source looks up     |
 | `.`           | `isEntitled`                                                                            | yes or no for one entitlement in one scope, by class or by key             |
@@ -73,6 +74,14 @@ export class TillLimitEntitlement extends Entitlement({
 
 A retired till stops counting and frees its place. `where` on a feature or module, or a value that is not a scalar,
 throws a `TypeError` at declaration.
+
+## Plan-sized rate limits
+
+`EntitlementRateLimitBudgetDriver` binds the pipeline's `RateLimitBudget` (ADR 0217 decision 2). For a call on API
+area `<area>` it reads two value entitlements in the call's scope: `rate_limit.<area>_per_minute` (the refill) and
+`rate_limit.<area>_burst` (the capacity; the per-minute value when the plan sets none). A plan without the per-minute
+value answers `undefined`, so the pipeline keeps `RateLimitConfig`. Both numbers are plan catalogue rows, so a lower
+plan is throttled by its own entitlement and an upgrade resizes the same bucket.
 
 ## The entitlement step
 

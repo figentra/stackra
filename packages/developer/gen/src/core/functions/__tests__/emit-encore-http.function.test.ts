@@ -3,7 +3,9 @@
  * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `.stackra/encore/<member>/http.ts`,
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
- *          `private, no-store` (ADR 0325 rule 22); a service without @stackra/app, a package and an app get none.
+ *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
+ *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; a service without
+ *          @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437; ADR 0295 (decision 8); ADR 0325 (rule 22); STA-1385;
@@ -34,6 +36,22 @@ describe(emitEncoreHttp, () => {
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
     ])
       expect(content).toContain(line);
+  });
+
+  it("answers a rate-limited refusal with 429 and its back-off headers when @stackra/errors is declared", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    for (const line of [
+      'import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";',
+      "      if (!isRefusal(error, RateLimitedError)) throw error;",
+      "      answered = Response.json(error.toEnvelope(), { status: 429, headers: rateLimitHeaders(error) });",
+    ])
+      expect(content).toContain(line);
+    const bare = emitEncoreHttp({
+      ...BILLING_IR,
+      packages: (BILLING_IR.packages ?? []).filter((name) => name !== "@stackra/errors"),
+    })?.content;
+    expect(bare).not.toContain("@stackra/errors");
+    expect(bare).toContain("    const answered = await handle(request, container);");
   });
 
   it("writes none without @stackra/app or outside a service", () => {

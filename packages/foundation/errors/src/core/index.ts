@@ -24,6 +24,7 @@ export { RateLimitedError } from "#core/errors/rate-limited.error";
 export { UnauthenticatedError } from "#core/errors/unauthenticated.error";
 export { WorkflowTimedOutError } from "#core/errors/workflow-timed-out.error";
 export { isRefusal } from "#core/functions/is-refusal.function";
+export { rateLimitHeaders } from "#core/functions/rate-limit-headers.function";
 export { refusalCode } from "#core/functions/refusal-code.function";
 export { SentryOptions } from "#core/schemas/sentry-options.schema";
 export type { ErrorCategory } from "#core/types/error-category.type";

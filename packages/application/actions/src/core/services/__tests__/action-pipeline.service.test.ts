@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
- *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`); the unit of work with `afterCommit`; the audit entry; the call
+ *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
+ *          with its back-off details and a `rate_limited` usage event); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
  *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
  *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
@@ -766,6 +767,39 @@ describe(ActionPipeline, () => {
     const outsider: Actor = { ...customer, id: "usr_9", scopeId: "ten_9" };
     await read(outsider);
     await expect(read(outsider)).rejects.toBeInstanceOf(RateLimitedError);
+  });
+
+  it("keys the area bucket by (app, scope) and refuses with the bucket's back-off details", async () => {
+    const config = Object.assign(new RateLimitConfig(), {
+      areas: { app: { requests: 1, per: Duration.minutes(1), burst: 1 } },
+    });
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [RateLimitConfig, config],
+      [EventOutbox, outbox],
+    ]);
+    const read = (id: string) =>
+      pipeline.execute(
+        GetOrderQuery,
+        { orderId: "ord_1" },
+        { actor: customer, origin: { kind: CallOriginKind.ApiKey, id } },
+      );
+    await read("key_1");
+    // Another app in the same scope has its own bucket.
+    await read("key_2");
+    await expect(read("key_1")).rejects.toMatchObject({
+      code: "rate_limited",
+      // One token a minute: about 60 seconds, rounded up by the store.
+      retryAfterMs: expect.closeTo(60_000, -1),
+      limit: 1,
+      remaining: 0,
+    });
+    expect(outbox.written.at(-1)?.event).toMatchObject({
+      meter: "actions.rate_limited",
+      kind: MeterKind.Count,
+      value: 1,
+      key: "order.get",
+    });
   });
 
   it("audits an action's outcome and fields, never a query", async () => {

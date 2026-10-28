@@ -29,6 +29,7 @@ describe("@stackra/entitlements", () => {
       "CatalogueVersionNotPendingError",
       "Entitlement",
       "EntitlementKind",
+      "EntitlementRateLimitBudgetDriver",
       "EntitlementSource",
       "EntitlementValueService",
       "LimitReachedError",
