@@ -5,7 +5,8 @@
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
- *          found for that port: the `MemberIR` every gen output is a pure function of.
+ *          found for that port, and the writes that skip the unit of work (`readNativeWrites`, stackra-262): the
+ *          `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
  * Runtime: node
@@ -36,6 +37,7 @@ import { readDependencyManifests } from "#node/functions/read-dependency-manifes
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
+import { readNativeWrites } from "#node/functions/read-native-writes.function";
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readServiceCatalogues } from "#node/functions/read-service-catalogues.function";
@@ -117,6 +119,8 @@ export async function discoverMember(
     // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
     const shippedCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
     const i18nReferences = readI18nReferences(facts.root);
+    // Writes that skip the unit of work, refused on an encrypted model (stackra-262).
+    const nativeWrites = readNativeWrites(facts.root);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
@@ -215,6 +219,7 @@ export async function discoverMember(
       ...(catalogues !== undefined ? { catalogues } : {}),
       ...(packageCatalogues.length > 0 ? { packageCatalogues } : {}),
       ...(i18nReferences.length > 0 ? { i18nReferences } : {}),
+      ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
       errors: [...reader.errors],
     };
   } finally {

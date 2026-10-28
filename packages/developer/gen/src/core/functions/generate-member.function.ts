@@ -19,7 +19,8 @@
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
  *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
- *           (`checkSemanticSearch`, STA-1251) or a slot fill that breaks its slot's contract (`checkSlotFills`,
+ *           (`checkSemanticSearch`, STA-1251), an encryption mismatch or a write past the unit of work on an encrypted
+ *           model (`checkEncryptedFields`, stackra-262) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
@@ -36,6 +37,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
+import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
@@ -131,6 +133,7 @@ export function generateMember(
     ...checkI18n(ir),
     ...checkConventions(ir, manifest),
     ...checkSemanticSearch(ir),
+    ...checkEncryptedFields(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
   );

@@ -1579,6 +1579,15 @@ export function createSourceReader(
         "@Secret does not name its secret with a SCREAMING_SNAKE literal",
         'write `@Secret("<PROVIDER>_<PURPOSE>")`, such as `@Secret("RESEND_API_KEY")`; the value comes from the secret store',
       );
+    // `@Classified(DataClassification.Personal)`: the code, from a literal or the enum member's name (stackra-262).
+    const classifiedArg = decorators.find((use) => use.name === "Classified")?.args[0];
+    const classifiedValue = classifiedArg === undefined ? undefined : constant(classifiedArg);
+    const classified =
+      classifiedArg === undefined
+        ? undefined
+        : typeof classifiedValue === "string"
+          ? classifiedValue
+          : snakeCase(host.text(classifiedArg).split(".").pop() ?? "");
     const initial =
       value.initializer === undefined
         ? undefined
@@ -1591,6 +1600,7 @@ export function createSourceReader(
       rules,
       ...(initial !== undefined ? { default: initial } : {}),
       ...(typeof renamedTo === "string" ? { renamed: renamedTo } : {}),
+      ...(classified === undefined ? {} : { classified }),
     };
     if (!quiet && type.kind !== "hatch")
       checkRules(field, declaration.name ?? declaration, subject);

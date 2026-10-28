@@ -4,7 +4,8 @@
  *          (the bound legal-hold registry and sequence time zone, the database with the hold subscriber and the outbox
  *          writer among its subscribers, then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
- *          aborted mid-boot disconnects at once; each step only when its package is used; no file for a package, an app or a
+ *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
+ *          (stackra-262); each step only when its package is used; no file for a package, an app or a
  *          service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
@@ -90,6 +91,30 @@ describe("emitBoot", () => {
       ].join("\n"),
     );
     expect(boot).not.toContain("InboxService");
+  });
+
+  it("seals encrypted fields with the bound cipher when a model has HasEncryptedFields", () => {
+    const boot =
+      emitBoot({
+        ...COMMERCE_IR,
+        classes: COMMERCE_IR.classes.map((declared) =>
+          declared.kind === "model"
+            ? {
+                ...declared,
+                traits: [...declared.traits, { name: "HasEncryptedFields", args: ["email"] }],
+              }
+            : declared,
+        ),
+      }) ?? "";
+    expect(boot).toContain('import { FieldCipher } from "@stackra/contracts";');
+    expect(boot).toContain('import { EncryptedFieldsSubscriber } from "@stackra/model";');
+    expect(boot).toContain(
+      "  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))] });",
+    );
+  });
+
+  it("leaves the subscriber out when no model encrypts a field", () => {
+    expect(emitBoot(COMMERCE_IR)).not.toContain("EncryptedFieldsSubscriber");
   });
 
   it("writes nothing for a package, an app or a service with nothing to connect", () => {

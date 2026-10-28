@@ -32,6 +32,7 @@ export { actionKey } from "#core/functions/action-key.function";
 export { additionsOf } from "#core/functions/additions-of.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
+export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 export { checkSurfaces } from "#core/functions/check-surfaces.function";
 export { compareManifests } from "#core/functions/compare-manifests.function";

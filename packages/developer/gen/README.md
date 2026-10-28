@@ -90,6 +90,13 @@ edges (`empty_module`, `sibling_not_exported`, `module_cycle`), `migration_numbe
 still writes the manifest; the reader's (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch`) refuse
 both.
 
+The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
+`HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
+`@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
+insert or update, or raw `insert into`/`update` statement on an encrypted model, own or a declared package's, found by
+`readNativeWrites` outside `__tests__` and `database/`). A service with an encrypted model gets
+`new EncryptedFieldsSubscriber(container.get(FieldCipher))` among its boot subscribers, so a cipher must be bound.
+
 `searchable_semantic_ai_never` (`checkSemanticSearch`, full pass only, STA-1251) refuses a model whose
 `@Searchable({ semantic: true })` lists a text field (its own, an own base model's, or a dotted path through a relation
 to an own model) whose `@Classify` data class says `ai: never`: semantic search embeds the text through a model

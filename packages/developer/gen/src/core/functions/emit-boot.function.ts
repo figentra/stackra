@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { url, signal })`
  *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
- *          drivers (or none), `PostgresDatabaseDriver.connect` with the legal-hold subscriber and the outbox writer
- *          among its subscribers, `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
+ *          drivers (or none), `PostgresDatabaseDriver.connect` with the legal-hold subscriber, the
+ *          `EncryptedFieldsSubscriber` over the bound `FieldCipher` (when a model, own or a declared package's, has
+ *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
+ *          `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), then `relay.connect(container)` and
  *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
@@ -16,7 +18,7 @@
  *                     0332 (segments); ADR 0295 (decision 8: boot order belongs to the runtime); ADR 0134 (2026-10-24
  *                     amendment: every disposal path asks the connected `HoldRegistry`); ADR 0394 (decision 1); ADR 0263 (the
  *                     container is ready before anything resolves from it); ADR 0260 (decision 4: typed subscribers
- *                     and relays receive only once connected).
+ *                     and relays receive only once connected); ADR 0465 (decision 5: the model encryption path).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -36,6 +38,16 @@ export function emitBoot(ir: MemberIR): string | undefined {
     uses("@stackra/database") ||
     ir.classes.some((declared) => declared.kind === "model") ||
     ir.dependencies.some(({ manifest }) => (manifest.models ?? []).length > 0);
+  // A model with `HasEncryptedFields` (own or a declared package's) is sealed by the subscriber, never written in clear.
+  const encrypted =
+    ir.classes.some(
+      (declared) =>
+        declared.kind === "model" &&
+        declared.traits.some((trait) => trait.name === "HasEncryptedFields"),
+    ) ||
+    ir.dependencies.some(({ manifest }) =>
+      (manifest.models ?? []).some((model) => model.traits.includes("HasEncryptedFields")),
+    );
   const outbox = uses("@stackra/outbox");
   const segments = uses("@stackra/segments");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
@@ -50,12 +62,17 @@ export function emitBoot(ir: MemberIR): string | undefined {
       'import { connectHoldRegistry, connectSequenceTimeZone, HoldSubscriber } from "@stackra/database";',
       'import { PostgresDatabaseDriver } from "@stackra/database/node";',
     );
+    if (encrypted)
+      imports.push(
+        'import { FieldCipher } from "@stackra/contracts";',
+        'import { EncryptedFieldsSubscriber } from "@stackra/model";',
+      );
     steps.push(
       "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
       "  connectSequenceTimeZone(",
       "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
       "  );",
-      `  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber()${outbox ? ", container.get(OutboxWriterService)" : ""}] });`,
+      `  await PostgresDatabaseDriver.connect({ url: options.url, subscribers: [new HoldSubscriber()${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher))" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}] });`,
     );
   }
   if (outbox)

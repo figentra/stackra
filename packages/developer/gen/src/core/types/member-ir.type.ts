@@ -132,6 +132,20 @@ export interface MemberIR {
   }[];
 
   /**
+   * Every write in the member's own non-test files that skips the unit of work, so no ORM subscriber sees it: a
+   * `nativeInsert`/`nativeUpdate`/`insert`/`insertMany` or query-builder insert or update naming a model class
+   * (`target` is the class), or a raw `insert into`/`update` statement (`target` is the table as written, schema
+   * included when written). `checkEncryptedFields` refuses one on an encrypted model. Absent when none (stackra-262).
+   */
+  readonly nativeWrites?: readonly {
+    readonly file: string;
+    readonly line: number;
+    readonly column: number;
+    readonly method: string;
+    readonly target: string;
+  }[];
+
+  /**
    * Every `I18n.<namespace>.<path>` chain in the member's own files that import `#stackra/i18n`, as path segments
    * with its place; a key no merged catalogue ships is refused (`i18n_key_missing`). Absent when none (STA-1298).
    */
