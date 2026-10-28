@@ -18,7 +18,8 @@
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
- *           abstract driver (a base the candidates extend) is never a candidate. The
+ *           abstract driver (a base the candidates extend) is never a candidate. A package candidate's tokens from a
+ *           library the member does not declare are left out, so the wiring never imports an undeclared library. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
@@ -145,10 +146,30 @@ function tokenOf(value: unknown): TokenRef | undefined {
   };
 }
 
+/** The package a bare specifier names: `@mikro-orm/postgresql` of `@mikro-orm/postgresql/x`, `zod` of `zod/v4`. */
+function packageOf(specifier: string): string {
+  const parts = specifier.split("/");
+  return (specifier.startsWith("@") ? parts.slice(0, 2) : parts.slice(0, 1)).join("/");
+}
+
+/**
+ * Whether the member's wiring may import a token from `from`: a `@stackra/*` package (an undeclared one is refused as
+ * `generated_dependency_missing`), a subpath import, or a library the member declares. An IR without `packages`
+ * (built by hand) imports anything.
+ */
+function importable(ir: MemberIR, from: string): boolean {
+  if (ir.packages === undefined || from.startsWith("@stackra/") || /^[#.]/.test(from)) return true;
+  const name = packageOf(from);
+  return name === ir.package || ir.packages.includes(name);
+}
+
 /**
  * The driver tables the declared packages' manifests record, by port key: each candidate's class, entry and tokens
  * (`classes`) and the config that selects one. The manifest is the one source (gen's AGENTS.md); a package whose
- * manifest predates `classes` contributes nothing.
+ * manifest predates `classes` contributes nothing. A candidate with a token from a library the member does not
+ * declare (`PostgreSqlMikroORM` of the database's `postgres` driver) is listed without tokens: the member cannot
+ * import that library, and such a driver is started by its own package (`PostgresDatabaseDriver.connect`), never
+ * built by the container.
  */
 function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
   const tables = new Map<string, PackageTable>();
@@ -162,13 +183,14 @@ function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
         const { class: type, from, deps } = (value ?? {}) as Record<string, unknown>;
         if (typeof type !== "string" || typeof from !== "string") continue;
         if (table.candidates.some((known) => known.name === name)) continue;
-        table.candidates.push({
-          name,
-          type: { name: type, from },
-          deps: (Array.isArray(deps) ? deps : [])
-            .map(tokenOf)
-            .filter((dep): dep is TokenRef => dep !== undefined),
-        });
+        const tokens = (Array.isArray(deps) ? deps : [])
+          .map(tokenOf)
+          .filter((dep): dep is TokenRef => dep !== undefined);
+        const reachable = tokens.every(
+          (dep) =>
+            importable(ir, dep.class.from) && (dep.of === undefined || importable(ir, dep.of.from)),
+        );
+        table.candidates.push({ name, type: { name: type, from }, deps: reachable ? tokens : [] });
       }
       const selectedBy = driver["selectedBy"];
       if (typeof selectedBy === "string") table.selectedBy ??= selectedBy;

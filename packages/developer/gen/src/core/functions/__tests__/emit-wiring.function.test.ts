@@ -6,7 +6,8 @@
  *          partners and dependency modules marked `from`, the bindings gen adds (per-model tokens with their
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
  *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
- *          their selecting config and package config rows, no registry entry; STA-1297), MediaLibrary over the media
+ *          their selecting config and package config rows, no registry entry; STA-1297; a candidate without the
+ *          tokens of a library the member does not declare; no abstract driver), MediaLibrary over the media
  *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), and the names the container really
@@ -319,6 +320,48 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*\bLockingConfig\b[^}]*\} from "@stackra\/locking";/);
     expect(content).not.toContain("MemoryUnreachedDriver");
     expect(content).not.toContain('"locking.LockDriver": ');
+  });
+
+  it("lists a package candidate without the tokens of a library the member does not declare", () => {
+    const database: MemberIR["dependencies"][number] = {
+      package: "@stackra/database",
+      manifest: {
+        member: "database",
+        package: "@stackra/database",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "Database",
+            key: "database.Database",
+            candidates: ["postgres"],
+            classes: {
+              postgres: {
+                class: "PostgresDatabaseDriver",
+                from: "@stackra/database/node",
+                deps: [{ class: { name: "PostgreSqlMikroORM", from: "@mikro-orm/postgresql" } }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: [...BILLING_IR.classes, service([{ name: "Database", from: "@stackra/database" }])],
+      dependencies: [...BILLING_IR.dependencies, database],
+    };
+    const undeclared = emitWiring(ir);
+    expect(undeclared).toContain(
+      '        "postgres": () => import("@stackra/database/node").then((m) => m.PostgresDatabaseDriver),',
+    );
+    expect(undeclared).not.toContain("@mikro-orm/postgresql");
+    expect(undeclared).not.toContain('"postgres": [');
+    const declared = emitWiring({
+      ...ir,
+      packages: [...(ir.packages ?? []), "@mikro-orm/postgresql"],
+    });
+    expect(declared).toContain('import { PostgreSqlMikroORM } from "@mikro-orm/postgresql";');
+    expect(declared).toContain('      deps: { "postgres": [PostgreSqlMikroORM] },');
   });
 
   it("binds MediaLibrary over the filesystem disk table and a media config row (STA-1297, ADR 0465)", () => {

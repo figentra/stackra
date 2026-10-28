@@ -74,7 +74,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   subpaths mapped by `publicSpecifier`; an `abstract` driver is a base, never a candidate) and `config` (`{ class, from }`, the config class whose field
   selects one). `emitWiring` reads them (`dependencyDriverTables`) and lists a package's table only for a port its
   bindings reach (the `used` worklist: bindings, platform bindings and driver constructors, transitively), merged
-  under the member's own candidates (own name wins). A package `*Config` class a reached token names gets a config
+  under the member's own candidates (own name wins). A package candidate with a token from a library the member does
+  not declare (`PostgreSqlMikroORM` of the database's `postgres` driver) is listed without tokens, so a wiring never
+  imports an undeclared library; such a driver is started by its package, never built by the container. A package `*Config` class a reached token names gets a config
   row (key from `configKeyOf` and the package's member) unless the member overrides it. The `DriverRegistry`
   augmentation lists the member's own drivers only: packages augment their own ports. A package manifest written
   before this change has no `classes` and contributes nothing until the package is generated again. Test-only
