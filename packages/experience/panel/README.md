@@ -11,7 +11,8 @@ Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (
 
 Stackra's panel: the admin and portal surfaces modules declare and one renderer draws (ADR 0164, ADR 0307). A module
 declares a `Resource` (one model's List, View, Create and Edit pages in one area), a `Widget` (a query bound to a
-display), a `Document` (a saved Page or Dashboard of registered blocks) and an app declares its `Panel`s. Builders are
+display), a `Document` (a saved Page or Dashboard of registered blocks, its kind
+`ExperienceKind.Page` or `ExperienceKind.Dashboard` of `@stackra/experience/contracts`; its blocks are `PanelBlockNode`s) and an app declares its `Panel`s. Builders are
 pure: gen runs each member once and records the tree in the manifest. The query computes every number; the panel only
 presents it.
 
@@ -28,7 +29,7 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                                        | the four kinds                                                 |
 | `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                                  | what the builder members receive                               |
 | `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                                        | metric output shapes and the period input, with their schemas  |
-| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentKind`, `DocumentLayout`, `ExportFormat`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
+| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentLayout`, `ExportFormat`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
 | `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                      | binds, drill-downs, date filter values, document blocks        |
 | `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`     |
 | `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`      |

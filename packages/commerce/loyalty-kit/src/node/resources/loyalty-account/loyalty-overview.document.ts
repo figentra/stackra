@@ -14,7 +14,8 @@
  *                     (dashboards); owner decision R-56.
  */
 import { ApiArea } from "@stackra/contracts";
-import { Blocks, Document, DocumentKind } from "@stackra/panel";
+import { ExperienceKind } from "@stackra/experience/contracts";
+import { Blocks, Document } from "@stackra/panel";
 
 import { LOYALTY_KIT_KEYS } from "#core/constants/loyalty-kit-keys.constant";
 import { LOYALTY_KIT_ICONS } from "#node/constants/loyalty-kit-icons.constant";
@@ -27,7 +28,7 @@ import { PointsBalanceWidget } from "#node/resources/loyalty-account/points-bala
  * kindOf(LoyaltyOverviewDocument)?.options; // { kind: "dashboard", path: "/loyalty", ... }
  */
 export class LoyaltyOverviewDocument extends Document({
-  kind: DocumentKind.Dashboard,
+  kind: ExperienceKind.Dashboard,
   path: "/loyalty",
   area: ApiArea.App,
   navigation: {

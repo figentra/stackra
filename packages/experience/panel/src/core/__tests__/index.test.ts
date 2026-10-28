@@ -39,7 +39,6 @@ describe("@stackra/panel", () => {
       "DateRange",
       "DisplayKind",
       "Document",
-      "DocumentKind",
       "DocumentLayout",
       "Drill",
       "Entry",

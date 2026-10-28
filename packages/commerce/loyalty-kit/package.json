@@ -129,6 +129,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/experience": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/iam": "workspace:*",
     "@stackra/integrations": "workspace:*",

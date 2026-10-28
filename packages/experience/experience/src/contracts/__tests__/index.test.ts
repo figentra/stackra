@@ -35,7 +35,13 @@ describe("@stackra/experience/contracts", () => {
 
   it("types the document kinds and the validator's problems", () => {
     expectTypeOf<contracts.ExperienceKind>().toEqualTypeOf<
-      "page" | "screen" | "form" | "email_template" | "print_document" | "theme_section"
+      | "page"
+      | "screen"
+      | "form"
+      | "email_template"
+      | "print_document"
+      | "theme_section"
+      | "dashboard"
     >();
     expectTypeOf<DocumentProblem["path"]>().toEqualTypeOf<string>();
     expectTypeOf<DocumentProblem["props"]>().toEqualTypeOf<readonly string[] | undefined>();

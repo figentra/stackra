@@ -8,7 +8,7 @@
  */
 import { kindOf } from "@stackra/container";
 import { ApiArea } from "@stackra/contracts";
-import { DocumentKind } from "@stackra/panel";
+import { ExperienceKind } from "@stackra/experience/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { LoyaltyOverviewDocument } from "#node/resources/loyalty-account/loyalty-overview.document";
@@ -18,7 +18,7 @@ describe("LoyaltyOverviewDocument", () => {
   it("is the app-area dashboard at /loyalty holding the points-balance tile", () => {
     expect(kindOf(LoyaltyOverviewDocument)?.kind).toBe("document");
     expect(kindOf(LoyaltyOverviewDocument)?.options).toEqual({
-      kind: DocumentKind.Dashboard,
+      kind: ExperienceKind.Dashboard,
       path: "/loyalty",
       area: ApiArea.App,
       navigation: { group: "loyalty_kit::nav.loyalty", icon: "star", order: 10 },

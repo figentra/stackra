@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `ExperienceKind`, the kinds of L2 document a block may be placed in: a page, a mobile screen, a form, an
- *          email template, a print document and a theme section.
+ *          email template, a print document, a theme section and a dashboard (a panel `Document`'s two kinds are its
+ *          `page` and `dashboard`, so there is one document-kind vocabulary).
  * Boundary: an enum (`Enum.of`) in the leaf entry, so the builder, the server-side validator and a renderer read it
  *           without a runtime. A block declares the kinds it fits (`Block({ kinds })`); `validateDocument` and the
  *           builder refuse a block outside the document's kind (email-safe blocks only in an email template).
  * Runtime: isomorphic
  * Governing contract: ADR 0270 (decisions 6, 7 and 13: document kinds, email-safe blocks, multi-step forms); ADR 0110
- *                     (L2 documents); ADR 0294 (decision 16: Enum).
+ *                     (L2 documents); ADR 0294 (decision 16: Enum);
+ *                     STA-1383 (Dashboard added: one document-kind vocabulary).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -30,6 +32,8 @@ export const ExperienceKind = Enum.of({
   PrintDocument: "print_document",
   /** One section of a theme: a header, a footer, a product card. */
   ThemeSection: "theme_section",
+  /** Widget tiles on the 12-column grid, under one range picker (a panel `Document`). */
+  Dashboard: "dashboard",
 });
 
 /** One of the codes above. */
