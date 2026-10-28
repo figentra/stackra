@@ -70,8 +70,8 @@ workflow), and by hand (`workflow_dispatch`, main only). Never on a pull request
 3. create the R2 bucket `turbo-cache` if `wrangler r2 bucket list` does not show it, and add the lifecycle rule
    `expire-after-7-days` (`--expire-days 7`) if `wrangler r2 bucket lifecycle list` does not show it;
 4. `wrangler deploy`, which also attaches the Custom Domain `turbo.stackra.figentra.com` (`routes` in `wrangler.jsonc`);
-5. read `TURBO_TOKEN` from the same path and pipe it into `wrangler secret put TURBO_CACHE_TOKEN` (stdin, never printed);
-   an empty or missing `TURBO_TOKEN` fails the step by name;
+5. read `TURBO_TOKEN` from `/ci/turbo` (STA-1393) and pipe it into `wrangler secret put TURBO_CACHE_TOKEN`
+   (stdin, never printed); an empty or missing `TURBO_TOKEN` fails the step by name;
 6. smoke: `GET https://turbo.stackra.figentra.com/v8/artifacts/status` with the bearer until it answers 200, ten
    minutes at most (a new Custom Domain needs a few minutes for its certificate).
 
@@ -88,7 +88,7 @@ Never run `wrangler deploy` or `wrangler secret put` by hand.
 The owner's only steps; everything else is the workflow's.
 
 1. Make two random values on your own machine: `openssl rand -hex 32`, twice (one token, one signature key).
-2. In Infisical, environment `prod`, path `/ci`, add:
+2. In Infisical, environment `prod`, path `/ci/turbo` (STA-1393; `CLOUDFLARE_API_TOKEN` stays in `/ci`), add:
 
    | Secret                             | Value                                |
    | ---------------------------------- | ------------------------------------ |
@@ -112,7 +112,8 @@ applied, leave its `domain` unset so the Custom Domain has one owner (wrangler).
 
 ## CI env (owned by the testing session's ci.yml)
 
-From Infisical `/ci` over OIDC (ADR 0026 decision 2):
+From Infisical `/ci/turbo` over OIDC (ADR 0026 decision 2, STA-1393), with the org variable
+`INFISICAL_TURBO_IDENTITY_ID`:
 
 | Variable                           | Value                                                              |
 | ---------------------------------- | ------------------------------------------------------------------ |
@@ -127,8 +128,8 @@ forks). `ci.yml` reads them; this member's deploy job does not change it.
 
 ## Not built
 
-- The ci.yml env (testing session).
-- Not checked from here: that the role of `INFISICAL_CI_IDENTITY_ID` reads all of `/ci`. It reads
-  `CLOUDFLARE_API_TOKEN` there for the static deploy; if its role names single secrets, it also needs `TURBO_TOKEN`.
+- The ci.yml env: built on branch `turbo-remote-cache` (STA-1393), not landed yet.
+- Not checked from here: that the role of `INFISICAL_CI_IDENTITY_ID` reads `/ci/turbo` as well as `/ci`. It reads
+  `CLOUDFLARE_API_TOKEN` in `/ci` for the static deploy; this job also needs `TURBO_TOKEN` in `/ci/turbo`.
 - Usage events are dropped, not counted; `GET /v2/user` and `/v2/teams` (turbo's `login` flow) are not served.
 - No per-team token: one token reaches every team's namespace.
