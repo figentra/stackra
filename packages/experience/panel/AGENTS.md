@@ -77,6 +77,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
   the data's own keys. Every button runs through `useActionRunner`; nothing calls the transport directly.
 - Resource labels are derived by `resourceLabel` (`<module>::resources.<model>.<part>.<path>`); never add a label
   option. Logic a native page needs too (list input, places, id key, input kind) goes in a pure `core` function.
+- `SearchPalette` reads only generated search queries (`<model>.search`) through `useQuery`, one hook per source
+  (`SearchPaletteGroup`); it never binds a key itself (the app's `Shortcut` opens it) and never imports
+  `@stackra/search` (`SearchPaletteHit` mirrors `SearchQueryHit`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

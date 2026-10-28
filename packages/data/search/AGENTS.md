@@ -110,6 +110,10 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 - `searchWordsOf` and `arabiziOf` are public (`.`): callers fold search text with them, never a copy. The Arabizi
   alternative is on unless a read passes `arabizi: false`; it only adds a spelling, so the switch narrows and never
   widens.
+- `SearchQuery(Model)` is the one search API (ADR 0221 d6): gen writes `SearchXQuery extends SearchQuery(X)` per
+  `@Searchable` model. Its answer is key, title and snippet only, never the row or a field outside the facet's text;
+  it reads through `SearchIndex` only, so visibility stays the database's. A public search changes the actors and the
+  area, nothing else.
 - `Search.across` filters are per model (`Map<model, filters>`), each checked by that model's `SearchIndex`.
 - `VectorIndex` (`search.vector_items`) is the platform's one vector store (ADR 0465): @stackra/ai retrieves and will
   store conversation memory through it, and keeps no vector table of its own. Add a vector need here, not a table.

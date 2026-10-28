@@ -1,7 +1,22 @@
 ---
 title: "0221 — Search: Postgres hybrid, ElasticSuite parity, Arabic and operations"
-description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456), 2026-10-28 (STA-1458)"
+description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456), 2026-10-28 (STA-1458), 2026-10-29 (STA-1459)"
 ---
+
+<Note>
+  Amended 2026-10-29 (STA-1459): decisions 4 and 6 are settled. The search API (d6) is one query per
+  `@Searchable` model, `<model>.search`, which gen writes as `class SearchProductQuery extends
+  SearchQuery(Product) {}` (`@stackra/search/node`): a `GET` endpoint, an MCP tool and a typed client
+  query that answer a phrase with at most 50 hits of key, title and snippet, never the row, read
+  through the model's own index under the caller's row-level security and record visibility. It is
+  open to a user, an agent and a service in the app area; a public search is the same query written by
+  hand with `ActorKind.Anonymous` and `ApiArea.Public`, which takes the generated one's place. Filters
+  stay server-side in hand-written queries over `Search`. The palette (d4) is `SearchPalette`
+  (`@stackra/panel/react`), a modal that runs the chosen models' search queries as the reader types and
+  hands the picked hit to the app; the app's own `mod+k` `Shortcut` opens it, so the shortcut registry
+  keeps key conflicts. A public widget is a storefront block reading the public query through its
+  generated client; no search widget kind is added. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-28 (STA-1458): decision 5's indexing through the outbox reads the retained change

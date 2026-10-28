@@ -44,6 +44,8 @@ one vector store (ADR 0465): `@stackra/ai` reads and writes through it and keeps
 | `./node`      | `RelatedChangeService`                                                | re-indexes the parents of a changed related row                   |
 | `./node`      | `SemanticChangeService`                                               | embeds a `semantic: true` model's text into the `VectorIndex`     |
 | `./node`      | `SearchForgetService`                                                 | `forget(Model, ids)`: drops rows from the search and vector index |
+| `./node`      | `SearchQuery`, `SearchQueryOptions`, `SearchQueryClass`               | the base of the `<model>.search` query gen writes per model       |
+| `./node`      | `SearchQueryInput`, `SearchQueryOutput`, `SearchQueryHit`             | its input (`q`, `limit`, `arabizi`) and its hits (key, title)     |
 | `./testing`   | `runSearchConformance`, `SEARCH_CONFORMANCE_CASES`                    | the `SearchDriver` conformance suite every driver passes          |
 | `./testing`   | `SEARCH_CONFORMANCE_DOCUMENTS`, `searchConformanceTable`              | the seed documents and the per-case table a fixture keys on       |
 
@@ -309,6 +311,30 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
   reciprocal rank (the palette's global search). `filters` is a `Map` from a model class to its own filters
   (`new Map([[Product, { status: ProductStatus.Active }]])`), since each model lists its own filter paths; a model with
   no entry is read unfiltered.
+
+## The search query (the search API)
+
+Gen writes one query per `@Searchable` model (ADR 0221 d4 and d6, settled 2026-10-29):
+
+```ts
+export class SearchProductQuery extends SearchQuery(Product) {} // key product.search, GET endpoint, MCP tool
+```
+
+It answers `{ q, limit?, arabizi? }` (limit 1 to 50, 10 by default) with `{ hits }`, each hit the row's key, a title
+(the facet's first plain text field in the call's locale, the key when empty) and the snippet when one matched; never
+the row. It reads `search.in(Product).find` in the call's locale, so row-level security, record visibility and the
+synonyms apply. The default callers are a user, an agent and a service; a public storefront search is the same query
+written by hand, which takes the generated one's place:
+
+```ts
+export class SearchProductQuery extends SearchQuery(Product, {
+  actors: [ActorKind.Anonymous, ActorKind.User],
+  area: ApiArea.Public,
+}) {}
+```
+
+A search that needs filters is a hand-written query over `Search`. The web Cmd+K palette over these queries is
+`SearchPalette` in `@stackra/panel/react`.
 
 ## Index registry and reindex jobs
 

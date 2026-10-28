@@ -69,6 +69,13 @@
     "state_approved": "Goedgekeurd",
     "state_rejected": "Afgewezen"
   },
+  "search_palette": {
+    "label": "Zoeken",
+    "placeholder": "Records zoeken",
+    "empty": "Geen resultaten.",
+    "loading": "Zoeken in {source}",
+    "failed": "{source} kon niet worden doorzocht."
+  },
   "checklist": {
     "title": "Aan de slag",
     "progress": "{done} van {total} klaar",

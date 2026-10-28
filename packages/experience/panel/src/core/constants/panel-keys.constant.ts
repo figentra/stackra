@@ -4,7 +4,7 @@
  *          states, the range picker and its periods, the trend and target lines, and the action runner's dialog and
  *          toasts, and the plan-catalogue admin's versions, decisions and proposal form,
  *          and the onboarding checklist, and the generic resource pages (search, create, view, edit, delete, save, the
- *          load failure, the empty list, the trashed filter and the row count).
+ *          load failure, the empty list, the trashed filter and the row count), and the search palette.
  * Boundary: internal: the web and native entries import it by path; no entry exports it. Each key exists in every base
  *           locale this package ships (ar, en, fr, de, es, it, nl).
  * Runtime: isomorphic
@@ -36,6 +36,7 @@ export const PANEL_KEYS = keys({
       "count",
       "count_capped",
     ],
+    search_palette: ["label", "placeholder", "empty", "loading", "failed"],
     checklist: [
       "title",
       "progress",

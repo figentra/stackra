@@ -69,6 +69,13 @@
     "state_approved": "Genehmigt",
     "state_rejected": "Abgelehnt"
   },
+  "search_palette": {
+    "label": "Suchen",
+    "placeholder": "Datensätze durchsuchen",
+    "empty": "Keine Ergebnisse.",
+    "loading": "{source} wird durchsucht",
+    "failed": "{source} konnte nicht durchsucht werden."
+  },
   "checklist": {
     "title": "Erste Schritte",
     "progress": "{done} von {total} erledigt",

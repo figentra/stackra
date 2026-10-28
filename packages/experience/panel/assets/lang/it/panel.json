@@ -69,6 +69,13 @@
     "state_approved": "Approvato",
     "state_rejected": "Rifiutato"
   },
+  "search_palette": {
+    "label": "Cerca",
+    "placeholder": "Cerca record",
+    "empty": "Nessun risultato.",
+    "loading": "Ricerca in {source}",
+    "failed": "Impossibile cercare in {source}."
+  },
   "checklist": {
     "title": "Per iniziare",
     "progress": "{done} di {total} completati",

@@ -69,6 +69,13 @@
     "state_approved": "معتمد",
     "state_rejected": "مرفوض"
   },
+  "search_palette": {
+    "label": "بحث",
+    "placeholder": "ابحث في السجلات",
+    "empty": "لا توجد نتائج.",
+    "loading": "جارٍ البحث في {source}",
+    "failed": "تعذّر البحث في {source}."
+  },
   "checklist": {
     "title": "ابدأ",
     "progress": "تم {done} من {total}",

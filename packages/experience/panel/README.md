@@ -47,6 +47,7 @@ route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tena
 | `./react`  | `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage`, `RelationManager`                                                                                                   | the generic List, View, Create and Edit pages and relations    |
 | `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                       | the widget grid of a panel's slots, one widget as a card       |
 | `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                            | run any action through its declared confirmation               |
+| `./react`  | `SearchPalette`, `SearchPaletteSource` (t), `SearchPaletteHit` (t)                                                                                                              | the Cmd+K palette over the generated `<model>.search` queries  |
 | `./native` | `WidgetSlot`, `SavedViewTabs`                                                                                                                                                   | a slot's widgets on mobile; saved view tabs over a list        |
 | `./node`   | `DatabaseViewStoreDriver`, `StoredView`, `StoredViewService`, `ViewPermissions`                                                                                                 | the `database` saved view store in `panel.stored_views`        |
 | `./node`   | `ExportRunner`, `ExportInput`, `ExportOutput`, `ExportSource` (t), `ExportConfig` (`ExportOptions`, `ExportConfig$`)                                                            | the queued export of a resource list (ADR 0307 rule 10)        |
@@ -233,6 +234,43 @@ no registered tree still gets every page, showing the row's, the record's and th
 input), `placementsAt`, `recordIdKey`, `inputKind`, `resourceLabel` and `resourceTreeOf`. The native pages are not
 built: `@stackra/ui/native` has no `DataTable` or `FilterBar` yet (gap-analysis P1), so a native list, filter bar,
 bulk bar and form page wait for those.
+
+## Search palette
+
+`SearchPalette` is the web Cmd+K palette (ADR 0221 d4, settled 2026-10-29). It searches each source model's generated
+search query (`SearchProductQuery`, key `product.search`, from `SearchQuery` in `@stackra/search/node`) once typing
+settles for 200 ms, draws each model's hits (title, snippet, the model's label) in source order, shows one empty state
+when no model found anything and a failure with a retry per model, and hands the picked hit to `onSelect` before it
+closes. The app's own shortcut opens it, so the key stays in the shortcut registry:
+
+```tsx
+export class OpenSearchShortcut extends Shortcut({
+  keys: "mod+k",
+  group: I18n.console.palette.group_app,
+}) {
+  private readonly ui: UiStore;
+
+  constructor(ui: UiStore) {
+    super();
+    this.ui = ui;
+  }
+
+  run(): void {
+    this.ui.openSearch();
+  }
+}
+
+<SearchPalette
+  sources={[{ query: SearchProductQuery, label: t(I18n.catalog.product.plural) }]}
+  isOpen={ui.isSearchOpen}
+  onOpenChange={ui.setSearchOpen}
+  onSelect={(source, hit) =>
+    navigate(toResource(Resources.Product, ResourcePage.View, { id: hit.id }))
+  }
+/>;
+```
+
+Texts are `panel::search_palette.*`. No native palette yet.
 
 ## Not built yet
 
