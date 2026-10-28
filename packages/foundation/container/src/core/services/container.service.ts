@@ -223,7 +223,8 @@ export class Container {
     for (const exported of graph.exported)
       if (container.recipeOf(exported).lifetime === Lifetime.Singleton) container.resolve(exported);
     // A snapshot: an explorer may build more instances while it bootstraps.
-    for (const instance of container.built.slice())
+    // oxlint-disable-next-line unicorn/no-useless-spread -- the copy is the snapshot; the loop body grows `built`
+    for (const instance of [...container.built])
       if (instance instanceof Explorer) await instance.onApplicationBootstrap();
     return container;
   }
@@ -325,6 +326,7 @@ export class Container {
    * forgets them. Overrides belong to whoever passed them and are left alone.
    */
   async close(): Promise<void> {
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     const built = this.built.splice(0).reverse();
     this.cache.clear();
     for (const instance of built) {

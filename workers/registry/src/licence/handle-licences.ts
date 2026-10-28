@@ -123,6 +123,7 @@ async function readGrants(
       )
     )
       throw new Refusal(400, `the names of ${scope} must be "*" or full names of that scope`);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return { scope, names: [...new Set(names as string[])].sort() };
   });
   const rules = await deps.licenceStore.readRules(grants.map((grant) => grant.scope));

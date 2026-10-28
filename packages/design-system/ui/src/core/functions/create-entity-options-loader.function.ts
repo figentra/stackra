@@ -51,7 +51,9 @@ export function createEntityOptionsLoader(
     const isMore = after !== undefined;
     change(isMore ? { ...state, isLoadingMore: true } : { ...state, status: "loading" });
     // A promise constructor, so a `loadOptions` that throws before it returns a promise is a rejection too.
-    new Promise<EntityOptionPage>((resolve) => resolve(options.getLoad()(text, after))).then(
+    new Promise<EntityOptionPage>((resolve) => {
+      resolve(options.getLoad()(text, after));
+    }).then(
       (page) => {
         if (mine !== ticket) return;
         cursor = page.nextCursor ?? undefined;

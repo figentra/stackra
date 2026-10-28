@@ -116,7 +116,9 @@ async function slowServer(plan) {
     if (step === "drop") setTimeout(() => req.socket.destroy(), 200);
     else res.writeHead(step).end(step === 200 ? "ok" : "bad gateway");
   });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
   return {
     url: `http://127.0.0.1:${server.address().port}/`,
     hits: () => hits,

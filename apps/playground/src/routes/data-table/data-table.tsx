@@ -173,7 +173,10 @@ const SLOW_ACTION = 2_000;
 const ignore = () => undefined;
 
 /** Waits for `ms` milliseconds. */
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** The cell of a sample: the status as a chip and the total as money, the rest as the table's own text. */
 function renderOrderCell(order: Order, column: TableColumn) {
@@ -197,6 +200,7 @@ function ordersFor(query: ResourceQuery): readonly Order[] {
   if (!query.sort) return found;
   const key = query.sort.column as keyof Order;
   const factor = query.sort.direction === "ascending" ? 1 : -1;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...found].sort((first, second) => {
     const a = first[key];
     const b = second[key];

@@ -45,7 +45,9 @@ export function connectMcp(
   let nextId = 1;
   let isClosed = false;
   let settle!: () => void;
-  const closed = new Promise<void>((resolve) => (settle = resolve));
+  const closed = new Promise<void>((resolve) => {
+    settle = resolve;
+  });
   const pending = new Map<
     number | string,
     { resolve: (value: unknown) => void; reject: (error: Error) => void }
@@ -116,7 +118,10 @@ export function connectMcp(
   return {
     request: (method, params) =>
       new Promise((resolve, reject) => {
-        if (isClosed) return reject(new Error("MCP connection closed"));
+        if (isClosed) {
+          reject(new Error("MCP connection closed"));
+          return;
+        }
         const id = nextId++;
         pending.set(id, { resolve, reject });
         send({ id, method, ...(params === undefined ? {} : { params }) });

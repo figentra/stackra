@@ -34,6 +34,7 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
   push(job: QueuedJob): Promise<boolean> {
     if (job.uniqueKey !== undefined && this.holds(job.uniqueKey, job.id))
       return Promise.resolve(false);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     const input: unknown = JSON.parse(JSON.stringify(job.input ?? null));
     this.slots.set(job.id, { job: Object.freeze({ ...job, input }), lockedUntil: undefined });
     return Promise.resolve(true);

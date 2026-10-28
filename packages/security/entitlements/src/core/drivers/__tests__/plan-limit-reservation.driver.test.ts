@@ -102,7 +102,9 @@ function callOf(type: AnyClass): CallDescriptor {
 
 /** A commit that takes a tick before its row becomes countable. */
 const create = async (): Promise<string> => {
-  await new Promise((resolve) => setTimeout(resolve, 5));
+  await new Promise((resolve) => {
+    setTimeout(resolve, 5);
+  });
   usage.rows.push(ACME.id);
   return "created";
 };

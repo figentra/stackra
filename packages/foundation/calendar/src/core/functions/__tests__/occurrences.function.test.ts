@@ -25,6 +25,8 @@ const calendar: BusinessCalendar = {
   uncertainDays: "working",
 };
 
+const count = (rule: string): number => occurrences({ ...base, rule }).length;
+
 describe("occurrences", () => {
   const base = { start: "2026-01-04", time: "10:00", timeZone: "Asia/Riyadh", to: "2026-12-31" };
 
@@ -100,7 +102,6 @@ describe("occurrences", () => {
   });
 
   it("ends at an UNTIL instant in UTC or in the series' wall time", () => {
-    const count = (rule: string): number => occurrences({ ...base, rule }).length;
     expect(count("FREQ=DAILY;UNTIL=20260106T070000Z")).toBe(3);
     expect(count("FREQ=DAILY;UNTIL=20260106T065959Z")).toBe(2);
     expect(count("FREQ=DAILY;UNTIL=20260106T095959")).toBe(2);

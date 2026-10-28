@@ -185,13 +185,13 @@ describe("generate's tool configs and code hatches (STA-1306)", () => {
   });
 });
 
-describe("generate's shipped manifest check (STA-1308)", () => {
-  /** Sets `files` in the member's package.json. */
-  const shipping = (root: string, files: readonly string[]): void => {
-    const path = join(root, "package.json");
-    writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), files }));
-  };
+/** Sets `files` in the member's package.json. */
+const shipping = (root: string, files: readonly string[]): void => {
+  const path = join(root, "package.json");
+  writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), files }));
+};
 
+describe("generate's shipped manifest check (STA-1308)", () => {
   it("fails a check when package.json `files` leaves the manifest out", async () => {
     const root = writeFixtureMember("shop", SHOP_SOURCES);
     expect((await generate(root)).errors).toEqual([]);

@@ -60,6 +60,7 @@ export function registerChanges(pairs: readonly (readonly [AnyClass, ChangeClass
       );
     CHANGE_REGISTRY.set(
       subject,
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       [...changes, { type, from, sunset }].sort((a, b) => (a.from < b.from ? -1 : 1)),
     );
   }

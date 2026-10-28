@@ -47,7 +47,7 @@ function classOf(character: string): BidiClass {
  * toVisualOrder("رقم 12", "rtl"); // "12 مقر"
  */
 export function toVisualOrder(line: string, direction: "ltr" | "rtl"): string {
-  const characters = Array.from(line);
+  const characters = [...line];
   const base: BidiClass = direction === "rtl" ? "R" : "L";
   const classes = characters.map(classOf);
   // W7: a number after strong left (or at the start of a left-to-right line) is left.
@@ -83,6 +83,7 @@ export function toVisualOrder(line: string, direction: "ltr" | "rtl"): string {
       if ((levels[order[start] ?? 0] ?? 0) < level) continue;
       let end = start;
       while (end < order.length && (levels[order[end] ?? 0] ?? 0) >= level) end += 1;
+      // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
       order.splice(start, end - start, ...order.slice(start, end).reverse());
       start = end - 1;
     }

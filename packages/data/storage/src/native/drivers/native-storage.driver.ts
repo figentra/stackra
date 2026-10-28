@@ -41,18 +41,20 @@ function mmkvBackend(area: StorageArea): StorageBackend {
   };
 }
 
+/** The keys the secure store holds, from its index entry, and the writer of that entry. */
+const readSecretsIndex = async (): Promise<string[]> => {
+  const text = await SecureStore.getItemAsync(SECRETS_INDEX);
+  return text === null ? [] : (JSON.parse(text) as string[]);
+};
+const writeSecretsIndex = (keys: string[]): Promise<void> =>
+  SecureStore.setItemAsync(SECRETS_INDEX, JSON.stringify(keys));
+
 /** A backend over the keychain or keystore. */
 function secureStoreBackend(): StorageBackend {
-  const readIndex = async (): Promise<string[]> => {
-    const text = await SecureStore.getItemAsync(SECRETS_INDEX);
-    return text === null ? [] : (JSON.parse(text) as string[]);
-  };
-  const writeIndex = (keys: string[]): Promise<void> =>
-    SecureStore.setItemAsync(SECRETS_INDEX, JSON.stringify(keys));
   return {
     async load() {
       const loaded: [string, string][] = [];
-      for (const key of await readIndex()) {
+      for (const key of await readSecretsIndex()) {
         const text = await SecureStore.getItemAsync(`stackra.secrets.${key}`);
         if (text !== null) loaded.push([key, text]);
       }
@@ -60,13 +62,13 @@ function secureStoreBackend(): StorageBackend {
     },
     async save(key, text) {
       await SecureStore.setItemAsync(`stackra.secrets.${key}`, text);
-      const keys = await readIndex();
-      if (!keys.includes(key)) await writeIndex([...keys, key]);
+      const keys = await readSecretsIndex();
+      if (!keys.includes(key)) await writeSecretsIndex([...keys, key]);
     },
     async remove(key) {
       await SecureStore.deleteItemAsync(`stackra.secrets.${key}`);
-      const keys = await readIndex();
-      if (keys.includes(key)) await writeIndex(keys.filter((kept) => kept !== key));
+      const keys = await readSecretsIndex();
+      if (keys.includes(key)) await writeSecretsIndex(keys.filter((kept) => kept !== key));
     },
   };
 }

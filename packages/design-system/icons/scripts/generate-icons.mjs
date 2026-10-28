@@ -52,7 +52,7 @@ const exportNamesByFile = (source) => {
 const webFiles = new Set(iconFiles("lucide-react"));
 const names = iconFiles("lucide-react-native")
   .filter((name) => webFiles.has(name))
-  .sort();
+  .toSorted();
 
 /** The export name of an icon: the first alias whose letters equal the file name's, so not `...Icon` or `Lucide...`. */
 const exportNameOf = (name, byFile, packageName) => {

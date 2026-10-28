@@ -72,6 +72,7 @@ describe("ui:// resources", () => {
     });
     const cancel = tools.find((tool) => tool.name === "orders_order_cancel");
     expect(cancel?.ui).toBeUndefined();
+    // oxlint-disable-next-line no-underscore-dangle -- `_meta` is the MCP protocol field
     expect(cancel?._meta).toBeUndefined();
   });
 
@@ -108,6 +109,7 @@ describe("ui:// resources", () => {
       text: "<html></html>",
       _meta: { ui: { csp: { connectDomains: ["https://api.example.com"], resourceDomains: [] } } },
     });
+    // oxlint-disable-next-line no-underscore-dangle -- `_meta` is the MCP protocol field
     expect(uiResourceContents(scanner, "")._meta).toEqual({
       ui: { csp: { connectDomains: [], resourceDomains: [] }, permissions: ["camera"] },
     });

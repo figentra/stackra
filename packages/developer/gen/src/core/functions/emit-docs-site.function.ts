@@ -163,6 +163,7 @@ export function emitDocsSite(input: DocsSiteInput): DocsSite {
     if ("folder" in entry) {
       const ids = [...pages.keys()]
         .filter((id) => folderOf(id) === entry.folder)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort(byIndexThenPath);
       if (ids.length === 0)
         refuse(
@@ -187,6 +188,7 @@ export function emitDocsSite(input: DocsSiteInput): DocsSite {
     ...(tab.icon === undefined ? {} : { icon: tab.icon }),
     groups: tab.groups.map(group),
   }));
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [id, page] of [...pages].sort(([a], [b]) => (a < b ? -1 : 1)))
     if (!listed.has(id))
       refuse(
@@ -218,6 +220,7 @@ export function emitDocsSite(input: DocsSiteInput): DocsSite {
     ...[config.logo?.light, config.logo?.dark, config.favicon].map((path) => `assets/${path}`),
     JSON.stringify([config.navbar, config.footer, config.raw]),
   ].join("\n");
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const asset of [...assets].sort())
     if (MEDIA.test(asset) && !corpus.includes(`assets/${asset}`))
       refuse(
@@ -315,7 +318,9 @@ export function emitDocsSite(input: DocsSiteInput): DocsSite {
   ];
   return {
     errors: [],
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     files: files.sort(byPath((file) => file.path)),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     copies: copies.sort(byPath((copy) => copy.to)),
   };
 }

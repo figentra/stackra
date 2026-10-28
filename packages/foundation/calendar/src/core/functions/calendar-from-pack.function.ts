@@ -36,6 +36,7 @@ export function calendarFromPack(
   const values = valuesOn(resolved, on);
   const holidays = [...values]
     .filter(([key]) => key.startsWith(HOLIDAYS))
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .flatMap(([, item]) => item.value);
   return BUSINESS_CALENDAR_SCHEMA.parse({

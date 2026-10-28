@@ -23,7 +23,11 @@ export function grantsOf(
     names.add(row.name);
     byScope.set(row.scope, names);
   }
-  return [...byScope.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([scope, names]) => ({ scope, names: names.has("*") ? "*" : [...names].sort() }));
+  return (
+    [...byScope.entries()]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort(([a], [b]) => a.localeCompare(b))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .map(([scope, names]) => ({ scope, names: names.has("*") ? "*" : [...names].sort() }))
+  );
 }

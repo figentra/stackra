@@ -34,8 +34,7 @@ const OBSERVE = z
 /** `true` when the runtime knows `zone`. */
 function knownZone(zone: string): boolean {
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone: zone });
-    return true;
+    return new Intl.DateTimeFormat("en-US", { timeZone: zone }).resolvedOptions().timeZone !== "";
   } catch {
     return false;
   }

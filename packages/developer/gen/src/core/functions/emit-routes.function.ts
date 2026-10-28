@@ -36,6 +36,7 @@ function resourceTrees(ir: MemberIR): [string, unknown][] {
     if (typeof resources !== "object" || resources === null || Array.isArray(resources)) continue;
     for (const [key, tree] of Object.entries(resources)) if (!trees.has(key)) trees.set(key, tree);
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...trees].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
@@ -89,6 +90,7 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
             "/** The label keys the resource pages derive (ADR 0307 rule 6); each must be in the catalogues. */",
             "export const resourceLabelKeys = [",
             ...[...new Set(trees.flatMap(([key, tree]) => resourceLabelKeys(key, tree)))]
+              // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
               .sort()
               .map((label) => `  ${JSON.stringify(label)},`),
             "] as const;",

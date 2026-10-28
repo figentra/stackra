@@ -21,6 +21,10 @@ import type { DeployTarget } from "#core/types/deploy-target.type";
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { RunwayRegion } from "#core/types/runway-region.type";
 
+/** Each region of `regions`, or one regionless target when it lists none. */
+const targetRegions = (regions: readonly RunwayRegion[]) =>
+  regions.length === 0 ? [undefined] : regions;
+
 /**
  * The targets of `environment`.
  *
@@ -36,15 +40,13 @@ export function deployTargets(root: RootRunway, environment: RunwayEnvironment):
     throw new RunwayUnresolvedError(`The root runway has no \`environments.${environment}\``);
   const scope: Readonly<Record<string, unknown>> = block;
   const shared = regionsOf(root, environment);
-  const inRegions = (regions: readonly RunwayRegion[]) =>
-    regions.length === 0 ? [undefined] : regions;
 
   const targets: DeployTarget[] = [];
   for (const kind of Enum.values(DeployKind)) {
     const destination = block.destinations?.[kind];
     if (destination === undefined) continue;
     const settings = root.targets?.[destination] ?? {};
-    for (const region of inRegions(shared))
+    for (const region of targetRegions(shared))
       targets.push({
         id: [environment, kind, region?.key].filter(Boolean).join("/"),
         environment,
@@ -59,7 +61,7 @@ export function deployTargets(root: RootRunway, environment: RunwayEnvironment):
     for (const [key, dedicated] of Object.entries(block.dedicated ?? {})) {
       const regions =
         dedicated.regions === undefined ? shared : regionsOf(root, environment, dedicated.regions);
-      for (const region of inRegions(regions))
+      for (const region of targetRegions(regions))
         targets.push({
           id: [environment, kind, region?.key, `dedicated:${key}`].filter(Boolean).join("/"),
           environment,

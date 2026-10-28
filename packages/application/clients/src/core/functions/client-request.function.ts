@@ -40,6 +40,7 @@ export function clientRequest(
   if (!parsed.success)
     throw InputInvalidError.create({}, { fieldErrors: fieldErrorsOf(parsed.error) });
   // JSON is the wire: a `Date` becomes its ISO text and nothing that cannot travel survives.
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
   const wire = JSON.parse(JSON.stringify(parsed.data ?? null)) as Json;
   return {
     key: ref.key,

@@ -29,7 +29,7 @@ async function rsaKey(): Promise<{ pem: string; publicKey: CryptoKey }> {
     ["sign", "verify"],
   );
   const der = new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey));
-  const base64 = btoa(String.fromCharCode(...der));
+  const base64 = btoa(String.fromCodePoint(...der));
   return {
     pem: `-----BEGIN PRIVATE KEY-----\n${base64}\n-----END PRIVATE KEY-----`,
     publicKey: pair.publicKey,
@@ -83,6 +83,7 @@ function driverOf(
 /** The bytes of a base64url part. */
 function decode(part: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(part.replaceAll("-", "+").replaceAll("_", "/")), (c) =>
+    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     c.charCodeAt(0),
   );
 }

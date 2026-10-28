@@ -68,6 +68,7 @@ export class InAppStoreFake extends InAppStore {
     const entries = (this.inboxes.get(recipient) ?? [])
       .filter((entry) => options.unreadOnly !== true || entry.readAt === null)
       .filter((entry) => options.product === undefined || entry.product === options.product)
+      // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
       .reverse();
     return Promise.resolve(options.limit === undefined ? entries : entries.slice(0, options.limit));
   }

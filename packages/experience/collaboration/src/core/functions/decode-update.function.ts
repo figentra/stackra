@@ -16,6 +16,7 @@
 export function decodeUpdate(data: unknown): Uint8Array | undefined {
   if (typeof data !== "string") return undefined;
   try {
+    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     return Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
   } catch {
     return undefined;

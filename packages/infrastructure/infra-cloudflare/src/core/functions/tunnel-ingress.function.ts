@@ -30,6 +30,7 @@ export function tunnelIngress(tunnel: {
   readonly ports: Readonly<Record<string, number>>;
   readonly members?: readonly string[] | undefined;
 }): TunnelIngressRule[] {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const members = tunnel.members ?? Object.keys(tunnel.ports).sort();
   const issues: RunwayIssue[] = [];
   const rules = members.map((member): TunnelIngressRule => {

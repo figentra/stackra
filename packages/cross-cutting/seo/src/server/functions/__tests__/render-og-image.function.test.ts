@@ -67,7 +67,7 @@ describe("renderOgImage", () => {
 
   it("renders the card through satori and resvg at its width", async () => {
     const png = await (await load())(CARD);
-    expect(Array.from(png)).toEqual([137, 80, 78, 71]);
+    expect([...png]).toEqual([137, 80, 78, 71]);
     expect(engines.readFile).toHaveBeenCalledWith("/node_modules/@resvg/resvg-wasm/index_bg.wasm");
     expect(engines.satori).toHaveBeenCalledWith(expect.objectContaining({ type: "div" }), {
       width: 1200,

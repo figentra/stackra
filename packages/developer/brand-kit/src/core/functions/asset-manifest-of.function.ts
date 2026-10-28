@@ -22,6 +22,7 @@ export function assetManifestOf(input: KitInput, files: readonly GeneratedFile[]
     kit: input.kit.id,
     inputHash: input.inputHash,
     files: [...files]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
       .map(({ path, output, bytes }) => ({
         path,

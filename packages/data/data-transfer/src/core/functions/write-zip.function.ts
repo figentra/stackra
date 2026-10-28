@@ -58,7 +58,9 @@ async function* deflateRaw(chunks: AsyncIterable<Uint8Array>): AsyncGenerator<Ui
     // CompressionStream takes ArrayBuffer-backed bytes only, so a chunk over a SharedArrayBuffer is copied first.
     for await (const chunk of chunks)
       await writer.write(
-        chunk.buffer instanceof ArrayBuffer ? (chunk as Uint8Array<ArrayBuffer>) : chunk.slice(),
+        chunk.buffer instanceof ArrayBuffer
+          ? (chunk as Uint8Array<ArrayBuffer>)
+          : new Uint8Array(chunk),
       );
     await writer.close();
   })();

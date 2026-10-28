@@ -11,5 +11,6 @@ import type { Bytes } from "#src/interfaces/bytes.type";
 export function fromBase64(text: string): Bytes {
   const standard = text.replaceAll("-", "+").replaceAll("_", "/");
   const binary = atob(standard + "=".repeat((4 - (standard.length % 4)) % 4));
+  // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }

@@ -17,7 +17,7 @@ import { PkijsCmsSignerDriver } from "#node/pass/pkijs-cms-signer.driver";
 
 /** `der` as a PEM block. */
 function pemOf(label: string, der: ArrayBuffer): string {
-  return `-----BEGIN ${label}-----\n${btoa(String.fromCharCode(...new Uint8Array(der)))}\n-----END ${label}-----`;
+  return `-----BEGIN ${label}-----\n${btoa(String.fromCodePoint(...new Uint8Array(der)))}\n-----END ${label}-----`;
 }
 
 /** A self-signed RSA certificate named `name` and its key, as PEM. */
@@ -68,13 +68,13 @@ describe("PkijsCmsSignerDriver", () => {
     expect(signer).toBeInstanceOf(CmsSigner);
     const content = new TextEncoder().encode('{"pass.json":"00"}');
     const der = await signer.sign(content, new Date("2026-10-27T10:00:00Z"));
-    const info = pkijs.ContentInfo.fromBER(der.slice().buffer);
+    const info = pkijs.ContentInfo.fromBER(new Uint8Array(der).buffer);
     expect(info.contentType).toBe("1.2.840.113549.1.7.2");
     const signed = new pkijs.SignedData({ schema: info.content });
     expect(signed.encapContentInfo.eContent).toBeUndefined();
     expect(signed.certificates).toHaveLength(2);
     expect(
-      await signed.verify({ signer: 0, data: content.slice().buffer, checkChain: false }),
+      await signed.verify({ signer: 0, data: new Uint8Array(content).buffer, checkChain: false }),
     ).toBe(true);
   });
 

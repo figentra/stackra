@@ -65,6 +65,10 @@ const refusal = (promise: Promise<unknown>): Promise<unknown> =>
 
 const expiry = new Date("2027-11-01T00:00:00.000Z");
 
+const down: Transport = async () => {
+  throw new TypeError("fetch failed");
+};
+
 describe("RegistryLicenceIssuerDriver", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -216,9 +220,6 @@ describe("RegistryLicenceIssuerDriver", () => {
     const failed = await refusal(issuer(registry({ error: "x" }, 409).send).suspend("lic_1"));
     expect(failed).toBeInstanceOf(LicenceIssuerUnavailableError);
     expect((failed as LicenceIssuerUnavailableError).status).toBe(409);
-    const down: Transport = async () => {
-      throw new TypeError("fetch failed");
-    };
     expect(await refusal(issuer(down).suspend("lic_1"))).toBeInstanceOf(
       LicenceIssuerUnavailableError,
     );

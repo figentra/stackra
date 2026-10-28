@@ -391,7 +391,9 @@ describe("MutationQueue", () => {
     sender.answer = async () => {
       active += 1;
       peak = Math.max(peak, active);
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
       active -= 1;
       return OK;
     };

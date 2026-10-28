@@ -19,5 +19,6 @@ import type { OpenApiDocument } from "#core/types/open-api-document.type";
  * expect(await projectOpenApi(next)).toEqual(await loadOpenApi("./openapi.json"));
  */
 export function projectOpenApi(manifest: StackraManifest): Promise<OpenApiDocument> {
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
   return Promise.resolve(JSON.parse(JSON.stringify(openApiOf(manifest))) as OpenApiDocument);
 }

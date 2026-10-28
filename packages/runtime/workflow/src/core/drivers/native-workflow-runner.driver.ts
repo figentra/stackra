@@ -154,6 +154,7 @@ const later = (at: Date, milliseconds: number): Date => new Date(at.getTime() + 
 
 /** `value` as the journal stores it: JSON, `undefined` kept as absent. */
 const toJson = (value: unknown): unknown =>
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
   value === undefined ? undefined : (JSON.parse(JSON.stringify(value)) as unknown);
 
 /** How `error` is recorded. */
@@ -887,6 +888,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     now: Date,
   ): Promise<Outcome> {
     let run = start;
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     const backwards = [...plan.steps].reverse();
     for (const step of backwards) {
       const record = recordOf(run, step.name);

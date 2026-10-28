@@ -52,7 +52,7 @@ test("render shows fixes for failures only; warn does not fail the run", () => {
   assert.match(text, /✖ b — missing\n {4}fix: do b/);
   assert.match(text, /1 check\(s\) failing/);
   assert.equal(exitCode(results), 1);
-  assert.equal(exitCode(results.slice(0, 1).concat(results.slice(2))), 0);
+  assert.equal(exitCode([...results.slice(0, 1), ...results.slice(2)]), 0);
 });
 
 test("spec-kit must match its exact mise pin", () => {

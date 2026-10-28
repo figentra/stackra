@@ -29,7 +29,7 @@ const pack: MarketPack = {
 async function keyPair(keyId: string) {
   const keys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
   const raw = new Uint8Array(await crypto.subtle.exportKey("raw", keys.publicKey));
-  return { privateKey: keys.privateKey, trusted: { [keyId]: btoa(String.fromCharCode(...raw)) } };
+  return { privateKey: keys.privateKey, trusted: { [keyId]: btoa(String.fromCodePoint(...raw)) } };
 }
 
 /** The rejection reason `promise` fails with. */
@@ -41,6 +41,7 @@ async function reasonOf(promise: Promise<unknown>): Promise<string | undefined> 
 describe("verifyPack", () => {
   it("returns the pack of a signed input", async () => {
     const { privateKey, trusted } = await keyPair("key_1");
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     const shipped = JSON.parse(JSON.stringify(await signPack(pack, "key_1", privateKey)));
     expect(await verifyPack(shipped, trusted)).toEqual(pack);
   });
@@ -52,6 +53,7 @@ describe("verifyPack", () => {
 
   it("refuses a changed value", async () => {
     const { privateKey, trusted } = await keyPair("key_1");
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     const shipped = JSON.parse(JSON.stringify(await signPack(pack, "key_1", privateKey)));
     shipped.pack.entries[0].value = 0;
     expect(await reasonOf(verifyPack(shipped, trusted))).toBe(PackRejection.HashMismatch);

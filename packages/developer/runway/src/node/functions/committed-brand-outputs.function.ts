@@ -62,13 +62,16 @@ export async function committedBrandOutputs(
   const paths = runs.flatMap((entry) => manifestPaths(repository, entry.outDir));
   if (paths.length === 0) return [];
   const tracked = await run("git", ["ls-files", "-z", "--", ...paths], { cwd: repository });
-  return tracked
-    .split("\0")
-    .filter((path) => path !== "")
-    .sort()
-    .map((path) => ({
-      path,
-      message:
-        "A generated brand output is committed; untrack it (git rm --cached) and ignore .stackra/",
-    }));
+  return (
+    tracked
+      .split("\0")
+      .filter((path) => path !== "")
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort()
+      .map((path) => ({
+        path,
+        message:
+          "A generated brand output is committed; untrack it (git rm --cached) and ignore .stackra/",
+      }))
+  );
 }

@@ -37,13 +37,16 @@ function loaderSpecifiers(ir: MemberIR): Map<string, Map<string, string>> {
   ];
   const loaders = new Map<string, Map<string, string>>();
   for (const { from, catalogues } of sets)
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const locale of Object.keys(catalogues).sort())
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       for (const namespace of Object.keys(catalogues[locale] ?? {}).sort()) {
         const byLocale = loaders.get(namespace) ?? new Map<string, string>();
         // A clash is refused by checkI18n before this runs; the first owner keeps the namespace, as in i18nTree.
         if (!byLocale.has(locale)) byLocale.set(locale, `${from}/${locale}/${namespace}.json`);
         loaders.set(namespace, byLocale);
       }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return new Map([...loaders].sort(([left], [right]) => left.localeCompare(right)));
 }
 
@@ -58,6 +61,7 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
   if (ir.packages !== undefined && !ir.packages.includes("@stackra/i18n")) return undefined;
   const { namespaces } = i18nTree(ir);
   if (namespaces.size === 0) return undefined;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const locales = Object.keys(ir.catalogues ?? {}).sort();
   const tree = Object.fromEntries(
     [...namespaces].map(([namespace, { node }]) => [namespace, node]),

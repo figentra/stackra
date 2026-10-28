@@ -20,8 +20,8 @@ const ARABIC_LETTER = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/u;
 // first code point. Upgrade to Intl.Segmenter when Hermes ships it.
 export function initialsOf(name: string, locale?: string): string {
   const words = name.trim().split(/\s+/u).filter(Boolean);
-  const first = Array.from(words[0] ?? "")[0] ?? "";
+  const first = [...(words[0] ?? "")][0] ?? "";
   if (first === "" || ARABIC_LETTER.test(first)) return first;
-  const last = words.length > 1 ? (Array.from(words.at(-1) ?? "")[0] ?? "") : "";
+  const last = words.length > 1 ? ([...(words.at(-1) ?? "")][0] ?? "") : "";
   return (first + last).toLocaleUpperCase(locale);
 }

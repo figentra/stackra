@@ -21,10 +21,13 @@ function propsDiff(
   declared: Readonly<Record<string, string>>,
   filled: Readonly<Record<string, string>>,
 ): string[] {
-  return [...new Set([...Object.keys(declared), ...Object.keys(filled)])]
-    .sort()
-    .filter((name) => declared[name] !== filled[name])
-    .map((name) => `${name}: ${declared[name] ?? "(absent)"} ≠ ${filled[name] ?? "(absent)"}`);
+  return (
+    [...new Set([...Object.keys(declared), ...Object.keys(filled)])]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort()
+      .filter((name) => declared[name] !== filled[name])
+      .map((name) => `${name}: ${declared[name] ?? "(absent)"} ≠ ${filled[name] ?? "(absent)"}`)
+  );
 }
 
 /**

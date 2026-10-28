@@ -2383,6 +2383,12 @@ function currentBranch(top) {
   return "";
 }
 
+/** The plan gate's deny decision with `why`. */
+const planGateDenial = (why) => ({
+  decision: "deny",
+  reason: `Plan gate (ADR 0362): ${why} No code without an answered questionnaire and a plan: write .agents/specs/sta-<n>-<slug>/spec.md (every question answered; \`node tools/scripts/spec-gate.mjs plan <spec.md>\` passes) and plan.md first. A production hotfix needs the owner's hotfix.md in that folder.`,
+});
+
 /**
  * Write tools on a source path (ADR 0362): allowed only when the branch's key (`figentra/sta-<n>-…`) has one
  * `.agents/specs/sta-<n>-*` folder whose spec.md passes spec-gate's `checkSpec` (every question answered) and which
@@ -2407,22 +2413,20 @@ export async function decidePlanGate(path, { cwd, root, branch } = {}) {
   const posix = rel.split(sep).join("/");
   // Documentation is never blocked, even inside a source folder (packages/*/README.md, services/*/docs/*.md).
   if (/\.mdx?$/i.test(posix) || !PLAN_GATED.test(posix)) return ok;
-  const no = (why) => ({
-    decision: "deny",
-    reason: `Plan gate (ADR 0362): ${why} No code without an answered questionnaire and a plan: write .agents/specs/sta-<n>-<slug>/spec.md (every question answered; \`node tools/scripts/spec-gate.mjs plan <spec.md>\` passes) and plan.md first. A production hotfix needs the owner's hotfix.md in that folder.`,
-  });
   const gate = new URL("../../tools/scripts/spec-gate.mjs", import.meta.url).href;
   const { checkSpec, specDir } = await import(gate);
   const found = specDir({ root, branch: String(branch ?? "") });
-  if (found.error) return no(`${found.error.replace(/; pass --slug.*/, "")}.`);
+  if (found.error) return planGateDenial(`${found.error.replace(/; pass --slug.*/, "")}.`);
   const dir = join(root, found.dir);
   const read = (f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), "utf8") : "");
   if (hotfixApproved(read("hotfix.md"))) return ok;
   const spec = read("spec.md");
-  if (!spec) return no(`${basename(found.dir)} has no spec.md.`);
+  if (!spec) return planGateDenial(`${basename(found.dir)} has no spec.md.`);
   const open = checkSpec(spec);
   if (open.length)
-    return no(`${basename(found.dir)}/spec.md has unanswered questions: ${open.join("; ")}.`);
-  if (!read("plan.md").trim()) return no(`${basename(found.dir)} has no plan.md.`);
+    return planGateDenial(
+      `${basename(found.dir)}/spec.md has unanswered questions: ${open.join("; ")}.`,
+    );
+  if (!read("plan.md").trim()) return planGateDenial(`${basename(found.dir)} has no plan.md.`);
   return ok;
 }

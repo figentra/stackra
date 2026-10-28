@@ -16,6 +16,7 @@ import { LabelDocumentInvalidError } from "#core/errors/label-document-invalid.e
 function fromBase64(text: string): Uint8Array | null {
   try {
     const binary = atob(text.replace(/\s+/g, ""));
+    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     return Uint8Array.from(binary, (char) => char.charCodeAt(0));
   } catch {
     return null;
@@ -25,7 +26,7 @@ function fromBase64(text: string): Uint8Array | null {
 /** True when the bytes are the envelope of `format`. */
 function hasSignature(format: LabelFormat, bytes: Uint8Array): boolean {
   // Both signatures are ASCII; Latin-1 keeps one character per byte whatever the rest of the document holds.
-  if (format === LabelFormat.Pdf) return String.fromCharCode(...bytes.subarray(0, 5)) === "%PDF-";
+  if (format === LabelFormat.Pdf) return String.fromCodePoint(...bytes.subarray(0, 5)) === "%PDF-";
   const zpl = new TextDecoder("latin1").decode(bytes).trimEnd();
   return zpl.includes("^XA") && zpl.endsWith("^XZ");
 }

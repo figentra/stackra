@@ -59,6 +59,7 @@ export class ChannelCustomerDisplayDriver extends Driver(CustomerDisplay) {
     if (typeof BroadcastChannel === "undefined")
       return refuse(PlatformCapability.Window, "unavailable");
     this.channel ??= new BroadcastChannel(CUSTOMER_DISPLAY_CHANNEL);
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     this.channel.postMessage(message);
     return { ok: true, data: undefined };
   }

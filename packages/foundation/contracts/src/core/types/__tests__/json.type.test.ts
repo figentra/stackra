@@ -17,7 +17,9 @@ describe("Json", () => {
       content: [{ text: "Linen shirt", marks: null, size: 2, isBold: true }],
     };
     const extensions: Record<string, Json> = { loyalty: { points: 120 } };
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(body))).toEqual(body);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(extensions))).toEqual(extensions);
   });
 

@@ -66,8 +66,8 @@ export function definesFor(member: string, environment: string): Record<string, 
   const brands = runway?.brands;
   let product: Product | undefined;
   try {
-    const file = join(repositoryRoot(), "runway.yaml");
-    product = existsSync(file) ? readRunway(file, RunwayKind.Root).product : undefined;
+    const rootFile = join(repositoryRoot(), "runway.yaml");
+    product = existsSync(rootFile) ? readRunway(rootFile, RunwayKind.Root).product : undefined;
   } catch (error) {
     // a bundle built outside a repository has no product; any other failure is real
     if (!(error instanceof RunwayUnresolvedError)) throw error;

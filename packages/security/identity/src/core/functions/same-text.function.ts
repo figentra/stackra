@@ -17,6 +17,7 @@ export function sameText(a: string, b: string): boolean {
   const length = Math.max(a.length, b.length);
   let difference = a.length ^ b.length;
   for (let index = 0; index < length; index += 1)
+    // oxlint-disable-next-line unicorn/prefer-code-point -- compares UTF-16 code units index by index, so a surrogate pair is two units on both sides
     difference |= (a.charCodeAt(index) || 0) ^ (b.charCodeAt(index) || 0);
   return difference === 0;
 }

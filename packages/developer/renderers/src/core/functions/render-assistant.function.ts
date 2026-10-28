@@ -50,6 +50,7 @@ export function renderAssistant(
   const render = Object.hasOwn(RENDERERS, assistant) ? RENDERERS[assistant] : undefined;
   if (render === undefined) throw new RenderInputError(String(assistant), "unknown assistant");
   const rendered = render(documents, options.generator ?? "@stackra/renderers");
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const files = [...rendered.files].sort((a, b) =>
     a.path < b.path ? -1 : a.path > b.path ? 1 : 0,
   );

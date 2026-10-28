@@ -85,6 +85,7 @@ function LiveSearch() {
     setIsSearching(true);
     const timer = setTimeout(() => setIsSearching(false), SEARCH_MILLISECONDS);
     return () => clearTimeout(timer);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the search text is the trigger of the pretend request this demo shows
   }, [text]);
 
   return (

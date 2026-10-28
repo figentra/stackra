@@ -30,6 +30,7 @@ const store = vi.hoisted(() => ({
 vi.mock("@google-cloud/storage", async () => {
   // Imported inside the factory, which vitest hoists above the file's imports.
   const { Readable } = await import("node:stream");
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- vitest hoists vi.mock above every module-scope binding, so the factory keeps its helpers
   const notFound = () => Object.assign(new Error("No such object"), { code: 404 });
   class File {
     readonly name: string;

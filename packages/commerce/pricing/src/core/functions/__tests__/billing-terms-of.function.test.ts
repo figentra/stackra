@@ -26,6 +26,9 @@ const EG = {
   [BILLING_PACK_KEYS.billingSeller]: "entity-a",
 };
 
+const without = (key: string) =>
+  Object.fromEntries(Object.entries(EG).filter(([held]) => held !== key));
+
 describe("billingTermsOf", () => {
   it("keeps price and collection currency apart", () => {
     expect(billingTermsOf(values(EG), "eg")).toEqual({
@@ -50,8 +53,6 @@ describe("billingTermsOf", () => {
   });
 
   it("refuses missing, malformed and unconvertible values", () => {
-    const without = (key: string) =>
-      Object.fromEntries(Object.entries(EG).filter(([held]) => held !== key));
     expect(() => billingTermsOf(values(without(BILLING_PACK_KEYS.billingSeller)), "eg")).toThrow(
       /sets no billing.billing_seller/,
     );

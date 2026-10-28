@@ -283,29 +283,29 @@ describe(CrudService, () => {
   });
 });
 
+/** A registry holding `ord_2`, recording what it was asked. */
+function registry() {
+  const asked: unknown[][] = [];
+  class Holds extends Driver(HoldRegistry) {
+    async heldAmong<M extends object>(
+      model: AnyClass<M>,
+      ids: readonly string[],
+      disposal: Disposal,
+      links?: HoldLinks,
+    ): Promise<ReadonlySet<string>> {
+      asked.push(
+        links === undefined ? [model, [...ids], disposal] : [model, [...ids], disposal, links],
+      );
+      return new Set(ids.filter((id) => id === "ord_2"));
+    }
+  }
+  return { holds: new Holds(), asked };
+}
+
 describe("CrudService.purge with legal holds", () => {
   afterEach(() => {
     connectHoldRegistry(undefined);
   });
-
-  /** A registry holding `ord_2`, recording what it was asked. */
-  function registry() {
-    const asked: unknown[][] = [];
-    class Holds extends Driver(HoldRegistry) {
-      async heldAmong<M extends object>(
-        model: AnyClass<M>,
-        ids: readonly string[],
-        disposal: Disposal,
-        links?: HoldLinks,
-      ): Promise<ReadonlySet<string>> {
-        asked.push(
-          links === undefined ? [model, [...ids], disposal] : [model, [...ids], disposal, links],
-        );
-        return new Set(ids.filter((id) => id === "ord_2"));
-      }
-    }
-    return { holds: new Holds(), asked };
-  }
 
   it("removes only the matching rows no hold covers", async () => {
     const em = connect();

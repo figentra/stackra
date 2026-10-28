@@ -41,7 +41,8 @@ export function readBundles(repository: string, surfaces: readonly string[]): Ed
         message:
           versions.length === 0
             ? "No built bundle: build the surface's bundle first"
-            : `More than one bundle version (${versions.sort().join(", ")}): build from a clean checkout`,
+            : // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+              `More than one bundle version (${versions.sort().join(", ")}): build from a clean checkout`,
       });
       continue;
     }

@@ -29,5 +29,6 @@ export function changedFiles(root: string, base: string): string[] {
     ...git("diff", "--name-only", "HEAD"),
     ...git("ls-files", "--others", "--exclude-standard"),
   ];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...new Set(files)].filter((path) => existsSync(join(root, path))).sort();
 }

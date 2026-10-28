@@ -50,7 +50,7 @@ describe("NativeStorageDriver", () => {
   });
 
   it("opens one MMKV instance per area but secrets", () => {
-    new NativeStorageDriver();
+    expect(new NativeStorageDriver()).toBeInstanceOf(Storage);
     expect([...mocks.instances.keys()].sort()).toEqual([
       "stackra.cache",
       "stackra.files",

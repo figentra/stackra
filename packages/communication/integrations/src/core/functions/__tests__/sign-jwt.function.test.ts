@@ -18,6 +18,7 @@ const NOW = new Date("2026-10-24T09:00:00Z");
 /** The bytes of a base64url segment. */
 const bytesOf = (segment: string) =>
   Uint8Array.from(atob(segment.replaceAll("-", "+").replaceAll("_", "/")), (character) =>
+    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     character.charCodeAt(0),
   );
 

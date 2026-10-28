@@ -35,6 +35,7 @@ function exportLine(
   names: readonly { readonly name: string; readonly typeOnly: boolean }[],
   from: string,
 ): string {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const sorted = [...names].sort((left, right) => left.name.localeCompare(right.name));
   if (sorted.every((entry) => entry.typeOnly))
     return `export type { ${sorted.map((entry) => entry.name).join(", ")} } from "${from}";`;
@@ -61,6 +62,7 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     schemaNames.set(entry, byModule);
   };
 
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const file of [...ir.files].sort((left, right) =>
     left.importPath < right.importPath ? -1 : 1,
   )) {
@@ -80,6 +82,7 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     )
       addSchema(declared.file, declared.module, declared.name);
   for (const [entry, byModule] of schemaNames)
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const [module, names] of [...byModule].sort(([left], [right]) =>
       left.localeCompare(right),
     ))
@@ -99,6 +102,7 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
         .filter((shape) => shape.kind === "model" || shape.kind === "model_addition")
         .map((shape) => shape.module),
     ),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   ].sort())
     lines
       .get("node")

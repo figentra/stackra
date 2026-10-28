@@ -31,6 +31,6 @@ export async function signPack(
   return {
     pack: checked,
     hash,
-    signature: { keyId, value: btoa(String.fromCharCode(...signature)) },
+    signature: { keyId, value: btoa(String.fromCodePoint(...signature)) },
   };
 }

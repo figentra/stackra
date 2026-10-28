@@ -16,12 +16,16 @@ function changed(
   left: Readonly<Record<string, unknown>>,
   right: Readonly<Record<string, unknown>>,
 ) {
-  return [...new Set([...Object.keys(left), ...Object.keys(right)])]
-    .filter(
-      (key) =>
-        Object.hasOwn(left, key) !== Object.hasOwn(right, key) || !sameJson(left[key], right[key]),
-    )
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return (
+    [...new Set([...Object.keys(left), ...Object.keys(right)])]
+      .filter(
+        (key) =>
+          Object.hasOwn(left, key) !== Object.hasOwn(right, key) ||
+          !sameJson(left[key], right[key]),
+      )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+  );
 }
 
 /**

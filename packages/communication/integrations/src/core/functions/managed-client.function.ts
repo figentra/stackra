@@ -48,7 +48,10 @@ const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD", "PUT", "
 const isTransient = (status: number): boolean => status === 408 || status === 429 || status >= 500;
 
 /** Waits `ms` milliseconds. */
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** The JSON of `text`, or the text itself when it is not JSON. */
 function parsed(text: string): unknown {

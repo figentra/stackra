@@ -16,6 +16,7 @@ const SUFFIX_LENGTH = 8;
 function hashOf(text: string): string {
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index += 1) {
+    // oxlint-disable-next-line unicorn/prefer-code-point -- hashes UTF-16 code units; code points would change every hash already issued
     hash ^= text.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193);
   }

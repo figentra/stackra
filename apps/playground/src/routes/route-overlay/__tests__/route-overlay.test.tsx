@@ -51,7 +51,12 @@ describe("RouteOverlay page", () => {
 
   // The router commits its navigations outside act, so React can still hold a passive-effects flush in the scheduler
   // (a setImmediate that reads `window.event`); let it run before jsdom is torn down, or it throws on a busy runner.
-  afterAll(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  afterAll(
+    () =>
+      new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      }),
+  );
 
   it("titles the page and the document, and sits at /route-overlay under Overlays", () => {
     renderPage();

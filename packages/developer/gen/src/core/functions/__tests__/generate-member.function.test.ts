@@ -42,6 +42,7 @@ describe("generateMember", () => {
       "vitest.config.ts",
       ".stackra/graph.json",
     ]);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(files[0]?.content ?? "{}")).toEqual(JSON.parse(JSON.stringify(manifest)));
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
   });

@@ -126,7 +126,9 @@ describe("EcrCardTerminalDriver", () => {
       if (bytes[0] === STX) fromTerminal([ACK]);
     };
     const running = terminal.exchange(new TextEncoder().encode("PUR"), timing);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(await terminal.status()).toMatchObject({
       ok: true,
       data: { state: TerminalState.Busy },
@@ -149,7 +151,9 @@ describe("EcrCardTerminalDriver", () => {
       "timed out",
     );
     const dropped = terminal.exchange(new TextEncoder().encode("PUR"), timing);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     socket.emit("close");
     await expect(dropped).rejects.toThrow("dropped");
   });

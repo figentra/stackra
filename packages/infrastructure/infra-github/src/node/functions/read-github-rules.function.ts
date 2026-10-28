@@ -46,6 +46,7 @@ export function readGithubRules(directory: string): GithubRules {
   const rulesets = existsSync(folder)
     ? readdirSync(folder)
         .filter((name) => name.endsWith(".json"))
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort()
         .map((name) => parseRuleset(json(join(folder, name)), join(folder, name)))
     : [];

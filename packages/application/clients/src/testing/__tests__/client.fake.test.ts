@@ -73,7 +73,9 @@ describe("ClientFake", () => {
     fake.on(QuotePriceQuery).pending();
     const settled = await Promise.race([
       fake.send(clientRequest(QuotePriceQuery, { lines: [] })).then(() => "settled"),
-      new Promise((resolve) => setTimeout(() => resolve("waiting"), 10)),
+      new Promise((resolve) => {
+        setTimeout(() => resolve("waiting"), 10);
+      }),
     ]);
     expect(settled).toBe("waiting");
   });

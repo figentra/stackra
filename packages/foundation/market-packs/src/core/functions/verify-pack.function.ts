@@ -19,6 +19,7 @@ import type { TrustedKeys } from "#core/types/trusted-keys.type";
 
 /** The bytes of a base64 string. */
 function bytesOf(base64: string): Uint8Array<ArrayBuffer> {
+  // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }
 

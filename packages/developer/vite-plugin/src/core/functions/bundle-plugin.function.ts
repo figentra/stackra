@@ -125,6 +125,7 @@ export function bundlePlugin(options: {
         entry: entry.fileName,
         modulepreload: preload,
         css: [...(entry.viteMetadata?.importedCss ?? [])],
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         imports: [...imports].sort(),
         ...(options.proTypesOnly === true ? { pro: "types-only" as const } : {}),
       };

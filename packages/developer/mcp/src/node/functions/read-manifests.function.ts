@@ -18,6 +18,7 @@ const folders = (folder: string): string[] =>
     ? readdirSync(folder, { withFileTypes: true })
         .filter((entry) => entry.isDirectory())
         .map((entry) => join(folder, entry.name))
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort()
     : [];
 

@@ -33,7 +33,7 @@ describe("OgRenderer", () => {
       brand: {},
       logo: "",
     });
-    expect(Array.from(png)).toEqual([137, 80, 78, 71]);
+    expect([...png]).toEqual([137, 80, 78, 71]);
   });
 
   it("types render as PNG bytes", () => {

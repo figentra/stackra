@@ -11,6 +11,8 @@ import { describe, expect, it } from "@stackra/testing";
 import { CODE128_PATTERNS } from "#core/constants/code128-patterns.constant";
 import { code128 } from "#core/functions/code128.function";
 
+const modules = (pattern: string) => [...pattern].reduce((sum, digit) => sum + Number(digit), 0);
+
 describe("code128", () => {
   it("encodes text in code set B with its check value", () => {
     const symbol = code128("Wikipedia");
@@ -37,8 +39,6 @@ describe("code128", () => {
   });
 
   it("has an 11-module pattern for every value and a 13-module stop", () => {
-    const modules = (pattern: string) =>
-      [...pattern].reduce((sum, digit) => sum + Number(digit), 0);
     expect(CODE128_PATTERNS).toHaveLength(107);
     expect(CODE128_PATTERNS.slice(0, 106).every((pattern) => modules(pattern) === 11)).toBe(true);
     expect(modules(CODE128_PATTERNS[106] ?? "")).toBe(13);

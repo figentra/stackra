@@ -12,7 +12,7 @@ import { decodeBase64 } from "#core/functions/decode-base64.function";
 
 describe("decodeBase64", () => {
   it("decodes standard base64", () => {
-    expect(Array.from(decodeBase64("aGk=") ?? [])).toEqual([104, 105]);
+    expect([...(decodeBase64("aGk=") ?? [])]).toEqual([104, 105]);
   });
 
   it("ignores whitespace and line breaks", () => {

@@ -282,6 +282,7 @@ export class ReplicaStore extends Service {
       this.clock.now().getTime() - Duration.toMilliseconds(duration(query.replica.window));
     const kept = rows
       .filter((row) => Date.parse(row.at) >= oldest)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => Date.parse(right.at) - Date.parse(left.at))
       .slice(0, query.replica.limit);
     return Object.freeze({

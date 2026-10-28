@@ -122,6 +122,7 @@ export function planCatalogueOf(rows: readonly Row[]): PlanCatalogue {
     if (!tierKeys.has(trial.tier))
       throw new RangeError(`planCatalogueOf: a trial names unknown tier ${trial.tier}`);
   return Object.freeze({
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     tiers: Object.freeze(tiers.sort((a, b) => a.rank - b.rank)),
     seatKinds: Object.freeze([...seatKinds].map((key) => Object.freeze({ key }))),
     modules: Object.freeze([...modules].map((key) => Object.freeze({ key }))),

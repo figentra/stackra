@@ -29,7 +29,10 @@ class RecordingDriver extends RealtimeDriver {
 }
 
 /** Lets queued microtasks run. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 describe(RealtimeRelay, () => {
   it("fans broadcasts and room frames out to this instance", async () => {

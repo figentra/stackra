@@ -39,6 +39,7 @@ export function readMigrationFiles(directory: string): readonly MigrationFile[] 
         inverse: existsSync(down) ? readFileSync(down, "utf8") : undefined,
       };
     })
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((a, b) => a.version - b.version);
   for (const [index, file] of files.entries()) {
     if (files[index - 1]?.version === file.version)

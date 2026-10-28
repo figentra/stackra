@@ -21,10 +21,12 @@ const NONE: SettingLayer = { values: {}, locked: [] };
  */
 export function diffSettingsPacks(base: SettingsPack, next: SettingsPack): SettingsChange[] {
   const rows: SettingsChange[] = [];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const groups = [...new Set([...Object.keys(base.groups), ...Object.keys(next.groups)])].sort();
   for (const group of groups) {
     const from = base.groups[group] ?? NONE;
     const to = next.groups[group] ?? NONE;
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const paths = [...new Set([...Object.keys(from.values), ...Object.keys(to.values)])].sort();
     for (const path of paths) {
       const had = Object.hasOwn(from.values, path);

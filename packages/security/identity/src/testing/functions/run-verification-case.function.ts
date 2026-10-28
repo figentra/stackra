@@ -60,7 +60,9 @@ function mismatchesOf(
   if (answer.status === VerificationStatus.Verified && answer.reasons.length > 0)
     missed.push("reasons: a verified check carries none");
   if (expect.reasons !== undefined) {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const got = [...answer.reasons].sort().join(",");
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const want = [...expect.reasons].sort().join(",");
     if (got !== want) missed.push(`reasons: expected [${want}], got [${got}]`);
   }

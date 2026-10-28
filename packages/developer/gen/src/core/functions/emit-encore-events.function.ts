@@ -40,6 +40,7 @@ function wireNames(manifest: StackraManifest): string[] {
         .filter((event) => event.kind === "integration" && typeof event["name"] === "string")
         .map((event) => String(event["name"])),
     ),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   ].sort();
 }
 
@@ -206,12 +207,14 @@ function emitSubscriptions(
     byService.set(service, (byService.get(service) ?? new Set()).add(wire));
   }
   if (byService.size === 0) return;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const services = [...byService].sort(([left], [right]) => (left < right ? -1 : 1));
   // First consuming import of a wire name wins, as in the relay.
   const seen = new Set<string>();
   const imports: string[] = [];
   const subscribed: string[] = [];
   for (const [service, wires] of services) {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const fresh = [...wires].filter((wire) => !seen.has(wire)).sort();
     if (fresh.length === 0) continue;
     for (const wire of fresh) seen.add(wire);

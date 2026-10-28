@@ -29,7 +29,9 @@ class SlowShortcut extends Shortcut({ group: "console::palette.group_app" }) {
   readonly runs: ShortcutContext[] = [];
 
   async run(ctx: ShortcutContext): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     this.runs.push(ctx);
   }
 }

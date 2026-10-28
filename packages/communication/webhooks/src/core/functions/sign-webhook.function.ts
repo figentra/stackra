@@ -29,7 +29,7 @@ export async function signWebhook(
   const signatures = await Promise.all(
     secrets.map(async (secret) => {
       const mac = await crypto.subtle.sign("HMAC", await signingKey(secret, "sign"), content);
-      return `v1,${btoa(String.fromCharCode(...new Uint8Array(mac)))}`;
+      return `v1,${btoa(String.fromCodePoint(...new Uint8Array(mac)))}`;
     }),
   );
   return {

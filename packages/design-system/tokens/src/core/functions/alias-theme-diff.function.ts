@@ -34,6 +34,7 @@ function currentPath(path: string, aliases: Readonly<Record<string, string>>): s
     const current = result;
     const alias = from
       .filter((old) => current === old || current.startsWith(`${old}.`))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((one, two) => two.length - one.length)[0];
     const target = alias === undefined ? undefined : aliases[alias];
     if (alias === undefined || target === undefined) return result;

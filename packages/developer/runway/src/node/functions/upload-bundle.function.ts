@@ -34,6 +34,7 @@ export async function uploadBundle(
     .map((entry) =>
       relative(bundle.folder, join(entry.parentPath, entry.name)).split(sep).join("/"),
     )
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort();
   const keys: string[] = [];
   for (const file of files) {

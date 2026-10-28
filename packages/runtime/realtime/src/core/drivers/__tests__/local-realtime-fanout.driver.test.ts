@@ -18,7 +18,10 @@ const MESSAGE: FanoutMessage = {
   broadcast: { permission: "p", message: { channel: "tenant.t.m", name: "m.e.v1", id: "evt_1" } },
 };
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 describe(LocalRealtimeFanoutDriver, () => {
   it("delivers to every subscriber after publish, until stopped", async () => {

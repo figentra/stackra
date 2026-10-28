@@ -65,6 +65,13 @@ const withClasses = (...classes: DeclaredClass[]): MemberIR => ({
   classes: [...COMMERCE_IR.classes, ...classes],
 });
 
+const migration = (name: string) => ({
+  file: `src/modules/orders/database/migrations/${name}`,
+  importPath: `#modules/orders/database/migrations/${name.slice(0, -3)}`,
+  folder: "modules",
+  names: [],
+});
+
 describe("checkConventions", () => {
   it("passes a member that follows every convention", () => {
     expect(refused(COMMERCE_IR)).toEqual([]);
@@ -227,12 +234,6 @@ describe("checkConventions", () => {
   });
 
   it("refuses migrations not numbered NNNN- from 0001 without gaps", () => {
-    const migration = (name: string) => ({
-      file: `src/modules/orders/database/migrations/${name}`,
-      importPath: `#modules/orders/database/migrations/${name.slice(0, -3)}`,
-      folder: "modules",
-      names: [],
-    });
     const errors = checkConventions(
       {
         ...COMMERCE_IR,

@@ -74,6 +74,7 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     },
     async guard(request, scoped) {
       // Array#sort is stable, so guards of equal order keep wiring order.
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       const guards = scoped.getAll(RequestGuard).sort((a, b) => a.order - b.order);
       for (const guard of guards) await guard.check(request);
     },

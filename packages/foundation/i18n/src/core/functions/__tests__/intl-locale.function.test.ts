@@ -13,6 +13,9 @@ import { HourCycle } from "#core/enums/hour-cycle.enum";
 import { NumberingSystem } from "#core/enums/numbering-system.enum";
 import { intlLocale } from "#core/functions/intl-locale.function";
 
+const decimal = (locale: string) =>
+  new Intl.NumberFormat(intlLocale(locale, NumberingSystem.Latn)).format(1.5);
+
 describe("intlLocale", () => {
   it("adds the nu keyword for a forced numbering system", () => {
     expect(intlLocale("ar-SA", NumberingSystem.Latn)).toBe("ar-SA-u-nu-latn");
@@ -35,8 +38,6 @@ describe("intlLocale", () => {
   });
 
   it("writes the comma decimal where the language uses it", () => {
-    const decimal = (locale: string) =>
-      new Intl.NumberFormat(intlLocale(locale, NumberingSystem.Latn)).format(1.5);
     for (const locale of ["fr", "de", "es", "it", "nl"]) expect(decimal(locale)).toBe("1,5");
     for (const locale of ["en", "en-US", "es-US"]) expect(decimal(locale)).toBe("1.5");
   });

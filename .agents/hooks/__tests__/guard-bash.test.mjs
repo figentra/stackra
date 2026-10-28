@@ -382,15 +382,17 @@ test("bot push is denied on main, allowed on a branch; bare git push is always d
   rmSync(dir, { recursive: true, force: true });
 });
 
+/** A fresh git checkout on `branch`, in a temp folder. */
+const gitRepoOn = (branch) => {
+  const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
+  spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
+  return d;
+};
+
 // STA-214: the branch is read in the checkout the push runs in, not in the hook's cwd.
 test("bot push resolves -C, --git-dir, --work-tree and cd targets", () => {
-  const repo = (branch) => {
-    const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
-    spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
-    return d;
-  };
-  const main = repo("main");
-  const feature = repo("feature/x");
+  const main = gitRepoOn("main");
+  const feature = gitRepoOn("feature/x");
   for (const c of [
     `pnpm bot:git -- -C ${main} push origin HEAD`,
     `pnpm bot:git -- -C ${main} push`,
@@ -448,13 +450,8 @@ for (const c of round3Allowed) test(`allow: ${c}`, () => assert.equal(denied(c),
 for (const c of round3Denied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
 
 test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixes, unresolvable", () => {
-  const repo = (branch) => {
-    const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
-    spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
-    return d;
-  };
-  const main = repo("main");
-  const feature = repo("feature/x");
+  const main = gitRepoOn("main");
+  const feature = gitRepoOn("feature/x");
   for (const c of [
     `pnpm bot:git -- -c "user.name=a b" -C ${main} push origin HEAD`,
     `pnpm bot:git -- -c 'color.ui=a;b' -C ${main} push origin HEAD`,
@@ -2965,6 +2962,15 @@ test("STA-400 review 2: the remaining deploys ask", () => {
     assert.equal(decision(c, root), "allow", c);
 });
 
+/** A `Bash(...)` permission glob as a whole-string RegExp. */
+const permissionGlob = (g) =>
+  new RegExp(
+    `^${g
+      .slice(5, -1)
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replaceAll("*", ".*")}$`,
+  );
+
 test("STA-400 review 2: settings deny the infisical secret reads and run, whatever the hook does", async () => {
   const { readFile } = await import("node:fs/promises");
   const { permissions: p } = JSON.parse(
@@ -2989,18 +2995,11 @@ test("STA-400 review 2: settings deny the infisical secret reads and run, whatev
   for (const rule of ["Bash(* rm -*r*)", "Bash(eas update*)"])
     assert.ok(!p.ask.includes(rule), rule);
   // `infisical secrets folders get` matches no infisical deny glob (shape: prefix, then `*`-separated literals)
-  const glob = (g) =>
-    new RegExp(
-      `^${g
-        .slice(5, -1)
-        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-        .replaceAll("*", ".*")}$`,
-    );
   for (const c of ["infisical secrets folders get", "infisical secrets folders get --env=dev"])
     assert.ok(
       !p.deny
         .filter((r) => r.startsWith("Bash(") && r.includes("infisical"))
-        .some((r) => glob(r).test(c)),
+        .some((r) => permissionGlob(r).test(c)),
       c,
     );
 });

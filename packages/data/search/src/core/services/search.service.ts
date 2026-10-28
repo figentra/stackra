@@ -98,9 +98,12 @@ export class Search extends Service {
       });
       rows.forEach((row, rank) => hits.push({ model, row, score: 1 / (FUSION + rank + 1) }));
     }
-    return hits
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
-      .map(({ model, row }) => ({ model, row }));
+    return (
+      hits
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map(({ model, row }) => ({ model, row }))
+    );
   }
 }

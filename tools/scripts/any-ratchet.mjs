@@ -56,7 +56,7 @@ export function anyDisableCounts(root) {
       count += readFileSync(path, "utf8").match(ANY_DISABLE)?.length ?? 0;
     if (count > 0) counts.set(dir, count);
   }
-  return new Map([...counts].sort(([a], [b]) => (a < b ? -1 : 1)));
+  return new Map([...counts].toSorted(([a], [b]) => (a < b ? -1 : 1)));
 }
 
 /** The committed baseline of `root`, or none when the file is missing. */
@@ -86,7 +86,7 @@ export function loweredBaselines(root, baseline = readBaseline(root)) {
   return Object.entries(baseline)
     .filter(([dir, allowed]) => (counts.get(dir) ?? 0) < allowed)
     .map(([dir, allowed]) => `${dir}: ${counts.get(dir) ?? 0} < ${allowed}`)
-    .sort();
+    .toSorted();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

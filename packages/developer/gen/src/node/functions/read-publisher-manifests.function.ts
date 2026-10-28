@@ -42,5 +42,6 @@ export function readPublisherManifests(root: string): NonNullable<MemberIR["publ
     if ((manifest.events ?? []).some((event) => event.kind === "integration"))
       found.push({ member: manifest.member, folder: entry.name, manifest });
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return found.sort((left, right) => left.member.localeCompare(right.member));
 }

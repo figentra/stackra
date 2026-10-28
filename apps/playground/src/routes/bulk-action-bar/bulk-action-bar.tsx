@@ -79,7 +79,10 @@ const DELAY = 1000;
 const ignore = () => undefined;
 
 /** Waits for `ms` milliseconds. */
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** The actions of the static samples: they do nothing, as the samples only show their look. */
 const ONE: readonly ResourceAction[] = [{ id: "archive", label: STRINGS.archive, onPress: ignore }];

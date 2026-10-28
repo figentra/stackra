@@ -150,6 +150,7 @@ export function generateMember(
   const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing");
   if (missing.length > 0) return { files: [], errors: missing, manifest };
   files.push(...schemas);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const module of [...new Set(ir.shapes.map((shape) => shape.module))].sort()) {
     const entities = emitEntities(ir, module);
     if (entities !== undefined)

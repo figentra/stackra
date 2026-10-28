@@ -119,7 +119,7 @@ export const OWNER_LABEL = "owner-approved";
 export function ownerLabelled(events) {
   const last = events
     .filter((e) => ["labeled", "unlabeled"].includes(e.event) && e.label?.name === OWNER_LABEL)
-    .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
+    .toSorted((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
     .at(-1);
   const who = last?.actor;
   return (
@@ -150,7 +150,7 @@ export function aiReview(pr, comments, reviews, authors = [], same = new Set()) 
   const edits = comments
     .filter((c) => byReviewerApp(c) && c.updated_at !== c.created_at)
     .map((c) => c.updated_at)
-    .sort();
+    .toSorted();
   const voidBefore = edits.at(-1) ?? "";
   const verdicts = new Set();
   for (const c of comments) {
@@ -195,7 +195,7 @@ export function blockers(
   if (pr.state !== "OPEN") reasons.push(`PR is ${pr.state}`);
   if (pr.isDraft) reasons.push("PR is a draft");
 
-  const gate = [...checkRuns].sort((a, b) => b.id - a.id)[0];
+  const gate = [...checkRuns].toSorted((a, b) => b.id - a.id)[0];
   if (!gate) reasons.push(`no Quality Gate run on ${sha}`);
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);

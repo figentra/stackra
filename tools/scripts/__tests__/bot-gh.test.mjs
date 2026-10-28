@@ -275,7 +275,9 @@ test("STA-302: a reader that stops early (`| head`) ends a captured read quietly
   let stderr = "";
   child.stderr.on("data", (d) => (stderr += d));
   child.stdout.once("data", () => child.stdout.destroy());
-  const code = await new Promise((resolve) => child.on("close", resolve));
+  const code = await new Promise((resolve) => {
+    child.on("close", resolve);
+  });
   assert.equal(code, 141);
   assert.doesNotMatch(stderr, /EPIPE|Unhandled/);
 });

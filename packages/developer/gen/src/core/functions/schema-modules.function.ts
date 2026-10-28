@@ -27,5 +27,6 @@ export function schemaModules(ir: MemberIR): string[] {
         )
         .map((declared) => declared.module),
     ]),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   ].sort();
 }

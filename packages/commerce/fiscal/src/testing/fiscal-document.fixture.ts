@@ -14,6 +14,9 @@ import { PartyKind } from "#contracts/enums/party-kind.enum";
 import type { FiscalAddress } from "#contracts/types/fiscal-address.type";
 import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
 
+/** `minor` cents of EUR. */
+const eur = (minor: number) => Money.ofMinor(minor, "EUR");
+
 /**
  * The sample document with `overrides` applied.
  *
@@ -21,7 +24,6 @@ import type { FiscalDocument } from "#contracts/types/fiscal-document.type";
  * const receipt = fiscalDocument({ kind: FiscalDocumentKind.Simplified, buyer: null });
  */
 export function fiscalDocument(overrides: Partial<FiscalDocument> = {}): FiscalDocument {
-  const eur = (minor: number) => Money.ofMinor(minor, "EUR");
   const address: FiscalAddress = {
     street: "Main Street",
     buildingNumber: "1",

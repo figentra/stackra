@@ -28,6 +28,7 @@ import type { PackSchema } from "#core/types/pack-schema.type";
 
 /** The plain JSON Schema of `schema`, without zod's own members. */
 const jsonSchemaOf = (schema: z.ZodType): PackKeySchema["schema"] =>
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
   JSON.parse(JSON.stringify(z.toJSONSchema(schema))) as PackKeySchema["schema"];
 
 /** A list of non-empty strings. */

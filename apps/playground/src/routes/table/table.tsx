@@ -132,6 +132,7 @@ function sortedOrders(sort: SortDescriptor | undefined): readonly Order[] {
   if (!sort) return ORDERS;
   const key = sort.column as keyof Order;
   const factor = sort.direction === "ascending" ? 1 : -1;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...ORDERS].sort((first, second) => {
     const a = first[key];
     const b = second[key];

@@ -47,6 +47,33 @@ function withBase(baseUrl: string): MemberIR {
   };
 }
 
+/** BILLING_IR with its Invoice numbered by `sequence`. */
+const billingNumberedBy = (sequence: string): MemberIR => ({
+  ...BILLING_IR,
+  classes: BILLING_IR.classes.map((candidate) =>
+    candidate.name === "Invoice"
+      ? {
+          ...candidate,
+          facets: [
+            ...candidate.facets,
+            {
+              name: "DocumentNumber",
+              kind: "document_number",
+              target: "field" as const,
+              member: "number",
+              options: { sequence },
+              from: "@stackra/model",
+            },
+          ],
+        }
+      : candidate,
+  ),
+});
+
+/** `code subject` of each error the manifest build reports for `ir`. */
+const codesOf = (ir: MemberIR): string[] =>
+  buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
+
 describe("buildManifest", () => {
   const { manifest, errors } = buildManifest(COMMERCE_IR);
 
@@ -381,31 +408,12 @@ describe("buildManifest", () => {
   });
 
   it("checks each document number names a declared sequence", () => {
-    const numbered = (sequence: string): MemberIR => ({
-      ...BILLING_IR,
-      classes: BILLING_IR.classes.map((candidate) =>
-        candidate.name === "Invoice"
-          ? {
-              ...candidate,
-              facets: [
-                ...candidate.facets,
-                {
-                  name: "DocumentNumber",
-                  kind: "document_number",
-                  target: "field" as const,
-                  member: "number",
-                  options: { sequence },
-                  from: "@stackra/model",
-                },
-              ],
-            }
-          : candidate,
-      ),
-    });
-    expect(buildManifest(numbered("invoice")).errors).toEqual([]);
-    expect(buildManifest(numbered("segments.export")).errors).toEqual([]);
+    expect(buildManifest(billingNumberedBy("invoice")).errors).toEqual([]);
+    expect(buildManifest(billingNumberedBy("segments.export")).errors).toEqual([]);
     expect(
-      buildManifest(numbered("receipt")).errors.map((error) => `${error.code} ${error.subject}`),
+      buildManifest(billingNumberedBy("receipt")).errors.map(
+        (error) => `${error.code} ${error.subject}`,
+      ),
     ).toEqual(["document_number_unsequenced Invoice"]);
   });
 
@@ -668,8 +676,6 @@ describe("buildManifest", () => {
       ...COMMERCE_IR,
       classes: [...COMMERCE_IR.classes.filter((item) => item.name !== cancel.name), ...classes],
     });
-    const codesOf = (ir: MemberIR): string[] =>
-      buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
 
     it("refuses `tool: false` on a user action without a reason, and records the reason", () => {
       const off = { ...cancel, options: { ...cancel.options, tool: false } };

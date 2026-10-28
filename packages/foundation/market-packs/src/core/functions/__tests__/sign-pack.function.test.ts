@@ -30,7 +30,8 @@ describe("signPack", () => {
     expect(signed.hash).toBe(await contentHash(pack));
     expect(signed.signature.keyId).toBe("key_1");
     const publicKey = new Uint8Array(await crypto.subtle.exportKey("raw", keys.publicKey));
-    const trusted = { key_1: btoa(String.fromCharCode(...publicKey)) };
+    const trusted = { key_1: btoa(String.fromCodePoint(...publicKey)) };
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(await verifyPack(JSON.parse(JSON.stringify(signed)), trusted)).toEqual(pack);
   });
 

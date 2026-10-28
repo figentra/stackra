@@ -84,6 +84,7 @@ export function discoverPages(
     if (!component) throw new Error(`routes/${folder}: no page component in ${folder}.tsx`);
     found.push({ route, element: createElement(component) });
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return found.sort(
     (a, b) =>
       PageCategory.indexOf(a.route.category) - PageCategory.indexOf(b.route.category) ||

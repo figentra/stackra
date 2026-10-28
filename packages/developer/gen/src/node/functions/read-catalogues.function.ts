@@ -28,6 +28,7 @@ export function readCatalogues(root: string): MemberIR["catalogues"] {
   for (const locale of readdirSync(folder, { withFileTypes: true })) {
     if (!locale.isDirectory()) continue;
     const files = readdirSync(join(folder, locale.name)).filter((name) => name.endsWith(".json"));
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const file of files.sort()) {
       const path = join(folder, locale.name, file);
       try {

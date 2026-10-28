@@ -52,6 +52,7 @@ function handlersOf(point: object, name: string): Handler[] {
         order: extension.order,
         handle: extension.handle as (...args: unknown[]) => unknown,
       });
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return handlers.sort((left, right) => left.order - right.order);
 }
 

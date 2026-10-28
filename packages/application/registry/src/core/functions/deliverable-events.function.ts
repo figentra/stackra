@@ -43,6 +43,7 @@ export function deliverableEvents(
   const withdrawn = [...rowsOf(previous ?? { events: [] }).values()]
     .filter((row) => !rows.has(row.type))
     .map((row): DeliverableEventRow => ({ ...row, withdrawn: true }));
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...rows.values(), ...withdrawn].sort((a, b) =>
     a.type < b.type ? -1 : a.type > b.type ? 1 : 0,
   );

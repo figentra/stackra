@@ -108,6 +108,7 @@ export class MemorySettingValueStoreDriver extends Driver(SettingValueStore) {
         (holder) =>
           holder.group === group && holder.user === null && isAtOrAbove(holder.path, node),
       )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((a, b) => depthOf(a.path) - depthOf(b.path));
     const user =
       target.user === undefined

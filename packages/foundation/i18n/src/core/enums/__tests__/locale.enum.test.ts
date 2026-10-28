@@ -79,6 +79,6 @@ describe("Locale", () => {
     const chain: Locale[] = ["ar", "en", "nl"];
     // @ts-expect-error -- not a shipped locale
     const unknown: Locale = "tr";
-    expect(chain.concat(unknown)).toHaveLength(4);
+    expect([...chain, unknown]).toHaveLength(4);
   });
 });

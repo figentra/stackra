@@ -44,7 +44,7 @@ class KeptContentCredentialsDriver extends Driver(ContentCredentials) {
     _contentType: string,
     credential: ContentCredential,
   ): Promise<Uint8Array> {
-    const signed = bytes.slice();
+    const signed = new Uint8Array(bytes);
     this.kept.set(signed, credential);
     return signed;
   }

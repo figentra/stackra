@@ -114,6 +114,7 @@ export function screenshotCaptureJob(request: ScreenshotCaptureRequest): Screens
   const appStore = join(repository, storeDir, app);
   const locales: { locale: string; screens: string[] }[] = [];
   const captionIssues: RunwayIssue[] = [];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const locale of existsSync(appStore) ? readdirSync(appStore).sort() : []) {
     const file = join(appStore, locale, "captions.json");
     if (!existsSync(file)) continue;

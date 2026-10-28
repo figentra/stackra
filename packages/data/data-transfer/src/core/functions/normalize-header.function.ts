@@ -21,14 +21,17 @@ const ARABIC_INDIC_DIGITS = /[٠-٩۰-۹]/g;
  * normalizeHeader("Unit_Price") === normalizeHeader("unit price"); // true
  */
 export function normalizeHeader(header: string): string {
-  return header
-    .normalize("NFKC")
-    .replace(INVISIBLE, "")
-    .replace(ARABIC_MARKS, "")
-    .replace(ALEF_FORMS, "ا")
-    .replace(/ى/g, "ي")
-    .replace(ARABIC_INDIC_DIGITS, (digit) => String((digit.charCodeAt(0) - 0x0660) % 0x90))
-    .replace(/[\s_-]+/g, " ")
-    .trim()
-    .toLowerCase();
+  return (
+    header
+      .normalize("NFKC")
+      .replace(INVISIBLE, "")
+      .replace(ARABIC_MARKS, "")
+      .replace(ALEF_FORMS, "ا")
+      .replace(/ى/g, "ي")
+      // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
+      .replace(ARABIC_INDIC_DIGITS, (digit) => String((digit.charCodeAt(0) - 0x0660) % 0x90))
+      .replace(/[\s_-]+/g, " ")
+      .trim()
+      .toLowerCase()
+  );
 }

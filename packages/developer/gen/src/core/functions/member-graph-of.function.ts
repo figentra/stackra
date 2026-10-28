@@ -21,6 +21,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
 
 /** `values`, de-duplicated and sorted. */
 function sorted(values: Iterable<string>): string[] {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...new Set(values)].sort();
 }
 
@@ -84,6 +85,7 @@ export function memberGraphOf(ir: MemberIR, manifest: StackraManifest): MemberGr
       ),
     ),
     drivers: [...drivers]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
       .map(([port, candidates]) => ({ port, candidates: sorted(candidates) })),
   };

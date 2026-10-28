@@ -96,7 +96,7 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
         isCompact ? (
           // The rail has no room for the label, so an entry with no icon shows its first letter as a mark.
           <span aria-hidden="true" className="grid size-5 place-items-center text-sm font-semibold">
-            {Array.from(item.label)[0]}
+            {[...item.label][0]}
           </span>
         ) : null
       ) : (

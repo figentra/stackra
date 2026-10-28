@@ -137,6 +137,9 @@ function scanTwice(c, opts) {
   return { ...scanOnce(source + c.slice(at), opts), source: source + c.slice(at) };
 }
 
+/** A span inside double quotes or a heredoc body. */
+const isQuotedSpan = (s) => s.kind === "dq" || s.kind === "heredoc";
+
 /** One pass of `scanShell` over `c` as given; `joins` lists where a backslash-newline sits outside single quotes. */
 function scanOnce(c, { heredoc = false } = {}) {
   let literal = "";
@@ -152,8 +155,7 @@ function scanOnce(c, { heredoc = false } = {}) {
   const frame = (kind, extra) => ({ kind, parens: 0, cases: 0, start: literal.length, ...extra });
   const stack = [frame("cmd")];
   if (heredoc) stack.push({ kind: "heredoc" }); // like "…", but a `"` is literal
-  const quoted = (s) => s.kind === "dq" || s.kind === "heredoc";
-  const direct = () => stack.every((s, k) => k === 0 || quoted(s) || s.kind === "param");
+  const direct = () => stack.every((s, k) => k === 0 || isQuotedSpan(s) || s.kind === "param");
   const emit = (s, b = s) => {
     literal += s;
     if (quietFrom < 0) blanked += b;
@@ -223,7 +225,7 @@ function scanOnce(c, { heredoc = false } = {}) {
       if (ch === "\\" && c[i] === "\n") joins.push(i - 1);
       continue;
     }
-    if (quoted(f)) {
+    if (isQuotedSpan(f)) {
       if (ch === '"' && f.kind === "dq") {
         stack.pop();
         literal += ch;
@@ -349,7 +351,7 @@ function scanOnce(c, { heredoc = false } = {}) {
       emit(c[i] + c[++i]);
       const brace = c[i] === "{";
       // Inside "…" or a heredoc body, `'` stays literal in the expansion (bash 5, zsh).
-      const literalQuotes = quoted(f) || Boolean(f.literalQuotes);
+      const literalQuotes = isQuotedSpan(f) || Boolean(f.literalQuotes);
       stack.push(
         frame("param", { opener: c[i], closer: brace ? "}" : "]", nest: 0, literalQuotes }),
       );
@@ -369,7 +371,7 @@ function scanOnce(c, { heredoc = false } = {}) {
     emit(ch);
   }
   while (stack.length > 1) {
-    if (quoted(stack.at(-1)) || stack.at(-1).kind === "param") stack.pop();
+    if (isQuotedSpan(stack.at(-1)) || stack.at(-1).kind === "param") stack.pop();
     else close();
   }
   if (quietFrom >= 0) blanked += c.slice(quietFrom);
@@ -567,20 +569,22 @@ export const simpleCommands = (c, { all = false } = {}) =>
   cached(all ? commandsAllCache : commandsCache, c, () => splitCommands(c, all));
 const commandsCache = memoTable();
 const commandsAllCache = memoTable();
+/** An empty command record for `splitCommands`. */
+const freshCommand = () => ({
+  words: [],
+  dyn: [],
+  at: [],
+  raw: [],
+  redirects: [],
+  dynamic: false,
+  op: "",
+  end: 0,
+});
+
 function splitCommands(c, all) {
   const out = [];
-  const fresh = () => ({
-    words: [],
-    dyn: [],
-    at: [],
-    raw: [],
-    redirects: [],
-    dynamic: false,
-    op: "",
-    end: 0,
-  });
   let lessEnv = false; // LESSOPEN / LESSCLOSE set in this or an earlier command of the line
-  let cur = fresh();
+  let cur = freshCommand();
   let word = null;
   let raw = null; // the word with its double-quoted bodies as written, for re-quoting it (`dequoted`)
   let wordAt = 0;
@@ -609,7 +613,7 @@ function splitCommands(c, all) {
     redirect = null;
     lessEnv ||= cur.words.some((w) => /^LESS(?:OPEN|CLOSE)=/.test(w));
     out.push(Object.assign(cur, { op, end: at, lessEnv }));
-    cur = fresh();
+    cur = freshCommand();
   };
   /** Index of the `)` closing the `(` at `k`, or the last index. */
   const closing = (k) => {
@@ -703,8 +707,8 @@ const ansiC = (s) =>
     (_, x, u, big, oct, ctl, ch) => {
       const code = x ?? u ?? big;
       if (code) return String.fromCodePoint(Math.min(parseInt(code, 16), 0x10ffff));
-      if (oct) return String.fromCharCode(parseInt(oct, 8) & 0xff);
-      if (ctl) return String.fromCharCode(ctl.charCodeAt(0) & 31);
+      if (oct) return String.fromCodePoint(parseInt(oct, 8) & 0xff);
+      if (ctl) return String.fromCodePoint(ctl.codePointAt(0) & 31);
       return ANSI_ESCAPES[ch] ?? ch;
     },
   );
@@ -1453,22 +1457,22 @@ const tokensOf = (w) =>
 export function commandReachesInbox(cmd, { cwd, home = homedir() } = {}) {
   let dir = cwd;
   for (const words of lex(cmd)) {
-    const { name, paths, texts, operands } = classify(words);
+    const { name, paths, texts, operands: args } = classify(words);
     if (texts.some((w) => LITERAL.test(w))) return true;
     // `mdfind` without `-onlyin` searches the whole Spotlight index, home included.
-    if (name === "mdfind" && !operands.some((w) => /^-onlyin$/i.test(w))) return true;
+    if (name === "mdfind" && !args.some((w) => /^-onlyin$/i.test(w))) return true;
     const recursive =
       RECURSIVE.test(paths.join(" ")) ||
       ["tree", "fd", "mdfind"].includes(name) ||
-      (name === "ls" && operands.some((w) => /^-\w*R/.test(w)));
+      (name === "ls" && args.some((w) => /^-\w*R/.test(w)));
     const opts = { recursive, home, cwd: dir };
     const tokens = paths.flatMap(tokensOf);
     if (tokens.some((t) => (URL.test(t) ? LITERAL.test(t) : reachesInbox(t, opts)))) return true;
     // `cd ~ && rg x`, `du -a`: no path operand means the current directory.
-    if (recursive && dir && !operands.some((w) => !w.startsWith("-")) && reachesInbox(".", opts))
+    if (recursive && dir && !args.some((w) => !w.startsWith("-")) && reachesInbox(".", opts))
       return true;
     if (name === "cd" || name === "pushd") {
-      const to = operands.find((w) => !/^-[LP]$/.test(w)) ?? "~";
+      const to = args.find((w) => !/^-[LP]$/.test(w)) ?? "~";
       const expanded = to.replace(/^(~|\$HOME|\$\{HOME\})(?=\/|$)/, home);
       dir =
         /^[~$]/.test(expanded) || (!expanded.startsWith("/") && !dir)

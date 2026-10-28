@@ -76,7 +76,7 @@ describe("SatoriOgRendererDriver", () => {
   it("renders the card through satori and resvg at its width", async () => {
     const Driver = await load();
     const png = await new Driver().render(CARD);
-    expect(Array.from(png)).toEqual([137, 80, 78, 71]);
+    expect([...png]).toEqual([137, 80, 78, 71]);
     expect(engines.initSatori).toHaveBeenCalledWith(engines.yoga);
     expect(engines.initWasm).toHaveBeenCalledWith(engines.resvg);
     expect(engines.satori).toHaveBeenCalledWith(expect.objectContaining({ type: "div" }), {

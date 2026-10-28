@@ -99,6 +99,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
           .map((shape) => shape.module),
       ),
     ]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((module) => `import "#stackra/entities/${module}";`),
     ...schemaModules(ir).map((module) => `import "#stackra/schemas/${module}";`),

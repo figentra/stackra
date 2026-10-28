@@ -34,14 +34,17 @@ import type { GenerateResult } from "#node/types/generate-result.type";
 /** Every file under `folder`, relative to it, sorted; dot entries skipped. */
 function walk(folder: string, base = folder): string[] {
   if (!existsSync(folder)) return [];
-  return readdirSync(folder, { withFileTypes: true })
-    .filter((entry) => !entry.name.startsWith("."))
-    .flatMap((entry) =>
-      entry.isDirectory()
-        ? walk(join(folder, entry.name), base)
-        : [relative(base, join(folder, entry.name)).split("\\").join("/")],
-    )
-    .sort();
+  return (
+    readdirSync(folder, { withFileTypes: true })
+      .filter((entry) => !entry.name.startsWith("."))
+      .flatMap((entry) =>
+        entry.isDirectory()
+          ? walk(join(folder, entry.name), base)
+          : [relative(base, join(folder, entry.name)).split("\\").join("/")],
+      )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort()
+  );
 }
 
 /** One refusal about the config file itself. */
@@ -135,5 +138,6 @@ export async function generateDocsSite(
     rmSync(join(out, stale));
     changed.push(`${DOCS_SITE_DIR}/${stale}`);
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return { errors: [], files: generated, changed: changed.sort() };
 }

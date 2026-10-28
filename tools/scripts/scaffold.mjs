@@ -307,7 +307,7 @@ export function scaffold({
     if (format)
       execFileSync("pnpm", ["exec", "oxfmt", "--write", dest], { cwd: ROOT, stdio: "inherit" });
   }
-  return { dest, rel, files: files.sort() };
+  return { dest, rel, files: files.toSorted() };
 }
 
 const VALUE_FLAGS = new Set([

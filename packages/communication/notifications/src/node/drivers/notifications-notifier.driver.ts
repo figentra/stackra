@@ -190,7 +190,9 @@ export class NotificationsNotifierDriver extends Driver(Notifier) {
   private messagesOf(locale: Locale): Promise<Messages> {
     let loaded = this.messages.get(locale);
     if (loaded === undefined) {
-      const chain = [...new Set([...(this.i18n.fallbacks[locale] ?? [])].reverse().concat(locale))];
+      const fallbacks = [...(this.i18n.fallbacks[locale] ?? [])];
+      fallbacks.reverse();
+      const chain = [...new Set([...fallbacks, locale])];
       loaded = Promise.all(
         [...NOTIFICATION_MAILS.catalogues].map(async ([namespace, loaders]) => {
           const catalogues = await Promise.all(

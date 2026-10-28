@@ -33,6 +33,7 @@ const ENTITIES: Readonly<Record<string, string>> = {
  */
 export function escapeXml(value: string): string {
   for (let index = 0; index < value.length; index++) {
+    // oxlint-disable-next-line unicorn/prefer-code-point -- checks every UTF-16 code unit, so a lone surrogate is refused too
     if (isForbidden(value.charCodeAt(index))) {
       throw new TypeError("The value holds a character XML cannot carry");
     }

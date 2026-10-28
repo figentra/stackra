@@ -65,7 +65,9 @@ export async function mockPulumi(
     let seen = -1;
     while (seen !== resources.length) {
       seen = resources.length;
-      await new Promise((resolve) => setTimeout(resolve, TICK));
+      await new Promise((resolve) => {
+        setTimeout(resolve, TICK);
+      });
     }
     return resources;
   };

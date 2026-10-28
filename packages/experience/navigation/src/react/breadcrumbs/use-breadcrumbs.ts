@@ -28,6 +28,7 @@ export function useBreadcrumbs(): readonly Breadcrumb[] {
   return useMemo(() => {
     const byHref = new Map<string, Breadcrumb>();
     for (const crumb of crumbs?.values() ?? []) byHref.set(crumb.to, crumb);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return [...byHref.values()].sort((left, right) => depthOf(left.to) - depthOf(right.to));
   }, [crumbs]);
 }

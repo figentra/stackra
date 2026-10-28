@@ -31,5 +31,6 @@ export async function grantedSettingEntitlements(
     for (const entitlement of Object.values(key.entitlementValues ?? {})) named.add(entitlement);
   }
   if (named.size === 0 || source === undefined) return NONE;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return source.granted([...named].sort(), target);
 }

@@ -15,6 +15,6 @@
  */
 export function base64urlEncode(bytes: Uint8Array): string {
   let text = "";
-  for (const byte of bytes) text += String.fromCharCode(byte);
+  for (const byte of bytes) text += String.fromCodePoint(byte);
   return btoa(text).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }

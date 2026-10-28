@@ -45,7 +45,7 @@ describe("buildPkpass", () => {
       new RecordingCmsSignerDriver(),
       at,
     );
-    expect(Array.from(bytes.slice(0, 4))).toEqual([0x50, 0x4b, 0x03, 0x04]);
+    expect([...bytes.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
     const text = new TextDecoder("latin1").decode(bytes);
     for (const name of ["pass.json", "icon.png", "manifest.json", "signature"])
       expect(text).toContain(name);

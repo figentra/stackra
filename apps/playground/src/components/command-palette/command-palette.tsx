@@ -195,6 +195,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
             items: [...pageItems, ...actionItems]
               .map((item, order) => ({ item, order, rank: score(item, words) }))
               .filter(({ rank }) => rank >= 0)
+              // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
               .sort((a, b) => b.rank - a.rank || a.order - b.order)
               .map(({ item }) => item),
           },

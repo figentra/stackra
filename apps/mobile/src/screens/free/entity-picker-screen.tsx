@@ -165,7 +165,9 @@ const SLOW_DELAY = 3000;
 /** The loader the pretend server gives a picker: the records that match, a page at a time, after a delay, or a failure. */
 function serverOf(delay: number, failure?: string) {
   return async (search: string, cursor?: string): Promise<EntityOptionPage> => {
-    await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, delay);
+    });
     if (failure !== undefined) throw new Error(failure);
     const needle = search.trim().toLocaleLowerCase();
     const matches = PEOPLE.filter((person) => person.label.toLocaleLowerCase().includes(needle));

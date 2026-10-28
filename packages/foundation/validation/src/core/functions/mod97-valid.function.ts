@@ -19,6 +19,7 @@ export function mod97Valid(value: string): boolean {
   const moved = `${value.slice(4)}${value.slice(0, 4)}`;
   let remainder = 0;
   for (const char of moved) {
+    // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
     const code = char >= "A" ? String(char.charCodeAt(0) - 55) : char;
     for (const digit of code) remainder = (remainder * 10 + Number(digit)) % 97;
   }

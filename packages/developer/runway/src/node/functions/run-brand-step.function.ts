@@ -64,9 +64,11 @@ function plan(request: BrandStepRequest): BrandStepRun[] {
   const runs: BrandStepRun[] = [
     ...Object.keys(root.surfaces ?? {})
       .filter((surface) => surface !== "ops")
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((surface) => ({ surface, outDir: `${outDir}/web/${surface}`, outputs: outputs.web })),
     ...Object.keys(root.mobile ?? {})
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((app) => ({ surface: app, outDir: `${outDir}/mobile/${app}`, outputs: outputs.mobile })),
   ];

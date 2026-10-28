@@ -123,6 +123,7 @@ function LiveComboBox() {
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), SERVER_DELAY);
     return () => clearTimeout(timer);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the text and the page count are the triggers of the pretend request this demo shows
   }, [text, pages]);
 
   return (

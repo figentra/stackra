@@ -83,6 +83,7 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
           run.automation === automation &&
           (before === undefined || run.startedAt.getTime() < before.getTime()),
       )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(
         (left, right) =>
           right.startedAt.getTime() - left.startedAt.getTime() || (right.id > left.id ? 1 : -1),
@@ -135,6 +136,7 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
               )),
         );
       })
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime())
       .map((run) => run.id);
     return Promise.resolve(ids.slice(0, limit));

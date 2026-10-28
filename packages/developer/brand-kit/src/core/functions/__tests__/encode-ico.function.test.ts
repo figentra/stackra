@@ -25,7 +25,7 @@ describe("encodeIco", () => {
     expect(view.getUint32(6 + 12, true)).toBe(38);
     expect(ico[22]).toBe(0);
     expect(view.getUint32(22 + 12, true)).toBe(40);
-    expect(Array.from(ico.slice(38))).toEqual([1, 2, 3]);
+    expect([...ico.subarray(38)]).toEqual([1, 2, 3]);
   });
 
   it("refuses a size outside 1 to 256", () => {

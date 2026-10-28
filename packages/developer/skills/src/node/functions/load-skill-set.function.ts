@@ -39,6 +39,7 @@ export function loadSkillSet(root: string = bundledRoot()): readonly AgentDocume
   for (const kind of Enum.values(AgentDocumentKind)) {
     const folder = join(root, KIND_FOLDERS[kind]);
     if (!existsSync(folder)) continue;
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const entries = readdirSync(folder, { withFileTypes: true }).sort((a, b) =>
       a.name.localeCompare(b.name, "en"),
     );

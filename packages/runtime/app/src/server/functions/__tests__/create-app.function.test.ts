@@ -114,7 +114,12 @@ describe("createApp (server)", () => {
   it("drains: waits for calls in flight, then refuses new ones", async () => {
     const app = await createApp(OrdersModule, { wiring });
     const gate: { finish?: (value: string) => void } = {};
-    const slow = app.handlers.run(() => new Promise<string>((resolve) => (gate.finish = resolve)));
+    const slow = app.handlers.run(
+      () =>
+        new Promise<string>((resolve) => {
+          gate.finish = resolve;
+        }),
+    );
     let drained = false;
     const draining = app.drain().then(() => (drained = true));
     expect(app.ready()).toBe(false);

@@ -33,7 +33,9 @@ describe(freezeClock, () => {
 
   it("keeps timers real, so awaited work settles while the time stands still", async () => {
     freezeClock(AT);
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 5);
+    });
     expect(Date.now()).toBe(Date.parse(AT));
   });
 

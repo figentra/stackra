@@ -17,5 +17,6 @@
 export function urlBase64ToBytes(value: string): Uint8Array<ArrayBuffer> {
   const padded = `${value}${"=".repeat((4 - (value.length % 4)) % 4)}`;
   const binary = atob(padded.replaceAll("-", "+").replaceAll("_", "/"));
+  // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }

@@ -39,7 +39,7 @@ export async function signEdgeRequest(input: EdgeSignatureInput, secret: string)
     ["sign"],
   );
   const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(bytes)));
-  return btoa(String.fromCharCode(...mac))
+  return btoa(String.fromCodePoint(...mac))
     .replaceAll("+", "-")
     .replaceAll("/", "_")
     .replace(/=+$/, "");

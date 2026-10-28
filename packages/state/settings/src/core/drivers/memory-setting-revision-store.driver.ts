@@ -39,20 +39,28 @@ export class MemorySettingRevisionStoreDriver extends Driver(SettingRevisionStor
   /** The revisions of `group` at exactly `target`'s holder, newest first. */
   async list(group: string, target: SettingTarget): Promise<readonly SettingRevision[]> {
     const holder = settingHolderOf(target);
-    return this.revisions
-      .filter((revision) => revision.group === group && settingHolderOf(revision.target) === holder)
-      .reverse();
+    return (
+      this.revisions
+        .filter(
+          (revision) => revision.group === group && settingHolderOf(revision.target) === holder,
+        )
+        // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
+        .reverse()
+    );
   }
 
   /** The scheduled revisions due at or before `at`, oldest first. */
   async due(at: string): Promise<readonly SettingRevision[]> {
-    return this.revisions
-      .filter(
-        (revision) =>
-          revision.status === SettingRevisionStatus.Scheduled &&
-          Date.parse(revision.effectiveAt) <= Date.parse(at),
-      )
-      .sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt));
+    return (
+      this.revisions
+        .filter(
+          (revision) =>
+            revision.status === SettingRevisionStatus.Scheduled &&
+            Date.parse(revision.effectiveAt) <= Date.parse(at),
+        )
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        .sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt))
+    );
   }
 
   /** Moves revision `id` to `patch` and returns it. */

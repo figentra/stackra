@@ -71,7 +71,7 @@ export function checkProvenance(
   if (raw === undefined) return refuse("provenance has no signing certificate");
   let der: string;
   try {
-    der = String.fromCharCode(...fromBase64(raw));
+    der = String.fromCodePoint(...fromBase64(raw));
   } catch {
     return refuse("provenance certificate is not base64");
   }

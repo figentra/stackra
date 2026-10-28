@@ -270,6 +270,7 @@ export function createSourceReader(
       const path = file.fileName ?? "";
       return isOwn(path) && (settings.includeTests === true || !isTest(path));
     })
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((left, right) => ((left.fileName ?? "") < (right.fileName ?? "") ? -1 : 1));
 
   const rel = (path: string): string =>
@@ -863,7 +864,8 @@ export function createSourceReader(
       .map((member) => host.literal(member))
       .filter((value): value is string => typeof value === "string");
     return values.length > 0
-      ? { kind: "enum", name: host.symbolName(symbol), values: values.sort() }
+      ? // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        { kind: "enum", name: host.symbolName(symbol), values: values.sort() }
       : undefined;
   };
 
@@ -1146,6 +1148,7 @@ export function createSourceReader(
               index.set(exported, (index.get(exported) ?? new Set<string>()).add(from));
       shippedIndex = index;
     }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const candidates = [...(shippedIndex.get(`${name}$`) ?? [])].sort();
     const own = packageOf(typePath);
     return (
@@ -1715,6 +1718,7 @@ export function createSourceReader(
     traitFields: readonly string[],
   ): EntityIR => {
     // Base-most first, as `fieldsOf` reads a chain: a base's declaration holds the decorators.
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     const baseFirst = [...chain].reverse();
     const properties = baseFirst.flatMap(propertiesOf);
     const declarations = new Map<string, TsNode>();
@@ -1736,6 +1740,7 @@ export function createSourceReader(
       )
       .map((member) => nameOf(member.name));
     return {
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       optional: [...new Set([...traitFields, ...initialized])].sort(),
       relations: relations.flatMap((name) => {
         const declaration = declarations.get(name);
@@ -2495,6 +2500,7 @@ export function createSourceReader(
     );
     const props = defined.length === 1 && defined[0] !== undefined ? defined[0] : type;
     const out: Record<string, string> = {};
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const property of [...host.properties(props)].sort((left, right) =>
       host.symbolName(left) < host.symbolName(right) ? -1 : 1,
     ))
@@ -2521,6 +2527,7 @@ export function createSourceReader(
       const own = all
         .map((file) => file.fileName ?? "")
         .filter(isOwn)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort();
       for (const path of own)
         for (const from of importsOf(path).values())
@@ -2529,9 +2536,12 @@ export function createSourceReader(
             !found.has(from.slice(CLIENTS_SPECIFIER.length))
           )
             found.set(from.slice(CLIENTS_SPECIFIER.length), rel(path));
-      return [...found]
-        .sort(([left], [right]) => (left < right ? -1 : 1))
-        .map(([service, file]) => ({ service, file }));
+      return (
+        [...found]
+          // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+          .sort(([left], [right]) => (left < right ? -1 : 1))
+          .map(([service, file]) => ({ service, file }))
+      );
     },
     classes: (file) =>
       classNodes(file)

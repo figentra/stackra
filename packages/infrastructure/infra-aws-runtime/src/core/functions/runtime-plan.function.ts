@@ -97,6 +97,7 @@ export function runtimePlan(
     });
   }
 
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [member, runway] of Object.entries(services).sort(([left], [right]) =>
     left.localeCompare(right),
   )) {

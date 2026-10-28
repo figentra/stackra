@@ -99,6 +99,7 @@ function reachable(schemas: JsonObject, roots: readonly (string | undefined)[]):
     for (const value of Object.values(node)) visit(value);
   };
   for (const root of roots) if (root !== undefined) visit({ $ref: `#/schemas/${root}` });
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...seen].sort();
 }
 

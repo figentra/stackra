@@ -14,12 +14,13 @@ import { isPublished } from "#core/functions/is-published.function";
 const MONDAY = new Date("2026-10-26T09:00:00Z");
 const TUESDAY = new Date("2026-10-27T09:00:00Z");
 
+const at = (publicationStatus: PublicationStatus, publishAt: Date | null) => ({
+  publicationStatus,
+  publishAt,
+});
+
 describe(isPublished, () => {
   it("answers per state and time", () => {
-    const at = (publicationStatus: PublicationStatus, publishAt: Date | null) => ({
-      publicationStatus,
-      publishAt,
-    });
     expect(isPublished(at(PublicationStatus.Published, null), MONDAY)).toBe(true);
     expect(isPublished(at(PublicationStatus.Draft, MONDAY), TUESDAY)).toBe(false);
     expect(isPublished(at(PublicationStatus.Scheduled, TUESDAY), MONDAY)).toBe(false);

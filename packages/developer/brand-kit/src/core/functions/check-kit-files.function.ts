@@ -59,10 +59,13 @@ export function checkKitFiles(input: KitInput, outputs: readonly BrandOutput[]):
   }
 
   const seen = new Set<string>();
-  return issues
-    .filter(
-      (issue) =>
-        !seen.has(`${issue.code}\0${issue.path}`) && seen.add(`${issue.code}\0${issue.path}`),
-    )
-    .sort((a, b) => (a.path === b.path ? a.code.localeCompare(b.code) : a.path < b.path ? -1 : 1));
+  return (
+    issues
+      .filter(
+        (issue) =>
+          !seen.has(`${issue.code}\0${issue.path}`) && seen.add(`${issue.code}\0${issue.path}`),
+      )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((a, b) => (a.path === b.path ? a.code.localeCompare(b.code) : a.path < b.path ? -1 : 1))
+  );
 }

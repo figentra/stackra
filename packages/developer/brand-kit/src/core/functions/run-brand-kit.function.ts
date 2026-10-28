@@ -34,6 +34,7 @@ function differing(one: AssetManifest, two: AssetManifest): string[] {
   for (const file of two.files) if (hashes.get(file.path) !== file.sha256) out.add(file.path);
   const paths = new Set(two.files.map((file) => file.path));
   for (const file of one.files) if (!paths.has(file.path)) out.add(file.path);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...out].sort();
 }
 

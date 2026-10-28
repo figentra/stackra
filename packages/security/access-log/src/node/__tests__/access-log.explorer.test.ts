@@ -140,7 +140,9 @@ describe("AccessLogExplorer", () => {
     const reads = container.get(CustomerReads);
     expect(reads.label("cus_2")).toEqual({ id: "cus_2", label: "Customer cus_2" });
     await expect(reads.remove({ id: "cus_3" })).rejects.toThrow(RangeError);
-    await new Promise((settle) => setTimeout(settle, 0));
+    await new Promise((settle) => {
+      setTimeout(settle, 0);
+    });
     expect(sink.records().map((record) => [record.target, record.subjects])).toEqual([
       ["CustomerReads.label", ["cus_2"]],
       ["CustomerReads.remove", ["cus_3"]],

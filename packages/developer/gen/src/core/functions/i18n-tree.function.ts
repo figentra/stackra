@@ -30,6 +30,7 @@ function nodeOf(branch: Readonly<Record<string, unknown>>): I18nNode {
 
 /** The base locale of a catalogue set. */
 function baseOf(catalogues: NonNullable<MemberIR["catalogues"]>): string {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const locales = Object.keys(catalogues).sort();
   return locales.includes("en") ? "en" : (locales[0] ?? "en");
 }
@@ -67,10 +68,12 @@ export function i18nTree(ir: MemberIR): {
     }
   }
   return {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     namespaces: new Map([...namespaces].sort(([left], [right]) => left.localeCompare(right))),
     clashes: [...owners]
       .filter(([, claimed]) => claimed.length > 1)
       .map(([namespace, claimed]) => ({ namespace, owners: claimed }))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => left.namespace.localeCompare(right.namespace)),
   };
 }

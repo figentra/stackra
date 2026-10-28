@@ -25,7 +25,8 @@ export function liveValue<T>(initial: T): LiveValue<T> {
     set: (next: T) => {
       if (Object.is(value, next)) return;
       value = next;
-      for (const listener of Array.from(listeners)) listener(next);
+      // oxlint-disable-next-line unicorn/no-useless-spread -- a snapshot: a listener may unsubscribe while it runs
+      for (const listener of [...listeners]) listener(next);
     },
     subscribe: (listener: (value: T) => void) => {
       const entry = (next: T) => listener(next);

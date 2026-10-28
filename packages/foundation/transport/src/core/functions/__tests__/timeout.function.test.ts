@@ -64,7 +64,9 @@ describe("timeout", () => {
       },
     });
     await send(new Request("https://api.test/stream"));
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 30);
+    });
     expect(signal?.aborted).toBe(false);
   });
 

@@ -19,6 +19,7 @@ export function fromBase64Url(text: string): Uint8Array<ArrayBuffer> | null {
   if (!BASE64_URL.test(text) || text.length % 4 === 1) return null;
   const binary = atob(text.replaceAll("-", "+").replaceAll("_", "/"));
   const bytes = new Uint8Array(binary.length);
+  // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
   return bytes;
 }

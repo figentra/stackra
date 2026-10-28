@@ -38,6 +38,7 @@ export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
    * @returns this tree, to chain.
    */
   seed(entries: readonly ScopeEntry[]): this {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     this.entries = [...entries].sort(byPathOrder);
     return this;
   }

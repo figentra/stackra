@@ -32,6 +32,7 @@ export function restrictedGtin(prefix: string, serial: number | bigint): string 
     throw new RangeError(`restrictedGtin: serial ${value} does not fit in ${width} digits`);
   const body = `${prefix}${value.toString().padStart(width, "0")}`;
   let sum = 0;
+  // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
   for (const [index, digit] of [...body].reverse().entries())
     sum += Number(digit) * (index % 2 === 0 ? 3 : 1);
   return `${body}${(10 - (sum % 10)) % 10}`;

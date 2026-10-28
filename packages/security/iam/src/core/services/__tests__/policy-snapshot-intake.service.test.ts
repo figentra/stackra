@@ -17,6 +17,7 @@ const PRINCIPAL = "usr_01j9z3k4m5n6p7q8r9s0t1v2r1";
 
 /** A snapshot at `version`, as the event's JSON carries it. */
 const json = (version: number): unknown =>
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
   JSON.parse(
     JSON.stringify({
       version,

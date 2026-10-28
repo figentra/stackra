@@ -31,6 +31,7 @@ export class MemoryBrokerPublisherDriver extends Driver(BrokerPublisher) {
   publish(topic: string, message: BrokerMessage): Promise<void> {
     const copy: BrokerMessage = Object.freeze({
       id: message.id,
+      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
       body: JSON.parse(JSON.stringify(message.body ?? null)) as unknown,
     });
     const list = this.published.get(topic) ?? [];

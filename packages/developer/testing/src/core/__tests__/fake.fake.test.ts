@@ -90,6 +90,7 @@ describe(Fake, () => {
     expect((fake as unknown as Record<string, unknown>)["then"]).toBeUndefined();
     void fake.count;
     // Spies and recorded calls stay off the enumerable keys: only the subclass's own field shows.
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(fake))).toEqual({ prefix: "Hello" });
     expect(Object.keys(fake)).toEqual(["prefix"]);
   });

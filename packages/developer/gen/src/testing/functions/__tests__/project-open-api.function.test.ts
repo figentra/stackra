@@ -17,7 +17,9 @@ describe("projectOpenApi", () => {
   it("projects the manifest in committed JSON form", async () => {
     const { manifest } = buildManifest(COMMERCE_IR);
     const projected = await projectOpenApi(manifest);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(projected).toEqual(JSON.parse(JSON.stringify(openApiOf(manifest))));
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(projected))).toEqual(projected);
   });
 });

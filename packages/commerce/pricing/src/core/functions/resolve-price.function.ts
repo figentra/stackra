@@ -117,6 +117,7 @@ export function resolvePrice(lists: readonly PriceList[], query: PriceQuery): Re
   const candidates = lists
     .map((list, index) => ({ list, index }))
     .filter(({ list }) => applies(list, query))
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((a, b) => specificity(b.list) - specificity(a.list) || a.index - b.index);
   for (const { list } of candidates) {
     const priced = priceOn(list, lists, query, new Set());

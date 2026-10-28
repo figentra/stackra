@@ -128,7 +128,10 @@ function lockOf() {
 }
 
 /** Lets fire-and-forget writes land. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 /** A store over memory storage; not opened. */
 function storeOf(

@@ -17,6 +17,7 @@ export function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let difference = 0;
   for (let index = 0; index < a.length; index += 1)
+    // oxlint-disable-next-line unicorn/prefer-code-point -- compares UTF-16 code units index by index, so a surrogate pair is two units on both sides
     difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
   return difference === 0;
 }

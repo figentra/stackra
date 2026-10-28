@@ -56,6 +56,7 @@ export class MemoryAppApprovalChallengesDriver extends Driver(AppApprovalChallen
             challenge.status === AppApprovalStatus.Pending &&
             challenge.expiresAt.getTime() > now.getTime(),
         )
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     );
   }

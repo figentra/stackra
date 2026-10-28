@@ -58,6 +58,7 @@ describe("FilesystemPackStoreDriver", () => {
     await packs.put(shipped);
     await packs.put(shipped);
     expect(await files.list("market-packs/")).toEqual([`market-packs/${shipped.hash}.json`]);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(await packs.get(shipped.hash)).toEqual(JSON.parse(JSON.stringify(shipped)));
     expect(await packs.hashes()).toEqual([shipped.hash]);
   });

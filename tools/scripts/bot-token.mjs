@@ -45,7 +45,10 @@ const TRANSIENT =
 const dispatcher =
   undici && new undici.Agent({ connectTimeout: CONNECT_TIMEOUT_MS, autoSelectFamily: true });
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
 /** The wait before retry `n` (1, 2, …): exponential backoff with full jitter. */

@@ -33,6 +33,7 @@ export function planEditionInstall(
 ): EditionInstallPlan {
   const known = new Map(modules.map((module) => [module.key, module]));
   const done = new Set(installed);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const wanted = [...new Set([...bundle.bundles, ...bundle.modules])].sort(byCodeUnit);
   const issues: EditionInstallIssue[] = [];
   const planned = new Map<string, InstallableModule>();
@@ -63,8 +64,10 @@ export function planEditionInstall(
     const ready = [...waiting]
       .filter(([, deps]) => deps.every((dependency) => install.includes(dependency)))
       .map(([key]) => key)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(byCodeUnit);
     if (ready.length === 0) {
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       const looped = [...waiting.keys()].sort(byCodeUnit);
       issues.push({
         code: "dependency_cycle",
@@ -83,6 +86,7 @@ export function planEditionInstall(
   const inert: Record<string, readonly string[]> = {};
   for (const [key, module] of planned) {
     const missing = (module.enhances ?? []).filter((target) => !present.has(target));
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     if (missing.length > 0) inert[key] = [...missing].sort(byCodeUnit);
   }
   return issues.length > 0 ? { install: [], inert: {}, issues } : { install, inert, issues };

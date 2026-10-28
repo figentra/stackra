@@ -254,6 +254,7 @@ export class Money {
     const bumped = new Set(
       weights
         .map((weight, index) => ({ index, remainder: (amount * weight) % total }))
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort((a, b) =>
           a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
         )

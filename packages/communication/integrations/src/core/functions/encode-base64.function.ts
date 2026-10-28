@@ -20,7 +20,7 @@ export function encodeBase64(
 ): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
+  for (const byte of bytes) binary += String.fromCodePoint(byte);
   const text = btoa(binary);
   return alphabet === "base64"
     ? text

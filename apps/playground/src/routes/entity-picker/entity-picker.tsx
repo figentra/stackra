@@ -131,9 +131,9 @@ const searchSlowly = serverOver(PEOPLE, SLOW_DELAY);
 
 /** A server that is always down, so the failed state can be seen. */
 const searchOffline = () =>
-  new Promise<EntityOptionPage>((_, reject) =>
-    setTimeout(() => reject(new Error("offline")), SERVER_DELAY),
-  );
+  new Promise<EntityOptionPage>((_, reject) => {
+    setTimeout(() => reject(new Error("offline")), SERVER_DELAY);
+  });
 
 /** The grid that lays the samples out in a wrapping row of fixed-width fields. */
 const ROW = "flex flex-wrap items-start gap-6";

@@ -24,7 +24,7 @@ const TAGS: Readonly<Partial<Record<AudioEncoding, number>>> = {
  */
 export function wavAudio(wav: Uint8Array, encoding: AudioEncoding): Uint8Array {
   const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength);
-  const text = (at: number): string => String.fromCharCode(...wav.subarray(at, at + 4));
+  const text = (at: number): string => String.fromCodePoint(...wav.subarray(at, at + 4));
   if (wav.byteLength < 12 || text(0) !== "RIFF" || text(8) !== "WAVE")
     throw new RangeError("the audio is not a WAV file");
   let at = 12;

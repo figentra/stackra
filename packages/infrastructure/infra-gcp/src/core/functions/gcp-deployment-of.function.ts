@@ -24,6 +24,11 @@ import type { InfraRunway } from "#core/types/infra-runway.type";
 /** The purposes of the service accounts the programs create, each checked against the length limit. */
 const PURPOSES = ["infra", "stop"];
 
+/** Throws the root runway refusal carrying `issues`. */
+const refuseRunway = (issues: RunwayIssue[]): never => {
+  throw new RunwayInvalidError(ROOT_SOURCE, issues);
+};
+
 /**
  * The deployment of `environment`, or of its dedicated deployment `dedicated`.
  *
@@ -44,15 +49,12 @@ export function gcpDeploymentOf(
     dedicated === undefined
       ? `environments.${environment}`
       : `environments.${environment}.dedicated.${dedicated}`;
-  const fail = (issues: RunwayIssue[]): never => {
-    throw new RunwayInvalidError(ROOT_SOURCE, issues);
-  };
 
   if (entry === undefined)
-    return fail([{ path, message: "The root runway has no such deployment" }]);
+    return refuseRunway([{ path, message: "The root runway has no such deployment" }]);
   const cloud = entry.cloud;
   if (cloud?.name !== "gcp")
-    return fail([
+    return refuseRunway([
       {
         path: `${path}.cloud`,
         message:
@@ -84,7 +86,8 @@ export function gcpDeploymentOf(
     } catch (error) {
       issues.push({ path: "project", message: (error as Error).message });
     }
-  if (cloudProject === undefined || region === undefined || issues.length > 0) return fail(issues);
+  if (cloudProject === undefined || region === undefined || issues.length > 0)
+    return refuseRunway(issues);
 
   const owner = Enum.values(RunwayEnvironment)
     .flatMap((name) => {

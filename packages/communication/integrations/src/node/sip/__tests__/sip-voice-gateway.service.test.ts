@@ -376,7 +376,9 @@ describe("SipVoiceGateway", () => {
       port: 5060,
     });
     signalling.deliver("OPTIONS sip:x SIP/2.0\r\nCall-ID: a\r\nCSeq: 1 OPTIONS\r\n\r\n");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(signalling.messages().map((message) => message.status)).toEqual([200]);
     gateway.stop();
   });

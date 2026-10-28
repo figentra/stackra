@@ -169,6 +169,7 @@ export class ImportRunner extends Service {
         );
       return target;
     };
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     const plan = [...batches].reverse().map((batch) => ({ batch, target: targetOf(batch) }));
     for (const { batch, target } of plan)
       if (batch.changes.length > 0) await target.revert(batch.changes);

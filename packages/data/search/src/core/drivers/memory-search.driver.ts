@@ -102,6 +102,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
         for (const { document } of hits)
           for (const value of new Set(document.filters[path]?.map(String)))
             counts.set(value, (counts.get(value) ?? 0) + 1);
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         const ranked = [...counts].sort(([a, x], [b, y]) => y - x || (a < b ? -1 : a > b ? 1 : 0));
         return [path, Object.fromEntries(ranked.slice(0, request.limit))];
       }),

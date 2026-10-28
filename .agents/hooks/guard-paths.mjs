@@ -22,20 +22,30 @@ const READ_TOOLS = new Set(["Read", "Grep", "Glob"]);
 const under = (dir, glob) =>
   glob.startsWith("/") || glob.startsWith("~") ? glob : `${dir}/${glob}`;
 
+/** `v` when it is a non-empty string. */
+const stringOrUndefined = (v) => (typeof v === "string" && v ? v : undefined);
+
 async function main() {
   const input = await readStdin();
   const ti = input.tool_input ?? {};
-  const str = (v) => (typeof v === "string" && v ? v : undefined);
-  const base = str(ti.path) ?? String(input.cwd ?? ".");
+  const base = stringOrUndefined(ti.path) ?? String(input.cwd ?? ".");
   const checks = [
     [ti.file_path, false],
     [ti.notebook_path, false],
     // Grep searches its path recursively; its `glob` filter and Glob's `pattern` are relative to it.
-    [input.tool_name === "Grep" ? str(ti.path) : undefined, true],
-    [input.tool_name === "Grep" && str(ti.glob) ? under(base, ti.glob) : undefined, false],
-    [input.tool_name === "Glob" ? str(ti.path) : undefined, false],
-    [input.tool_name === "Glob" && str(ti.pattern) ? under(base, ti.pattern) : undefined, false],
-  ].filter(([p]) => str(p));
+    [input.tool_name === "Grep" ? stringOrUndefined(ti.path) : undefined, true],
+    [
+      input.tool_name === "Grep" && stringOrUndefined(ti.glob) ? under(base, ti.glob) : undefined,
+      false,
+    ],
+    [input.tool_name === "Glob" ? stringOrUndefined(ti.path) : undefined, false],
+    [
+      input.tool_name === "Glob" && stringOrUndefined(ti.pattern)
+        ? under(base, ti.pattern)
+        : undefined,
+      false,
+    ],
+  ].filter(([p]) => stringOrUndefined(p));
   const cwd = String(input.cwd ?? "") || undefined; // relative paths and globs resolve against the session cwd
   for (const [p, recursive] of checks) {
     const d = decideRead(p, { recursive, cwd });

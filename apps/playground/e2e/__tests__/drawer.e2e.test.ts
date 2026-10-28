@@ -83,7 +83,9 @@ const markHiddenLines = async (page: Page, body: Locator) => {
   for (let height = 720; height > 480; height -= 1) {
     await page.setViewportSize({ width: 1280, height });
     const isCut = await body.evaluate(async (element) => {
-      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => resolve(undefined));
+      });
       const edge = element.getBoundingClientRect();
       return [...element.querySelectorAll("p, li")].some((line) => {
         const box = line.getBoundingClientRect();

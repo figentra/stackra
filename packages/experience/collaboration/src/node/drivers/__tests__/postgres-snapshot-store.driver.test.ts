@@ -40,7 +40,7 @@ describe(PostgresSnapshotStoreDriver, () => {
       "where current.scope_id is not distinct from excluded.scope_id",
     );
     expect(statement?.params.slice(0, 2)).toEqual(["pag_1", "scp_1"]);
-    expect(Array.from(statement?.params[2] as Uint8Array)).toEqual([1, 2]);
+    expect([...((statement?.params[2] ?? []) as Uint8Array)]).toEqual([1, 2]);
     expect(statement?.params[3]).toBe(savedAt);
   });
 

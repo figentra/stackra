@@ -33,6 +33,7 @@ const OID = {
 /** The DER bytes of a PEM block. */
 function derOf(pem: string): Uint8Array<ArrayBuffer> {
   const binary = atob(pem.replace(/-----(?:BEGIN|END) [A-Z0-9 ]+-----/g, "").replace(/\s+/g, ""));
+  // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
@@ -76,7 +77,7 @@ export class PkijsCmsSignerDriver extends Driver(CmsSigner) {
       false,
       ["sign"],
     );
-    const digest = await crypto.subtle.digest("SHA-256", content.slice());
+    const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(content));
     const signedData = new pkijs.SignedData({
       version: 1,
       encapContentInfo: new pkijs.EncapsulatedContentInfo({ eContentType: OID.data }),

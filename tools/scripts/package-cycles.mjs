@@ -62,7 +62,7 @@ export function readWorkspaceMembers(root) {
   );
   return [...dirs]
     .filter((dir) => existsSync(join(root, dir, "package.json")))
-    .sort()
+    .toSorted()
     .map((dir) => {
       const manifest = JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
       return { dir, name: manifest.name, manifest };
@@ -77,13 +77,13 @@ export function readWorkspaceMembers(root) {
 export function packageGraph(members) {
   const names = new Set(members.map((member) => member.name));
   const graph = new Map();
-  for (const { name, manifest } of [...members].sort((a, b) => (a.name < b.name ? -1 : 1))) {
+  for (const { name, manifest } of [...members].toSorted((a, b) => (a.name < b.name ? -1 : 1))) {
     const targets = new Set(
       DEPENDENCY_FIELDS.flatMap((field) => Object.keys(manifest[field] ?? {})).filter((dep) =>
         names.has(dep),
       ),
     );
-    graph.set(name, [...targets].sort());
+    graph.set(name, [...targets].toSorted());
   }
   return graph;
 }
@@ -104,7 +104,7 @@ export function findPackageCycles(graph) {
     for (const next of graph.get(name) ?? []) {
       if (state.get(next) === "open") {
         const loop = stack.slice(stack.indexOf(next));
-        const start = loop.indexOf([...loop].sort()[0]);
+        const start = loop.indexOf([...loop].toSorted()[0]);
         const path = [...loop.slice(start), ...loop.slice(0, start)];
         found.set(path.join("\u0000"), [...path, path[0]]);
       } else if (!state.has(next)) visit(next);
@@ -112,8 +112,8 @@ export function findPackageCycles(graph) {
     stack.pop();
     state.set(name, "done");
   };
-  for (const name of [...graph.keys()].sort()) if (!state.has(name)) visit(name);
-  return [...found.keys()].sort().map((key) => found.get(key));
+  for (const name of [...graph.keys()].toSorted()) if (!state.has(name)) visit(name);
+  return [...found.keys()].toSorted().map((key) => found.get(key));
 }
 
 /**

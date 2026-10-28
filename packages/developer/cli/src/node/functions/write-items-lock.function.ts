@@ -25,6 +25,7 @@ import { ITEMS_LOCK_FILE } from "#node/constants/items-lock-file.constant";
 export function writeItemsLock(root: string, lock: ItemsLock): void {
   const checked = ITEMS_LOCK_SCHEMA.parse(lock);
   const items = Object.fromEntries(
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     Object.entries(checked.items).sort(([left], [right]) => left.localeCompare(right)),
   );
   writeFileSync(

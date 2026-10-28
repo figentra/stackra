@@ -51,7 +51,9 @@ describe(PostgresIdempotencyStoreDriver, () => {
     await store().release("a:-:usr_1:k3");
     expect(await store().claim("a:-:usr_1:k3", "f3", Duration.hours(24))).toBeUndefined();
     await store().claim("a:-:usr_1:k4", "f4", Duration.seconds(0.001));
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20);
+    });
     expect(await store().claim("a:-:usr_1:k4", "other", Duration.hours(24))).toBeUndefined();
   });
 });

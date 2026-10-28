@@ -25,6 +25,7 @@ export function dueEscalations(
 ): readonly EscalationStep[] {
   if (state.acknowledgedAt !== undefined) return [];
   const elapsed = (now.getTime() - state.sentAt.getTime()) / 1000;
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const ordered = [...steps].sort((a, b) => a.afterSeconds - b.afterSeconds);
   return ordered.slice(state.escalated).filter((step) => step.afterSeconds <= elapsed);
 }

@@ -64,6 +64,7 @@ export function planSite(
     const path = `${SCHEMAS_PATH}${tree}${schema.name}`;
     add(path, publish(schema, path));
   };
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const newestFirst = [...releases].sort((a, b) => compareVersions(b.version, a.version));
 
   const index: SchemaIndexEntry[] = [];

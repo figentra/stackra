@@ -136,13 +136,16 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
         recursive: true,
         withFileTypes: true,
       });
-      return entries
-        .filter((entry) => entry.isFile())
-        .map((entry) =>
-          relative(this.root, join(entry.parentPath, entry.name)).split(sep).join("/"),
-        )
-        .filter((key) => key.startsWith(wanted))
-        .sort();
+      return (
+        entries
+          .filter((entry) => entry.isFile())
+          .map((entry) =>
+            relative(this.root, join(entry.parentPath, entry.name)).split(sep).join("/"),
+          )
+          .filter((key) => key.startsWith(wanted))
+          // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+          .sort()
+      );
     } catch (error) {
       if (isMissing(error)) return [];
       throw error;

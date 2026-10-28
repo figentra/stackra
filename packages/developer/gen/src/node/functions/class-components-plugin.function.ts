@@ -545,6 +545,7 @@ function addReactImports(
     return false;
   });
   const specifiers = missing
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort()
     .map((hook) => t.importSpecifier(t.identifier(hook), t.identifier(hook)));
   if (target !== undefined) target.node.specifiers.push(...specifiers);

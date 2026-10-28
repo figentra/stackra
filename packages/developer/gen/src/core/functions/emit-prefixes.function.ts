@@ -36,6 +36,7 @@ export function emitPrefixes(manifest: StackraManifest): string | undefined {
     "/** Prefix to the model that mints it. */",
     "export const PUBLIC_ID_PREFIXES = {",
     ...[...rows]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([prefix, key]) => `  ${prefix}: ${JSON.stringify(key)},`),
     "} as const;",

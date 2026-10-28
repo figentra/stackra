@@ -32,6 +32,7 @@ export async function rollback(options: {
     if (head === undefined) return { reverted: [] };
     const steps = files.filter((file) => file.batch === head.batch && file.version <= head.version);
     const reverted: string[] = [];
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     for (const file of [...steps].reverse()) {
       if (file.inverse === undefined)
         throw new Error(`${file.name} is irreversible: rollback stops here`);

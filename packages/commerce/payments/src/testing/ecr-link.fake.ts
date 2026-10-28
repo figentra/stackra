@@ -59,7 +59,11 @@ export class EcrLinkFake implements EcrLink {
 
   /** Queues an answer given only when `release` is called. */
   hold(): this {
-    this.queue.push({ held: new Promise<string>((resolve) => (this.releaseHeld = resolve)) });
+    this.queue.push({
+      held: new Promise<string>((resolve) => {
+        this.releaseHeld = resolve;
+      }),
+    });
     return this;
   }
 

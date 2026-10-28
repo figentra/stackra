@@ -30,9 +30,9 @@ function pair(handle?: McpHandler) {
 
 /** The next line written to `stream`, parsed. */
 const nextMessage = (stream: PassThrough): Promise<Record<string, unknown>> =>
-  new Promise((resolve) =>
-    stream.once("data", (chunk: Buffer) => resolve(JSON.parse(chunk.toString()))),
-  );
+  new Promise((resolve) => {
+    stream.once("data", (chunk: Buffer) => resolve(JSON.parse(chunk.toString())));
+  });
 
 describe("connectMcp", () => {
   it("answers a request with the handler's result and passes notifications", async () => {

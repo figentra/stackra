@@ -100,16 +100,23 @@ export function systemGraph(
   return {
     $comment: GRAPH_NOTICE,
     version: 1,
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     repos: [...new Set([...nodes.values()].map((node) => node.repo))].sort(byText),
     nodes: [...nodes.values()]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => byText(left.id, right.id))
       .map((node) => ({
         ...node,
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         usedBy: [...(usedBy.get(node.id) ?? [])].sort(byText),
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         flows: [...(tags.get(node.id) ?? [])].sort(byText),
       })),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     flows: [...flows.values()].sort((left, right) => byText(left.id, right.id)),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     edges: [...edges].sort(([left], [right]) => byText(left, right)).map(([, edge]) => edge),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     gaps: [...gaps].sort(byText),
   };
 }

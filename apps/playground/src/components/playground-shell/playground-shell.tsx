@@ -285,6 +285,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
     isFocusPending.current = true;
     setPaletteOpen(false);
     focusHeading();
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- runs on a route change only; focusHeading reads refs, so a stale copy is harmless
   }, [pathname]);
   const openPalette = () => {
     isFocusPending.current = false;
@@ -314,6 +315,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the listener is added once on mount; openPalette only sets refs and state
   }, []);
 
   const context: ShellContext = { openPalette };
@@ -338,6 +340,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   );
 
   return (
+    // oxlint-disable-next-line react/hooks -- react-aria's RouterProvider takes the router's useHref hook as a prop by design
     <RouterProvider navigate={navigate} useHref={useHref}>
       <DesignSystemProvider
         colorScheme={ColorScheme.find((scheme) => scheme === params.get("scheme"))}

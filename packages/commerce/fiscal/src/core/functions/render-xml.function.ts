@@ -24,10 +24,12 @@ const attribute = (value: string): string =>
     .replace(/\n/g, "&#xA;")
     .replace(/\r/g, "&#xD;");
 
+/** 0 for the default namespace declaration, 1 for a prefixed one, 2 for an attribute. */
+const namespaceRank = (name: string) => (name === "xmlns" ? 0 : name.startsWith("xmlns:") ? 1 : 2);
+
 /** Namespace declarations first (default before prefixed), then attributes, each group by name. */
 const order = ([a]: [string, string], [b]: [string, string]): number => {
-  const ns = (name: string) => (name === "xmlns" ? 0 : name.startsWith("xmlns:") ? 1 : 2);
-  return ns(a) - ns(b) || (a < b ? -1 : a > b ? 1 : 0);
+  return namespaceRank(a) - namespaceRank(b) || (a < b ? -1 : a > b ? 1 : 0);
 };
 
 /**
@@ -38,6 +40,7 @@ const order = ([a]: [string, string], [b]: [string, string]): number => {
  */
 export function renderXml(node: XmlNode): string {
   const attributes = Object.entries(node.attributes)
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort(order)
     .map(([name, value]) => ` ${name}="${attribute(value)}"`)
     .join("");

@@ -9,6 +9,6 @@
     "react/jsx-no-target-blank": "error",
     "react/react-in-jsx-scope": "off",
     "react/rules-of-hooks": "error",
-    "react/exhaustive-deps": "warn",
+    "react/exhaustive-deps": "error",
   },
 }

@@ -22,6 +22,7 @@ async function verifies(secret: string, message: string, signature: string): Pro
     ["verify"],
   );
   const bytes = Uint8Array.from(atob(signature.replace(/-/g, "+").replace(/_/g, "/")), (char) =>
+    // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
     char.charCodeAt(0),
   );
   return crypto.subtle.verify("HMAC", key, bytes, encoder.encode(message));

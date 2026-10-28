@@ -91,6 +91,7 @@ export function createDecorator<V>(definition: DecoratorDefinition): Decorator<V
     },
     members(type: AnyClass): ReadonlyMap<string | symbol, V> {
       const merged = new Map<string | symbol, V>();
+      // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
       for (const current of chainOf(type).reverse())
         for (const [member, value] of onMembers.get(current) ?? []) merged.set(member, value);
       return merged;

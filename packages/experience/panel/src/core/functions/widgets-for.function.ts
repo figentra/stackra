@@ -24,12 +24,15 @@ import type { WidgetDescriptor } from "#core/types/widget-descriptor.type";
  */
 export function widgetsFor(slots: readonly SlotRef[]): WidgetDescriptor[] {
   const places = new Map(slots.map((slot) => [slot.key, slot.place]));
-  return resolvePlacements(WIDGET_REGISTRY)
-    .filter((widget) => {
-      const place = widget.slot === null ? undefined : places.get(widget.slot.key);
-      if (place === undefined) return false;
-      const displays: readonly DisplayKind[] = Enum.meta(Place, place).displays;
-      return displays.includes(widget.display.kind);
-    })
-    .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key));
+  return (
+    resolvePlacements(WIDGET_REGISTRY)
+      .filter((widget) => {
+        const place = widget.slot === null ? undefined : places.get(widget.slot.key);
+        if (place === undefined) return false;
+        const displays: readonly DisplayKind[] = Enum.meta(Place, place).displays;
+        return displays.includes(widget.display.kind);
+      })
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key))
+  );
 }

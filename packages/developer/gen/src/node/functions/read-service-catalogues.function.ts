@@ -33,6 +33,7 @@ export function readServiceCatalogues(
 ): NonNullable<MemberIR["packageCatalogues"]> {
   const parents = [...new Set([dirname(root), join(dirname(dirname(root)), "services")])];
   const found: NonNullable<MemberIR["packageCatalogues"]>[number][] = [];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const service of [...services].sort((left, right) =>
     left.member.localeCompare(right.member),
   )) {

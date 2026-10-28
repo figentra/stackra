@@ -82,7 +82,9 @@ const registered: Registered[] = [];
 
 /** The resolved value of an output. */
 function valueOf<T>(output: Output<T>): Promise<T> {
-  return new Promise((resolve) => output.apply(resolve));
+  return new Promise((resolve) => {
+    output.apply(resolve);
+  });
 }
 
 /** Waits until every resource of the stack is registered. */
@@ -93,7 +95,9 @@ async function settle(stack: IdentityStack): Promise<void> {
       all([stack.orgId, stack.projectId, ...Object.values(stack.machines)]),
     ]),
   );
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise((resolve) => {
+    setTimeout(resolve, 10);
+  });
 }
 
 /** The inputs of the one resource of `kind` named `name`. */

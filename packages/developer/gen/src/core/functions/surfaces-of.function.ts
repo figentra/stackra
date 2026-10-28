@@ -30,7 +30,10 @@ export function surfacesOf(ir: MemberIR): SurfaceTarget[] {
       found.set(`${surface} ${shell}`, { surface, targets: `${surface}@${Number(major)}`, shell });
     }
   }
-  return [...found.entries()]
-    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
-    .map(([, target]) => target);
+  return (
+    [...found.entries()]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([, target]) => target)
+  );
 }

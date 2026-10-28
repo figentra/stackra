@@ -34,6 +34,7 @@ export function readServiceManifests(
   const found: { member: string; folder: string; manifest: StackraManifest }[] = [];
   // Beside the member first; an app (`apps/<app>`) also looks in the repo's `services/`.
   const parents = [...new Set([dirname(root), join(dirname(dirname(root)), "services")])];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const service of [...new Set(services)].sort()) {
     search: for (const parent of parents)
       for (const folder of new Set([service, kebabCase(service)])) {

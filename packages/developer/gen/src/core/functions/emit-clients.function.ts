@@ -135,6 +135,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     }
     state.set(key, "done");
   };
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of Object.keys(schemas).sort()) visit(key);
   if (declarations.length > 0) use("zod", "z");
 
@@ -204,6 +205,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     }
     return payloads.has(key) ? `${nameOf(key)}$` : nameOf(key);
   };
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const entry of [...own(manifest.actions)].sort((a, b) => (a.key < b.key ? -1 : 1))) {
     const factory = entry.kind === "query" ? "remoteQuery" : "remoteAction";
     use("@stackra/clients", factory);
@@ -311,6 +313,7 @@ export function emitClients(
     if (!consumers.has(imported.service))
       consumers.set(imported.service, { file: imported.file, subject: imported.file });
   const files: GeneratedFile[] = [];
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [service, at] of [...consumers].sort(([left], [right]) => (left < right ? -1 : 1))) {
     if (options.pending?.has(service) === true) continue;
     const manifest = serviceManifest(ir, service);

@@ -79,6 +79,7 @@ function hatchErrors(root: string): GenError[] {
   const errors: GenError[] = [];
   for (const file of readdirSync(root)
     .filter((name) => name.endsWith(".extend.ts"))
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort()) {
     const tool = file.slice(0, -".extend.ts".length);
     if (!HATCHES.has(tool))

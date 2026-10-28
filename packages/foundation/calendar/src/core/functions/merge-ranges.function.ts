@@ -14,6 +14,7 @@
  * mergeRanges([[5, 9], [0, 5]]); // [[0, 9]]
  */
 export function mergeRanges(ranges: readonly (readonly [number, number])[]): [number, number][] {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const sorted = ranges.filter(([start, end]) => start < end).sort((a, b) => a[0] - b[0]);
   const merged: [number, number][] = [];
   for (const [start, end] of sorted) {

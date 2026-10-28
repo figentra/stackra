@@ -21,6 +21,7 @@ import type { DatevWriteOptions } from "#core/types/datev-write-options.type";
 function latin1(text: string): Uint8Array {
   const bytes = new Uint8Array(text.length);
   for (let index = 0; index < text.length; index += 1) {
+    // oxlint-disable-next-line unicorn/prefer-code-point -- reads UTF-16 code units and refuses any above 0xFF, a surrogate half included
     const code = text.charCodeAt(index);
     if (code > 0xff)
       throw new TypeError(

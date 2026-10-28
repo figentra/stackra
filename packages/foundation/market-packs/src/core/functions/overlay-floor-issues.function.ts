@@ -71,6 +71,7 @@ export function overlayFloorIssues(
       if (entry.until !== undefined) days.add(dayAfter(entry.until));
     }
     const found = new Set<string>();
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const day of [...days].sort()) {
       const floor = valuesOn(parent, day).get(key);
       const own = inForce(entries, day);

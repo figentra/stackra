@@ -687,6 +687,7 @@ export abstract class SipVoiceGateway extends Service implements VoiceGateway {
     if (tag !== undefined) dialog.remoteTag = tag;
     const contact = sipHeaders(response, "Contact")[0];
     if (contact !== undefined) dialog.target = uriIn(contact);
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
     dialog.routes = [...sipHeaders(response, "Record-Route")].reverse();
     this.ack(dialog, cseqNumber(invite));
   }

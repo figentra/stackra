@@ -23,6 +23,21 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
+const service = (deps: readonly { name: string; from: string }[]) => ({
+  name: "InvoiceScanService",
+  kind: "service" as const,
+  module: "billing",
+  file: "src/modules/billing/services/invoice-scan.service.ts",
+  importPath: "#modules/billing/services/invoice-scan.service",
+  options: {},
+  deps: deps.map((type) => ({ class: type })),
+  facets: [],
+  methods: [],
+  refusals: [],
+  statics: {},
+  traits: [],
+});
+
 describe("emitWiring", () => {
   const wiring = emitWiring(COMMERCE_IR);
 
@@ -355,20 +370,6 @@ describe("emitWiring", () => {
   });
 
   it("writes a package config row only for a class the package's manifest lists (STA-1308)", () => {
-    const service = (deps: readonly { name: string; from: string }[]) => ({
-      name: "InvoiceScanService",
-      kind: "service" as const,
-      module: "billing",
-      file: "src/modules/billing/services/invoice-scan.service.ts",
-      importPath: "#modules/billing/services/invoice-scan.service",
-      options: {},
-      deps: deps.map((type) => ({ class: type })),
-      facets: [],
-      methods: [],
-      refusals: [],
-      statics: {},
-      traits: [],
-    });
     const search: MemberIR["dependencies"][number] = {
       package: "@stackra/search",
       manifest: {

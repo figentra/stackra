@@ -57,6 +57,7 @@ export class SettingsPackService extends Service {
   async exportPack(target: SettingTarget, groups: readonly string[]): Promise<SettingsPack> {
     const holder = settingHolderOf(target);
     const out: Record<string, SettingLayer> = {};
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const group of [...groups].sort()) {
       const layers = await this.store.layers(group, target);
       if (layers.some((layer) => layer.holder === undefined))
@@ -65,6 +66,7 @@ export class SettingsPackService extends Service {
         );
       const own = layers.find((layer) => layer.holder === holder);
       if (own !== undefined && Object.keys(own.values).length > 0)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         out[group] = { values: { ...own.values }, locked: [...own.locked].sort() };
     }
     return { groups: out };
@@ -93,6 +95,7 @@ export class SettingsPackService extends Service {
     meta: Pick<SettingWriteOptions, "author" | "reason" | "environment">,
   ): Promise<readonly SettingRevision[]> {
     const revisions: SettingRevision[] = [];
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const group of [...new Set(changes.map((change) => change.group))].sort()) {
       const rows = changes.filter((change) => change.group === group);
       const written = rows.filter((row) => row.after !== undefined);

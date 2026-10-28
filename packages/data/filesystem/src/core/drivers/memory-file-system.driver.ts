@@ -81,13 +81,16 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
 
   /** A copy of the bytes under `path`. */
   async read(path: string): Promise<Uint8Array> {
-    return this.find(normalizePath(path)).bytes.slice();
+    return new Uint8Array(this.find(normalizePath(path)).bytes);
   }
 
   /** Stores a copy of `contents` under `path`. */
   async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
     this.files.set(normalizePath(path), {
-      bytes: typeof contents === "string" ? new TextEncoder().encode(contents) : contents.slice(),
+      bytes:
+        typeof contents === "string"
+          ? new TextEncoder().encode(contents)
+          : new Uint8Array(contents),
       contentType: options?.contentType ?? null,
       lastModified: this.clock.now(),
     });
@@ -144,6 +147,7 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
   /** Every stored key starting with `prefix`, sorted. */
   async list(prefix = ""): Promise<string[]> {
     const wanted = normalizePrefix(prefix);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return [...this.files.keys()].filter((key) => key.startsWith(wanted)).sort();
   }
 

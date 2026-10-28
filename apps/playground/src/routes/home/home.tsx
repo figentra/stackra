@@ -48,6 +48,7 @@ export function Home({ pages }: HomeProps) {
   // second press of the same link (a new location key).
   useEffect(() => {
     if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView?.();
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the location key is the trigger: a second press of the same link scrolls again
   }, [hash, key]);
   // Undefined outside the shell (a unit test renders the page alone): the search button is left out then.
   const shell = useOutletContext<ShellContext | undefined>();

@@ -189,7 +189,9 @@ beforeAll(async () => {
   let count = -1;
   while (count !== registered.length) {
     count = registered.length;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
   }
 });
 

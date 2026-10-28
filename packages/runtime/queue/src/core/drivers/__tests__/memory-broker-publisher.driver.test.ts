@@ -14,7 +14,10 @@ import type { BrokerMessage } from "#contracts/index";
 import { MemoryBrokerPublisherDriver } from "#core/drivers/memory-broker-publisher.driver";
 
 /** Lets queued microtasks and promise callbacks run. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 describe(MemoryBrokerPublisherDriver, () => {
   it("is a BrokerPublisher that keeps what was published", async () => {

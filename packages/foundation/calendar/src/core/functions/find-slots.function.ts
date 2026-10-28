@@ -19,6 +19,9 @@ function range(interval: Interval): [number, number] {
   return [instantMs(interval.start), instantMs(interval.end)];
 }
 
+/** Whether `value` is a positive whole number. */
+const positive = (value: number): boolean => Number.isInteger(value) && value > 0;
+
 /**
  * The slots of `query`, earliest first.
  *
@@ -27,7 +30,6 @@ function range(interval: Interval): [number, number] {
  *   { minutes: 30, occupies: true }], step: 15 });
  */
 export function findSlots(query: SlotQuery): Interval[] {
-  const positive = (value: number): boolean => Number.isInteger(value) && value > 0;
   if (!positive(query.step))
     throw new RangeError(`The step must be whole minutes above zero: ${query.step}`);
   if (query.segments.length === 0 || !query.segments.every((segment) => positive(segment.minutes)))

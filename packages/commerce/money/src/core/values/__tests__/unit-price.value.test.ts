@@ -18,6 +18,7 @@ describe("UnitPrice", () => {
     expect(call.toDecimal()).toBe("0.000123");
     expect(UnitPrice.of("2.5", "EUR").toDecimal()).toBe("2.500000");
     expect(UnitPrice.of("-1.5", "EUR").toDecimal()).toBe("-1.500000");
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(call))).toEqual({ micros: 123, currency: "USD" });
   });
 

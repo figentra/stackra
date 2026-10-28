@@ -24,7 +24,9 @@ describe(RequestContext, () => {
     const request = new RequestContext(storage);
     const read = (callId: string) =>
       storage.run({ callId }, async () => {
-        await new Promise((resolve) => setTimeout(resolve, callId === "call_a" ? 5 : 0));
+        await new Promise((resolve) => {
+          setTimeout(resolve, callId === "call_a" ? 5 : 0);
+        });
         return request.current().callId;
       });
     expect(await Promise.all([read("call_a"), read("call_b")])).toEqual(["call_a", "call_b"]);

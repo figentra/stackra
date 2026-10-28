@@ -10,6 +10,10 @@
 - The rule-gap cheap set (N-1 to N-10, stackra-229) is in `base.jsonc` at error; a new site is fixed or carries a
   reasoned `oxlint-disable-next-line <rule> -- <reason>`, never a lower severity. The `.tsx` override carries the
   react and jsx-a11y rules, because no member extends `react.jsonc`.
+- No rule is at `warn` (rule-gap B-1, stackra-230): `suspicious` is an error and a member lints without
+  `--deny-warnings`, so a warning would never fail. B-2 (`no-array-sort`) and B-5 (promise executor, code point,
+  structured clone, spread) are at error too. Until the base lib is ES2023, a sort or reverse of a just-built array
+  carries a reasoned disable; never run `--fix` for `prefer-spread` on typed arrays (it yields a `number[]`).
 - Secrets: forbidden.
 
 ## PII

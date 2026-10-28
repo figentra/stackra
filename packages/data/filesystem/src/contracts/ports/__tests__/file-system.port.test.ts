@@ -60,6 +60,26 @@ class StubFileSystem extends FileSystem {
   }
 }
 
+/**
+ * Two chunks that spell `a,b`.
+ *
+ * @yields the string `a,`, then the byte `b`
+ */
+async function* rows() {
+  yield "a,";
+  yield new Uint8Array([0x62]);
+}
+
+/**
+ * A stream that fails after its first chunk.
+ *
+ * @yields `a`, then throws
+ */
+async function* broken(): AsyncGenerator<string> {
+  yield "a";
+  throw new Error("source failed");
+}
+
 describe("FileSystem", () => {
   it("is a port its drivers are instances of", () => {
     const disk = new StubFileSystem();
@@ -85,10 +105,6 @@ describe("FileSystem", () => {
 
   it("buffers a stream into one write by default", async () => {
     const disk = new StubFileSystem();
-    async function* rows() {
-      yield "a,";
-      yield new Uint8Array([0x62]);
-    }
     await disk.writeStream("exports/x.csv", rows(), { contentType: "text/csv" });
     expect(disk.written).toEqual([
       ["exports/x.csv", new TextEncoder().encode("a,b"), { contentType: "text/csv" }],
@@ -97,10 +113,6 @@ describe("FileSystem", () => {
 
   it("writes nothing when the stream fails", async () => {
     const disk = new StubFileSystem();
-    async function* broken(): AsyncGenerator<string> {
-      yield "a";
-      throw new Error("source failed");
-    }
     await expect(disk.writeStream("exports/x.csv", broken())).rejects.toThrow("source failed");
     expect(disk.written).toEqual([]);
   });

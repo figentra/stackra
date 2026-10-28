@@ -55,5 +55,6 @@ export function checkEditionBundle(
         module: key,
         message: `the edition module "${key}" takes a module key of its base "${bundle.edition.of}"`,
       });
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return issues.sort(byModule);
 }

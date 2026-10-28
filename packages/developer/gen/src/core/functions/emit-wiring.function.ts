@@ -276,6 +276,7 @@ export function emitWiring(ir: MemberIR): string {
         if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
           dependsOn.add(target);
       }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     edges.set(key, [...dependsOn].sort());
   }
   const moduleLines: string[] = [];
@@ -525,6 +526,7 @@ export function emitWiring(ir: MemberIR): string {
       "    },",
     );
     // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers.
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const driverNames = [...new Set(owned)].sort();
     if (driverNames.length > 0)
       registry.push(

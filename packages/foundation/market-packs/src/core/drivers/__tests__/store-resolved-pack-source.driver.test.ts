@@ -59,7 +59,7 @@ async function setUp(stored: boolean) {
   const config = buildConfig(MarketPacksConfig, {
     values: {
       packHashes: [signed.hash],
-      trustedKeys: { key_1: btoa(String.fromCharCode(...raw)) },
+      trustedKeys: { key_1: btoa(String.fromCodePoint(...raw)) },
     },
   });
   return { signed, store, source: new StoreResolvedPackSourceDriver(store, config) };

@@ -21,11 +21,14 @@ import type { SchemaSource } from "#src/interfaces";
 export function readWorkingSchemas(root: string): SchemaSource[] {
   const dir = join(root, SCHEMAS_DIR);
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((name) => name.endsWith(".schema.json"))
-    .sort()
-    .map((name) => ({
-      file: `${SCHEMAS_DIR}/${name}`,
-      text: readFileSync(join(dir, name), "utf8"),
-    }));
+  return (
+    readdirSync(dir)
+      .filter((name) => name.endsWith(".schema.json"))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort()
+      .map((name) => ({
+        file: `${SCHEMAS_DIR}/${name}`,
+        text: readFileSync(join(dir, name), "utf8"),
+      }))
+  );
 }

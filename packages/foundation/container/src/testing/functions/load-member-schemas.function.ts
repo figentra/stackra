@@ -26,6 +26,7 @@ async function load(root: string): Promise<void> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
     throw error;
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const file of files.filter((name) => name.endsWith(".ts")).sort())
     await import(/* @vite-ignore */ pathToFileURL(join(folder, file)).href);
 }

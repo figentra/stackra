@@ -106,7 +106,7 @@ export function readArchitectureInputs(root) {
       name,
       tier: stackra.tier ?? tagValues(tags, "tier")[0] ?? "untiered",
       category: stackra.category ?? tagValues(tags, "category")[0],
-      runtimes: [...new Set([...(stackra.runtimes ?? []), ...tagValues(tags, "runtime")])].sort(
+      runtimes: [...new Set([...(stackra.runtimes ?? []), ...tagValues(tags, "runtime")])].toSorted(
         byText,
       ),
     };
@@ -133,7 +133,7 @@ export function renderArchitectureMap({ members, calls }) {
   const known = new Set(TIERS.map((entry) => entry.tier));
   const extra = [...new Set(members.map((member) => member.tier))]
     .filter((tier) => !known.has(tier))
-    .sort(byText);
+    .toSorted(byText);
   const tiers = [
     ...TIERS,
     ...extra.map((tier) => ({ tier, label: `tier:${tier}`, perMember: true })),
@@ -147,20 +147,20 @@ export function renderArchitectureMap({ members, calls }) {
   for (const [index, { tier, label, perMember }] of tiers.entries()) {
     const inTier = members
       .filter((member) => member.tier === tier)
-      .sort((a, b) => byText(a.dir, b.dir));
+      .toSorted((a, b) => byText(a.dir, b.dir));
     if (!inTier.length) continue;
     const groups = new Map();
     for (const member of inTier) {
       const key = perMember ? member.dir : (member.category ?? "uncategorised");
       groups.set(key, [...(groups.get(key) ?? []), member]);
     }
-    const keys = [...groups.keys()].sort(byText);
+    const keys = [...groups.keys()].toSorted(byText);
     const ids = [];
     for (const [position, key] of keys.entries()) {
       const group = groups.get(key);
       const worker = perMember && group[0].dir.startsWith("workers/");
       const id = idOf(perMember ? group[0].dir : `${tier}-${key}`);
-      const runtimes = [...new Set(group.flatMap((member) => member.runtimes))].sort(byText);
+      const runtimes = [...new Set(group.flatMap((member) => member.runtimes))].toSorted(byText);
       components.push({
         id,
         type:
@@ -236,7 +236,9 @@ export function renderArchitectureMap({ members, calls }) {
     },
     components,
     boundaries,
-    connections: [...connections.keys()].sort(byText).map((id) => ({ id, ...connections.get(id) })),
+    connections: [...connections.keys()]
+      .toSorted(byText)
+      .map((id) => ({ id, ...connections.get(id) })),
     cards,
   };
 }

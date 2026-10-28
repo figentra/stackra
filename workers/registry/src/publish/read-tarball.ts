@@ -83,7 +83,7 @@ export async function readTarball(
     if (header.every((byte) => byte === 0)) break;
     const size = Number.parseInt(field(header, 124, 12).trim() || "0", 8);
     if (!Number.isFinite(size) || size < 0) throw new TarballError("tarball header is malformed");
-    const type = String.fromCharCode(header[156] ?? 0);
+    const type = String.fromCodePoint(header[156] ?? 0);
     const body = tar.subarray(at + BLOCK, at + BLOCK + size);
     at += BLOCK + Math.ceil(size / BLOCK) * BLOCK;
     if (type === "x") {

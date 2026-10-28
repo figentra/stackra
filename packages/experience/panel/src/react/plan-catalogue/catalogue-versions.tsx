@@ -42,6 +42,7 @@ export function CatalogueVersions({
   const keys = PANEL_KEYS.panel.plan_catalogue;
   // oxlint-disable-next-line react/purity -- reason: the console shows the version in force now; `at` pins the instant in tests
   const inForce = versionInForce(versions, at ?? new Date());
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const newestFirst = [...versions].sort((a, b) => b.version - a.version);
   return (
     <Card>

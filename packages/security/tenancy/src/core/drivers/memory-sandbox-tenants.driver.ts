@@ -37,6 +37,7 @@ export class MemorySandboxTenantsDriver extends Driver(SandboxTenants) {
     return Promise.resolve(
       [...this.sandboxes.values()]
         .filter((sandbox) => sandbox.live === live)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
     );
   }

@@ -141,6 +141,7 @@ describe("Refusal", () => {
       "category",
       "retryable",
     ]);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     expect(JSON.parse(JSON.stringify(refused.toEnvelope()))).toEqual(refused.toEnvelope());
   });
 

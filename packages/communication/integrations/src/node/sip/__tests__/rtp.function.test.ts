@@ -23,7 +23,7 @@ describe("rtpPacket", () => {
       },
       Uint8Array.of(1, 2, 3),
     );
-    expect(Array.from(packet)).toEqual([
+    expect([...packet]).toEqual([
       0x80, 0x88, 0x00, 0x01, 0x00, 0x00, 0x00, 0xa0, 0xde, 0xad, 0xbe, 0xef, 1, 2, 3,
     ]);
     expect(rtpPayload(packet)).toEqual({ payloadType: 8, payload: Uint8Array.of(1, 2, 3) });

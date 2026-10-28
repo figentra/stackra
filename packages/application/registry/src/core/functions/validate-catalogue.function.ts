@@ -205,6 +205,7 @@ export function validateCatalogue(manifests: readonly unknown[]): CatalogueDiagn
     order.set(key, node);
     stack.push(key);
     onStack.add(key);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const dependency of [...(dependencies.get(key) ?? [])].sort(compare)) {
       const visited = order.get(dependency);
       if (visited === undefined) {
@@ -240,8 +241,10 @@ export function validateCatalogue(manifests: readonly unknown[]): CatalogueDiagn
         `module "${first}" depends on itself`,
       );
   };
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of [...dependencies.keys()].sort(compare)) if (!order.has(key)) connect(key);
 
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return diagnostics.sort(
     (left, right) =>
       compare(left.member, right.member) ||

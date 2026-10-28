@@ -17,7 +17,9 @@ function sameIds(label: string, got: readonly string[], want: readonly string[])
   const missed: string[] = [];
   if (new Set(got).size !== got.length)
     missed.push(`${label}: ids repeat in ${JSON.stringify(got)}`);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const expected = [...want].sort();
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const actual = [...new Set(got)].sort();
   if (JSON.stringify(actual) !== JSON.stringify(expected))
     missed.push(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);

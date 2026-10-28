@@ -71,6 +71,7 @@ export function code128(data: string, options: { readonly gs1?: boolean } = {}):
       index += pairs;
       continue;
     }
+    // oxlint-disable-next-line unicorn/prefer-code-point -- reads one code unit and refuses anything outside printable ASCII, a lone surrogate included
     const code = char.charCodeAt(0);
     if (code < 32 || code > 126)
       throw new RangeError(`code128: character ${code} is outside printable ASCII`);

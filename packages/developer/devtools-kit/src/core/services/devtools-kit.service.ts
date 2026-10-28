@@ -178,6 +178,7 @@ export class DevtoolsKit extends Service {
 
   /** Every RPC name, sorted; for a package's own tests. */
   rpcNames(): readonly string[] {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return [...this.rpcByName.keys()].sort();
   }
 
@@ -244,10 +245,13 @@ export class DevtoolsKit extends Service {
 
   /** The tabs' metadata, sorted; sensitive ones only when `withSensitive`. */
   private sortedTabs(withSensitive: boolean): readonly DevtoolsTabMetadata[] {
-    return [...this.tabById.values()]
-      .filter((tab) => withSensitive || !tab.sensitive)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-      .map(metadataOf);
+    return (
+      [...this.tabById.values()]
+        .filter((tab) => withSensitive || !tab.sensitive)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+        .map(metadataOf)
+    );
   }
 
   /** Tells the attached host its visible tabs. */

@@ -66,6 +66,7 @@ function HomeTab() {
             options={{
               ...detailHeader,
               title: "Design system",
+              // oxlint-disable-next-line react/no-unstable-nested-components -- a render callback the navigator calls, not a component type
               headerRight: () => <DisplaySettings />,
             }}
           />
@@ -74,7 +75,9 @@ function HomeTab() {
               key={route}
               name={route}
               component={screen}
+              // oxlint-disable-next-line react/no-unstable-nested-components -- a render callback the navigator calls, not a component type
               options={{ ...detailHeader, title, headerRight: () => <DisplaySettings /> }}
+              // oxlint-disable-next-line react/no-unstable-nested-components -- a render callback the navigator calls, not a component type
               layout={({ children }) => (
                 <ComponentPage pages={DESIGN_SYSTEM_COMPONENTS} route={route}>
                   {children}

@@ -25,6 +25,7 @@ export function canonicalJson(value: unknown): string {
     const fields = value as Record<string, unknown>;
     const keys = Object.keys(fields)
       .filter((key) => fields[key] !== undefined)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort();
     return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson(fields[key])}`).join(",")}}`;
   }

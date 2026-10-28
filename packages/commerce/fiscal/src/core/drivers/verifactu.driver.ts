@@ -39,6 +39,7 @@ import { xmlElement } from "#core/functions/xml-element.function";
 import { zonedTime } from "#core/functions/zoned-time.function";
 
 /** `YYYY-MM-DD` as the format's `DD-MM-YYYY`. */
+// oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
 const dayFirst = (date: string): string => date.split("-").reverse().join("-");
 
 /** The first match of a tag's text in an answer, whatever its prefix. */

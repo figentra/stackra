@@ -71,6 +71,7 @@ export function resolveVersion(request: VersionRequest): ResolvedVersion {
       throw new TypeError(`The fallback version ${fallback} is not one of the supported versions`);
     throw UnsupportedVersionError.create({ supported: [...supported] });
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const successor = supported.filter((day) => day > version).sort()[0];
   if (successor === undefined) return { version, headers: {} };
   const windowEnd = time.addMonths(new Date(midnight(successor)), supportMonths);

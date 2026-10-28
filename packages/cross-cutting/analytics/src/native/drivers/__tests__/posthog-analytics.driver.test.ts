@@ -55,7 +55,9 @@ function sent(fetch: ReturnType<typeof answer>, index = 0): string[] {
 /** Moves the app to `state`, as React Native would, and lets the flush settle. */
 async function moveTo(state: string): Promise<void> {
   for (const listener of appState.listeners) listener(state);
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 beforeEach(() => {

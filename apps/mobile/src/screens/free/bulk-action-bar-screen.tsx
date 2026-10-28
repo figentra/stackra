@@ -82,7 +82,10 @@ const DELAY = 700;
 const ignore = () => undefined;
 
 /** Waits for `ms` milliseconds. */
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** Four actions that do nothing: two fill the bar and two go in the sheet. */
 const QUIET_ACTIONS: readonly ResourceAction[] = [

@@ -47,7 +47,9 @@ const freshHook = async () => (await import("#native/glass/use-glass-material"))
 /** Lets the settings queries resolve and the listeners run. */
 const settle = () =>
   act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
   });
 
 describe("useGlassMaterial", () => {

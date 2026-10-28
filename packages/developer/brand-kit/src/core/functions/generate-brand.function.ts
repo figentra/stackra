@@ -49,5 +49,6 @@ export async function generateBrand(
   if (missing.length > 0) throw new InvalidBrandKitError(missing.map((path) => `missing ${path}`));
   const files: GeneratedFile[] = [];
   for (const output of new Set(outputs)) files.push(...(await GENERATORS[output](input, render)));
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }

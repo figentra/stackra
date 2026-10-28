@@ -33,7 +33,7 @@ function colour(card: OgCard, role: string, fallback: string): string {
 function svgDataUrl(svg: string): string {
   const bytes = new TextEncoder().encode(svg);
   let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
+  for (const byte of bytes) binary += String.fromCodePoint(byte);
   return `data:image/svg+xml;base64,${btoa(binary)}`;
 }
 

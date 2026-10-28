@@ -68,6 +68,7 @@ export class FilesystemPackStoreDriver extends Driver(PackStore) {
 
   /** The hashes of the stored files. */
   async hashes(): Promise<readonly string[]> {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return (await this.files.list(FOLDER)).flatMap((path) => FILE.exec(path)?.[1] ?? []).sort();
   }
 }

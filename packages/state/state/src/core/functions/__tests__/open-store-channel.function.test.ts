@@ -112,11 +112,16 @@ describe("cross-tab sync of a persisted store", () => {
     stubBrowser();
     const tab = new ThemeStore(storage);
     const other = new FakeChannel("stackra:state:prefs");
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     other.postMessage({ key: "web.other", version: 1, state: { mode: "dark" } });
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     other.postMessage({ key: "web.theme", version: 2, state: { mode: "dark" } });
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     other.postMessage({ key: "web.theme", version: 1, state: "dark" });
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     other.postMessage(null);
     expect(tab.mode).toBe("light");
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a BroadcastChannel post: it is same-origin and takes no target origin
     other.postMessage({ key: "web.theme", version: 1, state: { mode: "dark" } });
     expect(tab.mode).toBe("dark");
   });

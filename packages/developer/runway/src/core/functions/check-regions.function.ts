@@ -30,6 +30,7 @@ export function checkRegions(root: RootRunway): RegionIssue[] {
   const issues: RegionIssue[] = [];
   const regions = root.regions ?? {};
   const providers: Readonly<Record<string, unknown>> = root.providers ?? {};
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of Object.keys(regions).sort()) {
     const { cloud } = regions[key] as NonNullable<RootRunway["regions"]>[string];
     if (providers[cloud] === undefined)

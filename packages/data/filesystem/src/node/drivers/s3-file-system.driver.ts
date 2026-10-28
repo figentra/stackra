@@ -283,6 +283,7 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       for (const object of page.Contents ?? []) if (object.Key !== undefined) keys.push(object.Key);
       token = page.IsTruncated === true ? page.NextContinuationToken : undefined;
     } while (token !== undefined);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return keys.sort();
   }
 

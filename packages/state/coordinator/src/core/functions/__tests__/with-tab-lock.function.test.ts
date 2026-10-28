@@ -47,7 +47,9 @@ describe("withTabLock", () => {
       memory,
     );
     const second = withTabLock("refresh", () => order.push("second"), memory);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(order).toEqual(["first:start"]);
     gate.resolve();
     await Promise.all([first, second]);

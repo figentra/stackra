@@ -51,7 +51,7 @@ async function mac(
   );
   return encoding === "hex"
     ? Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
-    : btoa(String.fromCharCode(...bytes));
+    : btoa(String.fromCodePoint(...bytes));
 }
 
 const utf8 = (text: string) => new TextEncoder().encode(text);

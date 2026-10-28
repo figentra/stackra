@@ -614,7 +614,7 @@
         "**/apps/**/*.tsx",
       ],
       "rules": {
-        "eslint/new-cap": ["warn", { "capIsNew": false }],
+        "eslint/new-cap": ["error", { "capIsNew": false }],
         "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
       },
     },
@@ -629,7 +629,7 @@
       "rules": {
         "react/react-in-jsx-scope": "off",
         "react/rules-of-hooks": "error",
-        "react/exhaustive-deps": "warn",
+        "react/exhaustive-deps": "error",
       },
     },
     {

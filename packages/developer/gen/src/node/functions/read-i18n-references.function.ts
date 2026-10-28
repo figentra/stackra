@@ -20,17 +20,22 @@ const CHAIN = /(?<![\w$.])I18n((?:\s*\??\.\s*[A-Za-z_$][\w$]*)+)/g;
 
 /** The `.ts`/`.tsx` files under `folder`, sorted. */
 function sourceFiles(folder: string): string[] {
-  return readdirSync(folder, { withFileTypes: true })
-    .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))
-    .flatMap((entry) => {
-      if (entry.isDirectory())
-        return entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "dist"
-          ? []
-          : sourceFiles(join(folder, entry.name));
-      return /\.tsx?$/.test(entry.name) && !entry.name.endsWith(".d.ts")
-        ? [join(folder, entry.name)]
-        : [];
-    });
+  return (
+    readdirSync(folder, { withFileTypes: true })
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))
+      .flatMap((entry) => {
+        if (entry.isDirectory())
+          return entry.name.startsWith(".") ||
+            entry.name === "node_modules" ||
+            entry.name === "dist"
+            ? []
+            : sourceFiles(join(folder, entry.name));
+        return /\.tsx?$/.test(entry.name) && !entry.name.endsWith(".d.ts")
+          ? [join(folder, entry.name)]
+          : [];
+      })
+  );
 }
 
 /**

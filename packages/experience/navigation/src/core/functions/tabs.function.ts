@@ -24,6 +24,7 @@ export function tabs(items: readonly TabItem[]): readonly TabItem[] {
   if (new Set(items.map((item) => item.route.name)).size !== items.length)
     throw new RangeError("A route is a tab once");
   return Object.freeze(
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     [...items].sort((a, b) => a.order - b.order).map((item) => Object.freeze({ ...item })),
   );
 }

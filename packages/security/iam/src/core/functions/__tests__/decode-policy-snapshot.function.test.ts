@@ -15,6 +15,7 @@ const ACME = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 describe("decodePolicySnapshot", () => {
   it("turns an event's JSON into a snapshot", () => {
     const snapshot = decodePolicySnapshot(
+      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
       JSON.parse(
         JSON.stringify({
           version: 7,

@@ -28,6 +28,7 @@ export function CategoryNav({ pages, current, search }: CategoryNavProps) {
     strip.current
       ?.querySelector('[aria-current="page"]')
       ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the page path is the trigger: the strip scrolls the current link into view on every navigation
   }, [current.path]);
   return (
     <nav

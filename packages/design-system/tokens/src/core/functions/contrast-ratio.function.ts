@@ -26,6 +26,7 @@ const luminance = (hex: string): number => {
  * @throws RangeError when either is not `#RRGGBB`
  */
 export function contrastRatio(one: string, two: string): number {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const [high, low] = [luminance(one), luminance(two)].sort((x, y) => y - x) as [number, number];
   return (high + 0.05) / (low + 0.05);
 }

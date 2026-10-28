@@ -13,6 +13,7 @@
 function sorted(_key: string, value: unknown): unknown {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
   return Object.fromEntries(
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     Object.entries(value as Record<string, unknown>).sort(([left], [right]) =>
       left < right ? -1 : left > right ? 1 : 0,
     ),

@@ -7,7 +7,7 @@
   "extends": ["./node.jsonc"],
   "rules": {
     "typescript/consistent-type-imports": "off",
-    "eslint/new-cap": ["warn", { "capIsNew": false }],
+    "eslint/new-cap": ["error", { "capIsNew": false }],
     // An empty `@Module({...}) class X {}` is the normal spelling of a module.
     "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
   },

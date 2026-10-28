@@ -25,6 +25,7 @@ export class MemoryCatalogueVersionsDriver extends Driver(CatalogueVersions) {
   /** Every version of `key`, lowest first. */
   list(key: string): Promise<readonly CatalogueVersion[]> {
     const versions = [...(this.records.get(key)?.values() ?? [])];
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return Promise.resolve(versions.sort((a, b) => a.version - b.version));
   }
 

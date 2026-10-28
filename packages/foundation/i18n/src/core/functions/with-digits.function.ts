@@ -20,13 +20,20 @@ import { NumberingSystem } from "#core/enums/numbering-system.enum";
 export function withDigits(text: string, numerals: NumberingSystem): string {
   switch (numerals) {
     case NumberingSystem.Latn:
-      return text
-        .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
-        .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+      return (
+        text
+          // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
+          .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+          // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
+          .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+      );
     case NumberingSystem.Arab:
-      return text
-        .replace(/[۰-۹]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0x06f0 + 0x0660))
-        .replace(/\d/g, (digit) => String.fromCharCode(0x0660 + Number(digit)));
+      return (
+        text
+          // oxlint-disable-next-line unicorn/prefer-code-point -- reads one character the pattern or loop already limits to the BMP, where code unit and code point agree
+          .replace(/[۰-۹]/g, (digit) => String.fromCodePoint(digit.charCodeAt(0) - 0x06f0 + 0x0660))
+          .replace(/\d/g, (digit) => String.fromCodePoint(0x0660 + Number(digit)))
+      );
     case NumberingSystem.User:
       return text;
   }

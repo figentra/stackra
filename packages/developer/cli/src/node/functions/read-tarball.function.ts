@@ -48,7 +48,7 @@ export function readTarball(tgz: Uint8Array): Map<string, Uint8Array> {
     ) {
       throw new Error(`the tarball holds a path outside its folder: ${name}`);
     }
-    files.set(segments.join("/"), body.slice());
+    files.set(segments.join("/"), new Uint8Array(body));
   }
   return files;
 }

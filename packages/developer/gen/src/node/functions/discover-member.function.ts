@@ -133,6 +133,7 @@ export async function discoverMember(
           ),
         ),
       )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort();
 
     // Driver names per port class: this member's drivers, then each dependency's.
@@ -147,6 +148,7 @@ export async function discoverMember(
       for (const driver of manifest.drivers ?? [])
         for (const candidate of Array.isArray(driver["candidates"]) ? driver["candidates"] : [])
           add(driver.port, String(candidate));
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const sorted = new Map([...names].map(([port, set]) => [port, [...set].sort()]));
     const filled = shapes.map((shape) => ({
       ...shape,
@@ -159,6 +161,7 @@ export async function discoverMember(
         ? readdirSync(modulesFolder, { withFileTypes: true })
             .filter((entry) => entry.isDirectory())
             .map((entry) => folderKey(entry.name))
+            // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
             .sort()
         : [];
     const used = new Set([
@@ -186,6 +189,7 @@ export async function discoverMember(
         ? { rootModule: { name: authored.name, from: authored.importPath } }
         : {}),
       modules,
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       classes: classes.sort((left, right) =>
         left.file === right.file
           ? left.name.localeCompare(right.name)

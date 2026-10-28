@@ -46,7 +46,10 @@ const CAPTURE_MIB = 256; // as pr-merge: a lockfile diff passes 1 MiB
 
 /** Writes `text` and resolves once it is flushed: the caller exits right after, which would cut a large diff written
  * to a pipe. */
-const write = (stream, text) => new Promise((resolve) => stream.write(text ?? "", resolve));
+const write = (stream, text) =>
+  new Promise((resolve) => {
+    stream.write(text ?? "", resolve);
+  });
 
 /**
  * Run gh/git as the bot; resolves to the exit status. A gh read whose output goes to a pipe or file is retried on a

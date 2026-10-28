@@ -77,6 +77,8 @@ const ISSUE = {
 const licenceOf = async (response: Response): Promise<RegistryLicence> =>
   (await response.json()) as RegistryLicence;
 
+const issue = (body: unknown) => send("POST", "/-/stackra/v1/licences", { body });
+
 describe("licence API", () => {
   let registry: Registry;
   let send: Awaited<ReturnType<typeof setUp>>["send"];
@@ -141,7 +143,6 @@ describe("licence API", () => {
   });
 
   it("validates the body and refuses a grant on a scope that is not licensed", async () => {
-    const issue = (body: unknown) => send("POST", "/-/stackra/v1/licences", { body });
     expect((await issue({ ...ISSUE, holderRef: "" })).status).toBe(400);
     expect((await issue({ ...ISSUE, expiresAt: "soon" })).status).toBe(400);
     expect(

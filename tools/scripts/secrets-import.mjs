@@ -69,7 +69,7 @@ export function scanInbox(inbox) {
     return { entries: [], problems: [{ file: inbox, error: NOT_A_DIRECTORY }] };
   const entries = [];
   const problems = [];
-  for (const file of readdirSync(inbox).sort()) {
+  for (const file of readdirSync(inbox).toSorted()) {
     if (file.startsWith(".") || file.endsWith(SIDECAR)) continue;
     const s = lstatSync(join(inbox, file));
     const name = file.replace(/\.[^.]*$/, "");

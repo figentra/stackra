@@ -29,5 +29,6 @@ export async function listFiles(dir: string, prefix = ""): Promise<string[]> {
     if (entry.isDirectory()) out.push(...(await listFiles(dir, rel)));
     else if (entry.isFile()) out.push(rel);
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return out.sort();
 }

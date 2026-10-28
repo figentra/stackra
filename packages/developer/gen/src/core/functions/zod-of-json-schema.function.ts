@@ -39,6 +39,7 @@ function isMoney(schema: Schema): boolean {
   const properties = isSchema(schema["properties"]) ? schema["properties"] : {};
   return (
     schema["type"] === "object" &&
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     Object.keys(properties).sort().join(",") === "currency,minor" &&
     isSchema(properties["minor"]) &&
     properties["minor"]["type"] === "integer"

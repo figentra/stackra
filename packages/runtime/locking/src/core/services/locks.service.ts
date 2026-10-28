@@ -25,6 +25,7 @@ const RETRY = Object.freeze({ base: Duration.parse("10ms"), max: Duration.parse(
 
 /** The keys sorted, each once. */
 const keysOf = (keys: string | readonly string[]): readonly string[] =>
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   [...new Set(typeof keys === "string" ? [keys] : keys)].sort();
 
 /**

@@ -19,7 +19,7 @@ import { extractText } from "unpdf";
 export async function pdfText(bytes: Uint8Array): Promise<string> {
   try {
     // pdf.js takes ownership of the buffer it is given, so it gets a copy.
-    const { text } = await extractText(bytes.slice(), { mergePages: false });
+    const { text } = await extractText(new Uint8Array(bytes), { mergePages: false });
     return text
       .map((page) => page.trim())
       .filter((page) => page !== "")

@@ -16,14 +16,18 @@
  * importLines(new Map([["zod", new Map([["z", false]])]])); // ['import { z } from "zod";']
  */
 export function importLines(imports: ReadonlyMap<string, ReadonlyMap<string, boolean>>): string[] {
-  return [...imports.entries()]
-    .filter(([, names]) => names.size > 0)
-    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
-    .map(([from, names]) => {
-      const sorted = [...names.entries()].sort(([left], [right]) => left.localeCompare(right));
-      if (sorted.every(([, typeOnly]) => typeOnly))
-        return `import type { ${sorted.map(([name]) => name).join(", ")} } from "${from}";`;
-      const specifiers = sorted.map(([name, typeOnly]) => (typeOnly ? `type ${name}` : name));
-      return `import { ${specifiers.join(", ")} } from "${from}";`;
-    });
+  return (
+    [...imports.entries()]
+      .filter(([, names]) => names.size > 0)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([from, names]) => {
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        const sorted = [...names.entries()].sort(([left], [right]) => left.localeCompare(right));
+        if (sorted.every(([, typeOnly]) => typeOnly))
+          return `import type { ${sorted.map(([name]) => name).join(", ")} } from "${from}";`;
+        const specifiers = sorted.map(([name, typeOnly]) => (typeOnly ? `type ${name}` : name));
+        return `import { ${specifiers.join(", ")} } from "${from}";`;
+      })
+  );
 }

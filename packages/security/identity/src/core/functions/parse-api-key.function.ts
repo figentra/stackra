@@ -30,6 +30,7 @@ export function parseApiKey(
 ): ParsedApiKey | undefined {
   const match = (Object.entries(config.apiKeyPrefixes) as [ApiKeyKind, string][])
     .filter(([, prefix]) => key.startsWith(`${prefix}_`))
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort(([, a], [, b]) => b.length - a.length)[0];
   if (match === undefined) return undefined;
   const [kind, prefix] = match;

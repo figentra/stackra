@@ -31,6 +31,7 @@ export function ocrLines(texts: readonly string[], boxes?: readonly OcrBox[]): s
   const items = texts
     .map((text, index) => ({ text, box: boxes[index] as OcrBox }))
     .filter((item) => item.text.trim() !== "")
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((a, b) => a.box[1] + a.box[3] - (b.box[1] + b.box[3]));
   const lines: (typeof items)[] = [];
   for (const item of items) {
@@ -44,6 +45,7 @@ export function ocrLines(texts: readonly string[], boxes?: readonly OcrBox[]): s
   return lines
     .map((line) => {
       const rtl = rightToLeft(line.map((item) => item.text).join(""));
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       const ordered = [...line].sort((a, b) => (rtl ? b.box[0] - a.box[0] : a.box[0] - b.box[0]));
       return ordered.map((item) => item.text).join(" ");
     })

@@ -88,7 +88,10 @@ class TestDevice extends DeviceIdentity {
 }
 
 /** Lets the lock's chained promises settle. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = () =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 /** A lock over memory storage holding something in each area it wipes. */
 function lockOf(online = true) {

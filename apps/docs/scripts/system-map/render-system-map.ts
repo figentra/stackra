@@ -136,6 +136,7 @@ export function renderSystemMap(
       body.push(`  ${id}["${label(`${repo} (${count} members)`)}"]`);
     }
     if (bound.length > 0) body.push(`  P(["providers"])`);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const [key, count] of [...between].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
       const [from = "", to = ""] = key.split(" ");
       const parts = [
@@ -144,6 +145,7 @@ export function renderSystemMap(
       ].filter(Boolean);
       body.push(`  ${repoId.get(from)} -->|"${label(parts.join(", "))}"| ${repoId.get(to)}`);
     }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const repo of [...new Set(bound.map((node) => node.repo))].sort())
       body.push(`  ${repoId.get(repo)} -.->|drivers| P`);
     body.push("```", "");
@@ -193,9 +195,11 @@ export function renderSystemMap(
     ...table(
       ["Port", "Drivers", "Bound by"],
       [...ports]
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([port, entry]) => [
           code(port),
+          // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
           [...entry.candidates].sort().map(code).join(", "),
           entry.by.map(ref).join(", "),
         ]),
@@ -259,6 +263,7 @@ export function renderSystemMap(
       ...new Set([...inbound.map((edge) => edge.from), ...outbound.map((edge) => edge.to)]),
     ]
       .filter((id) => id !== node.id)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort();
     const other = (id: string): string => (id === node.id ? "S" : `N${others.indexOf(id)}`);
     const arrow = (edge: (typeof graph.edges)[number]): string =>
@@ -344,5 +349,6 @@ export function renderSystemMap(
     });
   }
 
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return pages.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }

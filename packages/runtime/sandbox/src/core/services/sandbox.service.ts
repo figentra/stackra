@@ -169,6 +169,7 @@ export class Sandbox extends Service {
     const parse = context.getProp(json, "parse");
     const stringify = context.getProp(json, "stringify");
     json.dispose();
+    // oxlint-disable-next-line unicorn/consistent-function-scoping -- a placeholder the executor below replaces with `resolve` at once
     let stop: (stop: Stop) => void = () => {};
     const stopped = new Promise<Stop>((resolve) => {
       stop = resolve;

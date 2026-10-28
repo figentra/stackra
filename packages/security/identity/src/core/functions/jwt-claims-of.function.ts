@@ -26,6 +26,7 @@ export function jwtClaimsOf(token: string): Readonly<Record<string, unknown>> {
     const binary = atob(payload.replaceAll("-", "+").replaceAll("_", "/"));
     // Percent-encoding each byte lets decodeURIComponent read UTF-8 on every runtime, TextDecoder or not.
     const text = decodeURIComponent(
+      // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
       Array.from(binary, (char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`).join(""),
     );
     claims = JSON.parse(text);

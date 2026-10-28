@@ -24,11 +24,15 @@ export function validateSiteTheme(
   theme: SiteTheme,
   blocks: ReadonlyMap<string, BlockClass>,
 ): DocumentProblem[] {
-  return Object.keys(theme.sections)
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-    .flatMap((section) =>
-      validateDocument(theme.sections[section], { kind: ExperienceKind.ThemeSection, blocks }).map(
-        (problem) => ({ ...problem, path: `${section}:${problem.path}` }),
-      ),
-    );
+  return (
+    Object.keys(theme.sections)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      .flatMap((section) =>
+        validateDocument(theme.sections[section], {
+          kind: ExperienceKind.ThemeSection,
+          blocks,
+        }).map((problem) => ({ ...problem, path: `${section}:${problem.path}` })),
+      )
+  );
 }

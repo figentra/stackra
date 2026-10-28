@@ -164,7 +164,7 @@ export class ClientFake extends ClientTransport {
           `fakeClient has no answer for ${request.key}: add fake.on(<its ref>).returns(...)`,
         ),
       );
-    if (next.kind === "pending") return new Promise(() => undefined);
+    if (next.kind === "pending") return new Promise(() => {});
     if (next.kind === "error") return Promise.reject(next.error);
     const value = next.value;
     return Promise.resolve().then(() =>

@@ -27,6 +27,7 @@ const SKIPPED = new Set(["node_modules", "dist", "coverage"]);
 function memberFolders(dir: string): string[] {
   const found: string[] = [];
   if (existsSync(join(dir, ".stackra", "graph.json"))) found.push(dir);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const entry of readdirSync(dir, { withFileTypes: true }).sort((left, right) =>
     left.name < right.name ? -1 : 1,
   ))

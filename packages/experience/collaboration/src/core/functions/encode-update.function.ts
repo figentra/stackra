@@ -15,6 +15,6 @@
  */
 export function encodeUpdate(update: Uint8Array): string {
   let text = "";
-  for (const byte of update) text += String.fromCharCode(byte);
+  for (const byte of update) text += String.fromCodePoint(byte);
   return btoa(text);
 }

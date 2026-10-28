@@ -64,7 +64,10 @@ class SetReplica implements DocumentReplica {
 }
 
 /** Lets every pending microtask and promise settle. */
-const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 /** Two people on the same in-memory network, both granted unless `source` says otherwise. */
 function network(

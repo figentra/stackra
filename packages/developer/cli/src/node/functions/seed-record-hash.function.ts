@@ -15,6 +15,7 @@ function stable(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
   if (typeof value === "object" && value !== null)
     return `{${Object.keys(value)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((key) => `${JSON.stringify(key)}:${stable((value as Record<string, unknown>)[key])}`)
       .join(",")}}`;

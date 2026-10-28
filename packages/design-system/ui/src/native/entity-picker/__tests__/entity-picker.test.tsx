@@ -202,7 +202,9 @@ const answering =
 /** Lets the pending answers land. */
 const settle = () =>
   act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
   });
 
 const press = (name: string) => fireEvent.click(screen.getByRole("button", { name }));
@@ -341,7 +343,9 @@ describe("EntityPicker (native)", () => {
     const loadOptions = vi.fn((_search: string, cursor?: string) =>
       cursor === undefined
         ? Promise.resolve({ items: [ADA], nextCursor: "c2" })
-        : new Promise<EntityOptionPage>((resolve) => (answer = resolve)),
+        : new Promise<EntityOptionPage>((resolve) => {
+            answer = resolve;
+          }),
     );
     render(<EntityPicker label="Owner" loadingLabel="Loading people" loadOptions={loadOptions} />);
     openSheet();
@@ -362,7 +366,11 @@ describe("EntityPicker (native)", () => {
       <EntityPicker
         label="Owner"
         emptyMessage="No people found"
-        loadOptions={() => new Promise((resolve) => (answer = resolve))}
+        loadOptions={() =>
+          new Promise((resolve) => {
+            answer = resolve;
+          })
+        }
       />,
     );
     openSheet();
@@ -380,7 +388,9 @@ describe("EntityPicker (native)", () => {
     const loadOptions = vi.fn((search: string) =>
       search === ""
         ? Promise.resolve({ items: [] })
-        : new Promise<EntityOptionPage>((resolve) => (answer = resolve)),
+        : new Promise<EntityOptionPage>((resolve) => {
+            answer = resolve;
+          }),
     );
     render(
       <EntityPicker

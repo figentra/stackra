@@ -147,9 +147,12 @@ export class Editor {
 
   /** The keys of the blocks the palette offers for this document, in code-unit order. */
   palette(): string[] {
-    return [...this.blocks.keys()]
-      .filter((block) => this.allows(block))
-      .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+    return (
+      [...this.blocks.keys()]
+        .filter((block) => this.allows(block))
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+        .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+    );
   }
 
   /** The block `id` in the current tree, or `undefined`. */

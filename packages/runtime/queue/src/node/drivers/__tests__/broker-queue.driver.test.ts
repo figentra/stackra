@@ -61,6 +61,7 @@ describe(BrokerQueueDriver, () => {
     expect(driver).toBeInstanceOf(QueueDriver);
     await expect(driver.push(job)).resolves.toBe(true);
     expect(broker.published.get("queue.delivery")).toEqual([
+      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
       { id: "job_a", body: JSON.parse(JSON.stringify(job)) },
     ]);
     await expect(driver.reserve("delivery", NOON)).resolves.toBeUndefined();

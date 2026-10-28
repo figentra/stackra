@@ -23,7 +23,7 @@ describe("splitFrontMatter", () => {
 
   it("reads CRLF line endings and a byte order mark", () => {
     expect(
-      splitFrontMatter(`${String.fromCharCode(0xfeff)}---\r\nalways: true\r\n---\r\nBody`, "a.md"),
+      splitFrontMatter(`${String.fromCodePoint(0xfeff)}---\r\nalways: true\r\n---\r\nBody`, "a.md"),
     ).toEqual({
       data: { always: true },
       body: "Body",

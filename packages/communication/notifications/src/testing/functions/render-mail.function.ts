@@ -37,6 +37,7 @@ async function readMessages(locale: Locale): Promise<MailRenderOptions["messages
       if ((error as NodeJS.ErrnoException).code === "ENOENT") continue; // an overlay may ship no file
       throw error;
     }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const file of files.filter((name) => name.endsWith(".json")).sort()) {
       const namespace = file.slice(0, -".json".length);
       const catalogue = JSON.parse(await readFile(join(folder, file), "utf8")) as Catalogue;

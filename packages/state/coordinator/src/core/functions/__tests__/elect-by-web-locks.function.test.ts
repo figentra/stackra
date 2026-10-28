@@ -41,7 +41,10 @@ function fakeLocks() {
             queue.splice(index, 1);
             reject(new DOMException("The request was aborted", "AbortError"));
           });
-          if (!held.has(name)) return run();
+          if (!held.has(name)) {
+            run();
+            return;
+          }
           queues.set(name, [...(queues.get(name) ?? []), run]);
         }),
     ),
@@ -96,7 +99,9 @@ describe("electByWebLocks", () => {
     const leaveSecond = electByWebLocks("queue", second);
     leaveSecond();
     leaveFirst();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     expect(second.get()).toBe(false);
     expect(unhandled).not.toHaveBeenCalled();
     process.off("unhandledRejection", unhandled);

@@ -34,6 +34,7 @@ export class MemoryLoginDirectoryStoreDriver extends Driver(LoginDirectoryStore)
 
   /** The written keys, sorted. */
   keys(): readonly string[] {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return [...this.written].sort();
   }
 }

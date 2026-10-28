@@ -69,13 +69,16 @@ function cycles(graph: ReadonlyMap<string, readonly string[]>): string[][] {
       const at = path.indexOf(next);
       if (at >= 0) {
         const cycle = path.slice(at);
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         const start = cycle.indexOf([...cycle].sort()[0] ?? "");
         const rotated = [...cycle.slice(start), ...cycle.slice(0, start)];
         found.set(rotated.join(">"), rotated);
       } else walk([...path, next]);
     }
   };
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of [...graph.keys()].sort()) walk([key]);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...found.values()].sort((left, right) => left.join(">").localeCompare(right.join(">")));
 }
 
@@ -207,7 +210,9 @@ export function checkConventions(ir: MemberIR, manifest: StackraManifest): GenEr
     const at = /^(.*\/database\/migrations)\/([^/]+\.ts)$/.exec(file);
     if (at !== null) folders.set(at[1] ?? "", [...(folders.get(at[1] ?? "") ?? []), at[2] ?? ""]);
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [folder, names] of [...folders].sort(([left], [right]) => left.localeCompare(right))) {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const sorted = [...names].sort();
     sorted.forEach((name, index) => {
       const expected = String(index + 1).padStart(4, "0");

@@ -98,6 +98,7 @@ export class PackSchemaRegistry {
         });
       }
     }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const ordered = [...schemas].sort((left, right) => right.prefix.length - left.prefix.length);
     return new PackSchemaRegistry(ordered, keys);
   }

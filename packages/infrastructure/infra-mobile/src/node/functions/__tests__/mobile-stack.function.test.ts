@@ -122,7 +122,9 @@ describe("mobileStack", () => {
 
   it("registers no resource", async () => {
     mobileStack(PLAN);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
 
     expect(registered).toEqual([]);
   });

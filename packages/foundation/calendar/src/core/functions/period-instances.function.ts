@@ -31,6 +31,7 @@ export function periodInstances(
         minutes.flatMap((minute) => seconds.map((each) => hour * 3600 + minute * 60 + each)),
       ),
     ),
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   ].sort((left, right) => left - right);
   const found: (readonly [number, number])[] = [];
   for (let day = period[0]; day <= period[1]; day += 1)

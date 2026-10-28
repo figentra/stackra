@@ -194,7 +194,9 @@ describe("AnalyticsClient", () => {
     const unhandled = vi.fn();
     process.on("unhandledRejection", unhandled);
     expect(() => client.track(LeadSubmitted.create({ plan: "pro" }))).not.toThrow();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     process.off("unhandledRejection", unhandled);
     expect(unhandled).not.toHaveBeenCalled();
   });

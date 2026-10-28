@@ -160,6 +160,7 @@ function read(doc: Doc): EditorNode | undefined {
 function clientIdOf(text: string): number {
   let hash = 0x81_1c_9d_c5;
   for (let index = 0; index < text.length; index += 1)
+    // oxlint-disable-next-line unicorn/prefer-code-point -- hashes UTF-16 code units; code points would change every hash already issued
     hash = Math.imul(hash ^ text.charCodeAt(index), 0x01_00_01_93);
   return hash >>> 0;
 }

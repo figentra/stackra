@@ -31,7 +31,7 @@ class ReversingCipher extends FieldCipher {
   override async open(sealed: string, context: string): Promise<string> {
     const prefix = `sealed(${context})`;
     if (!sealed.startsWith(prefix)) throw new Error("Cannot open");
-    return Array.from(sealed.slice(prefix.length)).reverse().join("");
+    return [...sealed.substring(prefix.length)].reverse().join("");
   }
 }
 

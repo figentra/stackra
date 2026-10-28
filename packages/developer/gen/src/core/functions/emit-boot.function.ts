@@ -99,6 +99,7 @@ export function emitBoot(ir: MemberIR): string | undefined {
   });
   return [
     header,
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     ...imports.sort(),
     "",
     "/** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */",

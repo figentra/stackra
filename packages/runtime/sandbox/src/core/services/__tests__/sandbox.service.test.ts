@@ -37,11 +37,11 @@ class RecordingSandboxFetchProxy extends Driver(SandboxFetchProxy) {
   });
 
   fetch(
-    request: SandboxFetchRequest,
+    fetched: SandboxFetchRequest,
     reference: string,
     signal: AbortSignal,
   ): Promise<SandboxFetchResponse> {
-    this.calls.push({ request, reference, signal });
+    this.calls.push({ request: fetched, reference, signal });
     return this.answer === undefined ? new Promise(() => {}) : this.answer();
   }
 }

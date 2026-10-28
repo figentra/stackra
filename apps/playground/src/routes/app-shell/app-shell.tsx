@@ -169,7 +169,8 @@ function DemoShell({
         sidebar={
           items === undefined
             ? undefined
-            : ({ isInDrawer }) => (
+            : // oxlint-disable-next-line react/no-unstable-nested-components -- the shell calls this render prop for the sidebar, it is not a component type
+              ({ isInDrawer }) => (
                 <Sidebar
                   label={label}
                   items={items}

@@ -1,11 +1,13 @@
 // Stackra file contract:
-// Purpose: shared oxlint base — correctness is an error, suspicious a warning, `any` and unused code are errors;
+// Purpose: shared oxlint base — correctness and suspicious are errors (rule-gap B-1, stackra-230), `any` and unused code are errors;
 //          house rules shipped as JS plugins are errors: every rule of @stackra/coding-standard (`stackra/*`, ADR 0129,
 //          0294, 0305) and feature-flags/no-plan-targeting (ADR 0213 d7). Files are kebab-case (ADR 0006 d1); the
 //          retired kind decorators and define* helpers are banned at the import (ADR 0294 R6, ADR 0305 r3).
 //          The cheap set of rule-gap N-4, N-7 to N-10 (stackra-229, owner D11): ts-comment bans (ts-expect-error only
 //          in tests, with a description), the small bug-catchers and autofixes at error, no-console in packages
 //          (off for tools, hooks, plugins and apps), and the react, jsx-a11y and small React rules on every .tsx.
+//          The B group rows B-1, B-2 and B-5 (stackra-230, owner D11): no warnings left, no-array-sort outside tests,
+//          and the promise-executor, code-point, structured-clone and spread rules, all at error.
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -20,7 +22,8 @@
     "../../../developer/coding-standard/src/core/constants/stackra-plugin.constant.ts",
     "../../../state/feature-flags/src/lint/constants/feature-flags-lint-plugin.constant.ts",
   ],
-  "categories": { "correctness": "error", "suspicious": "warn" },
+  // B-1: a warning never fails a member's `oxlint .`, so every category that is on is an error.
+  "categories": { "correctness": "error", "suspicious": "error" },
   "env": { "es2024": true },
   "rules": {
     // Libraries log through @stackra/logger; tools, hooks, plugins and apps print (override below). N-10.
@@ -70,8 +73,16 @@
     "unicorn/consistent-date-clone": "error",
     "unicorn/prefer-type-error": "error",
     "unicorn/no-useless-promise-resolve-reject": "error",
-    // Mutating sort on a freshly-built local array is fine; toSorted() is noise here.
-    "unicorn/no-array-sort": "off",
+    // B-2: `.sort()` as a value can mutate an array the caller still holds. A bare `x.sort();` statement passes
+    // (allowExpressionStatement). toSorted is ES2023 and the base lib is ES2022, so a site that sorts an array it
+    // just built carries a reasoned disable until the lib moves; tests are off (override below).
+    "unicorn/no-array-sort": ["error", { "allowExpressionStatement": true }],
+    // B-5: an executor's return value is dropped; `charCodeAt` splits non-BMP text; a JSON round trip drops Dates;
+    // spread over Array.from/concat/slice.
+    "no-promise-executor-return": "error",
+    "unicorn/prefer-code-point": "error",
+    "unicorn/prefer-structured-clone": "error",
+    "unicorn/prefer-spread": "error",
     // Empty files are allowed for placeholders and test setup.
     "unicorn/no-empty-file": "off",
     // Side-effect imports for CSS and polyfills.
@@ -154,6 +165,12 @@
       "rules": { "stackra/no-raw-key-literal": "off" },
     },
     {
+      // B-1, B-2: a test sorts or reverses the array it just built, to get the order an assertion compares;
+      // nothing else holds it.
+      "files": ["**/__tests__/**", "**/*.test.*"],
+      "rules": { "unicorn/no-array-sort": "off", "unicorn/no-array-reverse": "off" },
+    },
+    {
       // N-4: a type test asserts a type error with @ts-expect-error and says which one; ts-ignore stays banned.
       "files": ["**/__tests__/**", "**/*.test.*", "**/*.test-d.ts"],
       "rules": {
@@ -203,7 +220,7 @@
         "react/jsx-no-target-blank": "error",
         "react/react-in-jsx-scope": "off",
         "react/rules-of-hooks": "error",
-        "react/exhaustive-deps": "warn",
+        "react/exhaustive-deps": "error",
         "react/button-has-type": "error",
         "react/no-array-index-key": "error",
         "react/no-object-type-as-default-prop": "error",

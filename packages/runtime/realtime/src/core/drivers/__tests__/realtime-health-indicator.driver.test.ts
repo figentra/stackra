@@ -27,7 +27,7 @@ function indicator(
 ): RealtimeHealthIndicatorDriver {
   const probe = (...args: unknown[]): Promise<unknown> => {
     calls.push(args);
-    if (outcome === "hang") return new Promise(() => undefined);
+    if (outcome === "hang") return new Promise(() => {});
     return outcome === "answer" ? Promise.resolve(undefined) : Promise.reject(outcome);
   };
   const port = { publish: probe } as unknown as RealtimeFanout;

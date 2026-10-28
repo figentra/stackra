@@ -52,7 +52,7 @@ function pack(market: string): MarketPack {
 async function keyPair() {
   const keys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
   const raw = new Uint8Array(await crypto.subtle.exportKey("raw", keys.publicKey));
-  return { privateKey: keys.privateKey, trusted: { key_1: btoa(String.fromCharCode(...raw)) } };
+  return { privateKey: keys.privateKey, trusted: { key_1: btoa(String.fromCodePoint(...raw)) } };
 }
 
 /** The rejection reason `promise` fails with. */

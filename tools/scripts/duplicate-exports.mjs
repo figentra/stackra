@@ -174,7 +174,7 @@ export function duplicateExports(root) {
   const homes = new Map();
   for (const { dir, name } of readWorkspaceMembers(root)) {
     if (!dir.startsWith("packages/")) continue;
-    for (const path of sourceFiles(join(root, dir, "src")).sort()) {
+    for (const path of sourceFiles(join(root, dir, "src")).toSorted()) {
       for (const [, exported] of readFileSync(path, "utf8").matchAll(DECLARATION)) {
         const rows = homes.get(exported) ?? new Map();
         if (!rows.has(name)) rows.set(name, path.slice(root.length).replace(/^[/\\]/, ""));
@@ -185,10 +185,12 @@ export function duplicateExports(root) {
   return new Map(
     [...homes]
       .filter(([, rows]) => rows.size > 1)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([exported, rows]) => [
         exported,
-        [...rows].sort(([a], [b]) => (a < b ? -1 : 1)).map(([pkg, file]) => ({ name: pkg, file })),
+        [...rows]
+          .toSorted(([a], [b]) => (a < b ? -1 : 1))
+          .map(([pkg, file]) => ({ name: pkg, file })),
       ]),
   );
 }
@@ -211,7 +213,7 @@ export function duplicateExportFindings(root, allowed = ALLOWED, pending = PENDI
   // PENDING is a ratchet that only shrinks: an entry whose duplicate is gone must leave the list (rule-gap N-6).
   const stale = Object.keys(pending)
     .filter((name) => !duplicates.has(name))
-    .sort()
+    .toSorted()
     .map((name) => ({
       dir: "tools/scripts",
       text: `PENDING name ${name} is no longer declared in two packages: delete it from PENDING in duplicate-exports.mjs`,
@@ -224,7 +226,7 @@ export function staleAllowListEntries(root, allowed = ALLOWED, pending = PENDING
   const duplicates = duplicateExports(root);
   return [...Object.keys(allowed), ...Object.keys(pending)]
     .filter((name) => !duplicates.has(name))
-    .sort();
+    .toSorted();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

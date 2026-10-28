@@ -99,7 +99,7 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
       this.loginUrl(`${location.pathname}${location.search}${location.hash}`, options),
     );
     // The page unloads for the hosted sign-in, so this never settles.
-    return new Promise<void>(() => undefined);
+    return new Promise<void>(() => {});
   }
 
   /**

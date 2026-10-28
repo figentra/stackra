@@ -51,7 +51,9 @@ const atRest = (element: Locator) =>
     await document.fonts.ready;
     let top = Number.NaN;
     for (let still = 0; still < 5;) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => {
+        requestAnimationFrame(resolve);
+      });
       const next = node.getBoundingClientRect().top;
       still = next === top ? still + 1 : 0;
       top = next;

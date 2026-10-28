@@ -16,7 +16,12 @@ import type { RootRunway } from "#core/types/root-runway.type";
  * bundleSurfaces(root); // ["console", "till"]
  */
 export function bundleSurfaces(root: RootRunway): string[] {
-  return Object.keys(root.surfaces ?? {})
-    .filter((surface) => surface !== "ops" && (root.surfaces?.[surface]?.packages?.length ?? 0) > 0)
-    .sort();
+  return (
+    Object.keys(root.surfaces ?? {})
+      .filter(
+        (surface) => surface !== "ops" && (root.surfaces?.[surface]?.packages?.length ?? 0) > 0,
+      )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort()
+  );
 }

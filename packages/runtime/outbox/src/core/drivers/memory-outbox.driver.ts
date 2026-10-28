@@ -36,6 +36,7 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
   /** Implements `OutboxDriver.write`, documented there. */
   write(messages: readonly OutboxMessage[]): Promise<void> {
     for (const message of messages) {
+      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
       const data: unknown = JSON.parse(JSON.stringify(message.data ?? null));
       this.messages.set(message.id, Object.freeze({ ...message, data }));
     }
@@ -47,6 +48,7 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     const at = now.getTime();
     const due = [...this.messages.values()]
       .filter((message) => message.deadAt === undefined && message.availableAt.getTime() <= at)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(byOrder);
     return Promise.resolve(due.slice(0, limit));
   }
@@ -71,6 +73,7 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
 
   /** Every message kept, dead ones included, in the relay's order; for a test's assertions. */
   stored(): readonly OutboxMessage[] {
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return [...this.messages.values()].sort(byOrder);
   }
 

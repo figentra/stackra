@@ -150,6 +150,7 @@ export class EncryptedFieldsSubscriber implements EventSubscriber<object> {
 
   /** Moves the ORM's snapshot of `field` to its plain text, so the next flush compares plain with plain. */
   private snapshot(entity: object, field: string, plain: string): void {
+    // oxlint-disable-next-line no-underscore-dangle -- MikroORM's own name for the entity snapshot
     const original = wrap(entity, true).__originalEntityData as Record<string, unknown> | undefined;
     if (original !== undefined) original[field] = plain;
   }

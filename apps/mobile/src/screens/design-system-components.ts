@@ -444,6 +444,7 @@ const COMPONENTS: readonly DesignSystemComponent[] = [
 ];
 
 /** The components of the review area in gallery order: by category, then by title. */
+// oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
 export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [...COMPONENTS].sort(
   (a, b) =>
     ComponentCategory.indexOf(a.category) - ComponentCategory.indexOf(b.category) ||

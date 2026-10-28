@@ -137,7 +137,12 @@ describe("EntityPicker (web)", () => {
 
   it("drops an answer that a later search has replaced", async () => {
     const answers: ((page: EntityOptionPage) => void)[] = [];
-    const load = vi.fn(() => new Promise<EntityOptionPage>((resolve) => answers.push(resolve)));
+    const load = vi.fn(
+      () =>
+        new Promise<EntityOptionPage>((resolve) => {
+          answers.push(resolve);
+        }),
+    );
     render(<EntityPicker loadOptions={load} label="Owner" debounceMs={0} />);
     // Focus asks for "" at once; "a" and then "al" follow, each after the pause.
     type("a");
@@ -280,7 +285,7 @@ describe("EntityPicker (web)", () => {
   it("shows a named spinner while the first answer is on its way", () => {
     render(
       <EntityPicker
-        loadOptions={() => new Promise<EntityOptionPage>(() => undefined)}
+        loadOptions={() => new Promise<EntityOptionPage>(() => {})}
         label="Owner"
         loadingLabel="Loading people"
       />,

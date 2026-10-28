@@ -40,9 +40,10 @@ function scannerAt(port: number, maxBytes = 1024): ClamavFileScannerDriver {
 }
 
 afterEach(async () => {
-  await new Promise((resolve) =>
-    server === undefined ? resolve(undefined) : server.close(resolve),
-  );
+  await new Promise((resolve) => {
+    if (server === undefined) resolve(undefined);
+    else server.close(resolve);
+  });
   server = undefined;
 });
 
@@ -66,7 +67,9 @@ describe("ClamavFileScannerDriver", () => {
 
   it("throws when clamd cannot be reached", async () => {
     const port = await clamd("", []);
-    await new Promise((resolve) => server?.close(resolve));
+    await new Promise((resolve) => {
+      server?.close(resolve);
+    });
     server = undefined;
     await expect(
       scannerAt(port).scan("uploads/a", async () => new Uint8Array(1)),

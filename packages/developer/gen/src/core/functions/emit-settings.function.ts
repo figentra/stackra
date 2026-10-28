@@ -151,6 +151,7 @@ export function emitSettings(ir: MemberIR): string | undefined {
     groups.set(shape.module, [...(groups.get(shape.module) ?? []), ...keysOf(ir, shape)]);
   const modules = [...groups]
     .filter(([, keys]) => keys.length > 0)
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort(([a], [b]) => a.localeCompare(b));
   if (modules.length === 0) return undefined;
   return [

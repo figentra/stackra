@@ -69,7 +69,9 @@ const sale = { reference: "chk_9", terminalId: "T-0042", amount };
 
 /** Lets queued microtasks and timers run, so the held exchange has started. */
 function tick(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 /** A gateway over `link`, with `overrides` on the profile. */

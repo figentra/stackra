@@ -77,6 +77,7 @@ export class EncoreBucketFileSystemDriver extends Driver(FileSystem) {
     const names: string[] = [];
     for await (const entry of this.bucket.list(wanted === "" ? {} : { prefix: wanted }))
       names.push(entry.name);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     return names.sort();
   }
 

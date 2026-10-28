@@ -67,7 +67,9 @@ describe("RtpAudioDeviceDriver", () => {
     await Promise.resolve();
     socket.deliver(rtpPacket({ ...header, payloadType: 0 }, Uint8Array.of(9)));
     socket.deliver(rtpPacket({ ...header, payloadType: 8 }, Uint8Array.of(1, 2)));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
     stop.abort();
     await done;
     expect(heard).toEqual([Uint8Array.of(1, 2)]);

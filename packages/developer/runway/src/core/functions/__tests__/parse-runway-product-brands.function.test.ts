@@ -27,6 +27,9 @@ function issuePaths(run: () => unknown): string[] {
   throw new Error("expected a RunwayInvalidError");
 }
 
+/** A parse of the root runway with `product`, deferred for `issuePaths`. */
+const parseRootWithProduct = (product: unknown) => () => parseRunway("root", { ...ROOT, product });
+
 describe("parseRunway product", () => {
   it("accepts a base product and an edition", () => {
     expect(parseRunway("root", { ...ROOT, product: { key: "commerce" } }).product).toEqual({
@@ -37,15 +40,18 @@ describe("parseRunway product", () => {
   });
 
   it("refuses a bad key, a missing base version and an unknown field", () => {
-    const root = (product: unknown) => () => parseRunway("root", { ...ROOT, product });
-
-    expect(issuePaths(root({ key: "Fashion" }))).toEqual(["product.key"]);
-    expect(issuePaths(root({ key: "fashion", edition: { of: "commerce" } }))).toEqual([
-      "product.edition.version",
+    expect(issuePaths(parseRootWithProduct({ key: "Fashion" }))).toEqual(["product.key"]);
+    expect(
+      issuePaths(parseRootWithProduct({ key: "fashion", edition: { of: "commerce" } })),
+    ).toEqual(["product.edition.version"]);
+    expect(issuePaths(parseRootWithProduct({ key: "fashion", base: "commerce" }))).toEqual([
+      "product",
     ]);
-    expect(issuePaths(root({ key: "fashion", base: "commerce" }))).toEqual(["product"]);
   });
 });
+
+/** A parse of the app runway with one `brand`, deferred for `issuePaths`. */
+const parseAppWithBrand = (brand: unknown) => () => parseRunway("app", { ...APP, brands: [brand] });
 
 describe("parseRunway brands", () => {
   it("accepts brands with and without bundle ids", () => {
@@ -56,10 +62,10 @@ describe("parseRunway brands", () => {
   });
 
   it("refuses a bad brand key, a missing app id and an unknown field, with the index", () => {
-    const app = (brand: unknown) => () => parseRunway("app", { ...APP, brands: [brand] });
-
-    expect(issuePaths(app({ ...BRAND, key: "Atelier" }))).toEqual(["brands.0.key"]);
-    expect(issuePaths(app({ key: "a", name: "A", tokens: "t.css" }))).toEqual(["brands.0.appId"]);
-    expect(issuePaths(app({ ...BRAND, color: "red" }))).toEqual(["brands.0"]);
+    expect(issuePaths(parseAppWithBrand({ ...BRAND, key: "Atelier" }))).toEqual(["brands.0.key"]);
+    expect(issuePaths(parseAppWithBrand({ key: "a", name: "A", tokens: "t.css" }))).toEqual([
+      "brands.0.appId",
+    ]);
+    expect(issuePaths(parseAppWithBrand({ ...BRAND, color: "red" }))).toEqual(["brands.0"]);
   });
 });

@@ -36,5 +36,6 @@ export function workspaceMembers(root: string): readonly string[] {
     ...globs.filter((glob) => glob.startsWith("!")).map((glob) => `${glob.slice(1)}/package.json`),
   ];
   const files = globSync(include, { cwd: root, exclude });
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...new Set(files.map((file) => join(root, dirname(file))))].sort();
 }

@@ -23,7 +23,9 @@ describe("AsyncContextStorageDriver", () => {
     const outer = { callId: "outer" };
     const inner = { callId: "inner" };
     const seen = await storage.run(outer, async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1);
+      });
       const nested = storage.run(inner, () => storage.current());
       return [storage.current(), nested];
     });

@@ -50,8 +50,14 @@ export function electLeader(name: string, options: ElectLeaderOptions = {}): Lea
     isLeader: Object.freeze({ get: isLeader.get, subscribe: isLeader.subscribe }),
     whenLeader: () =>
       new Promise<void>((resolve, reject) => {
-        if (resigned) return reject(new Error(`Resigned from the "${name}" election`));
-        if (isLeader.get()) return resolve();
+        if (resigned) {
+          reject(new Error(`Resigned from the "${name}" election`));
+          return;
+        }
+        if (isLeader.get()) {
+          resolve();
+          return;
+        }
         const stop = isLeader.subscribe((leads) => {
           if (!leads) return;
           stop();

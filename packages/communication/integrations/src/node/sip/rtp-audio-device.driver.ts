@@ -104,8 +104,11 @@ export class RtpAudioDeviceDriver extends Driver(AudioDevice) {
       if (signal?.aborted === true) return;
       // An abort or `close` queues `undefined`, which ends the loop.
       while (!this.closed) {
-        // oxlint-disable-next-line no-loop-func -- reason: parks the loop; the receive handler calls the live `wake`
-        if (queue.length === 0) await new Promise<void>((resolve) => (wake = resolve));
+        if (queue.length === 0)
+          // oxlint-disable-next-line no-loop-func -- reason: parks the loop; the receive handler calls the live `wake`
+          await new Promise<void>((resolve) => {
+            wake = resolve;
+          });
         wake = undefined;
         const payload = queue.shift();
         if (payload === undefined) return;
@@ -129,7 +132,10 @@ export class RtpAudioDeviceDriver extends Driver(AudioDevice) {
     let rest = new Uint8Array(0);
     const send = async (frame: Uint8Array): Promise<void> => {
       const due = started + sent * PACKET_MS - Date.now();
-      if (due > 0) await new Promise((resolve) => setTimeout(resolve, due));
+      if (due > 0)
+        await new Promise((resolve) => {
+          setTimeout(resolve, due);
+        });
       if (this.closed) return;
       const header = {
         payloadType: this.payloadType,

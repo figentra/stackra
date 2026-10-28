@@ -71,6 +71,7 @@ export class MemoryLoyaltyLedgerDriver extends Driver(LoyaltyLedger) {
   async expire(memberId: MemberId, before: Date): Promise<number> {
     const stale = [...this.entries.values()]
       .filter((e) => e.memberId === memberId && e.kind === EntryKind.Earn && e.at < before)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((a, b) => a.at.getTime() - b.at.getTime() || a.reference.localeCompare(b.reference));
     let balance = this.sumOf(memberId);
     let removed = 0;

@@ -717,6 +717,7 @@ export function buildManifest(ir: MemberIR): {
       const gate = actions.find((action) => action["class"] === call.name)?.["key"];
       if (typeof gate === "string") gates.add(gate);
     }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     entry["gates"] = [...gates].sort();
     entitlements.push(entry);
   }
@@ -881,6 +882,7 @@ export function buildManifest(ir: MemberIR): {
       key,
       ...(moduleClass !== undefined ? { class: moduleClass.name } : {}),
       exports,
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       dependsOn: [...dependsOn].sort(),
     };
   });
@@ -977,6 +979,7 @@ export function buildManifest(ir: MemberIR): {
 
   // The shell slots it declares and the fills it binds, for the OS registry and a filler's check (ADR 0438).
   const slots: Entry[] = [...(ir.slots ?? [])]
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0))
     .map((slot) => ({
       key: slot.key,
@@ -1001,6 +1004,7 @@ export function buildManifest(ir: MemberIR): {
             },
           ];
     })
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((left, right) =>
       `${String(left["slot"])} ${String(left["name"])}` <
       `${String(right["slot"])} ${String(right["name"])}`

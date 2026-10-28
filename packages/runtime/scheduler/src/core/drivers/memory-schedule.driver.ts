@@ -30,6 +30,7 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
 
   /** Stores a frozen copy of `schedule` (see `ScheduleDriver.add`). */
   add(schedule: Schedule): Promise<void> {
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
     const input = JSON.parse(JSON.stringify(schedule.input)) as object;
     this.stored.set(schedule.id, Object.freeze({ ...schedule, input }));
     return Promise.resolve();

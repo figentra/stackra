@@ -80,6 +80,7 @@ export function checkI18n(ir: MemberIR): GenError[] {
   }
   // Derived keys (ADR 0294 decision 22, STA-1306): each own enum case's label `<module>::enums.<enum>.<code>` is in
   // every base-language locale that ships the module's namespace (a regional overlay holds only what differs).
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [locale, shipped] of Object.entries(ir.catalogues ?? {}).sort(([left], [right]) =>
     left.localeCompare(right),
   )) {

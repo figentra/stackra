@@ -31,6 +31,7 @@ export function parseEmbeddedBarcode(
   if (!/^\d+$/.test(code)) return null;
   const layout = layouts
     .filter((candidate) => candidate.length === code.length && code.startsWith(candidate.prefix))
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     .sort((a, b) => b.prefix.length - a.prefix.length)[0];
   if (layout === undefined) return null;
   const check = layout.valueCheckDigit ? 1 : 0;

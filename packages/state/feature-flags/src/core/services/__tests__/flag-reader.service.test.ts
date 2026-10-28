@@ -100,7 +100,10 @@ describe("FlagReader", () => {
     const slow: { finish?: (values: Record<string, boolean>) => void } = {};
     const provider = new QueuedProvider();
     provider.answers.push(
-      () => new Promise((resolve) => (slow.finish = resolve)),
+      () =>
+        new Promise((resolve) => {
+          slow.finish = resolve;
+        }),
       () => Promise.resolve({ "web.help_centre": true }),
     );
     const reader = readerOf(provider);

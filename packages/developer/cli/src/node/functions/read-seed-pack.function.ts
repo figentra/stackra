@@ -77,6 +77,7 @@ export function readSeedPack(folder: string): SeedPack {
     ? readdirSync(profilesRoot, { withFileTypes: true })
         .filter((entry) => entry.isDirectory())
         .map((entry) => entry.name)
+        // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         .sort()
     : [];
   for (const profile of profiles) {
@@ -90,6 +91,7 @@ export function readSeedPack(folder: string): SeedPack {
     }
     const files = readdirSync(join(profilesRoot, profile))
       .filter((name) => /\.ya?ml$/.test(name))
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort();
     for (const name of files) {
       const file = `profiles/${profile}/${name}`;

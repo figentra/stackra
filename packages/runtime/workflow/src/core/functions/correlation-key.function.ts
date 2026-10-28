@@ -15,6 +15,7 @@ function sorted(value: unknown): unknown {
   const fields = value as Readonly<Record<string, unknown>>;
   return Object.fromEntries(
     Object.keys(fields)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((key) => [key, sorted(fields[key])]),
   );

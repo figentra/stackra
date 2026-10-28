@@ -62,6 +62,7 @@ export async function readKit(options: BrandKitRunOptions = {}): Promise<KitInpu
     ...Object.values(KIT_SOURCES).filter((path) => files.includes(path)),
     ...files.filter(isLogoFile),
   ]);
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const path of [...sourcePaths].sort()) {
     const bytes = new Uint8Array(await readFile(join(kitDir, path)));
     sources.set(path, bytes);
@@ -117,6 +118,7 @@ export async function readKit(options: BrandKitRunOptions = {}): Promise<KitInpu
 
   const inputHash = sha256Hex(
     [...read.keys()]
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
       .map((path) => `${path}\0${sha256Hex(read.get(path) ?? new Uint8Array())}`)
       .join("\n"),

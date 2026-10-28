@@ -58,7 +58,9 @@ const handlers = () => ({ onOpen: vi.fn(), onMessage: vi.fn(), onClose: vi.fn() 
 
 /** Lets queued promise callbacks run: a macrotask, as a stream read takes more microtask hops than a fixed count. */
 async function settle(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 /** An event-stream response whose body a test writes. */
@@ -158,7 +160,7 @@ describe("WebsocketRealtimeTransportDriver", () => {
     let signal: AbortSignal | undefined;
     vi.stubGlobal("fetch", (_url: string, init: RequestInit) => {
       signal = init.signal ?? undefined;
-      return new Promise<Response>(() => undefined);
+      return new Promise<Response>(() => {});
     });
     const reported = handlers();
     const link = new WebsocketRealtimeTransportDriver().open(TARGET, reported);

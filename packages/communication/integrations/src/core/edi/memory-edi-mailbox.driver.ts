@@ -47,6 +47,7 @@ export class MemoryEdiMailbox extends Driver(EdiMailbox) {
   async list(since: Date, _cursor?: string): Promise<EdiMailboxPage> {
     const files = [...this.inbox]
       .filter(([, file]) => file.at >= since)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(([, a], [, b]) => a.at.getTime() - b.at.getTime())
       .map(([id, file]) => ({ id, interchange: file.interchange }));
     return { files };

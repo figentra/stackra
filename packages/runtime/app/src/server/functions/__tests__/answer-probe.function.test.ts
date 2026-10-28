@@ -59,7 +59,7 @@ describe("answerProbe", () => {
   it("answers /readyz 503 when an indicator is down, throws or runs past the timeout", async () => {
     vi.useFakeTimers();
     const throwing = new FakeIndicator("queue", () => Promise.reject(new Error("boom")));
-    const silent = new FakeIndicator("mail", () => new Promise(() => undefined));
+    const silent = new FakeIndicator("mail", () => new Promise(() => {}));
     const pending = answerProbe("GET", "/readyz", {
       alive: () => true,
       indicators: [reports("postgres", HealthStatus.Down), throwing, silent],

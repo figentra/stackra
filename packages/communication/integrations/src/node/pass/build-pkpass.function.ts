@@ -14,7 +14,7 @@ import type { CmsSigner } from "#contracts/ports/cms-signer.port";
 
 /** The hex SHA-1 of `bytes`. */
 async function sha1(bytes: Uint8Array): Promise<string> {
-  const digest = new Uint8Array(await crypto.subtle.digest("SHA-1", bytes.slice()));
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-1", new Uint8Array(bytes)));
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 

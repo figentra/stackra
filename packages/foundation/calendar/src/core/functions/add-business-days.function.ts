@@ -41,5 +41,6 @@ export function addBusinessDays(
     if (status === DayStatus.Uncertain) uncertain.push(current);
     if (isOpen(calendar, status)) left -= 1;
   }
+  // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
   return { date: dateOfDay(day), uncertain: step < 0 ? uncertain.reverse() : uncertain };
 }

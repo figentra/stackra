@@ -31,6 +31,7 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   const out = new Uint8Array(12 + data.length);
   const view = new DataView(out.buffer);
   view.setUint32(0, data.length);
+  // oxlint-disable-next-line unicorn/prefer-code-point -- reads the ASCII PNG chunk type, where code unit and code point agree
   for (let index = 0; index < 4; index += 1) out[4 + index] = type.charCodeAt(index);
   out.set(data, 8);
   view.setUint32(8 + data.length, crcOf(out.subarray(4, 8 + data.length)));

@@ -3,10 +3,11 @@
  * Purpose: proves every preset in package.json `exports` exists, that base.jsonc loads every house JS plugin from a
  *          source file that exists and turns on every `stackra/*` rule at error, that @stackra/coding-standard is a
  *          peer, that the boundary preset still carries the two non-negotiable patterns (packages never import
- *          apps/services; no deep src imports), and that base.jsonc carries the rule-gap cheap set (stackra-229).
+ *          apps/services; no deep src imports), and that base.jsonc carries the rule-gap cheap set (stackra-229)
+ *          and the B group rows B-1, B-2 and B-5 with no warn level left (stackra-230).
  * Boundary: test only; reads the preset files and the plugin's source as text, imports no workspace package.
  * Runtime: node (vitest)
- * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10.
+ * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10, B-1, B-2, B-5.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -98,5 +99,23 @@ describe("@stackra/oxlint-config presets", () => {
     expect(text).toContain('"ts-expect-error": "allow-with-description"');
     expect(text).toContain('"plugins": ["react", "jsx-a11y"]');
     expect(text).toContain('"**/tools/scripts/*.mjs"');
+  });
+
+  it("base.jsonc leaves no rule at warn and carries B-1, B-2 and B-5 at error (stackra-230)", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    expect(text).toContain('"categories": { "correctness": "error", "suspicious": "error" }');
+    for (const preset of ["base", "node", "boundaries", "decorators", "react"])
+      expect(readFileSync(join(root, "src", `${preset}.jsonc`), "utf8")).not.toMatch(/"warn"/);
+    expect(text).toContain(
+      '"unicorn/no-array-sort": ["error", { "allowExpressionStatement": true }]',
+    );
+    for (const rule of [
+      "react/exhaustive-deps",
+      "no-promise-executor-return",
+      "unicorn/prefer-code-point",
+      "unicorn/prefer-structured-clone",
+      "unicorn/prefer-spread",
+    ])
+      expect(text).toContain(`"${rule}": "error"`);
   });
 });

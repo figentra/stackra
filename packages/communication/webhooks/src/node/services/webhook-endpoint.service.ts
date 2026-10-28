@@ -134,7 +134,8 @@ export class WebhookEndpointService extends CrudService<WebhookEndpoint> {
     const held =
       gates.length === 0 || this.entitlements === undefined
         ? new Set<string>()
-        : await this.entitlements.granted([...new Set(gates)].sort(), scopeId);
+        : // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+          await this.entitlements.granted([...new Set(gates)].sort(), scopeId);
     return new Set(
       events.filter((event) => {
         const entitlement = OUTBOUND_EVENT_ENTITLEMENTS.get(event);

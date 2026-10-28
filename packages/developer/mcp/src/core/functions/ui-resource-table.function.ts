@@ -65,5 +65,6 @@ export function uiResourceTable(manifests: readonly StackraManifest[]): UiResour
       });
     }
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...byUri.values()].sort((a, b) => a.uri.localeCompare(b.uri));
 }

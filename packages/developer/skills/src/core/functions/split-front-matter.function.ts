@@ -27,7 +27,7 @@ export function splitFrontMatter(
   text: string,
   source: string,
 ): { data: Record<string, unknown>; body: string } {
-  const lines = (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text).split(/\r?\n/);
+  const lines = (text.startsWith("\uFEFF") ? text.slice(1) : text).split(/\r?\n/);
   const end = FENCE.test(lines[0] ?? "")
     ? lines.findIndex((line, index) => index > 0 && FENCE.test(line))
     : -1;

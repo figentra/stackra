@@ -17,6 +17,7 @@ function wav(tag: number, channels: number, rate: number, data: Uint8Array): Uin
   const view = new DataView(bytes.buffer);
   const ascii = (at: number, text: string): void =>
     bytes.set(
+      // oxlint-disable-next-line unicorn/prefer-code-point -- a binary string: every character is one byte, so the code unit is the byte
       Array.from(text, (char) => char.charCodeAt(0)),
       at,
     );
