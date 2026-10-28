@@ -10,7 +10,7 @@
  *          STA-350 (thin wrappers).
  */
 import { Skeleton as HeroSkeleton, SkeletonGroup as HeroSkeletonGroup } from "heroui-native";
-import { useContext } from "react";
+import { useContext, type ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SkeletonGroupContext } from "#native/skeleton-group/skeleton-group-context";
@@ -20,7 +20,7 @@ import type { SkeletonProps } from "#native/skeleton/skeleton.props";
  * A placeholder for content that is still loading; its shape and size are its `className`. It is an empty box, so
  * assistive technology never reaches it: name the loading region with a `SkeletonGroup`'s `loadingLabel`.
  */
-export function Skeleton({ isLoading, animationType, ...rest }: SkeletonProps) {
+export function Skeleton({ isLoading, animationType, ...rest }: SkeletonProps): ReactElement {
   const Bone = useContext(SkeletonGroupContext) ? HeroSkeletonGroup.Item : HeroSkeleton;
   // Only the keys the caller set: HeroUI's group item spreads its own props over the group's, `undefined` included.
   return <Bone {...rest} {...omitUndefined({ isLoading, variant: animationType })} />;

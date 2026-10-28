@@ -26,7 +26,7 @@ import {
   TagGroup,
   ComboBox as HeroComboBox,
 } from "@heroui/react";
-import { type ReactNode, useId, useRef, useState } from "react";
+import { type ReactNode, useId, useRef, useState, type ReactElement } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
 import type { EntityOption } from "#contracts/types/entity-option.type";
@@ -88,7 +88,7 @@ function EntityPickerOption({ option }: { readonly option: EntityOption }) {
  * A field that picks records found by a search the server answers: one record, or several shown as removable tags. The
  * value is the chosen record (`null` for none) or the list of them, so a label survives any later search.
  */
-export function EntityPicker(props: EntityPickerProps) {
+export function EntityPicker(props: EntityPickerProps): ReactElement {
   const {
     loadOptions,
     placeholder,

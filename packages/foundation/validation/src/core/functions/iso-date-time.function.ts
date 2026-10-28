@@ -17,7 +17,10 @@ import { z } from "zod";
  * OrderView$.parse({ placedAt: "2026-10-24T10:00:00+03:00", paidAt: null }).placedAt; // Date 07:00Z
  * z.encode(isoDateTime(), new Date(0)); // "1970-01-01T00:00:00.000Z"
  */
-export function isoDateTime() {
+export function isoDateTime(): z.ZodCodec<
+  z.ZodUnion<readonly [z.ZodISODateTime, z.ZodDate]>,
+  z.ZodDate
+> {
   return z.codec(z.union([z.iso.datetime({ offset: true }), z.date()]), z.date(), {
     decode: (wire) => (wire instanceof Date ? wire : new Date(wire)),
     encode: (date) => date.toISOString(),

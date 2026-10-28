@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0055; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Description, FieldError, Label, SearchField as HeroSearchField } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -44,7 +45,7 @@ export function SearchField({
   onClear,
   name,
   ...rest
-}: SearchFieldProps) {
+}: SearchFieldProps): ReactElement {
   const t = useUiText();
   const clearLabel = clearLabelProp ?? t(UI_KEYS.ui.search_field.clear);
   return (

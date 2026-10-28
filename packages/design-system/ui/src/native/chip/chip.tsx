@@ -10,6 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304 (decision 3); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import type { Tone } from "@stackra/contracts";
 import { Chip as HeroChip, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
@@ -43,7 +44,7 @@ export function Chip({
   endIcon,
   children,
   ...rest
-}: ChipProps) {
+}: ChipProps): ReactElement {
   const color = useThemeColor(labelColor(variant, tone));
   const isText = typeof children === "string" || typeof children === "number";
   return (

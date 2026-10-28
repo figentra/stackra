@@ -13,7 +13,7 @@ import { findIcon } from "@stackra/icons";
 import { useIcon } from "@stackra/icons/react";
 import type { LucideProps } from "lucide-react";
 import { useLocale } from "react-aria-components";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactElement } from "react";
 
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
@@ -34,7 +34,7 @@ export function Icon({
   isMirroredInRtl,
   style,
   ...rest
-}: IconProps) {
+}: IconProps): ReactElement | null {
   const { direction } = useLocale();
   // A cast, not an assignment: the contract's component props leave out `undefined` on purpose (so every Lucide icon
   // is an IconComponent under exactOptionalPropertyTypes), which makes the reverse direction fail to compile. The

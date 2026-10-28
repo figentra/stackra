@@ -50,7 +50,11 @@ export function zoneEdge(args: {
   readonly plan: ZonePlan;
   readonly edge: EdgePolicy;
   readonly shopperRules?: readonly ShopperLimitRule[] | undefined;
-}) {
+}): {
+  settings: cloudflare.ZoneSetting[];
+  rulesets: cloudflare.Ruleset[];
+  bots: cloudflare.BotManagement | undefined;
+} {
   const { name, zoneId, plan, edge, shopperRules = [] } = args;
   const setting = (id: string, value: unknown) =>
     new cloudflare.ZoneSetting(`${name}-${id.replaceAll("_", "-")}`, {

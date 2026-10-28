@@ -39,7 +39,12 @@ export function registryWorker(args: {
   readonly database: string;
   readonly namespace: string;
   readonly importDomain?: string | undefined;
-}) {
+}): {
+  bucket: cloudflare.R2Bucket;
+  database: cloudflare.D1Database;
+  namespace: cloudflare.WorkersKvNamespace;
+  domain: cloudflare.WorkersCustomDomain;
+} {
   const { accountId, zoneId, hostname, script } = args;
   // Bytes and truth: never replaced or deleted by a stack change (tarballs are immutable, D1 is the only record).
   const bucket = new cloudflare.R2Bucket(

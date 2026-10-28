@@ -11,6 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0313 (decisions 1 and 2);
  *          WAI-ARIA 1.2 accordion pattern; owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Accordion as HeroAccordion } from "@heroui/react";
 
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
@@ -30,7 +31,7 @@ export function Accordion({
   variant,
   isDisabled,
   ...rest
-}: AccordionProps) {
+}: AccordionProps): ReactElement {
   const ids = items.map((item) => item.id);
   return (
     <HeroAccordion

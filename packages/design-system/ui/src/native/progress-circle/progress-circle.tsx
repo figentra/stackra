@@ -12,7 +12,7 @@
  *          WCAG 2.2 SC 2.3.3 and 4.1.2.
  */
 import { useThemeColor } from "heroui-native";
-import { useEffect } from "react";
+import { useEffect, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -67,7 +67,7 @@ export function ProgressCircle({
   valueLabel,
   style,
   ...rest
-}: ProgressCircleProps) {
+}: ProgressCircleProps): ReactElement {
   const { locale } = useDesignSystem();
   const { percentage, accessibilityValue } = progressStateOf({
     value,

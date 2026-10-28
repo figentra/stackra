@@ -25,7 +25,7 @@ export function r2Bucket(args: {
   readonly accountId: string;
   readonly name: string;
   readonly expireDays?: number | undefined;
-}) {
+}): { bucket: cloudflare.R2Bucket; lifecycle: cloudflare.R2BucketLifecycle | undefined } {
   const { accountId, name, expireDays } = args;
   const bucket = new cloudflare.R2Bucket(`r2-${name}`, { accountId, name });
   const lifecycle =

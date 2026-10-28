@@ -11,6 +11,7 @@
  *          web); WCAG 2.2 SC 2.5.8 (target size).
  */
 
+import type { ReactElement } from "react";
 import { Button } from "#react/button/button";
 import { ListItemContent } from "#react/list/list-item-content";
 import type { ListItemProps } from "#react/list/list-item.props";
@@ -32,7 +33,7 @@ export function ListItem({
   isDisabled,
   label,
   ...rest
-}: ListItemProps) {
+}: ListItemProps): ReactElement {
   const content = (
     <ListItemContent
       title={title}

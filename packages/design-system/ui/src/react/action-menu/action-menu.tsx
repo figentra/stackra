@@ -12,7 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0312; owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.1,
  *          4.1.2.
  */
-import type { KeyboardEvent, MouseEvent } from "react";
+import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
 
 import { IconButton } from "#react/icon-button/icon-button";
 import { Menu } from "#react/menu/menu";
@@ -39,7 +39,7 @@ export function ActionMenu({
   placement = "bottom",
   align = "end",
   ...rest
-}: ActionMenuProps) {
+}: ActionMenuProps): ReactElement {
   return (
     // `contents` keeps the wrapper out of layout; it only listens for events that bubble through the React tree.
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- reason: a layout-free wrapper that only stops events bubbling from the menu; it is not a control

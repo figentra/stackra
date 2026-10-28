@@ -10,6 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7);
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Checkbox as HeroCheckbox, Description, FieldError, Label } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -34,7 +35,7 @@ export function Checkbox({
   variant,
   name,
   ...rest
-}: CheckboxProps) {
+}: CheckboxProps): ReactElement {
   return (
     <HeroCheckbox
       {...rest}

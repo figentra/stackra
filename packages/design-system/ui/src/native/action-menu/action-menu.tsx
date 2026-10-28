@@ -11,6 +11,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0312; owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { IconButton } from "#native/icon-button/icon-button";
 import { Menu } from "#native/menu/menu";
 import type { ActionMenuProps } from "#native/action-menu/action-menu.props";
@@ -28,7 +29,7 @@ export function ActionMenu({
   placement = "bottom",
   align = "end",
   ...rest
-}: ActionMenuProps) {
+}: ActionMenuProps): ReactElement {
   return (
     <Menu {...rest} placement={placement} align={align}>
       <IconButton icon={icon} label={label} variant={variant} size={size} isDisabled={isDisabled} />

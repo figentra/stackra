@@ -14,6 +14,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0055 (one field contract); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { cn, Description, FieldError, Label, Select as HeroSelect } from "heroui-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -66,7 +67,7 @@ export function Select({
   presentation = "popover",
   className,
   ...rest
-}: SelectProps) {
+}: SelectProps): ReactElement {
   // Owner decision 2026-10-24: every native sheet is HeroUI Native's inset style, detached and clear of the home bar.
   const insets = useSafeAreaInsets();
   return (

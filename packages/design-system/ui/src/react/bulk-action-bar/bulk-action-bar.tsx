@@ -23,6 +23,7 @@
  *          (decisions 4 to 6); ADR 0139 (action UX); WCAG 2.2 SC 2.4.3, 2.5.3, 2.5.8, 4.1.2, 4.1.3; owner decision 6 of
  *          STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Toolbar, buttonVariants } from "@heroui/react";
 import { Link as RouterLink } from "react-aria-components";
 
@@ -64,7 +65,7 @@ export function BulkActionBar({
   // Native only: web draws every action and has no overflow.
   moreActionsLabel: _moreActionsLabel,
   ...rest
-}: BulkActionBarProps) {
+}: BulkActionBarProps): ReactElement {
   const t = useUiText();
   const label = labelProp ?? t(UI_KEYS.ui.bulk_action_bar.label);
   const countLabel =

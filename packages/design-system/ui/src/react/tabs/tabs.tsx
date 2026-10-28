@@ -14,6 +14,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0313 (decisions 1, 2, 5);
  *          WAI-ARIA 1.2 tabs pattern; owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Tabs as HeroTabs } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -37,7 +38,7 @@ export function Tabs({
   variant,
   isDisabled,
   ...rest
-}: TabsProps) {
+}: TabsProps): ReactElement {
   if (items.length === 0) {
     return isLoading ? (
       <div aria-busy="true">

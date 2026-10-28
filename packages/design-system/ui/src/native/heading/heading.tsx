@@ -7,6 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 6 and 7); ADR 0165 (UI contract); WCAG 2.2 SC 1.3.1.
  */
+import type { ReactElement } from "react";
 import { Typography } from "heroui-native";
 
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
@@ -27,7 +28,7 @@ export function Heading({
   lang,
   className,
   ...rest
-}: HeadingProps) {
+}: HeadingProps): ReactElement {
   const { locale } = useDesignSystem();
   const arabicClass = isArabic(lang ?? locale) ? `type-${type}-ar` : "";
   return (

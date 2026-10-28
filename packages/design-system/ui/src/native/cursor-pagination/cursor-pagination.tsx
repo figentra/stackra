@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 4 and 7); ADR 0060
  *          (right-to-left).
  */
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -42,7 +42,7 @@ export function CursorPagination({
   countLabel: countLabelProp,
   className,
   ...rest
-}: CursorPaginationProps) {
+}: CursorPaginationProps): ReactElement | null {
   const t = useUiText();
   const keys = UI_KEYS.ui.cursor_pagination;
   const label = labelProp ?? t(keys.label);

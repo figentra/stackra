@@ -8,6 +8,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (HeroUI Native on native); ADR 0319
  *          (the glass close button).
  */
+import type { ReactElement } from "react";
 import { CloseButton as HeroCloseButton, cn } from "heroui-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -23,7 +24,7 @@ export function CloseButton({
   onPress,
   className,
   ...rest
-}: CloseButtonProps) {
+}: CloseButtonProps): ReactElement {
   // HeroUI Native's CloseButton is a tertiary Button unless the caller picks another variant.
   const glass = useGlassButton(rest.variant ?? "tertiary", isDisabled);
   return (

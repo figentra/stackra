@@ -8,7 +8,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0304; WCAG 2.2 SC 1.3.1.
  */
 import { Card as HeroCard } from "@heroui/react";
-import { createElement } from "react";
+import { createElement, type ReactElement } from "react";
 import type { CardTitleProps } from "#react/card/card-title.props";
 
 /**
@@ -16,6 +16,6 @@ import type { CardTitleProps } from "#react/card/card-title.props";
  * ties the element to `h3`, which the outline must not be; React Aria's `render` swaps the element and keeps the
  * classes.
  */
-export function CardTitle({ level = 3, ...rest }: CardTitleProps) {
+export function CardTitle({ level = 3, ...rest }: CardTitleProps): ReactElement {
   return <HeroCard.Title {...rest} render={(domProps) => createElement(`h${level}`, domProps)} />;
 }

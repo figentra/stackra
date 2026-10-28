@@ -15,7 +15,7 @@
  *          (HeroUI Native on native); WCAG 2.2 SC 4.1.2 and 4.1.3.
  */
 import { ListGroup } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { FlatList, View } from "react-native";
 
 import type { ListItemData } from "#contracts/types/list-item-data.type";
@@ -54,7 +54,7 @@ export function List<TItem extends ListItemData = ListItemData>({
   onLoadMore,
   isAnimated = true,
   ...rest
-}: ListProps<TItem>) {
+}: ListProps<TItem>): ReactElement {
   const [ownKeys, setOwnKeys] = useState<readonly string[]>(defaultSelectedKeys ?? []);
   const selected = selectedKeys ?? ownKeys;
   const ids = items.map((item) => item.id);

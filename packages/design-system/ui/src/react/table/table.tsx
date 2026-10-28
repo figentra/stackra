@@ -19,7 +19,7 @@
  *          WCAG 2.2 SC 1.3.1, 2.1.1, 4.1.2, 4.1.3; owner decision 6 of STA-350 (thin wrappers).
  */
 import { Checkbox as HeroCheckbox, Table as HeroTable } from "@heroui/react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
@@ -99,7 +99,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   isStickyHeader = false,
   maxHeight = "24rem",
   ...rest
-}: TableProps<TItem>) {
+}: TableProps<TItem>): ReactElement {
   const t = useUiText();
   const isMultiple = selectionMode === "multiple";
   const loadingText = loadingLabel ?? t(UI_KEYS.ui.table.loading);

@@ -7,6 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); WCAG 2.2 SC 4.1.2 (name, role, value).
  */
+import type { ReactElement } from "react";
 import { Button } from "#native/button/button";
 import type { IconButtonProps } from "#native/icon-button/icon-button.props";
 
@@ -15,6 +16,6 @@ import type { IconButtonProps } from "#native/icon-button/icon-button.props";
 const ICON_ONLY = { isIconOnly: true } as const;
 
 /** A button that shows one icon and no text; `label` is its accessible name. */
-export function IconButton({ icon, label, ...rest }: IconButtonProps) {
+export function IconButton({ icon, label, ...rest }: IconButtonProps): ReactElement {
   return <Button {...rest} label={label} startIcon={icon} {...ICON_ONLY} />;
 }

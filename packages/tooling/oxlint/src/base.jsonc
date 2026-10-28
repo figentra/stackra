@@ -10,7 +10,8 @@
 //          and the promise-executor, code-point, structured-clone and spread rules, all at error. B-3 (stackra-231):
 //          the autofix sweep. B-4 (stackra-232): property signatures only, so ports are checked strictly. B-6 and B-8
 //          (stackra-233): smart eqeqeq; on .tsx no prop reassignment, named components, refresh-safe exports and no
-//          literal text in JSX outside tests (user-facing text is a lang key, or an app's STRINGS constant).
+//          literal text in JSX outside tests (user-facing text is a lang key, or an app's STRINGS constant). B-7
+//          (stackra-234): explicit return types on a package's exported functions and class members.
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -100,6 +101,9 @@
     // B-4: a method signature is checked bivariantly even under strictFunctionTypes, so a driver could accept a
     // narrower argument than its port promises. A property signature (`run: (x: T) => R`) is checked strictly.
     "typescript/method-signature-style": ["error", "property"],
+    // B-7 (stackra-234): an exported function, method or class member spells its parameter and return types, so a
+    // package's .d.ts is stable and an API change shows in the diff. Apps, workers, tools and tests are off below.
+    "typescript/explicit-module-boundary-types": "error",
     // Empty files are allowed for placeholders and test setup.
     "unicorn/no-empty-file": "off",
     // Side-effect imports for CSS and polyfills.
@@ -169,6 +173,24 @@
     ],
   },
   "overrides": [
+    {
+      // B-7: only a published package has a module boundary worth spelling. Apps, workers, repo tools, agent hooks,
+      // editor plugins, a package's build scripts, tests, stories and e2e specs export nothing a consumer types against.
+      "files": [
+        "**/apps/**",
+        "**/workers/**",
+        "**/tools/**",
+        "**/.agents/hooks/**",
+        "**/.opencode/plugins/**",
+        "**/packages/*/*/scripts/**",
+        "**/__tests__/**",
+        "**/*.test.*",
+        "**/*.test-d.ts",
+        "**/*.stories.*",
+        "**/e2e/**",
+      ],
+      "rules": { "typescript/explicit-module-boundary-types": "off" },
+    },
     {
       // The plugin's own source and tests name the rule it ships (`no-tenant-vocabulary`); the vocabulary ban
       // targets product code, not the rule that defines it.

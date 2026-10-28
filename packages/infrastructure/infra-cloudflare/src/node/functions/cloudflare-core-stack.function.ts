@@ -53,7 +53,19 @@ export function cloudflareCoreStack(args: {
   readonly stack: CloudflareStack;
   readonly ports?: Readonly<Record<string, number>> | undefined;
   readonly storefront?: Readonly<Record<string, StorefrontPolicy>> | undefined;
-}) {
+}): {
+  zones: Record<
+    string,
+    ReturnType<typeof cloudflareZone> & {
+      edge: ReturnType<typeof zoneEdge> | undefined;
+      storefront: ReturnType<typeof storefrontEdge>["rooms"] | undefined;
+    }
+  >;
+  tunnels: Record<string, ReturnType<typeof devTunnel>>;
+  access: ReturnType<typeof accessGate> | undefined;
+  buckets: Record<string, ReturnType<typeof r2Bucket>>;
+  edgeWorker: ReturnType<typeof edgeWorker> | undefined;
+} {
   const { root, stack, ports = {}, storefront = {} } = args;
   const provider = root.providers?.cloudflare;
   const runwayZones = provider?.zones ?? {};

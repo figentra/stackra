@@ -17,7 +17,13 @@
  * Governing contract: ADR 0294 (decisions 13, 16 and 20); ADR 0307 (rules 22 to 24); ADR 0213; ADR 0323 (decision 4);
  *                     ADR 0454 (decisions 1 and 2); STA-1323.
  */
-import { Setting, SettingScope, Settings, type SettingsRules } from "@stackra/settings";
+import {
+  Setting,
+  SettingScope,
+  Settings,
+  type SettingsRule,
+  type SettingsRules,
+} from "@stackra/settings";
 import { TenancyScopes } from "@stackra/tenancy";
 import { Int, Num, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
@@ -85,7 +91,7 @@ export class LoyaltyKitSettings extends Settings({
   isActive = true;
 
   /** Silver must start below gold, or no account could ever be silver. */
-  override rules(r: SettingsRules<LoyaltyKitSettings>) {
+  override rules(r: SettingsRules<LoyaltyKitSettings>): readonly SettingsRule[] {
     return [r.lessThan("tiers.silverFrom", "tiers.goldFrom")];
   }
 }

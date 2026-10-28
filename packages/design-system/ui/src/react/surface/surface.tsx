@@ -7,6 +7,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0304; owner decision 6 of STA-350
  *          (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Surface as HeroSurface } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -16,6 +17,6 @@ import type { SurfaceProps } from "#react/surface/surface.props";
  * A background at one of the theme's surface levels. HeroUI keeps the level in `SurfaceContext`, so HeroUI fields
  * inside pick colours that sit on it. The web surface paints colour only: add padding and radius with `className`.
  */
-export function Surface({ variant, ...rest }: SurfaceProps) {
+export function Surface({ variant, ...rest }: SurfaceProps): ReactElement {
   return <HeroSurface {...rest} {...omitUndefined({ variant })} />;
 }

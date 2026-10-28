@@ -10,6 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 7 and 10); ADR 0313 (text slots); ADR 0060 (RTL).
  */
+import type { ReactElement } from "react";
 import type { ListItemContractProps } from "#contracts/types/list-item-contract-props.type";
 import { Icon } from "#react/icon/icon";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
@@ -27,7 +28,7 @@ export function ListItemContent({
   startIcon,
   endContent,
   hasChevron,
-}: ListItemContentProps) {
+}: ListItemContentProps): ReactElement {
   return (
     <>
       {startIcon === undefined ? null : (

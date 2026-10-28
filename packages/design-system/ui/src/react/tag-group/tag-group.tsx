@@ -14,7 +14,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, Label, Tag, TagGroup as HeroTagGroup } from "@heroui/react";
-import { useId, useState } from "react";
+import { useId, useState, type ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import type { TagGroupProps } from "#react/tag-group/tag-group.props";
@@ -43,7 +43,7 @@ export function TagGroup({
   onChange,
   name,
   ...rest
-}: TagGroupProps) {
+}: TagGroupProps): ReactElement {
   // The group always runs controlled: React Aria hands back `Set`s, and a list of strings is the contract's value.
   const [own, setOwn] = useState<readonly string[]>(defaultValue ?? []);
   const selected = value ?? own;

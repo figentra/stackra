@@ -22,6 +22,6 @@ const CODES = Object.keys(CURRENCIES) as CurrencyCode[];
  * @example
  * export const CommerceConfig$ = z.object({ defaultCurrency: currencyCode().default("USD") });
  */
-export function currencyCode() {
+export function currencyCode(): z.ZodEnum<z.core.util.ToEnum<CurrencyCode>> {
   return z.enum(CODES);
 }

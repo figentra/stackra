@@ -7,6 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 6 and 7); ADR 0165 (HeroUI Native on native).
  */
+import type { ReactElement } from "react";
 import { Typography } from "heroui-native";
 
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
@@ -27,7 +28,7 @@ export function Text({
   lang,
   className,
   ...rest
-}: TextProps) {
+}: TextProps): ReactElement {
   const { locale } = useDesignSystem();
   // `type-<type>-ar` is the theme's own class (named after the token), not a utility, so no scanning is needed.
   const arabicClass = isArabic(lang ?? locale) ? `type-${type}-ar` : "";

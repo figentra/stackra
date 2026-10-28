@@ -33,7 +33,13 @@ export function cloudflareZone(args: {
   readonly zoneId: string;
   readonly options: ZoneOptions;
   readonly proxy: EdgePolicy["proxy"];
-}) {
+}): {
+  zone: cloudflare.Zone;
+  records: cloudflare.DnsRecord[];
+  workers: cloudflare.WorkersCustomDomain[];
+  fallbackOrigin: cloudflare.CustomHostnameFallbackOrigin | undefined;
+  regional: cloudflare.RegionalHostname[];
+} {
   const { accountId, name, zoneId, options } = args;
   const zone = new cloudflare.Zone(
     name,

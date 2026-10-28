@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0313 (decisions 1
  *          and 6); ADR 0140 (error envelope); WCAG 2.2 SC 1.3.1 and 4.1.3.
  */
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import { STATE_ICON } from "#core/constants/state-icon.constant";
@@ -31,7 +32,7 @@ export function ErrorState({
   actions,
   headingLevel = 1,
   ...rest
-}: ErrorStateProps) {
+}: ErrorStateProps): ReactElement {
   const isProduction = process.env.NODE_ENV === "production";
   // A server or driver message is an internal, so in production it is shown only when the app marks it as safe.
   const details = (isMessageShown ?? !isProduction) ? errorDetailsOf(error) : undefined;

@@ -9,10 +9,11 @@
  *          lives in @stackra/navigation).
  */
 
+import type { ReactElement } from "react";
 import { RouterContext } from "./router-context";
 import type { RouterProviderProps } from "#native/router-provider/router-provider.props";
 
 /** Gives every `Link` below it the app's navigate function for its internal paths. */
-export function RouterProvider({ navigate, children }: RouterProviderProps) {
+export function RouterProvider({ navigate, children }: RouterProviderProps): ReactElement {
   return <RouterContext value={navigate}>{children}</RouterContext>;
 }

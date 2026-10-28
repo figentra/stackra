@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0304 (decisions 3 and 4); WCAG 2.2 SC 1.4.1.
  */
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { STATUS_DOT_ROLE } from "#core/constants/status-dot-role.constant";
 import { Chip } from "#react/chip/chip";
@@ -20,7 +20,11 @@ const DOT_STYLE: CSSProperties = { width: 6, height: 6, borderRadius: 9999, flex
  * A record's state: its name as text, with a dot in the state's tone before it. The chip stays neutral so the text
  * keeps its contrast; the dot only repeats the meaning in colour.
  */
-export function StatusBadge({ tone = "default", children, ...rest }: StatusBadgeProps) {
+export function StatusBadge({
+  tone = "default",
+  children,
+  ...rest
+}: StatusBadgeProps): ReactElement {
   return (
     <Chip
       {...rest}

@@ -21,7 +21,7 @@
  *          STA-350 (thin wrappers).
  */
 import { cn } from "@heroui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
@@ -89,7 +89,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   onAllMatchingSelectedChange,
   className,
   ...rest
-}: DataTableProps<TItem>) {
+}: DataTableProps<TItem>): ReactElement {
   const t = useUiText();
   const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
   const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });

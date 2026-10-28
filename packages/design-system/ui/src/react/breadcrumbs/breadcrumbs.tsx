@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.4.8.
  */
+import type { ReactElement } from "react";
 import { Breadcrumbs as HeroBreadcrumbs } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -23,7 +24,12 @@ import type { BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs.props";
  * The trail from the root to the current page. Every step but the last is a link; the last is the current page, drawn
  * as text and announced as such.
  */
-export function Breadcrumbs({ items, label: labelProp, className, ...rest }: BreadcrumbsProps) {
+export function Breadcrumbs({
+  items,
+  label: labelProp,
+  className,
+  ...rest
+}: BreadcrumbsProps): ReactElement {
   const t = useUiText();
   const label = labelProp ?? t(UI_KEYS.ui.breadcrumbs.label);
   return (

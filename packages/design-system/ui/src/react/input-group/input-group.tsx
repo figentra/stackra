@@ -20,7 +20,7 @@ import {
   Label,
   TextField as HeroTextField,
 } from "@heroui/react";
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactElement, ReactNode } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import type { InputGroupProps } from "#react/input-group/input-group.props";
@@ -47,7 +47,7 @@ export function InputGroup({
   variant = "primary",
   isFullWidth = true,
   ...rest
-}: InputGroupProps) {
+}: InputGroupProps): ReactElement {
   return (
     <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
       {label == null ? null : <Label>{label}</Label>}

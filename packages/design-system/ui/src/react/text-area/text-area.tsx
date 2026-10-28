@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0055
  *          (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import {
   Description,
   FieldError,
@@ -36,7 +37,7 @@ export function TextArea({
   variant = "primary",
   isFullWidth = true,
   ...rest
-}: TextAreaProps) {
+}: TextAreaProps): ReactElement {
   return (
     <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
       {label == null ? null : <Label>{label}</Label>}

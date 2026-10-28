@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7);
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Description, FieldError, Label, Switch as HeroSwitch } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -32,7 +33,7 @@ export function Switch({
   isReadOnly,
   name,
   ...rest
-}: SwitchProps) {
+}: SwitchProps): ReactElement {
   return (
     <HeroSwitch
       {...rest}

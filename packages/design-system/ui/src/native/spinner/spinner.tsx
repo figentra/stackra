@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0304; ADR 0165 (HeroUI Native on native);
  *          owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Spinner as HeroSpinner, useThemeColor } from "heroui-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -25,7 +26,7 @@ const HIDDEN = Object.freeze({
  * An indeterminate wait. With a `label` it is one named, busy progress element; without one it is decoration and
  * hidden from assistive technology, so the text beside it must say what is loading.
  */
-export function Spinner({ size, tone = "accent", label, ...rest }: SpinnerProps) {
+export function Spinner({ size, tone = "accent", label, ...rest }: SpinnerProps): ReactElement {
   // Called on every render so the hook order is stable, and so a change of colour scheme redraws the spinner.
   const color = useThemeColor(tone === "default" ? "foreground" : tone);
   return (

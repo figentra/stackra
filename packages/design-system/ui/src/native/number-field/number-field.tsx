@@ -28,7 +28,7 @@ import {
   TextField as HeroTextField,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { Platform, type KeyboardTypeOptions } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -79,7 +79,7 @@ export function NumberField({
   onFocus,
   onBlur,
   ...rest
-}: NumberFieldProps) {
+}: NumberFieldProps): ReactElement {
   const t = useUiText();
   const incrementLabel = incrementLabelProp ?? t(UI_KEYS.ui.number_field.increment);
   const decrementLabel = decrementLabelProp ?? t(UI_KEYS.ui.number_field.decrement);

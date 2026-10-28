@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0304;
  *          owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Avatar as HeroAvatar, cn, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 
@@ -44,7 +45,7 @@ export function Avatar({
   fallback,
   className,
   ...rest
-}: AvatarProps) {
+}: AvatarProps): ReactElement {
   const { locale } = useDesignSystem();
   // The colour HeroUI gives its own fallback text; a nested Lucide provider replaces every field, so both are set.
   const color = useThemeColor(`${tone}-soft-foreground` satisfies ThemeColor);

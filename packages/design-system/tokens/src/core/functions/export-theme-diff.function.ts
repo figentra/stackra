@@ -9,12 +9,22 @@
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0320 (the Theme Studio); ADR 0340 (decision 6).
  */
 import type { Theme } from "#contracts/types/theme.type";
+import type { ThemeDiff } from "#contracts/types/theme-diff.type";
 import { THEME_JSON_FORMATS } from "#core/constants/theme-json-formats.constant";
 import { TOKEN_SET_VERSION } from "#core/constants/token-set-version.constant";
 import { diffTheme } from "#core/functions/diff-theme.function";
 
 /** The changes-only JSON export of `theme` against `base`. */
-export function exportThemeDiff(base: Theme, theme: Theme) {
+export function exportThemeDiff(
+  base: Theme,
+  theme: Theme,
+): {
+  format: typeof THEME_JSON_FORMATS.diff;
+  tokenSet: number;
+  base: string;
+  name: string;
+  changes: ThemeDiff;
+} {
   return {
     format: THEME_JSON_FORMATS.diff,
     tokenSet: TOKEN_SET_VERSION,

@@ -18,7 +18,7 @@
  *          WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2; owner decision 6 of STA-350 (thin wrappers).
  */
 import { Checkbox as HeroCheckbox } from "heroui-native";
-import { isValidElement, useState, type ReactNode } from "react";
+import { isValidElement, useState, type ReactNode, type ReactElement } from "react";
 import { FlatList, Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -85,7 +85,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   onLoadMore,
   accessibilityState,
   ...rest
-}: TableProps<TItem>) {
+}: TableProps<TItem>): ReactElement {
   // The selection always runs controlled here: the rows are plain pressables with no state of their own.
   const [own, setOwn] = useState<readonly string[]>(defaultSelectedKeys ?? []);
   const selected = selectedKeys ?? own;

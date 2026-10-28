@@ -13,7 +13,14 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 13, 16 and 20); ADR 0307 (rules 14 to 19); ADR 0306 (placements); ADR 0110.
  */
-import { Bind, type Display, Widget, WidgetSize } from "@stackra/panel";
+import {
+  Bind,
+  type Built,
+  type Display,
+  type DisplayNode,
+  Widget,
+  WidgetSize,
+} from "@stackra/panel";
 
 import type { BalanceView } from "#core/schemas/balance-view.schema";
 import type { GetBalanceQuery } from "#node/queries/get-balance.query";
@@ -29,7 +36,7 @@ export class PointsBalanceWidget extends Widget<GetBalanceQuery>({
   size: WidgetSize.Medium,
 }) {
   /** The kit's own renderer draws the tile. */
-  display(d: Display<BalanceView>) {
+  display(d: Display<BalanceView>): Built<DisplayNode> {
     return d.custom();
   }
 }

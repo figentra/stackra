@@ -23,7 +23,7 @@
  *          (decisions 2, 4 to 6 and 10); ADR 0139 (action UX); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2;
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -94,7 +94,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   scrollEnabled,
   className,
   ...rest
-}: DataTableProps<TItem>) {
+}: DataTableProps<TItem>): ReactElement {
   const t = useUiText();
   const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
   const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });

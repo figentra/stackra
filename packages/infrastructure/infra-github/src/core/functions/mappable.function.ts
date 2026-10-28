@@ -18,7 +18,9 @@ import { z } from "zod";
  * mappable({ strict: z.boolean().optional() }).parse({ strict: true, lock: false }); // ok: `lock` is off
  * mappable({ strict: z.boolean().optional() }).parse({ lock: true }); // fails at `lock`
  */
-export function mappable<T extends z.core.$ZodShape>(shape: T) {
+export function mappable<T extends z.core.$ZodShape>(
+  shape: T,
+): z.ZodObject<z.core.util.Writeable<T>, z.core.$loose> {
   return z.looseObject(shape).superRefine((value, ctx) => {
     for (const [key, setting] of Object.entries(value)) {
       const off =

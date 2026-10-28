@@ -12,7 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decision 7); ADR 0060
  *          (right-to-left).
  */
-import { Fragment } from "react";
+import { Fragment, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -26,7 +26,12 @@ import type { BreadcrumbsProps } from "#native/breadcrumbs/breadcrumbs.props";
  * The trail from the root to the current page. Every step but the last that has somewhere to go is a link; the last is
  * the current page, drawn as text.
  */
-export function Breadcrumbs({ items, label: labelProp, className, ...rest }: BreadcrumbsProps) {
+export function Breadcrumbs({
+  items,
+  label: labelProp,
+  className,
+  ...rest
+}: BreadcrumbsProps): ReactElement {
   const t = useUiText();
   const label = labelProp ?? t(UI_KEYS.ui.breadcrumbs.label);
   return (

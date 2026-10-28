@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7);
  *          ADR 0055 (forms); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import {
   Checkbox as HeroCheckbox,
   CheckboxGroup as HeroCheckboxGroup,
@@ -39,7 +40,7 @@ export function CheckboxGroup({
   variant,
   name,
   ...rest
-}: CheckboxGroupProps) {
+}: CheckboxGroupProps): ReactElement {
   return (
     <HeroCheckboxGroup
       {...rest}

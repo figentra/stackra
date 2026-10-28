@@ -5,10 +5,10 @@
  *          peer, that the boundary preset still carries the two non-negotiable patterns (packages never import
  *          apps/services; no deep src imports), and that base.jsonc carries the rule-gap cheap set (stackra-229)
  *          and the B group rows B-1, B-2 and B-5 with no warn level left (stackra-230), plus B-3 (stackra-231)
- *          and B-4 (stackra-232).
+ *          B-4 (stackra-232), B-6 and B-8 (stackra-233) and B-7 (stackra-234).
  * Boundary: test only; reads the preset files and the plugin's source as text, imports no workspace package.
  * Runtime: node (vitest)
- * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10, B-1 to B-5.
+ * Governing contract: ADR 0129; ADR 0421; docs/constitution/boundaries.md; rule-gap list N-1 to N-10, B-1 to B-8.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -151,5 +151,24 @@ describe("@stackra/oxlint-config presets", () => {
     );
     // Decided off by class: status live regions, React Native views and house components have no tag to prefer.
     expect(text).toContain('"jsx-a11y/prefer-tag-over-role": "off"');
+  });
+
+  it("base.jsonc requires explicit module boundary types in packages, not apps or tests (B-7, stackra-234)", () => {
+    const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
+    expect(text).toContain('"typescript/explicit-module-boundary-types": "error"');
+    expect(text).toContain('"rules": { "typescript/explicit-module-boundary-types": "off" }');
+    const override =
+      /"files": \[([^\]]*)\],\s*"rules": \{ "typescript\/explicit-module-boundary-types": "off" \}/.exec(
+        text,
+      )?.[1];
+    for (const glob of [
+      "**/apps/**",
+      "**/workers/**",
+      "**/tools/**",
+      "**/__tests__/**",
+      "**/*.test.*",
+    ])
+      expect(override).toContain(`"${glob}"`);
+    expect(override).not.toContain('"**/packages/**"');
   });
 });

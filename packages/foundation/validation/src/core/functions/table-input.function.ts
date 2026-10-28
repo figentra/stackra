@@ -22,6 +22,7 @@ import type { ZodObject } from "zod";
  *   tableInput({ sort: ["totals.totalMinor", "createdAt"], filters: z.object({ ... }) }),
  * ) {}
  */
+// oxlint-disable-next-line typescript/explicit-module-boundary-types -- B-7: the schema type is inferred on purpose; spelling the generic zod object (exactOptional, default, enum of K) by hand would duplicate zod internals with no typecheck to prove it
 export function tableInput<const K extends string, F extends ZodObject>(options: {
   readonly sort: readonly [K, ...K[]];
   readonly filters: F;

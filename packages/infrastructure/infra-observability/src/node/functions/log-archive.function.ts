@@ -23,7 +23,19 @@ const DAYS_PER_MONTH = 365.25 / 12;
  * @example
  * const { bucket, accessKey } = logArchive("logs-archive-acme-platform", 13); // objects expire after 396 days
  */
-export function logArchive(name: string, months: number) {
+export function logArchive(
+  name: string,
+  months: number,
+): {
+  bucket: aws.s3.Bucket;
+  publicAccessBlock: aws.s3.BucketPublicAccessBlock;
+  encryption: aws.s3.BucketServerSideEncryptionConfiguration;
+  lifecycle: aws.s3.BucketLifecycleConfiguration;
+  policy: aws.s3.BucketPolicy;
+  user: aws.iam.User;
+  userPolicy: aws.iam.UserPolicy;
+  accessKey: aws.iam.AccessKey;
+} {
   const bucket = new aws.s3.Bucket(name, {});
   const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(name, {
     bucket: bucket.id,

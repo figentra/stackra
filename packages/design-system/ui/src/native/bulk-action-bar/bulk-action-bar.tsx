@@ -19,7 +19,7 @@
  *          (decisions 4 to 6 and 10); ADR 0139 (action UX); ADR 0060 (right-to-left); WCAG 2.2 SC 2.5.8, 4.1.2, 4.1.3;
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, type ReactElement } from "react";
 import { AccessibilityInfo, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -69,7 +69,7 @@ export function BulkActionBar({
   moreActionsLabel: moreActionsLabelProp,
   className,
   ...rest
-}: BulkActionBarProps) {
+}: BulkActionBarProps): ReactElement | null {
   const t = useUiText();
   const keys = UI_KEYS.ui.bulk_action_bar;
   const label = labelProp ?? t(keys.label);

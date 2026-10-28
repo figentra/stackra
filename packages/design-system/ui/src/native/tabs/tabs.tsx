@@ -16,7 +16,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Tabs as HeroTabs } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -42,7 +42,7 @@ export function Tabs({
   variant,
   isDisabled,
   ...rest
-}: TabsProps) {
+}: TabsProps): ReactElement {
   const first = items.find((item) => !item.isDisabled)?.id ?? items[0]?.id ?? "";
   const [own, setOwn] = useState<string>(defaultSelectedKeys?.[0] ?? first);
   const value = selectedKeys === undefined ? own : (selectedKeys[0] ?? first);

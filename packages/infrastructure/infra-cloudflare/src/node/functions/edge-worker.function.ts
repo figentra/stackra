@@ -21,6 +21,7 @@ import { OriginLock } from "#core/enums/origin-lock.enum";
 import { signingKeySlots } from "#core/functions/signing-key-slots.function";
 import { zoneOf } from "#core/functions/zone-of.function";
 import type { EdgeWorker } from "#core/types/edge-worker.type";
+import type { SigningKeySlot } from "#core/types/signing-key-slot.type";
 import { devTunnel } from "#node/functions/dev-tunnel.function";
 
 /**
@@ -37,7 +38,22 @@ export function edgeWorker(args: {
   readonly project: string;
   readonly zoneIds: Readonly<Record<string, pulumi.Input<string>>>;
   readonly worker: EdgeWorker;
-}) {
+}): {
+  namespaces: Record<string, cloudflare.WorkersKvNamespace>;
+  routes: cloudflare.WorkersRoute[];
+  deployment: cloudflare.WorkersDeployment | undefined;
+  originToken: cloudflare.ZeroTrustAccessServiceToken | undefined;
+  originPolicy: cloudflare.ZeroTrustAccessPolicy | undefined;
+  origins: Record<
+    string,
+    {
+      application: cloudflare.ZeroTrustAccessApplication;
+      tunnel: ReturnType<typeof devTunnel> | undefined;
+    }
+  >;
+  originPulls: cloudflare.AuthenticatedOriginPullsSettings[];
+  signingKeys: SigningKeySlot[];
+} {
   const { accountId, project, zoneIds, worker } = args;
   const { script } = worker;
   const zoneId = (hostname: string) => zoneIds[zoneOf(hostname, Object.keys(zoneIds)) ?? ""] ?? "";

@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (text slots); ADR 0165 (HeroUI Native on
  *          native); WCAG 2.2 SC 2.5.8 (target size).
  */
+import type { ReactElement } from "react";
 import { ListGroup } from "heroui-native";
 import { View } from "react-native";
 
@@ -31,7 +32,7 @@ export function ListItem({
   label,
   className,
   ...rest
-}: ListItemProps) {
+}: ListItemProps): ReactElement {
   const isPressable = onPress !== undefined;
   const classes = ["min-h-11", isDisabled && isPressable ? "opacity-50" : "", className ?? ""]
     .filter(Boolean)

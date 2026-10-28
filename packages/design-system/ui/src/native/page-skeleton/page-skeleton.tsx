@@ -10,6 +10,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0304; ADR 0313 (decisions 1 and 6); WCAG 2.2 SC 4.1.3.
  */
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import { PAGE_SKELETON_ROWS } from "#core/constants/page-skeleton-rows.constant";
@@ -23,7 +24,7 @@ export function PageSkeleton({
   loadingLabel,
   animationType,
   ...rest
-}: PageSkeletonProps) {
+}: PageSkeletonProps): ReactElement {
   return (
     <SkeletonGroup {...rest} loadingLabel={loadingLabel} animationType={animationType}>
       <View className="w-full gap-4">

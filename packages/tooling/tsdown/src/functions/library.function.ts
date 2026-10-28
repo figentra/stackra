@@ -60,7 +60,7 @@ const withDecorators: InputOptionsFn = (input) => ({
 export function library(
   entries: Record<string, string> = { index: "src/index.ts" },
   options: LibraryOptions = {},
-) {
+): UserConfig {
   return defineConfig({
     entry: entries,
     format: ["esm"],

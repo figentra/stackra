@@ -14,7 +14,7 @@
  *          STA-350 (thin wrappers); WCAG 2.2 SC 2.1.1, 4.1.2.
  */
 import { Dropdown, Header, Kbd, Separator } from "@heroui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactElement } from "react";
 
 import type { MenuItem } from "#contracts/types/menu-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
@@ -96,7 +96,7 @@ export function Menu({
   defaultOpen,
   onOpenChange,
   ...rest
-}: MenuProps) {
+}: MenuProps): ReactElement {
   // The menu always runs controlled: React Aria hands back `Set`s per section, and one list of strings is the contract.
   const [own, setOwn] = useState<readonly string[]>(defaultValue ?? []);
   const selected = value ?? own;

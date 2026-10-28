@@ -20,7 +20,7 @@ import {
   FieldError,
   Label,
 } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -47,7 +47,7 @@ export function Checkbox({
   className,
   accessibilityState,
   ...rest
-}: CheckboxProps) {
+}: CheckboxProps): ReactElement {
   const [held, setHeld] = useState(defaultValue);
   const isSelected = value ?? held;
   // The name only keys a web form's submission and a form adapter's binding; there is nothing to submit on native.

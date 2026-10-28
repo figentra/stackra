@@ -15,6 +15,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 1, 2, 4 and 5); ADR 0165
  *          (HeroUI v3 on web); WCAG 2.2 SC 4.1.2 and 4.1.3.
  */
+import type { ReactElement } from "react";
 import { ListBox } from "@heroui/react";
 
 import type { ListItemData } from "#contracts/types/list-item-data.type";
@@ -49,7 +50,7 @@ export function List<TItem extends ListItemData = ListItemData>({
   onLoadMore,
   isAnimated = true,
   ...rest
-}: ListProps<TItem>) {
+}: ListProps<TItem>): ReactElement {
   const ids = items.map((item) => item.id);
   const onReach = hasMore === true && !isLoading ? onLoadMore : undefined;
   const marker = useEndReached(onReach, items.length);

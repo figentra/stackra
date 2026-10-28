@@ -13,7 +13,7 @@
  *                     presentation only).
  */
 import { SystemRole } from "@stackra/iam";
-import { type Display, Widget, WidgetSize } from "@stackra/panel";
+import { type Built, type Display, type DisplayNode, Widget, WidgetSize } from "@stackra/panel";
 
 import type { PointsIssuedView } from "#core/schemas/points-issued-view.schema";
 import { LOYALTY_KIT_SLOTS } from "#node/constants/loyalty-kit-slots.constant";
@@ -31,7 +31,7 @@ export class PointsIssuedWidget extends Widget<PointsIssuedQuery>({
   roles: [SystemRole.Owner, SystemRole.Manager],
 }) {
   /** The kit's own renderer draws the tile. */
-  display(d: Display<PointsIssuedView>) {
+  display(d: Display<PointsIssuedView>): Built<DisplayNode> {
     return d.custom();
   }
 }

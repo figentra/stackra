@@ -26,17 +26,18 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | N-9  | `react/button-has-type`, `no-array-index-key`, `no-object-type-as-default-prop`, `jsx-no-useless-fragment` (expressions allowed)                                                                                                                                                                                                                                                         | every `**/*.tsx`                                                                            |
 | N-10 | `no-console`                                                                                                                                                                                                                                                                                                                                                                             | off for tools, agent hooks, editor plugins, package `scripts/`, apps and workers            |
 
-## The B group: B-1 to B-6 and B-8 (stackra-230 to stackra-233, owner D11)
+## The B group: B-1 to B-8 (stackra-230 to stackra-234, owner D11)
 
-| Row | Change                                                                                                                                      | Where                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| B-1 | `suspicious` category and `react/exhaustive-deps` at `error`: no warn level is left, because a member's `oxlint .` never fails on a warning | everywhere; `no-array-reverse` off in tests |
-| B-2 | `unicorn/no-array-sort` (`allowExpressionStatement`: a bare `x.sort();` passes)                                                             | everywhere but tests                        |
-| B-5 | `no-promise-executor-return`, `unicorn/prefer-code-point`, `unicorn/prefer-structured-clone`, `unicorn/prefer-spread`                       | everywhere                                  |
-| B-3 | `unicorn/numeric-separators-style`, `switch-case-braces`, `prefer-string-replace-all`, `catch-error-name`; `number-literal-case` stays off  | everywhere                                  |
-| B-4 | `typescript/method-signature-style` set to `property`: a method signature is checked bivariantly                                            | everywhere                                  |
-| B-6 | `eqeqeq` (`smart`); `no-param-reassign` (props), `react/display-name`, `react/only-export-components`                                       | eqeqeq everywhere, the rest on `.tsx`       |
-| B-8 | `react/jsx-no-literals` (`ignoreProps`, punctuation in `allowedStrings`)                                                                    | `.tsx` but tests, stories and e2e           |
+| Row | Change                                                                                                                                      | Where                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| B-1 | `suspicious` category and `react/exhaustive-deps` at `error`: no warn level is left, because a member's `oxlint .` never fails on a warning | everywhere; `no-array-reverse` off in tests  |
+| B-2 | `unicorn/no-array-sort` (`allowExpressionStatement`: a bare `x.sort();` passes)                                                             | everywhere but tests                         |
+| B-5 | `no-promise-executor-return`, `unicorn/prefer-code-point`, `unicorn/prefer-structured-clone`, `unicorn/prefer-spread`                       | everywhere                                   |
+| B-3 | `unicorn/numeric-separators-style`, `switch-case-braces`, `prefer-string-replace-all`, `catch-error-name`; `number-literal-case` stays off  | everywhere                                   |
+| B-4 | `typescript/method-signature-style` set to `property`: a method signature is checked bivariantly                                            | everywhere                                   |
+| B-6 | `eqeqeq` (`smart`); `no-param-reassign` (props), `react/display-name`, `react/only-export-components`                                       | eqeqeq everywhere, the rest on `.tsx`        |
+| B-8 | `react/jsx-no-literals` (`ignoreProps`, punctuation in `allowedStrings`)                                                                    | `.tsx` but tests, stories and e2e            |
+| B-7 | `typescript/explicit-module-boundary-types`: an exported function or class member spells its return type                                    | packages; off in apps, workers, tools, tests |
 
 `toSorted` and `toReversed` are ES2023 and the TypeScript base lib is ES2022, so a TypeScript site that sorts or
 reverses an array it just built carries `oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here,
@@ -64,6 +65,14 @@ specimens are expressions. A compound built as `Object.assign(Root, parts)` keep
 (`Object.freeze`) is not, so its parts live in their own files. `jsx-a11y/prefer-tag-over-role` is decided off for all
 110 sites: `role="status"` live regions (`<output>` is not announced reliably), React Native views and house components
 (no tag), non-form groups (a fieldset adds form semantics) and the `<kbd role="img">` spoken-name pattern.
+
+B-7 (stackra-234) makes a package's public surface explicit: an exported function, and a public method of an exported
+class, spells its return type, so the `.d.ts` is stable, declaration emit stays fast and an API change shows in the
+diff. A component returns `ReactElement` (`ReactElement | null` when it can render nothing); a panel override returns
+its base's node (`Built<TableNode>`); a Pulumi helper returns an object type of its resources; a zod factory names its
+schema type (`z.ZodEnum<z.core.util.ToEnum<CurrencyCode>>`). Apps, workers, repo tools, a package's build scripts,
+tests, stories and e2e specs are off. A generic schema factory whose zod type would only restate zod internals
+(`tableInput`) keeps a reasoned disable.
 
 `decorators.jsonc` needs no new wiring: `boundaries.jsonc` already applies its `new-cap` and `no-extraneous-class`
 settings to every package and app file, and keeps `consistent-type-imports` on (ADR 0005 d5). N-5 (the

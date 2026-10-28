@@ -10,6 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0329 (motion layer); ADR 0302 (decision 3); ADR 0303 (decision 7).
  */
+import type { ReactElement } from "react";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import type { RevealProps } from "#react/reveal/reveal.props";
@@ -21,7 +22,12 @@ const STAGGER = motionTiming(STACKRA_THEME, "stagger");
 const RISE = 8;
 
 /** Content that fades in and rises into place when it mounts. */
-export function Reveal({ children, index = 0, isAnimated = true, ...rest }: RevealProps) {
+export function Reveal({
+  children,
+  index = 0,
+  isAnimated = true,
+  ...rest
+}: RevealProps): ReactElement {
   const isReduced = useReducedMotion() ?? false;
   const plays = isAnimated && !isReduced;
   return (

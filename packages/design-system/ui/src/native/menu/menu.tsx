@@ -17,7 +17,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Menu as HeroMenu, Separator, SubMenu, useIsRTL } from "heroui-native";
-import { Fragment, use, useState, type ReactNode } from "react";
+import { Fragment, use, useState, type ReactNode, type ReactElement } from "react";
 import { Text, View } from "react-native";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
@@ -90,7 +90,7 @@ export function Menu({
   // Taken out of `rest` because the root and its content must be given the same one.
   presentation = "popover",
   ...rest
-}: MenuProps) {
+}: MenuProps): ReactElement {
   const navigate = use(RouterContext);
   const isRtl = useIsRTL();
   // The menu always runs controlled: HeroUI Native hands back a `Set` per group, and one list of strings is the contract.

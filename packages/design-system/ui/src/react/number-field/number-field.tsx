@@ -17,6 +17,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decision 9); ADR 0165 (UI contract, HeroUI
  *          v3 on web); ADR 0055 (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Description, FieldError, Label, NumberField as HeroNumberField } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -47,7 +48,7 @@ export function NumberField({
   defaultValue,
   onChange,
   ...rest
-}: NumberFieldProps) {
+}: NumberFieldProps): ReactElement {
   const t = useUiText();
   const incrementLabel = incrementLabelProp ?? t(UI_KEYS.ui.number_field.increment);
   const decrementLabel = decrementLabelProp ?? t(UI_KEYS.ui.number_field.decrement);

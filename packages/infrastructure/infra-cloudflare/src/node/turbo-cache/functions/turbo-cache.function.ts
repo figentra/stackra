@@ -38,7 +38,11 @@ export function turboCache(args: {
   readonly domain?:
     | { readonly hostname: string; readonly zoneId: pulumi.Input<string> }
     | undefined;
-}) {
+}): {
+  bucket: cloudflare.R2Bucket;
+  lifecycle: cloudflare.R2BucketLifecycle | undefined;
+  customDomain: cloudflare.WorkersCustomDomain | undefined;
+} {
   const { accountId, bucket: name, expireDays, script, domain } = args;
   if (!Number.isInteger(expireDays) || expireDays < 1)
     throw new RangeError(

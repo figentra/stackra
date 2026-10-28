@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0304 (decision 3); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Chip as HeroChip, cn } from "@heroui/react";
 
 import { SlotIcon } from "#react/slot-icon/slot-icon";
@@ -27,7 +28,7 @@ export function Chip({
   children,
   className,
   ...rest
-}: ChipProps) {
+}: ChipProps): ReactElement {
   // HeroUI wraps a lone string in the label itself, but not beside an icon, where the label would lose its padding.
   const isText = typeof children === "string" || typeof children === "number";
   return (

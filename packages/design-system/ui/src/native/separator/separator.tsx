@@ -9,6 +9,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304.
  */
+import type { ReactElement } from "react";
 import { Separator as HeroSeparator, useThemeColor, type ThemeColor } from "heroui-native";
 
 import type { SeparatorVariant } from "#contracts/enums/separator-variant.enum";
@@ -30,7 +31,12 @@ const SEPARATOR_COLOR: Readonly<Record<SeparatorVariant, ThemeColor>> = Object.f
  * sits on: the rule does not read the level from the surface around it. Screen readers skip it, the platform
  * convention for a rule.
  */
-export function Separator({ variant = "default", orientation, style, ...rest }: SeparatorProps) {
+export function Separator({
+  variant = "default",
+  orientation,
+  style,
+  ...rest
+}: SeparatorProps): ReactElement {
   const backgroundColor = useThemeColor(SEPARATOR_COLOR[variant]);
   // The caller's style comes after ours, so a caller can still override the colour.
   return (

@@ -14,7 +14,7 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Accordion as HeroAccordion } from "heroui-native";
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type ReactElement } from "react";
 
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -38,7 +38,7 @@ export function Accordion({
   variant,
   isDisabled,
   ...rest
-}: AccordionProps) {
+}: AccordionProps): ReactElement {
   // The accordion always runs controlled: HeroUI Native's value is one string or a list by mode, the contract's a list.
   const [own, setOwn] = useState<readonly string[]>(defaultExpandedKeys ?? []);
   const expanded = expandedKeys ?? own;

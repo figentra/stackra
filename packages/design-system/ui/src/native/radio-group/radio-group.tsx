@@ -15,7 +15,7 @@
  *          (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, Radio, RadioGroup as HeroRadioGroup } from "heroui-native";
-import { useId, useState } from "react";
+import { useId, useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -41,7 +41,7 @@ export function RadioGroup({
   variant,
   name,
   ...rest
-}: RadioGroupProps) {
+}: RadioGroupProps): ReactElement {
   const labelId = useId();
   const [held, setHeld] = useState(defaultValue);
   // The name only keys a web form's submission and a form adapter's binding; there is nothing to submit on native.

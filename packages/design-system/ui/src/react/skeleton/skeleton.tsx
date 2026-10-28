@@ -10,7 +10,7 @@
  *          STA-350 (thin wrappers).
  */
 import { Skeleton as HeroSkeleton } from "@heroui/react";
-import { useContext } from "react";
+import { useContext, type ReactNode } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SkeletonGroupContext } from "#react/skeleton-group/skeleton-group-context";
@@ -20,7 +20,12 @@ import type { SkeletonProps } from "#react/skeleton/skeleton.props";
  * A placeholder for content that is still loading; its shape and size are its `className`. It is an empty box, so
  * assistive technology never reaches it: name the loading region with a `SkeletonGroup`'s `loadingLabel`.
  */
-export function Skeleton({ isLoading, animationType, children, ...rest }: SkeletonProps) {
+export function Skeleton({
+  isLoading,
+  animationType,
+  children,
+  ...rest
+}: SkeletonProps): ReactNode {
   const group = useContext(SkeletonGroupContext);
   if (!(isLoading ?? group?.isLoading ?? true)) return children;
   // In a shimmering group the bone stands still and the group's one sweep passes over it (HeroUI's single shimmer).

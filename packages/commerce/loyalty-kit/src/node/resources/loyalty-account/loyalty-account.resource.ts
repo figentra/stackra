@@ -17,7 +17,18 @@
  *                     (API areas); owner decision R-56.
  */
 import { ApiArea, SortDirection } from "@stackra/contracts";
-import { type Actions, type Form, type Infolist, Resource, type Table } from "@stackra/panel";
+import {
+  type Actions,
+  type Built,
+  type Form,
+  type FormNode,
+  type Infolist,
+  type InfolistNode,
+  type PlacementNode,
+  Resource,
+  type Table,
+  type TableNode,
+} from "@stackra/panel";
 
 import { LOYALTY_KIT_KEYS } from "#core/constants/loyalty-kit-keys.constant";
 import type { LoyaltyAccountView } from "#core/schemas/loyalty-account-view.schema";
@@ -43,7 +54,7 @@ export class LoyaltyAccountResource extends Resource<LoyaltyAccount, LoyaltyAcco
   operations: { list: true, get: true, create: EnrollMemberAction },
 }) {
   /** The list: the tier badge from the enum, frozen accounts flagged, newest first. */
-  override table(t: Table<LoyaltyAccountView>) {
+  override table(t: Table<LoyaltyAccountView>): Built<TableNode> {
     return t
       .columns((c) => [
         c.from("memberId").copyable(),
@@ -60,12 +71,12 @@ export class LoyaltyAccountResource extends Resource<LoyaltyAccount, LoyaltyAcco
    * Enroll only: exactly the fields of `EnrollMemberInput` a person fills in. `accountId` is the PUT address the panel
    * mints when the form opens, so it is never a field.
    */
-  override form(f: Form<EnrollMemberInput>) {
+  override form(f: Form<EnrollMemberInput>): Built<FormNode> {
     return f.fields((x) => [x.from("principalId"), x.from("tier")]);
   }
 
   /** The View page: the account and when it was frozen. */
-  override infolist(i: Infolist<LoyaltyAccountView>) {
+  override infolist(i: Infolist<LoyaltyAccountView>): Built<InfolistNode> {
     return i.entries((e) => [
       e.from("memberId"),
       e.from("tier"),
@@ -76,7 +87,9 @@ export class LoyaltyAccountResource extends Resource<LoyaltyAccount, LoyaltyAcco
   }
 
   /** Freeze on a row, on the View page and for a selection; the record fills `accountId`. */
-  override actions(a: Actions<LoyaltyAccountView, LoyaltyAccountView>) {
+  override actions(
+    a: Actions<LoyaltyAccountView, LoyaltyAccountView>,
+  ): readonly Built<PlacementNode>[] {
     return [a.run(FreezeAccountAction).bulk()];
   }
 }

@@ -14,6 +14,7 @@ import * as cloudflare from "@pulumi/cloudflare";
 import type * as pulumi from "@pulumi/pulumi";
 
 import { shopperLimitRules } from "#core/functions/shopper-limit-rules.function";
+import type { ShopperLimitRule } from "#core/types/shopper-limit-rule.type";
 import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
 
 /** Milliseconds in a minute. */
@@ -31,7 +32,13 @@ export function storefrontEdge(args: {
   readonly name: string;
   readonly zoneId: pulumi.Input<string>;
   readonly policy: StorefrontPolicy;
-}) {
+}): {
+  rooms: Record<
+    string,
+    { readonly waitingRoom: cloudflare.WaitingRoom; readonly event: cloudflare.WaitingRoomEvent }
+  >;
+  rules: ShopperLimitRule[];
+} {
   const { name, zoneId, policy } = args;
   const rooms = Object.entries(policy.campaigns).flatMap(([key, campaign]) => {
     const room = campaign.waitingRoom;

@@ -29,7 +29,11 @@ export function accessGate(args: {
   readonly devZone: string;
   readonly identityProviderId: string;
   readonly access: NonNullable<CloudflareStack["access"]>;
-}) {
+}): {
+  policies: cloudflare.ZeroTrustAccessPolicy[];
+  applications: cloudflare.ZeroTrustAccessApplication[];
+  serviceTokens: cloudflare.ZeroTrustAccessServiceToken[];
+} {
   const { accountId, project, devZone, identityProviderId, access } = args;
   const policy = (
     id: string,

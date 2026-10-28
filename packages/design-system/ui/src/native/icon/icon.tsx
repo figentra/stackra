@@ -14,7 +14,7 @@ import { findIcon } from "@stackra/icons";
 import { useIcon } from "@stackra/icons/native";
 import { useIsRTL, useThemeColor } from "heroui-native";
 import type { LucideProps } from "lucide-react-native";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactElement } from "react";
 
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
@@ -37,7 +37,7 @@ export function Icon({
   isMirroredInRtl,
   style,
   ...rest
-}: IconProps) {
+}: IconProps): ReactElement | null {
   const isRtl = useIsRTL();
   // Called on every render, so the hook order is stable; the colour is used only when a tone is given.
   const toneColor = useThemeColor(tone === undefined || tone === "default" ? "foreground" : tone);

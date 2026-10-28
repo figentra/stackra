@@ -11,7 +11,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, ListBox, Select as HeroSelect } from "@heroui/react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactElement } from "react";
 import { Text } from "react-aria-components";
 
 import type { SelectItem } from "#contracts/types/select-item.type";
@@ -64,7 +64,7 @@ export function Select({
   onChange,
   name,
   ...rest
-}: SelectProps) {
+}: SelectProps): ReactElement {
   return (
     // React Aria's Select has no read-only state: its closed trigger still picks a key from ArrowLeft, ArrowRight and
     // type-ahead. The capture handler stops those keys before they reach it; `contents` keeps the wrapper out of layout.

@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decision 4); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 4.1.3.
  */
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -40,7 +40,7 @@ export function CursorPagination({
   countLabel: countLabelProp,
   className,
   ...rest
-}: CursorPaginationProps) {
+}: CursorPaginationProps): ReactElement | null {
   const t = useUiText();
   const label = labelProp ?? t(UI_KEYS.ui.cursor_pagination.label);
   const previousLabel = previousLabelProp ?? t(UI_KEYS.ui.cursor_pagination.previous);

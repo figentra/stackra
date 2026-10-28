@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0304; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Spinner as HeroSpinner, type SpinnerRootProps } from "@heroui/react";
 
 import type { TextTone } from "#contracts/enums/text-tone.enum";
@@ -34,7 +35,13 @@ const SPINNER_COLOR: Readonly<
  * An indeterminate wait. With a `label` it is one named status; without one it is decoration and hidden from
  * assistive technology, so the text beside it must say what is loading. HeroUI's English "Loading" never shows.
  */
-export function Spinner({ size, tone = "accent", label, style, ...rest }: SpinnerProps) {
+export function Spinner({
+  size,
+  tone = "accent",
+  label,
+  style,
+  ...rest
+}: SpinnerProps): ReactElement {
   const [color, roleColor] = SPINNER_COLOR[tone];
   return (
     <HeroSpinner

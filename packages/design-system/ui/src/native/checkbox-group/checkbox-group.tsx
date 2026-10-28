@@ -13,7 +13,7 @@
  *          (forms); owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label } from "heroui-native";
-import { useId, useState } from "react";
+import { useId, useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -42,7 +42,7 @@ export function CheckboxGroup({
   variant,
   name,
   ...rest
-}: CheckboxGroupProps) {
+}: CheckboxGroupProps): ReactElement {
   const labelId = useId();
   const [held, setHeld] = useState<readonly string[]>(defaultValue);
   const chosen = value ?? held;

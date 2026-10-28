@@ -13,6 +13,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (HeroUI Native on native); ADR 0055
  *          (forms: one field contract); owner decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import {
   Description,
   FieldError,
@@ -48,7 +49,7 @@ export function TextArea({
   className,
   accessibilityLabel,
   ...rest
-}: TextAreaProps) {
+}: TextAreaProps): ReactElement {
   return (
     <HeroTextField
       {...omitUndefined({ isRequired, isInvalid, isDisabled })}

@@ -11,7 +11,7 @@
  *          decision 6 of STA-350.
  */
 import { LinkButton } from "heroui-native";
-import { use } from "react";
+import { use, type ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -41,7 +41,7 @@ export function Link({
   children,
   accessibilityHint,
   ...rest
-}: LinkProps) {
+}: LinkProps): ReactElement {
   const t = useUiText();
   const externalLabel = externalLabelProp ?? t(UI_KEYS.ui.link.opens_in_browser);
   const navigate = use(RouterContext);

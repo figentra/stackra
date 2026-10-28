@@ -45,7 +45,18 @@ export function sentryProjects(args: {
   readonly team: string;
   readonly sentry: NonNullable<ObservabilityPlan["sentry"]>;
   readonly environments: readonly RunwayEnvironment[];
-}) {
+}): {
+  team: sentry.SentryTeam;
+  members: Record<
+    string,
+    {
+      readonly project: sentry.SentryProject;
+      readonly key: sentry.SentryKey;
+      readonly alerts: sentry.SentryIssueAlert[];
+    }
+  >;
+  dsn: Record<string, pulumi.Output<string>>;
+} {
   const { org: organization, projects } = args.sentry;
   const team = new sentry.SentryTeam(`sentry-team-${args.team}`, {
     organization,

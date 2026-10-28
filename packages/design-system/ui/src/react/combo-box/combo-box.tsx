@@ -24,7 +24,7 @@ import {
   TagGroup,
   ComboBox as HeroComboBox,
 } from "@heroui/react";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useId, type ReactElement } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
 import type { SelectItem } from "#contracts/types/select-item.type";
@@ -86,7 +86,7 @@ export function ComboBox({
   onChange,
   name,
   ...rest
-}: ComboBoxProps) {
+}: ComboBoxProps): ReactElement {
   const labelId = useId();
   const labelOf = (key: unknown) => items.find((item) => item.id === String(key))?.label ?? "";
   const list = (

@@ -15,7 +15,7 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, TagGroup as HeroTagGroup } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Text } from "#native/text/text";
@@ -46,7 +46,7 @@ export function TagGroup({
   // A form adapter binds the field by its name; the group submits nothing itself.
   name: _name,
   ...rest
-}: TagGroupProps) {
+}: TagGroupProps): ReactElement {
   // The group always runs controlled: HeroUI Native hands back `Set`s, and a list of strings is the contract's value.
   const [own, setOwn] = useState<readonly string[]>(defaultValue ?? []);
   const selected = value ?? own;

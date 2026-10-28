@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0060 (light, dark, RTL).
  */
 import { I18nProvider } from "react-aria-components";
-import { useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from "react";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
 import type { Direction } from "#contracts/enums/direction.enum";
@@ -60,7 +60,7 @@ export function DesignSystemProvider({
   direction,
   theme = "stackra",
   material = "solid",
-}: DesignSystemProviderProps) {
+}: DesignSystemProviderProps): ReactElement {
   const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
   const [ownLocale, setOwnLocale] = useState(defaultLocale);
   const currentColorScheme = colorScheme ?? ownColorScheme;

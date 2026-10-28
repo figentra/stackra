@@ -25,7 +25,7 @@ import {
   SearchField,
   Select as HeroSelect,
 } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -106,7 +106,7 @@ export function ComboBox({
   name: _name,
   className,
   ...rest
-}: ComboBoxProps) {
+}: ComboBoxProps): ReactElement {
   // Owner decision 2026-10-24: every native sheet is HeroUI Native's inset style, detached and clear of the home bar.
   const insets = useSafeAreaInsets();
   const [ownText, setOwnText] = useState("");

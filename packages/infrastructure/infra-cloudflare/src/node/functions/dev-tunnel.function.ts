@@ -29,7 +29,11 @@ export function devTunnel(args: {
   readonly ingress: readonly TunnelIngressRule[];
   /** The DNS record comment; a dev tunnel's by default. */
   readonly comment?: string | undefined;
-}) {
+}): {
+  tunnel: cloudflare.ZeroTrustTunnelCloudflared;
+  config: cloudflare.ZeroTrustTunnelCloudflaredConfig;
+  records: cloudflare.DnsRecord[];
+} {
   const {
     accountId,
     zoneId,

@@ -36,7 +36,14 @@ interface SharedOptions {
  * @example
  * const shared = readCallOptions("Action", options); // { version: 1, area: "app", interceptors: [] }
  */
-export function readCallOptions(base: "Action" | "Query", options: SharedOptions) {
+export function readCallOptions(
+  base: "Action" | "Query",
+  options: SharedOptions,
+): {
+  version: number;
+  area: ApiArea;
+  interceptors: readonly AnyClass<Interceptor>[];
+} {
   if (typeof options?.key !== "string" || !CALL_KEY_PATTERN.test(options.key))
     throw new TypeError(
       `${base}({ key }) needs "<model>.<verb>" in snake_case, such as "order.create", got ${JSON.stringify(options?.key)}`,

@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 5 and 7); ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350.
  */
+import type { ReactElement } from "react";
 import { Link as HeroLink } from "@heroui/react";
 import { composeRenderProps } from "react-aria-components";
 
@@ -36,7 +37,7 @@ export function Link({
   rel,
   children,
   ...rest
-}: LinkProps) {
+}: LinkProps): ReactElement {
   const t = useUiText();
   const externalLabel = externalLabelProp ?? t(UI_KEYS.ui.link.opens_in_new_tab);
   // Written out in full: Tailwind finds `text-link` and `underline` here, and `default` has no entry in the map.

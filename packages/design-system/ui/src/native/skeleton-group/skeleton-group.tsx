@@ -8,6 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0304; WCAG 2.2 SC 4.1.3.
  */
+import type { ReactElement } from "react";
 import { SkeletonGroup as HeroSkeletonGroup } from "heroui-native";
 import { StyleSheet, View } from "react-native";
 
@@ -26,7 +27,7 @@ export function SkeletonGroup({
   loadingLabel,
   children,
   ...rest
-}: SkeletonGroupProps) {
+}: SkeletonGroupProps): ReactElement {
   const isNamed = loadingLabel !== undefined && isLoading !== false;
   return (
     <SkeletonGroupContext value>

@@ -8,13 +8,16 @@
  * Runtime: react-native
  * Governing contract: ADR 0303 (decision 10); ADR 0165 (UI contract, HeroUI Native on native).
  */
-import { use, useMemo } from "react";
+import { use, useMemo, type ReactElement } from "react";
 
 import { IconRegistryContext } from "./icon-registry-context";
 import type { IconRegistryProviderProps } from "./icon-registry-provider.props";
 
 /** Makes a registry of icons available to every `Icon` below it. */
-export function IconRegistryProvider({ registry, children }: IconRegistryProviderProps) {
+export function IconRegistryProvider({
+  registry,
+  children,
+}: IconRegistryProviderProps): ReactElement {
   const parent = use(IconRegistryContext);
   const merged = useMemo(() => Object.freeze({ ...parent, ...registry }), [parent, registry]);
   return <IconRegistryContext value={merged}>{children}</IconRegistryContext>;

@@ -13,7 +13,7 @@
  *          WCAG 2.2 SC 2.3.3 and 4.1.2.
  */
 import { useThemeColor } from "heroui-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -63,7 +63,7 @@ export function ProgressBar({
   isValueVisible = false,
   style,
   ...rest
-}: ProgressBarProps) {
+}: ProgressBarProps): ReactElement {
   const { locale, direction } = useDesignSystem();
   const { percentage, valueText, accessibilityValue } = progressStateOf({
     value,

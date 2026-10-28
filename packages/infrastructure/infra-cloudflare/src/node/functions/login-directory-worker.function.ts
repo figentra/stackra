@@ -29,7 +29,7 @@ export function loginDirectoryWorker(args: {
   readonly script: string;
   readonly zoneIds: Readonly<Record<string, pulumi.Input<string>>>;
   readonly routes: Readonly<Record<string, readonly string[]>>;
-}) {
+}): { namespace: cloudflare.WorkersKvNamespace; routes: cloudflare.WorkersRoute[] } {
   const { accountId, script, zoneIds } = args;
   const namespace = new cloudflare.WorkersKvNamespace(`${script}-kv`, {
     accountId,

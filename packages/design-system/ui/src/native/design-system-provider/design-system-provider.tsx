@@ -17,7 +17,7 @@
  */
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState, type ReactElement } from "react";
 import { Appearance, View } from "react-native";
 import { LayoutDirection, Uniwind, useUniwind } from "uniwind";
 
@@ -43,7 +43,7 @@ export function DesignSystemProvider({
   onLocaleChange,
   direction,
   theme = "stackra",
-}: DesignSystemProviderProps) {
+}: DesignSystemProviderProps): ReactElement {
   const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
   const [ownLocale, setOwnLocale] = useState(defaultLocale);
   const currentColorScheme = colorScheme ?? ownColorScheme;

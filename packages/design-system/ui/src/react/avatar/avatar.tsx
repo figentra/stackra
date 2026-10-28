@@ -8,6 +8,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0303 (decision 7); ADR 0304; owner
  *          decision 6 of STA-350 (thin wrappers).
  */
+import type { ReactElement } from "react";
 import { Avatar as HeroAvatar, cn } from "@heroui/react";
 import { LucideProvider } from "lucide-react";
 import { useLocale } from "react-aria-components";
@@ -34,7 +35,7 @@ export function Avatar({
   fallback,
   className,
   ...rest
-}: AvatarProps) {
+}: AvatarProps): ReactElement {
   const { locale } = useLocale();
   const initials = name ? initialsOf(name, locale) : "";
   const content =

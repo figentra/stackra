@@ -8,6 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 6 and 7); ADR 0165 (UI contract, HeroUI v3 on web).
  */
+import type { ReactElement } from "react";
 import { Typography } from "@heroui/react";
 
 import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
@@ -28,7 +29,7 @@ export function Text({
   lang,
   className,
   ...rest
-}: TextProps) {
+}: TextProps): ReactElement {
   return (
     <Typography
       type={TYPOGRAPHY_TYPE[type]}

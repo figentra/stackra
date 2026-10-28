@@ -23,7 +23,7 @@ import {
   TextField as HeroTextField,
   Typography,
 } from "heroui-native";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
@@ -78,7 +78,7 @@ export function InputGroup({
   className,
   accessibilityLabel,
   ...rest
-}: InputGroupProps) {
+}: InputGroupProps): ReactElement {
   return (
     <HeroTextField
       {...omitUndefined({ isRequired, isInvalid, isDisabled })}

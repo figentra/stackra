@@ -10,6 +10,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0329 (motion layer); ADR 0302 (decision 3); ADR 0303 (decision 7).
  */
+import type { ReactElement } from "react";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import Animated, { Easing, FadeInDown, ReduceMotion } from "react-native-reanimated";
 import type { RevealProps } from "#native/reveal/reveal.props";
@@ -30,7 +31,12 @@ const enteringAt = (index: number) => {
 };
 
 /** Content that fades in and rises into place when it mounts. */
-export function Reveal({ children, index = 0, isAnimated = true, ...rest }: RevealProps) {
+export function Reveal({
+  children,
+  index = 0,
+  isAnimated = true,
+  ...rest
+}: RevealProps): ReactElement {
   return (
     <Animated.View {...rest} {...(isAnimated ? { entering: enteringAt(index) } : {})}>
       {children}

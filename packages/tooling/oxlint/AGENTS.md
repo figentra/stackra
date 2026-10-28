@@ -25,6 +25,10 @@
   stories and e2e. A test override that turns a React rule off must name `"plugins": ["react"]`, or oxlint ignores it.
   An `Object.assign(Root, parts)` compound carries a reasoned file-level disable of only-export-components (React
   Refresh takes the root function as the component). `jsx-a11y/prefer-tag-over-role` is decided off.
+- B-7 (stackra-234): `typescript/explicit-module-boundary-types` at error in packages (off in apps, workers, tools,
+  build scripts, tests, stories, e2e). Spell the return type of every exported function and public class member:
+  `ReactElement` for a component, the base's node type for a panel override, an object type of resources for a
+  Pulumi helper. Never infer the public type of a package.
 - Secrets: forbidden.
 
 ## PII

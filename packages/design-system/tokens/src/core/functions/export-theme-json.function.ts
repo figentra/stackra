@@ -8,11 +8,17 @@
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0320 (the Theme Studio).
  */
 import type { Theme } from "#contracts/types/theme.type";
+import type { ThemeVariables } from "#contracts/types/theme-variables.type";
 import { THEME_JSON_FORMATS } from "#core/constants/theme-json-formats.constant";
 import { themeVariables } from "#core/functions/theme-variables.function";
 
 /** The full JSON export of `theme`. */
-export function exportThemeJson(theme: Theme) {
+export function exportThemeJson(theme: Theme): {
+  format: typeof THEME_JSON_FORMATS.theme;
+  name: string;
+  theme: Theme;
+  variables: ThemeVariables;
+} {
   return {
     format: THEME_JSON_FORMATS.theme,
     name: theme.name,

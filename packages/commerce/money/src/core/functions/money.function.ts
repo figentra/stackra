@@ -23,7 +23,10 @@ import { Money } from "#core/values/money.value";
  * OrderLine$.parse({ quantity: 2, unitPrice: { minor: 1250, currency: "USD" } }).unitPrice.toDecimal(); // "12.50"
  * z.encode(money(), Money.ofMinor(1250, "USD")); // { minor: 1250, currency: "USD" }
  */
-export function money() {
+export function money(): z.ZodCodec<
+  z.ZodObject<{ minor: z.ZodInt; currency: ReturnType<typeof currencyCode> }, z.core.$strip>,
+  z.ZodCustom<Money, Money>
+> {
   return z.codec(
     z.object({ minor: z.int(), currency: currencyCode() }),
     z.custom<Money>((value) => value instanceof Money, { message: "Expected a Money" }),

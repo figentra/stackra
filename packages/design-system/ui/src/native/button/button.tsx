@@ -14,6 +14,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (HeroUI Native on native); owner
  *          decision 6 of STA-350; ADR 0319 (the glass quiet variants).
  */
+import type { ReactElement } from "react";
 import { Button as HeroButton, Spinner, cn, useThemeColor, type ThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 
@@ -57,7 +58,7 @@ export function Button({
   className,
   accessibilityState,
   ...rest
-}: ButtonProps) {
+}: ButtonProps): ReactElement {
   const labelColor = useThemeColor(LABEL_COLOR[variant]);
   const glass = useGlassButton(variant, isDisabled);
   const isBlocked = isDisabled || isLoading;

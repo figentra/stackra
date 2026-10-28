@@ -7,6 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0304 (decisions 3 and 4); WCAG 2.2 SC 1.4.1.
  */
+import type { ReactElement } from "react";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 
@@ -21,7 +22,11 @@ const DOT_SIZE = 6;
  * A record's state: its name as text, with a dot in the state's tone before it. The chip stays neutral so the text
  * keeps its contrast; the dot only repeats the meaning in colour.
  */
-export function StatusBadge({ tone = "default", children, ...rest }: StatusBadgeProps) {
+export function StatusBadge({
+  tone = "default",
+  children,
+  ...rest
+}: StatusBadgeProps): ReactElement {
   const backgroundColor = useThemeColor(STATUS_DOT_ROLE[tone]);
   return (
     <Chip

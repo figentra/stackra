@@ -18,6 +18,7 @@
  *          v3 on web); ADR 0055 (forms: one field contract); WCAG 2.2 SC 2.5.8; owner decision 6 of STA-350 (thin
  *          wrappers).
  */
+import type { ReactElement } from "react";
 import { DateField as HeroDateField, Description, FieldError, Label } from "@heroui/react";
 import type { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
@@ -52,7 +53,7 @@ export function DateField({
   isFullWidth = true,
   isDateUnavailable,
   ...rest
-}: DateFieldProps) {
+}: DateFieldProps): ReactElement {
   return (
     <HeroDateField
       {...omitUndefined(rest)}

@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decisions 7 and 10); ADR 0313
  *          (decisions 5 and 6); WCAG 2.2 SC 1.3.1 and 1.4.1.
  */
+import type { ReactElement } from "react";
 import { IconRegistryProvider } from "@stackra/icons/native";
 import { View } from "react-native";
 
@@ -32,7 +33,7 @@ export function StateLayout({
   className,
   children,
   ...rest
-}: StateLayoutProps) {
+}: StateLayoutProps): ReactElement {
   return (
     <View
       {...rest}

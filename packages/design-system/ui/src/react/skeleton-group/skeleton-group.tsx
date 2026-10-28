@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0165; ADR 0304; WCAG 2.2 SC 4.1.3.
  */
 import { cn } from "@heroui/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactElement } from "react";
 
 import { SkeletonGroupContext } from "#react/skeleton-group/skeleton-group-context";
 import type { SkeletonGroupProps } from "#react/skeleton-group/skeleton-group.props";
@@ -27,7 +27,7 @@ export function SkeletonGroup({
   className,
   children,
   ...rest
-}: SkeletonGroupProps) {
+}: SkeletonGroupProps): ReactElement {
   const value = useMemo(() => ({ isLoading, animationType }), [isLoading, animationType]);
   const statusRef = useRef<HTMLSpanElement>(null);
   const text = isLoading ? (loadingLabel ?? "") : "";

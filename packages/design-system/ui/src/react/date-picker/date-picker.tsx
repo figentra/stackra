@@ -33,7 +33,7 @@ import {
   type CalendarHeaderProps,
 } from "@heroui/react";
 import type { CalendarDate } from "@internationalized/date";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { composeRenderProps, type DateValue } from "react-aria-components";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -92,7 +92,7 @@ export function DatePicker({
   isReadOnly,
   className,
   ...rest
-}: DatePickerProps) {
+}: DatePickerProps): ReactElement {
   const t = useUiText();
   const calendarButtonLabel = calendarButtonLabelProp ?? t(UI_KEYS.ui.date_picker.calendar);
   // The picker hands its bounds to the calendar through context, but HeroUI's calendar always passes bounds of its own

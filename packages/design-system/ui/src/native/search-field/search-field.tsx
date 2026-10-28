@@ -14,7 +14,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { Description, FieldError, Label, SearchField as HeroSearchField, cn } from "heroui-native";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Spinner } from "#native/spinner/spinner";
@@ -47,7 +47,7 @@ export function SearchField({
   accessibilityLabel,
   className,
   ...rest
-}: SearchFieldProps) {
+}: SearchFieldProps): ReactElement {
   const [ownText, setOwnText] = useState(defaultValue ?? "");
   const isControlled = value !== undefined;
   const text = isControlled ? value : ownText;
