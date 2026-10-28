@@ -19,4 +19,11 @@ export interface SearchableColumns {
 
   /** The locale tags of a translated model (`["en", "ar"]`), one weighted vector each; distinct. */
   readonly locales?: readonly string[];
+
+  /**
+   * The index version these columns hold (ADR 0221 d7): absent for the live columns, a whole number from 2 for the
+   * shadow columns of a versioned rebuild (`search_vector__v2`, `search_text__v2`, `search_filters__v2`), which the
+   * expand migration adds beside the live ones and the contract migration renames over them.
+   */
+  readonly version?: number;
 }

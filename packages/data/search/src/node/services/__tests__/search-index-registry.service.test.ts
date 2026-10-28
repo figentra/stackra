@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `SearchIndexRegistry`: every statement binds its values; `list` reads rows back into statuses
  *          (scope, cursor and rebuild time only when stored); `invalidateChanged` names the models whose facet changed
- *          and refuses a model that is not `@Searchable`; `begin` keeps a stopped rebuild's cursor only for the same
+ *          and refuses a model that is not `@Searchable`; `begin` records the version it builds and keeps a stopped rebuild's cursor only for the same
  *          facet and answers it; `progress` and `finish` record the run.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
@@ -69,6 +69,7 @@ describe(SearchIndexRegistry, () => {
         doc_count: 500,
         cursor: "prd_500",
         rebuilt_at: rebuiltAt,
+        version: 2,
       },
       {
         model: "Product",
@@ -79,6 +80,7 @@ describe(SearchIndexRegistry, () => {
         doc_count: 3,
         cursor: null,
         rebuilt_at: null,
+        version: null,
       },
     ]);
     expect(await registry.list()).toEqual([
@@ -90,6 +92,7 @@ describe(SearchIndexRegistry, () => {
         docCount: 500,
         cursor: "prd_500",
         rebuiltAt,
+        version: 2,
       },
       { model: "Product", state: SearchIndexState.Valid, facetHash: "abc", docCount: 3 },
     ]);
@@ -121,14 +124,20 @@ describe(SearchIndexRegistry, () => {
       "scp_1",
       "platform.acme",
       "abc",
+      null,
     ]);
     expect(resumed.statements[0]?.sql).toContain(
-      "idx.facet_hash = excluded.facet_hash then idx.cursor",
+      "idx.facet_hash = excluded.facet_hash and idx.version is not distinct from excluded.version then idx.cursor",
     );
     expectBound(resumed.statements);
     const fresh = registryWith([{ cursor: null, doc_count: 0 }]);
     expect(await fresh.registry.begin("Product", undefined, "abc")).toEqual({ docCount: 0 });
     expect(fresh.statements[0]?.params.slice(1, 4)).toEqual(["-", null, null]);
+    const versioned = registryWith([{ cursor: null, doc_count: 0 }]);
+    await versioned.registry.begin("Product", scope, "abc", 2);
+    expect(versioned.statements[0]?.params.at(-1)).toBe(2);
+    expect(versioned.statements[0]?.sql).toContain("version = excluded.version");
+    expectBound(versioned.statements);
   });
 
   it("records progress and the finish", async () => {

@@ -8,10 +8,12 @@
  *           Ties rank by id. A word also matches as any of its alternatives. It refuses a request that
  *           carries record visibility, which it cannot apply. It keeps every document it was given, with its scope, and
  *           answers only the documents within a request's `scopePaths` (and those without a scope), so its matches,
- *           pages and facet counts never cross scopes. Nothing survives a restart, so `reindex` refills it.
+ *           pages and facet counts never cross scopes. Nothing survives a restart, so `reindex` refills it. It keeps one
+ *           shadow version per table between `prepare` and `swap` (the alias swap an engine does), written beside the
+ *           live index and readable by version.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 and 9); ADR 0266 (memory drivers first); ADR 0294 (decision 16); ADR 0089
- *                     (decision 6: every query scoped).
+ *                     (decision 6: every query scoped); stackra-303 (versions).
  */
 import { Driver } from "@stackra/container";
 
@@ -44,6 +46,9 @@ const WEIGHTS: readonly number[] = [8, 6, 4, 2];
 
 /** The key of a table's documents. */
 const keyOf = (table: SearchTable): string => `${table.schema ?? ""}.${table.table}`;
+
+/** The store key of a shadow version of a table. */
+const versionKeyOf = (key: string, version: number): string => `${key}#v${version}`;
 
 /** All the words of one field, every locale's included. */
 const wordsOf = (field: SearchDocument["fields"][number]): readonly string[] =>
@@ -87,6 +92,9 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
   /** Documents by table key, then by id. */
   private readonly tables = new Map<string, Map<string, StoredDocument>>();
 
+  /** The shadow version readied per table, until its swap. */
+  private readonly readied = new Map<string, number>();
+
   /**
    * The ids of the rows of `table` that match `request`, best first, sliced by its offset and limit.
    *
@@ -118,26 +126,76 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
     );
   }
 
-  /** Stores each document as its row's current one, replacing what was stored. */
+  /**
+   * Stores each document as its row's current one, replacing what was stored: in the live index and a readied shadow
+   * version, or in `table.version`'s alone.
+   */
   async index(table: SearchTable, documents: readonly SearchDocument[]): Promise<void> {
-    const key = keyOf(table);
-    const stored = this.tables.get(key) ?? new Map<string, StoredDocument>();
-    this.tables.set(key, stored);
-    for (const document of documents) {
-      const fields = document.fields.map(wordsOf);
-      stored.set(document.id, {
-        fields,
-        text: fields.flat().join(" "),
-        filters: document.filters,
-        scopePath: document.scope?.path,
-      });
+    for (const key of this.writtenOf(table)) {
+      const stored = this.tables.get(key) ?? new Map<string, StoredDocument>();
+      this.tables.set(key, stored);
+      for (const document of documents) {
+        const fields = document.fields.map(wordsOf);
+        stored.set(document.id, {
+          fields,
+          text: fields.flat().join(" "),
+          filters: document.filters,
+          scopePath: document.scope?.path,
+        });
+      }
     }
   }
 
-  /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
+  /** Removes the documents of `ids` from the live index and a readied shadow (or `table.version`'s alone). */
   async remove(table: SearchTable, ids: readonly string[]): Promise<void> {
-    const stored = this.tables.get(keyOf(table));
-    for (const id of ids) stored?.delete(id);
+    for (const key of this.writtenOf(table)) {
+      const stored = this.tables.get(key);
+      for (const id of ids) stored?.delete(id);
+    }
+  }
+
+  /** Starts an empty shadow index of `version`, which every later write also reaches until the swap. */
+  override async prepare(table: SearchTable, version: number): Promise<void> {
+    const key = keyOf(table);
+    const readied = this.readied.get(key);
+    if (readied !== undefined) this.tables.delete(versionKeyOf(key, readied));
+    this.readied.set(key, version);
+    this.tables.set(versionKeyOf(key, version), new Map());
+  }
+
+  /**
+   * Makes the readied shadow of `version` the live index at once.
+   *
+   * @throws TypeError when `version` is not the readied one.
+   */
+  override async swap(table: SearchTable, version: number): Promise<void> {
+    const key = keyOf(table);
+    if (this.readied.get(key) !== version)
+      throw new TypeError(`${key} has no readied index of version ${version} to swap to`);
+    this.tables.set(key, this.tables.get(versionKeyOf(key, version)) ?? new Map());
+    this.tables.delete(versionKeyOf(key, version));
+    this.readied.delete(key);
+  }
+
+  /** The stores a write reaches: `table.version`'s, else the live one and the readied shadow. */
+  private writtenOf(table: SearchTable): readonly string[] {
+    const key = keyOf(table);
+    if (table.version !== undefined) return [this.storeOf(table)];
+    const readied = this.readied.get(key);
+    return readied === undefined ? [key] : [key, versionKeyOf(key, readied)];
+  }
+
+  /**
+   * The store a read or a versioned write addresses: the live one, or `table.version`'s.
+   *
+   * @throws TypeError when `table.version` is not the readied one.
+   */
+  private storeOf(table: SearchTable): string {
+    const key = keyOf(table);
+    if (table.version === undefined) return key;
+    if (this.readied.get(key) !== table.version)
+      throw new TypeError(`${key} has no readied index of version ${table.version}`);
+    return versionKeyOf(key, table.version);
   }
 
   /**
@@ -160,7 +218,7 @@ export class MemorySearchDriver extends Driver(SearchDriver) {
       readonly score: number;
       readonly document: StoredDocument;
     }[] = [];
-    for (const [id, document] of this.tables.get(keyOf(table)) ?? []) {
+    for (const [id, document] of this.tables.get(this.storeOf(table)) ?? []) {
       if (!inScope(document.scopePath, request.scopePaths)) continue;
       if (!filters.every(([path, value]) => document.filters[path]?.includes(value) === true))
         continue;

@@ -3,14 +3,15 @@
  * Purpose: `ReindexSearchAction`, `data_maintenance.index.reindex`: the job that runs `reindexSearch` of
  *          @stackra/search in the job's scope: it rebuilds the full-text index of one registered `@Searchable` model
  *          (every registered model when none is named), resuming a stopped run from its recorded cursor; with `since`,
- *          only rows updated since then.
+ *          only rows updated since then; with `version`, a versioned rebuild into that index version and a swap.
  * Boundary: a job is an action run from a queue (`stackra search:reindex` queues it through `searchReindex`); the only
  *           actor is the system, so it gets no endpoint and no tool. It runs in the scope the job was queued with,
  *           under that scope's row-level security. One run per scope at a time (`unique`). A refused model name is
  *           `search_model_unknown`. Its permission is `IndexPermissions.reindex`, system-held.
  * Runtime: node
  * Governing contract: ADR 0404 (decision 3: the reindex plan runs as a job); ADR 0221 (decision 7); ADR 0305 (rule
- *                     28: the job surface); ADR 0148 (queue); ADR 0327 (decisions 6 and 9); ADR 0462 (decision 1).
+ *                     28: the job surface); ADR 0148 (queue); ADR 0327 (decisions 6 and 9); ADR 0462 (decision 1);
+ *                     stackra-303 (versioned rebuild).
  */
 import { Action, type ActionContext } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
@@ -53,6 +54,7 @@ export class ReindexSearchAction extends Action({
     const indexed = await reindexSearch(this.search, this.registry, ctx.scope, {
       ...(input.model === undefined ? {} : { model: input.model }),
       ...(input.since === undefined ? {} : { since: new Date(input.since) }),
+      ...(input.version === undefined ? {} : { version: input.version }),
     });
     return ReindexSearchOutput.create({ indexed });
   }

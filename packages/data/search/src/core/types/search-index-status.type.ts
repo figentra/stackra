@@ -6,7 +6,7 @@
  * Boundary: a type only; `SearchIndexRegistry.list` builds it from `search.indexes`. The scope is absent for a
  *           platform-wide index.
  * Runtime: isomorphic
- * Governing contract: ADR 0404 (decision 3); ADR 0221 (decision 7); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`).
+ * Governing contract: stackra-303 (version); ADR 0404 (decision 3); ADR 0221 (decision 7); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`).
  */
 import type { ScopeRef } from "@stackra/contracts";
 
@@ -34,4 +34,7 @@ export interface SearchIndexStatus {
 
   /** When the last full rebuild finished. */
   readonly rebuiltAt?: Date;
+
+  /** The index version the rebuild builds or last built; absent for the live index. */
+  readonly version?: number;
 }

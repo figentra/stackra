@@ -3,7 +3,8 @@
  * Purpose: `SearchIndex<M>`, one model's search index as `search.in(Model)` returns it: ranked `find` and cursor
  *          `page` reads that return loaded rows (hybrid with the vector lane when given an embedder), the semantic
  *          `similar` read, `facets` (value counts of the filter fields over the same matches),
- *          `snippets` for a result list, and `index`, `remove` and `reindex`, which keep the documents current.
+ *          `snippets` for a result list, and `index`, `remove` and `reindex`, which keep the documents current, with
+ *          `prepare` and `swap` for a versioned rebuild.
  * Boundary: a value built by `Search`, never injected. It reads the model's `@Searchable` facet and its ORM metadata,
  *           builds documents and phrase words (the one normalisation, ADR 0221 d3) and leaves ranking and storage to the
  *           driver. Every read and write runs on the running context's entity manager, so it joins the caller's
@@ -22,7 +23,8 @@
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
  *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
- *                     every query scoped); stackra-301 (the vector lane, `similar`).
+ *                     every query scoped); stackra-301 (the vector lane, `similar`); stackra-303
+ *                     (versioned rebuild and swap).
  */
 import type { AnyClass } from "@stackra/container";
 import { visibleKeysQuery } from "@stackra/database";
@@ -64,6 +66,9 @@ const MAX_LIMIT = 100;
 
 /** The most phrase words a search uses: a longer phrase is cut, which bounds the query one input can cause. */
 const MAX_WORDS = 32;
+
+/** The highest index version, as `t.searchable` allows. */
+const MAX_VERSION = 999;
 
 /** Rows per batch of `reindex`. */
 const REINDEX_BATCH = 500;
@@ -247,15 +252,29 @@ export class SearchIndex<M extends object> {
 
   /** Stores the current document of each row, loading the relations the facet's paths walk first. */
   async index(rows: readonly M[]): Promise<void> {
-    if (rows.length === 0) return;
-    const relations = this.relations();
-    // reason: populate types its hints from the entity type; the facet's paths are strings checked by gen
-    if (relations.length > 0) await this.database.em().populate([...rows], relations as never);
-    const { table, key } = this.shape();
-    await this.driver.index(
-      table,
-      rows.map((row) => searchDocumentOf(row, String(this.keyOf(row, key)), this.facet)),
-    );
+    await this.store(rows, undefined);
+  }
+
+  /**
+   * Readies version `version` of this index for a rebuild (ADR 0221 d7): from now on every write also reaches it, and
+   * `reindex({ version })` fills it while reads stay on the live index.
+   *
+   * @throws RangeError for a version that is not a whole number from 2 to 999.
+   * @throws TypeError when the driver keeps no versions, or (Postgres) the version's shadow columns do not exist.
+   */
+  async prepare(version: number): Promise<void> {
+    await this.driver.prepare(this.versioned(version), version);
+  }
+
+  /**
+   * Makes the rebuilt version `version` the live index at once; on Postgres, which swaps by its contract migration,
+   * this only checks the version's columns exist.
+   *
+   * @throws RangeError for a version that is not a whole number from 2 to 999.
+   * @throws TypeError when the driver keeps no versions, or `version` was not readied.
+   */
+  async swap(version: number): Promise<void> {
+    await this.driver.swap(this.versioned(version), version);
   }
 
   /** Removes the documents of `ids` (an erasure, or a row hidden from search). */
@@ -266,11 +285,15 @@ export class SearchIndex<M extends object> {
   /**
    * Indexes every row the caller's scope session can see, in primary key order, in batches; the backfill after
    * `t.searchable(...)` added the columns, or after the facet changed. `after` resumes a stopped run, `since` limits it
-   * to rows updated since then (a partial reindex), and `onBatch` sees each stored batch with its cursor.
+   * to rows updated since then (a partial reindex), `version` writes into a readied version instead of the live index,
+   * and `onBatch` sees each stored batch with its cursor.
+   *
+   * @throws RangeError for a version that is not a whole number from 2 to 999.
    *
    * @returns how many rows were indexed.
    */
   async reindex(options: SearchReindexOptions<M> = {}): Promise<number> {
+    if (options.version !== undefined) this.versioned(options.version);
     const { key } = this.shape();
     let count = 0;
     let after: unknown = options.after;
@@ -288,11 +311,37 @@ export class SearchIndex<M extends object> {
         );
       const last = rows.at(-1);
       if (last === undefined) return count;
-      await this.index(rows);
+      await this.store(rows, options.version);
       count += rows.length;
       after = this.keyOf(last, key);
       await options.onBatch?.(rows, String(after));
     }
+  }
+
+  /** Stores the documents of `rows` in the live index, or in `version` alone. */
+  private async store(rows: readonly M[], version: number | undefined): Promise<void> {
+    if (rows.length === 0) return;
+    const relations = this.relations();
+    // reason: populate types its hints from the entity type; the facet's paths are strings checked by gen
+    if (relations.length > 0) await this.database.em().populate([...rows], relations as never);
+    const { table, key } = this.shape();
+    await this.driver.index(
+      version === undefined ? table : { ...table, version },
+      rows.map((row) => searchDocumentOf(row, String(this.keyOf(row, key)), this.facet)),
+    );
+  }
+
+  /**
+   * The table addressed at `version`.
+   *
+   * @throws RangeError for a version that is not a whole number from 2 to 999.
+   */
+  private versioned(version: number): SearchTable {
+    if (!Number.isInteger(version) || version < 2 || version > MAX_VERSION)
+      throw new RangeError(
+        `A search index version is a whole number from 2 to ${MAX_VERSION}, got ${version}`,
+      );
+    return { ...this.shape().table, version };
   }
 
   /**

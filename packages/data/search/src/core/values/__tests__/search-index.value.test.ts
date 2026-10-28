@@ -10,11 +10,12 @@
  *          that does not isolate scopes carries the session's granted paths (none outside a scope session, none at all
  *          when the session holds an empty grant), while one on an engine that does carries none; `similar` embeds the folded
  *          phrase and reads by the vector lane alone, a find given an embedder on a semantic index and a fusing driver
- *          carries the vector, and `similar` refuses a non-semantic model or a driver without the lane.
+ *          carries the vector, and `similar` refuses a non-semantic model or a driver without the lane; `prepare`,
+ *          `reindex({ version })` and `swap` rebuild into a version and swap it live, refusing a version outside 2 to 999.
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301; stackra-303.
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
@@ -453,5 +454,34 @@ describe("SearchIndex vector lane", () => {
     expect(await guides.similar("  ", { embedder })).toEqual([]);
     const silent = { dimensions: 2, embed: async () => [] } as unknown as Embedder;
     await expect(guides.similar("linen", { embedder: silent })).rejects.toThrow(RangeError);
+  });
+});
+
+describe("SearchIndex versions", () => {
+  it("readies a version, rebuilds into it while reads stay live, and swaps it live", async () => {
+    const { driver, products } = await indexed();
+    const index = vi.spyOn(driver, "index");
+    await products.prepare(2);
+    expect(await products.reindex({ version: 2 })).toBe(3);
+    expect(index.mock.calls[0]?.[0]).toEqual({
+      schema: "catalogue",
+      table: "products",
+      primaryKey: "id",
+      version: 2,
+    });
+    expect(await products.find("linen")).toEqual([ROWS[0], ROWS[2]]);
+    await products.swap(2);
+    expect(await products.find("linen")).toEqual([ROWS[0], ROWS[2]]);
+  });
+
+  it("refuses a version outside 2 to 999 before reaching the driver", async () => {
+    const { driver, products } = await indexed();
+    const prepare = vi.spyOn(driver, "prepare");
+    for (const version of [1, 1000, 2.5]) {
+      await expect(products.prepare(version)).rejects.toThrow(RangeError);
+      await expect(products.swap(version)).rejects.toThrow(RangeError);
+      await expect(products.reindex({ version })).rejects.toThrow(RangeError);
+    }
+    expect(prepare).not.toHaveBeenCalled();
   });
 });

@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemorySearchDriver`: a `SearchDriver` whose search requires every word, ranks a match in an
  *          earlier field higher, falls back to a match inside the text, applies exact filters, slices by offset and
- *          limit, keeps tables apart, replaces a re-indexed document and forgets a removed one; facets count each
+ *          limit, keeps tables apart, replaces a re-indexed document and forgets a removed one, keeps a readied version beside the live index until its swap; facets count each
  *          matching document once per value, most frequent first, and refuse record visibility as a search does.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266; ADR 0404.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 and 7); ADR 0266; ADR 0404; stackra-303 (versions).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -183,5 +183,37 @@ describe("MemorySearchDriver scopes", () => {
         scopePaths: ["platform.ab"],
       }),
     ).toEqual({ status: { active: 1, draft: 1 } });
+  });
+});
+
+describe("MemorySearchDriver versions", () => {
+  const V2: SearchTable = { ...PRODUCTS, version: 2 };
+
+  it("rebuilds into a readied version while reads stay live, then swaps it live at once", async () => {
+    const driver = await seeded();
+    await driver.prepare(PRODUCTS, 2);
+    expect(await driver.search(V2, request(["linen"]))).toEqual([]);
+    await driver.index(V2, [{ id: "prd_9", fields: ["linen sheet"], filters: {} }]);
+    expect(await driver.search(PRODUCTS, request(["linen"]))).toEqual(["prd_1", "prd_3"]);
+    expect(await driver.search(V2, request(["linen"]))).toEqual(["prd_9"]);
+    await driver.swap(PRODUCTS, 2);
+    expect(await driver.search(PRODUCTS, request(["linen"]))).toEqual(["prd_9"]);
+    await expect(driver.search(V2, request(["linen"]))).rejects.toThrow(TypeError);
+  });
+
+  it("writes and removes in the live index and the readied version alike during a rebuild", async () => {
+    const driver = await seeded();
+    await driver.prepare(PRODUCTS, 2);
+    await driver.index(PRODUCTS, [{ id: "prd_7", fields: ["linen cap"], filters: {} }]);
+    expect(await driver.search(V2, request(["cap"]))).toEqual(["prd_7"]);
+    await driver.remove(PRODUCTS, ["prd_7"]);
+    expect(await driver.search(V2, request(["cap"]))).toEqual([]);
+    expect(await driver.search(PRODUCTS, request(["cap"]))).toEqual([]);
+  });
+
+  it("refuses a version that was not readied", async () => {
+    const driver = await seeded();
+    await expect(driver.swap(PRODUCTS, 3)).rejects.toThrow(TypeError);
+    await expect(driver.index({ ...PRODUCTS, version: 3 }, [])).rejects.toThrow(TypeError);
   });
 });

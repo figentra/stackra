@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ReindexSearchAction` and `ReindexSemanticAction`: system-only queued jobs, unique per scope,
- *          which hand the model, the parsed `since` and (for the full-text one) the job's scope to `reindexSearch` and
- *          `reindexSemantic` of @stackra/search and report the rows indexed.
+ *          which hand the model, the parsed `since`, the index `version` and (for the full-text one) the job's scope to
+ *          `reindexSearch` and `reindexSemantic` of @stackra/search and report the rows indexed.
  * Boundary: test only; the two functions are spied on, so no index or embedder runs; their own tests are
  *           @stackra/search's.
  * Runtime: node (vitest)
@@ -50,6 +50,18 @@ describe(ReindexSearchAction, () => {
     expect(reindexSearch).toHaveBeenCalledWith(search, registry, scope, {
       model: "Product",
       since: new Date(SINCE),
+    });
+  });
+
+  it("hands a versioned rebuild its index version", async () => {
+    const registry = {} as SearchIndexRegistry;
+    await new ReindexSearchAction(search, registry).handle(
+      ReindexSearchInput.create({ model: "Product", version: 2 }),
+      { scope } as unknown as ActionContext,
+    );
+    expect(reindexSearch).toHaveBeenLastCalledWith(search, registry, scope, {
+      model: "Product",
+      version: 2,
     });
   });
 });

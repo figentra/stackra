@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: `SearchIndexRegistry`, the index registry over `search.indexes`: `list` answers every index's status,
  *          `invalidateChanged` marks invalid the indexes whose `@Searchable` facet changed since their last rebuild,
- *          and `begin`, `progress` and `finish` record a reindex job's run so a stopped rebuild resumes from its cursor.
+ *          and `begin`, `progress` and `finish` record a reindex job's run (and the index version it builds) so a stopped
+ *          rebuild resumes from its cursor.
  * Boundary: a platform service over raw SQL on the running context's entity manager, one statement per method, every
  *           value bound and every result row read through zod. The table holds counts and states, never row data, and
  *           is read across scopes (no row-level security), so only platform code (the reindex job, `search:status`, an
  *           admin read) calls it. An index is keyed by model class name and scope (`-` for platform-wide).
  * Runtime: node
  * Governing contract: ADR 0404 (decision 3: the reindex plan, run as a job); ADR 0221 (decision 7); ADR 0160 (raw SQL
- *                     is parameterised and typed with zod); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`).
+ *                     is parameterised and typed with zod); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`); stackra-303 (the version).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -36,6 +37,7 @@ const ROW = z.object({
   doc_count: z.number().int(),
   cursor: z.string().nullable(),
   rebuilt_at: z.coerce.date().nullable(),
+  version: z.number().int().nullable(),
 });
 
 /** Rows of `search.indexes`. */
@@ -62,6 +64,7 @@ function statusOf(row: z.infer<typeof ROW>): SearchIndexStatus {
     docCount: row.doc_count,
     ...(row.cursor === null ? {} : { cursor: row.cursor }),
     ...(row.rebuilt_at === null ? {} : { rebuiltAt: row.rebuilt_at }),
+    ...(row.version === null ? {} : { version: row.version }),
   });
 }
 
@@ -90,7 +93,7 @@ export class SearchIndexRegistry extends Service {
     const rows = await this.database
       .em()
       .execute(
-        "select model, scope_id, scope_path, state, facet_hash, doc_count, cursor, rebuilt_at " +
+        "select model, scope_id, scope_path, state, facet_hash, doc_count, cursor, rebuilt_at, version " +
           `from ${TABLE} order by model, scope_key`,
         [],
       );
@@ -124,27 +127,40 @@ export class SearchIndexRegistry extends Service {
   }
 
   /**
-   * Records that a full rebuild of `model` in `scope` begins with `facetHash`.
+   * Records that a full rebuild of `model` in `scope` begins with `facetHash`, into index `version` (the live index
+   * when absent).
    *
    * @returns the cursor to resume after and the documents indexed before it: what a stopped rebuild with the same facet
-   *          recorded, else no cursor and `0`.
+   *          and version recorded, else no cursor and `0`.
    */
   async begin(
     model: string,
     scope: ScopeRef | undefined,
     facetHash: string,
+    version?: number,
   ): Promise<{ readonly cursor?: string; readonly docCount: number }> {
+    // A stopped rebuild resumes only with the same facet into the same version.
+    const same =
+      "idx.state = 'rebuilding' and idx.facet_hash = excluded.facet_hash " +
+      "and idx.version is not distinct from excluded.version";
     // raw-sql: an upsert that keeps the cursor of a stopped rebuild of the same facet, which the ORM cannot express
     const rows = await this.database
       .em()
       .execute(
-        `insert into ${TABLE} as idx (model, scope_key, scope_id, scope_path, state, facet_hash, doc_count) ` +
-          "values (?, ?, ?, ?, 'rebuilding', ?, 0) on conflict (model, scope_key) do update set " +
-          "cursor = case when idx.state = 'rebuilding' and idx.facet_hash = excluded.facet_hash then idx.cursor end, " +
-          "doc_count = case when idx.state = 'rebuilding' and idx.facet_hash = excluded.facet_hash " +
-          "then idx.doc_count else 0 end, state = 'rebuilding', facet_hash = excluded.facet_hash, " +
+        `insert into ${TABLE} as idx (model, scope_key, scope_id, scope_path, state, facet_hash, doc_count, version) ` +
+          "values (?, ?, ?, ?, 'rebuilding', ?, 0, ?) on conflict (model, scope_key) do update set " +
+          `cursor = case when ${same} then idx.cursor end, ` +
+          `doc_count = case when ${same} then idx.doc_count else 0 end, ` +
+          "state = 'rebuilding', facet_hash = excluded.facet_hash, version = excluded.version, " +
           "updated_at = now() returning cursor, doc_count",
-        [model, scopeKeyOf(scope), scope?.id ?? null, scope?.path ?? null, facetHash],
+        [
+          model,
+          scopeKeyOf(scope),
+          scope?.id ?? null,
+          scope?.path ?? null,
+          facetHash,
+          version ?? null,
+        ],
       );
     const [row] = CURSORS.parse(rows);
     return row === undefined || row.cursor === null

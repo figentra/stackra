@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `SearchableMacro`: installed as `t.searchable`, it writes a nullable, commented
  *          `search_vector` (or one per locale), `search_text` and `search_filters` on a new table and as expand steps on
- *          an existing one, writes no index, and refuses no text field, a bad path and bad locales.
+ *          an existing one, writes no index, writes a version's `__v<n>` shadow columns, and refuses no text field, a bad
+ *          path, bad locales and a bad version.
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0159 as amended by ADR 0305; ADR 0221.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0159 as amended by ADR 0305; ADR 0221; stackra-303.
  */
 import { compileMigration, Macro, Migration } from "@stackra/database";
 import type { Blueprint, SchemaBuilder } from "@stackra/database";
@@ -66,6 +67,24 @@ describe(SearchableMacro, () => {
     );
     expect(sql).toContain('alter table "audit"."entries" add column "search_text" text null');
     expect(sql.join("\n")).not.toContain('"search_vector" ');
+  });
+
+  it("writes the shadow columns of a version as expand steps beside the live ones", () => {
+    const sql = compiled({ text: ["title"], locales: ["en"], version: 2 }, false).join("\n");
+    expect(sql).toContain(
+      'alter table "audit"."entries" add column "search_vector_en__v2" tsvector null',
+    );
+    expect(sql).toContain('alter table "audit"."entries" add column "search_text__v2" text null');
+    expect(sql).toContain(
+      'alter table "audit"."entries" add column "search_filters__v2" jsonb null',
+    );
+    expect(sql).toContain("(version 2, until it goes live)");
+    expect(sql).not.toContain('"search_text" ');
+  });
+
+  it("refuses a version that is not a whole number from 2 to 999", () => {
+    for (const version of [1, 0, 2.5, 1000])
+      expect(() => compiled({ text: ["title"], version }, false)).toThrow(TypeError);
   });
 
   it("refuses no text field, a bad path and bad locales", () => {

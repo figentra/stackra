@@ -9,7 +9,7 @@
  * Boundary: test only; a stand-in entity manager records each statement and answers the catalogue read and the
  *           search from fixed rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1, 3 and 7); ADR 0160; ADR 0404; stackra-301 (the vector lane); stackra-303 (versions).
  */
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
@@ -368,5 +368,66 @@ describe(PostgresSearchDriver, () => {
     const count = statements.at(-1);
     expect(count?.sql).toContain(`where t."search_filters" is not null`);
     expect(count?.params).toEqual([["status"], 5]);
+  });
+});
+
+describe("PostgresSearchDriver versions", () => {
+  const SHADOWED = ["search_vector_ar__v2", "search_vector_en", "search_vector_en__v2"];
+
+  it("writes the live and every shadow version's columns in one statement, and clears them alike", async () => {
+    const { database, statements } = databaseWith(SHADOWED);
+    const driver = new PostgresSearchDriver(database);
+    await driver.index(PRODUCTS, [{ id: "prd_1", fields: ["linen"], filters: {} }]);
+    expect(statements[1]?.sql).toBe(
+      `update "catalogue"."products" set "search_vector_en" = setweight(to_tsvector('english', ?), 'A'), "search_text" = ?, "search_filters" = ?::jsonb, "search_vector_ar__v2" = setweight(to_tsvector('arabic', ?), 'A'), "search_vector_en__v2" = setweight(to_tsvector('english', ?), 'A'), "search_text__v2" = ?, "search_filters__v2" = ?::jsonb where "id" = ?`,
+    );
+    expect(statements[1]?.params).toEqual([
+      "linen",
+      "linen",
+      "{}",
+      "linen",
+      "linen",
+      "linen",
+      "{}",
+      "prd_1",
+    ]);
+    await driver.remove(PRODUCTS, ["prd_1"]);
+    expect(statements[2]?.sql).toBe(
+      `update "catalogue"."products" set "search_vector_en" = null, "search_text" = null, "search_filters" = null, "search_vector_ar__v2" = null, "search_vector_en__v2" = null, "search_text__v2" = null, "search_filters__v2" = null where "id" in (?)`,
+    );
+  });
+
+  it("writes one version alone for a rebuild, and ranks on the live columns only", async () => {
+    const { database, statements } = databaseWith(SHADOWED);
+    const driver = new PostgresSearchDriver(database);
+    const v2 = { ...PRODUCTS, version: 2 };
+    await driver.index(v2, [{ id: "prd_1", fields: ["linen"], filters: {} }]);
+    expect(statements[1]?.sql).not.toContain(`"search_text" =`);
+    expect(statements[1]?.sql).toContain(`"search_text__v2" = ?`);
+    await driver.search(PRODUCTS, { words: ["linen"], filters: {}, offset: 0, limit: 5 });
+    expect(statements.at(-1)?.sql).toContain(`to_tsquery('english', ?) as q0`);
+    expect(statements.at(-1)?.sql).not.toContain("__v2");
+    await expect(
+      driver.search(v2, { words: ["linen"], filters: {}, offset: 0, limit: 5 }),
+    ).rejects.toThrow(/contract migration/);
+  });
+
+  it("prepares and swaps only a version whose shadow columns exist, reading the catalogue again", async () => {
+    const { database, statements } = databaseWith(SHADOWED);
+    const driver = new PostgresSearchDriver(database);
+    await driver.prepare(PRODUCTS, 2);
+    await driver.prepare(PRODUCTS, 2);
+    expect(
+      statements.filter((statement) => statement.sql.includes("information_schema")),
+    ).toHaveLength(2);
+    await driver.swap(PRODUCTS, 2);
+    expect(statements.filter((statement) => statement.sql.startsWith("update"))).toEqual([]);
+    await expect(driver.prepare(PRODUCTS, 3)).rejects.toThrow(
+      /t\.searchable\(\{ \.\.\., version: 3 \}\)/,
+    );
+    await expect(driver.swap(PRODUCTS, 3)).rejects.toThrow(TypeError);
+    await expect(
+      driver.index({ ...PRODUCTS, version: 3 }, [{ id: "x", fields: ["a"], filters: {} }]),
+    ).rejects.toThrow(TypeError);
   });
 });

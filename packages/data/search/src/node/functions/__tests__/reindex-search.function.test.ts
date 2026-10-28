@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `reindexSearch` and `reindexSemantic`: a full rebuild begins in the registry, resumes after a
  *          stopped run's cursor, records each batch and finishes with the total; `since` runs a partial reindex without
- *          touching the registry; no model name reindexes every registered one; an unknown name is
+ *          touching the registry; a versioned rebuild readies the version (fresh runs only), writes into it and swaps it
+ *          live; no model name reindexes every registered one; an unknown name is
  *          `search_model_unknown`; the semantic backfill embeds each batch of semantic models only.
  * Boundary: test only; a stand-in `Search` whose index calls `onBatch` with fixed batches, a recording registry and a
  *           recording semantic service, so no database runs.
@@ -37,8 +38,15 @@ const scope = { id: "scp_1", path: "platform.acme" } as const;
 /** A search whose every index stores two batches of two rows, cursors `r2` and `r4`, recording its options. */
 function searchOf() {
   const runs: { readonly model: string; readonly options: SearchReindexOptions<object> }[] = [];
+  const versions: (readonly [string, number])[] = [];
   const search = {
     in: (model: { readonly name: string }) => ({
+      prepare: async (version: number) => {
+        versions.push(["prepare", version]);
+      },
+      swap: async (version: number) => {
+        versions.push(["swap", version]);
+      },
       reindex: async (options: SearchReindexOptions<object> = {}) => {
         runs.push({ model: model.name, options });
         await options.onBatch?.([{}, {}], "r2");
@@ -47,7 +55,7 @@ function searchOf() {
       },
     }),
   } as unknown as Search;
-  return { search, runs };
+  return { search, runs, versions };
 }
 
 /** A registry that answers `begun` and records every call. */
@@ -80,11 +88,38 @@ describe(reindexSearch, () => {
     expect(await reindexSearch(search, registry, scope, { model: "Product" })).toBe(4);
     expect(runs[0]?.options.after).toBe("r0");
     expect(calls).toEqual([
-      ["begin", "Product", scope, searchFacetHashOf({ text: ["title"] })],
+      ["begin", "Product", scope, searchFacetHashOf({ text: ["title"] }), undefined],
       ["progress", "Product", scope, "r2", 12],
       ["progress", "Product", scope, "r4", 14],
       ["finish", "Product", scope, 14],
     ]);
+  });
+
+  it("rebuilds into a readied version and swaps it live, never readying a resumed one again", async () => {
+    SEARCHABLE_MODELS.set("Product", Product);
+    const fresh = searchOf();
+    const { registry, calls } = registryOf({ docCount: 0 });
+    await reindexSearch(fresh.search, registry, scope, { model: "Product", version: 2 });
+    expect(fresh.versions).toEqual([
+      ["prepare", 2],
+      ["swap", 2],
+    ]);
+    expect(fresh.runs[0]?.options.version).toBe(2);
+    expect(calls[0]).toEqual([
+      "begin",
+      "Product",
+      scope,
+      searchFacetHashOf({ text: ["title"] }),
+      2,
+    ]);
+    expect(calls.at(-1)).toEqual(["finish", "Product", scope, 4]);
+    const resumed = searchOf();
+    await reindexSearch(resumed.search, registryOf({ cursor: "r2", docCount: 2 }).registry, scope, {
+      model: "Product",
+      version: 2,
+    });
+    expect(resumed.versions).toEqual([["swap", 2]]);
+    expect(resumed.runs[0]?.options).toMatchObject({ after: "r2", version: 2 });
   });
 
   it("runs a partial reindex since an instant without touching the registry", async () => {

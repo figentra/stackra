@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `ReindexSearchInput`, the input of the search reindex jobs: the model to reindex (every registered one when
- *          absent) and, for a partial reindex, the instant from which updated rows are indexed again.
+ *          absent), for a partial reindex the instant from which updated rows are indexed again, and for a versioned
+ *          rebuild the index version it builds and swaps to.
  * Boundary: a shape class in its own file; `stackra search:reindex` fills it from its flags. It registers its schema
  *           when the module loads (STA-339 replaces the registration). The scope is the job's, never input.
  * Runtime: node
- * Governing contract: ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one declaration per file); ADR 0404 (decision 3).
+ * Governing contract: ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one declaration per file); ADR 0404 (decision 3); ADR 0221
+ *                     (decision 7: versioned swap, stackra-303).
  */
-import { registerSchemas, Schema, Str } from "@stackra/validation";
+import { Int, registerSchemas, Schema, Str } from "@stackra/validation";
 import { z } from "zod";
 
 /**
@@ -30,6 +32,16 @@ export class ReindexSearchInput extends Schema {
     max: 40,
   })
   since?: string;
+
+  /**
+   * The index version a full rebuild writes into and swaps to (ADR 0221 d7), from 2; the live index when absent. A
+   * partial reindex (`since`) and the semantic reindex ignore it: their writes reach a readied version anyway.
+   */
+  @Int({
+    min: 2,
+    max: 999,
+  })
+  version?: number;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).
@@ -39,6 +51,7 @@ registerSchemas([
     z.object({
       model: z.string().min(1).max(200).optional(),
       since: z.iso.datetime().optional(),
+      version: z.number().int().min(2).max(999).optional(),
     }),
   ],
 ]);

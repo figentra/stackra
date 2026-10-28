@@ -16,11 +16,16 @@
  *           is empty. With a request `vector`, a third lane ranks rows by their nearest passages in `search.vector_items`
  *           (pgvector, cosine, the `CANDIDATES` nearest passages joined to their rows by metadata `row`, under the same
  *           filters and visibility, and that table's row-level security); with no words it is the only lane (a semantic
- *           read). Facets count the lexical matches only.
+ *           read). Facets count the lexical matches only. Versions (ADR 0221 d7): a table may also hold the shadow columns of a
+ *           rebuild (`search_vector__v2`, `search_text__v2`, `search_filters__v2`, from the expand migration
+ *           `t.searchable({ ..., version: 2 })`); `index` and `remove` write them beside the live ones so the shadow never
+ *           misses a change, a rebuild writes them alone (`SearchTable.version`), reads stay on the live columns, and
+ *           the swap is the contract migration that renames the shadow over the live columns.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 3 and 7); ADR 0160 (raw SQL is parameterised; approved extensions);
  *                     ADR 0327 (decision 9: isolation in the database); ADR 0294 (decision 16); ADR 0333 (amendment);
- *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`); stackra-301 (the vector lane).
+ *                     ADR 0404 (facets under the VisibilityFilter; `search.fold`); stackra-301 (the vector lane);
+ *                     stackra-303 (versioned columns).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -45,6 +50,18 @@ interface VectorColumn {
 
 /** The name of the locale-free vector, and the prefix of the per-locale ones. */
 const VECTOR = "search_vector";
+
+/** The version of the live columns, which carry no suffix. */
+const LIVE = 1;
+
+/** The suffix of a shadow column of version n (`search_vector_en__v2`), and n. */
+const SHADOW = /__v([1-9]\d*)$/;
+
+/** The column suffix of `version`: none for the live columns, `__v<n>` for a shadow version. */
+const suffixOf = (version: number): string => (version === LIVE ? "" : `__v${version}`);
+
+/** A table's cache key. */
+const keyOf = (table: SearchTable): string => `${table.schema ?? ""}.${table.table}`;
 
 /** The `setweight` letter of field 0, 1, 2, and 3 or later. */
 const WEIGHTS = ["A", "B", "C", "D"] as const;
@@ -159,8 +176,8 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
   /** The connected database. */
   private readonly database: Database;
 
-  /** Each table's vector columns, read once. */
-  private readonly vectors = new Map<string, readonly VectorColumn[]>();
+  /** Each table's vector columns by version, read once (again by `prepare`). */
+  private readonly vectors = new Map<string, ReadonlyMap<number, readonly VectorColumn[]>>();
 
   /**
    * @param database - the connected database whose running context each statement joins.
@@ -308,40 +325,56 @@ order by path, rank`,
     return facets;
   }
 
-  /** Stores each document as its row's current one, replacing what was stored. */
+  /**
+   * Stores each document as its row's current one, replacing what was stored: in the live columns and every shadow
+   * version the table has (so a rebuild never misses a change), or in `table.version`'s columns alone.
+   *
+   * @throws TypeError when `table.version` names a version the table has no columns for.
+   */
   async index(table: SearchTable, documents: readonly SearchDocument[]): Promise<void> {
     if (documents.length === 0) return;
-    const vectors = await this.vectorsOf(table);
+    const columns = await this.writtenOf(table);
     for (const document of documents) {
       const params: unknown[] = [];
-      const sets = vectors.map((vector) => {
-        const weighted = document.fields.map((field, position) => {
-          params.push(textIn(field, vector.locale));
-          return `setweight(to_tsvector('${vector.config}', ?), '${WEIGHTS[Math.min(position, WEIGHTS.length - 1)]}')`;
+      const sets = [...columns].map(([version, vectors]) => {
+        const weighted = vectors.map((vector) => {
+          const fields = document.fields.map((field, position) => {
+            params.push(textIn(field, vector.locale));
+            return `setweight(to_tsvector('${vector.config}', ?), '${WEIGHTS[Math.min(position, WEIGHTS.length - 1)]}')`;
+          });
+          return `${quote(vector.name)} = ${fields.join(" || ")}`;
         });
-        return `${quote(vector.name)} = ${weighted.join(" || ")}`;
+        params.push(
+          document.fields.map((field) => textIn(field, undefined)).join(" "),
+          JSON.stringify(document.filters),
+        );
+        return `${weighted.join(", ")}, ${quote(`search_text${suffixOf(version)}`)} = ?, ${quote(`search_filters${suffixOf(version)}`)} = ?::jsonb`;
       });
-      params.push(
-        document.fields.map((field) => textIn(field, undefined)).join(" "),
-        JSON.stringify(document.filters),
-        document.id,
-      );
+      params.push(document.id);
       // raw-sql: the search columns are not model fields, so the ORM cannot write them
       // shortcut: one statement per document; batch with unnest once indexing volume needs it.
       await this.database
         .em()
         .execute(
-          `update ${qualified(table)} set ${sets.join(", ")}, "search_text" = ?, "search_filters" = ?::jsonb where ${quote(table.primaryKey)} = ?`,
+          `update ${qualified(table)} set ${sets.join(", ")} where ${quote(table.primaryKey)} = ?`,
           params,
         );
     }
   }
 
-  /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
+  /**
+   * Removes the documents of `ids` from the live columns and every shadow version (or `table.version`'s alone), so no
+   * search finds those rows until they are indexed again.
+   */
   async remove(table: SearchTable, ids: readonly string[]): Promise<void> {
     if (ids.length === 0) return;
-    const vectors = await this.vectorsOf(table);
-    const cleared = [...vectors.map((vector) => vector.name), "search_text", "search_filters"]
+    const columns = await this.writtenOf(table);
+    const cleared = [...columns]
+      .flatMap(([version, vectors]) => [
+        ...vectors.map((vector) => vector.name),
+        `search_text${suffixOf(version)}`,
+        `search_filters${suffixOf(version)}`,
+      ])
       .map((name) => `${quote(name)} = null`)
       .join(", ");
     // raw-sql: the search columns are not model fields, so the ORM cannot clear them
@@ -354,12 +387,68 @@ order by path, rank`,
   }
 
   /**
-   * The vector columns of `table`, read from the catalogue the first time.
+   * Checks the shadow columns of `version` exist, reading the catalogue again (the expand migration
+   * `t.searchable({ ..., version })` may have just added them), so a rebuild can write into them.
    *
-   * @throws TypeError when the table has none: no migration called `t.searchable(...)` on it.
+   * @throws TypeError when the table has no columns of that version.
    */
+  override async prepare(table: SearchTable, version: number): Promise<void> {
+    this.vectors.delete(keyOf(table));
+    await this.versionOf(table, version);
+  }
+
+  /**
+   * Postgres swaps by migration, not at run time: the contract migration gen emits after a versioned rebuild renames
+   * the `__v<n>` columns over the live ones in one transaction, so reads stay on the live columns until it runs and the
+   * dual write keeps the shadow current meanwhile. This only checks the version's columns exist.
+   *
+   * @throws TypeError when the table has no columns of that version.
+   */
+  override async swap(table: SearchTable, version: number): Promise<void> {
+    await this.versionOf(table, version);
+  }
+
+  /** The live vector columns of `table`, which every read ranks. */
   private async vectorsOf(table: SearchTable): Promise<readonly VectorColumn[]> {
-    const key = `${table.schema ?? ""}.${table.table}`;
+    if (table.version !== undefined && table.version !== LIVE)
+      throw new TypeError(
+        `${qualified(table)}: postgres reads the live search columns only; version ${table.version} goes live by its contract migration`,
+      );
+    return (await this.columnsOf(table)).get(LIVE) ?? [];
+  }
+
+  /** The vector columns `index` and `remove` write, by version: `table.version`'s, else the live and every shadow. */
+  private async writtenOf(
+    table: SearchTable,
+  ): Promise<ReadonlyMap<number, readonly VectorColumn[]>> {
+    if (table.version === undefined) return this.columnsOf(table);
+    return new Map([[table.version, await this.versionOf(table, table.version)]]);
+  }
+
+  /**
+   * The vector columns of `version`.
+   *
+   * @throws TypeError when the table has none: no expand migration added that version.
+   */
+  private async versionOf(table: SearchTable, version: number): Promise<readonly VectorColumn[]> {
+    const vectors = (await this.columnsOf(table)).get(version);
+    if (vectors === undefined)
+      throw new TypeError(
+        `${qualified(table)} has no search columns of version ${version}: a migration calls t.searchable({ ..., version: ${version} }) on it first`,
+      );
+    return vectors;
+  }
+
+  /**
+   * The vector columns of `table` by version (1 for the live ones, n for the `__v<n>` shadow ones), read from the
+   * catalogue the first time.
+   *
+   * @throws TypeError when the table has no live ones: no migration called `t.searchable(...)` on it.
+   */
+  private async columnsOf(
+    table: SearchTable,
+  ): Promise<ReadonlyMap<number, readonly VectorColumn[]>> {
+    const key = keyOf(table);
     const known = this.vectors.get(key);
     if (known !== undefined) return known;
     // raw-sql: the columns t.searchable(...) wrote are read from the catalogue, so a table's locales need no config
@@ -370,21 +459,28 @@ where table_schema = ${table.schema === undefined ? "current_schema()" : "?"} an
 order by column_name`,
       [...(table.schema === undefined ? [] : [table.schema]), table.table],
     )) as unknown as readonly { readonly column_name: string }[];
-    const vectors = rows.map(({ column_name: name }): VectorColumn => {
+    // The live set first, so a write lists the live columns before the shadow ones.
+    const columns = new Map<number, VectorColumn[]>([[LIVE, []]]);
+    for (const { column_name: name } of rows) {
+      const shadow = SHADOW.exec(name);
+      const version = shadow === null ? LIVE : Number(shadow[1]);
+      const base = shadow === null ? name : name.slice(0, shadow.index);
       const locale =
-        name === VECTOR ? undefined : name.slice(VECTOR.length + 1).replaceAll("_", "-");
+        base === VECTOR ? undefined : base.slice(VECTOR.length + 1).replaceAll("_", "-");
       const language = locale?.split("-")[0];
-      return {
+      const vectors = columns.get(version) ?? [];
+      vectors.push({
         name,
         locale,
         config: (language === undefined ? undefined : TEXT_SEARCH_CONFIGS[language]) ?? "simple",
-      };
-    });
-    if (vectors.length === 0)
+      });
+      columns.set(version, vectors);
+    }
+    if ((columns.get(LIVE) ?? []).length === 0)
       throw new TypeError(
         `${qualified(table)} has no search columns: a migration calls t.searchable(...) on it first`,
       );
-    this.vectors.set(key, vectors);
-    return vectors;
+    this.vectors.set(key, columns);
+    return columns;
   }
 }

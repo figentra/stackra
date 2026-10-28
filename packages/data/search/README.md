@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the reader-facing guide of @stackra/search: entries, searching, indexing, the columns, vector retrieval (the fixed-dimension HNSW index), semantic indexing, visibility, Arabizi and global search, the driver conformance suite, and what is not here.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); stackra-301 (vector lane, `similar`, content hash, chunker); ADR 0089 d5 and ADR 0461 (conformance suite, Pro drivers).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); stackra-301 (vector lane, `similar`, content hash, chunker); stackra-303 (versioned rebuild and swap); ADR 0089 d5 and ADR 0461 (conformance suite, Pro drivers).
 -->
 
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
@@ -255,7 +255,7 @@ Rebuilds run as jobs (ADR 0404 d3). The work is here (`./node`); the jobs that r
 `stackra search:reindex` loads, live in the add-on `@stackra/data-maintenance` with their system-held permissions
 (ADR 0462 decision 1):
 
-- `reindexSearch(search, registry, scope, { model, since })` rebuilds one model (every registered model when none is
+- `reindexSearch(search, registry, scope, { model, since, version })` rebuilds one model (every registered model when none is
   named) in the scope, in batches of 500 through `SearchIndex.reindex({ after, onBatch })`, recording each batch's
   cursor; a stopped run resumes after it when the facet is unchanged. `since` indexes only rows updated since then and
   leaves the registry alone. Its job is `data_maintenance.index.reindex`.
@@ -264,6 +264,38 @@ Rebuilds run as jobs (ADR 0404 d3). The work is here (`./node`); the jobs that r
   embedder from building one for a plain reindex.
 
 `stackra search:status` (the `searchStatus` runner) prints the registry.
+
+### Versioned rebuild and swap
+
+A rebuild that must not show a half-built index (a changed facet, a new locale) builds a new index version beside the
+live one and swaps it in (ADR 0221 d7). `reindexSearch` with `version` (from 2; `ReindexSearchInput.version` of the
+`data_maintenance.index.reindex` job) runs it: it readies the version
+(`SearchIndex.prepare`), writes every row into it alone (`reindex({ version })`) while reads stay on the live index,
+then swaps it live (`SearchIndex.swap`) and records the version in `search.indexes.version` (migration
+`search.0006_add_search_index_version`; a resumed run keeps going only with the same facet and version). From
+`prepare` to the swap, every ordinary write and removal reaches both the live index and the version, so no change made
+during the rebuild is lost. A driver keeps versions by overriding `SearchDriver.prepare`/`swap` (the default refuses);
+`MemorySearchDriver` keeps one shadow per table and swaps it in at once, as an engine's alias swap would.
+
+Postgres keeps the version as shadow columns and swaps by migration, not at run time:
+
+1. Expand: a migration calls `t.searchable({ text, filters, locales, version: 2 })`, which adds `search_vector__v2`
+   (or `search_vector_<locale>__v2`), `search_text__v2` and `search_filters__v2` beside the live columns, and declares
+   their GIN and trigram indexes. From then on the driver writes them beside the live ones.
+2. Rebuild: `stackra search:reindex Product` with version 2 fills them; `search:status` shows the index `valid` at
+   version 2. Reads stay on the live columns throughout.
+3. Contract: a later migration renames the shadow over the live columns in one transaction:
+
+```ts
+schema.sql(
+  `alter table "catalogue"."products" drop column "search_vector", drop column "search_text", drop column "search_filters"`,
+);
+for (const column of ["search_vector", "search_text", "search_filters"])
+  schema.sql(`alter table "catalogue"."products" rename column "${column}__v2" to "${column}"`);
+```
+
+gen is to emit the expand migration when a facet hash changes and the contract migration once the registry shows the
+version valid; until then both are written by hand, with literal names, as every migration is.
 
 ## Scopes on engines outside the database
 
@@ -317,12 +349,12 @@ A failed probe never throws; its detail names the error type only.
   equivalences.
 - Re-indexing a parent after a related one-to-many row is deleted, and re-embedding a semantic parent after a related
   row changes: the parent's own next change or `reindex` does it.
-- The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap,
-  the palette UI and the public search API of ADR 0221 are later work.
+- The palette UI and the public search API of ADR 0221 are later work. gen does not yet emit the expand and contract
+  migrations of a versioned rebuild, and the Pro engines' alias and index swaps live with those drivers.
 - Meilisearch and OpenSearch drivers: Pro (`@stackra-pro/search-meilisearch`, `@stackra-pro/search-opensearch`,
   ADR 0461); this package never imports them, and `search.driver` names only `postgres` and `memory`.
-- Semantic querying: `Search` ranks lexically only; reading the semantic passages back (a vector lane in `find`) is
-  later work. `SearchIndex.reindex` does not embed; a backfill calls `SemanticChangeService.index`.
+- The vector lane in the memory driver and in facet counts. `SearchIndex.reindex` does not embed; a backfill calls
+  `SemanticChangeService.index`.
 - `ai: tenant_opt_in` fields are embedded like any other text: the guard refuses `never` only, and the scope's opt-in
   is not read here.
 - A semantic model's rows need the `scopeId` and `scopePath` columns; one without them is refused at index time.

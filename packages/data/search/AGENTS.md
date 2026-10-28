@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker).
+Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap).
 -->
 
 Hybrid search over a model's `@Searchable` index: the `SearchDriver` port, the `Search` reader, the memory and
@@ -75,6 +75,11 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `scope` (from `scopeId`/`scopePath`, never input) and `SearchIndex` passes the session's `app.scope_paths` as
   `SearchRequest.scopePaths`, which the driver must apply to matches and facet counts (ADR 0089 d6). Postgres sets
   `isolatesScopes` true and gets none.
+- A versioned rebuild (ADR 0221 d7) is `prepare` → `reindex({ version })` → `swap`, in `reindexSearch` only (the
+  `ReindexSearchAction` job of @stackra/data-maintenance, with its `version` input). Between `prepare` and `swap` a
+  driver writes and removes in the live index and the version alike; reads never leave the live index before the swap.
+  Postgres shadow columns are `<column>__v<n>`, live columns have no suffix, and a live column name never contains
+  `__v`; the swap is a contract migration, so `PostgresSearchDriver.swap` only checks.
 - A full rebuild runs only as a job: `reindexSearch`, called by `ReindexSearchAction` of @stackra/data-maintenance,
   records its cursor in `search.indexes` through `SearchIndexRegistry`; never loop `SearchIndex.reindex` in a request.
   The registry holds counts and states only, no row data, and has no RLS; only platform code reads it. The CLI reaches

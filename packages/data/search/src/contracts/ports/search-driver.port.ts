@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the `SearchDriver` port: the engine behind `Search`. It ranks a model's rows for a phrase, counts the
- *          values of their filter fields (facets), stores each row's document and removes documents. Config `search.driver` picks the driver (`postgres`, `memory`).
+ *          values of their filter fields (facets), stores each row's document, removes documents, and readies and
+ *          swaps an index version for a zero-downtime rebuild. Config `search.driver` picks the driver (`postgres`, `memory`).
  * Boundary: an abstract class that is its own token, keyed `search.SearchDriver`. It deals in ids and documents only:
  *           `Search` builds documents from rows and loads rows for ids, so a driver never touches the ORM. Reads run in
  *           the caller's transaction and scope session, so row-level security decides what a search can see. An engine
@@ -12,7 +13,8 @@
  * Governing contract: ADR 0221 (decisions 1, 7 and 9: hybrid ranking, erasure, later engines behind one interface);
  *                     ADR 0089 (decision 6: every query scoped);
  *                     ADR 0294 (decisions 4, 15 and 16); ADR 0263 (ports resolve by type); ADR 0404 (facets);
- *                     stackra-301 (the vector lane).
+ *                     stackra-301 (the vector lane); stackra-303 (versioned
+ *                     index swap, ADR 0221 decision 7).
  */
 import { Port } from "@stackra/contracts";
 
@@ -57,4 +59,31 @@ export abstract class SearchDriver extends Port {
 
   /** Removes the documents of `ids`, so no search finds those rows until they are indexed again. */
   abstract remove(table: SearchTable, ids: readonly string[]): Promise<void>;
+
+  /**
+   * Readies version `version` of `table`'s index for a rebuild: an empty shadow index (an engine), or the check that
+   * its shadow columns exist (Postgres). From then on, a write without a version also reaches the shadow, so the
+   * rebuild never misses a change; a write with `table.version` reaches the shadow alone. The default keeps no
+   * versions.
+   *
+   * @throws TypeError when the engine keeps no versions, or the version cannot be readied.
+   */
+  async prepare(table: SearchTable, version: number): Promise<void> {
+    throw new TypeError(
+      `This search driver keeps no index versions, so ${table.table} cannot rebuild into version ${version}`,
+    );
+  }
+
+  /**
+   * Makes the rebuilt version `version` of `table` the live index at once (an alias swap, an index swap), so reads
+   * move from the old documents to the new ones with no gap; Postgres swaps by its contract migration instead. The
+   * default keeps no versions.
+   *
+   * @throws TypeError when the engine keeps no versions, or `version` was not readied.
+   */
+  async swap(table: SearchTable, version: number): Promise<void> {
+    throw new TypeError(
+      `This search driver keeps no index versions, so ${table.table} cannot swap to version ${version}`,
+    );
+  }
 }
