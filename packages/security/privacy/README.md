@@ -107,6 +107,9 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
 | `./node`      | `PostgresSubjectSaltStoreDriver`, `CreateSubjectSaltsMigration`                                                    | the salt store over `privacy.subject_salts`, partitioned per tenant    |
 | `./node`      | `SaltedSubjectCipherResolverDriver`, `unsealedShredFields`                                                         | per-subject ciphers for `EncryptedFieldsSubscriber`; the shred check   |
+| `./node`      | `PostgresHoldRegistryDriver`, `CreateLegalHoldsMigration`                                                          | the `HoldRegistry` over `privacy.legal_holds`, for a product off OS    |
+| `./node`      | `PlaceHoldAction`, `ReleaseHoldAction`, `ListHoldsQuery` (and their `Input/Output` schemas)                        | place, release and list legal holds in the session's tenant            |
+| `./contracts` | `LegalHold`                                                                                                        | one listed hold                                                        |
 | `./node`      | `EraseSubjectInput/Output`, `ExportSubjectDataInput/Output`, `PurgeSubjectExportsInput/Output`                     | schemas                                                                |
 | `./testing`   | `SubjectSaltStoreFake`, `clearPersonalData`                                                                        | a recording salt store; empties the declaration registry between tests |
 
@@ -120,7 +123,20 @@ export class PrivacyConfig extends BasePrivacyConfig {
 - `SaltedSubjectCipherResolverDriver(keys, salts)` passed as the second argument of `EncryptedFieldsSubscriber`
   (`@stackra/model`), with the scope's `KeyProvider`, so subject-sealed models are sealed per subject.
 - A `FileSystem` disk that can sign URLs (S3, R2, GCS); the local disk cannot.
-- A `HoldRegistry` through `connectHoldRegistry` (`@stackra/database`); with none, nothing is held.
+- A `HoldRegistry` through `connectHoldRegistry` (`@stackra/database`); with none, nothing is held. Inside Figentra
+  OS it is `ServiceHoldRegistryDriver` over the compliance service; a product outside OS binds
+  `PostgresHoldRegistryDriver` (over the `Database`) and runs `CreateLegalHoldsMigration`.
+
+## Legal holds outside Figentra OS
+
+`privacy.legal_holds` is a product's own hold store, partitioned by `app.tenant_id` (`-` outside a tenant) like the
+salts. `PlaceHoldAction` (`privacy.hold.place@1`, `{ model, recordId, reason }`) holds one record of a model, or, with a
+subject's public id, every record whose subject links (`registerHoldLinks`) name it; it answers `{ holdId }` (`lgh_`).
+`ReleaseHoldAction` (`privacy.hold.release@1`, `{ holdId, reason }`) releases a live hold and keeps its row as evidence.
+`ListHoldsQuery` (`privacy.hold.list@1`) lists live holds, or all with `includeReleased`, optionally for one
+`recordId`. All three are for users and services with their derived permissions; none is an agent tool.
+`PostgresHoldRegistryDriver` answers `heldAmong` from the live holds and logs each refused disposal to
+`privacy.legal_hold_refusals`.
 
 ## Not here yet
 

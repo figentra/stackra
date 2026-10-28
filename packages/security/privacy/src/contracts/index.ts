@@ -14,6 +14,7 @@ export { PersonalDataStore } from "#contracts/ports/personal-data-store.port";
 export { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port";
 export type { ErasedRecords } from "#contracts/types/erased-records.type";
 export type { ErasureReceipt } from "#contracts/types/erasure-receipt.type";
+export type { LegalHold } from "#contracts/types/legal-hold.type";
 export type { PersonalDataOptions } from "#contracts/types/personal-data-options.type";
 export type { SubjectExport } from "#contracts/types/subject-export.type";
 export type { SubjectExportSection } from "#contracts/types/subject-export-section.type";

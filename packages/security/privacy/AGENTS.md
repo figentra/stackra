@@ -36,6 +36,8 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
   `ErasureMethod` (update the exact-set test, the README and both schemas that list the methods).
 - Every disposal asks `disposableIds` first; held rows are kept and counted, never touched.
 - Never shred while a held row carries a `shred` field.
+- Legal holds (`legal_holds`): a release keeps the row; never delete a hold or a refusal row. A hold is never an
+  agent tool, and every statement names the session's tenant partition as well as the policy enforcing it.
 - Never erase while a `shred` field is not subject-sealed (`unsealedShredFields`); the receipt would be false.
 - @stackra/model is imported from `node` only (its runtime is node); `core` and `contracts` stay off it.
 - A salt never leaves `SubjectKeyProviderDriver`: never log, export or put it in an event.
