@@ -1,0 +1,4 @@
+<!-- Stackra file contract: Purpose: the library manifest of the StackraCardTerminal module; empty, because the app's
+     permissions come from the package's config plugin (ADR 0479 decision 6). Runtime: android. Governing contract:
+     ADR 0478 (decision 2). -->
+<manifest />

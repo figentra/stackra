@@ -57,6 +57,9 @@ playwright-report/
 .expo/
 ios/
 android/
+# An Expo module package authors its ios/ and android/ (ADR 0478 decision 2).
+!packages/*/*/ios/
+!packages/*/*/android/
 expo-env.d.ts
 
 # Mintlify local preview cache

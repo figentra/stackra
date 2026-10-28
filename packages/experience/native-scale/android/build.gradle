@@ -1,0 +1,40 @@
+// Stackra file contract:
+// Purpose: the Gradle module of the StackraNativeScale Expo module (ADR 0478 decision 2), linked into an app by
+//          autolinking at prebuild: the Kotlin in src/main, plus the USB serial link and its library when the app
+//          keeps `usb` (the config plugin writes `stackraNativeScaleUsb=false` into gradle.properties otherwise).
+// Boundary: the only third-party library is usb-serial-for-android (MIT, fetched from JitPack at build time, which
+//           Expo's app template lists); it drives the FTDI, CP210x, CH34x, PL2303 and CDC-ACM adapters scales ship
+//           with. Bluetooth is the platform's own API. No vendor binary lives in this repository (ADR 0478 decision 4).
+// Runtime: build (Gradle)
+// Governing contract: ADR 0478 (decisions 2, 4 and 7); ADR 0442 (decision 3).
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.figentra.stackra.nativescale'
+version = '0.0.0'
+
+def usbEnabled = (findProperty('stackraNativeScaleUsb') ?: 'true').toString().toBoolean()
+
+android {
+  namespace 'com.figentra.stackra.nativescale'
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.0'
+  }
+  sourceSets {
+    main {
+      java.srcDirs += usbEnabled ? 'src/usb/java' : 'src/nousb/java'
+    }
+  }
+  lint {
+    abortOnError false
+  }
+}
+
+dependencies {
+  if (usbEnabled) {
+    implementation 'com.github.mik3y:usb-serial-for-android:3.8.1'
+  }
+}

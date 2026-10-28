@@ -1,0 +1,28 @@
+// Stackra file contract:
+// Purpose: the Gradle build of the StackraCardTerminal Expo module on Android: its Kotlin sources and the vendor SDK it
+//          wraps, Stripe Terminal's Android SDK and its Tap to Pay artifact, fetched from Maven Central at the app's
+//          build under Stripe's terms.
+// Boundary: this repository holds no Stripe binary or source (ADR 0478 decision 4). The SDK version is pinned here
+//           (`stackraStripeTerminalVersion` in the app's gradle.properties overrides it on the box); a bump is a package
+//           release with its changeset. Certification pending (STA-739): not built on a developer Mac.
+// Runtime: build (Gradle, at prebuild)
+// Governing contract: ADR 0479 (decision 1); ADR 0478 (decisions 2 and 4).
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+
+group = 'com.figentra.stackra'
+version = '0.0.0'
+
+def stripeTerminalVersion = project.findProperty('stackraStripeTerminalVersion') ?: '4.7.1'
+
+android {
+  namespace 'com.figentra.stackra.cardterminal'
+  defaultConfig {
+    minSdkVersion 26
+  }
+}
+
+dependencies {
+  implementation "com.stripe:stripeterminal:${stripeTerminalVersion}"
+  implementation "com.stripe:stripeterminal-taptopay:${stripeTerminalVersion}"
+}

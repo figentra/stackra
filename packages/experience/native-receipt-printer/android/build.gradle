@@ -1,0 +1,50 @@
+// Stackra file contract:
+// Purpose: the Android build of the `StackraReceiptPrinter` Expo module: it compiles the module and only the vendor
+//          families the app's runway lists (`stackra.receiptPrinter.vendors` in gradle.properties, written by the
+//          package's config plugin), and declares only their SDKs, fetched from the vendor at build time.
+// Boundary: build configuration only. No vendor binary or source lives in this package (ADR 0478 decision 4): Star and
+//           Sunmi come from Maven Central, Epson and PAX from the coordinate and repository the app's plugin options
+//           give (the vendors' portals, under their terms). A listed family without an artefact fails the build.
+// Runtime: android
+// Governing contract: ADR 0478 (decisions 2 and 4); ADR 0442 (decision 3); ADR 0458 (decision 6); ADR 0459 (decision 6).
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.figentra.stackra'
+version = '0.0.0'
+
+/** The families the app links, from the config plugin. */
+def vendors = (findProperty('stackra.receiptPrinter.vendors') ?: '')
+  .toString().split(',').collect { it.trim() }.findAll { !it.isEmpty() }
+
+/** Each family's SDK coordinate: the plugin's override, else the default (certification pending, STA-739). */
+def defaultArtifacts = [
+  star: 'com.starmicronics:stario10:1.8.0',
+  sunmi: 'com.sunmi:printerlibrary:1.0.23',
+]
+def artifactOf = { String vendor ->
+  def coordinate = findProperty("stackra.receiptPrinter.${vendor}Artifact") ?: defaultArtifacts[vendor]
+  if (coordinate == null) {
+    throw new GradleException("@stackra/native-receipt-printer: set android.${vendor}.coordinate in the plugin options")
+  }
+  return coordinate.toString()
+}
+
+android {
+  namespace 'com.figentra.stackra.receiptprinter'
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.0'
+  }
+  sourceSets {
+    main {
+      vendors.each { vendor -> java.srcDirs += "src/${vendor}/java" }
+    }
+  }
+}
+
+dependencies {
+  vendors.each { vendor -> implementation artifactOf(vendor) }
+}

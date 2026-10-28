@@ -1,0 +1,4 @@
+<!-- Stackra file contract: Purpose: the StackraNativeScale library manifest; the permissions and features are added
+     to the app's manifest by the config plugin from the transports the app keeps (ADR 0478 decision 2), so this one
+     declares nothing. Runtime: Android. Governing contract: ADR 0478 (decision 2). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
