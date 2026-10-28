@@ -1,0 +1,152 @@
+---
+title: "0437 — The edge Worker, its KV copy and the server checks"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends
+  [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) decision 6
+  (what the Worker forwards) and [0276](/adr/0276-tenant-custom-domains) (the host table the Worker
+  reads, and the day-1 date), each by a Note. Builds on
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) and uses the `workers/`
+  member root of [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker).
+</Note>
+
+## Context
+
+With one deployed shell per surface ([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)),
+something must decide, for every request, which product, tenant, region and release a hostname means, before any app
+code runs. Hosts come from two places: platform hosts Figentra registers through Runway, and tenant hosts a tenant adds
+through [0276](/adr/0276-tenant-custom-domains). The source of truth for each fact already has an OS owner (registry,
+experience, tenancy, entitlements); the edge needs a fast copy, and the API must not trust the hostname alone. Runway's
+review of 2026-10-26 and the agent reviews of the same day found that signed headers alone do not protect a regional
+API reachable directly, that a signature without a timestamp can be replayed, that KV is eventually consistent, that
+one Worker in front of every host needs its own staged rollout, and that the order of the server checks let sign-in be
+probed before any limit applied.
+
+## Decision
+
+1. **One OS edge Worker, one OS edge projector.** Every web host, platform and tenant, is served by one Figentra OS
+   Worker. It routes and caches; it never authorises. It is the member `workers/edge` (`@figentra/worker-edge`) of
+   figentra/os, under the `workers/` member root of
+   [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 1, deployed from CI like
+   `workers/static`. The **edge projector** of decision 6 is an ordinary OS service, `services/edge-projector`
+   (`@figentra/service-edge-projector`), with listeners like any other service; it is not a Worker.
+
+2. **What the Worker does, in order.**
+   1. Resolves the host with one KV read of `host:<hostname>`, held in the Worker's own cache for a short TTL (decision
+      7); an unknown host gets a 404 page, never a default tenant.
+   2. Gates on the host's status: `suspended` gets a static notice and no API access; `setup` admits only the setup
+      routes.
+   3. Serves the host's well-known files from KV (app-site association, asset links, `robots.txt`, `sitemap.xml`,
+      `security.txt`, favicons and the web manifest from the tenant's theme).
+   4. Proxies `/api/*` to the tenant's region with signed headers (decision 4), over the locked origin path (decision
+      5).
+   5. Serves the shell's files and writes the startup record (decision 3), the import map with the product's bundle
+      (the canary bundle for a tenant on the canary list) and `modulepreload` links for the shell entry and that bundle
+      into the HTML (0436 decision 7).
+   6. Renders landing pages at the edge from OS-registered blocks only
+      ([0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge)); no product code runs in the
+      Worker.
+   7. Applies the host's content-security policy (`@stackra/csp`), host-only cookies, HSTS, rate limits per host and
+      address, bot checks on sign-in and sign-up (`@stackra/platform` `CaptchaVerifier`) and request ids.
+
+3. **The startup record is public data only.** Product, surface, tenant id, region, realm, the theme revision and its
+   CSS and asset URLs, the enabled locales, the canary flag, the shell version and the bundle URLs. Nothing per user:
+   plans, roles and grants come from the API after sign-in.
+
+4. **Signed headers that cannot be replayed.** The Worker forwards `x-figentra-tenant`, `x-figentra-product`,
+   `x-figentra-surface`, `x-figentra-realm`, a timestamp, a key id and an HMAC over those headers, the timestamp, the
+   method, the path, a hash of the body and the request id. The API trusts these headers only with a valid signature
+   that is younger than the validity window (60 seconds by default, an OS setting) and whose request id it has not
+   seen inside that window; without one, only public endpoints answer. Two signing keys are active at any time, so the
+   secret rotates without a cut-over: the Worker signs with the newer, the API accepts both, and the older is retired
+   on the next rotation. These headers join the three things 0297 decision 6 forwards.
+
+5. **The origin accepts traffic only from the Worker.** Each regional API is reachable only through the edge: a
+   Cloudflare Tunnel or authenticated origin pulls with mTLS, and an allow-list that admits the Worker alone. The
+   signature of decision 4 sits on top of this lock, never in place of it.
+
+6. **The KV copy and who writes it.**
+
+   | Key                                 | Value                                                                                      | Written by                                                                    |
+   | ----------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+   | `host:<hostname>`                   | product, surface, tenant (absent on platform hosts), region, status, realm, canonical host | Runway (platform hosts); the edge projector (tenant hosts and status changes) |
+   | `boot:<product>:<surface>:<tenant>` | the startup record without the release                                                     | the edge projector                                                            |
+   | `shell:<surface>:<line>`            | shell version, entry, import map and the shell's canary list                               | the OS deploy                                                                 |
+   | `release:<product>:<surface>`       | the current bundle version and URL                                                         | the edge projector, from registry release events                              |
+   | `canary:<product>:<surface>`        | the canary tenants and their bundle version                                                | the edge projector                                                            |
+   | `wellknown:<hostname>:<file>`       | the file body                                                                              | Runway (app links); the edge projector (tenant files)                         |
+
+   KV is a copy for speed. Its sources are Postgres in the OS registry (manifests, releases, installs;
+   [0109](/adr/0109-registry-manifests-published-by-ci), [0214](/adr/0214-registry-v2-and-the-module-install-lifecycle)),
+   experience (documents, themes, branding; [0110](/adr/0110-experience-is-the-sdui-service-at-l2)), tenancy (tenants,
+   status, region, domains; [0276](/adr/0276-tenant-custom-domains)) and entitlements. The edge projector listens to
+   their events and is the only writer of the projected keys; Runway is the only writer of platform `host:` rows
+   ([0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing),
+   [0400](/adr/0400-runway-deploy-providers-promote-rollback-environment-cloud-and-dedicated-tenants)). Until the
+   projector exists, Runway writes the pointers by hand.
+
+7. **KV is eventually consistent; the API is the enforcer.** A KV write takes up to about a minute to reach every
+   location, so nothing that must take effect at once is left to KV. Suspending a tenant, removing a host and ending a
+   canary are enforced by the API's own checks (decision 8, tenant state and product installed), and the edge copy
+   only catches up. The Worker's host cache TTL is short (30 seconds by default, a Worker setting).
+
+8. **The server checks every call, cheapest refusal first.** In this order: signed edge headers; origin, CSRF and rate
+   limits; the tenant's home region; authentication bound to this host's tenant and realm; tenant state; product
+   installed for the tenant; the action's entitlement; membership and role (IAM policy); data classes (fields the role
+   may not see are removed); the client's shell line supports the document; consent for features that need it;
+   idempotency. Rate limits come before authentication, so sign-in cannot be brute-forced before a limit applies.
+   Experience documents and navigation pass the same checks, and entries the tenant, plan, role, region or consent does
+   not allow are removed before the document is sent.
+
+9. **The Worker and the shells roll out in stages.** The Worker deploys through Cloudflare's gradual deployments: a
+   share of traffic first, then everyone, rolled back automatically when its error rate passes the threshold. A shell
+   release goes first to the tenants on its `shell:` canary list, after the contract test of 0436 decision 5, and is
+   promoted on health as product bundles are (0436 decision 13). The traffic share, the steps and the threshold are
+   OS settings.
+
+10. **Tenant custom domains on day 1.** OS tenancy runs the hostname registry and Cloudflare for SaaS of
+    [0276](/adr/0276-tenant-custom-domains) for launch, and the projector writes a tenant host's row on
+    `tenancy.domain.verified.v1` (owner decision of 2026-10-26).
+
+11. **Tenancy owns every host lookup.** Storefront names on shared domains (`*.shop.figentra.com`) are unique across
+    tenants through the tenancy hostname registry; no product keeps its own host table.
+
+12. **Regulated markets are a launch gate.** TLS for tenant API traffic ends at Cloudflare points of presence. For KSA
+    (NCA rules, and Juristra's Dammam stack, JUR-215), counsel and infrastructure confirm that this is acceptable, or
+    those hosts use Cloudflare's regional services and data localisation. The answer is a launch-gate item of the KSA
+    market pack; no KSA tenant host goes live before it is recorded.
+
+## Consequences
+
+- Every request costs one KV read before the shell (usually a cache hit), and the API never trusts a hostname on its
+  own.
+- A product release is a pointer move in KV; a rollback is the same move back, visible everywhere within about a minute
+  and enforced at the API at once.
+- The projector is new OS service work and becomes a dependency of every web surface; its lag plus KV propagation is the
+  time a status, domain or release change takes to reach the edge.
+- The API keeps a short-lived store of seen request ids per region, and the rotation of the two signing keys is a
+  recurring chore.
+- The regional API is unreachable except through the Worker, so direct health checks and debugging go through the
+  tunnel or the edge.
+- The KSA pack carries one more launch-gate item, owned by counsel and infrastructure.
+- The Commerce owner question on domain verification is settled for launch.
+
+## Enforcement
+
+- planned — the API pipeline's first step rejects a request whose edge signature is missing, invalid, older than the
+  window or already seen, on a non-public endpoint (a test in the OS service template).
+- planned — a Worker test suite in `workers/edge` covers unknown hosts, suspended tenants, setup routes, the ops/tenant
+  realm split and the `modulepreload` links.
+- planned — only the projector's and Runway's credentials can write the KV namespace.
+- planned — the regional origin refuses a connection that does not come through the tunnel or present the Worker's
+  client certificate.
+- planned — the KSA market pack's launch-gate list holds the edge TLS and localisation item.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 5 and 6, 15
+(points 4, 5 and 6) and 16 (points 1, 2, 3 and 5), owner decisions D6, D8 and D10 of 2026-10-26,
+`handover/app-shells/review-runway-2026-10-26.md` (items 3, 4, 5, 7, 10, 11, 12 and 14) and
+`handover/app-shells/agent-reviews-2026-10-26.md`.

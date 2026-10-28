@@ -1,0 +1,92 @@
+---
+title: "0439 — Mobile apps from one OS template, with capability flags and managed or own store accounts"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends [0180](/adr/0180-mobile-apps-and-release-trains) decision 1
+  (white-label builds and store accounts) and
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+  decision 8 (where a per-brand build's brands come from), each by a Note. Builds on
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells).
+</Note>
+
+## Context
+
+A store binary cannot be shared between brands: each product's staff or customer app needs its own bundle id, icon,
+listing and signing. Under [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) products write no
+app code, so the binaries must come from one OS template with each product's data. Native modules cannot change over
+the air, so the template's native set decides what every product can do between store releases. White-label shopper
+apps add a third source of builds: a merchant, with or without its own store accounts. Runway's review of 2026-10-26
+pointed out that Apple rejects apps that declare permissions they do not use, and that many near-identical apps under
+one account meet Apple's spam rule as well as its template-app rule.
+
+## Decision
+
+1. **One template per native line.** The OS mobile template (Expo, `figentra/os/apps/mobile`) carries the union of
+   native modules any product may need, each behind a capability flag. Its native line is a runtime version; a native
+   change starts a new line.
+
+2. **A product declares its apps as data.** A product's root `runway.yaml` declares each mobile app (template line,
+   packages, identity, assets and store paths, capabilities, store accounts, EAS project;
+   [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)). Runway generates the app config
+   from the template and that entry, builds on EAS, submits with the listing from `assets/store`, and writes the app-link
+   files to the edge ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)).
+
+3. **Capabilities are removed at build time, not hidden at run time.** A product's build switches on only the
+   capabilities it lists. Config plugins driven by `capabilities` leave every other native module, and its permission
+   strings and entitlements, out of the binary; nothing is merely hidden at run time. A product that needs a native
+   feature the template lacks asks for it in the template, behind a flag. A product's own native app is an exception
+   that needs its own ADR (0436 decision 3), the first being
+   [0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template).
+
+4. **Releases.** JS, package and document changes ship over the air on the product's channel, as 0180 decision 3 sets.
+   A new native line rebuilds and resubmits every product on it.
+
+5. **Offline: the last good update and an embedded fallback.** The mobile shell keeps the last good update and the last
+   good documents with a version pin, and starts from the bundle embedded in the binary when no downloaded update
+   loads (Expo updates). The OS owns this for the mobile template, as 0436 decision 8 sets.
+
+6. **Identity.** Staff app ids follow `com.figentra.<product>.staff` (the commerce product's is
+   `com.figentra.commerce.staff`); customer apps follow `com.figentra.<product>.<app>`. An id is frozen at the first
+   store upload.
+
+7. **Store accounts.** A product's own apps publish under one Figentra Apple and one Figentra Google account, as 0180
+   decision 1 already says (owner decision of 2026-10-26).
+
+8. **White-label is managed or the merchant's own.** A white-label app (the commerce shopper app) is built from tenant
+   data in the OS (brand, identity, listing and the tenant's theme), not from a `brands` list in a repository. A merchant
+   with store accounts connects them as Connections (an App Store Connect API key, a Google Play service account) and
+   Runway publishes under the merchant; a merchant without them is published under Figentra's account, as other
+   regional commerce platforms do (owner decision of 2026-10-26). The build is started by a tenant event, not by a
+   commit. Before the first build under Figentra's account, Apple's rules on template apps published for clients
+   (guideline 4.2.6) and on many near-identical apps under one account (guideline 4.3, spam) are checked and the
+   result is recorded here.
+
+9. **Free components in white-label builds.** A white-label app uses the free `@stackra/ui` only, as 0335 decision 8
+   says, whichever account publishes it.
+
+## Consequences
+
+- No product writes Expo config, signing setup or native code; a new product app is a runway entry and assets.
+- A native addition is shared work in the OS template and reaches every product on the next line; the config plugins
+  that strip unused modules are part of that work.
+- Binaries stay small and declare only the permissions they use.
+- Runway gains a build started by tenant data and two new Connection kinds (store accounts).
+- The Stackra gap "no per-tenant build variants" becomes this ADR's build job.
+- The commerce product's native Android till is the first exception ADR under decision 3.
+
+## Enforcement
+
+- planned — Runway refuses a mobile entry whose capabilities the template line does not offer, and an app id outside
+  the pattern of decision 6.
+- planned — the template's build fails when a module is linked, or a permission string is present, without its
+  capability flag.
+- planned — the tenant-started job refuses to publish under Figentra's account until decision 8's guideline 4.2.6 and
+  4.3 checks are recorded.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 9 and 15
+(points 3, 9 and 10), owner decisions D3, D13, D14 and D15 of 2026-10-26, and
+`handover/app-shells/review-runway-2026-10-26.md` (items 2, 8 and 9).

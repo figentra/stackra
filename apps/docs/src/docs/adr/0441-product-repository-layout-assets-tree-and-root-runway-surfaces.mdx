@@ -1,0 +1,105 @@
+---
+title: "0441 — Product repository layout: the assets tree, root runway surfaces and the brand kit in CI"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling)
+  decisions 10 and 11 (the generic generator becomes `@stackra/brand-kit` and runs in CI; Figentra's
+  parent kit stays OS tooling; where a product's brand sources sit) and
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+  decision 2 (the root runway's sections), each by a Note. Builds on
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells),
+  [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) and
+  [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge).
+</Note>
+
+## Context
+
+Without app folders ([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)), a product repository
+needs one agreed place for what Runway and the brand kit read: icons, splash screens, store listings, landing seeds and
+brand sources. Each product repository today has a `brand/` folder made by the OS brand kit, mixing hand-made sources,
+design exploration and generated files. The root `runway.yaml` already declares the product
+([0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) decision 2)
+and has no way to name surfaces or mobile apps. Runway, which must run the brand kit in CI, is Stackra and may not
+depend on Figentra code, so the owner split the brand kit on 2026-10-26 (amending decision D17): the generic generator
+moves to Stackra and Figentra keeps only its own kit.
+
+## Decision
+
+1. **Every product repository has a root `assets/` tree.** Each folder has a `README.md` saying what goes there (sizes,
+   formats, names) and a `.gitkeep`. The Stackra product template scaffolds it.
+
+   ```
+   assets/
+     brand/        marks, the kit configuration, decisions, version history (sources only)
+     mobile/<app>/ icon, adaptive icon, splash, notification icon sources
+     store/<app>/<locale>/  listing text, keywords, privacy answers
+     landing/      seed experience documents and images
+     lang/         permission prompts and store strings in the seven locales
+   ```
+
+2. **No `apps/` folder by default.** Surfaces and mobile apps are declared in the root runway (decision 3), not in app
+   members.
+
+3. **The root runway names surfaces and mobile apps.** Beside `product`, the root `runway.yaml` gains `surfaces`
+   (per surface: the shell line, the packages, the host; `contributes` for the ops console; for landing, `content`,
+   the product's own domain per environment and which host is canonical, as
+   [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge) decision 6 sets),
+   `mobile` (per app: the template line, packages, `assets` and `store` paths, identity, capabilities, store accounts,
+   EAS project) and `assets` (the tree's root, when not the default). Runway builds and publishes the bundles,
+   registers platform hosts and their `host:` and `wellknown:` rows
+   ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)), imports landing seeds once
+   ([0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge)) and builds mobile apps
+   ([0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags)).
+
+4. **Brand sources live in `assets/brand`.** A product's `brand/` folder moves to `assets/brand/` and keeps only
+   sources: the marks, the kit configuration (`kit.json`: the symbol, the theme file and the colour roles of icons,
+   splash screens and store frames, beside the owner's concept, logo rules and asset manifest), decisions, the Arabic
+   review and the version history. The product's accent layer stays in `@figentra/brand` (0340 decision 11), so the family
+   separation test still sees every product. Fonts stay the OS design record's (0340 decision 11 refuses per-product
+   type exceptions); a product kit keeps only the licence notes for fonts it already uses until the owner decides
+   otherwise.
+
+5. **The brand kit is split: a Stackra generator and Figentra's own kit.**
+   - The generic generator is the Stackra package `@stackra/brand-kit`. It reads a kit configuration
+     (`assets/brand/kit.json`) and the theme file the kit names (a `@stackra/tokens` theme, committed beside the kit
+     so CI needs no Figentra package; how a product exports it from `@figentra/brand` is open) and generates tokens,
+     HeroUI CSS, app icons and adaptive icons, splash screens, favicons and the web manifest, and the frames for store
+     screenshots. It holds no Figentra identity and no colour logic of its own.
+   - Figentra's parent kit, its marks and its endorsement rules stay in `figentra/os/tools/brand-kit`, as data the
+     generator reads.
+   - A product's sources stay in its `assets/brand` (decision 4).
+   - Runway runs `@stackra/brand-kit` as a CI step. Its outputs are build artefacts, never committed (owner decision of
+     2026-10-26). Runway depends on no Figentra code.
+
+6. **Exploration is archived.** Once a direction is picked, the exploration (directions, book drafts, the comparison
+   page) moves to `assets/brand/versions/` as a record and is never deleted, as the kits already keep retired identities.
+
+7. **Store screenshots are captured.** A CI job runs the built app on a simulator with demo data and the product theme,
+   captures each screen per locale, and the brand kit adds frames and captions from `assets/store`. The job runs on a
+   CI runner, never on a developer's machine.
+
+## Consequences
+
+- One layout for every product; Runway and the brand kit know where everything is without per-repo config.
+- Brand changes are reviewed as source changes; the generated set is reproducible from sources in every build.
+- Every product repository has a one-time move of `brand/` into `assets/brand/`.
+- The generator becomes Stackra work (`@stackra/brand-kit`, published like any `@stackra/*` package), carrying 0340
+  decision 10's determinism check and literal scan, which now gate a CI step; `figentra/os/tools/brand-kit` shrinks to
+  Figentra's parent kit, marks and endorsement rules.
+- Store screenshots need a simulator lane on a CI runner.
+
+## Enforcement
+
+- planned — Runway's schema validates `surfaces`, `mobile` and `assets`, and refuses paths outside `assets/`.
+- planned — a repository check fails when generated brand outputs are committed (the kit's asset manifest lists them).
+- planned — the product template's scaffold check fails when an `assets/` folder lacks its `README.md`.
+- planned — the validator refuses a `@figentra/*` dependency in `@stackra/brand-kit` and in `@stackra/runway`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 8, 15
+(point 1) and 16 (point 9), owner decisions D16, D17 (as amended on 2026-10-26), D18 and D19, and
+`handover/app-shells/review-runway-2026-10-26.md` ("Owner decision taken since the drafts").

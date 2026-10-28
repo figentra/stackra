@@ -1,0 +1,102 @@
+---
+title: "0442 — A native Android till for POS terminals, built from the commerce till template"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). This is the product-app ADR that
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) decision 3 requires. It
+  uses the `android` target that
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) gives every
+  app member and the evidence
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+  open detail 2 states for vendor SDKs. It does not decide any one vendor's driver: under
+  [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3 each vendor's SDK gets
+  its own ADR.
+</Note>
+
+## Context
+
+The owner decided on 2026-10-26 that a native Android till ships in release 1 for Sunmi, PAX and iMin terminals. The
+commerce till today builds for web and desktop from one source tree, with kiosk and customer display as modes
+([0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)). These terminals' built-in printer, scanner, cash
+drawer and second screen have no Web API and no LAN path; only each vendor's SDK reaches them
+([0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+open detail 2). The till's offline rules ([0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps))
+and its server-driven screens must stay the same on every till kind. Under the app-shell model products build no apps
+of their own without an ADR, and the till is a commerce template that the editions (Mezzora, Jute, Organza) use.
+
+## Decision
+
+1. **One till member, a fourth target.** The commerce till template (`commerce/apps/till`) adds the `android` target of
+   0344 through the Expo native driver. It stays one member with one source tree: web, desktop and Android share the
+   till module, the offline queue, the rules (`@figentra/commerce-rules`), the recall check, the sync replicas and the
+   server-driven screens, rendered through the native entries of `@stackra/panel` and `@stackra/experience`. No second
+   till codebase exists.
+
+2. **Commerce owns it; editions configure it.** Commerce owns the template, its Android target and its release. An
+   edition declares the till in its root runway's `surfaces` and `mobile` blocks
+   ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)) with its packages, assets and
+   capabilities, and writes no till code.
+
+3. **Device families are capabilities.** Each vendor family (`device:sunmi`, `device:pax`, `device:imin`) is a
+   capability flag. A build includes only the families its runway entry lists, and the native modules and permission
+   strings of the other families are removed at build time by config plugins, not hidden at run time, as
+   [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 3 sets. One build per family set;
+   the device model picks the driver at run time.
+
+4. **Drivers behind the existing ports.** Each family adds drivers for the ports of `@stackra/peripherals`
+   (`ReceiptPrinter`, `LabelPrinter`, `CashDrawer`, `BarcodeScanner`, `Scale`, `CustomerDisplay`, `CardTerminal`) in a
+   new `./native` entry; the ports do not change. The second screen is a `CustomerDisplay` driver over the Android
+   Presentation API, as 0339 open detail 3 names. Each vendor SDK is its own ADR (0253 decision 3), written before that
+   family's first build; a family without its ADR is not built.
+
+5. **Certified models only.** The till runs its hardware drivers only on models certified by the hardware
+   certification module (STA-739) and registered as devices in OS devices (STA-725,
+   [0235](/adr/0235-devices-and-iot-minimal-now-full-later)). On an uncertified model the till runs with the keyboard
+   scanner and network printers only, and says so.
+
+6. **Card payments through the terminal port.** An integrated card payment goes through `CardTerminal` and the tenant's
+   payment Connection (OS payments, STA-664); it never completes offline (0339). Which acquirer SDKs run on which family
+   is pack data and its own ADR per acquirer.
+
+7. **Offline first.** The Android till keeps the last good bundle and the last good documents with a version pin and
+   falls back to them, with an embedded fallback for over-the-air updates; Commerce owns this
+   ([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) decision 8). The offline queue, sealed
+   payloads and replicas behave as on the web till (0338).
+
+8. **Distribution.** The Android till is not a store app for shoppers. Runway publishes it to the managed channels POS
+   fleets use: the vendor app stores (the Sunmi, PAX and iMin stores) and Google Play's managed distribution for the
+   tenant's devices, and an APK for a tenant's own device management. Which channels are on per pack is pack data. The
+   app id follows `com.figentra.<product>.till` (Commerce: `com.figentra.commerce.till`).
+
+9. **Kiosk and customer display stay modes.** Kiosk and customer display remain modes of the same build on Android
+   (`TillConfig.mode`); a dual-screen terminal runs the till on the main screen and the customer display on the second.
+
+## Consequences
+
+- One till for web, desktop and Android; a fix to the till module or its rules reaches every till kind.
+- Release 1 needs three vendor-SDK ADRs and their drivers, the `./native` entry of `@stackra/peripherals` (STA-904),
+  device enrolment from OS devices (STA-725) and certified models from STA-739 before a family ships.
+- Runway gains vendor-store and managed-Play publishing for this app.
+- The till's Electron-only kiosk window gap stays a desktop matter; Android kiosk mode uses Android's lock-task mode
+  through `@stackra/platform`.
+
+## Enforcement
+
+- planned — Runway refuses an Android till build whose device families lack their vendor ADR reference.
+- planned — the template build fails when a family's native module is linked without its capability flag.
+- planned — the till refuses to start hardware drivers on a model the certification module has not certified.
+
+## Open questions for the owner
+
+1. Which models are certified first per family, and which acquirer runs on each? (Commerce owner questions on hardware
+   certification cover part of this.)
+2. Vendor app stores, managed Google Play, or both for release 1?
+3. Is the Android till offered on every plan, or only on plans that include device limits for tills (entitlements)?
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: owner decision D15 of 2026-10-26 (stackra-notes
+`handover/app-shells/app-shells-edge-and-extension.md` section 14), Runway's review of 2026-10-26 (points 3 and 9), the
+commerce till SPEC (`commerce/apps/till/SPEC.md`, "native tablets"), and STA-698, STA-739, STA-725, STA-904.
