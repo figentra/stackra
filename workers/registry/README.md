@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
+<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy with the custom-domain detach step and its dry run, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
 
 # @figentra/worker-registry
 
@@ -219,7 +219,7 @@ repository's immutable form, `repo:figentra@314302700/stackra@1425140001:environ
 (`REGISTRY_SIGNING_KEY`). The Cloudflare token in `/ci` needs D1, Workers R2 Storage, Workers KV Storage and Workers
 Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain
 `npm.stackra.figentra.com` must leave the npflared `npm-registry` Worker first (decision 17), or `wrangler deploy`
-refuses the route.
+refuses the route; the workflow now does that itself (step 4), so nothing is detached by hand.
 
 ### 2. Signing key
 
@@ -256,7 +256,24 @@ pnpm exec wrangler d1 execute stackra-registry --remote --command \
 Run "Deploy registry" on `main`. It tests and builds this member, puts the ids into the runner's `wrangler.jsonc`,
 applies the migrations (`wrangler d1 migrations apply stackra-registry --remote`), runs `wrangler deploy`, sets
 `REGISTRY_SIGNING_KEY` from Infisical through stdin, and waits for `/-/ping` and `/-/npm/v1/keys` to answer 200 with at
-least one key. Without `INFISICAL_REGISTRY_IDENTITY_ID` it builds, tests and deploys nothing. Check by hand too:
+least one key. Without `INFISICAL_REGISTRY_IDENTITY_ID` it builds, tests and deploys nothing.
+
+Right before `wrangler deploy`, the step "Custom domain (detach from another Worker)" (owner decision D13) lists the
+account's Workers custom domains (`GET /accounts/<id>/workers/domains`, the account id read from `wrangler.jsonc`) and
+looks for `npm.stackra.figentra.com` by exact hostname:
+
+| Found                                         | The step does                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| not bound (or the list answers 404)           | nothing; `wrangler deploy` attaches it                                 |
+| bound to `stackra-registry`                   | nothing                                                                |
+| bound to any other Worker (`npm-registry`, …) | detaches it (`DELETE …/workers/domains/<id>`), logs that Worker's name |
+
+It never touches `npm.figentra.com`, the `npm-registry` Worker or its bucket (they stay until 0.1.0, decision D13). Any
+other non-2xx answer fails the job. The Cloudflare token reaches curl through stdin and is never printed.
+
+A **dispatch** run has the input `detach_dry_run`, on by default: the step prints what it would do (`would detach … from
+Worker …`), and the job stops there, before the migrations, the deploy and the secret, so the account is not changed.
+Turn it off to deploy by hand. A push to `main` has no inputs and always runs the full deploy. Check by hand too:
 
 ```sh
 curl -fsS https://npm.stackra.figentra.com/-/ping
@@ -301,5 +318,5 @@ and drop their `packages/tooling` copies, one follow-up batch per product.
   same shapes live in `src/interfaces/` (`stackra-kind.type.ts`, `catalogue-item.interface.ts`, …) and
   `src/constants/stackra-kinds.constant.ts` until then.
 - The runway placement of this member (the deploy is its own workflow, not a `runway-cloudflare-workers.yml` caller:
-  that provider has no D1 migration step and no Worker secret), the Pulumi stack call of `registryWorker`, and the
-  move of the custom domain from the npflared Worker (owner, ADR 0453 decision 17; runbook step 1).
+  that provider has no D1 migration step and no Worker secret) and the Pulumi stack call of `registryWorker`. The move
+  of the custom domain from the npflared Worker is in the deploy workflow (D13, runbook step 4).

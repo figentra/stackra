@@ -2,7 +2,9 @@
 # Purpose: deploy workers/registry (the `stackra-registry` Cloudflare Worker, npm.stackra.figentra.com, ADR 0453) from
 #          CI only (ADR 0284): test and build the member, put the real D1 and KV ids into wrangler.jsonc on the runner,
 #          apply the D1 migrations (remote), `wrangler deploy`, set the REGISTRY_SIGNING_KEY Worker secret, then check
-#          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand.
+#          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand. Just
+#          before the deploy it moves npm.stackra.figentra.com off any other Worker (owner decision D13, STA-1389);
+#          a dispatch run defaults to a dry run that prints the plan and stops before changing the account.
 # Boundary: a standalone job, not a caller of runway-cloudflare-workers.yml: that provider has no D1 migration step, no
 #           Worker secret and no binding ids, and its folder is not this batch's. The resource ids are never committed:
 #           they come from the `registry` environment's variables (the outputs of infra-cloudflare `registryWorker`,
@@ -24,6 +26,11 @@ on:
       - "workers/registry/**"
       - ".github/workflows/deploy-registry.yml"
   workflow_dispatch:
+    inputs:
+      detach_dry_run:
+        description: "Only print what the custom domain step would do, then stop before migrations and deploy"
+        type: boolean
+        default: true
 
 # One deploy at a time, in order: a newer run waits instead of cancelling one mid-migration.
 concurrency:
@@ -52,6 +59,8 @@ jobs:
       INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
       INFISICAL_DOMAIN: https://eu.infisical.com
       REGISTRY_URL: https://npm.stackra.figentra.com
+      # 'true' only for a dispatch run that keeps the default; a main push has no inputs and deploys.
+      DETACH_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.detach_dry_run }}
 
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
@@ -119,18 +128,71 @@ jobs:
 
       # Before the deploy, so the new code never runs against an old schema. Applied migrations are skipped.
       - name: D1 migrations (remote)
-        if: env.INFISICAL_IDENTITY_ID != ''
+        if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         working-directory: workers/registry
         run: pnpm exec wrangler d1 migrations apply stackra-registry --remote
 
-      - name: wrangler deploy
+      # D13: wrangler deploy refuses a custom domain another Worker holds, so detach it from that Worker first.
+      # Idempotent: unbound or already on stackra-registry is a no-op. Exact hostname match only, so npm.figentra.com
+      # and the old npm-registry Worker are never touched. The token goes to curl through stdin, never argv or a log.
+      - name: Custom domain (detach from another Worker)
         if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: workers/registry
+        env:
+          REGISTRY_HOST: npm.stackra.figentra.com
+          REGISTRY_SCRIPT: stackra-registry
+        run: |
+          set -euo pipefail
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || {
+            echo "::error title=CLOUDFLARE_API_TOKEN::missing in Infisical"; exit 1; }
+          account="$(sed -n 's/^ *"account_id": *"\([0-9a-f]\{32\}\)".*/\1/p' wrangler.jsonc)"
+          [[ "$account" =~ ^[0-9a-f]{32}$ ]] || {
+            echo "::error title=account_id::wrangler.jsonc has no 32-hex account_id"; exit 1; }
+          api="https://api.cloudflare.com/client/v4/accounts/${account}/workers/domains"
+          body="$RUNNER_TEMP/workers-domains.json"
+          # cf METHOD URL: prints the HTTP status; fails on anything but 2xx or 404.
+          cf() {
+            local code
+            code="$(printf 'header = "Authorization: Bearer %s"\n' "$CLOUDFLARE_API_TOKEN" |
+              curl --config - --silent --show-error --max-time 30 --request "$1" \
+                --output "$body" --write-out '%{http_code}' "$2")"
+            case "$code" in
+              2??|404) echo "$code" ;;
+              *) echo "::error title=Cloudflare API::$1 workers/domains answered $code" >&2
+                 jq -c '.errors? // empty' "$body" >&2 || true
+                 return 1 ;;
+            esac
+          }
+          code="$(cf GET "${api}?hostname=${REGISTRY_HOST}")"
+          bound=""
+          [ "$code" = 404 ] || bound="$(jq -r --arg h "$REGISTRY_HOST" \
+            '.result[]? | select(.hostname == $h) | "\(.id) \(.service)"' "$body")"
+          if [ -z "$bound" ]; then
+            echo "::notice title=Custom domain::$REGISTRY_HOST is unbound; wrangler deploy attaches it"
+          fi
+          while read -r id service; do
+            [ -n "$id" ] || continue
+            if [ "$service" = "$REGISTRY_SCRIPT" ]; then
+              echo "::notice title=Custom domain::$REGISTRY_HOST is already on $REGISTRY_SCRIPT; nothing to do"
+            elif [ "$DETACH_DRY_RUN" = true ]; then
+              echo "::notice title=Dry run::would detach $REGISTRY_HOST (domain $id) from Worker $service"
+            else
+              code="$(cf DELETE "${api}/${id}")"
+              echo "::notice title=Custom domain::detached $REGISTRY_HOST from Worker $service (HTTP $code)"
+            fi
+          done <<< "$bound"
+          if [ "$DETACH_DRY_RUN" = true ]; then
+            echo "::notice title=Dry run::stopping before migrations and deploy (run again with detach_dry_run off)"
+          fi
+
+      - name: wrangler deploy
+        if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         working-directory: workers/registry
         run: pnpm exec wrangler deploy
 
       # Fetched only now, so the key is in no earlier step's environment.
       - name: Signing key (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != ''
+        if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
@@ -144,7 +206,7 @@ jobs:
 
       # Through stdin, never an argument; setting the same value again is harmless, a rotated value takes effect.
       - name: REGISTRY_SIGNING_KEY secret
-        if: env.INFISICAL_IDENTITY_ID != ''
+        if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         working-directory: workers/registry
         run: |
           [ -n "${REGISTRY_SIGNING_KEY:-}" ] || {
@@ -154,7 +216,7 @@ jobs:
       # Readiness, not just liveness (STA-268): each attempt prints its status; only the end of the budget fails.
       # /-/npm/v1/keys answers only once the signing key is readable, so it proves the secret too.
       - name: Smoke test
-        if: env.INFISICAL_IDENTITY_ID != ''
+        if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ""
           REGISTRY_SIGNING_KEY: ""
