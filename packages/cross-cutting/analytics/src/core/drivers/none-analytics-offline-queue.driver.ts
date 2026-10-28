@@ -12,7 +12,7 @@ import { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 
 /**
- * Keeps nothing.
+ * Keeps no undelivered batch, so each one is dropped.
  *
  * @example
  * new NoneAnalyticsOfflineQueueDriver().load(); // []
@@ -23,7 +23,7 @@ export class NoneAnalyticsOfflineQueueDriver extends Driver(AnalyticsOfflineQueu
     return [];
   }
 
-  /** Drops `deliveries`. */
+  /** Drops `deliveries` without keeping them. */
   save(_deliveries: readonly AnalyticsDelivery[]): void {
     // Nothing is kept by design.
   }

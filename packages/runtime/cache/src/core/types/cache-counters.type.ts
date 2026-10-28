@@ -13,7 +13,7 @@
  * metrics.snapshot().get("Product"); // { hits: 40, stale: 2, misses: 3, loads: 3, loadMilliseconds: 31, evictions: 4 }
  */
 export interface CacheCounters {
-  /** Fresh hits. */
+  /** Reads served by a fresh entry. */
   readonly hits: number;
 
   /** Entries served past their lifetime, inside their stale window. */

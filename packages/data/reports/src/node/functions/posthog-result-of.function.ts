@@ -104,8 +104,11 @@ function cohortOf({ query }: CallOf<"cohort">, reply: unknown): CohortResult {
  * posthogResultOf({ kind: "funnel", query }, { results: [{ count: 10 }, { count: 4, median_conversion_time: 90 }] });
  */
 export function posthogResultOf(call: CallOf<"funnel">, reply: unknown): FunnelResult;
+/** The retention result of `call` read from PostHog's `reply`. */
 export function posthogResultOf(call: CallOf<"retention">, reply: unknown): RetentionResult;
+/** The cohort result of `call` read from PostHog's `reply`. */
 export function posthogResultOf(call: CallOf<"cohort">, reply: unknown): CohortResult;
+/** Reads the result of any `call` kind from PostHog's `reply`, documented above. */
 export function posthogResultOf(
   call: ProductAnalyticsCall,
   reply: unknown,

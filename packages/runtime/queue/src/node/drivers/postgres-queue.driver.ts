@@ -261,7 +261,7 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
     return IDS.parse(rows).length > 0;
   }
 
-  /** Stores `batch`. */
+  /** Stores `batch` in the batch table. */
   async openBatch(batch: JobBatch): Promise<void> {
     // raw-sql: the batch table has no model; one parameterised insert
     await this.database

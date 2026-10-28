@@ -14,7 +14,7 @@ export interface MarkerStore {
   /** Stores `text` under `key` for at least `ttl`. */
   write: (key: string, text: string, ttl: Duration) => Promise<void>;
 
-  /** Removes `key`. */
+  /** Removes `key` and its text. */
   delete: (key: string) => Promise<void>;
 
   /** Every stored key that starts with `prefix`. */

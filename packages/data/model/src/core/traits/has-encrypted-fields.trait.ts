@@ -46,6 +46,7 @@ export function HasEncryptedFields(
   ...fields: readonly string[]
 ): Trait;
 
+/** Builds the encrypted-fields trait from either overload's arguments, documented above. */
 export function HasEncryptedFields(...args: readonly (EncryptedFieldsOptions | string)[]): Trait {
   const [first] = args;
   const options = typeof first === "object" ? first : undefined;

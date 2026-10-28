@@ -33,7 +33,7 @@ export class FiltersRecord<R> implements FilterFactory<R> {
     return new FilterRecord((flags) => Filter.dateRange(key, flags));
   }
 
-  /** One comparison. */
+  /** A comparison of `key` by `operator`. */
   compare(key: Path<R>, operator: FilterComparison): FilterRecord {
     return new FilterRecord((flags) => Filter.compare(key, operator, flags));
   }

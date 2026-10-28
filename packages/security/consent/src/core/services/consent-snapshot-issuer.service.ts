@@ -8,8 +8,9 @@
  *           list is ignored, and before a decision the region's regime applies (opt-out grants `defaultGranted`).
  *           The snapshot lives `snapshotLifetimeMinutes`, never past the decision's own expiry. It stores nothing,
  *           and a snapshot is never evidence (`ConsentProofService` keeps person-level proof). The HTTP route that
- *           calls it is the host's (an action on the consent endpoint).
- * Runtime: isomorphic (a server or a Worker; the private key stays with the `Signer` driver)
+ *           calls it is the host's (an action on the consent endpoint). It runs on a server or a Worker; the private
+ *           key stays with the `Signer` driver.
+ * Runtime: isomorphic
  * Governing contract: ADR 0472 (decisions 1, 2, 5 and 6); ADR 0298 (decisions 1 to 4); ADR 0416.
  */
 import { Service } from "@stackra/container";

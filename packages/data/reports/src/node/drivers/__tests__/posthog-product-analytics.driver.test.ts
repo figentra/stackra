@@ -48,6 +48,7 @@ function driverWith(
         host: "https://posthog.test/",
         projectId: "12345",
         keySecret: "REPORTS_POSTHOG_KEY",
+        scopeProperty: "scope_id",
         ...posthog,
       },
     },

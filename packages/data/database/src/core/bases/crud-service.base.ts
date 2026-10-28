@@ -190,8 +190,10 @@ export abstract class CrudService<M extends object> extends Service implements R
    */
   lock(where: Where<M>, options?: LockOptions & { readonly skipLocked?: false }): Promise<M>;
 
+  /** Locks a matching row under any `options`; with `skipLocked` it returns null when every match is held. */
   lock(where: Where<M>, options: LockOptions): Promise<M | null>;
 
+  /** Locks the matching row with the mode `options` picks; the overloads above document the contract. */
   lock(where: Where<M>, options: LockOptions = {}): Promise<M | null> {
     const { shared = false, nowait = false, skipLocked = false } = options;
     if (nowait && skipLocked)

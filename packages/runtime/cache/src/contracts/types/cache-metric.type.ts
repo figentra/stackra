@@ -16,7 +16,7 @@ import type { CacheMetricEvent } from "#contracts/types/cache-metric-event.type"
  * metrics.record({ event: "load", owner: "Product", value: 12.5 }); // a load of 12.5 ms
  */
 export interface CacheMetric {
-  /** What happened. */
+  /** What happened to the entry. */
   readonly event: CacheMetricEvent;
 
   /** The key's owner, its first part (`Product` for `CacheKey.of(Product, id)`). */

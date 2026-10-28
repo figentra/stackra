@@ -14,7 +14,7 @@ import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database
 
 /** No session of the service can change a ledger entry. */
 export class AppendOnlyLedgerEntriesMigration extends Migration {
-  /** One revoke. */
+  /** Revokes every change to `ledger_entries` from the service's sessions. */
   up(schema: SchemaBuilder): void {
     schema.table("ledger_entries", (t: Blueprint) => {
       t.appendOnly();

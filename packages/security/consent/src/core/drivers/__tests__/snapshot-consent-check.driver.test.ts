@@ -23,7 +23,7 @@ describe("SnapshotConsentCheckDriver", () => {
     freezeClock("2026-10-28T09:00:00Z");
     const config = buildConfig(ConsentConfig);
     const signer = await MemorySignerDriver.generate("consent-1");
-    const check = new SnapshotConsentCheckDriver(
+    const check: ConsentCheck = new SnapshotConsentCheckDriver(
       new ConsentSnapshotVerifier(config, new SignerConsentSnapshotKeysDriver(signer)),
     );
     expect(check).toBeInstanceOf(ConsentCheck);

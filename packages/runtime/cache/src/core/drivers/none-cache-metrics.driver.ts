@@ -12,7 +12,7 @@ import type { CacheMetric } from "#contracts/types/cache-metric.type";
 
 /** Drops every observation. */
 export class NoneCacheMetricsDriver extends Driver(CacheMetrics) {
-  /** Does nothing. */
+  /** Drops `_metric` without recording it. */
   record(_metric: CacheMetric): void {
     // Intentionally empty: the default records no metric.
   }

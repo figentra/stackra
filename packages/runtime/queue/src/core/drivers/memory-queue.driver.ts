@@ -136,7 +136,7 @@ export class MemoryQueueDriver extends Driver(QueueDriver) {
     return Promise.resolve(true);
   }
 
-  /** Stores `batch`. */
+  /** Stores `batch` in memory. */
   openBatch(batch: JobBatch): Promise<void> {
     this.batches.set(batch.id, Object.freeze({ ...batch }));
     return Promise.resolve();

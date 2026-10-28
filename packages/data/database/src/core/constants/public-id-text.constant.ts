@@ -9,5 +9,5 @@
  * Governing contract: ADR 0135 (decision 1 and the 2026-10-28 amendment).
  */
 
-/** `varchar(33)`. */
+/** The column type of a public id, `varchar(33)`. */
 export const PUBLIC_ID_TEXT = "varchar(33)";

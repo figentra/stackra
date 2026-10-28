@@ -17,7 +17,7 @@ import type { ReportRequest } from "#core/types/report-request.type";
 import type { ReportResult } from "#core/types/report-result.type";
 
 /**
- * Runs reports.
+ * Runs a declared report for the current caller.
  *
  * @example
  * const result = await container.get(ReportRunner).run(OrderSalesReport, { dimensions: [{ name: "placedAt", grain: TimeGrain.Month }], measures: ["revenue"] });

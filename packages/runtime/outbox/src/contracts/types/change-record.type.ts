@@ -18,7 +18,7 @@ export interface ChangeRecord {
   /** Where the entry sits in the log; opaque, ordered by the driver. */
   readonly position: string;
 
-  /** The change. */
+  /** The row change itself. */
   readonly change: RowChange;
 
   /** Who caused it and the ids that chain it to its call. */

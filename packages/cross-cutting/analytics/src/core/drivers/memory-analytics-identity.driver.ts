@@ -27,7 +27,7 @@ export class MemoryAnalyticsIdentityDriver extends Driver(AnalyticsIdentity) {
     return this.record;
   }
 
-  /** Keeps `record`. */
+  /** Keeps `record` in memory, replacing the last one. */
   write(record: AnalyticsIdentityRecord): void {
     this.record = record;
   }
