@@ -10,7 +10,8 @@
  *           one as a number and drop its leading zeros.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (`ref:` values from the stacks repository), ADR 0172 (accounts, region, budgets, tags),
- *                     ADR 0186 (backups), ADR 0296 (root runway), ADR 0353 (residency), ADR 0402 (egress, jurisdiction).
+ *                     ADR 0186 (backups), ADR 0296 (root runway), ADR 0353 (residency), ADR 0402 (egress, jurisdiction),
+ *                     ADR 0188 (decision 3: backups kept 35 days or less, or crypto-shredded).
  */
 import { z } from "zod";
 
@@ -31,6 +32,29 @@ const AMOUNT = z.union([
   z.string().regex(/^(\d+(\.\d+)?|ref:[A-Za-z0-9_.-]+)$/, "Expected an amount or ref:<path>"),
 ]);
 
+/** Days a backup may outlive an erasure unless its data is crypto-shredded (ADR 0188 decision 3). */
+const BACKUP_DAYS_CEILING = 35;
+
+/**
+ * The Postgres backups: snapshot copies kept `retentionDays`, and point-in-time recovery when `pitr`. Past 35 days the
+ * runway must state `cryptoShredded: true` (erasure destroys the scope's data key, so old copies are unreadable);
+ * otherwise a backup would outlive an erasure.
+ */
+const BACKUPS = z
+  .looseObject({
+    retentionDays: z.int().min(1).optional(),
+    pitr: z.boolean().optional(),
+    cryptoShredded: z.boolean().optional(),
+  })
+  .refine(
+    (backups) =>
+      (backups.retentionDays ?? 0) <= BACKUP_DAYS_CEILING || backups.cryptoShredded === true,
+    {
+      path: ["retentionDays"],
+      message: `Keep backups ${BACKUP_DAYS_CEILING} days or less, or state cryptoShredded: true (ADR 0188 decision 3)`,
+    },
+  );
+
 /** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
@@ -43,12 +67,7 @@ const ENVIRONMENT = z.looseObject({
     .looseObject({
       database: z
         .looseObject({
-          backups: z
-            .looseObject({
-              retentionDays: z.int().min(1).optional(),
-              pitr: z.boolean().optional(),
-            })
-            .optional(),
+          backups: BACKUPS.optional(),
         })
         .optional(),
       network: z

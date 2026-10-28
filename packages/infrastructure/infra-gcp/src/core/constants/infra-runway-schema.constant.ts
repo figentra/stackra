@@ -14,7 +14,8 @@
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (`ref:` values from the stacks repository), ADR 0172
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
  *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
- *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses).
+ *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses), ADR 0188
+ *                     (decision 3: backups kept 35 days or less, or crypto-shredded).
  */
 import { z } from "zod";
 
@@ -70,12 +71,29 @@ const AMOUNT = z.union([
 /** The `cloud` of an environment or dedicated deployment, as `@stackra/runway` has already checked it. */
 const CLOUD = z.looseObject({ name: z.string(), account: z.string() });
 
-/** A Cloud SQL backup policy: daily backups kept `retentionDays`, and point-in-time recovery for `pitrDays`. */
-const BACKUPS = z.looseObject({
-  retentionDays: z.int().min(1).max(365).optional(),
-  pitr: z.boolean().optional(),
-  pitrDays: z.int().min(1).max(35).optional(),
-});
+/** Days a backup may outlive an erasure unless its data is crypto-shredded (ADR 0188 decision 3). */
+const BACKUP_DAYS_CEILING = 35;
+
+/**
+ * A Cloud SQL backup policy: daily backups kept `retentionDays`, and point-in-time recovery for `pitrDays`. Past 35
+ * days the runway must state `cryptoShredded: true` (erasure destroys the scope's data key, so old backups are
+ * unreadable); otherwise a backup would outlive an erasure.
+ */
+const BACKUPS = z
+  .looseObject({
+    retentionDays: z.int().min(1).max(365).optional(),
+    pitr: z.boolean().optional(),
+    pitrDays: z.int().min(1).max(35).optional(),
+    cryptoShredded: z.boolean().optional(),
+  })
+  .refine(
+    (backups) =>
+      (backups.retentionDays ?? 0) <= BACKUP_DAYS_CEILING || backups.cryptoShredded === true,
+    {
+      path: ["retentionDays"],
+      message: `Keep backups ${BACKUP_DAYS_CEILING} days or less, or state cryptoShredded: true (ADR 0188 decision 3)`,
+    },
+  );
 
 /** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();

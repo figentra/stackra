@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `parseInfraRunway`: a root runway narrows to the GCP foundation's view with its defaults; a
  *          malformed region, an unquoted project number, a bad Postgres version, a bad label key, more than ten static
- *          egress addresses and a missing `providers.gcp` are refused with their paths.
+ *          egress addresses, backups kept past 35 days without `cryptoShredded` and a missing `providers.gcp` are
+ *          refused with their paths.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0354 (decision 4), ADR 0171 (decision 4: the root runway is the
@@ -20,6 +21,16 @@ function rootWith(gcp: Record<string, unknown> | null) {
     project: "acme",
     ...(gcp === null ? {} : { providers: { gcp } }),
     environments: {},
+  });
+}
+
+/** A root runway whose production database keeps the given backups. */
+function rootKeeping(backups: Record<string, unknown>) {
+  return parseRunway("root", {
+    version: 3,
+    project: "acme",
+    providers: { gcp: {} },
+    environments: { production: { shared: { database: { backups } } } },
   });
 }
 
@@ -78,6 +89,16 @@ describe("parseInfraRunway", () => {
     expect(() => parseInfraRunway(root)).toThrow(
       /environments\.production\.shared\.network\.egress\.staticIps/,
     );
+  });
+
+  it("refuses backups kept past 35 days unless they are crypto-shredded (ADR 0188 decision 3)", () => {
+    expect(() => parseInfraRunway(rootKeeping({ retentionDays: 90 }))).toThrow(
+      /environments\.production\.shared\.database\.backups\.retentionDays/,
+    );
+    expect(() => parseInfraRunway(rootKeeping({ retentionDays: 35 }))).not.toThrow();
+    expect(() =>
+      parseInfraRunway(rootKeeping({ retentionDays: 90, cryptoShredded: true })),
+    ).not.toThrow();
   });
 
   it("refuses a root without providers.gcp", () => {

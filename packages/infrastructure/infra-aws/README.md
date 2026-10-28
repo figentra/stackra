@@ -97,6 +97,9 @@ regions:
   uae: { cloud: aws, location: me-central-1, jurisdiction: ae }
 ```
 
+`retentionDays` past 35 is refused unless the environment states `cryptoShredded: true` (ADR 0188 decision 3: a backup
+must not outlive an erasure, or erasure must destroy the data key that reads it).
+
 `awsBaselineConfig` refuses an environment with backups or replicated files whose AWS regions are not
 `providers.aws.region`: a region in another jurisdiction gets its own account and stack. The stack exports `egressIps`
 (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the account's region as

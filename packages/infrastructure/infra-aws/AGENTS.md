@@ -28,6 +28,8 @@ Entries `.` (isomorphic config readers), `./node` (the Pulumi programs) and `./t
   the addresses here; attaching them to NAT gateways is the network's job.
 - The health driver's target is `InfraAwsConfig` (`src/config/infra-aws.config.ts`, key `infra_aws`), injected by type:
   the runway's `config.infra_aws` sets it. Never a constructor options object (gen's `token_not_a_class`).
+- Backups are kept 35 days or less, or the runway states `cryptoShredded: true` (ADR 0188 decision 3); the runway
+  schema refuses anything else. Never raise the ceiling in code.
 
 ## PII
 

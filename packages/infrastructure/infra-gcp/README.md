@@ -97,7 +97,9 @@ A project number is a quoted string or a `ref:`. `ref:gcp.projects.ksa.id` reads
 `projects.ksa.id` (ADR 0171 decision 4). `gcpBaselineConfig(root, env, origins, "firm")` and
 `gcpRuntimeConfig(root, env, "firm")` give the dedicated tenant's stacks, prefixed `<project>-firm`. Every service
 account id (`<prefix>-infra`, `<prefix>-stop`) must fit GCP's 30 characters; the config readers refuse a name that would
-not. Cloud SQL backups are always on and stored in the server's region; the runway sizes them.
+not. Cloud SQL backups are always on and stored in the server's region; the runway sizes them. `retentionDays` past 35
+is refused unless the environment states `cryptoShredded: true` (ADR 0188 decision 3: a backup must not outlive an
+erasure, or erasure must destroy the data key that reads it).
 
 The stack exports `egressIps` (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the
 deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self links the network's Cloud NAT takes as
