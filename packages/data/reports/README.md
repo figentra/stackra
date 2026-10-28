@@ -3,7 +3,7 @@
 <!--
 Stackra file contract:
 Purpose: the package's reader guide: the `Report` kind, its closed vocabulary, what gen does with a report, the
-         `ReportRunner` port and what is not here yet.
+         `ReportRunner` and `ReportEngine` ports and what is not here yet.
 Boundary: documentation only; the code and ADR 0470 win on any difference.
 Runtime: none
 Governing contract: ADR 0470 (Reports v2); ADR 0294 (kinds by base class); ADR 0154 (no tenant code or SQL).
@@ -13,8 +13,9 @@ A module ships its reports as code: a `Report<Source>({...})` class names the di
 filtered and pivoted by and the measures it may compute. Nothing outside the declaration can be asked for, so a saved
 report or an agent's question is data over declared names, never SQL (ADR 0470, ADR 0154).
 
-**Tier:** `tier:lib` (`packages/data/reports`), category data, entries `.` (isomorphic) and `./node` (the Postgres
-report compiler). Depends on `@stackra/container` and `@stackra/contracts`; `./node` adds `@stackra/actions`,
+**Tier:** `tier:lib` (`packages/data/reports`), category data, entries `.` (isomorphic), `./contracts` (the
+`ReportEngine` port, isomorphic) and `./node` (the engine runner and the Postgres report engine). Depends on
+`@stackra/container` and `@stackra/contracts`; `./node` adds `@stackra/actions`,
 `@stackra/config`, `@stackra/database`, `@stackra/errors`, `@stackra/validation` and `zod`.
 
 ## Declaring a report
@@ -70,10 +71,29 @@ filter, permission, query key), refuses a dimension or measure path the source m
 class per report into `#stackra/reports` (`.stackra/gen/reports.ts`), keyed `report.<key>`, whose `handle` calls the
 `ReportRunner`.
 
+## The engine port (`@stackra/reports/contracts`)
+
+`ReportEngine` (`reports.ReportEngine`) is the store a report run executes on (ADR 0470 decision 8). It takes a
+`ReportEngineQuery` (the report's declaration, its source model, the caller's request and the time zone) and returns a
+`ReportEngineResult` (groups, grand totals, cursor). The types are engine-neutral strings, so an engine package (the Pro
+`clickhouse` and `duckdb` engines, stackra-417) imports only this entry; the core `ReportDeclaration`, `ReportRequest`
+and `ReportResult` are assignable to them. Which engine runs is `ReportsConfig.engine` (`postgres`), never code. An
+engine applies record visibility and scope isolation itself and never widens what the caller may read.
+
+| `./contracts` symbol                                                      | Use                                     |
+| ------------------------------------------------------------------------- | --------------------------------------- |
+| `ReportEngine`                                                            | the port an engine driver extends       |
+| `ReportEngineQuery`, `ReportEngineRequest`, `ReportEngineResult`          | one run, the caller's ask, its answer   |
+| `ReportEngineDeclaration`, `ReportEngineDimension`, `ReportEngineMeasure` | the report's declaration as engines see |
+
 ## Running a report (`@stackra/reports/node`)
 
-`PostgresReportRunnerDriver` is the report compiler, the `postgres` driver of `ReportRunner` (ADR 0470 decision 3).
-One run is one parameterised statement built through the ORM query builder:
+`EngineReportRunnerDriver` is the `engine` driver of `ReportRunner`: it reads the report's declaration from its kind
+record, finds the source model `registerReportSources` registered (on the class or an ancestor), takes the call's time
+zone (UTC outside a call) and hands the run to the configured `ReportEngine`.
+
+`PostgresReportEngineDriver` is the report compiler, the `postgres` driver of `ReportEngine` (ADR 0470 decisions 3 and
+8). One run is one parameterised statement built through the ORM query builder:
 
 - **Checked request.** Every dimension, grain, measure, filter, sort key (at most three, requested names only) and
   pivot axis must be declared; anything else is `ReportRequestInvalidError` (`report_request_invalid`). Filter values
@@ -88,27 +108,31 @@ One run is one parameterised statement built through the ORM query builder:
   the rows; row-level security holds because the run uses the caller's transaction settings, which `onReplica` replays.
 - **Mixed-currency guard.** A money measure (and any money a formula reads) is checked per group and for the total;
   two currencies refuse the run with `MixedCurrencyError`. Money comes back as `{ minor, currency }`.
-- **Replica, timeout, row cap.** `ReportsConfig` (`pageSize` 100, `maxRows` 10000, `timeout` 30 s, `replica` true):
+- **Replica, timeout, row cap.** `ReportsConfig` (`pageSize` 100, `maxRows` 10000, `timeout` 30 s, `replica` true,
+  `engine` `postgres`):
   runs go to the read replica, inside a transaction with the statement timeout; a page and the cursor stop at
   `maxRows`. The cursor is an opaque offset (a sort may be on a measure, so there is no key to seek from).
 
-Generated wiring binds the driver (`deps: [Database, ContextStorage, ReportsConfig]`) and calls
+Generated wiring binds `ReportRunner` to `EngineReportRunnerDriver` (`deps: [ReportEngine, ContextStorage]`) and
+`ReportEngine` to the driver `ReportsConfig.engine` names (`postgres`: `deps: [Database, ReportsConfig]`), and calls
 `registerReportSources([[OrderSalesReport, Order]])`, since the source type argument is gone at run time.
 
 | `./node` symbol                                     | Use                                                    |
 | --------------------------------------------------- | ------------------------------------------------------ |
-| `PostgresReportRunnerDriver`                        | the report compiler (`ReportRunner` driver `postgres`) |
-| `ReportsConfig`, `ReportsOptions`, `ReportsConfig$` | page size, row cap, timeout, replica                   |
+| `EngineReportRunnerDriver`                          | the `ReportRunner` driver `engine`                     |
+| `PostgresReportEngineDriver`                        | the report compiler (`ReportEngine` driver `postgres`) |
+| `ReportsConfig`, `ReportsOptions`, `ReportsConfig$` | page size, row cap, timeout, replica, engine           |
 | `registerReportSources`                             | report class to source model, from generated wiring    |
 | `ReportRequestInvalidError`                         | `report_request_invalid`                               |
 
 ## Not here yet
 
 - Subtotals per level and the pivot matrix (stackra-391): pivot axes are checked, not laid out; column visibility
-  (stackra-395); saved `ReportDefinition` rows (stackra-396); the `ReportEngine` port (stackra-398).
+  (stackra-395); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
+  (stackra-417).
 - A projection-row source (the runner reads registered models only) and a `Link<T>` path that is not an ORM relation.
 - Named date ranges in report filters (the run carries no period).
 - With no replica connected, the statement timeout is `set local` inside the caller's transaction and lasts until it
   ends.
-- Registering the generated queries as actions (endpoint, MCP tool), the driver binding and the
-  `registerReportSources` call in the generated wiring.
+- Registering the generated queries as actions (endpoint, MCP tool), the `ReportRunner` and `ReportEngine` driver
+  bindings (`selectedBy: "config:reports.engine"`) and the `registerReportSources` call in the generated wiring.

@@ -1,8 +1,9 @@
 # AGENTS — @stackra/reports
 
 Module reports: the `Report<Source>({ key, dimensions, measures, defaultFilter, permission })` kind base, its closed
-vocabulary and the `ReportRunner` port (ADR 0470). Member at `packages/data/reports` (`tier:lib`), in the programming
-model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node` (the Postgres report compiler, stackra-390).
+vocabulary, the `ReportRunner` port and the `ReportEngine` port (ADR 0470). Member at `packages/data/reports` (`tier:lib`), in the programming
+model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` (the `ReportEngine` port, stackra-398) and `./node` (the engine runner and the Postgres
+report engine, stackra-390 and stackra-398).
 
 ## Where code goes
 
@@ -11,7 +12,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node` (the Postgres report
 | The kind base    | `src/core/bases/report.base.ts`             |
 | An enum          | `src/core/enums/<name>.enum.ts`             |
 | A pure function  | `src/core/functions/<name>.function.ts`     |
-| A port           | `src/core/ports/<name>.port.ts`             |
+| A core port      | `src/core/ports/<name>.port.ts`             |
+| An engine type   | `src/contracts/{ports,types}`               |
 | A type           | `src/core/types/<name>.type.ts`             |
 | The compiler     | `src/node/drivers`, `src/node/functions`    |
 | Its config       | `src/node/{config,constants,schemas}`       |
@@ -23,6 +25,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node` (the Postgres report
   it and to the export list in `src/core/__tests__/index.test.ts`.
 - `ReportBase` is exported as a type only.
 - `src/node/index.ts` is the `./node` stand-in barrel; keep `src/node/__tests__/index.test.ts` in step.
+- `src/contracts/index.ts` is the `./contracts` leaf entry: it imports no other entry of this package, and its types
+  stay engine-neutral strings so an engine package needs nothing else; keep `src/contracts/__tests__/index.test.ts` in
+  step (it also checks the core types stay assignable).
+- A new engine driver adds its name to `REPORT_ENGINES` (`src/node/constants`) in the same commit as the driver.
 
 ## This package
 

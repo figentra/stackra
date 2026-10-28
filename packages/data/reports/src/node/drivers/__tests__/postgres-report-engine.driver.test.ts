@@ -1,27 +1,25 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `PostgresReportRunnerDriver`: a run compiles one statement through the query builder (selects,
+ * Purpose: unit tests of `PostgresReportEngineDriver`: a run compiles one statement through the query builder (selects,
  *          one where with the bound filters and the visible-keys subquery, grouping sets) and pages it in one execute;
  *          it runs on the replica inside a transaction with the configured timeout, or on the primary when the replica
- *          is off; the time grain takes the call's time zone; and a class with no registered source is refused.
- * Boundary: test only; the database, entity manager, query builder and call context are recording stand-ins, and
+ *          is off; and the time grain takes the query's time zone.
+ * Boundary: test only; the database, entity manager and query builder are recording stand-ins, and
  *           `visibleKeysQuery` is replaced with a canned subquery.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0470 (decision 3); ADR 0333 (decisions 4 and 5); ADR 0160.
+ * Governing contract: ADR 0022 (test placement); ADR 0470 (decisions 3 and 8); ADR 0333 (decisions 4 and 5); ADR 0160.
  */
-import type { ContextStorage } from "@stackra/actions/contracts";
 import { Duration } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { Report } from "#core/bases/report.base";
 import { MeasureKind } from "#core/enums/measure-kind.enum";
 import { ReportMetric } from "#core/enums/report-metric.enum";
 import { TimeGrain } from "#core/enums/time-grain.enum";
+import type { ReportDeclaration } from "#core/types/report-declaration.type";
 import type { ReportsConfig } from "#node/config/reports.config";
-import { PostgresReportRunnerDriver } from "#node/drivers/postgres-report-runner.driver";
-import { registerReportSources } from "#node/functions/register-report-sources.function";
+import { PostgresReportEngineDriver } from "#node/drivers/postgres-report-engine.driver";
 
 vi.mock("@stackra/database", async (original) => ({
   ...(await original<Record<string, unknown>>()),
@@ -31,14 +29,9 @@ vi.mock("@stackra/database", async (original) => ({
   })),
 }));
 
-interface OrderShape {
-  status: string;
-  placedAt: Date;
-}
-
 class Order {}
 
-class OrderSalesReport extends Report<OrderShape>({
+const declaration: ReportDeclaration = {
   key: "order_sales",
   dimensions: {
     placedAt: { path: "placedAt", grains: [TimeGrain.Month] },
@@ -46,15 +39,7 @@ class OrderSalesReport extends Report<OrderShape>({
   },
   measures: { orders: { kind: MeasureKind.Count, metric: ReportMetric.Count } },
   defaultFilter: { status: "paid" },
-}) {}
-
-class UnregisteredReport extends Report<OrderShape>({
-  key: "unregistered",
-  dimensions: { status: { path: "status" } },
-  measures: { orders: { kind: MeasureKind.Count, metric: ReportMetric.Count } },
-}) {}
-
-registerReportSources([[OrderSalesReport, Order]]);
+};
 
 const meta = {
   className: "Order",
@@ -95,22 +80,25 @@ function driverWith(replica = true) {
     transaction: vi.fn(async (work: () => Promise<unknown>) => work()),
     onReplica: vi.fn(async (work: () => Promise<unknown>) => work()),
   };
-  const storage = { current: () => ({ timeZone: "Asia/Riyadh" }) };
   const config = { pageSize: 100, maxRows: 10_000, timeout: Duration.seconds(30), replica };
-  const driver = new PostgresReportRunnerDriver(
+  const driver = new PostgresReportEngineDriver(
     database as unknown as Database,
-    storage as unknown as ContextStorage,
     config as unknown as ReportsConfig,
   );
   return { driver, database, em, qb };
 }
 
-describe(PostgresReportRunnerDriver, () => {
+describe(PostgresReportEngineDriver, () => {
   it("runs one paged statement on the replica with the timeout", async () => {
     const { driver, database, em, qb } = driverWith();
-    const result = await driver.run(OrderSalesReport, {
-      dimensions: [{ name: "placedAt", grain: TimeGrain.Month }, { name: "status" }],
-      measures: ["orders"],
+    const result = await driver.run({
+      declaration,
+      source: Order,
+      request: {
+        dimensions: [{ name: "placedAt", grain: TimeGrain.Month }, { name: "status" }],
+        measures: ["orders"],
+      },
+      timeZone: "Asia/Riyadh",
     });
     expect(database.onReplica).toHaveBeenCalledOnce();
     expect(database.transaction).toHaveBeenCalledWith(expect.any(Function), {
@@ -141,15 +129,13 @@ describe(PostgresReportRunnerDriver, () => {
 
   it("runs on the primary when the replica is off", async () => {
     const { driver, database } = driverWith(false);
-    await driver.run(OrderSalesReport, { dimensions: [], measures: ["orders"] });
+    await driver.run({
+      declaration,
+      source: Order,
+      request: { dimensions: [], measures: ["orders"] },
+      timeZone: "UTC",
+    });
     expect(database.onReplica).not.toHaveBeenCalled();
     expect(database.transaction).toHaveBeenCalledOnce();
-  });
-
-  it("refuses a report with no registered source", () => {
-    const { driver } = driverWith();
-    expect(() => driver.run(UnregisteredReport, { dimensions: [], measures: ["orders"] })).toThrow(
-      /registerReportSources/,
-    );
   });
 });

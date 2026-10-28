@@ -3,9 +3,10 @@
  * Purpose: the `ReportRunner` port: runs one report for a request under the caller's session and returns its groups,
  *          totals and cursor. Each report's generated query (`#stackra/reports`) injects it.
  * Boundary: an abstract class that is its own token, keyed `reports.ReportRunner`. In `core` because it speaks the
- *           core `ReportClass`, `ReportRequest` and `ReportResult`. The Postgres driver is `ReportCompiler` in
- *           `@stackra/reports/node` (stackra-390): one parameterised statement, `visibleFilter` and row-level security,
- *           the read replica, a statement timeout and a row cap. No driver ships here.
+ *           core `ReportClass`, `ReportRequest` and `ReportResult`. Its driver is `EngineReportRunnerDriver` in
+ *           `@stackra/reports/node` (stackra-398): it resolves the report's declaration, source model and time zone and
+ *           hands the run to the configured `ReportEngine` (`@stackra/reports/contracts`), whose `postgres` driver is
+ *           the report compiler (stackra-390). No driver ships here.
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decisions 3 and 8); ADR 0142 (drivers behind a port); ADR 0294 (decisions 4 and 16).
  */

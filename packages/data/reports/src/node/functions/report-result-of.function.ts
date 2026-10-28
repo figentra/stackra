@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `reportResultOf(plan, declaration, rows, maxRows)`, the `ReportResult` of one report statement's rows: the
+ * Purpose: `reportResultOf(plan, declaration, rows, maxRows)`, the `ReportEngineResult` of one report statement's rows: the
  *          page's groups, the grand totals (the grouping-sets total row), and the next page's cursor. It applies the
  *          mixed-currency guard: a group or the total whose money measure spans two currencies refuses the run.
  * Boundary: internal; pure. Counts and numeric aggregates (Postgres sends `numeric` and `bigint` as text) become numbers;
@@ -12,8 +12,8 @@
 import type { Json } from "@stackra/contracts";
 import { MixedCurrencyError } from "@stackra/database";
 
-import type { ReportDeclaration } from "#core/types/report-declaration.type";
-import type { ReportResult } from "#core/types/report-result.type";
+import type { ReportEngineDeclaration } from "#contracts/types/report-engine-declaration.type";
+import type { ReportEngineResult } from "#contracts/types/report-engine-result.type";
 import { PAGE_CURSOR } from "#node/constants/page-cursor.constant";
 import type { ReportPlan } from "#node/types/report-plan.type";
 
@@ -38,10 +38,10 @@ function numberOf(value: unknown): number | null {
  */
 export function reportResultOf(
   plan: ReportPlan,
-  declaration: ReportDeclaration,
+  declaration: ReportEngineDeclaration,
   rows: readonly Readonly<Record<string, unknown>>[],
   maxRows: number,
-): ReportResult {
+): ReportEngineResult {
   for (const row of rows)
     for (const name of plan.money)
       if (Number(row[`${name}~currencies`] ?? 0) > 1) {

@@ -12,7 +12,8 @@ import * as node from "#node/index";
 describe("@stackra/reports/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
-      "PostgresReportRunnerDriver",
+      "EngineReportRunnerDriver",
+      "PostgresReportEngineDriver",
       "ReportRequestInvalidError",
       "ReportsConfig",
       "ReportsConfig$",

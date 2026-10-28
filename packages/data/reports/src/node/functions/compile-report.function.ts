@@ -9,16 +9,17 @@
  *           joins a relation as it goes). Every name the request sends is looked up in the declaration, never written
  *           into SQL; grains are enum values and the time zone is checked, so the select and grouping text has no
  *           bound values and the grouping expressions match the selected ones. Filter values are bound parameters.
- *           Visibility, row-level security, the replica and the timeout are the driver's.
+ *           Visibility, row-level security, the replica and the timeout are the driver's. It reads the engine-neutral
+ *           declaration and request of `@stackra/reports/contracts` (stackra-398), which the core types satisfy.
  * Runtime: node
  * Governing contract: ADR 0470 (decisions 2 and 3); ADR 0160 (parameterised SQL); ADR 0307 (rules 2 and 16).
  */
+import type { ReportEngineDeclaration } from "#contracts/types/report-engine-declaration.type";
+import type { ReportEngineMeasure } from "#contracts/types/report-engine-measure.type";
+import type { ReportEngineRequest } from "#contracts/types/report-engine-request.type";
 import { MeasureKind } from "#core/enums/measure-kind.enum";
 import { ReportMetric } from "#core/enums/report-metric.enum";
 import { formulaNames } from "#core/functions/formula-names.function";
-import type { ReportDeclaration } from "#core/types/report-declaration.type";
-import type { ReportMeasure } from "#core/types/report-measure.type";
-import type { ReportRequest } from "#core/types/report-request.type";
 import { PAGE_CURSOR } from "#node/constants/page-cursor.constant";
 import { ReportRequestInvalidError } from "#node/errors/report-request-invalid.error";
 import { filterSql } from "#node/functions/filter-sql.function";
@@ -47,8 +48,8 @@ function moneyBase(field: string): string {
  * compileReport(OrderSales.declaration, { dimensions: [{ name: "status" }], measures: ["orders"] }, options);
  */
 export function compileReport(
-  declaration: ReportDeclaration,
-  request: ReportRequest,
+  declaration: ReportEngineDeclaration,
+  request: ReportEngineRequest,
   options: CompileReportOptions,
 ): ReportPlan {
   const report = declaration.key;
@@ -87,7 +88,7 @@ export function compileReport(
   }
 
   // Measures: one aggregate each, formulas inlined over the measures they read.
-  const amount = (measure: ReportMeasure): string =>
+  const amount = (measure: ReportEngineMeasure): string =>
     column(
       measure.metric === ReportMetric.Money
         ? `${moneyBase(String(measure.field))}.minor`
