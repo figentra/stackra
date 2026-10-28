@@ -49,6 +49,7 @@ peers, each loaded only by the entry that needs it.
 | `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                              |
 | `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`          |
 | `corsHeaders`                                | `./server`  | the CORS answer headers for a request, preflight included                            |
+| `apiCacheControl`                            | `./server`  | `private, no-store` for a signed-in request or a cookie-setting answer (rule 22)     |
 | `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
 | `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
 | `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                |
@@ -187,6 +188,10 @@ configuration; a host overrides `CorsConfig` or `CsrfConfig` in `src/overrides/a
 - `corsHeaders(request, cors)` returns the answer headers: an allowed origin is echoed (with credentials when on),
   and a preflight also gets the methods, headers and max-age. Anything else gets only `Vary: Origin`. The adapter
   answers `OPTIONS` preflights with 204 and these headers and adds them to every other answer.
+- `apiCacheControl(request, response)` is ADR 0325 rule 22: an answer to a request with an `Authorization` header or
+  any cookie, or an answer that sets a cookie, is `private, no-store`, over whatever the handler set. The generated
+  adapter (`answerHttp`) sets it on every answer. Any cookie counts as signed in until rule 23's cache profiles name
+  the cacheable public endpoints (stackra-299).
 
 The client sends `x-stackra-csrf` on every `credentials: "include"` call. Not wired yet: the generated adapter calling
 `corsHeaders` on preflight and answers (gen), and the BFF transport sending the header (`@stackra/identity`).

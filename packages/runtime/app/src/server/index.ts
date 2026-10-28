@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `./server` runtime-target entry of @stackra/app (the server `createApp`, its app
  *          object, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
  *          guard with its memory drivers and refusal, the origin and CSRF guards with their configuration and
- *          refusals, and `corsHeaders`), until `stackra gen` writes the entry barrels (STA-339).
+ *          refusals, `corsHeaders`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 8); ADR 0127 2026-10-24 note (runtime-target entries); registry v3.1 A13;
@@ -19,6 +20,7 @@ export { AppDrainingError } from "#server/errors/app-draining.error";
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";
 export { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
 export { OriginNotAllowedError } from "#server/errors/origin-not-allowed.error";
+export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
 export { CsrfGuard } from "#server/services/csrf.guard";

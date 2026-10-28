@@ -65,6 +65,8 @@ note).
 - Origins, methods, headers, credentials, max-age and the CSRF header and cookie are `CorsConfig` and `CsrfConfig`
   fields, never literals in a guard. Allowed origins are exact (`scheme://host[:port]`); never add a wildcard.
   `OriginGuard` and `corsHeaders` compare origins only through `isAllowedOrigin`.
+- ADR 0325 rule 22 lives only in `apiCacheControl`, which the generated adapter applies to every API answer and which
+  overrides a handler's header; never add a per-app switch for it (STA-1448).
 - Server-check order: edge headers -100, origin -90, CSRF -80; the guards fail closed with one refusal each and no
   detail. `CsrfGuard` compares a double-submit token in constant time.
 - The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session

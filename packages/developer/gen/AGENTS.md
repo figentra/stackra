@@ -158,7 +158,7 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `SERVER_CONTRIBUTIONS` (package, class, constructor tokens, config rows), gated on the declared package; add a new
   one there, never a branch in `emitWiring`. Their config rows come after the packages' own rows, so a manifest's
   row or a host override wins. `emitEncoreHttp` writes the CORS adapter (`answerHttp`); headers come only from
-  `corsHeaders` over the bound `CorsConfig`.
+  `corsHeaders` over the bound `CorsConfig` and `apiCacheControl` (ADR 0325 rule 22).
 - Resource trees: the browser route table registers `ui.resources` from the declared manifests and lists the
   derived label keys (`resourceLabelKeys`, the panel's `resourceLabel` rule). Keep the two leaf rules equal.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one

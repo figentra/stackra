@@ -456,7 +456,9 @@ listeners and queries inject it.
 
 A service that declares `@stackra/app` gets `.stackra/encore/<member>/http.ts`: `answerHttp(request, handle)`, which
 every generated raw endpoint answers through inside `app.handlers.run`. An `OPTIONS` preflight gets 204 and
-`corsHeaders(request, CorsConfig)`; every other answer gets the same headers (`Vary` appended). The wiring of such a
+`corsHeaders(request, CorsConfig)`; every other answer gets the same headers (`Vary` appended), and
+`Cache-Control: private, no-store` when `apiCacheControl` forces it (ADR 0325 rule 22: a signed-in request or an
+answer that sets a cookie). The wiring of such a
 service binds `OriginGuard` and `CsrfGuard` with the `app.cors` and `app.csrf` config rows, and one binding per
 `HealthIndicator` driver of a declared package (`@stackra/database/node`, `@stackra/cache`, `@stackra/queue`,
 `@stackra/realtime`, `@stackra/filesystem`, `@stackra/search`) with its package config row, so `/readyz` checks them

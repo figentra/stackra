@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./server` entry: `createApp` (the template's service entries import it),
  *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError` and the edge-header guard
- *          with its memory drivers and refusal, the origin and CSRF guards with their configuration and refusals, and
- *          `corsHeaders` are exported, nothing else is, and `createApp` resolves to a `ServerApp`.
+ *          with its memory drivers and refusal, the origin and CSRF guards with their configuration and refusals,
+ *          `apiCacheControl` and `corsHeaders` are exported, nothing else is, and `createApp` resolves to a `ServerApp`.
  * Boundary: test only; imports the stand-in barrel through its `#server` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0127 2026-10-24 note; ADR 0437.
@@ -29,6 +29,7 @@ describe("@stackra/app/server", () => {
       "OriginGuard",
       "OriginNotAllowedError",
       "RequestGuard",
+      "apiCacheControl",
       "corsHeaders",
       "createApp",
     ]);
