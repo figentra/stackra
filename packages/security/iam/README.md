@@ -31,6 +31,7 @@ rule ("VIP customers cannot cancel") is a `@stackra/rules` condition that the op
 | `.`           | `registerDimensions`, `DimensionRegistration`                                           | which fields carry a dimension another service owns (ADR 0351)                |
 | `.`           | `existenceHit`, `SearchHit`                                                             | full record, existence-only hit, or nothing                                   |
 | `.`           | `assertFieldsReadable`                                                                  | refuse an aggregate over, or filtered on, a hidden field                      |
+| `.`           | `hiddenColumns`, `ColumnRule`                                                           | columns of a view, report or export a caller may not see (permission, class)  |
 | `./contracts` | `PolicySnapshotStore`, `DimensionValues`, `FieldRule`, `FieldAccess`, `BreakGlassGrant` | the event-fed store, the dimension projection, field and break-glass data     |
 | `.`           | `PermissionSnapshotService`                                                             | the client's UI permissions snapshot                                          |
 | `.`           | `registerPermissions`, `registerRoles`, `registerPolicies`, `connectPolicies`           | what gen's entry tells the runtime                                            |

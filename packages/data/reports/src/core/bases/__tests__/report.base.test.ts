@@ -3,7 +3,8 @@
  * Purpose: unit tests of `Report`: the called form records the `report` kind with the frozen declaration; the instance
  *          reads its key and declaration; every closed-vocabulary refusal (key, empty sections, names, paths, grains,
  *          measure kinds and metrics, fields per kind, money kinds, formulas and their names and cycles, a name used
- *          twice, the default filter) throws a readable TypeError; a bare report base has no declaration.
+ *          twice, the default filter, a data class that is no code) throws a readable TypeError; a column keeps its
+ *          permission and data class; a bare report base has no declaration.
  * Boundary: test only; the source is a local stand-in for a model.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0470 (decisions 1 and 2); ADR 0294 (decision 16).
@@ -100,6 +101,26 @@ describe("Report", () => {
       permission,
     }) {}
     expect(new Permitted().declaration.permission).toBe(permission);
+  });
+
+  it("keeps each column's permission and data class", () => {
+    const permission = { $permission: "orders.order.margin" };
+    class Guarded extends Report<Order>({
+      ...BASE,
+      dimensions: { customerId: { path: "customerId", dataClass: "pseudonymous" } },
+      measures: {
+        revenue: { kind: MeasureKind.Sum, field: "total", metric: ReportMetric.Money, permission },
+      },
+    }) {}
+    const { declaration } = new Guarded();
+    expect(declaration.dimensions["customerId"]).toEqual({
+      path: "customerId",
+      dataClass: "pseudonymous",
+    });
+    expect(declaration.measures["revenue"]?.permission).toBe(permission);
+    expect(() =>
+      declare({ ...BASE, dimensions: { status: { path: "status", dataClass: "Personal Data" } } }),
+    ).toThrow(/dataClass is a snake_case data class code/);
   });
 
   it("types the source paths", () => {

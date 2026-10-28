@@ -53,6 +53,7 @@ describe("@stackra/reports", () => {
       "ReportRunner",
       "TimeGrain",
       "formulaNames",
+      "hiddenReportColumns",
     ]);
     expect("ReportBase" in reports).toBe(false);
   });

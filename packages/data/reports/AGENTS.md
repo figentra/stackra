@@ -49,6 +49,8 @@ report engine, stackra-390 and stackra-398).
 - Never import `@mikro-orm/*` here (ADR 0097); read the ORM through `Database.em()` and `@stackra/database` exports.
 - Groups, subtotals, pivot margins and the grand total are grouping sets of one statement; a row's `"~grouping"` mask
   (`groupingMask`) says which. Never total or pivot in JavaScript over a page; `pageSql` keeps every caller value bound.
+- Column visibility is decided once, by `hiddenReportColumns` (iam's `hiddenColumns`), and applied before the engine
+  runs; never let an engine see a hidden column, and never reveal a hidden value through a formula, filter or sort.
 - `MeasureKind` takes its aggregate codes from `@stackra/database`'s `Aggregate` (the only aggregate enum); never
   declare another.
 
@@ -66,7 +68,7 @@ report engine, stackra-390 and stackra-398).
 
 ## PII
 
-| Data              | Where                                             | Handling                                                                                   |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Report rows       | `ReportResult`                                    | Grouped values of declared dimensions and measures only; column visibility is stackra-395. |
-| Product analytics | `FunnelResult`, `RetentionResult`, `CohortResult` | Counts of people only; no person id or property value is returned.                         |
+| Data              | Where                                             | Handling                                                                                                                     |
+| ----------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Report rows       | `ReportResult`                                    | Grouped values of declared dimensions and measures only; columns the caller may not see are dropped (`hiddenReportColumns`). |
+| Product analytics | `FunnelResult`, `RetentionResult`, `CohortResult` | Counts of people only; no person id or property value is returned.                                                           |

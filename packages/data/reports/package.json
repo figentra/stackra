@@ -95,6 +95,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

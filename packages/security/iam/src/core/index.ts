@@ -30,6 +30,7 @@ export { breakGlassGrant } from "#core/functions/break-glass-grant.function";
 export { connectPolicies } from "#core/functions/connect-policies.function";
 export { decodePolicySnapshot } from "#core/functions/decode-policy-snapshot.function";
 export { existenceHit } from "#core/functions/existence-hit.function";
+export { hiddenColumns } from "#core/functions/hidden-columns.function";
 export { permissionKey } from "#core/functions/permission-key.function";
 export { redactFields } from "#core/functions/redact-fields.function";
 export { registerDimensions } from "#core/functions/register-dimensions.function";
@@ -42,6 +43,7 @@ export { PolicySnapshotIntakeService } from "#core/services/policy-snapshot-inta
 export { Permission } from "#core/values/permission.value";
 export type { AccessExplanation } from "#core/types/access-explanation.type";
 export type { CheckOptions } from "#core/types/check-options.type";
+export type { ColumnRule } from "#core/types/column-rule.type";
 export type { DimensionRegistration } from "#core/types/dimension-registration.type";
 export type { FieldPermissions } from "#core/types/field-permissions.type";
 export type { MemoryPolicyState } from "#core/types/memory-policy-state.type";

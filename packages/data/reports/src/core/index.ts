@@ -14,6 +14,7 @@ export { MeasureKind } from "#core/enums/measure-kind.enum";
 export { ReportMetric } from "#core/enums/report-metric.enum";
 export { TimeGrain } from "#core/enums/time-grain.enum";
 export { formulaNames } from "#core/functions/formula-names.function";
+export { hiddenReportColumns } from "#core/functions/hidden-report-columns.function";
 export { ReportRunner } from "#core/ports/report-runner.port";
 export type { ReportClass } from "#core/types/report-class.type";
 export type { ReportDeclaration } from "#core/types/report-declaration.type";

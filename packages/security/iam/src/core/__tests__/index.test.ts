@@ -53,6 +53,7 @@ describe("@stackra/iam", () => {
       "connectPolicies",
       "decodePolicySnapshot",
       "existenceHit",
+      "hiddenColumns",
       "permissionKey",
       "redactFields",
       "registerDimensions",

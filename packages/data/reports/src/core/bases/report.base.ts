@@ -3,8 +3,8 @@
  * Purpose: `Report<Source>({ key, dimensions, measures, defaultFilter, permission })`, the kind base of a module's
  *          report: `class OrderSalesReport extends Report<Order>({ key: "order_sales", ... }) {}` in a module's
  *          `reports/<name>.report.ts`. It checks the closed vocabulary when the class is declared: dimension paths and
- *          grains, measure kinds with the field each needs, money only where it adds up, and formulas that parse and
- *          name declared measures without a cycle.
+ *          grains, measure kinds with the field each needs, money only where it adds up, formulas that parse and
+ *          name declared measures without a cycle, and each column's permission and data class code.
  * Boundary: called only, with the source (a model or a projection row) as the type argument (gone at runtime: gen
  *           reads it). A binding with no constructor dependencies. It declares; gen records it under the manifest's
  *           `reports` and writes its query into `#stackra/reports`, and the `ReportRunner` port runs it. Whether a
@@ -35,6 +35,9 @@ const NAME = /^[a-z][A-Za-z0-9]*$/;
 
 /** A field path: camelCase segments joined by dots. */
 const PATH = /^[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)*$/;
+
+/** A data class code: snake_case (ADR 0231, 0341). */
+const DATA_CLASS = /^[a-z][a-z0-9_]*$/;
 
 /** The measure kinds that read no field. */
 const FIELDLESS = new Set<string>([MeasureKind.Count, MeasureKind.Formula]);
@@ -81,6 +84,24 @@ function namedEntries(
   });
 }
 
+/**
+ * The column's visibility options as written: its permission and its data class.
+ *
+ * @throws TypeError for a data class that is not a snake_case code.
+ */
+function visibilityOf(
+  where: string,
+  item: Readonly<Record<string, unknown>>,
+): { permission?: unknown; dataClass?: string } {
+  const { permission, dataClass } = item;
+  if (dataClass !== undefined && (typeof dataClass !== "string" || !DATA_CLASS.test(dataClass)))
+    throw new TypeError(`${where} dataClass is a snake_case data class code such as "personal"`);
+  return {
+    ...(permission === undefined ? {} : { permission }),
+    ...(dataClass === undefined ? {} : { dataClass }),
+  };
+}
+
 /** Checks one dimension. */
 function dimensionOf(
   key: string,
@@ -92,8 +113,9 @@ function dimensionOf(
     throw new TypeError(
       `Report "${key}" dimension "${name}" needs a field path such as "placedAt" or "customer.country"`,
     );
+  const visibility = visibilityOf(`Report "${key}" dimension "${name}"`, item);
   const grains = item["grains"];
-  if (grains === undefined) return Object.freeze({ path });
+  if (grains === undefined) return Object.freeze({ path, ...visibility });
   const known = new Set<unknown>(Enum.values(TimeGrain));
   if (
     !Array.isArray(grains) ||
@@ -104,7 +126,11 @@ function dimensionOf(
     throw new TypeError(
       `Report "${key}" dimension "${name}" grains are distinct TimeGrain values (${[...known].join(", ")})`,
     );
-  return Object.freeze({ path, grains: Object.freeze([...(grains as TimeGrain[])]) });
+  return Object.freeze({
+    path,
+    grains: Object.freeze([...(grains as TimeGrain[])]),
+    ...visibility,
+  });
 }
 
 /** Checks one measure, except its formula's names. */
@@ -132,15 +158,21 @@ function measureOf(
         : `${where} is ${kind}, so it needs a field path`,
     );
   const formula = item["formula"];
+  const visibility = visibilityOf(where, item);
   if (kind === MeasureKind.Formula) {
     if (typeof formula !== "string")
       throw new TypeError(`${where} is a formula, so it needs \`formula\``);
     formulaNames(formula);
-    return Object.freeze({ kind: kind as MeasureKind, metric: metric as ReportMetric, formula });
+    return Object.freeze({
+      kind: kind as MeasureKind,
+      metric: metric as ReportMetric,
+      formula,
+      ...visibility,
+    });
   }
   if (formula !== undefined)
     throw new TypeError(`${where} is ${kind}; only a formula measure takes \`formula\``);
-  const checked = { kind: kind as MeasureKind, metric: metric as ReportMetric };
+  const checked = { kind: kind as MeasureKind, metric: metric as ReportMetric, ...visibility };
   return Object.freeze(field === undefined ? checked : { ...checked, field: field as string });
 }
 

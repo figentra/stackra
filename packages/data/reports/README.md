@@ -15,8 +15,9 @@ report or an agent's question is data over declared names, never SQL (ADR 0470, 
 
 **Tier:** `tier:lib` (`packages/data/reports`), category data, entries `.` (isomorphic), `./contracts` (the
 `ReportEngine` port, isomorphic) and `./node` (the engine runner and the Postgres report engine). Depends on
-`@stackra/container` and `@stackra/contracts`; `./node` adds `@stackra/actions`,
-`@stackra/config`, `@stackra/database`, `@stackra/errors`, `@stackra/validation` and `zod`.
+`@stackra/container`, `@stackra/contracts`, `@stackra/database` (`Aggregate`, the measure codes) and `@stackra/iam`
+(column visibility); `./node` adds `@stackra/actions`, `@stackra/config`, `@stackra/errors`, `@stackra/validation`
+and `zod`.
 
 ## Declaring a report
 
@@ -122,6 +123,29 @@ never carrying the key or the reply body).
 | `PosthogProductAnalyticsDriver` (`./node`)                                         | the `posthog` driver                               |
 | `ProductAnalyticsQueryInvalidError`, `...ScopeMissingError`, `...UnavailableError` | `validation`, `failed precondition`, `unavailable` |
 
+## Column visibility
+
+A dimension or measure may carry a `permission` (a `Permissions` static) and a `dataClass` (a `DataClassification`
+code or a product class key, ADR 0341):
+
+```ts
+measures: {
+  margin: { kind: MeasureKind.Sum, field: "margin", metric: ReportMetric.Money, permission: OrderPermissions.margin },
+},
+dimensions: {
+  email: { path: "customer.email", dataClass: DataClassification.Personal }, // hidden from everyone
+  phone: { path: "customer.phone", dataClass: DataClassification.Personal, permission: OrderPermissions.contact },
+},
+```
+
+`hiddenReportColumns(declaration, held)` names the columns a holder of the permission keys `held` may not see: a
+permission column it does not hold, a classified column with no permission, and every formula over a hidden measure.
+`EngineReportRunnerDriver` checks each column permission for the call's actor and scope through
+`PolicyDecisionPointService` and drops what is hidden before the engine sees the request: hidden dimensions, measures,
+sort keys and pivot axes go; a filter on a hidden dimension, or a request whose every measure is hidden, is
+`ForbiddenError`. With no decision point bound, or outside a call, no permission is held (fail closed). The shared
+definition validator (stackra-396) calls `hiddenReportColumns` with the audience's keys.
+
 ## Running a report (`@stackra/reports/node`)
 
 `EngineReportRunnerDriver` is the `engine` driver of `ReportRunner`: it reads the report's declaration from its kind
@@ -174,7 +198,8 @@ Generated wiring binds `ReportRunner` to `EngineReportRunnerDriver` (`deps: [Rep
   (stackra-416), funnel breakdowns, property filters on retention events, cohorts of several criteria and saved
   cohorts; the analytics client does not yet put the scope id on events (`scope_id`), which the `posthog` driver
   filters by.
-- Column visibility (stackra-395); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
+- Masking instead of dropping, column visibility in a report export and the shared-definition validator (both with
+  stackra-396 and the report export); saved `ReportDefinition` rows (stackra-396); the Pro `clickhouse` and `duckdb` engines
   (stackra-417).
 - A projection-row source (the runner reads registered models only) and a `Link<T>` path that is not an ORM relation.
 - Named date ranges in report filters (the run carries no period).
