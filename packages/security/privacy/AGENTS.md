@@ -15,6 +15,7 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | The kind base, its registry                  | `src/core/{bases,functions,constants}/`                   |
 | An isomorphic driver, service or event       | `src/core/{drivers,services,events}/`                     |
 | A job, the saga, a server driver, schemas    | `src/node/{actions,workflows,drivers,schemas}/`           |
+| A job's permissions (`<model>.permissions.ts`) | `src/node/access/`                                      |
 | A fake or a test helper                      | `src/testing/`                                            |
 | A test                                       | `__tests__/<name>.test.ts` beside it                      |
 
@@ -32,7 +33,10 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
   `ErasureMethod` (update the exact-set test, the README and both schemas that list the methods).
 - Every disposal asks `disposableIds` first; held rows are kept and counted, never touched.
 - Never shred while a held row carries a `shred` field.
-- Receipts and events carry counts and kinds, never row ids or contents.
+- Receipts and events carry counts and kinds, never row ids or contents. A shape field is typed with a shape class
+  (`ErasedRecordsLine`), never a contracts interface, or gen refuses it (`shape_unknown_type`).
+- Every action key needs its permission in a `Permissions` class under `src/node/access/` (`permission_unknown`).
+- Event names are `<aggregate>.<verb>` (`subject.erased`); gen adds the module key.
 - Business values (export window, folder) are `PrivacyConfig`, never constants.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 - No `tenant` identifiers (R-59); the running scope comes from row-level security.

@@ -16,6 +16,7 @@ export { MemorySubjectSaltStoreDriver } from "#core/drivers/memory-subject-salt-
 export { SubjectErased } from "#core/events/subject-erased.event";
 export { personalDataDeclarations } from "#core/functions/personal-data-declarations.function";
 export { registerPersonalData } from "#core/functions/register-personal-data.function";
+export { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema";
 export { PrivacyOptions } from "#core/schemas/privacy-options.schema";
 export { SubjectExportService } from "#core/services/subject-export.service";
 export type { PersonalDataClass } from "#core/types/personal-data-class.type";

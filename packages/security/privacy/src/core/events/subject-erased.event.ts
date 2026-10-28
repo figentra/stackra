@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `SubjectErased`, `privacy.subject_erased.v1`: the receipt of one erasure, recorded by the erasure saga's
+ * Purpose: `SubjectErased`, `privacy.subject.erased.v1`: the receipt of one erasure, recorded by the erasure saga's
  *          last step so the audit service and the requester's workflow see what was disposed of, what a legal hold
  *          kept, and whether the subject key was shredded.
  * Boundary: an integration event leaving through the outbox in the step's transaction. Counts and kinds only, never
  *           row ids or contents; the subject's public id identifies the request.
+ *           The name is `<aggregate>.<verb>`; gen adds the module key (`event_name_prefixed`, STA-1299).
  * Runtime: isomorphic
  * Governing contract: ADR 0189 (decision 2); ADR 0141 (event names); ADR 0305 (rules 19 and 21); STA-1375.
  */
@@ -16,7 +17,7 @@ import { registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import { ErasureMethod } from "#contracts/enums/erasure-method.enum";
-import type { ErasedRecords } from "#contracts/types/erased-records.type";
+import type { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema";
 
 /**
  * One erasure's receipt, as an event.
@@ -24,7 +25,7 @@ import type { ErasedRecords } from "#contracts/types/erased-records.type";
  * @example
  * ctx.record(SubjectErased.create({ erasureId, subject, erased, kept, shredded: true, at: ctx.now().toISOString() }));
  */
-export class SubjectErased extends IntegrationEvent({ name: "privacy.subject_erased" }) {
+export class SubjectErased extends IntegrationEvent({ name: "subject.erased" }) {
   /** The erasure request's id. */
   erasureId!: string;
 
@@ -32,7 +33,7 @@ export class SubjectErased extends IntegrationEvent({ name: "privacy.subject_era
   subject!: string;
 
   /** What was disposed of, per model. */
-  erased!: ErasedRecords[];
+  erased!: ErasedRecordsLine[];
 
   /** What a legal hold kept, per model. */
   kept!: KeptRecords[];

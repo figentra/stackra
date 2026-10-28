@@ -24,6 +24,8 @@ describe("@stackra/privacy/node", () => {
       "PurgeSubjectExportsInput",
       "PurgeSubjectExportsOutput",
       "RepositoryPersonalDataStoreDriver",
+      "SubjectExportPermissions",
+      "SubjectPermissions",
     ]);
   });
 });

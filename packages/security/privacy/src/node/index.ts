@@ -7,6 +7,8 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { SubjectExportPermissions } from "#node/access/subject-export.permissions";
+export { SubjectPermissions } from "#node/access/subject.permissions";
 export { EraseSubjectAction } from "#node/actions/erase-subject.action";
 export { ExportSubjectDataAction } from "#node/actions/export-subject-data.action";
 export { PurgeSubjectExportsAction } from "#node/actions/purge-subject-exports.action";

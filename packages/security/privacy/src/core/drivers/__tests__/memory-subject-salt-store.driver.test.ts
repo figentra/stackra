@@ -12,7 +12,8 @@ import { MemorySubjectSaltStoreDriver } from "#core/drivers/memory-subject-salt-
 
 describe("MemorySubjectSaltStoreDriver", () => {
   it("destroys a held salt once", async () => {
-    const salts = new MemorySubjectSaltStoreDriver(["usr_1"]);
+    const salts = new MemorySubjectSaltStoreDriver();
+    salts.put(["usr_1"]);
     expect(salts).toBeInstanceOf(SubjectSaltStore);
     await expect(salts.destroy("usr_1")).resolves.toBe(true);
     expect(salts.has("usr_1")).toBe(false);

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `SubjectErased`: an integration event named `privacy.subject_erased` that carries the receipt
+ * Purpose: unit tests of `SubjectErased`: an integration event named `subject.erased` (wire name
+ *          `privacy.subject.erased.v1`) that carries the receipt
  *          and refuses an unknown erasure method.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -22,9 +23,9 @@ const RECEIPT = {
 };
 
 describe("SubjectErased", () => {
-  it("is the privacy.subject_erased integration event", () => {
+  it("is the subject.erased integration event", () => {
     expect(kindOf(SubjectErased)?.kind).toBe("integration_event");
-    expect(kindOf(SubjectErased)?.options["name"]).toBe("privacy.subject_erased");
+    expect(kindOf(SubjectErased)?.options["name"]).toBe("subject.erased");
   });
 
   it("carries the receipt", () => {

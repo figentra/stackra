@@ -3,7 +3,8 @@
  * Purpose: `EraseSubjectOutput`, the output of `EraseSubjectWorkflow` and `EraseSubjectAction`: the erasure receipt
  *          (what was disposed of per model, what a legal hold kept, whether the subject key was shredded).
  * Boundary: a shape class implementing `ErasureReceipt`; it registers its schema when the module loads (STA-339
- *           replaces the registration). Counts and kinds only, never row ids or contents.
+ *           replaces the registration). `erased` is typed with the `ErasedRecordsLine` shape (STA-1299). Counts and
+ *           kinds only, never row ids or contents.
  * Runtime: node
  * Governing contract: ADR 0189 (decision 2); ADR 0294 (decisions 4 and 13); STA-1375.
  */
@@ -14,8 +15,8 @@ import type { KeptRecords } from "@stackra/workflow";
 import { z } from "zod";
 
 import { ErasureMethod } from "#contracts/enums/erasure-method.enum";
-import type { ErasedRecords } from "#contracts/types/erased-records.type";
 import type { ErasureReceipt } from "#contracts/types/erasure-receipt.type";
+import type { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema";
 
 /** An erasure's receipt. */
 export class EraseSubjectOutput extends Schema implements ErasureReceipt {
@@ -26,7 +27,7 @@ export class EraseSubjectOutput extends Schema implements ErasureReceipt {
   subject!: string;
 
   /** What was disposed of, per model. */
-  erased!: ErasedRecords[];
+  erased!: ErasedRecordsLine[];
 
   /** What a legal hold kept, per model. */
   kept!: KeptRecords[];

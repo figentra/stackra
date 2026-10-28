@@ -12,6 +12,7 @@ import * as core from "#core/index";
 describe("@stackra/privacy", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "ErasedRecordsLine",
       "MemoryPersonalDataStoreDriver",
       "MemorySubjectSaltStoreDriver",
       "PERSONAL_DATA_STORE_DRIVERS",

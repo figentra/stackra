@@ -56,7 +56,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
   are kept and counted in the receipt's `kept` (`reason: "hold"`).
 - The key is shredded only when no held row carries a `shred` field: shredding would destroy what the hold keeps.
   The receipt's `shredded` says which.
-- The last step records `SubjectErased` (`privacy.subject_erased.v1`) and, with `ackAs`, the workflow's
+- The last step records `SubjectErased` (`privacy.subject.erased.v1`) and, with `ackAs`, the workflow's
   `ServiceAcked` with the same `kept`, so a cross-service erasure gathers every service's receipt.
 - Erasure has no undo.
 
@@ -74,13 +74,14 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `.`           | `PersonalData`, `registerPersonalData`, `personalDataDeclarations`                                                 | the kind, its registration and the resolved declarations               |
 | `.`           | `SubjectExportService`                                                                                             | `collect(subject, at)` and `archive(export)`                           |
 | `.`           | `PrivacyConfig`, `PrivacyOptions`, `PrivacyConfig$`                                                                | `store` (`repository`, `memory`), `exportTtlDays` (7), `exportFolder`  |
-| `.`           | `MemoryPersonalDataStoreDriver`, `MemorySubjectSaltStoreDriver`                                                    | memory drivers for tests and previews                                  |
-| `.`           | `SubjectErased`, `PERSONAL_DATA_STORE_DRIVERS`                                                                     | the receipt event; the store driver names                              |
+| `.`           | `MemoryPersonalDataStoreDriver`, `MemorySubjectSaltStoreDriver`                                                    | memory drivers for tests and previews; seed them with `put`            |
+| `.`           | `SubjectErased`, `ErasedRecordsLine`, `PERSONAL_DATA_STORE_DRIVERS`                                                | the receipt event and its line shape; the store driver names           |
 | `./contracts` | `ErasureMethod`, `PersonalDataStore`, `SubjectSaltStore`                                                           | the enum and the ports                                                 |
 | `./contracts` | `ErasureReceipt`, `ErasedRecords`, `SubjectExport`, `SubjectExportSection`, `SubjectRecord`, `PersonalDataOptions` | types                                                                  |
 | `./node`      | `EraseSubjectWorkflow`, `EraseSubjectAction`                                                                       | the erasure saga and the job that starts it                            |
 | `./node`      | `ExportSubjectDataAction`, `PurgeSubjectExportsAction`                                                             | the DSAR export job and the nightly export purge                       |
 | `./node`      | `RepositoryPersonalDataStoreDriver`, `PrivacyModule`                                                               | the database store driver; the root module                             |
+| `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
 | `./node`      | `EraseSubjectInput/Output`, `ExportSubjectDataInput/Output`, `PurgeSubjectExportsInput/Output`                     | schemas                                                                |
 | `./testing`   | `SubjectSaltStoreFake`, `clearPersonalData`                                                                        | a recording salt store; empties the declaration registry between tests |
 
