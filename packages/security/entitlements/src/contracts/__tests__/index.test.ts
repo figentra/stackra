@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: it exports exactly the `EntitlementSource`,
- *          `EntitlementUsage`, `PlanSnapshots` and `SeatLedger` ports.
+ *          `EntitlementUsage`, `PlanSnapshots`, `SeatLedger`, `MeterTotals` and `QuotaWarnings` ports and
+ *          `CatalogueVersionState`.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -17,7 +18,9 @@ describe("@stackra/entitlements/contracts", () => {
       "CatalogueVersions",
       "EntitlementSource",
       "EntitlementUsage",
+      "MeterTotals",
       "PlanSnapshots",
+      "QuotaWarnings",
       "SeatLedger",
     ]);
   });

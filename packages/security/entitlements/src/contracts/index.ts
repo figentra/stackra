@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/entitlements (the `EntitlementSource`,
- *          `EntitlementUsage`, `PlanSnapshots`, `SeatLedger` and `CatalogueVersions` ports, `CatalogueVersionState`
+ *          `EntitlementUsage`, `PlanSnapshots`, `SeatLedger`, `CatalogueVersions`, and the quota's `MeterTotals` and
+ *          `QuotaWarnings` ports (stackra-309), `CatalogueVersionState`
  *          and the types they name, plus `CapLiftFacts` and the limit's `EntitlementFilter`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package (ADR
  *           0294 decision 15). `EntitlementSource` names `EntitlementRef`, the structural form of an entitlement
@@ -13,7 +14,9 @@ export { CatalogueVersionState } from "#contracts/enums/catalogue-version-state.
 export { CatalogueVersions } from "#contracts/ports/catalogue-versions.port";
 export { EntitlementSource } from "#contracts/ports/entitlement-source.port";
 export { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
+export { MeterTotals } from "#contracts/ports/meter-totals.port";
 export { PlanSnapshots } from "#contracts/ports/plan-snapshots.port";
+export { QuotaWarnings } from "#contracts/ports/quota-warnings.port";
 export { SeatLedger } from "#contracts/ports/seat-ledger.port";
 export type { CapLiftFacts } from "#contracts/types/cap-lift-facts.type";
 export type { CatalogueVersion } from "#contracts/types/catalogue-version.type";

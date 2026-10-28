@@ -37,6 +37,8 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
 | `.`           | `EntitlementRateLimitBudgetDriver`                                                      | the driver of `RateLimitBudget`: plan-sized API area buckets               |
 | `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
+| `.`           | `QuotaPeriod`, `quotaWindow`, `QuotaExceededError`                                      | a quota's period, its UTC window, and the `quota_exceeded` refusal         |
+| `./contracts` | `MeterTotals`, `QuotaWarnings`                                                          | a meter's period total (the usage service); the soft-quota warning         |
 | `.`           | `registerEntitlements`, `entitlementKey`                                                | what gen's entry calls at boot; the locked key a keyed source looks up     |
 | `.`           | `isEntitled`                                                                            | yes or no for one entitlement in one scope, by class or by key             |
 | `./contracts` | `EntitlementKey` (also re-exported from `.`)                                            | an entitlement named by its key: `billing` or `catalogue.product_limit`    |
@@ -74,6 +76,27 @@ export class TillLimitEntitlement extends Entitlement({
 
 A retired till stops counting and frees its place. `where` on a feature or module, or a value that is not a scalar,
 throws a `TypeError` at declaration.
+
+## Consumption quotas
+
+A quota caps how much of a meter (ADR 0216) a scope uses per period. It names the meter an action declares
+(`meter: { name: "ai.tokens", kind: MeterKind.Sum, field: "tokens" }`) and a `QuotaPeriod`:
+
+```ts
+export class TokenQuotaEntitlement extends Entitlement({
+  kind: EntitlementKind.Quota,
+  meter: "ai.tokens",
+  per: QuotaPeriod.Month,
+}) {}
+```
+
+The plan grants a number, or a `LimitGrant` for a soft quota with grace and a ceiling. `PlanEntitlementCheckDriver`
+reads the meter's total for the current UTC period from `MeterTotals` (the usage service implements it) and refuses
+`quota_exceeded` once the total reaches the grant; the details carry the key, the meter, the allowance and
+`resetsAt`. A soft quota past its allowance passes while its grace runs and tells the optional `QuotaWarnings`. Bind
+the totals as the fourth constructor argument; a quota-gated call with none bound throws rather than pass unmetered.
+The total is read before the call, so one call may overshoot by its own units (ADR 0216 open question 1). Gen gates
+every action that feeds the quota's meter.
 
 ## Plan-sized rate limits
 

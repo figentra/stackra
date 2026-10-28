@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/entitlements`
  *          (`Entitlement`, `EntitlementKind`, `EntitlementSource`, `LimitReachedError`) and the registry row's plan
- *          driver, usage port and registration, the limit-grant helpers (stackra-117) and the edition bundling (stackra-64) are exported, nothing else is, the registry stays internal, and the
+ *          driver, usage port and registration, the limit-grant helpers (stackra-117), the quota pieces (stackra-309) and the edition bundling (stackra-64) are exported, nothing else is, the registry stays internal, and the
  *          public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -41,6 +41,8 @@ describe("@stackra/entitlements", () => {
       "PlanEntitlementCheckDriver",
       "PlanLimitReservationDriver",
       "PlanSnapshotEntitlementSourceDriver",
+      "QuotaExceededError",
+      "QuotaPeriod",
       "SeatLimitReachedError",
       "SeatMeterService",
       "SecondApproverRequiredError",
@@ -52,6 +54,7 @@ describe("@stackra/entitlements", () => {
       "limitOf",
       "paidPlanDays",
       "planCatalogueOf",
+      "quotaWindow",
       "registerEntitlements",
       "tierPlan",
       "versionInForce",
@@ -66,6 +69,8 @@ describe("@stackra/entitlements", () => {
     expectTypeOf<EntitlementGrant>().toEqualTypeOf<boolean | number | LimitGrant>();
     expectTypeOf<EntitlementOptions["kind"]>().toEqualTypeOf<EntitlementKind>();
     expectTypeOf<EntitlementOptions["counts"]>().toEqualTypeOf<(() => AnyClass) | undefined>();
+    expectTypeOf<EntitlementOptions["meter"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<EntitlementOptions["per"]>().toEqualTypeOf<entitlements.QuotaPeriod | undefined>();
     expectTypeOf<EntitlementRegistration["type"]>().toEqualTypeOf<EntitlementClass>();
     expectTypeOf<EntitlementRegistration["gates"]>().toEqualTypeOf<readonly AnyClass[]>();
     expectTypeOf<InstanceType<EntitlementClass>>().toEqualTypeOf<entitlements.Entitlement>();

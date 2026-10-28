@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit and type tests of the `Entitlement` kind base: the template's limit and a feature and a module record
  *          their options, a limit records its `where` filter, a limit without `counts`, a feature with one or with a `where`, a
- *          `where` that is not field equality and an unknown kind are refused at declaration,
- *          and the kind is called only.
+ *          `where` that is not field equality and an unknown kind are refused at declaration, a quota records its meter
+ *          and period and is refused without them or with a counted model, another kind with a meter is refused
+ *          (stackra-309), and the kind is called only.
  * Boundary: test only; the limit restates the template's `catalogue/access/product-limit.entitlement.ts`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decisions 16 and
@@ -14,6 +15,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Entitlement } from "#core/bases/entitlement.base";
 import { EntitlementKind } from "#core/enums/entitlement-kind.enum";
+import { QuotaPeriod } from "#core/enums/quota-period.enum";
 import type { EntitlementClass } from "#core/types/entitlement-class.type";
 
 class Product {}
@@ -77,6 +79,36 @@ describe("Entitlement", () => {
         where: { retiredAt: { lt: "2026-01-01" } },
       }),
     ).toThrow(/field equality/);
+  });
+
+  it("records a quota's meter and period and refuses a malformed one", () => {
+    class TokenQuotaEntitlement extends Entitlement({
+      kind: EntitlementKind.Quota,
+      meter: "ai.tokens",
+      per: QuotaPeriod.Month,
+    }) {}
+    expect(kindOf(TokenQuotaEntitlement)?.options).toEqual({
+      kind: "quota",
+      meter: "ai.tokens",
+      per: "month",
+    });
+    expect(() => Entitlement({ kind: EntitlementKind.Quota, per: QuotaPeriod.Day })).toThrow(
+      /names the meter it reads/,
+    );
+    expect(() =>
+      Entitlement({ kind: EntitlementKind.Quota, meter: "ai.tokens", per: "week" as never }),
+    ).toThrow(RangeError);
+    expect(() =>
+      Entitlement({
+        kind: EntitlementKind.Quota,
+        meter: "ai.tokens",
+        per: QuotaPeriod.Day,
+        counts: () => Product,
+      }),
+    ).toThrow(/counts no model/);
+    expect(() => Entitlement({ kind: EntitlementKind.Feature, meter: "ai.tokens" })).toThrow(
+      /Only a quota entitlement reads a meter/,
+    );
   });
 
   it("refuses a kind outside EntitlementKind", () => {

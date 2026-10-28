@@ -5,8 +5,9 @@
  *          reaches the grant (the template's two-product plan), the grant and the count are asked in the call's
  *          `scope` (platform-wide without one), no limit never counts, a grant of the wrong shape is a bug, a soft
  *          limit passes past its allowance while its grace period runs and up to its ceiling, a filtered limit hands
- *          its `where` to the usage so a retired till stops counting (STA-913), and the driver runs as
- *          the entitlement step of the real `ActionPipeline`.
+ *          its `where` to the usage so a retired till stops counting (STA-913), a quota refuses `quota_exceeded` once
+ *          its meter's period total reaches the grant, warns while a soft quota's grace runs and throws with no
+ *          meter totals bound (stackra-309), and the driver runs as the entitlement step of the real `ActionPipeline`.
  * Boundary: test only; the source is `fakeEntitlements`, the usage a list of rows, the permission step an allow-all.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0138 (as amended);
@@ -32,6 +33,10 @@ import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.const
 import { PlanEntitlementCheckDriver } from "#core/drivers/plan-entitlement-check.driver";
 import { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
+import { QuotaExceededError } from "#core/errors/quota-exceeded.error";
+import { QuotaPeriod } from "#core/enums/quota-period.enum";
+import { MeterTotals } from "#contracts/ports/meter-totals.port";
+import { QuotaWarnings } from "#contracts/ports/quota-warnings.port";
 import { registerEntitlements } from "#core/functions/register-entitlements.function";
 import { EntitlementSource } from "#core/ports/entitlement-source.port";
 import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
@@ -369,5 +374,136 @@ describe("PlanEntitlementCheckDriver with a filtered limit", () => {
     usage.tills = [{ retiredAt: null }, { retiredAt: "2026-10-01T00:00:00Z" }];
     await expect(check.check(callOf(RegisterTillAction))).resolves.toBeUndefined();
     expect(usage.filters).toEqual([{ retiredAt: null }, { retiredAt: null }]);
+  });
+});
+
+/** A monthly AI token quota (stackra-309). */
+class TokenQuotaEntitlement extends Entitlement({
+  kind: EntitlementKind.Quota,
+  meter: "ai.tokens",
+  per: QuotaPeriod.Month,
+}) {}
+
+class AskAssistantAction extends Action({
+  key: "assistant.ask",
+  actors: [ActorKind.User],
+}) {
+  async handle(): Promise<string> {
+    return "answered";
+  }
+}
+
+/** Answers `used` for every question and records each one in full. */
+class FixedMeterTotalsDriver extends Driver(MeterTotals) {
+  used = 0;
+
+  asked: unknown[][] = [];
+
+  async total(meter: string, scope: PublicId | undefined, from: Date, to: Date): Promise<number> {
+    this.asked.push([meter, scope, from.toISOString(), to.toISOString()]);
+    return this.used;
+  }
+}
+
+class ListQuotaWarningsDriver extends Driver(QuotaWarnings) {
+  heard: unknown[][] = [];
+
+  async warn(
+    entitlement: string,
+    scope: PublicId | undefined,
+    used: number,
+    limit: number,
+  ): Promise<void> {
+    this.heard.push([entitlement, scope, used, limit]);
+  }
+}
+
+describe("PlanEntitlementCheckDriver with a quota (stackra-309)", () => {
+  beforeEach(() => {
+    ENTITLEMENT_REGISTRY.clear();
+    registerEntitlements([
+      { type: TokenQuotaEntitlement, key: "ai.token_quota", gates: [AskAssistantAction] },
+    ]);
+  });
+
+  it("reads the meter's total for the month in the call's scope and refuses once it reaches the grant", async () => {
+    const totals = new FixedMeterTotalsDriver();
+    const check = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[TokenQuotaEntitlement, 1000]]),
+      new RowsUsageDriver(),
+      new FixedClockDriver(),
+      totals,
+    );
+    totals.used = 999;
+    await expect(check.check(callOf(AskAssistantAction))).resolves.toBeUndefined();
+    expect(totals.asked).toEqual([
+      ["ai.tokens", ACME.id, "2026-10-01T00:00:00.000Z", "2026-11-01T00:00:00.000Z"],
+    ]);
+    totals.used = 1000;
+    const refused = await check.check(callOf(AskAssistantAction)).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(QuotaExceededError);
+    expect((refused as QuotaExceededError).details).toEqual({
+      entitlement: "ai.token_quota",
+      meter: "ai.tokens",
+      limit: 1000,
+      resetsAt: "2026-11-01T00:00:00.000Z",
+    });
+  });
+
+  it("passes a soft quota in its grace period with a warning, up to the ceiling", async () => {
+    const totals = new FixedMeterTotalsDriver();
+    const warnings = new ListQuotaWarningsDriver();
+    const check = new PlanEntitlementCheckDriver(
+      fakeEntitlements([
+        [
+          TokenQuotaEntitlement,
+          { limit: 1000, graceEndsAt: new Date("2026-11-01T00:00:00Z"), ceiling: 1200 },
+        ],
+      ]),
+      new RowsUsageDriver(),
+      new FixedClockDriver(),
+      totals,
+      warnings,
+    );
+    totals.used = 900;
+    await expect(check.check(callOf(AskAssistantAction))).resolves.toBeUndefined();
+    totals.used = 1100;
+    await expect(check.check(callOf(AskAssistantAction))).resolves.toBeUndefined();
+    expect(warnings.heard).toEqual([["ai.token_quota", ACME.id, 1100, 1000]]);
+    totals.used = 1200;
+    await expect(check.check(callOf(AskAssistantAction))).rejects.toBeInstanceOf(
+      QuotaExceededError,
+    );
+  });
+
+  it("never reads an unlimited quota, refuses one outside the plan and throws without meter totals", async () => {
+    const totals = new FixedMeterTotalsDriver();
+    const unlimited = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[TokenQuotaEntitlement, Number.POSITIVE_INFINITY]]),
+      new RowsUsageDriver(),
+      undefined,
+      totals,
+    );
+    await expect(unlimited.check(callOf(AskAssistantAction))).resolves.toBeUndefined();
+    expect(totals.asked).toEqual([]);
+    await expect(
+      new PlanEntitlementCheckDriver(fakeEntitlements(), new RowsUsageDriver()).check(
+        callOf(AskAssistantAction),
+      ),
+    ).rejects.toBeInstanceOf(EntitlementRequiredError);
+    await expect(
+      new PlanEntitlementCheckDriver(
+        fakeEntitlements([[TokenQuotaEntitlement, 1000]]),
+        new RowsUsageDriver(),
+      ).check(callOf(AskAssistantAction)),
+    ).rejects.toThrow(/MeterTotals must be bound/);
+    await expect(
+      new PlanEntitlementCheckDriver(
+        fakeEntitlements([[TokenQuotaEntitlement, true]]),
+        new RowsUsageDriver(),
+        undefined,
+        totals,
+      ).check(callOf(AskAssistantAction)),
+    ).rejects.toThrow(/is a quota, so its source answers a count/);
   });
 });

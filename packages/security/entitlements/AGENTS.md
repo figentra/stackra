@@ -55,6 +55,9 @@ The `Entitlement` kind, its ports and the plan driver of the pipeline's entitlem
   `rate_limit.<area>_burst` by key in the call's `scope`; never put a request rate in code (STA-1477).
 - Edition bundles (ADR 0335 d6): an edition's base entitlements reach its tiers only through `bundleEditionCatalogue`;
   never grant a base module by name in a driver, and never sell an unbundled one.
+- A quota (`EntitlementKind.Quota`, stackra-309) names a meter and a `QuotaPeriod`; its total comes only from the
+  `MeterTotals` port (the usage service aggregates, ADR 0216 d3). Never count usage events here, never let a
+  quota-gated call through when no totals are bound, and keep the allowance and the grace in the plan grant.
 - A check that must never pass a limit holds the limit's lock (`LimitReservationService`, `SeatMeterService`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 

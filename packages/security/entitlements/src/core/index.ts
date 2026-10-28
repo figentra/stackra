@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/entitlements (the `Entitlement` kind, its ports, the plan driver
  *          of the pipeline's entitlement step and its limit reservation, the plan-sized rate-limit budget, the value-entitlement reader, the registration
  *          gen calls, the by-class-or-key `isEntitled` check, the limit-grant helpers `isLimitGrant` and `limitOf`, `paidPlanDays`,
- *          `LimitReachedError`, the plan-catalogue admin of ADR 0391, and an edition's bundled catalogue `bundleEditionCatalogue`, ADR 0335) until `stackra gen` writes the entry barrels (STA-339).
+ *          `LimitReachedError`, the quota's `QuotaPeriod`, `quotaWindow` and `QuotaExceededError` (stackra-309), the plan-catalogue admin of ADR 0391, and an edition's bundled catalogue `bundleEditionCatalogue`, ADR 0335) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The registry stays internal; `isLimitGrant` and `limitOf` are public
  *           (stackra-117) so a service's own ledger reuses them instead of repeating them.
  *           `EntitlementSource` now lives in `./contracts` and is still re-exported here so existing imports keep
@@ -22,9 +22,11 @@ export { PlanLimitReservationDriver } from "#core/drivers/plan-limit-reservation
 export { PlanEntitlementCheckDriver } from "#core/drivers/plan-entitlement-check.driver";
 export { PlanSnapshotEntitlementSourceDriver } from "#core/drivers/plan-snapshot-entitlement-source.driver";
 export { EntitlementKind } from "#core/enums/entitlement-kind.enum";
+export { QuotaPeriod } from "#core/enums/quota-period.enum";
 export { CatalogueChangeBackdatedError } from "#core/errors/catalogue-change-backdated.error";
 export { CatalogueVersionNotPendingError } from "#core/errors/catalogue-version-not-pending.error";
 export { LimitReachedError } from "#core/errors/limit-reached.error";
+export { QuotaExceededError } from "#core/errors/quota-exceeded.error";
 export { SeatLimitReachedError } from "#core/errors/seat-limit-reached.error";
 export { SecondApproverRequiredError } from "#core/errors/second-approver-required.error";
 export { bundleEditionCatalogue } from "#core/functions/bundle-edition-catalogue.function";
@@ -35,6 +37,7 @@ export { limitAllows } from "#core/functions/limit-allows.function";
 export { limitOf } from "#core/functions/limit-of.function";
 export { paidPlanDays } from "#core/functions/paid-plan-days.function";
 export { planCatalogueOf } from "#core/functions/plan-catalogue-of.function";
+export { quotaWindow } from "#core/functions/quota-window.function";
 export { registerEntitlements } from "#core/functions/register-entitlements.function";
 export { tierPlan } from "#core/functions/tier-plan.function";
 export { versionInForce } from "#core/functions/version-in-force.function";
