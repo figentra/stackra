@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `posthog` `AnalyticsDriver`: the batch request it sends (endpoint, key, events in order
- *          with their capture time, no person profile), one anonymous id per driver kept across sends, the ingest
+ *          with their capture time, no person profile), the envelope ids and page path mapped to PostHog, the ingest
  *          origin preferred over the host, no request for an empty list, and the errors for a missing key and an
  *          error status.
  * Boundary: test only; `fetch` is stubbed, no network.
@@ -23,6 +23,10 @@ const config = buildConfig(AnalyticsConfig, {
 
 /** A delivery named `name`. */
 const delivery = (name: string, properties: Record<string, unknown> = {}) => ({
+  eventId: "evt_01jbadk0g0aaaaaaaaaaaaaaaa",
+  anonymousId: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+  sessionId: "ses_01jbadk0g0cccccccccccccccc",
+  context: { library: { name: "@stackra/analytics" } },
   name,
   properties,
   occurredAt: "2026-10-25T09:00:00.000Z",
@@ -71,14 +75,23 @@ describe("PosthogAnalyticsDriver", () => {
     });
   });
 
-  it("keeps one anonymous id per driver across sends", async () => {
+  it("sends the delivery's ids and page path, making none of its own", async () => {
     const fetch = answer();
-    const driver = new PosthogAnalyticsDriver(config);
-    await driver.send([delivery("a.one")]);
-    await driver.send([delivery("a.two")]);
-    const first = request(fetch, 0).body.batch[0].properties.distinct_id;
-    expect(typeof first).toBe("string");
-    expect(request(fetch, 1).body.batch[0].properties.distinct_id).toBe(first);
+    await new PosthogAnalyticsDriver(config).send([
+      {
+        ...delivery("a.one"),
+        context: { library: { name: "@stackra/analytics" }, page: { path: "/pricing" } },
+      },
+      delivery("a.two"),
+    ]);
+    const [first, second] = request(fetch).body.batch;
+    expect(first.properties).toMatchObject({
+      distinct_id: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+      $session_id: "ses_01jbadk0g0cccccccccccccccc",
+      $insert_id: "evt_01jbadk0g0aaaaaaaaaaaaaaaa",
+      $pathname: "/pricing",
+    });
+    expect(second.properties).not.toHaveProperty("$pathname");
   });
 
   it("sends to the ingest origin when one is set", async () => {

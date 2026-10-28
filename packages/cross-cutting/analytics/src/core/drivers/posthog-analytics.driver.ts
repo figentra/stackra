@@ -3,10 +3,11 @@
  * Purpose: the `posthog` driver of the `AnalyticsDriver` port: posts the deliveries it is handed, in order, to
  *          PostHog's batch capture endpoint (`POST <ingestOrigin or posthogHost>/batch/`) with the project key.
  * Boundary: plain `fetch`, no vendor SDK, no cookie and no storage. `AnalyticsClient` keeps the consent gate and the
- *           bounded queue and calls `send` only once the category is granted, so the anonymous `distinct_id` (a random
- *           id, created on the first send and held in memory only) never leaves before consent, and every event is
- *           sent with `$process_person_profile: false`, so PostHog builds no person profile from it. Each delivery's
- *           capture time is its `timestamp`. A missing key or an error status rejects; the client swallows it.
+ *           bounded queue and calls `send` only once the category is granted. The driver makes no id of its own: the
+ *           delivery's `anonymousId` is the `distinct_id`, its `sessionId` the `$session_id`, its `eventId` the
+ *           `$insert_id` and its page path the `$pathname`; every event is sent with `$process_person_profile: false`,
+ *           so PostHog builds no person profile from it. Each delivery's capture time is its `timestamp`. A missing
+ *           key or an error status rejects; the client swallows it.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0071 (no identifier before consent); ADR 0294 (decisions 16
  *                     and 17); ADR 0266 (one option, one driver).
@@ -22,13 +23,11 @@ import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type
  *
  * @example
  * const driver = new PosthogAnalyticsDriver(buildConfig(AnalyticsConfig, { values: { posthogKey: "phc_..." } }));
- * await driver.send([{ name: "lead.submitted", properties: { plan: "pro" }, occurredAt }]);
+ * await driver.send(deliveries); // the envelope v2 deliveries `AnalyticsClient` builds after consent
  */
 export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
   /** Holds the PostHog key and host, the ingest origin and the queue bound. */
   protected readonly config: AnalyticsConfig;
-
-  private distinctId: string | null = null;
 
   /**
    * @param config - holds the PostHog project key and host and the ingest origin.
@@ -47,11 +46,6 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
     return this.post(deliveries);
   }
 
-  /** The anonymous visitor id of this launch; native drivers override it where Web Crypto is absent. */
-  protected anonymousId(): string {
-    return globalThis.crypto.randomUUID();
-  }
-
   /**
    * One batch capture request for `deliveries`; nothing is requested for an empty list.
    *
@@ -62,9 +56,6 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
     const { posthogKey, posthogHost, ingestOrigin } = this.config;
     if (posthogKey === null || posthogKey === "")
       throw new Error("AnalyticsConfig.posthogKey is not set, so PostHog cannot be sent to");
-    // Created only here, after consent, and never stored: a new launch is a new anonymous visitor.
-    this.distinctId ??= this.anonymousId();
-    const distinctId = this.distinctId;
     const response = await fetch(`${(ingestOrigin || posthogHost).replace(/\/+$/, "")}/batch/`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -77,7 +68,10 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
           timestamp: delivery.occurredAt,
           properties: {
             ...delivery.properties,
-            distinct_id: distinctId,
+            distinct_id: delivery.anonymousId,
+            $session_id: delivery.sessionId,
+            $insert_id: delivery.eventId,
+            ...(delivery.context.page ? { $pathname: delivery.context.page.path } : {}),
             $process_person_profile: false,
           },
         })),

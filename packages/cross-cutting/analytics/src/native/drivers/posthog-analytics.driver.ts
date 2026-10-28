@@ -53,13 +53,6 @@ export class PosthogAnalyticsDriver extends CorePosthogAnalyticsDriver {
     return this.buffer.length >= FLUSH_AT ? this.flush() : Promise.resolve();
   }
 
-  /** A random per-launch key; Hermes has no global Web Crypto, and this id needs no cryptographic strength. */
-  protected override anonymousId(): string {
-    return Array.from({ length: 4 }, () =>
-      Math.random().toString(16).slice(2, 10).padEnd(8, "0"),
-    ).join("-");
-  }
-
   /** Sends everything buffered as one batch; on failure puts it back in front, within the buffer limit. */
   private async flush(): Promise<void> {
     const batch = this.buffer.splice(0);

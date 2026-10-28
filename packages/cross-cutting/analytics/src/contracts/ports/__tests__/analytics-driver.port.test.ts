@@ -30,6 +30,10 @@ describe("AnalyticsDriver", () => {
     expect(driver).toBeInstanceOf(Port);
     await driver.send([
       {
+        eventId: "evt_01jbadk0g0aaaaaaaaaaaaaaaa",
+        anonymousId: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+        sessionId: "ses_01jbadk0g0cccccccccccccccc",
+        context: { library: { name: "@stackra/analytics" } },
         name: "scan.barcode_scanned",
         properties: { found: true },
         occurredAt: "2026-10-24T09:00:00Z",

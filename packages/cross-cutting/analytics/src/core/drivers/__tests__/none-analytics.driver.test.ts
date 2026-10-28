@@ -32,7 +32,15 @@ describe("NoneAnalyticsDriver", () => {
     const driver: AnalyticsDriver = new NoneAnalyticsDriver();
     await expect(
       driver.send([
-        { name: "lead.submitted", properties: { plan: "pro" }, occurredAt: "2026-10-24T09:00:00Z" },
+        {
+          eventId: "evt_01jbadk0g0aaaaaaaaaaaaaaaa",
+          anonymousId: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+          sessionId: "ses_01jbadk0g0cccccccccccccccc",
+          context: { library: { name: "@stackra/analytics" } },
+          name: "lead.submitted",
+          properties: { plan: "pro" },
+          occurredAt: "2026-10-24T09:00:00Z",
+        },
       ]),
     ).resolves.toBeUndefined();
     expect(fetch).not.toHaveBeenCalled();

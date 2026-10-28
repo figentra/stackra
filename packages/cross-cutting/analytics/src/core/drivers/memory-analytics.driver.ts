@@ -20,7 +20,7 @@ import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type
  *
  * @example
  * const driver = new MemoryAnalyticsDriver();
- * await driver.send([{ name: "lead.submitted", properties: { plan: "pro" }, occurredAt }]);
+ * await driver.send(deliveries); // the envelope v2 deliveries `AnalyticsClient` builds after consent
  * expect(driver.delivered()).toHaveLength(1);
  */
 export class MemoryAnalyticsDriver extends Driver(AnalyticsDriver) {

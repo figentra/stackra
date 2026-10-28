@@ -14,6 +14,10 @@ import { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
 
 /** A delivery named `name`. */
 const delivery = (name: string) => ({
+  eventId: "evt_01jbadk0g0aaaaaaaaaaaaaaaa",
+  anonymousId: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+  sessionId: "ses_01jbadk0g0cccccccccccccccc",
+  context: { library: { name: "@stackra/analytics" } },
   name,
   properties: {},
   occurredAt: "2026-10-24T09:00:00.000Z",

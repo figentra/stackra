@@ -34,6 +34,10 @@ const config = buildConfig(AnalyticsConfig, {
 /** `count` deliveries named `e.<n>`. */
 const deliveries = (count: number, from = 0) =>
   Array.from({ length: count }, (_, index) => ({
+    eventId: `evt_01jbadk0g0aaaaaaaaaaaaaa${String(from + index).padStart(2, "0")}`,
+    anonymousId: "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
+    sessionId: "ses_01jbadk0g0cccccccccccccccc",
+    context: { library: { name: "@stackra/analytics" } },
     name: `e.${from + index}`,
     properties: {},
     occurredAt: "2026-10-25T09:00:00.000Z",

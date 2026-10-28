@@ -4,7 +4,8 @@
  *          queue is sent in order on acceptance with each event's capture time, discarded unsent on refusal, holds at
  *          most `queueLimit` events (keeping the earliest), and Global Privacy Control counts as a refusal; plus the
  *          payload rules (declared fields only, the deny list removed), the refusal of a non-analytics event, a
- *          driver failure kept from the caller, and the ledger watched only while events wait.
+ *          driver failure kept from the caller, the ledger watched only while events wait, and the envelope v2 ids
+ *          and context (event id per event, visitor and session ids made only after consent and kept for the launch).
  * Boundary: test only; registers each event's zod schema the way gen does; the memory driver records what left.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1, 2 and 5); ADR 0305 (rule 20).
@@ -93,7 +94,7 @@ describe("AnalyticsClient", () => {
     client.track(NewsletterJoined.create({ source: "footer", email: "lina@acme.example" }));
     freezeClock("2026-10-24T09:01:00Z");
     ledger.set(ConsentCategory.Analytics, true);
-    expect(driver.delivered()).toEqual([
+    expect(driver.delivered()).toMatchObject([
       {
         name: "lead.submitted",
         properties: { plan: "pro" },
@@ -199,6 +200,51 @@ describe("AnalyticsClient", () => {
     });
     process.off("unhandledRejection", unhandled);
     expect(unhandled).not.toHaveBeenCalled();
+  });
+
+  it("gives each event its own id and the launch one visitor and one session", () => {
+    const { client, driver, ledger } = setUp();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    client.track(LeadSubmitted.create({ plan: "team" }));
+    const [first, second] = driver.delivered();
+    expect(first?.eventId).toMatch(/^evt_[0-9a-hjkmnp-tv-z]{26}$/);
+    expect(first?.eventId).not.toBe(second?.eventId);
+    expect(first?.anonymousId).toMatch(/^anon_/);
+    expect(first?.sessionId).toMatch(/^ses_/);
+    expect(second?.anonymousId).toBe(first?.anonymousId);
+    expect(second?.sessionId).toBe(first?.sessionId);
+    expect(first).not.toHaveProperty("userId");
+  });
+
+  it("makes no visitor id for a visitor who refused", () => {
+    const { client, ledger } = setUp();
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    ledger.set(ConsentCategory.Analytics, false);
+    expect(Reflect.get(client, "anonymousId")).toBeNull();
+    expect(Reflect.get(client, "sessionId")).toBeNull();
+  });
+
+  it("captures the library, page path and locale when the platform has them", () => {
+    vi.stubGlobal("location", { pathname: "/pricing", search: "?email=lina@acme.example" });
+    vi.stubGlobal("navigator", { language: "ar-SA" });
+    const { client, driver, ledger } = setUp();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(driver.delivered()[0]?.context).toEqual({
+      library: { name: "@stackra/analytics" },
+      page: { path: "/pricing" },
+      locale: "ar-SA",
+    });
+  });
+
+  it("captures only the library without a page or a locale", () => {
+    vi.stubGlobal("location", undefined);
+    vi.stubGlobal("navigator", undefined);
+    const { client, driver, ledger } = setUp();
+    ledger.set(ConsentCategory.Analytics, true);
+    client.track(LeadSubmitted.create({ plan: "pro" }));
+    expect(driver.delivered()[0]?.context).toEqual({ library: { name: "@stackra/analytics" } });
   });
 
   it("watches the ledger only while events wait", () => {
