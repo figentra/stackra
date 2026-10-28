@@ -45,6 +45,7 @@ describe("@stackra/documents", () => {
       "InvalidDocumentTemplateError",
       "LABEL_PURPOSE",
       "MemoryESignatureDriver",
+      "PdfTableWriterDriver",
       "PRINT_DOCUMENT_KIND",
       "PdfEngineFailedError",
       "SignatureEnvelopeClosedError",

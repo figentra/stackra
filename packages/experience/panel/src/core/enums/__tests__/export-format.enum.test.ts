@@ -13,11 +13,11 @@ import { ExportFormat } from "#core/enums/export-format.enum";
 
 describe("ExportFormat", () => {
   it("holds its codes in order", () => {
-    expect(Enum.values(ExportFormat)).toEqual(["csv", "xlsx"]);
+    expect(Enum.values(ExportFormat)).toEqual(["csv", "xlsx", "jsonl", "pdf"]);
     expect(ExportFormat.Csv).toBe("csv");
   });
 
   it("types its values", () => {
-    expectTypeOf<ExportFormat>().toEqualTypeOf<"csv" | "xlsx">();
+    expectTypeOf<ExportFormat>().toEqualTypeOf<"csv" | "xlsx" | "jsonl" | "pdf">();
   });
 });

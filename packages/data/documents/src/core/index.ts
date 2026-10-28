@@ -21,6 +21,7 @@ export { DocumensoIntegration } from "#core/drivers/documenso.integration";
 export { GotenbergPdfAssemblerDriver } from "#core/drivers/gotenberg-pdf-assembler.driver";
 export { GotenbergPdfEngineDriver } from "#core/drivers/gotenberg-pdf-engine.driver";
 export { MemoryESignatureDriver } from "#core/drivers/memory-e-signature.driver";
+export { PdfTableWriterDriver } from "#core/drivers/pdf-table-writer.driver";
 export { DocumentFormat } from "#core/enums/document-format.enum";
 export { AmountWordsUnavailableError } from "#core/errors/amount-words-unavailable.error";
 export { DocumentValueError } from "#core/errors/document-value.error";

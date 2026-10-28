@@ -18,7 +18,8 @@ presents it.
 
 **Tier:** `tier:lib` (`packages/experience/panel`). Entries `.`, `./react`, `./native` and `./node` (the old `./schemas` is folded
 into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/container`, `@stackra/contracts`,
-`@stackra/database` and `@stackra/model` (the `./node` saved view store), `@stackra/errors`, `@stackra/experience`,
+`@stackra/database` and `@stackra/model` (the `./node` saved view store), `@stackra/access-log`, `@stackra/config`,
+`@stackra/data-transfer`, `@stackra/documents` and `@stackra/filesystem` (the `./node` queued export), `@stackra/errors`, `@stackra/experience`,
 `@stackra/i18n`, `@stackra/iam`, `@stackra/icons`, `@stackra/money`, `@stackra/navigation` (the breadcrumb trail and the
 route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tenancy` (`BelongsToTenant`), `@stackra/ui`,
 `@stackra/validation` and zod. React, React Router and React Native are optional peers.
@@ -48,6 +49,7 @@ route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tena
 | `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                            | run any action through its declared confirmation               |
 | `./native` | `WidgetSlot`, `SavedViewTabs`                                                                                                                                                   | a slot's widgets on mobile; saved view tabs over a list        |
 | `./node`   | `DatabaseViewStoreDriver`, `StoredView`, `StoredViewService`, `ViewPermissions`                                                                                                 | the `database` saved view store in `panel.stored_views`        |
+| `./node`   | `ExportRunner`, `ExportInput`, `ExportOutput`, `ExportSource` (t), `ExportConfig` (`ExportOptions`, `ExportConfig$`)                                                            | the queued export of a resource list (ADR 0307 rule 10)        |
 
 ## Declaring a resource
 
@@ -127,6 +129,18 @@ the registered table), sharing without `panel.view.share` (`ViewPermissions.shar
 version (`StaleVersionError`). `ResourceListPage` takes a `views` store and draws the views as tabs over the table; the
 native `SavedViewTabs` does the same for a native list. `groupRows(rows, view)` groups what is on screen in first-met
 order and is for a fully loaded relation table only (ADR 0470 decision 4); a paged list waits for the server group-by.
+
+## Queued export
+
+`a.export({ formats })` places the export button; the work is a module's export action (`job` on the action, the
+`export` verb as its permission) whose `handle` calls `ExportRunner.run({ list, row, classified? }, input, ctx)`.
+`ExportInput` is the format (`csv`, `xlsx`, `jsonl`, `pdf`), the row paths and the list's filters, sort and search. The
+runner pages the list query through the action pipeline as the reader, so the query's permission, the visibility filter
+and row-level security decide every row; it drops `@Classified` columns of the row shape unless the source opts the
+column in and the reader holds its L2 permission; it streams at most `maxRows` rows into the format's `TabularWriter`
+(data-transfer's CSV, JSON Lines and XLSX, documents' `PdfTableWriterDriver` for PDF) under a random name in the
+configured folder; and it returns a link the disk signs for 24 hours, whose issue is access-logged against the reader.
+`ExportConfig` holds the page size, the row caps, the folder and the PDF page.
 
 ## Display modes
 
@@ -225,6 +239,8 @@ calendar and chart layouts of a saved view (they draw as the table), saving and 
 `.renamed()` migration of stored views, a view that targets a `Report` key, the modal form of a record action that needs more than the id, a selection-input (`Selection<...>`) action, the
 upload and repeater fields, the step wizard (steps show one under another), the id a create mints for its PUT address,
 enum labels (codes show), the native pages, and nesting the resource routes under the panel shell. Elsewhere: the
-queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and
+import pipeline with the `ImportMapper` port, gen emitting each resource's export action from `a.export()` and the List
+button that dispatches it, export column labels (headers are row paths), a per-download access record (the disk signs
+the link; its own logs record downloads), the Chart, Table, Timeline, Banner and
 Check displays, the `NumberMetric`, `PercentMetric` and `DurationMetric` shapes, the scope and user layouts (layers 4
 and 5) and the KPI drill-down links and sparklines. See the spec's open items.

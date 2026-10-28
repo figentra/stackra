@@ -9,7 +9,7 @@ templates, never code. This package also holds the `PdfEngine`, `PdfAssembler` a
 `gotenberg` drivers of the two PDF ports, the binding of `@stackra/fiscal`'s `HybridPdf`, and the default e-signature
 connector, Documenso self-hosted.
 
-**Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/config`, `@stackra/container`,
+**Tier:** `tier:lib` (`packages/data/documents`). Entries `.` and `./contracts`. Depends on `@stackra/config`, `@stackra/container`, `@stackra/data-transfer` (the `TabularWriter` port),
 `@stackra/contracts`, `@stackra/errors`, `@stackra/integrations`, `@stackra/support` (`escapeHtml`), `@stackra/validation`, `zod`, `docx` (DOCX writing) and `uqr` (QR encoding).
 
 ## What is here
@@ -26,6 +26,7 @@ connector, Documenso self-hosted.
 | `MemoryESignatureDriver`                                                            | the `memory` driver of `ESignatureProvider` (tests, sandboxes)                                                                                                                                                        |
 | `ConnectionESignatureDriver`, `DocumensoIntegration`, `DocumensoConnection`         | the `connection` driver of `ESignatureProvider` (ADR 0356 per call) and the Documenso connector it routes to                                                                                                          |
 | `GotenbergPdfEngineDriver`, `GotenbergPdfAssemblerDriver`                           | the `gotenberg` drivers of `PdfEngine` (headless Chromium, shapes Arabic) and `PdfAssembler` (merge, Factur-X hybrid), configured by `DocumentsConfig`                                                                |
+| `PdfTableWriterDriver`                                                              | the `pdf` driver of data-transfer's `TabularWriter`: one sheet printed as a PDF table through `PdfEngine`, for queued list and report exports                                                                         |
 | `DocumentsConfig`, `DocumentsConfig$`                                               | key `documents`: `gotenbergUrl`, `gotenbergTimeoutMs`, and the `DOCUMENTS_GOTENBERG_AUTHORIZATION` secret for the engine's header                                                                                     |
 | `HybridPdfBinding`                                                                  | fiscal's `HybridPdf` (`attach`) made by the bound `PdfAssembler`                                                                                                                                                      |
 | `LABEL_PURPOSE`                                                                     | the purpose codes of the shelf, food and short-dated label templates                                                                                                                                                  |

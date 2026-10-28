@@ -36,6 +36,8 @@ drivers, fiscal's `HybridPdf` binding, the e-signature port (ADR 0365), its `con
 - A new barcode symbology is a new `symbology` value, its encoder function, and the `barcode` case of
   `resolveDocument`; the renderers draw any module row.
 - A label kind is a `LABEL_PURPOSE` code plus templates, never a renderer branch.
+- `PdfTableWriterDriver` is data-transfer's `TabularWriter` for PDF: it depends on data-transfer, never the reverse. Its
+  page and row cap are the caller's configuration; it collects one sheet (a PDF prints whole) and escapes every cell.
 - `HybridPdfBinding` matches `@stackra/fiscal`'s `HybridPdf` by shape; this package never depends on fiscal.
 - The `gotenberg` drivers use plain `fetch`; every failure is `PdfEngineFailedError` (route and status only).
 - The `gotenberg` drivers inject `DocumentsConfig` (key `documents`), never an endpoint object: a constructor takes

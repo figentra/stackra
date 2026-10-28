@@ -13,6 +13,12 @@ describe("@stackra/panel/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DatabaseViewStoreDriver",
+      "ExportConfig",
+      "ExportConfig$",
+      "ExportInput",
+      "ExportOptions",
+      "ExportOutput",
+      "ExportRunner",
       "StoredView",
       "StoredViewService",
       "ViewPermissions",

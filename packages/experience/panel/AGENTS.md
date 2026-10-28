@@ -65,6 +65,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - A display mode is display only: `fieldsForMode` hides, never denies. A saved view stores declared keys only: a
   `ViewStore` driver checks `unknownViewKeys` on every save, `panel.view.share` before sharing, ownership before a
   change, and passes the view's `version` as `expectedVersion`. Never draw `groupRows` totals on a paged list.
+- An export reads rows only through the resource's list query run as the reader (`ExportRunner`), never a table or a
+  service directly, so per-row permissions hold. `@Classified` columns are dropped unless opted in under an L2
+  permission; the link lives 24 hours and its issue is access-logged. Caps and folders are `ExportConfig`, never code.
 - A `LineEntry` slot shows exactly one editor, the highest layer's; never merge editors.
 - Shell slots (ADR 0438): `defineSlot<Props>` in the shell package, `fillSlot` in the product's UI package, each an
   exported const with static options so gen reads them. `Slot.props` is type-only; never set it at run time. A shell
@@ -85,5 +88,6 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 ## PII
 
 The `./node` saved view store keeps `panel.stored_views`: a view's name, its owner's principal id (pseudonymous) and
-the filter values a person chose, which may contain what they searched for. Rows are tenant-scoped; nothing else is
-stored.
+the filter values a person chose, which may contain what they searched for. Rows are tenant-scoped. An export file
+holds the rows the reader may see, without classified columns unless opted in; it sits behind a random name and a
+24-hour signed link, and each link's issue writes an access record.

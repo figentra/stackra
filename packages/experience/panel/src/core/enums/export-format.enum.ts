@@ -3,7 +3,8 @@
  * Purpose: `ExportFormat`, the file formats a resource's queued export offers.
  * Boundary: an enum (`Enum.of`) written in `a.export({ formats })`.
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rule 10: export is queued, CSV and XLSX); ADR 0294 (decision 16: Enum).
+ * Governing contract: ADR 0307 (rule 10: export is queued, CSV and XLSX); ADR 0163 (decision 4); reporting gap 11 (JSON
+ *                     Lines and PDF); ADR 0294 (decision 16: Enum).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -18,6 +19,10 @@ export const ExportFormat = Enum.of({
   Csv: "csv",
   /** An Office Open XML workbook. */
   Xlsx: "xlsx",
+  /** One JSON object per line, keyed by the header. */
+  JsonLines: "jsonl",
+  /** A printed table, through the bound `PdfEngine`. */
+  Pdf: "pdf",
 });
 
 /** One of the codes above. */

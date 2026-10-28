@@ -87,6 +87,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/data-transfer": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/support": "workspace:*",
