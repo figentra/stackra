@@ -17,9 +17,9 @@ import type { TurnstileProps } from "#react/turnstile/turnstile.props";
 /** The part of Cloudflare's `window.turnstile` this component calls. */
 interface TurnstileApi {
   /** Draws a widget into `container`; returns its id. */
-  render(container: HTMLElement, options: Readonly<Record<string, unknown>>): string;
+  render: (container: HTMLElement, options: Readonly<Record<string, unknown>>) => string;
   /** Removes the widget with `id`. */
-  remove(id: string): void;
+  remove: (id: string) => void;
 }
 
 /** Cloudflare's script, in explicit mode so the component decides where and when a widget draws. */

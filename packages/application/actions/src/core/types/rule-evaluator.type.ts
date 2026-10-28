@@ -15,5 +15,5 @@ import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 /** Re-evaluates an offline-computed document on the server. */
 export interface RuleEvaluator<I = never> {
   /** Both answers to the document in `input`; `undefined` when `input` carries none. */
-  evaluate(input: I, ctx: ActionContext): Promise<RuleEvaluation | undefined>;
+  evaluate: (input: I, ctx: ActionContext) => Promise<RuleEvaluation | undefined>;
 }

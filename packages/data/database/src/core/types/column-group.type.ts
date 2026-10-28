@@ -11,11 +11,11 @@
 /** Columns set together. */
 export interface ColumnGroup {
   /** Every column refuses null. */
-  notNull(): this;
+  notNull: () => this;
 
   /** Every column accepts null. */
-  nullable(): this;
+  nullable: () => this;
 
   /** Every column's comment. */
-  comment(text: string): this;
+  comment: (text: string) => this;
 }

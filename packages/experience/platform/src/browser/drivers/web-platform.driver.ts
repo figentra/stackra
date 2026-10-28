@@ -37,19 +37,19 @@ const DONE: CapabilityResult = Object.freeze({ ok: true, data: undefined });
 
 /** The browser APIs this driver reaches that the DOM lib does not type yet. */
 interface BrowserExtras {
-  setAppBadge?(count?: number): Promise<void>;
-  clearAppBadge?(): Promise<void>;
+  setAppBadge?: (count?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
 }
 
 /** The deferred `beforeinstallprompt` event. */
 interface InstallPromptEvent extends Event {
-  prompt(): Promise<void>;
+  prompt: () => Promise<void>;
   readonly userChoice: Promise<{ readonly outcome: "accepted" | "dismissed" }>;
 }
 
 /** One file handle of a launch. */
 interface LaunchParams {
-  readonly files: readonly { getFile(): Promise<File> }[];
+  readonly files: readonly { getFile: () => Promise<File> }[];
 }
 
 /** Vibration length per strength, in milliseconds. */
@@ -138,7 +138,7 @@ export class WebPlatformDriver extends Driver(Platform) {
       });
       const queue = (
         globalThis as {
-          launchQueue?: { setConsumer(consumer: (params: LaunchParams) => void): void };
+          launchQueue?: { setConsumer: (consumer: (params: LaunchParams) => void) => void };
         }
       ).launchQueue;
       queue?.setConsumer((params) => {

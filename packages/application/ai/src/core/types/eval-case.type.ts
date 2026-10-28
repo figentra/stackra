@@ -17,5 +17,5 @@ export interface EvalCase<I, O> {
   readonly input: I;
 
   /** Whether the subject's output is acceptable. */
-  check(output: O): boolean;
+  check: (output: O) => boolean;
 }

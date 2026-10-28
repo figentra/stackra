@@ -21,76 +21,76 @@ export interface TsHost {
   readonly name: string;
 
   /** Every source file of the program (declaration files included), in program order. */
-  files(): readonly TsNode[];
+  files: () => readonly TsNode[];
 
   /** The path of the source file a node belongs to. */
-  fileName(node: TsNode): string;
+  fileName: (node: TsNode) => string;
 
   /** The node's `SyntaxKind` name; the first name of a kind number wins (`NumericLiteral`, not a marker). */
-  kind(node: TsNode): string;
+  kind: (node: TsNode) => string;
 
   /** The name of a kind number (a heritage token, an operator). */
-  kindName(kind: number): string;
+  kindName: (kind: number) => string;
 
   /** The node's source text, trivia excluded. */
-  text(node: TsNode): string;
+  text: (node: TsNode) => string;
 
   /** The trivia before the node (comments and blank lines). */
-  leading(node: TsNode): string;
+  leading: (node: TsNode) => string;
 
   /** The rest of the line after the node (a trailing `, // reason: …` comment), up to the line break. */
-  trailing(node: TsNode): string;
+  trailing: (node: TsNode) => string;
 
   /** The 1-based line and column of the node's start. */
-  position(node: TsNode): { readonly line: number; readonly column: number };
+  position: (node: TsNode) => { readonly line: number; readonly column: number };
 
   /** Whether a property or parameter is declared with `?`. */
-  isOptional(node: TsNode): boolean;
+  isOptional: (node: TsNode) => boolean;
 
   /** The symbol at a node, followed through import aliases. */
-  symbolAt(node: TsNode): TsSymbol | undefined;
+  symbolAt: (node: TsNode) => TsSymbol | undefined;
 
   /** The symbol's name. */
-  symbolName(symbol: TsSymbol): string;
+  symbolName: (symbol: TsSymbol) => string;
 
   /** Whether the symbol carries a `SymbolFlags` flag (`Alias`, `Class`, `Optional`, `Property`, ...). */
-  symbolHas(symbol: TsSymbol, flag: string): boolean;
+  symbolHas: (symbol: TsSymbol, flag: string) => boolean;
 
   /** The symbol's declarations. */
-  declarations(symbol: TsSymbol): readonly TsNode[];
+  declarations: (symbol: TsSymbol) => readonly TsNode[];
 
   /** The symbol's value declaration. */
-  valueDeclaration(symbol: TsSymbol): TsNode | undefined;
+  valueDeclaration: (symbol: TsSymbol) => TsNode | undefined;
 
   /** The type at a node. */
-  typeAt(node: TsNode): TsType;
+  typeAt: (node: TsNode) => TsType;
 
   /** The type of a symbol. */
-  typeOfSymbol(symbol: TsSymbol): TsType;
+  typeOfSymbol: (symbol: TsSymbol) => TsType;
 
   /** The properties of a type. */
-  properties(type: TsType): readonly TsSymbol[];
+  properties: (type: TsType) => readonly TsSymbol[];
 
   /** Whether the type carries a `TypeFlags` flag (`Null`, `String`, `BooleanLiteral`, ...). */
-  typeHas(type: TsType, flag: string): boolean;
+  typeHas: (type: TsType, flag: string) => boolean;
 
   /** The alias a type was written through, with its type arguments. */
-  typeAlias(
+  typeAlias: (
     type: TsType,
-  ): { readonly symbol: TsSymbol; readonly args: readonly TsType[] } | undefined;
+  ) => { readonly symbol: TsSymbol; readonly args: readonly TsType[] } | undefined;
 
   /** The members of a union type; undefined for any other type. */
-  unionMembers(type: TsType): readonly TsType[] | undefined;
+  unionMembers: (type: TsType) => readonly TsType[] | undefined;
 
   /** The value of a literal type. */
-  literal(type: TsType): string | number | boolean | undefined;
+  literal: (type: TsType) => string | number | boolean | undefined;
 
   /** The symbol of a type. */
-  typeSymbol(type: TsType): TsSymbol | undefined;
+  typeSymbol: (type: TsType) => TsSymbol | undefined;
 
   /** The type printed by the checker. */
-  typeText(type: TsType): string;
+  typeText: (type: TsType) => string;
 
   /** Releases the program (stops the tsgo process). */
-  close(): void;
+  close: () => void;
 }

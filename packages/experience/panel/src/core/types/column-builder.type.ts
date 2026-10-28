@@ -11,11 +11,11 @@ import type { ColumnNode } from "#core/types/column-node.type";
 /** The chainable builder of one table column. */
 export interface ColumnBuilder extends Built<ColumnNode> {
   /** Adds a copy button to the cell. */
-  copyable(): this;
+  copyable: () => this;
 
   /** Makes the column sortable; the key needs an index. */
-  sortable(): this;
+  sortable: () => this;
 
   /** Starts the column hidden in the column picker. */
-  hidden(): this;
+  hidden: () => this;
 }

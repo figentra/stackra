@@ -15,9 +15,9 @@ import { runConnectorCase } from "#testing/connectors/run-connector-case.functio
 
 /** A made-up connector contract. */
 interface Shelf {
-  stock(sku: string): Promise<number>;
-  restock(sku: string, quantity: number): Promise<void>;
-  archive?(sku: string): Promise<void>;
+  stock: (sku: string) => Promise<number>;
+  restock: (sku: string, quantity: number) => Promise<void>;
+  archive?: (sku: string) => Promise<void>;
 }
 
 /** A sample driver of `Shelf`. */

@@ -11,5 +11,5 @@ import type { ShareData } from "#contracts/types/share-data.type";
 /** The system share sheet. */
 export interface ShareCapability {
   /** Shares `data`; `data` is true when the user completed the share, false when they closed the sheet. */
-  share(data: ShareData): Promise<CapabilityResult<boolean>>;
+  share: (data: ShareData) => Promise<CapabilityResult<boolean>>;
 }

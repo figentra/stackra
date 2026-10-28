@@ -30,49 +30,51 @@ import type { ChannelReturnPage } from "#contracts/types/channel-return-page.typ
  */
 export interface SalesChannelConnector {
   /** Orders created or changed since `since`, a page at a time. */
-  orders(since: Date, cursor?: string): Promise<ChannelOrderPage>;
+  orders: (since: Date, cursor?: string) => Promise<ChannelOrderPage>;
 
   /** Tells the channel we took order `externalId`. */
-  acknowledge(externalId: string): Promise<void>;
+  acknowledge: (externalId: string) => Promise<void>;
 
   /** Tells the channel order `externalId` shipped, with the carrier and tracking number. */
-  markShipped(
+  markShipped: (
     externalId: string,
     shipment: { readonly carrier: string; readonly trackingNumber: string },
-  ): Promise<void>;
+  ) => Promise<void>;
 
   /** Sets the sellable quantity of each SKU on the channel. */
-  setStock(levels: readonly { readonly sku: string; readonly available: number }[]): Promise<void>;
+  setStock: (
+    levels: readonly { readonly sku: string; readonly available: number }[],
+  ) => Promise<void>;
 
   /** Sets the price of each SKU on the channel. */
-  setPrices(prices: readonly { readonly sku: string; readonly price: Money }[]): Promise<void>;
+  setPrices: (prices: readonly { readonly sku: string; readonly price: Money }[]) => Promise<void>;
 
   /** Refuses order `externalId` before it is prepared, with the reason the channel shows the buyer. */
-  reject?(externalId: string, reason: string): Promise<void>;
+  reject?: (externalId: string, reason: string) => Promise<void>;
 
   /** Cancels order `externalId` after it was acknowledged, with the reason the channel shows the buyer. */
-  cancel?(externalId: string, reason: string): Promise<void>;
+  cancel?: (externalId: string, reason: string) => Promise<void>;
 
   /** Tells the channel order `externalId` is ready in `minutes`, so it sends the courier in time. */
-  setPrepTime?(externalId: string, minutes: number): Promise<void>;
+  setPrepTime?: (externalId: string, minutes: number) => Promise<void>;
 
   /** Replaces the store's whole menu, its sections, items and modifier groups. */
-  setMenu?(menu: ChannelMenu): Promise<void>;
+  setMenu?: (menu: ChannelMenu) => Promise<void>;
 
   /** Marks each item or modifier option (by SKU) orderable or not, until a time when given. */
-  setAvailability?(
+  setAvailability?: (
     items: readonly { readonly sku: string; readonly available: boolean; readonly until?: Date }[],
-  ): Promise<void>;
+  ) => Promise<void>;
 
   /**
    * Creates or replaces the listing content of each product.
    *
    * @returns the SKUs the channel refused, each with the channel's reason.
    */
-  setListings?(
+  setListings?: (
     listings: readonly ChannelListing[],
-  ): Promise<readonly { readonly sku: string; readonly reason: string }[]>;
+  ) => Promise<readonly { readonly sku: string; readonly reason: string }[]>;
 
   /** Returns opened or changed since `since`, a page at a time. */
-  returns?(since: Date, cursor?: string): Promise<ChannelReturnPage>;
+  returns?: (since: Date, cursor?: string) => Promise<ChannelReturnPage>;
 }

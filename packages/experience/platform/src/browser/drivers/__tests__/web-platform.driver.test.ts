@@ -121,7 +121,7 @@ describe("WebPlatformDriver", () => {
   });
 
   it("keeps the files of the latest launch", async () => {
-    let consumer: ((params: { files: { getFile(): Promise<File> }[] }) => void) | undefined;
+    let consumer: ((params: { files: { getFile: () => Promise<File> }[] }) => void) | undefined;
     vi.stubGlobal("launchQueue", { setConsumer: (next: typeof consumer) => (consumer = next) });
     const platform = new WebPlatformDriver();
     expect(platform.has(PlatformCapability.FileHandling)).toBe(true);

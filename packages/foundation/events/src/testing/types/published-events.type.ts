@@ -19,5 +19,5 @@ export interface PublishedEvents extends ReadonlyArray<Event> {
    * @example
    * expect(app.events.published().ofType(MessageSent)).toHaveLength(1);
    */
-  ofType<E extends Event>(type: AnyClass<E>): readonly E[];
+  ofType: <E extends Event>(type: AnyClass<E>) => readonly E[];
 }

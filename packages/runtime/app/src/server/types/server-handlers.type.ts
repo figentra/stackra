@@ -20,7 +20,7 @@ export interface ServerHandlers {
    *
    * @throws AppDrainingError (as a rejection) once the app drains.
    */
-  run<T>(call: (container: Container) => T | Promise<T>): Promise<T>;
+  run: <T>(call: (container: Container) => T | Promise<T>) => Promise<T>;
 
   /**
    * Runs every `RequestGuard` the booted modules contribute on `request`, lowest `order` first, one after another,
@@ -33,5 +33,5 @@ export interface ServerHandlers {
    *   return container.get(CancelOrderAction).handle(input);
    * });
    */
-  guard(request: Request, container: Container): Promise<void>;
+  guard: (request: Request, container: Container) => Promise<void>;
 }

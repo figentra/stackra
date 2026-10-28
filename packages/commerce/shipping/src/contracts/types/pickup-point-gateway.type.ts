@@ -19,5 +19,5 @@ import type { PickupPointSearch } from "#contracts/types/pickup-point-search.typ
  */
 export interface PickupPointGateway {
   /** The points near `search.near`, nearest first; an empty list when there are none. */
-  searchPickupPoints(search: PickupPointSearch): Promise<readonly PickupPoint[]>;
+  searchPickupPoints: (search: PickupPointSearch) => Promise<readonly PickupPoint[]>;
 }

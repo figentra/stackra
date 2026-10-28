@@ -18,11 +18,11 @@ export interface LintRule {
   };
 
   /** Builds the visitor for one file. */
-  create(context: {
-    report(report: {
+  create: (context: {
+    report: (report: {
       node: LintNode;
       messageId: string;
       data?: Readonly<Record<string, string>>;
-    }): void;
-  }): Readonly<Record<string, (node: LintNode) => void>>;
+    }) => void;
+  }) => Readonly<Record<string, (node: LintNode) => void>>;
 }

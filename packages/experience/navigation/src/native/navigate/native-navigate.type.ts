@@ -12,11 +12,11 @@ import type { RouteRef } from "#core/types/route-ref.type";
 /** Native navigation by route ref. */
 export interface NativeNavigate {
   /** Pushes the route's screen with its params. */
-  to(route: RouteRef, params?: HrefParams): void;
+  to: (route: RouteRef, params?: HrefParams) => void;
 
   /** Replaces the current screen with the route's. */
-  replace(route: RouteRef, params?: HrefParams): void;
+  replace: (route: RouteRef, params?: HrefParams) => void;
 
   /** Goes back one screen. */
-  back(): void;
+  back: () => void;
 }

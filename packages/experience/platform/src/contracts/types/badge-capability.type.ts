@@ -11,8 +11,8 @@ import type { CapabilityResult } from "#contracts/types/capability-result.type";
 /** The app icon badge. */
 export interface BadgeCapability {
   /** Shows `count` on the app icon; zero clears it. */
-  set(count: number): Promise<CapabilityResult>;
+  set: (count: number) => Promise<CapabilityResult>;
 
   /** Removes the badge. */
-  clear(): Promise<CapabilityResult>;
+  clear: () => Promise<CapabilityResult>;
 }

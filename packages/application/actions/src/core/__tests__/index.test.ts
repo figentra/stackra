@@ -101,7 +101,7 @@ describe("@stackra/actions", () => {
     // the called form returns the exported `ExtensionClass`, so a consumer's declaration emit can name it (STA-1220)
     expectTypeOf(actions.Extension<AnySlot>({ order: 1 })).toEqualTypeOf<ExtensionClass<AnySlot>>();
     type Handler = {
-      handle(input: { orderId: string }, ctx: QueryContext): Promise<{ status: string }>;
+      handle: (input: { orderId: string }, ctx: QueryContext) => Promise<{ status: string }>;
     };
     expectTypeOf<InputOf<Handler>>().toEqualTypeOf<{ orderId: string }>();
     expectTypeOf<CallInput<Handler>>().toEqualTypeOf<{ orderId: string }>();

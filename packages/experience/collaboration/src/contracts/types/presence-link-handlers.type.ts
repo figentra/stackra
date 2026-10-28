@@ -13,11 +13,11 @@ import type { PresencePeer } from "#contracts/types/presence-peer.type";
 /** What a room membership reports. */
 export interface PresenceLinkHandlers {
   /** The membership is live. */
-  onOpen(): void;
+  onOpen: () => void;
 
   /** The other peers in the room, all of them. */
-  onPeers(peers: readonly PresencePeer[]): void;
+  onPeers: (peers: readonly PresencePeer[]) => void;
 
   /** The link went down without the caller leaving; the driver reconnects. */
-  onClose(): void;
+  onClose: () => void;
 }

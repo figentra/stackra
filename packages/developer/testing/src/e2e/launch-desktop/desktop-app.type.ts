@@ -11,5 +11,5 @@ import type { ElectronApplication } from "@playwright/test";
 /** A launched desktop app. */
 export type DesktopApp = ElectronApplication & {
   /** Delivers `url` (`acme-console://orders/orders/ord_1`) to main as an `open-url` event. */
-  openUrl(url: string): Promise<void>;
+  openUrl: (url: string) => Promise<void>;
 };

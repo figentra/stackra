@@ -13,13 +13,13 @@
 /** A change of one existing column. */
 export interface ColumnChange {
   /** `DROP NOT NULL`, an expand step; its inverse sets NOT NULL again. */
-  nullable(): this;
+  nullable: () => this;
 
   /**
    * `SET NOT NULL`, a contract step: Postgres scans the table under an exclusive lock and fails on a null row, so the
    * backfill (a queue job) ships in an earlier release. Its inverse drops NOT NULL.
    */
-  notNull(): this;
+  notNull: () => this;
 
   /**
    * `ALTER COLUMN ... TYPE to USING ...`. `to` and `options.from` are SQL types the blueprint writes (`text`,
@@ -28,5 +28,5 @@ export interface ColumnChange {
    * to `from`. A change that rewrites the table (most do, except widening a `varchar` or `varchar` to `text`) holds an
    * exclusive lock for the rewrite: on a large table, add a new column and backfill it instead.
    */
-  type(to: string, options: { readonly from: string; readonly using?: string }): this;
+  type: (to: string, options: { readonly from: string; readonly using?: string }) => this;
 }

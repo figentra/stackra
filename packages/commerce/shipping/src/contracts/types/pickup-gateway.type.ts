@@ -17,8 +17,8 @@ import type { PickupRequest } from "#contracts/types/pickup-request.type";
  */
 export interface PickupGateway {
   /** Books a collection; a repeated `request.reference` returns the booking already made. */
-  schedulePickup(request: PickupRequest): Promise<Pickup>;
+  schedulePickup: (request: PickupRequest) => Promise<Pickup>;
 
   /** Cancels a booking; cancelling twice is not an error. */
-  cancelPickup(pickupId: string): Promise<void>;
+  cancelPickup: (pickupId: string) => Promise<void>;
 }

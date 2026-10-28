@@ -11,5 +11,5 @@ import type { SharedPayload } from "#contracts/types/shared-payload.type";
 /** The PWA share inbox. */
 export interface ShareTargetCapability {
   /** The payload kept under `id`, removed as it is read; `null` for an unknown or used id. */
-  take(id: string): Promise<SharedPayload | null>;
+  take: (id: string) => Promise<SharedPayload | null>;
 }

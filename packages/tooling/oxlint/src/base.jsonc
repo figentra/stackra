@@ -7,7 +7,8 @@
 //          in tests, with a description), the small bug-catchers and autofixes at error, no-console in packages
 //          (off for tools, hooks, plugins and apps), and the react, jsx-a11y and small React rules on every .tsx.
 //          The B group rows B-1, B-2 and B-5 (stackra-230, owner D11): no warnings left, no-array-sort outside tests,
-//          and the promise-executor, code-point, structured-clone and spread rules, all at error.
+//          and the promise-executor, code-point, structured-clone and spread rules, all at error. B-3 (stackra-231):
+//          the autofix sweep. B-4 (stackra-232): property signatures only, so ports are checked strictly.
 //          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
 // Scope: every TypeScript/JavaScript file in the repo
 // Owner: release-operations
@@ -92,6 +93,9 @@
     "unicorn/switch-case-braces": "error",
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/catch-error-name": "error",
+    // B-4: a method signature is checked bivariantly even under strictFunctionTypes, so a driver could accept a
+    // narrower argument than its port promises. A property signature (`run: (x: T) => R`) is checked strictly.
+    "typescript/method-signature-style": ["error", "property"],
     // Empty files are allowed for placeholders and test setup.
     "unicorn/no-empty-file": "off",
     // Side-effect imports for CSS and polyfills.

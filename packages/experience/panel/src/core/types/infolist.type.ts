@@ -21,5 +21,5 @@ import type { InfolistNode } from "#core/types/infolist-node.type";
  */
 export interface Infolist<R> extends Built<InfolistNode> {
   /** Sets the entries and sections, in order. */
-  entries(build: (entry: EntryFactory<R>) => readonly Built<EntryNode>[]): this;
+  entries: (build: (entry: EntryFactory<R>) => readonly Built<EntryNode>[]) => this;
 }

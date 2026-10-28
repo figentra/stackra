@@ -12,11 +12,11 @@
 /** One reactive value. */
 export interface StateSignal<T> {
   /** The current value. */
-  get(): T;
+  get: () => T;
 
   /** Replaces the value and notifies subscribers; a value equal by `Object.is` changes nothing. */
-  set(next: T): void;
+  set: (next: T) => void;
 
   /** Calls `listener` with each new value; returns the unsubscribe function. */
-  subscribe(listener: (value: T) => void): () => void;
+  subscribe: (listener: (value: T) => void) => () => void;
 }

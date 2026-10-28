@@ -11,11 +11,11 @@
 /** An upgraded server socket. */
 export interface RealtimeSocket {
   /** Sends one text frame. */
-  send(data: string): void;
+  send: (data: string) => void;
 
   /** Closes the socket with an application close code (4000 to 4999) and a reason. */
-  close(code?: number, reason?: string): void;
+  close: (code?: number, reason?: string) => void;
 
   /** Calls `listener` once the socket has closed, whichever side closed it. */
-  addEventListener(type: "close", listener: () => void): void;
+  addEventListener: (type: "close", listener: () => void) => void;
 }

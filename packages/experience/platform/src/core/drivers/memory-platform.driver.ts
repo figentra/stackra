@@ -56,7 +56,7 @@ export class MemoryPlatformDriver extends Driver(Platform) {
   };
 
   /** The scanner; `emit(code)` decodes a code in the view rendered last. */
-  readonly scanner: ScannerCapability & { emit(code: string): void };
+  readonly scanner: ScannerCapability & { emit: (code: string) => void };
 
   /** Files opened with the app; a test sets them with `fileHandling.launched.set([...])`. */
   readonly fileHandling: { readonly launched: LiveValue<readonly File[]> };

@@ -19,8 +19,8 @@ import type { MerchantOnboarding } from "#contracts/types/merchant-onboarding.ty
  */
 export interface PlatformGateway {
   /** Creates the merchant's account and returns it with the provider's onboarding URL. */
-  onboard(request: MerchantOnboarding): Promise<MerchantAccount>;
+  onboard: (request: MerchantOnboarding) => Promise<MerchantAccount>;
 
   /** The account as the provider holds it now. */
-  account(accountRef: string): Promise<MerchantAccount>;
+  account: (accountRef: string) => Promise<MerchantAccount>;
 }

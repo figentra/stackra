@@ -14,5 +14,7 @@ export interface AlternatesContext {
   /** The request's site; only its canonical origin is read. */
   readonly site: { readonly origin: string };
   /** Reads a configuration from the container; called with `I18nConfig`. */
-  config(type: typeof I18nConfig): Pick<I18nConfig, "locales" | "defaultLocale" | "urlStrategy">;
+  config: (
+    type: typeof I18nConfig,
+  ) => Pick<I18nConfig, "locales" | "defaultLocale" | "urlStrategy">;
 }

@@ -12,7 +12,7 @@ import type { RegistrySignature } from "#src/interfaces/registry-signature.inter
 /** The registry's signer. */
 export interface Signer {
   /** Signs `name@version:integrity` with the current key. */
-  sign(name: string, version: string, integrity: string): Promise<RegistrySignature>;
+  sign: (name: string, version: string, integrity: string) => Promise<RegistrySignature>;
   /** Lists the current key and the retired keys for `/-/npm/v1/keys`. */
-  keys(): readonly RegistryKey[];
+  keys: () => readonly RegistryKey[];
 }

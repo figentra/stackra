@@ -12,8 +12,8 @@ import type { AnyClass } from "@stackra/container";
 /** Reads instances by class. */
 export interface Resolver {
   /** Whether `token` is bound. */
-  has(token: AnyClass): boolean;
+  has: (token: AnyClass) => boolean;
 
   /** The instance bound to `token`. */
-  get<T extends object>(token: AnyClass<T>): T;
+  get: <T extends object>(token: AnyClass<T>) => T;
 }

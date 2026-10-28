@@ -18,8 +18,8 @@ export interface ClientQueries {
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  fetch<Q extends QueryRef>(query: Q, input: RefInput<Q>): Promise<RefOutput<Q>>;
+  fetch: <Q extends QueryRef>(query: Q, input: RefInput<Q>) => Promise<RefOutput<Q>>;
 
   /** Marks the cached answers of `query` stale (for `input` only, when given); those on screen refetch. */
-  invalidate<Q extends QueryRef>(query: Q, input?: RefInput<Q>): Promise<void>;
+  invalidate: <Q extends QueryRef>(query: Q, input?: RefInput<Q>) => Promise<void>;
 }

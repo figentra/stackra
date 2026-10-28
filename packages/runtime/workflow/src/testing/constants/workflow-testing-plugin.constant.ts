@@ -35,10 +35,10 @@ declare module "@stackra/container/testing" {
        * The latest run of `type`, with its steps.
        * @throws Error when `type` never ran in this app.
        */
-      last(type: AnyClass<Workflow>): Promise<WorkflowRun>;
+      last: (type: AnyClass<Workflow>) => Promise<WorkflowRun>;
 
       /** Moves the engine's time on by `duration` (`"16m"`), then resumes and times out what became due. */
-      advanceClock(duration: string): Promise<void>;
+      advanceClock: (duration: string) => Promise<void>;
     };
   }
 }

@@ -23,15 +23,15 @@ export interface AccountingProvider {
    *
    * @returns the provider's journal.
    */
-  post(entry: AccountingJournalEntry, idempotencyKey: string): Promise<PostedJournal>;
+  post: (entry: AccountingJournalEntry, idempotencyKey: string) => Promise<PostedJournal>;
 
   /**
    * The journal posted under `idempotencyKey`, for a call whose answer was lost.
    *
    * @returns null when none was posted.
    */
-  find(idempotencyKey: string): Promise<PostedJournal | null>;
+  find: (idempotencyKey: string) => Promise<PostedJournal | null>;
 
   /** The tenant's accounts in the provider, for the mapping screen. */
-  accounts(): Promise<readonly { readonly code: string; readonly name: string }[]>;
+  accounts: () => Promise<readonly { readonly code: string; readonly name: string }[]>;
 }

@@ -27,7 +27,7 @@ declare module "@stackra/container/testing" {
      * Adds function implementers to extension slots for this testing module only (build them with `extension(...)`);
      * calls add up.
      */
-    withExtensions(extensions: readonly InlineExtension[]): this;
+    withExtensions: (extensions: readonly InlineExtension[]) => this;
   }
 }
 

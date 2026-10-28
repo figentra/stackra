@@ -12,14 +12,14 @@ import type { Path } from "#core/types/path.type";
 /** Builds the columns of a table over row type `R`. */
 export interface ColumnFactory<R> {
   /** A column rendered from the field's type (an enum renders its badge). */
-  from(key: Path<R>): ColumnBuilder;
+  from: (key: Path<R>) => ColumnBuilder;
 
   /** A principal id rendered as an avatar and a name. */
-  principal(key: Path<R>): ColumnBuilder;
+  principal: (key: Path<R>) => ColumnBuilder;
 
   /** Minor units rendered as money in the currency at `currency` (a row path or a bind). */
-  money(key: Path<R>, options: { readonly currency: Path<R> | BindRef }): ColumnBuilder;
+  money: (key: Path<R>, options: { readonly currency: Path<R> | BindRef }) => ColumnBuilder;
 
   /** The length of a list field. */
-  count(key: Path<R>): ColumnBuilder;
+  count: (key: Path<R>) => ColumnBuilder;
 }

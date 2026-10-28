@@ -15,5 +15,5 @@ export interface Rule {
   readonly meta: RuleMeta;
 
   /** Builds the visitor for one file: node type to handler. */
-  create(context: RuleContext): Readonly<Record<string, (node: AstNode) => void>>;
+  create: (context: RuleContext) => Readonly<Record<string, (node: AstNode) => void>>;
 }

@@ -34,12 +34,12 @@ export type RefusalClass = (abstract new () => Refusal) & {
    * throw InsufficientPointsError.create({ balance, requested: points });
    * throw SiteContextMissingError.create();
    */
-  create<T extends Refusal>(
+  create: <T extends Refusal>(
     this: new () => T,
     ...args: DetailsOptional<T> extends true
       ? [details?: RefusalDetails<T>, extras?: Extras]
       : [details: RefusalDetails<T>, extras?: Extras]
-  ): T;
+  ) => T;
 
   /**
    * The envelope of a refusal of this class with these details, without throwing it.
@@ -47,10 +47,10 @@ export type RefusalClass = (abstract new () => Refusal) & {
    * @example
    * Promise.resolve({ ok: false, error: CoreRefusals.bridge_rejected.envelope() });
    */
-  envelope<T extends Refusal>(
+  envelope: <T extends Refusal>(
     this: new () => T,
     ...args: DetailsOptional<T> extends true
       ? [details?: RefusalDetails<T>]
       : [details: RefusalDetails<T>]
-  ): ErrorEnvelope;
+  ) => ErrorEnvelope;
 };

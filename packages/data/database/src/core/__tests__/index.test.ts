@@ -50,7 +50,7 @@ declare module "@stackra/database" {
   // oxlint-disable-next-line eslint/no-shadow -- reason: a module augmentation must repeat the interface's name
   interface Blueprint {
     /** Merged the way gen's `blueprint.d.ts` merges a package's macro. */
-    dataClassification(column: string): ColumnGroup;
+    dataClassification: (column: string) => ColumnGroup;
   }
 }
 

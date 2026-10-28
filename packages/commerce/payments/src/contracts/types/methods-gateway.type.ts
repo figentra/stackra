@@ -17,5 +17,5 @@
  */
 export interface MethodsGateway {
   /** The provider codes of the payment methods the account can take now. */
-  paymentMethods(): Promise<readonly string[]>;
+  paymentMethods: () => Promise<readonly string[]>;
 }

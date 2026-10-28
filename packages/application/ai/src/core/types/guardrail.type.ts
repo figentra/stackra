@@ -20,5 +20,5 @@ export interface Guardrail {
    * @param text - the prompt before the call or the answer after it.
    * @param stage - which of the two `text` is.
    */
-  check(text: string, stage: "input" | "output"): GuardrailVerdict | Promise<GuardrailVerdict>;
+  check: (text: string, stage: "input" | "output") => GuardrailVerdict | Promise<GuardrailVerdict>;
 }

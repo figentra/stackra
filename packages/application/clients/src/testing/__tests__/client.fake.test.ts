@@ -97,7 +97,7 @@ describe("ClientFake", () => {
     const pricing = fake as unknown as PricingClient;
     expect(await pricing.price.quote.call({ lines: [] })).toEqual({ lines: [] });
     const payments = fake as unknown as {
-      payment: { void: { queue(input: object): Promise<void> } };
+      payment: { void: { queue: (input: object) => Promise<void> } };
     };
     await payments.payment.void.queue({ paymentId: "pay_2" });
     expect(fake.queued(VoidPaymentAction)).toEqual([{ paymentId: "pay_2" }]);

@@ -40,7 +40,7 @@ function handlersOf(point: object, name: string): Handler[] {
   for (const row of rows)
     if (resolver?.has(row.extension)) {
       const instance = resolver.get(row.extension) as unknown as {
-        handle(...args: unknown[]): unknown;
+        handle: (...args: unknown[]) => unknown;
       };
       const order =
         row.order ?? (kindOf(row.extension)?.options["order"] as number | undefined) ?? 0;

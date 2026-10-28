@@ -11,8 +11,8 @@ import type { FieldNode } from "#core/types/field-node.type";
 /** The chainable builder of one form field. */
 export interface FieldBuilder extends Built<FieldNode> {
   /** The grid columns the field spans. */
-  span(columns: number): this;
+  span: (columns: number) => this;
 
   /** Marks the field as one normal mode shows; developer mode shows every field. */
-  essential(): this;
+  essential: () => this;
 }

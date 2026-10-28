@@ -13,11 +13,11 @@ import type { SavedView } from "#core/schemas/saved-view.schema";
 /** Where saved views live. */
 export interface ViewStore {
   /** The views of `resource` the viewer may see, in the store's order. */
-  list(resource: string): Promise<readonly SavedView[]>;
+  list: (resource: string) => Promise<readonly SavedView[]>;
 
   /** Stores `view`, new or changed; resolves with what was stored. */
-  save(view: SavedView): Promise<SavedView>;
+  save: (view: SavedView) => Promise<SavedView>;
 
   /** Removes the view `id`; a view that is not there is not an error. */
-  remove(id: string): Promise<void>;
+  remove: (id: string) => Promise<void>;
 }

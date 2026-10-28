@@ -13,5 +13,5 @@ import type { ShortcutContext } from "#core/types/shortcut-context.type";
 /** A shortcut that can be run. */
 export type RunnableShortcut = Shortcut & {
   /** Does what the shortcut is for, with the context of this run. */
-  run(ctx: ShortcutContext): void | Promise<void>;
+  run: (ctx: ShortcutContext) => void | Promise<void>;
 };

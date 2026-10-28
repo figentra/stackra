@@ -55,13 +55,16 @@ interface ShellCreateBefore {
 interface Ctx {
   location: { directory: string };
   permission: {
-    hook(name: "evaluate", cb: (e: PermissionEvaluation) => void | Promise<void>): Promise<unknown>;
+    hook: (
+      name: "evaluate",
+      cb: (e: PermissionEvaluation) => void | Promise<void>,
+    ) => Promise<unknown>;
   };
   shell: {
-    hook(
+    hook: (
       name: "create.before",
       cb: (e: ShellCreateBefore) => void | Promise<void>,
-    ): Promise<unknown>;
+    ) => Promise<unknown>;
   };
 }
 

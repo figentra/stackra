@@ -13,14 +13,14 @@ import type { Duration } from "@stackra/contracts";
 /** One outside store of cache text. */
 export interface CacheStore {
   /** The text under `key`, or `undefined` when none is stored. */
-  read(key: string): Promise<string | undefined>;
+  read: (key: string) => Promise<string | undefined>;
 
   /** Stores `text` under `key`, kept at least for `ttl` (a lifetime above zero). */
-  write(key: string, text: string, ttl: Duration): Promise<void>;
+  write: (key: string, text: string, ttl: Duration) => Promise<void>;
 
   /** Removes `key`; nothing happens when it is not stored. */
-  delete(key: string): Promise<void>;
+  delete: (key: string) => Promise<void>;
 
   /** Every stored key that starts with `prefix`, in any order. */
-  keys(prefix: string): Promise<readonly string[]>;
+  keys: (prefix: string) => Promise<readonly string[]>;
 }

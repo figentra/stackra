@@ -19,8 +19,8 @@ export interface ImportTarget<T> {
   readonly schema: ZodType<T>;
 
   /** Writes one batch and returns each written record's key and before-image. */
-  upsert(records: readonly T[]): Promise<readonly ImportChange[]>;
+  upsert: (records: readonly T[]) => Promise<readonly ImportChange[]>;
 
   /** Reverts the changes of one batch. */
-  revert(changes: readonly ImportChange[]): Promise<void>;
+  revert: (changes: readonly ImportChange[]) => Promise<void>;
 }

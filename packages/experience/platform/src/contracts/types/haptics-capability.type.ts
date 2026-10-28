@@ -10,5 +10,5 @@ import type { CapabilityResult } from "#contracts/types/capability-result.type";
 /** The touch feedback capability. */
 export interface HapticsCapability {
   /** One tap of feedback; `heavy` is longer than `light`. */
-  impact(strength?: "light" | "medium" | "heavy"): Promise<CapabilityResult>;
+  impact: (strength?: "light" | "medium" | "heavy") => Promise<CapabilityResult>;
 }

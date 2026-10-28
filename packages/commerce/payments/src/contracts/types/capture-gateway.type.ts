@@ -19,8 +19,8 @@ import type { ProviderPayment } from "#contracts/types/provider-payment.type";
  */
 export interface CaptureGateway {
   /** Takes all or part of an authorised payment. */
-  capture(request: CaptureRequest): Promise<ProviderPayment>;
+  capture: (request: CaptureRequest) => Promise<ProviderPayment>;
 
   /** Releases an authorised payment, or closes a session nobody paid. */
-  void(target: PaymentTarget): Promise<ProviderPayment>;
+  void: (target: PaymentTarget) => Promise<ProviderPayment>;
 }

@@ -12,11 +12,11 @@ import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
 /** What a link reports. */
 export interface RealtimeLinkHandlers {
   /** The link is up and messages may arrive. */
-  onOpen(): void;
+  onOpen: () => void;
 
   /** One decoded message. */
-  onMessage(message: RealtimeMessage): void;
+  onMessage: (message: RealtimeMessage) => void;
 
   /** The link went down without the caller closing it; the caller decides whether to reconnect. */
-  onClose(): void;
+  onClose: () => void;
 }

@@ -12,5 +12,5 @@ import type { OutboundWhatsApp } from "#contracts/types/outbound-whatsapp.type";
 /** A WhatsApp provider account. */
 export interface WhatsAppSender {
   /** Sends `message` once per `idempotencyKey` and returns the provider's id. */
-  sendWhatsApp(message: OutboundWhatsApp, idempotencyKey: string): Promise<string>;
+  sendWhatsApp: (message: OutboundWhatsApp, idempotencyKey: string) => Promise<string>;
 }

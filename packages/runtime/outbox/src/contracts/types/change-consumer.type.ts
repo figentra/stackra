@@ -15,5 +15,5 @@ import type { RowChange } from "#contracts/types/row-change.type";
 /** Reacts to committed row changes. */
 export interface ChangeConsumer {
   /** Handles one committed change of a model this consumer is registered for. */
-  consume(change: RowChange): Promise<void>;
+  consume: (change: RowChange) => Promise<void>;
 }

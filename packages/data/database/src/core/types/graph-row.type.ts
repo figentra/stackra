@@ -8,7 +8,7 @@
  */
 
 /** The row a relation value loads. */
-type Related<V> = V extends { load(): Promise<infer T> } ? T : never;
+type Related<V> = V extends { load: () => Promise<infer T> } ? T : never;
 
 /** One graph row. */
 export type GraphRow<M extends object, R extends keyof M, F> = {

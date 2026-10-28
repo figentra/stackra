@@ -37,7 +37,7 @@ import { toHotkey } from "#react/shortcut-bindings/to-hotkey.function";
 export function ShortcutBindings(): null {
   const container = useContainer();
   useEffect(() => {
-    const handles: { unregister(): void }[] = [];
+    const handles: { unregister: () => void }[] = [];
     for (const entry of SHORTCUT_ENTRIES.values()) {
       if (entry.steps.length === 0 || !container.has(entry.type)) continue;
       const run = () => {

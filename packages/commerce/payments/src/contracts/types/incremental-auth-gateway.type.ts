@@ -19,5 +19,5 @@ import type { ProviderPayment } from "#contracts/types/provider-payment.type";
  */
 export interface IncrementalAuthGateway {
   /** Adds `request.amount` to the hold; the answer's `amount` is the whole hold, tip included. */
-  increment(request: IncrementRequest): Promise<ProviderPayment>;
+  increment: (request: IncrementRequest) => Promise<ProviderPayment>;
 }

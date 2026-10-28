@@ -83,6 +83,6 @@ export const toHaveAudited = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts that the run's call (or the fake context's code under test) wrote audit fields matching the expectation. */
-    toHaveAudited(expected?: AuditExpectation): R;
+    toHaveAudited: (expected?: AuditExpectation) => R;
   }
 }

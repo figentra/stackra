@@ -13,14 +13,14 @@
 /** The family's Expo module. */
 export interface PosDeviceNativeModule {
   /** The built-in printer's status, exactly as the vendor SDK returns it; rejects when no printer service is bound. */
-  printerStatus(): Promise<number>;
+  printerStatus: () => Promise<number>;
   /** Prints the lines as text in the SDK's default font, feeds, and cuts where the model has a cutter. */
-  printLines(lines: readonly string[]): Promise<void>;
+  printLines: (lines: readonly string[]) => Promise<void>;
   /** Pulses the drawer wired to the terminal's drawer port. */
-  openDrawer(): Promise<void>;
+  openDrawer: () => Promise<void>;
   /** Calls `listener` with each code the built-in scanner decodes; `remove` on the answer stops it. */
-  addListener(
+  addListener: (
     eventName: "onScan",
     listener: (event: { readonly code?: unknown }) => void,
-  ): { remove(): void };
+  ) => { remove: () => void };
 }

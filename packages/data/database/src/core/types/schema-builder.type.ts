@@ -24,24 +24,24 @@ import type { Blueprint } from "#core/types/blueprint.type";
  */
 export interface SchemaBuilder {
   /** Creates `table`; its indexes build inside the migration's transaction. */
-  create(table: string, define: (t: Blueprint) => void): void;
+  create: (table: string, define: (t: Blueprint) => void) => void;
 
   /** Changes the existing `table`: added columns are nullable or defaulted, indexes are built concurrently. */
-  table(table: string, define: (t: Blueprint) => void): void;
+  table: (table: string, define: (t: Blueprint) => void) => void;
 
   /**
    * A statement a blueprint cannot express (an operator class, a trigger), with the statement that undoes it on dev
    * databases, or `false` when nothing can. A `CONCURRENTLY` statement compiles to its own non-transactional step.
    */
-  sql(statement: string, options: { readonly inverse: string | false }): void;
+  sql: (statement: string, options: { readonly inverse: string | false }) => void;
 
   /** Creates one of the approved extensions, if the database does not have it. */
-  createExtension(extension: Extension): void;
+  createExtension: (extension: Extension) => void;
 
   /**
    * Creates the ICU collation `name` in the module's schema for `locale` (a BCP 47 tag with ICU keywords, such as
    * `ar-u-kn-true`), which a text column then names with `collate(name)`. Which locale a module sorts by is the
    * migration's literal, taken from the market pack the module serves; nothing here picks one.
    */
-  createCollation(name: string, locale: string): void;
+  createCollation: (name: string, locale: string) => void;
 }

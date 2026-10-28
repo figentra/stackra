@@ -37,14 +37,14 @@ type NumberPath<T> = {
  */
 export interface SettingsRules<T> {
   /** `a` stays below `b`. */
-  lessThan(a: NumberPath<T>, b: NumberPath<T>): SettingsRule;
+  lessThan: (a: NumberPath<T>, b: NumberPath<T>) => SettingsRule;
 
   /** `a` stays at or below `b`. */
-  atMost(a: NumberPath<T>, b: NumberPath<T>): SettingsRule;
+  atMost: (a: NumberPath<T>, b: NumberPath<T>) => SettingsRule;
 
   /** `a` stays above `b`. */
-  greaterThan(a: NumberPath<T>, b: NumberPath<T>): SettingsRule;
+  greaterThan: (a: NumberPath<T>, b: NumberPath<T>) => SettingsRule;
 
   /** `a` stays at or above `b`. */
-  atLeast(a: NumberPath<T>, b: NumberPath<T>): SettingsRule;
+  atLeast: (a: NumberPath<T>, b: NumberPath<T>) => SettingsRule;
 }

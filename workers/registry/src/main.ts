@@ -21,7 +21,7 @@ import { RegistryStore } from "#src/store/registry-store";
 
 /** The Worker's execution context. */
 interface WorkerContext {
-  waitUntil(task: Promise<unknown>): void;
+  waitUntil: (task: Promise<unknown>) => void;
 }
 
 /** The signer, imported once per isolate and per key. */

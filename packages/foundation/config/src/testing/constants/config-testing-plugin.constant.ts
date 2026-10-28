@@ -25,10 +25,10 @@ declare module "@stackra/container/testing" {
      * Builds `type` with `values` over its defaults and puts it in place of the class for every class that injects it.
      * Calls for the same class add up.
      */
-    withConfig<C extends Config>(type: new () => C, values: Partial<ConfigValues<C>>): this;
+    withConfig: <C extends Config>(type: new () => C, values: Partial<ConfigValues<C>>) => this;
 
     /** Binds a `SecretStore` answering from `secrets` by name; calls add up. */
-    withSecrets(secrets: Readonly<Record<string, string>>): this;
+    withSecrets: (secrets: Readonly<Record<string, string>>) => this;
   }
 }
 

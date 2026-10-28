@@ -110,7 +110,7 @@ describe(WorkflowExplorer, () => {
       now: () => NOON,
     } as ListenerContext;
     await (
-      starter as unknown as { handle(event: object, context: ListenerContext): Promise<void> }
+      starter as unknown as { handle: (event: object, context: ListenerContext) => Promise<void> }
     ).handle(Object.assign(new PaymentCaptured(), { orderId: "ord_1" }), ctx);
 
     expect(fulfil.started).toEqual(["ord_1"]);
@@ -201,10 +201,9 @@ describe("WorkflowExplorer trigger blocks", () => {
     expect(type).toBe(OrderPaid);
     const event = Object.assign(new OrderPaid(), { orderId: "ord_1" });
     const ctx = { eventId: "evt_1", occurredAt: NOON, now: () => NOON } as ListenerContext;
-    await (listener as unknown as { handle(e: object, c: ListenerContext): Promise<void> }).handle(
-      event,
-      ctx,
-    );
+    await (
+      listener as unknown as { handle: (e: object, c: ListenerContext) => Promise<void> }
+    ).handle(event, ctx);
 
     expect(hold).toHaveBeenCalledWith(OrderPaid, event, "ord_1");
     expect(start).toHaveBeenCalledWith(
@@ -248,10 +247,9 @@ describe("WorkflowExplorer trigger blocks", () => {
       occurredAt: NOON,
       now: () => NOON,
     } as ListenerContext;
-    await (listener as unknown as { handle(e: object, c: ListenerContext): Promise<void> }).handle(
-      Object.assign(new OrderPaid(), { orderId: "ord_1" }),
-      ctx,
-    );
+    await (
+      listener as unknown as { handle: (e: object, c: ListenerContext) => Promise<void> }
+    ).handle(Object.assign(new OrderPaid(), { orderId: "ord_1" }), ctx);
 
     expect(chained).toHaveBeenCalledWith("wfr_00000000000000000000000000:notify", "wfa_1");
     expect(start).not.toHaveBeenCalled();
@@ -293,7 +291,7 @@ describe("WorkflowExplorer service acks", () => {
 
     const [, listener] = subscriptions.find(([candidate]) => candidate === ServiceAcked) ?? [];
     const deliver = (service: string, fields: object = {}) =>
-      (listener as unknown as { handle(e: object): Promise<void> }).handle(
+      (listener as unknown as { handle: (e: object) => Promise<void> }).handle(
         Object.assign(Object.create(ServiceAcked.prototype) as object, {
           subject: "tnt_1",
           service,

@@ -22,5 +22,5 @@ export interface TrackingGateway {
   readonly trackingMap: TrackingMap;
 
   /** Every event the carrier holds for the shipment, in any order. */
-  track(shipmentId: string): Promise<readonly CarrierEvent[]>;
+  track: (shipmentId: string) => Promise<readonly CarrierEvent[]>;
 }

@@ -10,5 +10,5 @@
 /** A builder step and the node it records. */
 export interface Built<N> {
   /** The node recorded so far, frozen. */
-  toNode(): N;
+  toNode: () => N;
 }

@@ -18,5 +18,5 @@ import type { AccountMap } from "#contracts/accounting/account-map.type";
  */
 export interface AccountMapped {
   /** The mapping the tenant keeps on this Connection. */
-  accountMap(): Promise<AccountMap>;
+  accountMap: () => Promise<AccountMap>;
 }

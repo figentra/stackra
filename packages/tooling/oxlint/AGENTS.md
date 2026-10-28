@@ -17,6 +17,8 @@
 - B-3 (stackra-231): numeric separators, switch-case braces, `replaceAll` and `catch-error-name` at error;
   `number-literal-case` off (oxfmt lowercases hex digits). Never `--fix` `catch-error-name`: its rename to `error`
   can shadow an outer `error`; use an `Error`-suffixed name (`caughtError`) there.
+- B-4 (stackra-232): `typescript/method-signature-style` is `property` at error. Interface and type-literal members,
+  augmentations included, are `name: (args) => R`, so a driver's parameters are checked strictly against its port.
 - Secrets: forbidden.
 
 ## PII

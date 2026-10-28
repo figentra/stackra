@@ -35,67 +35,67 @@ import type { TableIndex } from "#core/types/table-index.type";
  */
 export interface Blueprint {
   /** `varchar(length)`, or `text` without a length (an unbounded string). */
-  string(name: string, length?: number): ColumnDefinition;
+  string: (name: string, length?: number) => ColumnDefinition;
 
   /** A 32-bit `integer`. */
-  integer(name: string): ColumnDefinition;
+  integer: (name: string) => ColumnDefinition;
 
   /**
    * A 64-bit `bigint`, for a count or minor-unit amount past 2^31 (a ledger amount outside `money`). The ORM reads it
    * as a string unless the model field maps it to `bigint` or `number`.
    */
-  bigint(name: string): ColumnDefinition;
+  bigint: (name: string) => ColumnDefinition;
 
   /**
    * An exact `numeric(precision, scale)`: `precision` digits in all (1 to 1000), `scale` of them after the point (0
    * to `precision`), for a measured reading or bound; never for money, which is `money`.
    */
-  decimal(name: string, precision: number, scale: number): ColumnDefinition;
+  decimal: (name: string, precision: number, scale: number) => ColumnDefinition;
 
   /** Adds a `boolean` column. */
-  boolean(name: string): ColumnDefinition;
+  boolean: (name: string) => ColumnDefinition;
 
   /** A `timestamptz`; every instant is stored with its zone. */
-  timestamp(name: string): ColumnDefinition;
+  timestamp: (name: string) => ColumnDefinition;
 
   /** Adds a `uuid` column. */
-  uuid(name: string): ColumnDefinition;
+  uuid: (name: string) => ColumnDefinition;
 
   /** A `jsonb` document. */
-  jsonb(name: string): ColumnDefinition;
+  jsonb: (name: string) => ColumnDefinition;
 
   /** A `tsvector`, a full-text document for a GIN index; @stackra/search's `t.searchable(...)` macro writes them. */
-  tsvector(name: string): ColumnDefinition;
+  tsvector: (name: string) => ColumnDefinition;
 
   /** `text` limited to `values` by the check constraint `ck_<table>_<column>`. */
-  enum(name: string, values: readonly string[]): ColumnDefinition;
+  enum: (name: string, values: readonly string[]) => ColumnDefinition;
 
   /** A `Money` field: `<name>_minor bigint` and `<name>_currency char(3)`. */
-  money(name: string): ColumnGroup;
+  money: (name: string) => ColumnGroup;
 
   /** A `Link<T>` to another module's model: its public id in `varchar(33)`, indexed, with no foreign key. */
-  link(column: string): ColumnDefinition;
+  link: (column: string) => ColumnDefinition;
 
   /** A same-module relation: `varchar(33)` with the foreign key `fk_<table>_<column>` to `table.id`, indexed. */
-  belongsTo(table: string, options: { readonly column: string }): ForeignKeyColumn;
+  belongsTo: (table: string, options: { readonly column: string }) => ForeignKeyColumn;
 
   /** The `HasPublicId(prefix)` trait: the primary key `id varchar(33)`. */
-  hasPublicId(prefix: string): ColumnGroup;
+  hasPublicId: (prefix: string) => ColumnGroup;
 
   /** The `Timestamps` trait: `created_at` and `updated_at`, `timestamptz not null default now()`. */
-  timestamps(): ColumnGroup;
+  timestamps: () => ColumnGroup;
 
   /** The `UserStamps` trait: `created_by` and `updated_by`, principal public ids, nullable. */
-  userStamps(): ColumnGroup;
+  userStamps: () => ColumnGroup;
 
   /** The `Versioned` trait: `version integer not null default 1`. */
-  versioned(): ColumnGroup;
+  versioned: () => ColumnGroup;
 
   /** The `SoftDeletes` trait: `deleted_at timestamptz`, nullable. */
-  softDeletes(): ColumnGroup;
+  softDeletes: () => ColumnGroup;
 
   /** `Translated` fields: one `jsonb` locale map per field. */
-  translatable(fields: readonly string[]): ColumnGroup;
+  translatable: (fields: readonly string[]) => ColumnGroup;
 
   /**
    * Changes the existing column `column` (`schema.table` only): `t.change("lot_id").nullable()`,
@@ -103,31 +103,31 @@ export interface Blueprint {
    * adds, each statement with its inverse; a column is changed once per blueprint and never in the blueprint that adds
    * it.
    */
-  change(column: string): ColumnChange;
+  change: (column: string) => ColumnChange;
 
   /** An index over `columns`, named `idx_<table>_<columns>`. */
-  index(columns: readonly string[]): TableIndex;
+  index: (columns: readonly string[]) => TableIndex;
 
   /** A unique index over `columns`, named `idx_<table>_<columns>`. */
-  unique(columns: readonly string[]): TableIndex;
+  unique: (columns: readonly string[]) => TableIndex;
 
   /** A composite primary key, such as a pivot's pair. */
-  primary(columns: readonly string[]): void;
+  primary: (columns: readonly string[]) => void;
 
   /** The columns a macro wrote, so the caller sets their nullability and comment together. */
-  group(...columns: readonly ColumnDefinition[]): ColumnGroup;
+  group: (...columns: readonly ColumnDefinition[]) => ColumnGroup;
 
   /**
    * The scope node a row belongs to: `scope_id varchar(33)`, the node's `scp_` public id, indexed, with no foreign key
    * (the node is @stackra/scope's).
    */
-  scopeId(): ColumnDefinition;
+  scopeId: () => ColumnDefinition;
 
   /**
    * The node's materialised path, denormalised: `scope_path ltree` with the GiST index `idx_<table>_scope_path`, built
    * online on an existing table. The database needs `Extension.Ltree`.
    */
-  scopePath(): ColumnDefinition;
+  scopePath: () => ColumnDefinition;
 
   /**
    * Enables and forces row-level security with the generated policy `pol_<table>_<column>`, which reads
@@ -141,5 +141,5 @@ export interface Blueprint {
    * ORs permissive policies. A business table keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327
    * d8).
    */
-  rowLevelSecurity(column: string, options: RowLevelSecurityOptions): void;
+  rowLevelSecurity: (column: string, options: RowLevelSecurityOptions) => void;
 }

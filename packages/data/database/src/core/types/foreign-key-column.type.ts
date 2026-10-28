@@ -13,8 +13,8 @@ import type { ColumnDefinition } from "#core/types/column-definition.type";
 /** A foreign-key column of a blueprint. */
 export interface ForeignKeyColumn extends ColumnDefinition {
   /** Deleting the referenced row deletes this one (`ON DELETE CASCADE`). */
-  cascadeOnDelete(): this;
+  cascadeOnDelete: () => this;
 
   /** No index with the foreign key: a later migration builds it concurrently. */
-  withoutIndex(): this;
+  withoutIndex: () => this;
 }

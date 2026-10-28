@@ -11,5 +11,5 @@ import type { DisplayNode } from "#core/types/display-node.type";
 /** A list or view display. */
 export interface ListingBuilder extends Built<DisplayNode> {
   /** Shows at most `rows` rows, then "Open all". */
-  limit(rows: number): this;
+  limit: (rows: number) => this;
 }

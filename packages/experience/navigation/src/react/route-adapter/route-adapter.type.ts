@@ -15,14 +15,14 @@ import type { RouterArgs } from "#react/route-run/router-args.type";
 /** The delegates of one route module. */
 export interface RouteAdapter {
   /** The module's `loader`. */
-  loader(args: RouterArgs): Promise<unknown>;
+  loader: (args: RouterArgs) => Promise<unknown>;
 
   /** The module's `meta`: the resolved head as tags. */
-  meta(args: { readonly loaderData?: unknown; readonly data?: unknown }): MetaDescriptor[];
+  meta: (args: { readonly loaderData?: unknown; readonly data?: unknown }) => MetaDescriptor[];
 
   /** The module's page, from its loader data and params. */
-  render(props: {
+  render: (props: {
     readonly loaderData: unknown;
     readonly params: Readonly<Record<string, string | undefined>>;
-  }): ReactElement | null;
+  }) => ReactElement | null;
 }

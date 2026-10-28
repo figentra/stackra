@@ -11,5 +11,5 @@ import type { DevtoolsTabMetadata } from "#core/types/devtools-tab-metadata.type
 /** A data tab. */
 export interface DevtoolsTabDefinition extends DevtoolsTabMetadata {
   /** Reads the tab's current data; a host receives what it returns (or resolves to). */
-  read(): unknown;
+  read: () => unknown;
 }

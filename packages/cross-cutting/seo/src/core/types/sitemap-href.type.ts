@@ -10,5 +10,5 @@
 
 /** Builds a site path from a route ref and its params. */
 export type SitemapHref = {
-  call(route: object, params?: Readonly<Record<string, unknown>>): string;
+  call: (route: object, params?: Readonly<Record<string, unknown>>) => string;
 }["call"];

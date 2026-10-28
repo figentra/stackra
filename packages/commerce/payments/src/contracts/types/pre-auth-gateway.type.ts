@@ -20,5 +20,5 @@ import type { TokenCharge } from "#contracts/types/token-charge.type";
  */
 export interface PreAuthGateway {
   /** Holds `request.amount` on `request.method`; the answer is `authorized` when the issuer approves. */
-  authorize(request: TokenCharge): Promise<ProviderPayment>;
+  authorize: (request: TokenCharge) => Promise<ProviderPayment>;
 }

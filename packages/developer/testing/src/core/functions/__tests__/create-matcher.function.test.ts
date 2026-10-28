@@ -13,13 +13,13 @@ import { createMatcher } from "#core/functions/create-matcher.function";
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Test-only: the number is even. */
-    toBeEvenInThisSuite(): R;
+    toBeEvenInThisSuite: () => R;
 
     /** Test-only: the number lies in [min, max]. */
-    toBeWithinInThisSuite(min: number, max: number): R;
+    toBeWithinInThisSuite: (min: number, max: number) => R;
 
     /** Test-only: the async source yields `value`. */
-    toYieldInThisSuite(value: string): Promise<R>;
+    toYieldInThisSuite: (value: string) => Promise<R>;
   }
 }
 

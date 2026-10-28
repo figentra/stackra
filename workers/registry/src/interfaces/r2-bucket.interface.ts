@@ -11,13 +11,13 @@ import type { R2Head } from "#src/interfaces/r2-head.interface";
 /** The R2 bucket binding. */
 export interface R2Bucket {
   /** Resolves to the object's metadata, or null when the key is absent. */
-  head(key: string): Promise<R2Head | null>;
+  head: (key: string) => Promise<R2Head | null>;
   /** Resolves to the object with its body, or null when the key is absent. */
-  get(key: string): Promise<R2Body | null>;
+  get: (key: string) => Promise<R2Body | null>;
   /** Stores a value under the key with optional custom metadata. */
-  put(
+  put: (
     key: string,
     value: Uint8Array | string,
     options?: { readonly customMetadata?: Record<string, string> },
-  ): Promise<unknown>;
+  ) => Promise<unknown>;
 }

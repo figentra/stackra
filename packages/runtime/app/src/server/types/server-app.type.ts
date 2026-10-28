@@ -16,16 +16,16 @@ export interface ServerApp {
   readonly key: string;
 
   /** True from boot until a drain starts: the readiness probe. */
-  ready(): boolean;
+  ready: () => boolean;
 
   /** Refuses new calls and resolves once every call in flight has settled; idempotent. */
-  drain(): Promise<void>;
+  drain: () => Promise<void>;
 
   /** Drains, aborts the boot's shutdown signal, then shuts the container down (each instance's `onApplicationShutdown`, last built first); idempotent. */
-  close(): Promise<void>;
+  close: () => Promise<void>;
 
   /** Answers `GET /healthz` and `GET /readyz`; `undefined` for any other route. */
-  probe(method: string, path: string): Promise<ProbeAnswer | undefined>;
+  probe: (method: string, path: string) => Promise<ProbeAnswer | undefined>;
 
   /** What the generated adapters call. */
   readonly handlers: ServerHandlers;

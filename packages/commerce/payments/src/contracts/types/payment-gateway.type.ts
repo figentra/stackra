@@ -44,7 +44,7 @@ export interface PaymentGateway {
    * @throws PaymentFieldRequiredError when the provider needs a field the request left out.
    * @throws PaymentDeclinedError when the provider refuses the customer up front (buy-now-pay-later scoring).
    */
-  checkout(request: CheckoutRequest): Promise<CheckoutSession>;
+  checkout: (request: CheckoutRequest) => Promise<CheckoutSession>;
 
   /**
    * The payment as the provider holds it now: by `providerRef` when given, else by `reference` where the provider
@@ -52,8 +52,8 @@ export interface PaymentGateway {
    *
    * @returns null when the provider holds no payment for the target.
    */
-  lookup(target: PaymentTarget): Promise<ProviderPayment | null>;
+  lookup: (target: PaymentTarget) => Promise<ProviderPayment | null>;
 
   /** Refunds all or part of a captured payment. */
-  refund(request: RefundRequest): Promise<TransferResult>;
+  refund: (request: RefundRequest) => Promise<TransferResult>;
 }

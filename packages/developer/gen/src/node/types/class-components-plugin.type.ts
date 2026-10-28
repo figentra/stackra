@@ -19,5 +19,5 @@ export interface ClassComponentsPlugin {
    * Compiles one module.
    * @returns the compiled code and its source map, or null to leave the module as it is.
    */
-  transform(code: string, id: string): Promise<{ code: string; map: unknown } | null>;
+  transform: (code: string, id: string) => Promise<{ code: string; map: unknown } | null>;
 }

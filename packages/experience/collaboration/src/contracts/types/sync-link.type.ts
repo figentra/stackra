@@ -12,8 +12,8 @@
 /** A document stream its caller owns. */
 export interface SyncLink {
   /** Sends one update to the other replicas of the document. */
-  send(update: Uint8Array): void;
+  send: (update: Uint8Array) => void;
 
   /** Closes the stream; safe to call more than once. */
-  close(): void;
+  close: () => void;
 }

@@ -22,8 +22,8 @@ import type { EcrTiming } from "#contracts/types/ecr-timing.type";
  */
 export interface EcrLink {
   /** Sends `payload` and resolves with the terminal's answer payload. */
-  exchange(payload: Uint8Array, timing: EcrTiming): Promise<Uint8Array>;
+  exchange: (payload: Uint8Array, timing: EcrTiming) => Promise<Uint8Array>;
 
   /** Sends `payload` while an exchange may be running, and resolves once the terminal acknowledges it. */
-  signal(payload: Uint8Array, timing: EcrTiming): Promise<void>;
+  signal: (payload: Uint8Array, timing: EcrTiming) => Promise<void>;
 }

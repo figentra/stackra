@@ -18,11 +18,11 @@ import type { FulfilmentRequest } from "#contracts/types/fulfilment-request.type
  */
 export interface FulfilmentProviderConnector {
   /** Hands `request` over; a second call with the same reference returns the first fulfilment. */
-  create(request: FulfilmentRequest): Promise<Fulfilment>;
+  create: (request: FulfilmentRequest) => Promise<Fulfilment>;
 
   /** The fulfilment `providerRef` as it is now. */
-  status(providerRef: string): Promise<Fulfilment>;
+  status: (providerRef: string) => Promise<Fulfilment>;
 
   /** Cancels fulfilment `providerRef` if it has not shipped. */
-  cancel(providerRef: string): Promise<Fulfilment>;
+  cancel: (providerRef: string) => Promise<Fulfilment>;
 }

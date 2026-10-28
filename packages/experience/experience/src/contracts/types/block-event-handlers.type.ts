@@ -18,8 +18,8 @@ import type { BlockEvent } from "#contracts/types/block-event.type";
  */
 export interface BlockEventHandlers {
   /** Opens the route a navigate verb names, by its generated key. */
-  onNavigate?(route: string): void;
+  onNavigate?: (route: string) => void;
 
   /** Runs the action an action verb names; the host dispatches it through its client. */
-  onAction?(event: Extract<BlockEvent, { readonly verb: "action" }>): void;
+  onAction?: (event: Extract<BlockEvent, { readonly verb: "action" }>) => void;
 }

@@ -54,33 +54,33 @@ export interface RouteContextMembers<T> {
   readonly settings: SettingsReader;
 
   /** A configuration from the container. */
-  config<C extends object>(type: AnyClass<C>): C;
+  config: <C extends object>(type: AnyClass<C>) => C;
 
   /** The localised href of `to` in the request's locale mount. */
-  href(to: RouteTarget, params?: HrefParams): string;
+  href: (to: RouteTarget, params?: HrefParams) => string;
 
   /**
    * The answer of a consumed query.
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  query<Q extends QueryRef>(
+  query: <Q extends QueryRef>(
     query: Q,
     input: RefInput<Q>,
     options?: RouteQueryOptions,
-  ): Promise<RefOutput<Q>>;
+  ) => Promise<RefOutput<Q>>;
 
   /** Runs a consumed action; a refusal is `{ ok: false, error }`, never a rejection. */
-  action<A extends ActionRef>(
+  action: <A extends ActionRef>(
     action: A,
     input: RefInput<A>,
-  ): Promise<RouteActionResult<RefOutput<A>>>;
+  ) => Promise<RouteActionResult<RefOutput<A>>>;
 
   /** The submitted form (or JSON body) as one object, dotted names nested (`lines.0.quantity`). */
-  formData(): Promise<Record<string, unknown>>;
+  formData: () => Promise<Record<string, unknown>>;
 
   /** `value` with a status and headers. */
-  data<V>(value: V, init?: RouteResponseInit): RouteResponse<V>;
+  data: <V>(value: V, init?: RouteResponseInit) => RouteResponse<V>;
 
   /**
    * A 400 that puts each refused path's message on its field: from a failed `validate(...)` or a refusal with field
@@ -88,15 +88,15 @@ export interface RouteContextMembers<T> {
    *
    * @throws the error itself when it carries no field errors.
    */
-  fieldErrors(error: unknown): RouteResponse<{ readonly fieldErrors: FieldErrors }>;
+  fieldErrors: (error: unknown) => RouteResponse<{ readonly fieldErrors: FieldErrors }>;
 
   /** A 404 for the error boundary; thrown (`throw ctx.notFound({ code })`). */
-  notFound(
+  notFound: (
     details?: Readonly<Record<string, unknown>>,
-  ): RouteResponse<Readonly<Record<string, unknown>>>;
+  ) => RouteResponse<Readonly<Record<string, unknown>>>;
 
   /** A redirect to `to`, returned (or thrown) from a loader or a submit. */
-  redirect(to: RouteTarget, params?: HrefParams): RouteRedirect;
+  redirect: (to: RouteTarget, params?: HrefParams) => RouteRedirect;
 
   /**
    * Answers a permanent redirect when the route's last path param is not `value` (a renamed slug), so only one URL
@@ -104,8 +104,8 @@ export interface RouteContextMembers<T> {
    *
    * @throws Response a 301 to the canonical URL.
    */
-  redirectToCanonical(value: string): void;
+  redirectToCanonical: (value: string) => void;
 
   /** Leaves for `to`: an outside URL with `{ external: true }`, else a redirect inside the app. */
-  navigate(to: RouteTarget, options?: { readonly external?: boolean }): void;
+  navigate: (to: RouteTarget, options?: { readonly external?: boolean }) => void;
 }

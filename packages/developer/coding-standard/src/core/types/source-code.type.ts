@@ -16,5 +16,5 @@ export interface SourceCode {
   readonly lines: readonly string[];
 
   /** Every comment in the file, in source order. */
-  getAllComments(): readonly AstComment[];
+  getAllComments: () => readonly AstComment[];
 }

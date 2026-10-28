@@ -25,27 +25,27 @@ import type { Path } from "#core/types/path.type";
  */
 export interface Display<O> {
   /** One metric field. */
-  kpi(path: MetricPath<O>): KpiBuilder;
+  kpi: (path: MetricPath<O>) => KpiBuilder;
 
   /** Several KPIs in one tile. */
-  kpiGroup(kpis: readonly KpiBuilder[]): Built<DisplayNode>;
+  kpiGroup: (kpis: readonly KpiBuilder[]) => Built<DisplayNode>;
 
   /** One metric field against its target. */
-  progress(path: MetricPath<O>): Built<DisplayNode>;
+  progress: (path: MetricPath<O>) => Built<DisplayNode>;
 
   /** The rows of the list field `path`. */
-  list<K extends ListPath<O>>(
+  list: <K extends ListPath<O>>(
     path: K,
     options: {
       readonly primary: Path<ElementOf<NonNullable<O[K]>>>;
       readonly secondary?: Path<ElementOf<NonNullable<O[K]>>>;
       readonly meta?: Path<ElementOf<NonNullable<O[K]>>>;
     },
-  ): ListingBuilder;
+  ) => ListingBuilder;
 
   /** The resource view `name` of the resource whose list query this is. */
-  view(name: string): ListingBuilder;
+  view: (name: string) => ListingBuilder;
 
   /** The producing package's renderer. */
-  custom(): Built<DisplayNode>;
+  custom: () => Built<DisplayNode>;
 }

@@ -11,8 +11,8 @@ import type { RoomFrame } from "#contracts/types/room-frame.type";
 /** A connection that receives room frames. */
 export interface RoomPeer {
   /** Sends one frame. */
-  deliver(frame: RoomFrame): void;
+  deliver: (frame: RoomFrame) => void;
 
   /** Ends the connection with an application close code and a reason. */
-  close(code: number, reason: string): void;
+  close: (code: number, reason: string) => void;
 }

@@ -13,11 +13,11 @@ import type { IndexMethod } from "#core/types/index-method.type";
 /** One index of a blueprint. */
 export interface TableIndex {
   /** Built with `CREATE INDEX CONCURRENTLY`, so writes continue; required on a table that already exists. */
-  concurrently(): this;
+  concurrently: () => this;
 
   /** The access method (`gin` for a tsvector or jsonb, `gist` for ranges and ltree). */
-  using(method: IndexMethod): this;
+  using: (method: IndexMethod) => this;
 
   /** A partial index: only rows matching the SQL predicate (`deleted_at is null`). */
-  where(predicate: string): this;
+  where: (predicate: string) => this;
 }

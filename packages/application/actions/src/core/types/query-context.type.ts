@@ -26,17 +26,17 @@ export interface QueryContext extends ExtensionContext {
    * Checks the call's permission against `record` through its policy.
    * @throws Refusal `forbidden` (or the policy's own refusal) when the policy denies.
    */
-  authorize(record: object): Promise<void>;
+  authorize: (record: object) => Promise<void>;
 
   /**
    * The window `input` names, with midnights in the call's time zone.
    * @throws RangeError for a range code it does not know, a `custom` range without `from`, or a custom `to` before
    *         `from`.
    */
-  period(input: PeriodInput): Period;
+  period: (input: PeriodInput) => Period;
 
   /** Midnight of the call's day in its time zone. */
-  startOfDay(): Date;
+  startOfDay: () => Date;
 
   /** The device the call came from, once the transport matched it to the verified session's device; else absent. */
   readonly deviceId?: string;
@@ -64,8 +64,8 @@ export interface QueryContext extends ExtensionContext {
    * @throws TypeError when the query declares no `replica`, or `slice` does not match its `scope`.
    * @throws Error when no `ReplicaLog` is bound.
    */
-  replica(
+  replica: (
     fill: (bounds: ReplicaBounds) => Promise<readonly ReplicaRow[]>,
     slice?: string,
-  ): Promise<ReplicaPage>;
+  ) => Promise<ReplicaPage>;
 }

@@ -64,6 +64,6 @@ export const toRecord = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts the list (or a `run()` result's `events`) holds an event of `type` with these fields. */
-    toRecord<E extends Event>(type: AnyClass<E>, fields?: Partial<Fields<E>>): R;
+    toRecord: <E extends Event>(type: AnyClass<E>, fields?: Partial<Fields<E>>) => R;
   }
 }

@@ -17,11 +17,11 @@ export interface NotificationsCapability {
   readonly permission: PermissionStatus;
 
   /** Asks for the permission when it is not decided; refuses with `permission_denied` when it ends up denied. */
-  requestPermission(): Promise<CapabilityResult>;
+  requestPermission: () => Promise<CapabilityResult>;
 
   /** Shows a notification; refuses unless the permission is granted. */
-  notify(
+  notify: (
     title: string,
     options?: { readonly body?: string; readonly tag?: string },
-  ): Promise<CapabilityResult>;
+  ) => Promise<CapabilityResult>;
 }

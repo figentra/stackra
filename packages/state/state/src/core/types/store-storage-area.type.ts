@@ -12,8 +12,8 @@
 /** One named area of client storage, read and written by key. */
 export interface StoreStorageArea {
   /** The value stored under `key`, `undefined` when nothing is; a promise of it on an asynchronous driver. */
-  get(key: string): unknown;
+  get: (key: string) => unknown;
 
   /** Stores `value`, a plain JSON-safe object, under `key`; may return a promise on an asynchronous driver. */
-  set(key: string, value: unknown): unknown;
+  set: (key: string, value: unknown) => unknown;
 }

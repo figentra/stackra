@@ -23,16 +23,16 @@ import type { MatchKeys } from "#contracts/ads/match-keys.type";
  */
 export interface AdPlatformConnector {
   /** Sends `events` to the conversions API. */
-  sendConversions(events: readonly ConversionEvent[]): Promise<AdBatchResult>;
+  sendConversions: (events: readonly ConversionEvent[]) => Promise<AdBatchResult>;
 
   /**
    * Changes the members of audience `audience` (the platform's audience id from the Connection's settings).
    *
    * @param mode - `add` and `remove` change only `members`; `replace` makes the audience exactly `members`.
    */
-  syncAudience(
+  syncAudience: (
     audience: string,
     members: readonly MatchKeys[],
     mode: "add" | "remove" | "replace",
-  ): Promise<AdBatchResult>;
+  ) => Promise<AdBatchResult>;
 }

@@ -28,16 +28,16 @@ declare module "@stackra/container/testing" {
     /** The events this app published. */
     readonly events: {
       /** Every event published so far, in process or through the outbox, oldest first. */
-      published(): PublishedEvents;
+      published: () => PublishedEvents;
     };
 
     /** The deliveries this app's bus made. */
     readonly listeners: {
       /** Every delivery to a listener of `type`, oldest first, failures included. */
-      calls(type: AnyClass<Listener>): readonly ListenerDelivery[];
+      calls: (type: AnyClass<Listener>) => readonly ListenerDelivery[];
 
       /** The deliveries to a listener of `type` whose `handle` threw. */
-      failures(type: AnyClass<Listener>): readonly ListenerDelivery[];
+      failures: (type: AnyClass<Listener>) => readonly ListenerDelivery[];
     };
   }
 }

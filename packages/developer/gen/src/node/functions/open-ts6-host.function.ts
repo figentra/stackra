@@ -20,12 +20,12 @@ import type { TsNode } from "#node/types/ts-node.type";
 
 /** A TypeScript 6 node: the shared shape plus the methods gen calls. */
 interface SixNode extends TsNode {
-  getSourceFile(): SixNode & {
+  getSourceFile: () => SixNode & {
     readonly text: string;
-    getLineAndCharacterOfPosition(at: number): { line: number; character: number };
+    getLineAndCharacterOfPosition: (at: number) => { line: number; character: number };
   };
-  getStart(file?: SixNode): number;
-  getText(file?: SixNode): string;
+  getStart: (file?: SixNode) => number;
+  getText: (file?: SixNode) => string;
   readonly questionToken?: TsNode;
 }
 
@@ -54,25 +54,25 @@ interface SixModule {
   readonly SyntaxKind: Readonly<Record<string, string | number>>;
   readonly SymbolFlags: Readonly<Record<string, number>>;
   readonly TypeFlags: Readonly<Record<string, number>>;
-  readonly sys: { readFile(path: string): string | undefined };
-  readConfigFile(
+  readonly sys: { readFile: (path: string) => string | undefined };
+  readConfigFile: (
     path: string,
     read: (path: string) => string | undefined,
-  ): { config?: unknown; error?: unknown };
-  parseJsonConfigFileContent(
+  ) => { config?: unknown; error?: unknown };
+  parseJsonConfigFileContent: (
     json: unknown,
     host: unknown,
     base: string,
-  ): { readonly fileNames: readonly string[]; readonly options: unknown };
-  createProgram(setup: { rootNames: readonly string[]; options: unknown }): {
-    getSourceFiles(): readonly SixNode[];
-    getTypeChecker(): {
-      getSymbolAtLocation(node: SixNode): SixSymbol | undefined;
-      getAliasedSymbol(symbol: SixSymbol): SixSymbol;
-      getTypeAtLocation(node: SixNode): SixType;
-      getTypeOfSymbol(symbol: SixSymbol): SixType;
-      getPropertiesOfType(type: SixType): readonly SixSymbol[];
-      typeToString(type: SixType): string;
+  ) => { readonly fileNames: readonly string[]; readonly options: unknown };
+  createProgram: (setup: { rootNames: readonly string[]; options: unknown }) => {
+    getSourceFiles: () => readonly SixNode[];
+    getTypeChecker: () => {
+      getSymbolAtLocation: (node: SixNode) => SixSymbol | undefined;
+      getAliasedSymbol: (symbol: SixSymbol) => SixSymbol;
+      getTypeAtLocation: (node: SixNode) => SixType;
+      getTypeOfSymbol: (symbol: SixSymbol) => SixType;
+      getPropertiesOfType: (type: SixType) => readonly SixSymbol[];
+      typeToString: (type: SixType) => string;
     };
   };
 }

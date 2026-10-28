@@ -11,7 +11,7 @@
 /** The KV read the directory needs. */
 export type LoginDirectoryKv = {
   /** Lists the keys that start with `prefix`. */
-  list(options: {
+  list: (options: {
     readonly prefix: string;
-  }): Promise<{ readonly keys: readonly { readonly name: string }[] }>;
+  }) => Promise<{ readonly keys: readonly { readonly name: string }[] }>;
 };

@@ -22,7 +22,7 @@ type StandInDevice = {
   readonly [K in keyof PosDeviceNativeModule]: Mock<PosDeviceNativeModule[K]>;
 } & {
   /** Replays a recorded scan event to every listener. */
-  emit(event: ScanEvent): void;
+  emit: (event: ScanEvent) => void;
   /** The `remove` every `addListener` answer carries. */
   readonly remove: Mock<() => void>;
 };
@@ -48,9 +48,9 @@ interface PosDeviceSdk {
   readonly status: typeof STATUS;
   readonly scan: typeof SCAN;
   /** Puts a stand-in module named `module` on the Expo registry that answers `status`. */
-  install(module: string, status: number): StandInDevice;
+  install: (module: string, status: number) => StandInDevice;
   /** Removes the stand-in registry. */
-  uninstall(): void;
+  uninstall: () => void;
 }
 
 /** The recorded SDK answers and the stand-in module. */

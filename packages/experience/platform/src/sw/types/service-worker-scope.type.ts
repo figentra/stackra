@@ -16,19 +16,19 @@ export interface ServiceWorkerScope {
 
   /** The worker's registration. */
   readonly registration: {
-    showNotification(title: string, options?: NotificationOptions): Promise<void>;
+    showNotification: (title: string, options?: NotificationOptions) => Promise<void>;
     readonly pushManager: PushManager;
   };
 
   /** The app's open tabs. */
   readonly clients: {
-    matchAll(options: {
+    matchAll: (options: {
       type: "window";
       includeUncontrolled: boolean;
-    }): Promise<readonly WindowClient[]>;
-    openWindow(url: string): Promise<unknown>;
+    }) => Promise<readonly WindowClient[]>;
+    openWindow: (url: string) => Promise<unknown>;
   };
 
   /** Activates a waiting worker at once. */
-  skipWaiting(): Promise<void>;
+  skipWaiting: () => Promise<void>;
 }

@@ -72,8 +72,8 @@ export class InboxService extends Service {
    * @param container - a container or a testing app; relays of modules it did not boot are skipped.
    */
   connect(container: {
-    has(type: AnyClass): boolean;
-    get<T extends object>(type: AnyClass<T>): T;
+    has: (type: AnyClass) => boolean;
+    get: <T extends object>(type: AnyClass<T>) => T;
   }): void {
     for (const type of RELAYS)
       if (container.has(type)) {

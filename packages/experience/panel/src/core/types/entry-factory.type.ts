@@ -16,20 +16,20 @@ import type { SectionBuilder } from "#core/types/section-builder.type";
 /** Builds the entries of an infolist over record type `R`. */
 export interface EntryFactory<R> {
   /** A value rendered from the field's type. */
-  from(key: Path<R>): EntryBuilder;
+  from: (key: Path<R>) => EntryBuilder;
 
   /** A principal id rendered as an avatar and a name. */
-  principal(key: Path<R>): EntryBuilder;
+  principal: (key: Path<R>) => EntryBuilder;
 
   /** Minor units rendered as money in the currency at `currency`. */
-  money(key: Path<R>, options: { readonly currency: Path<R> }): EntryBuilder;
+  money: (key: Path<R>, options: { readonly currency: Path<R> }) => EntryBuilder;
 
   /** A list field as a small table of the item paths `columns`. */
-  list<K extends Path<R>>(
+  list: <K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
-  ): Built<EntryNode>;
+  ) => Built<EntryNode>;
 
   /** A titled group of entries. */
-  section(name: string, entries: readonly Built<EntryNode>[]): SectionBuilder;
+  section: (name: string, entries: readonly Built<EntryNode>[]) => SectionBuilder;
 }

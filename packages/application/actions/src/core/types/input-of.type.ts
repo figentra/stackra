@@ -8,6 +8,6 @@
  */
 
 /** The `handle` input of an action or query instance type. */
-export type InputOf<T> = T extends { handle(input: infer I, ...rest: never[]): unknown }
+export type InputOf<T> = T extends { handle: (input: infer I, ...rest: never[]) => unknown }
   ? I
   : never;

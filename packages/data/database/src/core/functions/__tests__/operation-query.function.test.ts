@@ -31,7 +31,7 @@ function build(operation: "list" | "get") {
     permission: "loyalty_kit.loyalty_account.read",
   });
   const query = Reflect.construct(type, [service]) as {
-    handle(input: object): Promise<unknown>;
+    handle: (input: object) => Promise<unknown>;
   };
   return { type, service, query };
 }

@@ -81,8 +81,8 @@ export class EventBus extends Service {
    * @param container - a container or a testing app; listeners of modules it did not boot are skipped.
    */
   connect(container: {
-    has(type: AnyClass): boolean;
-    get<T extends object>(type: AnyClass<T>): T;
+    has: (type: AnyClass) => boolean;
+    get: <T extends object>(type: AnyClass<T>) => T;
   }): void {
     for (const [type, listeners] of LISTENER_REGISTRY)
       for (const listener of listeners) {

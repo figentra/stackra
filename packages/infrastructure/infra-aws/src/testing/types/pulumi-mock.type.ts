@@ -13,11 +13,11 @@ export type PulumiMock = {
   /** The resources registered so far, in registration order. */
   readonly resources: readonly MockedResource[];
   /** Waits until no new resource registers, then returns them all. */
-  settled(): Promise<readonly MockedResource[]>;
+  settled: () => Promise<readonly MockedResource[]>;
   /**
    * The settled resource named `name` whose type token is `type` or ends in `:<type>` (`BucketPolicy`).
    *
    * @throws Error when none registered.
    */
-  find(type: string, name: string): Promise<MockedResource>;
+  find: (type: string, name: string) => Promise<MockedResource>;
 };

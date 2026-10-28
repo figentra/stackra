@@ -116,7 +116,7 @@ export class WebhookReceiver extends Service {
     const eventClass = typeof type === "string" ? route.types.get(type) : undefined;
     if (eventClass === undefined) return undefined;
     // reason: the event's generated schema checks the payload at runtime; `create` types its fields from the class
-    const event = (eventClass as unknown as { create(values: unknown): Event }).create(payload);
+    const event = (eventClass as unknown as { create: (values: unknown) => Event }).create(payload);
     let id: string;
     let occurredAt: Date;
     if (webhooks.scheme === SignatureScheme.StandardWebhooks) {

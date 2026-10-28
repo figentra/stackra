@@ -33,5 +33,5 @@ export interface StoreAccountConnector {
    * @returns null when the account has no such app or its key may not see it.
    * @throws ConnectionCheckFailedError when the store refuses the key itself.
    */
-  findApp(appId: string): Promise<StoreApp | null>;
+  findApp: (appId: string) => Promise<StoreApp | null>;
 }

@@ -19,8 +19,8 @@ import { runShortcut } from "#testing/functions/run-shortcut.function";
 
 /** The context members the template's shortcuts use, as the theming and navigation packages would add them. */
 type TemplateContext = {
-  theme: { scheme: string; setScheme(scheme: string): void };
-  navigate(to: string, options?: { external?: boolean }): void;
+  theme: { scheme: string; setScheme: (scheme: string) => void };
+  navigate: (to: string, options?: { external?: boolean }) => void;
 };
 
 /** A stand-in for the console's palette store. */
@@ -123,7 +123,7 @@ describe("runShortcut", () => {
       };
     });
     const run = await runShortcut(OpenPaletteShortcut);
-    const { stores } = run as unknown as { stores: { get(type: unknown): PaletteStore } };
+    const { stores } = run as unknown as { stores: { get: (type: unknown) => PaletteStore } };
     expect(stores.get(PaletteStore).isOpen).toBe(true);
     expect(run.shortcut).toBeInstanceOf(OpenPaletteShortcut);
     expectTypeOf(run.shortcut).toEqualTypeOf<OpenPaletteShortcut>();

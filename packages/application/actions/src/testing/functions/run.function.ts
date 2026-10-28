@@ -19,7 +19,7 @@ import type { RunResult } from "#testing/types/run-result.type";
 
 /** The events the app published so far, when `@stackra/events/testing` added `app.events`. */
 function publishedBy(app: object): readonly object[] {
-  return (app as { events?: { published(): readonly object[] } }).events?.published() ?? [];
+  return (app as { events?: { published: () => readonly object[] } }).events?.published() ?? [];
 }
 
 /** A result whose `output` throws the refusal of a refused call (non-enumerable, so printing never throws). */

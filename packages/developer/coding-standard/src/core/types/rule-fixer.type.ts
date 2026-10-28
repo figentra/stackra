@@ -10,11 +10,11 @@ import type { RuleFix } from "#core/types/rule-fix.type";
 /** Builds text edits for an autofix. */
 export interface RuleFixer {
   /** Inserts `text` at the end of `range`. */
-  insertTextAfterRange(range: readonly [number, number], text: string): RuleFix;
+  insertTextAfterRange: (range: readonly [number, number], text: string) => RuleFix;
 
   /** Replaces the text in `range`. */
-  replaceTextRange(range: readonly [number, number], text: string): RuleFix;
+  replaceTextRange: (range: readonly [number, number], text: string) => RuleFix;
 
   /** Deletes the text in `range`. */
-  removeRange(range: readonly [number, number]): RuleFix;
+  removeRange: (range: readonly [number, number]) => RuleFix;
 }

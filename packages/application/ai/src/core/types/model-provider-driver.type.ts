@@ -22,5 +22,5 @@ export interface ModelProviderDriver {
    * @param model - the provider's model id from the route row.
    * @param region - the data region the route chose.
    */
-  model(model: string, region: string): Exclude<LanguageModel, string>;
+  model: (model: string, region: string) => Exclude<LanguageModel, string>;
 }

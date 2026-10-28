@@ -18,5 +18,5 @@ import type { ViewBuilder } from "#core/types/view-builder.type";
  */
 export interface Views<R> {
   /** A preset view named `name` with `filter` applied. */
-  view(name: string, filter: { readonly [K in Path<R>]?: unknown }): ViewBuilder<R>;
+  view: (name: string, filter: { readonly [K in Path<R>]?: unknown }) => ViewBuilder<R>;
 }

@@ -10,26 +10,26 @@
 /** One column of a blueprint. */
 export interface ColumnDefinition {
   /** The column refuses null. On an existing table it also needs a `default`, or the step would fail on its rows. */
-  notNull(): this;
+  notNull: () => this;
 
   /** The column accepts null. */
-  nullable(): this;
+  nullable: () => this;
 
   /** The column's comment: the model field's docblock, written as `COMMENT ON COLUMN`. */
-  comment(text: string): this;
+  comment: (text: string) => this;
 
   /** The default, a constant equal to the model field's initializer; an array or object is stored as jsonb. */
-  default(value: string | number | boolean | null | object): this;
+  default: (value: string | number | boolean | null | object) => this;
 
   /** A plain index on the column alone (`idx_<table>_<column>`); built online when the table already exists. */
-  index(): this;
+  index: () => this;
 
   /**
    * Compares and sorts the text column by `collation`, an ICU collation the module's migration created with
    * `schema.createCollation` (Arabic letter order, digits by value). Text columns only.
    */
-  collate(collation: string): this;
+  collate: (collation: string) => this;
 
   /** A persisted computed value: `GENERATED ALWAYS AS (<expression>) STORED`; the model reads it with a getter. */
-  storedAs(expression: string): this;
+  storedAs: (expression: string) => this;
 }

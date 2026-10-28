@@ -18,5 +18,5 @@ import type { TransferResult } from "#contracts/types/transfer-result.type";
  */
 export interface PayoutGateway {
   /** Sends `request.amount` to `request.destination`. */
-  payout(request: PayoutRequest): Promise<TransferResult>;
+  payout: (request: PayoutRequest) => Promise<TransferResult>;
 }

@@ -51,7 +51,7 @@ export function fakeIntegrationApi<I extends Integration>(
   const routes: Route[] = [];
   const route =
     (method: string) =>
-    (path: string): { returns(answer: FakeAnswer<string>): FakeIntegrationRoutes } => ({
+    (path: string): { returns: (answer: FakeAnswer<string>) => FakeIntegrationRoutes } => ({
       returns(answer) {
         routes.unshift({ method, segments: segmentsOf(path), answer });
         return builder;

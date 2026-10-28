@@ -19,5 +19,5 @@ export interface FactsContext extends Pick<QueryContext, "actor" | "locale" | "a
    * @param minorUnits - an integer amount in the currency's minor units, as the wire carries it (ADR 0220).
    * @param currency - an ISO 4217 code.
    */
-  money(minorUnits: number, currency: string): string;
+  money: (minorUnits: number, currency: string) => string;
 }

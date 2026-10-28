@@ -27,7 +27,7 @@ describe("Macro", () => {
     class AddScoreMigration extends Migration {
       up(schema: SchemaBuilder): void {
         schema.table("players", (t) => {
-          (t as Blueprint & { score(column: string): ColumnGroup })
+          (t as Blueprint & { score: (column: string) => ColumnGroup })
             .score("rating")
             .notNull()
             .comment("The rating.");

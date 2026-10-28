@@ -12,5 +12,5 @@ import type { BrokerMessage } from "#contracts/types/broker-message.type";
 /** A topic a broker publishes to. */
 export interface BrokerTopic {
   /** Hands `message` to the broker. */
-  publish(message: BrokerMessage): Promise<unknown>;
+  publish: (message: BrokerMessage) => Promise<unknown>;
 }

@@ -16,14 +16,14 @@ import type { ToneRules } from "#core/types/tone-rules.type";
 /** The chainable builder of one KPI. */
 export interface KpiBuilder extends Built<KpiNode> {
   /** The icon beside the label. */
-  icon(name: IconName): this;
+  icon: (name: IconName) => this;
 
   /** The threshold tones, first match wins. */
-  tone(build: (tone: ToneRules) => readonly ToneRule[]): this;
+  tone: (build: (tone: ToneRules) => readonly ToneRule[]) => this;
 
   /** Where a click goes. */
-  drill(drill: DrillNode): this;
+  drill: (drill: DrillNode) => this;
 
   /** Marks a falling value as the good direction. */
-  lowerIsBetter(): this;
+  lowerIsBetter: () => this;
 }

@@ -17,5 +17,5 @@ export type Faker = FakerJs & {
    * @example
    * faker.publicId("usr"); // "usr_01jaz…"
    */
-  publicId<const P extends string>(prefix: P): PublicId<P>;
+  publicId: <const P extends string>(prefix: P) => PublicId<P>;
 };

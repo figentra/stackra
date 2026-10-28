@@ -23,11 +23,11 @@ export interface TaxGateway {
    *
    * @throws RangeError when the provider cannot tax a line; a missing rate is never a zero.
    */
-  quote(request: TaxRequest): Promise<TaxQuote>;
+  quote: (request: TaxRequest) => Promise<TaxQuote>;
 
   /** Records the finalised sale `quote` under the caller's `reference`; answers the provider's transaction id. */
-  record?(quote: TaxQuote, reference: string): Promise<string>;
+  record?: (quote: TaxQuote, reference: string) => Promise<string>;
 
   /** Voids (reverses) the recorded transaction `transaction`. */
-  void?(transaction: string): Promise<void>;
+  void?: (transaction: string) => Promise<void>;
 }

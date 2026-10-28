@@ -14,11 +14,11 @@ export interface WindowClient {
   readonly url: string;
 
   /** Brings the tab to the front. */
-  focus(): Promise<unknown>;
+  focus: () => Promise<unknown>;
 
   /** Navigates the tab to `url`. */
-  navigate(url: string): Promise<unknown>;
+  navigate: (url: string) => Promise<unknown>;
 
   /** Posts `message` to the page. */
-  postMessage(message: unknown): void;
+  postMessage: (message: unknown) => void;
 }

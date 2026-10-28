@@ -18,11 +18,11 @@ import type { DisputeEvidence } from "#contracts/types/dispute-evidence.type";
  */
 export interface DisputeGateway {
   /** The dispute as the provider holds it now. */
-  dispute(providerRef: string): Promise<Dispute>;
+  dispute: (providerRef: string) => Promise<Dispute>;
 
   /** Submits evidence; the dispute moves to review. */
-  respond(providerRef: string, evidence: DisputeEvidence): Promise<Dispute>;
+  respond: (providerRef: string, evidence: DisputeEvidence) => Promise<Dispute>;
 
   /** Accepts the chargeback without contest. */
-  accept(providerRef: string): Promise<Dispute>;
+  accept: (providerRef: string) => Promise<Dispute>;
 }

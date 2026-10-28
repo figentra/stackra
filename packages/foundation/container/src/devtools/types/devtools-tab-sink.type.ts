@@ -14,5 +14,5 @@ import type { DevtoolsTabSinkDefinition } from "#devtools/types/devtools-tab-sin
 /** The kit, as a devtools entry sees it: `DevtoolsKit` from @stackra/devtools-kit fits. */
 export interface DevtoolsTabSink {
   /** Defines a tab and returns what removes it. */
-  defineTab(definition: DevtoolsTabSinkDefinition): () => void;
+  defineTab: (definition: DevtoolsTabSinkDefinition) => () => void;
 }

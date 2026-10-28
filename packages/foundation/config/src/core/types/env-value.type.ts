@@ -12,13 +12,13 @@
 /** A parser of one environment value of type `T`. */
 export interface EnvValue<T> {
   /** The same parser, returning undefined for an unset value instead of failing. */
-  optional(): EnvValue<T | undefined>;
+  optional: () => EnvValue<T | undefined>;
 
   /** The same parser, returning `value` for an unset value instead of failing. */
-  default(value: NonNullable<T>): EnvValue<NonNullable<T>>;
+  default: (value: NonNullable<T>) => EnvValue<NonNullable<T>>;
 
   /** The same parser, keeping an empty string as a value instead of treating it as unset. */
-  allowEmpty(): EnvValue<T>;
+  allowEmpty: () => EnvValue<T>;
 
   /**
    * Parses one raw value.
@@ -28,5 +28,5 @@ export interface EnvValue<T> {
    * @throws ConfigInvalidError when the value is unset (and neither optional nor defaulted) or invalid; the message
    *         names `name`, never the value.
    */
-  parse(value: unknown, name?: string): T;
+  parse: (value: unknown, name?: string) => T;
 }

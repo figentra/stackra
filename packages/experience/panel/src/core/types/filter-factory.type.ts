@@ -12,11 +12,11 @@ import type { Path } from "#core/types/path.type";
 /** Builds the filters of a table over row type `R`. */
 export interface FilterFactory<R> {
   /** A filter rendered from the field's type (an enum offers its codes, a date a range). */
-  from(key: Path<R>): FilterBuilder;
+  from: (key: Path<R>) => FilterBuilder;
 
   /** A principal picker. */
-  principal(key: Path<R>): FilterBuilder;
+  principal: (key: Path<R>) => FilterBuilder;
 
   /** With, without or only soft-deleted records. */
-  trashed(): FilterBuilder;
+  trashed: () => FilterBuilder;
 }

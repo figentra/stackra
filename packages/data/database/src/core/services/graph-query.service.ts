@@ -69,7 +69,7 @@ export class GraphQuery extends Service {
       rows.map(async (row) => {
         checkFields(row, options.fields[source] ?? [], source);
         const value = (row as Record<string, unknown>)[relation] as
-          | { load(): Promise<object> }
+          | { load: () => Promise<object> }
           | null
           | undefined;
         const related = value === null || value === undefined ? null : await value.load();

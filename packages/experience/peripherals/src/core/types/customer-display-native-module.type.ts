@@ -12,9 +12,9 @@
 /** The `StackraCustomerDisplay` native module. */
 export interface CustomerDisplayNativeModule {
   /** Whether an external display is connected now. */
-  isAvailable(): Promise<boolean>;
+  isAvailable: () => Promise<boolean>;
   /** Draws the view (a `CustomerDisplayView` as JSON) on the external display, opening it when closed. */
-  show(view: string): Promise<void>;
+  show: (view: string) => Promise<void>;
   /** Shows the idle screen on the external display. */
-  clear(): Promise<void>;
+  clear: () => Promise<void>;
 }

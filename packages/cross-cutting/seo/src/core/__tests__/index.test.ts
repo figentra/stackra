@@ -46,7 +46,7 @@ describe("@stackra/seo", () => {
   });
 
   it("types a sitemap source as the generated sitemap file writes it", () => {
-    const source: SitemapSource<{ query(): Promise<string[]> }> = {
+    const source: SitemapSource<{ query: () => Promise<string[]> }> = {
       changefreq: core.Changefreq.Daily,
       maxLimit: 100,
       list: async (clients, site, href, { cursor, limit }) => ({

@@ -33,13 +33,13 @@ export function deliverRemoteEvent<E extends Event>(
 ): Promise<E>;
 /** A consumed service's event class, as gen writes it into `#stackra/clients/<service>`. */
 export function deliverRemoteEvent<E extends object, V>(
-  type: { readonly eventName: string; create(values: V): E },
+  type: { readonly eventName: string; create: (values: V) => E },
   values: V,
   meta?: Partial<EventMeta>,
 ): Promise<E>;
 /** The implementation behind both overloads: creates the event and queues it in the harness inbox. */
 export async function deliverRemoteEvent(
-  type: { create(values: never): object },
+  type: { create: (values: never) => object },
   values: unknown,
   meta: Partial<EventMeta> = {},
 ): Promise<object> {

@@ -21,10 +21,10 @@ export interface ProductFeedConnector {
    *
    * @returns the SKUs the feed refused, each with the feed's reason.
    */
-  upsert(
+  upsert: (
     items: readonly FeedItem[],
-  ): Promise<readonly { readonly sku: string; readonly reason: string }[]>;
+  ) => Promise<readonly { readonly sku: string; readonly reason: string }[]>;
 
   /** Removes the items of `skus`; an unknown SKU is ignored. */
-  remove(skus: readonly string[]): Promise<void>;
+  remove: (skus: readonly string[]) => Promise<void>;
 }

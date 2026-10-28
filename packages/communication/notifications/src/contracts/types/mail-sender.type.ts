@@ -18,5 +18,5 @@ export interface MailSender {
   readonly supports?: readonly MailFeature[];
 
   /** Sends `mail`; a provider with an idempotency header deduplicates on `idempotencyKey`. */
-  sendMail(mail: OutboundMail, idempotencyKey: string): Promise<string>;
+  sendMail: (mail: OutboundMail, idempotencyKey: string) => Promise<string>;
 }

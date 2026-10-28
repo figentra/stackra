@@ -28,24 +28,24 @@ export interface RouteModuleContext {
   readonly clients: Pick<PublicClients, "query" | "action">;
 
   /** A configuration from the container. */
-  config<C extends object>(type: AnyClass<C>): C;
+  config: <C extends object>(type: AnyClass<C>) => C;
 
   /**
    * What `layout`'s loader resolved for this request (one run per request).
    *
    * @throws Response the layout's redirect or response.
    */
-  layout<L extends AnyClass<Layout>>(
+  layout: <L extends AnyClass<Layout>>(
     layout: L,
-  ): Promise<Exclude<LoaderData<ClassInstance<L>>, null | undefined>>;
+  ) => Promise<Exclude<LoaderData<ClassInstance<L>>, null | undefined>>;
 
   /** The answer of a consumed public query. */
-  query<Q extends QueryRef>(
+  query: <Q extends QueryRef>(
     query: Q,
     input: RefInput<Q>,
     options?: RouteQueryOptions,
-  ): Promise<RefOutput<Q>>;
+  ) => Promise<RefOutput<Q>>;
 
   /** The localised href of `to`. */
-  href(to: RouteTarget, params?: HrefParams): string;
+  href: (to: RouteTarget, params?: HrefParams) => string;
 }

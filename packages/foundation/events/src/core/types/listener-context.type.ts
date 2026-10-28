@@ -34,5 +34,5 @@ export interface ListenerContext {
   readonly connection?: string;
 
   /** The current instant, from the Clock port. */
-  now(): Date;
+  now: () => Date;
 }

@@ -41,5 +41,5 @@ export type SettingKeys<
   readonly [M in keyof T & string]: { readonly [N in keyof T[M] & string]: SettingKey<T[M][N], N> };
 } & {
   /** A shape class whose fields are the keys' names, typed and bounded as the keys declare. */
-  pick<const K extends readonly SettingKey[]>(keys: K): ShapeClass<PickedFields<K>>;
+  pick: <const K extends readonly SettingKey[]>(keys: K) => ShapeClass<PickedFields<K>>;
 };

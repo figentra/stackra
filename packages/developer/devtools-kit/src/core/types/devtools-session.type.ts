@@ -12,25 +12,25 @@ import type { DevtoolsTabMetadata } from "#core/types/devtools-tab-metadata.type
 /** An attached host's view of the kit. */
 export interface DevtoolsSession {
   /** The tabs this host may see, sorted by `order` then id. */
-  tabs(): readonly DevtoolsTabMetadata[];
+  tabs: () => readonly DevtoolsTabMetadata[];
 
   /**
    * Reads one tab's data.
    *
    * @throws DevtoolsError `unknown_tab` when no tab has that id or it is sensitive and the host did not accept that.
    */
-  readTab(id: string): Promise<unknown>;
+  readTab: (id: string) => Promise<unknown>;
 
   /** The RPC names, sorted. */
-  rpcNames(): readonly string[];
+  rpcNames: () => readonly string[];
 
   /**
    * Calls one RPC function with the host's arguments.
    *
    * @throws DevtoolsError `unknown_rpc` when no package defined that name.
    */
-  call(name: string, ...args: readonly unknown[]): Promise<unknown>;
+  call: (name: string, ...args: readonly unknown[]) => Promise<unknown>;
 
   /** The buffered stream, oldest first; only `channel` when given. */
-  replay(channel?: string): readonly DevtoolsEvent[];
+  replay: (channel?: string) => readonly DevtoolsEvent[];
 }

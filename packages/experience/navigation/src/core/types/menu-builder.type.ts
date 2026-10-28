@@ -25,7 +25,7 @@ type Entry<V, K extends MenuItemKind> = Extract<MenuItem<V>, { readonly kind: K 
 /** Builds the entries of a menu for values of type `V`. */
 export interface MenuBuilder<V = unknown> {
   /** A link to a route; its label is the route's title unless given. */
-  route(
+  route: (
     to: RouteRef,
     options?: {
       readonly label?: string;
@@ -35,20 +35,20 @@ export interface MenuBuilder<V = unknown> {
       readonly flag?: FlagRef;
       readonly shortcut?: string;
     },
-  ): Entry<V, typeof MenuItemKind.Route>;
+  ) => Entry<V, typeof MenuItemKind.Route>;
 
   /** A labelled group of entries. */
-  group(label: string, items: readonly MenuItem<V>[]): Entry<V, typeof MenuItemKind.Group>;
+  group: (label: string, items: readonly MenuItem<V>[]) => Entry<V, typeof MenuItemKind.Group>;
 
   /** An outside URL. */
-  link(
+  link: (
     label: string,
     url: string,
     options?: { readonly external?: boolean; readonly icon?: IconName },
-  ): Entry<V, typeof MenuItemKind.Link>;
+  ) => Entry<V, typeof MenuItemKind.Link>;
 
   /** A consumed action, run with the input built from the menu's value. */
-  action(
+  action: (
     action: ActionRef,
     options?: {
       readonly label?: string;
@@ -57,17 +57,17 @@ export interface MenuBuilder<V = unknown> {
       readonly input?: (value: V) => unknown;
       readonly flag?: FlagRef;
     },
-  ): Entry<V, typeof MenuItemKind.Action>;
+  ) => Entry<V, typeof MenuItemKind.Action>;
 
   /** A shortcut class, run as the keyboard runs it. */
-  shortcut(shortcut: AnyClass): Entry<V, typeof MenuItemKind.Shortcut>;
+  shortcut: (shortcut: AnyClass) => Entry<V, typeof MenuItemKind.Shortcut>;
 
   /** A divider between groups of entries. */
-  separator(): Entry<V, typeof MenuItemKind.Separator>;
+  separator: () => Entry<V, typeof MenuItemKind.Separator>;
 
   /** The place of the app's generated navigation tree. */
-  navigation(): Entry<V, typeof MenuItemKind.Navigation>;
+  navigation: () => Entry<V, typeof MenuItemKind.Navigation>;
 
   /** The place of the routes that declare `tab`, in their order. */
-  tabs(): Entry<V, typeof MenuItemKind.Tabs>;
+  tabs: () => Entry<V, typeof MenuItemKind.Tabs>;
 }

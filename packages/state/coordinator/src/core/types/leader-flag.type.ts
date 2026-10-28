@@ -10,8 +10,8 @@
 /** The participant's leader flag as a method sees it. */
 export interface LeaderFlag {
   /** Whether the participant leads now. */
-  get(): boolean;
+  get: () => boolean;
 
   /** Records whether the participant leads. */
-  set(leads: boolean): void;
+  set: (leads: boolean) => void;
 }

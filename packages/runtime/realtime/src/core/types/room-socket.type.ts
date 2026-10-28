@@ -11,14 +11,15 @@
 /** An accepted room socket. */
 export interface RoomSocket {
   /** Sends one text frame. */
-  send(data: string): void;
+  send: (data: string) => void;
 
   /** Closes the socket with an application close code (4000 to 4999) and a reason. */
-  close(code?: number, reason?: string): void;
+  close: (code?: number, reason?: string) => void;
 
   /** Calls `listener` with each frame the member sends. */
-  addEventListener(type: "message", listener: (event: { readonly data: unknown }) => void): void;
-
-  /** Calls `listener` once the socket has closed, whichever side closed it. */
-  addEventListener(type: "close", listener: () => void): void;
+  addEventListener: ((
+    type: "message",
+    listener: (event: { readonly data: unknown }) => void,
+  ) => void) &
+    ((type: "close", listener: () => void) => void);
 }

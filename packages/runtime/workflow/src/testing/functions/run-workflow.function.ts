@@ -23,7 +23,7 @@ import type { WorkflowResult } from "#testing/types/workflow-result.type";
 const TEST_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: "sys_test" as PublicId });
 
 /** What `output(run)` of `W` returns. */
-type OutputOf<W> = W extends { output(run: never): infer O } ? O : undefined;
+type OutputOf<W> = W extends { output: (run: never) => infer O } ? O : undefined;
 
 /**
  * Runs `type` with `input` on the current testing app's engine.

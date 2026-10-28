@@ -20,5 +20,5 @@ import type { TaxRateTable } from "#core/types/tax-rate-table.type";
  */
 export interface TaxTables {
   /** The Market's own rate table for `request`, or null when its pack sends tax to a provider. */
-  table(request: TaxRequest): Promise<TaxRateTable | null>;
+  table: (request: TaxRequest) => Promise<TaxRateTable | null>;
 }

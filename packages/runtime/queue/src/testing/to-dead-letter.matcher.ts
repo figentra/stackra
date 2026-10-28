@@ -32,6 +32,6 @@ export const toDeadLetter = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts a `runJob` result was dead-lettered, after `attempts` attempts when given. */
-    toDeadLetter(expected?: { readonly attempts?: number }): R;
+    toDeadLetter: (expected?: { readonly attempts?: number }) => R;
   }
 }

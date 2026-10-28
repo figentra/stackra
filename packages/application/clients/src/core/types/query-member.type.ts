@@ -18,5 +18,5 @@ export interface QueryMember<Q extends QueryRef> {
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  call(input: RefInput<Q>, options?: CallOptions): Promise<RefOutput<Q>>;
+  call: (input: RefInput<Q>, options?: CallOptions) => Promise<RefOutput<Q>>;
 }

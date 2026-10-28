@@ -12,5 +12,5 @@ import type { MenuItem } from "#core/types/menu-item.type";
 /** A menu whose items a renderer can read, for values of type `V`. */
 export type RunnableMenu<V = unknown> = Menu & {
   /** The entries, in order. */
-  items(m: MenuBuilder<V>): readonly MenuItem<V>[];
+  items: (m: MenuBuilder<V>) => readonly MenuItem<V>[];
 };

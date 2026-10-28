@@ -18,17 +18,17 @@ import type { RequestOptions } from "#core/types/request-options.type";
  */
 export interface IntegrationApi {
   /** `GET path`; retried. */
-  get<T>(path: string, options?: RequestOptions): Promise<T>;
+  get: <T>(path: string, options?: RequestOptions) => Promise<T>;
 
   /** `DELETE path`; retried. */
-  delete<T>(path: string, options?: RequestOptions): Promise<T>;
+  delete: <T>(path: string, options?: RequestOptions) => Promise<T>;
 
   /** `POST path` with a JSON body; retried only with an idempotency key. */
-  post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
 
   /** `PUT path` with a JSON body; retried. */
-  put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  put: <T>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
 
   /** `PATCH path` with a JSON body; retried only with an idempotency key. */
-  patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  patch: <T>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
 }

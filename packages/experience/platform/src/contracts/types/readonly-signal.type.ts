@@ -10,8 +10,8 @@
 /** A value to read and subscribe to, never to write. */
 export interface ReadonlySignal<T> {
   /** The current value. */
-  get(): T;
+  get: () => T;
 
   /** Calls `listener` with each new value; returns the unsubscribe function. */
-  subscribe(listener: (value: T) => void): () => void;
+  subscribe: (listener: (value: T) => void) => () => void;
 }

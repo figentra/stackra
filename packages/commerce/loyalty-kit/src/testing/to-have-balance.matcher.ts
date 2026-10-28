@@ -32,6 +32,6 @@ export const toHaveBalance = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts the ledger balance of one member. */
-    toHaveBalance(member: MemberId, points: number): Promise<R>;
+    toHaveBalance: (member: MemberId, points: number) => Promise<R>;
   }
 }

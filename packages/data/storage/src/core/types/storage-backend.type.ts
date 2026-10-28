@@ -11,11 +11,11 @@
 /** The persistence of one storage area. */
 export interface StorageBackend {
   /** Every persisted entry, as key and stored text. */
-  load(): Iterable<readonly [string, string]> | Promise<Iterable<readonly [string, string]>>;
+  load: () => Iterable<readonly [string, string]> | Promise<Iterable<readonly [string, string]>>;
 
   /** Persists `text` under `key`. */
-  save(key: string, text: string): void | Promise<void>;
+  save: (key: string, text: string) => void | Promise<void>;
 
   /** Forgets the text under `key`. */
-  remove(key: string): void | Promise<void>;
+  remove: (key: string) => void | Promise<void>;
 }

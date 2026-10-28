@@ -29,9 +29,9 @@ export interface Relations<R> {
    * A table of the rows `query` lists for the record. `bind` maps a query input to a record path when gen cannot
    * derive it (the record id input is derived).
    */
-  table<Q extends AnyClass>(
+  table: <Q extends AnyClass>(
     query: Q,
     build: (column: ColumnFactory<QueryRow<Q>>) => readonly ColumnBuilder[],
     options?: { readonly bind?: Readonly<Record<string, Path<R>>> },
-  ): Built<RelationNode>;
+  ) => Built<RelationNode>;
 }

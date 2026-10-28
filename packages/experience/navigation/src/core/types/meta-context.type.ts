@@ -26,8 +26,8 @@ export type MetaContext<T> = {
   readonly search: SearchOf<T>;
 
   /** Translates a key in the request's locale. */
-  t(key: string, values?: Readonly<Record<string, unknown>>): string;
+  t: (key: string, values?: Readonly<Record<string, unknown>>) => string;
 
   /** The localised href of `to`, relative to the origin. */
-  href(to: RouteTarget, params?: HrefParams): string;
+  href: (to: RouteTarget, params?: HrefParams) => string;
 } & LayoutData<T>;

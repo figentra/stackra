@@ -167,7 +167,7 @@ interface Call {
 }
 
 /** An instance whose `handle` the pipeline calls. */
-type Handler = { handle(input: unknown, ctx: unknown): Promise<unknown> };
+type Handler = { handle: (input: unknown, ctx: unknown) => Promise<unknown> };
 
 const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed without one";
 

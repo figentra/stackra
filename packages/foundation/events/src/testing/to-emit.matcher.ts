@@ -43,6 +43,6 @@ export const toEmit = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts an event of `type` with these fields was published (by the current app, or in the received list). */
-    toEmit<E extends Event>(type: AnyClass<E>, fields?: Partial<Fields<E>>): R;
+    toEmit: <E extends Event>(type: AnyClass<E>, fields?: Partial<Fields<E>>) => R;
   }
 }

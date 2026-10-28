@@ -9,9 +9,9 @@
 /** The KV namespace binding. */
 export interface KvNamespace {
   /** Resolves to the value stored under the key, or null when it is absent. */
-  get(key: string): Promise<string | null>;
+  get: (key: string) => Promise<string | null>;
   /** Stores a value under the key, optionally expiring after a number of seconds. */
-  put(key: string, value: string, options?: { readonly expirationTtl?: number }): Promise<void>;
+  put: (key: string, value: string, options?: { readonly expirationTtl?: number }) => Promise<void>;
   /** Removes the value stored under the key. */
-  delete(key: string): Promise<void>;
+  delete: (key: string) => Promise<void>;
 }

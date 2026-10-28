@@ -18,20 +18,20 @@ type FakeOutput<T> = T extends object ? Partial<T> : T;
 /** How the fake answers one ref. */
 export interface FakeAnswer<R extends CallRef> {
   /** Answers every later call with `answer`, or with what `answer(input)` returns. */
-  returns(
+  returns: (
     answer:
       | FakeOutput<RefOutput<R>>
       | ((
           input: output<R["input"]>,
         ) => FakeOutput<RefOutput<R>> | Promise<FakeOutput<RefOutput<R>>>),
-  ): FakeAnswer<R>;
+  ) => FakeAnswer<R>;
 
   /** Rejects every later call with `error` (a refusal, a `TransportError`). */
-  throws(error: unknown): FakeAnswer<R>;
+  throws: (error: unknown) => FakeAnswer<R>;
 
   /** Rejects the next call with `error`, before any lasting answer. */
-  throwsOnce(error: unknown): FakeAnswer<R>;
+  throwsOnce: (error: unknown) => FakeAnswer<R>;
 
   /** Never settles a later call, so a test sees the loading state. */
-  pending(): FakeAnswer<R>;
+  pending: () => FakeAnswer<R>;
 }

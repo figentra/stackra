@@ -22,7 +22,7 @@ export interface ScannerCapability {
   readonly permission: PermissionStatus;
 
   /** Asks for the camera permission; resolves where it stands afterwards. */
-  requestPermission(): Promise<PermissionStatus>;
+  requestPermission: () => Promise<PermissionStatus>;
 
   /** The camera view that decodes barcodes. */
   readonly View: ComponentType<ScannerViewProps>;

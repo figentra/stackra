@@ -14,5 +14,5 @@ import type { ViewNode } from "#core/types/view-node.type";
 /** One preset view. */
 export interface ViewBuilder<R> extends Built<ViewNode> {
   /** Sorts the view by `key`. */
-  sort(key: Path<R>, direction: SortDirection): this;
+  sort: (key: Path<R>, direction: SortDirection) => this;
 }

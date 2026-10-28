@@ -11,16 +11,16 @@
 /** A KV namespace binding. */
 export interface WorkersKvNamespace {
   /** The text under `key`, or `null` when none is stored. */
-  get(key: string, type: "text"): Promise<string | null>;
+  get: (key: string, type: "text") => Promise<string | null>;
 
   /** Stores `value` under `key`; KV drops it after `expirationTtl` seconds (at least 60). */
-  put(key: string, value: string, options: { readonly expirationTtl: number }): Promise<void>;
+  put: (key: string, value: string, options: { readonly expirationTtl: number }) => Promise<void>;
 
   /** Removes `key` and its value. */
-  delete(key: string): Promise<void>;
+  delete: (key: string) => Promise<void>;
 
   /** One page of the keys that start with `prefix`, from `cursor` on. */
-  list(options: { readonly prefix: string; readonly cursor?: string }): Promise<{
+  list: (options: { readonly prefix: string; readonly cursor?: string }) => Promise<{
     readonly keys: readonly { readonly name: string }[];
     readonly list_complete: boolean;
     readonly cursor?: string;

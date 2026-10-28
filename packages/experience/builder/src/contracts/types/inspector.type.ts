@@ -22,5 +22,5 @@ export interface Inspector {
   readonly values: Readonly<Record<string, Json>>;
 
   /** Sets the prop `key` of the inspected block, or clears it with `undefined`; does nothing without a block. */
-  set(key: string, value: Json | undefined): void;
+  set: (key: string, value: Json | undefined) => void;
 }

@@ -13,8 +13,8 @@ import type { ActionPlace } from "#core/enums/action-place.enum";
 /** The buttons of one resource. */
 export interface ResourceActions {
   /** The buttons at `place`, for `record` when the place is a record's (row, View, Edit). */
-  at(place: ActionPlace, record?: object): ResourceAction[];
+  at: (place: ActionPlace, record?: object) => ResourceAction[];
 
   /** The bulk bar's buttons for the selected ids. */
-  bulk(ids: readonly string[]): ResourceAction[];
+  bulk: (ids: readonly string[]) => ResourceAction[];
 }

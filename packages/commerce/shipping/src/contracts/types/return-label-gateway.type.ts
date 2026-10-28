@@ -20,8 +20,8 @@ import type { Shipment } from "#contracts/types/shipment.type";
  */
 export interface ReturnLabelGateway {
   /** Buys a return label; a repeated `request.reference` returns the shipment already bought. */
-  createReturnLabel(request: ReturnLabelRequest): Promise<Shipment>;
+  createReturnLabel: (request: ReturnLabelRequest) => Promise<Shipment>;
 
   /** Cancels an unused return label; cancelling twice is not an error. */
-  cancelReturnLabel(shipmentId: string): Promise<void>;
+  cancelReturnLabel: (shipmentId: string) => Promise<void>;
 }

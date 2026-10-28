@@ -20,8 +20,8 @@ import type { FraudScoreRequest } from "#contracts/types/fraud-score-request.typ
  */
 export interface FraudScoringConnector {
   /** Scores `request`; a second call with the same reference returns the first score. */
-  score(request: FraudScoreRequest): Promise<FraudScore>;
+  score: (request: FraudScoreRequest) => Promise<FraudScore>;
 
   /** Tells the scorer how `reference` ended: paid out fine, charged back as fraud, or cancelled before it shipped. */
-  outcome(reference: string, outcome: "legitimate" | "fraudulent" | "cancelled"): Promise<void>;
+  outcome: (reference: string, outcome: "legitimate" | "fraudulent" | "cancelled") => Promise<void>;
 }

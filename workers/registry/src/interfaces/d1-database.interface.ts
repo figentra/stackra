@@ -10,7 +10,7 @@ import type { D1Statement } from "#src/interfaces/d1-statement.interface";
 /** The D1 database binding. */
 export interface D1Database {
   /** Prepares one SQL statement for binding and running. */
-  prepare(sql: string): D1Statement;
+  prepare: (sql: string) => D1Statement;
   /** Runs several prepared statements in one transaction. */
-  batch(statements: D1Statement[]): Promise<unknown[]>;
+  batch: (statements: D1Statement[]) => Promise<unknown[]>;
 }

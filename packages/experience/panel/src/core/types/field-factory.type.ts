@@ -18,25 +18,25 @@ import type { PathValue } from "#core/types/path-value.type";
 /** Builds the elements of a form over input type `I`. */
 export interface FieldFactory<I> {
   /** A field rendered from its type; a `T | null` object renders as a switch that reveals its fields. */
-  from(key: Path<I>): FieldBuilder;
+  from: (key: Path<I>) => FieldBuilder;
 
   /** Fields on a grid of `columns` columns. */
-  grid(columns: number, fields: readonly Built<FieldNode>[]): Built<FieldNode>;
+  grid: (columns: number, fields: readonly Built<FieldNode>[]) => Built<FieldNode>;
 
   /** A wizard on Create, the same steps as tabs on Edit. */
-  steps(name: string, steps: readonly Built<FormStepNode>[]): Built<FieldNode>;
+  steps: (name: string, steps: readonly Built<FormStepNode>[]) => Built<FieldNode>;
 
   /** One step of `steps`. */
-  step(name: string, fields: readonly Built<FieldNode>[]): Built<FormStepNode>;
+  step: (name: string, fields: readonly Built<FieldNode>[]) => Built<FormStepNode>;
 
   /** A file upload through the bucket's signed URL, attached with `action`. */
-  upload(key: Path<I>, options: { readonly action: AnyClass }): Built<FieldNode>;
+  upload: (key: Path<I>, options: { readonly action: AnyClass }) => Built<FieldNode>;
 
   /** A list of items, each built from the item's own paths. */
-  repeater<K extends Path<I>>(
+  repeater: <K extends Path<I>>(
     key: K,
     build: (
       field: FieldFactory<ElementOf<NonNullable<PathValue<I, K>>>>,
     ) => readonly Built<FieldNode>[],
-  ): Built<FieldNode>;
+  ) => Built<FieldNode>;
 }

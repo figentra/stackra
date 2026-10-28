@@ -11,5 +11,5 @@ import type { WorkerExecutionContext } from "#worker/types/worker-execution-cont
 /** A Worker app. */
 export interface WorkerApp {
   /** Answers one request; never rejects (a throw is reported and answered with the crash page). */
-  fetch(request: Request, env: unknown, ctx: WorkerExecutionContext): Promise<Response>;
+  fetch: (request: Request, env: unknown, ctx: WorkerExecutionContext) => Promise<Response>;
 }

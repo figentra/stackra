@@ -17,8 +17,8 @@ export interface PushPermission {
   readonly isGranted: boolean;
 
   /** Asks for the permission; resolves where it stands afterwards. */
-  request(): Promise<PermissionStatus>;
+  request: () => Promise<PermissionStatus>;
 
   /** Opens the OS settings page of the app, where a denied permission is granted again. */
-  openSettings(): Promise<void>;
+  openSettings: () => Promise<void>;
 }

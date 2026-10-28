@@ -26,7 +26,7 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | N-9  | `react/button-has-type`, `no-array-index-key`, `no-object-type-as-default-prop`, `jsx-no-useless-fragment` (expressions allowed)                                                                                                                                                                                                                                                         | every `**/*.tsx`                                                                            |
 | N-10 | `no-console`                                                                                                                                                                                                                                                                                                                                                                             | off for tools, agent hooks, editor plugins, package `scripts/`, apps and workers            |
 
-## The B group: B-1, B-2, B-3, B-5 (stackra-230, stackra-231, owner D11)
+## The B group: B-1 to B-5 (stackra-230, stackra-231, stackra-232, owner D11)
 
 | Row | Change                                                                                                                                      | Where                                       |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
@@ -34,6 +34,7 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | B-2 | `unicorn/no-array-sort` (`allowExpressionStatement`: a bare `x.sort();` passes)                                                             | everywhere but tests                        |
 | B-5 | `no-promise-executor-return`, `unicorn/prefer-code-point`, `unicorn/prefer-structured-clone`, `unicorn/prefer-spread`                       | everywhere                                  |
 | B-3 | `unicorn/numeric-separators-style`, `switch-case-braces`, `prefer-string-replace-all`, `catch-error-name`; `number-literal-case` stays off  | everywhere                                  |
+| B-4 | `typescript/method-signature-style` set to `property`: a method signature is checked bivariantly                                            | everywhere                                  |
 
 `toSorted` and `toReversed` are ES2023 and the TypeScript base lib is ES2022, so a TypeScript site that sorts or
 reverses an array it just built carries `oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here,
@@ -46,6 +47,11 @@ B-3 (stackra-231) is the autofix sweep. `number-literal-case` stays off: it want
 them lowercase, so the two would fight. `catch-error-name` wants `error`; where an outer `error` is in scope, name the
 parameter with an `Error` suffix (`caughtError`, `readError`), which the rule accepts and which does not shadow. Never
 run its `--fix`: it renames to `error` even when that shadows an outer `error`, which silently rebinds the outer name.
+
+B-4 (stackra-232) closes the bivariance hole on ports: a method signature (`find(id: string): Promise<T>`) is checked
+bivariantly even under `strictFunctionTypes`, so a driver could take a narrower argument than its port promises. Write
+members as properties (`find: (id: string) => Promise<T>`), in module augmentations too. oxlint has no autofix for it;
+a class method still implements a property member, so only the type side changes.
 
 `decorators.jsonc` needs no new wiring: `boundaries.jsonc` already applies its `new-cap` and `no-extraneous-class`
 settings to every package and app file, and keeps `consistent-type-imports` on (ADR 0005 d5). N-5 (the

@@ -12,5 +12,5 @@ import type { StoreStorageArea } from "#core/types/store-storage-area.type";
 /** Client storage with named areas. */
 export interface StoreStorage {
   /** The area named `name` (a `StorageArea` code such as `prefs`). */
-  area(name: string): StoreStorageArea;
+  area: (name: string) => StoreStorageArea;
 }

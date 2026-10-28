@@ -29,15 +29,15 @@ import { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
 declare module "@stackra/container/testing" {
   interface TestingModuleBuilder {
     /** Runs each seeder, in order and each in its own transaction, once the module compiles. */
-    seed(...seeders: readonly (new () => Seeder)[]): this;
+    seed: (...seeders: readonly (new () => Seeder)[]) => this;
   }
 
   interface TestingApp {
     /** Runs `work` in a transaction of the connected database, as an action's unit of work would. */
-    transaction<T>(work: () => Promise<T>): Promise<T>;
+    transaction: <T>(work: () => Promise<T>) => Promise<T>;
 
     /** The repository of `model`, reading and writing the connected database. */
-    repository<M extends object>(model: AnyClass<M>): Repository<M>;
+    repository: <M extends object>(model: AnyClass<M>) => Repository<M>;
   }
 }
 

@@ -11,8 +11,8 @@ import type { RoomPublish } from "@stackra/realtime/contracts";
 /** An open room connection. */
 export interface RoomLink {
   /** Sends `message` while connected; drops it otherwise. */
-  send(message: RoomPublish): void;
+  send: (message: RoomPublish) => void;
 
   /** Closes the connection and stops reconnecting; safe to call more than once. */
-  close(): void;
+  close: () => void;
 }

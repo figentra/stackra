@@ -12,5 +12,5 @@ import type { OutboundSms } from "#contracts/types/outbound-sms.type";
 /** An SMS provider account. */
 export interface SmsSender {
   /** Sends `sms` once per `idempotencyKey` and returns the provider's id. */
-  sendSms(sms: OutboundSms, idempotencyKey: string): Promise<string>;
+  sendSms: (sms: OutboundSms, idempotencyKey: string) => Promise<string>;
 }

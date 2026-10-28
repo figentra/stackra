@@ -16,6 +16,6 @@ declare module "@stackra/database" {
      * forced row-level security with the equality policy `pol_<table>_tenant_id` on `app.tenant_id`. With
      * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's.
      */
-    belongsToTenant(options?: { readonly nullable?: boolean }): ColumnGroup;
+    belongsToTenant: (options?: { readonly nullable?: boolean }) => ColumnGroup;
   }
 }

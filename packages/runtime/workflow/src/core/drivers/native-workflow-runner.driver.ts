@@ -114,8 +114,8 @@ interface Wait {
 /** An attempt's abort signal, with its heartbeat watchdog. */
 interface Guard {
   readonly signal: AbortSignal;
-  beat(): void;
-  stop(): void;
+  beat: () => void;
+  stop: () => void;
 }
 
 /** The step record an attempt keeps up to date between its tries and heartbeats. */

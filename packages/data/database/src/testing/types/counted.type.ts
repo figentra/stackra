@@ -12,8 +12,8 @@ import type { Attributes } from "@stackra/model";
 /** A factory of `n` rows of `M`. */
 export type Counted<F, M> = Omit<F, "make" | "create"> & {
   /** `n` unsaved rows. */
-  make(overrides?: Attributes<M>): M[];
+  make: (overrides?: Attributes<M>) => M[];
 
   /** `n` saved rows. */
-  create(overrides?: Attributes<M>): Promise<M[]>;
+  create: (overrides?: Attributes<M>) => Promise<M[]>;
 };

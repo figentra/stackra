@@ -27,8 +27,8 @@ export interface Speech {
   readonly retainsAudio: boolean;
 
   /** Recognises `audio` (raw, in `request.format`) as it arrives, yielding interim and final transcripts. */
-  listen(audio: AsyncIterable<Uint8Array>, request: SpeechRequest): AsyncIterable<Transcript>;
+  listen: (audio: AsyncIterable<Uint8Array>, request: SpeechRequest) => AsyncIterable<Transcript>;
 
   /** Synthesises `text` (already translated) in `request.speech`, yielding raw audio in `request.format`. */
-  speak(text: string, request: SpeechRequest): AsyncIterable<Uint8Array>;
+  speak: (text: string, request: SpeechRequest) => AsyncIterable<Uint8Array>;
 }

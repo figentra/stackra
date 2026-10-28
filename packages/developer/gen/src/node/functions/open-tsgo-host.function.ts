@@ -19,18 +19,18 @@ import type { TsNode } from "#node/types/ts-node.type";
 
 /** A tsgo node: the shared shape plus the methods gen calls. */
 interface GoNode extends TsNode {
-  getSourceFile(): GoNode & {
+  getSourceFile: () => GoNode & {
     readonly text: string;
-    getLineAndCharacterOfPosition(at: number): { line: number; character: number };
+    getLineAndCharacterOfPosition: (at: number) => { line: number; character: number };
   };
-  getStart(file?: GoNode): number;
-  getText(file?: GoNode): string;
+  getStart: (file?: GoNode) => number;
+  getText: (file?: GoNode) => string;
   readonly postfixToken?: TsNode;
 }
 
 /** A declaration handle, resolved against a project. */
 interface GoHandle {
-  resolve(project: GoProject): GoNode | undefined;
+  resolve: (project: GoProject) => GoNode | undefined;
 }
 
 /** A tsgo symbol. */
@@ -46,36 +46,36 @@ interface GoType {
   readonly flags: number;
   readonly value?: string | number;
   readonly intrinsicName?: string;
-  getAliasSymbol(): GoSymbol | undefined;
-  getAliasTypeArguments(): readonly GoType[];
-  getTypes(): readonly GoType[];
-  getSymbol(): GoSymbol | undefined;
+  getAliasSymbol: () => GoSymbol | undefined;
+  getAliasTypeArguments: () => readonly GoType[];
+  getTypes: () => readonly GoType[];
+  getSymbol: () => GoSymbol | undefined;
 }
 
 /** A tsgo project. */
 interface GoProject {
   readonly program: {
-    getSourceFileNames(): readonly string[];
-    getSourceFile(name: string): GoNode | undefined;
+    getSourceFileNames: () => readonly string[];
+    getSourceFile: (name: string) => GoNode | undefined;
   };
   readonly checker: {
-    getSymbolAtLocation(node: GoNode): GoSymbol | undefined;
-    getAliasedSymbol(symbol: GoSymbol): GoSymbol;
-    getTypeAtLocation(node: GoNode): GoType;
-    getTypeOfSymbol(symbol: GoSymbol): GoType;
-    getPropertiesOfType(type: GoType): readonly GoSymbol[];
-    typeToString(type: GoType): string;
+    getSymbolAtLocation: (node: GoNode) => GoSymbol | undefined;
+    getAliasedSymbol: (symbol: GoSymbol) => GoSymbol;
+    getTypeAtLocation: (node: GoNode) => GoType;
+    getTypeOfSymbol: (symbol: GoSymbol) => GoType;
+    getPropertiesOfType: (type: GoType) => readonly GoSymbol[];
+    typeToString: (type: GoType) => string;
   };
 }
 
 /** The parts of `typescript/unstable/sync` gen uses. */
 interface GoSync {
   readonly API: new (options: { cwd: string }) => {
-    updateSnapshot(params: { openProjects: readonly string[] }): {
-      getProject(name: string): GoProject | undefined;
-      getProjects(): readonly GoProject[];
+    updateSnapshot: (params: { openProjects: readonly string[] }) => {
+      getProject: (name: string) => GoProject | undefined;
+      getProjects: () => readonly GoProject[];
     };
-    close(): void;
+    close: () => void;
   };
   readonly SymbolFlags: Readonly<Record<string, number>>;
   readonly TypeFlags: Readonly<Record<string, number>>;

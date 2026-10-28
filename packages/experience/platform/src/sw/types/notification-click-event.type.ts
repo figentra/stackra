@@ -11,5 +11,5 @@ import type { ExtendableEvent } from "#sw/types/extendable-event.type";
 /** A notification click. */
 export interface NotificationClickEvent extends ExtendableEvent {
   /** The clicked notification. */
-  readonly notification: { readonly data: unknown; close(): void };
+  readonly notification: { readonly data: unknown; close: () => void };
 }

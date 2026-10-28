@@ -16,5 +16,5 @@ export interface InstallCapability {
   readonly canPrompt: ReadonlySignal<boolean>;
 
   /** Shows the install prompt; `data` is true when the user installed. */
-  prompt(): Promise<CapabilityResult<boolean>>;
+  prompt: () => Promise<CapabilityResult<boolean>>;
 }

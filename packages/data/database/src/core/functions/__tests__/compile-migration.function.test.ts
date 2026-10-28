@@ -42,8 +42,8 @@ class DataClassificationMacro extends Macro {
 
 /** The macro methods the fixtures call, typed the way gen's `blueprint.d.ts` merge types them. */
 type WithMacros = Blueprint & {
-  belongsToWorkspace(): ColumnGroup;
-  dataClassification(column: string): ColumnGroup;
+  belongsToWorkspace: () => ColumnGroup;
+  dataClassification: (column: string) => ColumnGroup;
 };
 
 const macros = [BelongsToWorkspaceMacro, DataClassificationMacro];

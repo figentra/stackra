@@ -21,8 +21,8 @@ export interface RoomMember {
    * @throws ForbiddenError for a viewer's `update`; RoomLimitReachedError over the size or rate cap (the member is
    *         dropped).
    */
-  publish(message: RoomPublish): void;
+  publish: (message: RoomPublish) => void;
 
   /** Leaves the room. */
-  leave(): void;
+  leave: () => void;
 }

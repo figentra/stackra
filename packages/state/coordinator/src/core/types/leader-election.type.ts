@@ -28,8 +28,8 @@ export interface LeaderElection {
    *
    * @throws Error (as a rejection) when the participant resigns first.
    */
-  whenLeader(): Promise<void>;
+  whenLeader: () => Promise<void>;
 
   /** Leaves the election for good, handing leadership on when it led; a second call does nothing. */
-  resign(): void;
+  resign: () => void;
 }

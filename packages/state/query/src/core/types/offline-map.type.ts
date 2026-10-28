@@ -17,5 +17,5 @@ export interface OfflineMap {
    * @example
    * Offline.for(conflict.action)?.onConflict ?? [ConflictResolution.Manual];
    */
-  for(action: OfflineActionRef | string): OfflineEntry | undefined;
+  for: (action: OfflineActionRef | string) => OfflineEntry | undefined;
 }

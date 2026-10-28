@@ -17,7 +17,7 @@ export interface FlushArgs {
   /** The flush's unit of work. */
   readonly uow: {
     /** The change sets of the flush, computed before `onFlush`. */
-    getChangeSets(): readonly {
+    getChangeSets: () => readonly {
       /** The changed entity. */
       readonly entity: object;
       /** `create`, `update`, `delete` (or their `_early` forms). */
@@ -25,7 +25,7 @@ export interface FlushArgs {
       /** The fields the flush writes, by property name. */
       readonly payload: object;
       /** The entity's primary key, serialised; set once the row is written. */
-      getSerializedPrimaryKey(): string | null;
+      getSerializedPrimaryKey: () => string | null;
     }[];
   };
 }

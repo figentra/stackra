@@ -14,11 +14,11 @@ import type { PlacementNode } from "#core/types/placement-node.type";
 /** One placed button. */
 export interface PlacementBuilder extends Built<PlacementNode> {
   /** Adds the bulk bar, fanned out with the policy per record. */
-  bulk(): this;
+  bulk: () => this;
 
   /** Narrows the places. */
-  in(...places: readonly ActionPlace[]): this;
+  in: (...places: readonly ActionPlace[]) => this;
 
   /** The page the panel opens after a create. */
-  then(page: ResourcePage): this;
+  then: (page: ResourcePage) => this;
 }

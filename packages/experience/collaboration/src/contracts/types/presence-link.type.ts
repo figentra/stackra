@@ -12,8 +12,8 @@ import type { CollaborationCursor } from "#contracts/types/collaboration-cursor.
 /** A room membership its caller owns. */
 export interface PresenceLink {
   /** Shows this connection's pointer at `cursor`, or hides it with `null`. */
-  move(cursor: CollaborationCursor | null): void;
+  move: (cursor: CollaborationCursor | null) => void;
 
   /** Leaves the room; safe to call more than once. */
-  leave(): void;
+  leave: () => void;
 }

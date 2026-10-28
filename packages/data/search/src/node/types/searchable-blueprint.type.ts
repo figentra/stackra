@@ -18,6 +18,6 @@ declare module "@stackra/database" {
      * `search_text` and `search_filters`, nullable, filled by @stackra/search. The GIN and trigram indexes are the
      * migration's own lines.
      */
-    searchable(columns: SearchableColumns): ColumnGroup;
+    searchable: (columns: SearchableColumns) => ColumnGroup;
   }
 }

@@ -11,8 +11,8 @@ import type { StorageAreaHandle } from "#contracts/types/storage-area-handle.typ
 /** One area with its lifecycle. */
 export interface PersistedStorageArea extends StorageAreaHandle {
   /** Resolves once what the backend persisted is loaded. */
-  hydrate(): Promise<void>;
+  hydrate: () => Promise<void>;
 
   /** Resolves once every write so far is persisted; rejects with the first failed write since the last flush. */
-  flush(): Promise<void>;
+  flush: () => Promise<void>;
 }

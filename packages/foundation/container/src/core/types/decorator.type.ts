@@ -29,12 +29,12 @@ export interface Decorator<V> {
    * The value recorded on `type` by a class decorator, or on its nearest decorated ancestor.
    * @returns undefined when neither the class nor an ancestor carries it.
    */
-  on(type: AnyClass): V | undefined;
+  on: (type: AnyClass) => V | undefined;
 
   /**
    * The values recorded on the fields or methods of `type` and its ancestors, by member name; a subclass's value
    * wins over its ancestor's.
    * @returns an empty map for a class decorator or an undecorated class.
    */
-  members(type: AnyClass): ReadonlyMap<string | symbol, V>;
+  members: (type: AnyClass) => ReadonlyMap<string | symbol, V>;
 }

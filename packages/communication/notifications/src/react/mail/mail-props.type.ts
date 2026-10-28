@@ -22,6 +22,6 @@ import type { Notification } from "#core/index";
  * }
  */
 export type MailProps<N extends AnyClass<Notification>> =
-  InstanceType<N> extends { data(event: never): infer D }
+  InstanceType<N> extends { data: (event: never) => infer D }
     ? Readonly<Awaited<D>>
     : Readonly<Parameters<InstanceType<N>["recipients"]>[0]>;

@@ -13,27 +13,27 @@
 /** The AWS KMS calls the drivers use. */
 export type AwsKmsApi = {
   /** Unwraps a data key wrapped under `KeyId` with the same encryption context. */
-  decrypt(input: {
+  decrypt: (input: {
     CiphertextBlob: Uint8Array;
     KeyId?: string;
     EncryptionContext?: Record<string, string>;
-  }): Promise<{ Plaintext?: Uint8Array }>;
+  }) => Promise<{ Plaintext?: Uint8Array }>;
 
   /** A fresh AES-256 data key, returned wrapped only. */
-  generateDataKeyWithoutPlaintext(input: {
+  generateDataKeyWithoutPlaintext: (input: {
     KeyId: string;
     KeySpec: "AES_256";
     EncryptionContext?: Record<string, string>;
-  }): Promise<{ CiphertextBlob?: Uint8Array }>;
+  }) => Promise<{ CiphertextBlob?: Uint8Array }>;
 
   /** An ECDSA P-256 signature (DER) of a SHA-256 digest. */
-  sign(input: {
+  sign: (input: {
     KeyId: string;
     Message: Uint8Array;
     MessageType: "DIGEST";
     SigningAlgorithm: "ECDSA_SHA_256";
-  }): Promise<{ Signature?: Uint8Array }>;
+  }) => Promise<{ Signature?: Uint8Array }>;
 
   /** The public half of an asymmetric key, as DER SubjectPublicKeyInfo. */
-  getPublicKey(input: { KeyId: string }): Promise<{ PublicKey?: Uint8Array }>;
+  getPublicKey: (input: { KeyId: string }) => Promise<{ PublicKey?: Uint8Array }>;
 };

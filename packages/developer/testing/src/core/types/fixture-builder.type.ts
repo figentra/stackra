@@ -14,7 +14,7 @@ export interface FixtureBuilder<T> {
    *
    * @param overrides - fields to set instead of their defaults.
    */
-  build(overrides?: Partial<T>): T;
+  build: (overrides?: Partial<T>) => T;
 
   /**
    * `count` objects at build indexes `0..count-1`, each with the same `overrides`.
@@ -22,5 +22,5 @@ export interface FixtureBuilder<T> {
    * @param count - how many objects; a whole number, zero or more.
    * @param overrides - fields to set on every object instead of their defaults.
    */
-  buildMany(count: number, overrides?: Partial<T>): T[];
+  buildMany: (count: number, overrides?: Partial<T>) => T[];
 }

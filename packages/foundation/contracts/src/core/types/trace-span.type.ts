@@ -12,8 +12,8 @@ import type { TraceAttributes } from "#core/types/trace-attributes.type";
 /** A running span. */
 export interface TraceSpan {
   /** Adds or replaces attributes on the span. */
-  set(attributes: TraceAttributes): void;
+  set: (attributes: TraceAttributes) => void;
 
   /** Marks the span failed with `error`'s type and code; the span still ends when its work settles. */
-  fail(error: unknown): void;
+  fail: (error: unknown) => void;
 }

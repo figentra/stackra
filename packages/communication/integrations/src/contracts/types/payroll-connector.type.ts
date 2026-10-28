@@ -26,12 +26,12 @@ export interface PayrollConnector {
    *
    * @throws ProviderRefusedError when the provider refuses an input (an unknown employee or pay code).
    */
-  pushPayInputs(batch: PayInputBatch, idempotencyKey: string): Promise<PayInputReceipt>;
+  pushPayInputs: (batch: PayInputBatch, idempotencyKey: string) => Promise<PayInputReceipt>;
 
   /**
    * The receipt of the batch pushed under `idempotencyKey`, for a call whose answer was lost.
    *
    * @returns null when none was pushed.
    */
-  findPayInputs(idempotencyKey: string): Promise<PayInputReceipt | null>;
+  findPayInputs: (idempotencyKey: string) => Promise<PayInputReceipt | null>;
 }

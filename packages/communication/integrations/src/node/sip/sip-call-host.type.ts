@@ -23,11 +23,11 @@ export interface SipCallHost {
   readonly meter: VoiceMeter;
 
   /** The speech session (drivers, who pays) of the call `reference` (ours outbound, the Call-ID inbound). */
-  session(reference: string): SpeechSession;
+  session: (reference: string) => SpeechSession;
 
   /** Posts `params` to the host's own call webhook `url` and resolves to its answer body. */
-  post(url: Url, params: Readonly<Record<string, string>>): Promise<string>;
+  post: (url: Url, params: Readonly<Record<string, string>>) => Promise<string>;
 
   /** Opens a UDP socket bound to `port` (0 for any); node:dgram when left out. */
-  openUdp?(port: number): Promise<UdpSocket>;
+  openUdp?: (port: number) => Promise<UdpSocket>;
 }

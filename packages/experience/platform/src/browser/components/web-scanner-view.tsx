@@ -15,7 +15,7 @@ import { BARCODE_DETECTOR_FORMATS } from "#browser/constants/barcode-detector-fo
 
 /** The slice of the Shape Detection API this view uses (not in the DOM lib yet). */
 type DetectorConstructor = new (options: { formats: string[] }) => {
-  detect(source: HTMLVideoElement): Promise<readonly { readonly rawValue: string }[]>;
+  detect: (source: HTMLVideoElement) => Promise<readonly { readonly rawValue: string }[]>;
 };
 
 /** Milliseconds between two decode attempts. */

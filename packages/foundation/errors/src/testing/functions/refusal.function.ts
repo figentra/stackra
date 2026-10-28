@@ -26,7 +26,8 @@ export function refusal<T extends Refusal>(
 ): T {
   const { fields, ...rest } = details;
   // The class's `create` types its required details; a test passes only some of them, on purpose.
-  const create = (type as unknown as { create(this: unknown, details: object, extras: object): T })
-    .create;
+  const create = (
+    type as unknown as { create: (this: unknown, details: object, extras: object) => T }
+  ).create;
   return create.call(type, rest, fields === undefined ? {} : { fieldErrors: fields });
 }

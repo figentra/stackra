@@ -44,7 +44,7 @@ export function handlePush(event: PushEvent): void {
   if (typeof payload.tag === "string") options.tag = payload.tag;
   const work: Promise<unknown>[] = [scope.registration.showNotification(payload.title, options)];
   const badging = globalThis.navigator as unknown as {
-    setAppBadge?(count?: number): Promise<void>;
+    setAppBadge?: (count?: number) => Promise<void>;
   };
   if (typeof payload.badge === "number" && badging.setAppBadge !== undefined)
     work.push(badging.setAppBadge(payload.badge));

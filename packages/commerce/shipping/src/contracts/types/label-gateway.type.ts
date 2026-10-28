@@ -19,8 +19,8 @@ import type { Shipment } from "#contracts/types/shipment.type";
  */
 export interface LabelGateway {
   /** Buys a label; a repeated `request.reference` returns the shipment already bought. */
-  createLabel(request: LabelRequest): Promise<Shipment>;
+  createLabel: (request: LabelRequest) => Promise<Shipment>;
 
   /** Cancels an unused label so the carrier does not charge it; cancelling twice is not an error. */
-  cancel(shipmentId: string): Promise<void>;
+  cancel: (shipmentId: string) => Promise<void>;
 }

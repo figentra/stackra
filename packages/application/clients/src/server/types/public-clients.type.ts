@@ -19,20 +19,20 @@ export interface PublicClients {
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  query<Q extends QueryRef>(
+  query: <Q extends QueryRef>(
     query: Q,
     input: RefInput<Q>,
     options?: Pick<CallOptions, "signal">,
-  ): Promise<RefOutput<Q>>;
+  ) => Promise<RefOutput<Q>>;
 
   /**
    * Calls the public action `action`.
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  action<A extends ActionRef>(
+  action: <A extends ActionRef>(
     action: A,
     input: RefInput<A>,
     options?: Pick<CallOptions, "idempotencyKey" | "signal">,
-  ): Promise<RefOutput<A>>;
+  ) => Promise<RefOutput<A>>;
 }

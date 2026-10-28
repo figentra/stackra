@@ -24,26 +24,26 @@ import type { ProviderCall } from "#contracts/types/provider-call.type";
  */
 export interface VoiceGateway {
   /** Places the outbound `call`. */
-  call(call: OutboundCall): Promise<ProviderCall>;
+  call: (call: OutboundCall) => Promise<ProviderCall>;
 
   /** The call `providerRef` as it is now. */
-  lookup(providerRef: string): Promise<ProviderCall>;
+  lookup: (providerRef: string) => Promise<ProviderCall>;
 
   /** Replaces what the live call `providerRef` does with `instructions` (a handover is a `handover` step). */
-  redirect(providerRef: string, instructions: readonly CallInstruction[]): Promise<void>;
+  redirect: (providerRef: string, instructions: readonly CallInstruction[]) => Promise<void>;
 
   /** Starts recording the live call `providerRef`. */
-  record(providerRef: string): Promise<void>;
+  record: (providerRef: string) => Promise<void>;
 
   /** Ends the call `providerRef`. */
-  hangUp(providerRef: string): Promise<ProviderCall>;
+  hangUp: (providerRef: string) => Promise<ProviderCall>;
 
   /** The provider's answer document for `instructions`, returned from our instructions webhook. */
-  answer(instructions: readonly CallInstruction[]): {
+  answer: (instructions: readonly CallInstruction[]) => {
     readonly contentType: string;
     readonly body: string;
   };
 
   /** The provider's webhook parameters as a `CallEvent`, after `@stackra/webhooks` verified them. */
-  event(params: Readonly<Record<string, string>>): CallEvent;
+  event: (params: Readonly<Record<string, string>>) => CallEvent;
 }

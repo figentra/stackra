@@ -23,5 +23,5 @@ export interface ReplayedIntegrationApi extends IntegrationApi {
    *
    * @throws TypeError naming the first call left.
    */
-  done(): void;
+  done: () => void;
 }

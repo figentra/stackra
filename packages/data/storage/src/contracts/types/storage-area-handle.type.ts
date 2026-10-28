@@ -24,7 +24,7 @@ import type { StorageWriteOptions } from "#contracts/types/storage-write-options
  */
 export interface StorageAreaHandle {
   /** The value under `key` as JSON, or `undefined` when absent or expired. */
-  get(key: string): Json | undefined;
+  get: (key: string) => Json | undefined;
 
   /**
    * Stores `value` under `key` as JSON.
@@ -32,19 +32,19 @@ export interface StorageAreaHandle {
    * @throws TypeError when `value` has no JSON form (`undefined`, a function).
    * @throws RangeError when `options.ttl` is not a duration.
    */
-  set(key: string, value: unknown, options?: StorageWriteOptions): void;
+  set: (key: string, value: unknown, options?: StorageWriteOptions) => void;
 
   /** Whether a live value is stored under `key`. */
-  has(key: string): boolean;
+  has: (key: string) => boolean;
 
   /** Removes the value under `key`; nothing happens when there is none. */
-  delete(key: string): void;
+  delete: (key: string) => void;
 
   /** The keys of every live value, in insertion order. */
-  keys(): string[];
+  keys: () => string[];
 
   /** Removes every value of the area. */
-  clear(): void;
+  clear: () => void;
 
   /**
    * The stored value of a shape class, decoded and with its defaults applied; the shape's defaults when nothing is
@@ -53,7 +53,7 @@ export interface StorageAreaHandle {
    * @throws TypeError when gen registered no key or no schema for `type`.
    * @throws ZodError when nothing fits and the shape has a field without a default.
    */
-  read<T extends object>(type: AnyClass<T>): T;
+  read: <T extends object>(type: AnyClass<T>) => T;
 
   /**
    * Checks `value` against the schema of `type` and stores it under the key gen registered for `type`.
@@ -61,5 +61,5 @@ export interface StorageAreaHandle {
    * @throws TypeError when gen registered no key or no schema for `type`.
    * @throws ZodError when `value` does not fit the shape; nothing is stored then.
    */
-  write<T extends object>(type: AnyClass<T>, value: T, options?: StorageWriteOptions): void;
+  write: <T extends object>(type: AnyClass<T>, value: T, options?: StorageWriteOptions) => void;
 }

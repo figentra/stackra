@@ -17,5 +17,5 @@ export interface RuleContext {
   readonly sourceCode: SourceCode;
 
   /** Records a finding. */
-  report(report: RuleReport): void;
+  report: (report: RuleReport) => void;
 }

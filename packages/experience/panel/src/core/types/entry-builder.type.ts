@@ -11,5 +11,5 @@ import type { EntryNode } from "#core/types/entry-node.type";
 /** The chainable builder of one View page entry. */
 export interface EntryBuilder extends Built<EntryNode> {
   /** Adds a copy button to the value. */
-  copyable(): this;
+  copyable: () => this;
 }

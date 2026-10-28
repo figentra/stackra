@@ -54,10 +54,10 @@ export interface Refusal extends Error {
    * @example
    * response.json(refusal.toEnvelope({ correlationId: trace.id, action: "orders.order.cancel@1" }));
    */
-  toEnvelope(context?: {
+  toEnvelope: (context?: {
     readonly correlationId?: string;
     readonly action?: string;
-  }): ErrorEnvelope;
+  }) => ErrorEnvelope;
 }
 
 /** The options a refusal's class was declared with, from the kind registry. */

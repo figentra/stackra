@@ -21,7 +21,7 @@ import { TestingModuleBuilder } from "#testing/services/testing-module-builder.s
 declare module "#testing/services/testing-module-builder.service" {
   interface TestingModuleBuilder {
     /** The stand-in for @stackra/config's `.withConfig`. */
-    withValues(type: AnyClass, values: object): this;
+    withValues: (type: AnyClass, values: object) => this;
   }
 }
 

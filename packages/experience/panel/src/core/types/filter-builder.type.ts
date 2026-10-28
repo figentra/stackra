@@ -11,8 +11,8 @@ import type { FilterNode } from "#core/types/filter-node.type";
 /** The chainable builder of one table filter. */
 export interface FilterBuilder extends Built<FilterNode> {
   /** The value the filter starts with on the Default view. */
-  default(value: unknown): this;
+  default: (value: unknown) => this;
 
   /** Pins the filter beside the search box. */
-  pinned(): this;
+  pinned: () => this;
 }

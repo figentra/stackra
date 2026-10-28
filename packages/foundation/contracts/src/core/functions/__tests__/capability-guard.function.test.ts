@@ -16,12 +16,12 @@ interface Gateway {
 }
 
 interface RefundGateway {
-  refund(amount: number): Promise<void>;
+  refund: (amount: number) => Promise<void>;
 }
 
 interface Gateways {
   readonly refunds: RefundGateway;
-  readonly tokens: { tokenize(): Promise<string> };
+  readonly tokens: { tokenize: () => Promise<string> };
 }
 
 const hasGatewayCapability = capabilityGuard<Gateways>();

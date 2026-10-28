@@ -33,7 +33,7 @@ export function watchDocsSite(
   root: string,
   onRun: (result: GenerateResult) => void,
   onError: (error: unknown) => void,
-): { close(): void } {
+): { close: () => void } {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let running = false;
   let again = false;

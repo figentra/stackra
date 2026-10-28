@@ -11,10 +11,10 @@
 /** The execution context of one Worker invocation. */
 export interface WorkerExecutionContext {
   /** Keeps the isolate alive until `promise` settles, after the response is sent. */
-  waitUntil(promise: Promise<unknown>): void;
+  waitUntil: (promise: Promise<unknown>) => void;
 
   /** Lets the request fall through to the origin when the Worker throws. */
-  passThroughOnException(): void;
+  passThroughOnException: () => void;
 
   /** The props a service binding or an entrypoint passed. */
   readonly props: unknown;

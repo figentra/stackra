@@ -11,7 +11,7 @@ import type { FakeAnswer } from "#testing/types/fake-answer.type";
 /** One route waiting for its answer. */
 interface PendingRoute<P extends string> {
   /** Sets the route's answer and returns the builder for the next route. */
-  returns(answer: FakeAnswer<P>): FakeIntegrationRoutes;
+  returns: (answer: FakeAnswer<P>) => FakeIntegrationRoutes;
 }
 
 /**
@@ -22,17 +22,17 @@ interface PendingRoute<P extends string> {
  */
 export interface FakeIntegrationRoutes {
   /** A `GET` route. */
-  get<P extends string>(path: P): PendingRoute<P>;
+  get: <P extends string>(path: P) => PendingRoute<P>;
 
   /** A `DELETE` route. */
-  delete<P extends string>(path: P): PendingRoute<P>;
+  delete: <P extends string>(path: P) => PendingRoute<P>;
 
   /** A `POST` route. */
-  post<P extends string>(path: P): PendingRoute<P>;
+  post: <P extends string>(path: P) => PendingRoute<P>;
 
   /** A `PUT` route. */
-  put<P extends string>(path: P): PendingRoute<P>;
+  put: <P extends string>(path: P) => PendingRoute<P>;
 
   /** A `PATCH` route. */
-  patch<P extends string>(path: P): PendingRoute<P>;
+  patch: <P extends string>(path: P) => PendingRoute<P>;
 }

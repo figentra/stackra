@@ -13,15 +13,15 @@
 /** A local copy of a shared document. */
 export interface DocumentReplica {
   /** Merges an update from another replica or a snapshot's state. */
-  apply(update: Uint8Array): void;
+  apply: (update: Uint8Array) => void;
 
   /** The full state, for a snapshot and the first message on every open stream. */
-  encode(): Uint8Array;
+  encode: () => Uint8Array;
 
   /**
    * Calls `listener` with each local change as an update.
    *
    * @returns removes the listener.
    */
-  onUpdate(listener: (update: Uint8Array) => void): () => void;
+  onUpdate: (listener: (update: Uint8Array) => void) => () => void;
 }

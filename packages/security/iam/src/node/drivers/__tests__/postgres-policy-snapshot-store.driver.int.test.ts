@@ -66,7 +66,7 @@ describe(PostgresPolicySnapshotStoreDriver, () => {
   it("throws on a row that is not a policy snapshot", async () => {
     await postgres.database.transaction(async () => {
       const em = postgres.database.em() as unknown as {
-        execute(sql: string, params: readonly unknown[]): Promise<unknown>;
+        execute: (sql: string, params: readonly unknown[]) => Promise<unknown>;
       };
       await em.execute("select set_config('app.tenant_id', ?, true)", ["ten_corrupt"]);
       await em.execute(

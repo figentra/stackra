@@ -11,5 +11,5 @@
 /** An event that can extend the worker's life. */
 export interface ExtendableEvent {
   /** Keeps the worker alive until `promise` settles. */
-  waitUntil(promise: Promise<unknown>): void;
+  waitUntil: (promise: Promise<unknown>) => void;
 }

@@ -20,6 +20,6 @@ type Unwrapped<R> = R extends RouteRedirect
       : R;
 
 /** The page data of route or layout instance `I`. */
-export type LoaderData<I> = I extends { loader(...args: never[]): infer R }
+export type LoaderData<I> = I extends { loader: (...args: never[]) => infer R }
   ? Unwrapped<Awaited<R>>
   : never;

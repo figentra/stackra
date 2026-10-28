@@ -23,35 +23,35 @@ import type { Where } from "#contracts/types/where.type";
  */
 export interface Repository<M extends object> {
   /** The rows matching `where`. */
-  find<H extends string = never>(
+  find: <H extends string = never>(
     where: Where<M>,
     options?: FindOptions<M, H>,
-  ): Promise<Loaded<M, H>[]>;
+  ) => Promise<Loaded<M, H>[]>;
 
   /** The one row matching `where`, or null. */
-  findOne<H extends string = never>(
+  findOne: <H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H>,
-  ): Promise<Loaded<M, H> | null>;
+  ) => Promise<Loaded<M, H> | null>;
 
   /**
    * The one row matching `where`.
    *
    * @throws NotFoundError (a `not_found` refusal) when there is none.
    */
-  findOneOrFail<H extends string = never>(
+  findOneOrFail: <H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H>,
-  ): Promise<Loaded<M, H>>;
+  ) => Promise<Loaded<M, H>>;
 
   /** How many rows match `where`. */
-  count(where?: Where<M>): Promise<number>;
+  count: (where?: Where<M>) => Promise<number>;
 
   /** The sum of a numeric field (`points`, or an embedded `total.minor`) over the rows matching `where`; 0 for none. */
-  sum(field: string, where?: Where<M>): Promise<number>;
+  sum: (field: string, where?: Where<M>) => Promise<number>;
 
   /** How many distinct non-null values a field (`subjectId`) holds over the rows matching `where`; 0 for none. */
-  countDistinct(field: string, where?: Where<M>): Promise<number>;
+  countDistinct: (field: string, where?: Where<M>) => Promise<number>;
 
   /**
    * The one row matching `where`, read again and locked (`select ... for update`) until the running transaction ends,
@@ -60,27 +60,27 @@ export interface Repository<M extends object> {
    *
    * @throws NotFoundError (a `not_found` refusal) when there is none; an error when no transaction is running.
    */
-  lock(where: Where<M>): Promise<M>;
+  lock: (where: Where<M>) => Promise<M>;
 
   /**
    * Adds `by` (default 1, negative to decrease) to a numeric field (`hits`, or an embedded `total.minor`) of every row
    * matching `where` in one statement (`col = col + ?`), so concurrent increments never lose a step; returns how many
    * rows changed. Rows the unit of work already loaded keep their old value until read again.
    */
-  increment(where: Where<M>, field: string, by?: number): Promise<number>;
+  increment: (where: Where<M>, field: string, by?: number) => Promise<number>;
 
   /** A new row, written when the caller's unit of work commits. */
-  create(data: RequiredEntityData<M>): M;
+  create: (data: RequiredEntityData<M>) => M;
 
   /**
    * A new row, written now.
    *
    * @throws UniqueViolation when a unique index refuses it.
    */
-  insert(data: RequiredEntityData<M>, options?: TransactionOptions): Promise<M>;
+  insert: (data: RequiredEntityData<M>, options?: TransactionOptions) => Promise<M>;
 
   /**
    * Deletes the rows matching `where` that no legal hold covers and returns how many; retention and purge jobs only.
    */
-  purge(where: Where<M>): Promise<number>;
+  purge: (where: Where<M>) => Promise<number>;
 }

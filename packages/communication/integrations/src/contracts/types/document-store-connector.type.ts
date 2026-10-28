@@ -21,19 +21,19 @@ import type { StoredDocumentPage } from "#contracts/types/stored-document-page.t
  */
 export interface DocumentStoreConnector {
   /** The documents in `folder`, a page at a time. */
-  list(folder: string, cursor?: string): Promise<StoredDocumentPage>;
+  list: (folder: string, cursor?: string) => Promise<StoredDocumentPage>;
 
   /** The content of document `id`, its latest version unless `version` names one. */
-  fetch(id: string, version?: string): Promise<DocumentFile>;
+  fetch: (id: string, version?: string) => Promise<DocumentFile>;
 
   /**
    * Files `file` in `folder`, or as a new version of document `replaces`; a repeated `idempotencyKey` returns the
    * first answer and files nothing.
    */
-  file(
+  file: (
     folder: string,
     file: DocumentFile,
     idempotencyKey: string,
     replaces?: string,
-  ): Promise<StoredDocument>;
+  ) => Promise<StoredDocument>;
 }

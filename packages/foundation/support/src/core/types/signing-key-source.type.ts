@@ -11,12 +11,12 @@
 /** Hands out keys by id; a `KeyProvider` is one. */
 export interface SigningKeySource {
   /** The key new tokens and codes are made with. */
-  current(): Promise<{ readonly id: string; readonly key: Uint8Array }>;
+  current: () => Promise<{ readonly id: string; readonly key: Uint8Array }>;
 
   /**
    * The key with this id.
    *
    * @throws when no key has the id.
    */
-  byId(id: string): Promise<{ readonly id: string; readonly key: Uint8Array }>;
+  byId: (id: string) => Promise<{ readonly id: string; readonly key: Uint8Array }>;
 }

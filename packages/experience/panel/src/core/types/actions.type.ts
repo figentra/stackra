@@ -23,21 +23,21 @@ import type { PlacementBuilder } from "#core/types/placement-builder.type";
  */
 export interface Actions<R, V = R> {
   /** A button that runs `action`. */
-  run(action: AnyClass): PlacementBuilder;
+  run: (action: AnyClass) => PlacementBuilder;
 
   /** The queued export of the current view or the selection, writing `columns` (the view's when absent). */
-  export(options: {
+  export: (options: {
     readonly formats: readonly ExportFormat[];
     readonly columns?: readonly Path<R>[];
-  }): PlacementBuilder;
+  }) => PlacementBuilder;
 
   /** An import whose rows are matched by the unique record path `match`. */
-  import(options: {
+  import: (options: {
     readonly mode: ImportMode;
     readonly match: Path<V>;
     readonly maxRows?: number;
-  }): PlacementBuilder;
+  }) => PlacementBuilder;
 
   /** The create button. */
-  create(): PlacementBuilder;
+  create: () => PlacementBuilder;
 }

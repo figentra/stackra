@@ -11,11 +11,11 @@ import type { UdpPeer } from "#node/sip/udp-peer.type";
 /** A bound UDP socket. */
 export interface UdpSocket {
   /** Sends `data` to `address`:`port`. */
-  send(data: Uint8Array, port: number, address: string): void;
+  send: (data: Uint8Array, port: number, address: string) => void;
   /** Calls `listener` with each datagram received. */
-  on(event: "message", listener: (data: Uint8Array, from: UdpPeer) => void): unknown;
+  on: (event: "message", listener: (data: Uint8Array, from: UdpPeer) => void) => unknown;
   /** The local address and port it is bound to. */
-  address(): UdpPeer;
+  address: () => UdpPeer;
   /** Closes the socket; no datagram is sent or received after. */
-  close(): void;
+  close: () => void;
 }

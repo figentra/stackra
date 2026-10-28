@@ -12,11 +12,11 @@
 /** What a document stream reports. */
 export interface SyncLinkHandlers {
   /** The stream is up; the owner sends its full state now. */
-  onOpen(): void;
+  onOpen: () => void;
 
   /** One update from another replica. */
-  onUpdate(update: Uint8Array): void;
+  onUpdate: (update: Uint8Array) => void;
 
   /** The stream went down without the caller closing it; the driver reconnects. */
-  onClose(): void;
+  onClose: () => void;
 }

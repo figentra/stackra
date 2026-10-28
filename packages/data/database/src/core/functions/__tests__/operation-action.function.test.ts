@@ -39,7 +39,9 @@ function build(operation: "create" | "update") {
     permission: "catalogue.product_collection.create",
     entitlements: [ProductLimitEntitlement],
   });
-  const action = Reflect.construct(type, [service]) as { handle(input: object): Promise<unknown> };
+  const action = Reflect.construct(type, [service]) as {
+    handle: (input: object) => Promise<unknown>;
+  };
   return { type, service, action };
 }
 

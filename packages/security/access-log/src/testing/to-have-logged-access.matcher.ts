@@ -54,6 +54,6 @@ export const toHaveLoggedAccess = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts that one access record matches the expectation. */
-    toHaveLoggedAccess(expected: ToHaveLoggedAccessOptions): R;
+    toHaveLoggedAccess: (expected: ToHaveLoggedAccessOptions) => R;
   }
 }

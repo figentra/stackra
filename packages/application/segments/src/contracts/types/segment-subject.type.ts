@@ -28,8 +28,8 @@ export interface SegmentSubject {
   readonly rules: Rules;
 
   /** Up to `limit` public ids of the subjects in the running scope, ascending, after `after` (from the first when null). */
-  ids(after: string | null, limit: number): Promise<readonly string[]>;
+  ids: (after: string | null, limit: number) => Promise<readonly string[]>;
 
   /** The facts of each of `ids` in the running scope, by public id; an id left out is no subject there (deleted). */
-  facts(ids: readonly string[]): Promise<ReadonlyMap<string, RuleFacts>>;
+  facts: (ids: readonly string[]) => Promise<ReadonlyMap<string, RuleFacts>>;
 }

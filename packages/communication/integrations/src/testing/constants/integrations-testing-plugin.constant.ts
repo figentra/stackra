@@ -43,13 +43,16 @@ import type { TestConnection } from "#testing/types/test-connection.type";
 declare module "@stackra/container/testing" {
   interface TestingModuleBuilder {
     /** Puts an instance of `type` whose `api` is `api` in place, and makes `api` its connections' client. */
-    withIntegrationApi<I extends Integration>(type: IntegrationClass<I>, api: IntegrationApi): this;
+    withIntegrationApi: <I extends Integration>(
+      type: IntegrationClass<I>,
+      api: IntegrationApi,
+    ) => this;
 
     /** Puts a connection of `type` in the connection store, owned by the test scope (or test user); calls add up. */
-    withConnection<C extends Connection>(
+    withConnection: <C extends Connection>(
       type: ConnectionClass<C>,
       connection: TestConnection<C>,
-    ): this;
+    ) => this;
   }
 }
 

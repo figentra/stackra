@@ -119,7 +119,7 @@ describe(Fake, () => {
     const fake = GreeterFake.with();
     expectTypeOf(fake.calls("greet")).toEqualTypeOf<readonly string[]>();
     // A reader shaped like the template's access-log matcher accepts the fake.
-    const reader: { calls(name: "greet"): readonly string[] } = fake;
+    const reader: { calls: (name: "greet") => readonly string[] } = fake;
     expect(reader.calls("greet")).toEqual([]);
     // @ts-expect-error the first argument of greet is a string
     fake.record("greet", 1);

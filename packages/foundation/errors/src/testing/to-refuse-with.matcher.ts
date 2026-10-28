@@ -84,6 +84,6 @@ export const toRefuseWith = createMatcher(
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** Asserts a refusal by code, the details the expected refusal sets and its field errors. */
-    toRefuseWith(expected: Refusal): R;
+    toRefuseWith: (expected: Refusal) => R;
   }
 }

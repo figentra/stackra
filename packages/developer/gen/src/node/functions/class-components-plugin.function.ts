@@ -107,7 +107,7 @@ function collectNames(cls: NodePath<BabelTypes.ClassDeclaration>): Set<string> {
 /** The local name of `Component` imported from `#stackra/ui`, and how to remove that import. */
 function findBaseImport(
   program: NodePath<BabelTypes.Program>,
-): { readonly local: string; remove(): void } | undefined {
+): { readonly local: string; remove: () => void } | undefined {
   for (const statement of program.get("body")) {
     if (!statement.isImportDeclaration() || statement.node.source.value !== COMPONENT_MODULE)
       continue;

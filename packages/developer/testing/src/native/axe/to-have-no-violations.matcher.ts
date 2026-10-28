@@ -13,7 +13,7 @@ import type { AxeResult } from "#native/axe/axe-result.type";
 declare module "@stackra/testing" {
   interface Matchers<R> {
     /** `axe` found no accessibility violation. */
-    toHaveNoViolations(): R;
+    toHaveNoViolations: () => R;
   }
 }
 

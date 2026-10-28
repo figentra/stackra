@@ -17,11 +17,11 @@ import type { StorageWriteOptions } from "#contracts/types/storage-write-options
  */
 export interface StoredRecord<T extends object> {
   /** The stored state, or `undefined` when nothing is stored or it expired. */
-  read(): Partial<T> | undefined;
+  read: () => Partial<T> | undefined;
 
   /** Replaces the stored state. */
-  write(state: Partial<T>, options?: StorageWriteOptions): void;
+  write: (state: Partial<T>, options?: StorageWriteOptions) => void;
 
   /** Removes the stored state. */
-  clear(): void;
+  clear: () => void;
 }

@@ -29,5 +29,5 @@ export interface DevtoolsTabSinkDefinition {
   readonly sensitive?: boolean;
 
   /** Reads the tab's data when a host opens it. */
-  read(): unknown;
+  read: () => unknown;
 }

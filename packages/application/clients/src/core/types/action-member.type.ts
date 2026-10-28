@@ -19,12 +19,12 @@ export interface ActionMember<A extends ActionRef> {
    *
    * @throws ClientError the producer's refusal, or a `TransportError`.
    */
-  call(input: RefInput<A>, options?: CallOptions): Promise<RefOutput<A>>;
+  call: (input: RefInput<A>, options?: CallOptions) => Promise<RefOutput<A>>;
 
   /**
    * Queues the action on the producer's queue.
    *
    * @throws ClientError when the producer refuses to queue it, or a `TransportError`.
    */
-  queue(input: RefInput<A>, options?: CallOptions): Promise<void>;
+  queue: (input: RefInput<A>, options?: CallOptions) => Promise<void>;
 }

@@ -35,7 +35,7 @@ function isClassName(value: unknown): value is { readonly $class: string } {
  */
 export async function discoverWithGen<V = unknown>(
   module: abstract new (...args: never[]) => object,
-  decorator: { readonly kind: string; on?(type: never): V | undefined },
+  decorator: { readonly kind: string; on?: (type: never) => V | undefined },
   options: { readonly root?: string; readonly backend?: "tsgo" | "ts6" } = {},
 ): Promise<readonly DiscoveredTarget<V>[]> {
   const root = resolve(options.root ?? process.cwd());

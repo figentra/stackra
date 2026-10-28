@@ -11,5 +11,5 @@ import type { LicenceView } from "#src/interfaces/licence-view.interface";
 /** Reads a licence token. */
 export interface LicenceCheck {
   /** The licence of a token, or null when the token is unknown or revoked. */
-  check(token: string): Promise<LicenceView | null>;
+  check: (token: string) => Promise<LicenceView | null>;
 }

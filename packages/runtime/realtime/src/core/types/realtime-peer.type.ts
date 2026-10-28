@@ -11,8 +11,8 @@ import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
 /** A connection the hub delivers to. */
 export interface RealtimePeer {
   /** Sends one message; a throw drops the peer. */
-  deliver(message: RealtimeMessage): void;
+  deliver: (message: RealtimeMessage) => void;
 
   /** Ends the connection because its token expired; the client reconnects with a new one. */
-  close(): void;
+  close: () => void;
 }

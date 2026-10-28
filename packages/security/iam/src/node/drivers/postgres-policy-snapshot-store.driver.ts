@@ -28,7 +28,7 @@ const PLATFORM = "-";
 
 /** The raw-SQL surface of the entity manager this driver uses. */
 interface Sql {
-  execute(statement: string, params: readonly unknown[]): Promise<unknown>;
+  execute: (statement: string, params: readonly unknown[]) => Promise<unknown>;
 }
 
 /**

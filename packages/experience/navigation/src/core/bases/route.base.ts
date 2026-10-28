@@ -35,13 +35,13 @@ export interface Route<O extends RouteOptions = RouteOptions> {
   readonly "~layoutData": OptionsLayoutData<O>;
 
   /** What the page shows; a redirect (`ctx.redirect`) or a thrown `ctx.notFound()` instead of data. */
-  loader(ctx: RouteContext<this>): unknown;
+  loader: (ctx: RouteContext<this>) => unknown;
 
   /** Handles the page's form: field errors, data for the page, or a redirect. */
-  submit(ctx: RouteContext<this>): unknown;
+  submit: (ctx: RouteContext<this>) => unknown;
 
   /** The head that depends on the loader's data, over the static `seo`. */
-  meta(ctx: MetaContext<this>): Seo;
+  meta: (ctx: MetaContext<this>) => Seo;
 }
 
 /**

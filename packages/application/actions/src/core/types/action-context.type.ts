@@ -27,28 +27,28 @@ export interface ActionContext extends QueryContext {
    * Runs `work` once the call's transaction has committed, in call order; never for a refused or failed call. A
    * failure there is logged and never fails the committed call.
    */
-  afterCommit(work: () => unknown): void;
+  afterCommit: (work: () => unknown) => void;
 
   /** Adds `fields` to the call's audit entry (later calls overwrite a field of the same name). */
-  audit(fields: Readonly<Record<string, Json>>): void;
+  audit: (fields: Readonly<Record<string, Json>>) => void;
 
   /**
    * Runs `workflow` with `input` behind this call and resolves to its output.
    * @throws Error when no `WorkflowRunner` is bound (`@stackra/workflow` is not installed).
    */
-  run<O>(workflow: AnyClass, input: unknown): Promise<O>;
+  run: <O>(workflow: AnyClass, input: unknown) => Promise<O>;
 
   /**
    * Delivers `payload` as `signal` to the workflow run waiting on `correlation`.
    * @throws Error when no `WorkflowRunner` is bound.
    */
-  signal(signal: AnyClass, payload: object, correlation?: object): Promise<void>;
+  signal: (signal: AnyClass, payload: object, correlation?: object) => Promise<void>;
 
   /**
    * Queues `action` with `input` as a job on its declared queue.
    * @throws Error when no `JobDispatcher` is bound (`@stackra/queue` is not installed).
    */
-  dispatch<A extends object>(action: AnyClass<A>, input: CallInput<A>): Promise<void>;
+  dispatch: <A extends object>(action: AnyClass<A>, input: CallInput<A>) => Promise<void>;
 
   /**
    * Writes `event`, an integration event no model owns (an alert, a notice), to the outbox in the call's unit of work,
@@ -57,5 +57,5 @@ export interface ActionContext extends QueryContext {
    * @throws TypeError when `event` is not an `IntegrationEvent`.
    * @throws Error when no `EventOutbox` is bound (`@stackra/outbox` is not installed).
    */
-  publish(event: Event): Promise<void>;
+  publish: (event: Event) => Promise<void>;
 }

@@ -31,14 +31,14 @@ import type { TableNode } from "#core/types/table-node.type";
  */
 export interface Table<R> extends Built<TableNode> {
   /** Sets the columns, in order. */
-  columns(build: (column: ColumnFactory<R>) => readonly ColumnBuilder[]): this;
+  columns: (build: (column: ColumnFactory<R>) => readonly ColumnBuilder[]) => this;
 
   /** Sets the filters, in order. */
-  filters(build: (filter: FilterFactory<R>) => readonly FilterBuilder[]): this;
+  filters: (build: (filter: FilterFactory<R>) => readonly FilterBuilder[]) => this;
 
   /** Sets the sort a fresh list starts with. */
-  defaultSort(key: Path<R>, direction: SortDirection): this;
+  defaultSort: (key: Path<R>, direction: SortDirection) => this;
 
   /** Sets how rows are counted; estimated by default. */
-  count(count: Count): this;
+  count: (count: Count) => this;
 }

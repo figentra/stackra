@@ -22,7 +22,7 @@ const SOLID_SETTING_EVENTS = ["reduceTransparencyChanged", "darkerSystemColorsCh
 type Settings = "unknown" | "solid" | "clear";
 
 const listeners = new Set<() => void>();
-let subscriptions: { remove(): void }[] = [];
+let subscriptions: { remove: () => void }[] = [];
 // Kept between mounts so a later control starts in the last known state.
 let settings: Settings = "unknown";
 

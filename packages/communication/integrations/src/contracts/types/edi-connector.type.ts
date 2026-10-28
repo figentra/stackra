@@ -26,11 +26,11 @@ export interface EdiConnector {
    * @returns the network's id of the document.
    * @throws ProviderRefusedError when the network refuses it (an unknown partner, a body that fails its checks).
    */
-  send(document: EdiDocument, idempotencyKey: string): Promise<{ readonly id: string }>;
+  send: (document: EdiDocument, idempotencyKey: string) => Promise<{ readonly id: string }>;
 
   /** The documents received since `since` and not yet acknowledged, a page at a time. */
-  receive(since: Date, cursor?: string): Promise<EdiDocumentPage>;
+  receive: (since: Date, cursor?: string) => Promise<EdiDocumentPage>;
 
   /** Tells the network we took document `id`, so it is not delivered again. */
-  acknowledge(id: string): Promise<void>;
+  acknowledge: (id: string) => Promise<void>;
 }

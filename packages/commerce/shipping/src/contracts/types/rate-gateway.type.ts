@@ -20,5 +20,5 @@ export interface RateGateway {
    *
    * @returns an empty list when the carrier serves no service between the two addresses.
    */
-  quote(request: RateRequest): Promise<readonly RateQuote[]>;
+  quote: (request: RateRequest) => Promise<readonly RateQuote[]>;
 }

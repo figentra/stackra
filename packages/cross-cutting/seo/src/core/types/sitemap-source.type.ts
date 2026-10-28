@@ -22,10 +22,13 @@ export interface SitemapSource<Clients> {
    * One page of the source after `cursor`, about `limit` items, with the cursor of the next page; a source without
    * paging answers everything and no cursor.
    */
-  list(
+  list: (
     clients: Clients,
     site: SitemapSite,
     href: SitemapHref,
     page: { readonly cursor?: string; readonly limit: number },
-  ): Promise<{ readonly items: readonly SitemapItem[]; readonly nextCursor?: string | undefined }>;
+  ) => Promise<{
+    readonly items: readonly SitemapItem[];
+    readonly nextCursor?: string | undefined;
+  }>;
 }

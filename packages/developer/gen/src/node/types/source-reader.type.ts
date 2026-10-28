@@ -22,25 +22,25 @@ export interface SourceReader {
   readonly sources: readonly TsNode[];
 
   /** The kind classes of a file, in source order. */
-  classes(file: TsNode): DeclaredClass[];
+  classes: (file: TsNode) => DeclaredClass[];
 
   /** The shapes of a file, in source order. */
-  shapes(file: TsNode): ShapeIR[];
+  shapes: (file: TsNode) => ShapeIR[];
 
   /** The exported `defineSlot` declarations of a file (ADR 0438); reports `slot_options_not_constant`. */
-  slots(file: TsNode): SlotIR[];
+  slots: (file: TsNode) => SlotIR[];
 
   /** The exported `fillSlot` declarations of a file (ADR 0438); reports `slot_options_not_constant`. */
-  fills(file: TsNode): SlotFillIR[];
+  fills: (file: TsNode) => SlotFillIR[];
 
   /** The `Enum.of` declarations of a file. */
-  enums(file: TsNode): EnumIR[];
+  enums: (file: TsNode) => EnumIR[];
 
   /** The exported declarations of a file; reports `two_declarations_in_file`. */
-  exports(file: TsNode): FileExports;
+  exports: (file: TsNode) => FileExports;
 
   /** The services any own source file (tests included) imports from `#stackra/clients/<service>`, by service. */
-  clientImports(): { readonly service: string; readonly file: string }[];
+  clientImports: () => { readonly service: string; readonly file: string }[];
 
   /** Every refusal reported so far. */
   readonly errors: readonly GenError[];

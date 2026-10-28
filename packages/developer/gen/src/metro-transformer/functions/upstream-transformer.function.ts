@@ -14,8 +14,8 @@ import type { MetroTransformParams } from "#metro-transformer/types/metro-transf
 
 /** A Metro Babel transformer. */
 interface BabelTransformer {
-  transform(params: MetroTransformParams): unknown;
-  getCacheKey?(): string;
+  transform: (params: MetroTransformParams) => unknown;
+  getCacheKey?: () => string;
 }
 
 /** The candidates, in order of preference. */

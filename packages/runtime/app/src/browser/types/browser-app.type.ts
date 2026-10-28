@@ -17,10 +17,10 @@ export interface BrowserApp {
    *
    * @throws Error when `createApp` was given no routes.
    */
-  mount(root: Element): void;
+  mount: (root: Element) => void;
 
   /** Hydrates the server-rendered document with React Router's `HydratedRouter`, in a transition. */
-  hydrate(options?: HydrateOptions): void;
+  hydrate: (options?: HydrateOptions) => void;
 
   /** The router over the given routes (a hash router inside the desktop shell); undefined without routes. */
   readonly router: ReturnType<typeof createBrowserRouter> | undefined;

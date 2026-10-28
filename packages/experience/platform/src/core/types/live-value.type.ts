@@ -11,5 +11,5 @@ import type { ReadonlySignal } from "#contracts/types/readonly-signal.type";
 /** A live value with its writer. */
 export type LiveValue<T> = ReadonlySignal<T> & {
   /** Replaces the value and notifies subscribers; an equal value (`Object.is`) changes nothing. */
-  set(next: T): void;
+  set: (next: T) => void;
 };

@@ -17,5 +17,5 @@ import type { Duration } from "@stackra/contracts";
  */
 export type DeployLock = {
   /** Runs `work` holding `key` when no one holds it now, renewing the lease while it runs; `true` when it ran. */
-  tryWith(key: string, ttl: Duration, work: () => Promise<void>): Promise<boolean>;
+  tryWith: (key: string, ttl: Duration, work: () => Promise<void>) => Promise<boolean>;
 };

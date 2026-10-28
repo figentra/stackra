@@ -53,7 +53,7 @@ type Hint = "Name the query as a type argument: Widget<OrderKpisQuery>({ ... })"
  * A class `Widget.place` takes: one whose instances present a display. Not `WidgetBase<never>`, which no widget is
  * (its type-only `~query` takes the query, and no query is `never`); `place` refuses a class that is no widget.
  */
-type PlaceableWidget = AnyClass<{ display(display: never): Built<DisplayNode> }>;
+type PlaceableWidget = AnyClass<{ display: (display: never) => Built<DisplayNode> }>;
 
 /** The called form and the placement shadow. */
 interface WidgetForm {
@@ -63,7 +63,7 @@ interface WidgetForm {
   ): abstract new () => WidgetBase<Q>;
 
   /** A placement shadow of `base`: the same widget, moved. */
-  place<W extends PlaceableWidget>(base: W, options: WidgetPlaceOptions): W;
+  place: <W extends PlaceableWidget>(base: W, options: WidgetPlaceOptions) => W;
 }
 
 /** Whether `slot` is absent, `null` or a slot ref. */

@@ -13,6 +13,6 @@ import type { ColumnGroup } from "@stackra/database";
 declare module "@stackra/database" {
   interface Blueprint {
     /** A `DataClassification` column: `text` limited to the four classification codes by `ck_<table>_<column>`. */
-    dataClassification(column: string): ColumnGroup;
+    dataClassification: (column: string) => ColumnGroup;
   }
 }

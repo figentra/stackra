@@ -27,7 +27,7 @@ export interface Layout<O extends LayoutOptions = LayoutOptions> {
   readonly "~options": O;
 
   /** What every child shares; a redirect instead of data sends the visitor elsewhere before any child loads. */
-  loader(ctx: RouteContext<this>): unknown;
+  loader: (ctx: RouteContext<this>) => unknown;
 }
 
 /**

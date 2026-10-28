@@ -8,4 +8,4 @@
  */
 
 /** The resolved `handle` output of an action or query instance type. */
-export type OutputOf<T> = T extends { handle(...args: never[]): Promise<infer O> } ? O : never;
+export type OutputOf<T> = T extends { handle: (...args: never[]) => Promise<infer O> } ? O : never;

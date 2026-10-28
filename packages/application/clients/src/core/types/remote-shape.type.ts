@@ -22,12 +22,12 @@ export type RemoteShape<S extends ZodType = ZodType> = (abstract new () => Shape
   readonly schema: S;
 
   /** The schema, or `null`. */
-  nullable(): ZodNullable<S>;
+  nullable: () => ZodNullable<S>;
 
   /**
    * An instance of the class from `values`, parsed by the schema.
    *
    * @throws ZodError when `values` do not match the schema.
    */
-  create<T>(this: abstract new () => T, values: input<S>): T;
+  create: <T>(this: abstract new () => T, values: input<S>) => T;
 };

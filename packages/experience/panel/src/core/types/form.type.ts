@@ -21,5 +21,5 @@ import type { FormNode } from "#core/types/form-node.type";
  */
 export interface Form<I> extends Built<FormNode> {
   /** Sets the elements, in order. */
-  fields(build: (field: FieldFactory<I>) => readonly Built<FieldNode>[]): this;
+  fields: (build: (field: FieldFactory<I>) => readonly Built<FieldNode>[]) => this;
 }

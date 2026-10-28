@@ -18,11 +18,11 @@ export interface DevtoolsHost {
   readonly acceptsSensitive?: boolean;
 
   /** Each new stream entry, as it is emitted. */
-  onEvent?(event: DevtoolsEvent): void;
+  onEvent?: (event: DevtoolsEvent) => void;
 
   /** The tabs it can see, after every tab is defined or removed. */
-  onTabsChanged?(tabs: readonly DevtoolsTabMetadata[]): void;
+  onTabsChanged?: (tabs: readonly DevtoolsTabMetadata[]) => void;
 
   /** The RPC names, after every RPC is defined or removed. */
-  onRpcChanged?(names: readonly string[]): void;
+  onRpcChanged?: (names: readonly string[]) => void;
 }

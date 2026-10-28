@@ -21,8 +21,8 @@ import type { ConnectionSubscription } from "#core/types/connection-subscription
  */
 export interface ConnectionWebhooks {
   /** Subscribes `webhookUrl` at the provider; a signing secret it returns is kept in the webhook secret field. */
-  subscribe?(webhookUrl: string): Promise<ConnectionSubscription>;
+  subscribe?: (webhookUrl: string) => Promise<ConnectionSubscription>;
 
   /** Removes the connection's webhook subscription at the provider. */
-  unsubscribe?(): Promise<void>;
+  unsubscribe?: () => Promise<void>;
 }

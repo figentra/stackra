@@ -28,7 +28,7 @@ import type { DesktopAppOptions } from "#desktop/types/desktop-app-options.type"
 
 /** What a bridge class exposes to the renderer. */
 interface BridgeInstance {
-  handle(input: unknown): unknown;
+  handle: (input: unknown) => unknown;
 }
 
 /**

@@ -36,7 +36,7 @@ export abstract class PartiesLoyaltyMembersDriver extends Driver(LoyaltyMembers)
   protected abstract readonly parties: {
     readonly person: {
       readonly get: {
-        call(input: { readonly id: string }): Promise<{
+        call: (input: { readonly id: string }) => Promise<{
           readonly mergedInto: string | null;
           readonly erasedAt: unknown;
         }>;

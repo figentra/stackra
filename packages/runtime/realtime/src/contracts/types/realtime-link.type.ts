@@ -9,5 +9,5 @@
 /** A connection its caller owns. */
 export interface RealtimeLink {
   /** Closes the link; safe to call more than once. */
-  close(): void;
+  close: () => void;
 }

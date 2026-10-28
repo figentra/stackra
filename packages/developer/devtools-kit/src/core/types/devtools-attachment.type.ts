@@ -13,5 +13,5 @@ export interface DevtoolsAttachment {
   readonly session: DevtoolsSession;
 
   /** Ends the session so another host may attach; safe to call twice. */
-  detach(): void;
+  detach: () => void;
 }

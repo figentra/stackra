@@ -18,5 +18,5 @@ import type { TokenCharge } from "#contracts/types/token-charge.type";
  */
 export interface TokenGateway {
   /** Charges `request.method` for `request.amount`, flagged as merchant-initiated when the initiator is the merchant. */
-  charge(request: TokenCharge): Promise<ProviderPayment>;
+  charge: (request: TokenCharge) => Promise<ProviderPayment>;
 }

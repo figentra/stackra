@@ -19,6 +19,6 @@ type Unwrapped<R> = R extends RouteRedirect
       : R;
 
 /** The submit result of route instance `I`. */
-export type SubmitData<I> = I extends { submit(...args: never[]): infer R }
+export type SubmitData<I> = I extends { submit: (...args: never[]) => infer R }
   ? Unwrapped<Awaited<R>>
   : never;

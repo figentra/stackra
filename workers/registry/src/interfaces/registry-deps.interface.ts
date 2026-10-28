@@ -33,7 +33,7 @@ export interface RegistryDeps {
   /** The registry's settings, read from its vars. */
   readonly settings: RegistrySettings;
   /** Returns the current time; tests pass a fixed clock. */
-  now(): Date;
+  now: () => Date;
   /** Runs work after the response (the Worker's `ctx.waitUntil`). */
-  defer(task: Promise<unknown>): void;
+  defer: (task: Promise<unknown>) => void;
 }

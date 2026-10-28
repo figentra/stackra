@@ -36,8 +36,8 @@ export interface StepContext extends ExtensionContext {
   readonly progress: Json | undefined;
 
   /** Keeps `event` for the step's commit; a failed attempt drops it. */
-  record(event: Event): void;
+  record: (event: Event) => void;
 
   /** Reports liveness, with `progress` kept durably for a retry; resolves once it is stored. */
-  heartbeat(progress?: Json): Promise<void>;
+  heartbeat: (progress?: Json) => Promise<void>;
 }

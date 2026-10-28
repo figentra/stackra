@@ -13,5 +13,5 @@ export interface ShareTargetEvent {
    * The POST another app's share sheet sent; only its form is read. Typed by that one method, so the DOM form type
    * wins over React Native's global `FormData` in a program that loads both.
    */
-  readonly request: { formData(): Promise<FormData> };
+  readonly request: { formData: () => Promise<FormData> };
 }

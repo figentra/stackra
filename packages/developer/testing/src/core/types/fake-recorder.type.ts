@@ -15,17 +15,17 @@ export interface FakeRecorder<T> {
    * @param name - a method of the port.
    * @param value - the first argument the method received.
    */
-  record<K extends keyof T & string>(
+  record: <K extends keyof T & string>(
     name: K,
     value: T[K] extends (...args: infer A) => unknown ? A[0] : never,
-  ): void;
+  ) => void;
 
   /**
    * The values recorded for `name`, oldest first; empty when it was never recorded.
    *
    * @param name - a method of the port.
    */
-  calls<K extends keyof T & string>(
+  calls: <K extends keyof T & string>(
     name: K,
-  ): readonly (T[K] extends (...args: infer A) => unknown ? A[0] : never)[];
+  ) => readonly (T[K] extends (...args: infer A) => unknown ? A[0] : never)[];
 }

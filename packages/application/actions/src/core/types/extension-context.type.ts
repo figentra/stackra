@@ -52,5 +52,5 @@ export interface ExtensionContext {
   readonly abortSignal: AbortSignal;
 
   /** The pipeline clock: one instant for the whole call, read from the Clock port when the call started. */
-  now(): Date;
+  now: () => Date;
 }

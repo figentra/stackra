@@ -12,14 +12,14 @@ import type { ToneRule } from "#core/types/tone-rule.type";
 /** Builds a KPI's threshold tones. */
 export interface ToneRules {
   /** `tone` when the value is under `ratio` of the target. */
-  belowTarget(ratio: number, tone: Tone): ToneRule;
+  belowTarget: (ratio: number, tone: Tone) => ToneRule;
 
   /** `tone` when the value is at or over `ratio` of the target. */
-  aboveTarget(ratio: number, tone: Tone): ToneRule;
+  aboveTarget: (ratio: number, tone: Tone) => ToneRule;
 
   /** `tone` when the value is under `value`. */
-  below(value: number, tone: Tone): ToneRule;
+  below: (value: number, tone: Tone) => ToneRule;
 
   /** `tone` when the value is at or over `value`. */
-  above(value: number, tone: Tone): ToneRule;
+  above: (value: number, tone: Tone) => ToneRule;
 }

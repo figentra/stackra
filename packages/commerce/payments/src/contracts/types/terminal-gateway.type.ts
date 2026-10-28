@@ -21,13 +21,13 @@ import type { TerminalSession } from "#contracts/types/terminal-session.type";
  */
 export interface TerminalGateway {
   /** Presents the amount on the terminal. */
-  startTerminal(request: TerminalRequest): Promise<TerminalSession>;
+  startTerminal: (request: TerminalRequest) => Promise<TerminalSession>;
 
   /** The session as the provider holds it now. */
-  terminalSession(providerRef: string, terminalId: string): Promise<TerminalSession>;
+  terminalSession: (providerRef: string, terminalId: string) => Promise<TerminalSession>;
 
   /**
    * Clears what the terminal is showing: the session `providerRef` when given, else whatever is on `terminalId`.
    */
-  cancelTerminal(terminalId: string, providerRef?: string): Promise<void>;
+  cancelTerminal: (terminalId: string, providerRef?: string) => Promise<void>;
 }
