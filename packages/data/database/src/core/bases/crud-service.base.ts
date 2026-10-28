@@ -3,7 +3,8 @@
  * Purpose: `CrudService<M>`, the kind base of a module service over one model: `class OrderService extends
  *          CrudService<Order>` inherits the repository reads and writes, `update`, the table read of a resource
  *          (`table(input, { where, period, count })`, with range, date-range, comparison, contains and null filters, a
- *          multi-key sort and the row count) and the metrics of a KPI (`metrics(period, { on })`).
+ *          multi-key sort and the row count) and the metrics of a KPI (`metrics(period, { on, timeZone })`: any
+ *          aggregate, a series by hour to quarter in the call's time zone, a breakdown by a dimension).
  * Boundary: a service (it extends container's `Service`, so its binding kind is `service`); its own constructor
  *           dependencies are the subclass's, and it calls `super()` with none. The model comes from the type argument,
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
@@ -34,7 +35,7 @@
  *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
  *                     ADR 0134 (2026-10-24 amendment: legal holds); ADR 0411 (subtree move); STA-1239 (row lock,
  *                     atomic increment, `update` with `requiresNew`); reporting gaps 5 (filter operators, multi-key sort)
- *                     and 6 (table counts);
+ *                     and 6 (table counts) and 10 (metrics grains, aggregates and breakdown);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
  *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields).
@@ -66,6 +67,7 @@ import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
 import { NATIVE_WRITE_HOST } from "#core/constants/native-write-host.constant";
 import { LTREE_PATH } from "#core/constants/ltree-path.constant";
+import { callTimeZone } from "#core/functions/call-time-zone.function";
 import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
 import { filterCondition } from "#core/functions/filter-condition.function";
@@ -683,10 +685,14 @@ export abstract class CrudService<M extends object> extends Service implements R
     };
   }
 
-  /** The metrics of the rows matching `options.where` whose `options.on` falls in `period` or the period before. */
+  /**
+   * The metrics of the rows matching `options.where` whose `options.on` falls in `period` or the period before; a series
+   * buckets in `options.timeZone`, else the running call's time zone, else UTC.
+   */
   metrics(period: Period, options: MetricsOptions<M>): MetricsReader<M> {
     const model = this.model();
-    return new MetricsReader(this.em(), model, period, options, () =>
+    const zoned = { ...options, timeZone: options.timeZone ?? callTimeZone() };
+    return new MetricsReader(this.em(), model, period, zoned, () =>
       visibleFilter(model, options.where ?? ({} as Where<M>)),
     );
   }

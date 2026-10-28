@@ -24,6 +24,7 @@ import {
   CrudService,
   EntitySchema,
   Macro,
+  MetricGrain,
   Migration,
   Seeder,
   UniqueViolation,
@@ -36,6 +37,7 @@ import {
 import type {
   Blueprint,
   ColumnGroup,
+  MetricBreakdown,
   MetricSeries,
   MetricValue,
   MigrationId,
@@ -152,6 +154,10 @@ async function shapes(
   const paid = orders.metrics(period, { on: "paidAt", where: { status: "paid" } });
   expectTypeOf(await paid.sum("totalMinor")).toEqualTypeOf<MetricValue>();
   expectTypeOf(await paid.series(Aggregate.Count)).toEqualTypeOf<MetricSeries>();
+  expectTypeOf(
+    await paid.series(Aggregate.Avg, "totalMinor", MetricGrain.Week),
+  ).toEqualTypeOf<MetricSeries>();
+  expectTypeOf(await paid.breakdown("status", Aggregate.Count)).toEqualTypeOf<MetricBreakdown[]>();
   expectTypeOf(await lines.sum("quantity", { quantity: { $gte: 1 } })).toEqualTypeOf<number>();
   expectTypeOf(await lines.purge({ quantity: 0 })).toEqualTypeOf<number>();
   try {
@@ -188,6 +194,7 @@ describe("@stackra/database", () => {
       "HoldSubscriber",
       "Isolation",
       "Macro",
+      "MetricGrain",
       "Migration",
       "MixedCurrencyError",
       "ModelInvalidError",
@@ -254,6 +261,8 @@ describe("@stackra/database", () => {
       "visibleFilter",
       "filterCondition",
       "tableCount",
+      "metricBuckets",
+      "callTimeZone",
       "mintSequenceBlockId",
       "CreateSequenceTablesMigration",
     ])

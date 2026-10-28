@@ -49,7 +49,17 @@ const [revenue, series] = await Promise.all([
   paid.sum("total.minor"),
   paid.series(Aggregate.Sum, "total.minor"),
 ]);
+const average = await paid.value(Aggregate.Avg, "total.minor"); // also Min, Max, Distinct
+const weekly = await paid.series(Aggregate.Count, undefined, MetricGrain.Week);
+const byChannel = await paid.breakdown("channel", Aggregate.Sum, "total.minor", 5);
 ```
+
+- `metrics(period, { on, where, timeZone })` reads the period and the previous one in one statement per call.
+  `value(aggregate, path?)` takes any `Aggregate` (`count`, `sum`, `avg`, `min`, `max`, `distinct`); `series` buckets
+  by `MetricGrain` (hour, day, week from Monday, month, quarter) on the local calendar of `timeZone`, which defaults to
+  the running call's `ctx.timeZone` and else UTC, so a day across a daylight-saving change stays one local day; a series
+  holds at most 5,000 buckets. `breakdown(dimension, aggregate, path?, limit = 10)` groups by a single-column field,
+  largest current value first. A money aggregate over two currencies refuses with `mixed_currency`.
 
 - The model comes from the type argument (gen registers it with `registerModelPartners`); the entity manager is the
   running context's, so every write joins the action's unit of work (`DatabaseUnitOfWorkDriver`).

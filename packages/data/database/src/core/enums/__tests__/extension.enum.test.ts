@@ -31,6 +31,6 @@ describe("Extension", () => {
   });
 
   it("lists the aggregates", () => {
-    expect(Enum.values(Aggregate)).toEqual(["count", "sum"]);
+    expect(Enum.values(Aggregate)).toEqual(["count", "sum", "avg", "min", "max", "distinct"]);
   });
 });

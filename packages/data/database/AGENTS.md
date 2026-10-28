@@ -42,6 +42,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   of `CrudService`, `GraphQuery` and `MetricsReader` takes its filter from the internal `visibleFilter`, which ANDs
   the bound `VisibilityFilter` driver's conditions. A new read path calls it too; never let it widen, bypass or carry
   scope isolation, and never decide visibility here (the model's facet and iam's evaluation do).
+- Metrics (`MetricsReader`, reporting gap 10): bucket a series on the local calendar (`date_trunc(grain, at at time
+zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never bucket by elapsed milliseconds, which
+  breaks on a daylight-saving day. The grain and time zone are parameters; field paths go through `columnOf`.
 - A table count (`tableCount`, ADR 0307 r12) reads through the same filter as its page and calls the builder's
   `applyFilters()` so hidden rows stay hidden. Keep `Count.Estimated` bounded: the exact part stops at
   `BULK_LIMITS.countCap` plus one row, and past it only `explain` (never `explain analyze`) runs. Never estimate from
