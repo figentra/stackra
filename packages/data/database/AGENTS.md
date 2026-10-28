@@ -144,6 +144,10 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
 - `usePostgres()` defaults to the image `POSTGRES_TEST_IMAGE` describes (stackra-284); when an extension joins
   `Extension`, add it to that Dockerfile (and the tag) and to the memory driver's extension list in the same change.
   Keep `@electric-sql/pglite-pgvector` at the release whose peer is the catalog's PGlite.
+- Every connection this package opens (the Postgres and memory drivers) uses `observedLogger`, so statements are counted
+  for `QueryBudget` and `strictLoading` and reach the observers. Never log or hand on a raw statement or its params:
+  only `statementShape`'s output. An observer must not throw; the logger drops what it throws.
+- `GraphQuery` loads related rows batched (`Link.loadMany`, one `populate`), never one read per row.
 - The unit tier's database is `MemoryDatabaseDriver` (PGlite, ADR 0266 memory first), connected by
   `DATABASE_TESTING_PLUGIN` on every compile unless another database is connected; keep its `transaction`, `withScope`
   and `em` the same as `PostgresDatabaseDriver`'s when either changes.

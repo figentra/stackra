@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `Extension` and `Aggregate`: exactly the five ADR 0160 extensions plus PostGIS (ADR 0314) by their SQL names, the
+ * Purpose: unit tests of `Extension` and `Aggregate`: exactly the five ADR 0160 extensions plus PostGIS (ADR 0314) and pg_stat_statements by their SQL names, the
  *          two aggregates a metrics series takes, and the three isolation levels a transaction starts at.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -22,6 +22,7 @@ describe("Extension", () => {
       "citext",
       "pgcrypto",
       "postgis",
+      "pg_stat_statements",
     ]);
     expect(Enum.values(Extension)).not.toContain("timescaledb");
   });

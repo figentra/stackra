@@ -41,6 +41,8 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   their field. Model references inside decorators are thunks (R11).
 - `Collection` and `Ref` are MikroORM's own, re-exported, so the hydrator understands them. A `Link` never has
   `unwrap()`.
+- `Link.loadMany` batches only the links its caller passes, in the caller's context; never queue loads across calls
+  in a static (a batch would run under another request's scope).
 - Never import @stackra/database (it depends on this package); a factory meets `Attributes<M>` through the
   `RelationSource` brand.
 - `Cached({ ttl })` is a marker read by `cacheTtlOf`, which refuses a model that also has encrypted fields (a shared

@@ -5,7 +5,9 @@
  *          (`runTransaction`: statement and lock timeouts, isolation, read-only, retry), starts every session with the configured timeouts, sizes the pool, registers the
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
- *          runtime handed it one. The ORM's result cache is `EntityResultCacheAdapter`, the store of `Cached` models.
+ *          runtime handed it one; every statement is counted for the query guard and handed to the
+ *          `DatabaseOptions.observers` (`observedLogger`). The ORM's result cache is `EntityResultCacheAdapter`, the
+ *          store of `Cached` models.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
  *           fork). `connect` makes it `Database.current()` until `close`. Reads stay on the primary
@@ -14,7 +16,8 @@
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
  *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool);
- *                     data-layer gap mo6 (stackra-279: transaction options).
+ *                     data-layer gap mo6 (stackra-279: transaction options); gaps sc7 and sc8 (stackra-282: query
+ *                     telemetry and the N+1 guard).
  */
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
@@ -32,6 +35,7 @@ import { runTransaction } from "#core/functions/run-transaction.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
+import { observedLogger } from "#node/functions/observed-logger.function";
 import type { DatabaseOptions } from "#core/types/database-options.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 
@@ -82,6 +86,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       discovery: { inferDefaultValues: false },
       allowGlobalContext: false,
       debug: options.debug ?? false,
+      loggerFactory: (settings) => observedLogger(settings, options.observers ?? []),
     });
     const driver = new PostgresDatabaseDriver(orm);
     ACTIVE_DATABASE.current = driver;

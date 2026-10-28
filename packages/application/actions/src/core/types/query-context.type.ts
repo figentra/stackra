@@ -3,8 +3,8 @@
  * Purpose: `QueryContext`, the second parameter of a query's `handle`: the call context plus the record check
  *          (`authorize`), the reporting helpers (`period`, `startOfDay`) a read needs, the verified device the call
  *          came from (`deviceId`), the caller's verified assurance (`assurance`, STA-814), the sandbox flag and the
- *          network client (`sandbox`, `client`, STA-1248), the visitor's verified consent (`consent`, ADR 0472) and a
- *          replica query's answer (`replica`).
+ *          network client (`sandbox`, `client`, STA-1248), the visitor's verified consent (`consent`, ADR 0472), a
+ *          replica query's answer (`replica`) and the call's request memo (`memo`, STA-1400).
  * Boundary: a type only; the pipeline builds it per call. A query has no transaction, no `afterCommit`, no audit and
  *           no Idempotency-Key, so none is here. `ActionContext` extends it.
  * Runtime: isomorphic
@@ -63,6 +63,16 @@ export interface QueryContext extends ExtensionContext {
    * when `granted` holds its category; reading it never refuses the call.
    */
   consent: () => Promise<CallConsent>;
+
+  /**
+   * The call's request memo: the first read of `key` runs `load`, every later read in the same call shares its answer
+   * (a rejected load is forgotten, so a later read tries again). Nothing outlives the call; put the scope or any id the
+   * answer depends on in `key`.
+   *
+   * @example
+   * const rates = await ctx.memo(`fx:${currency}`, () => this.rates.today(currency));
+   */
+  memo: <T>(key: string, load: () => Promise<T>) => Promise<T>;
 
   /**
    * A replica query's answer: the changes since the cursor the client sent (the input's `cursor`), or, on a first fill

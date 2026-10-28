@@ -5,7 +5,8 @@
  *          (`endpoint`, `tool`, `intent`, `job`, `offline`), its effect tags (`effects`), the client rule code it accepts (`accepts`), whether it
  *          changes structural configuration (`structural`), the meter it feeds (`meter`), whether it always needs an
  *          approval gate (`approval`), the assurance level it needs (`stepUp`) and the statement timeout of its unit of
- *          work (`timeout`), and the analytics event each call writes (`analytics`).
+ *          work (`timeout`), and the analytics event each call writes (`analytics`), and the most statements a
+ *          call may run (`queryBudget`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -107,6 +108,13 @@ export interface ActionOptions {
    * longer or must fail faster than the configured session timeout (`DatabaseConfig.timeouts.statement`).
    */
   readonly timeout?: Duration;
+
+  /**
+   * The most database statements one call's `handle` may run (`QueryBudget` counts them): above it the call is
+   * reported with its key, a warning in production and a failure in strict mode. No count limit when absent; a
+   * statement shape repeated past the configured limit (an N+1 loop) is reported either way.
+   */
+  readonly queryBudget?: number;
 
   /**
    * The analytics event each call writes as `analytics.tracked.v1` when its consent grants `analytics`: `true` for

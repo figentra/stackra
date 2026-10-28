@@ -7,13 +7,16 @@
  *           one relation per call (depth and fan-out stay within the limits). The listed fields are checked against
  *           each loaded row; rows are returned whole. The source rows carry the bound `VisibilityFilter`'s conditions;
  *           a related row is the related model's own read (its link resolver or its reference).
- *           shortcut: one load per related row through its resolver; batch by id when a read needs more than 100.
+ *           Related rows are batched: links through `Link.loadMany` (one read per target model by id set, through the
+ *           batch resolver when installed), references through one ORM `populate` (one `in` query), so a call runs
+ *           a fixed number of statements, not one per row.
  * Runtime: node
  * Governing contract: ADR 0104 (decision 2: the query graph); ADR 0268 (R10); ADR 0294 (decision 28: links); ADR 0333
- *                     (decision 4).
+ *                     (decision 4); ADR 0097 (decision 4: batched link loading), data-layer gap model-orm 12 (STA-1400).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
+import { Link } from "@stackra/model";
 
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
@@ -62,16 +65,27 @@ export class GraphQuery extends Service {
     const source = keys.find((key) => key !== relation);
     if (keys.length !== 2 || source === undefined || !keys.includes(relation))
       throw new TypeError(`GraphQuery: fields names the source and "${relation}", nothing else`);
-    const rows = await Database.current()
-      .em()
-      .find(model, await visibleFilter(model, options.where ?? ({} as Where<M>)), { limit });
+    const em = Database.current().em();
+    const rows = await em.find(
+      model,
+      await visibleFilter(model, options.where ?? ({} as Where<M>)),
+      {
+        limit,
+      },
+    );
+    for (const row of rows) checkFields(row, options.fields[source] ?? [], source);
+    const values = rows.map((row) => (row as Record<string, unknown>)[relation]);
+    // Batched like a DataLoader: one read per linked model, one populate for references, then `load()` reads nothing.
+    const links = values.filter((value): value is Link<{ id: string }> => value instanceof Link);
+    if (links.length > 0) await Link.loadMany(links);
+    const referencing = rows.filter(
+      (_, index) =>
+        values[index] !== null && values[index] !== undefined && !(values[index] instanceof Link),
+    );
+    if (referencing.length > 0) await em.populate(referencing, [relation] as never);
     return Promise.all(
-      rows.map(async (row) => {
-        checkFields(row, options.fields[source] ?? [], source);
-        const value = (row as Record<string, unknown>)[relation] as
-          | { load: () => Promise<object> }
-          | null
-          | undefined;
+      rows.map(async (row, index) => {
+        const value = values[index] as { load: () => Promise<object> } | null | undefined;
         const related = value === null || value === undefined ? null : await value.load();
         if (related !== null) checkFields(related, options.fields[relation] ?? [], relation);
         return { [source]: row, [relation]: related } as GraphRow<M, R, F>;

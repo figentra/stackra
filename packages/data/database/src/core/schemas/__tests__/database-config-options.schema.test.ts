@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `DatabaseConfigOptions`: its initializers equal the shipped schema's defaults (a two
- *          second, critical probe, the pg pool defaults, a five-second read-your-writes window), its fields match the schema's output type exactly, and it registers that schema.
+ *          second, critical probe, the pg pool defaults, a five-second read-your-writes window, no region, the query guard), its fields match the schema's output type exactly, and it registers that schema.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 26); ADR 0473.
@@ -32,6 +32,8 @@ describe("DatabaseConfigOptions", () => {
       timeouts: { statement: "PT30S", lock: "PT10S", idleInTransaction: "PT1M" },
       pool: { max: 10, min: 0, idleTimeout: "PT10S" },
       readYourWrites: "PT5S",
+      region: "",
+      queries: { slow: "PT0.5S", repeats: 10, strict: false },
     });
   });
 

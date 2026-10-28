@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `DatabaseOptions`, what `PostgresDatabaseDriver.connect` takes: the connection string, the read replicas'
  *          connection strings, the session timeouts, the pool of this instance, the entities, and the ORM subscribers other packages contribute (the outbox, the audit
- *          trail, the scope column filler).
+ *          trail, the scope column filler), and the query observers told about every statement (stackra-282).
  * Boundary: a type only. Whether a service has replicas is deployment data (runway's `readReplica`), handed over by the
  *           runtime; no read goes to one unless it asks (`Database.onReplica`). Every connection string is a secret the runtime hands over (the generated Encore app, runway,
  *           or a test container); it is never logged and never read from a file here.
@@ -12,6 +12,7 @@
  */
 import type { EntitySchema, EventSubscriber } from "@mikro-orm/core";
 
+import type { QueryObserver } from "#contracts/ports/query-observer.port";
 import type { DatabasePool } from "#core/types/database-pool.type";
 import type { SessionTimeouts } from "#core/types/session-timeouts.type";
 
@@ -40,6 +41,12 @@ export interface DatabaseOptions {
 
   /** ORM subscribers, such as the outbox writer that takes each flushed model's recorded events. */
   readonly subscribers?: readonly EventSubscriber[];
+
+  /**
+   * Told about every statement this database runs, with its normalised shape and duration (no values); none when
+   * absent. Statements are counted for `QueryBudget` either way.
+   */
+  readonly observers?: readonly QueryObserver[];
 
   /** Log every query (development only). */
   readonly debug?: boolean;

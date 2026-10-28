@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `GraphQuery`: it reads the source rows with the limit, loads each row's relation (a link
  *          through its resolver), returns them under the field keys, and refuses a bad limit, bad keys or a field the
- *          related row lacks; with a `VisibilityFilter` bound, the source read carries its conditions.
+ *          related row lacks; with a `VisibilityFilter` bound, the source read carries its conditions; the links of all
+ *          rows load in one batch read.
  * Boundary: test only; a fake database returns the source rows and a fake resolver serves the link.
  * Runtime: node (vitest)
  * Governing contract: ADR 0104 (decision 2); ADR 0268 (R10); ADR 0022; ADR 0269.
@@ -54,6 +55,7 @@ class LinesDatabase extends Database {
 afterEach(() => {
   ACTIVE_DATABASE.current = undefined;
   Link.useResolver(undefined);
+  Link.useBatchResolver(undefined);
   connectVisibilityFilter(undefined);
 });
 
@@ -106,5 +108,30 @@ describe(GraphQuery, () => {
     await expect(
       graph.through(OrderLine, "variant", { fields: { line: [], variant: ["barcode"] } }),
     ).rejects.toThrow(/variant has no field barcode/);
+  });
+
+  it("loads the links of every row in one batch read (STA-1400)", async () => {
+    const database = new LinesDatabase();
+    database.find.mockResolvedValueOnce(
+      ["var_1", "var_2", "var_1"].map((id) =>
+        Object.assign(new OrderLine(), { variant: new Link<Variant>("catalogue.variant", id) }),
+      ),
+    );
+    ACTIVE_DATABASE.current = database;
+    const single = vi.fn(async (_model: string, id: string) =>
+      Object.assign(new Variant(), { id }),
+    );
+    const batch = vi.fn(async (_model: string, ids: readonly string[]) =>
+      ids.map((id) => Object.assign(new Variant(), { id, sku: `SKU-${id}` })),
+    );
+    Link.useResolver(single);
+    Link.useBatchResolver(batch);
+    const rows = await new GraphQuery().through(OrderLine, "variant", {
+      fields: { line: ["variant"], variant: ["sku"] },
+    });
+    expect(batch).toHaveBeenCalledTimes(1);
+    expect(batch).toHaveBeenCalledWith("catalogue.variant", ["var_1", "var_2"]);
+    expect(single).not.toHaveBeenCalled();
+    expect(rows.map((row) => row.variant.sku)).toEqual(["SKU-var_1", "SKU-var_2", "SKU-var_1"]);
   });
 });

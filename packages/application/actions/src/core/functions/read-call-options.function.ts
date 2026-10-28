@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: `readCallOptions`, the checks `Action({...})` and `Query({...})` share: the key's shape, the actors, the
  *          version, the area, the endpoint override (a query reads with `GET`, an action never does), the
- *          interceptors, an explicit `tool: true` without an agent actor, and `analytics` (`true` or an
- *          `AnalyticsEvent` class).
+ *          interceptors, an explicit `tool: true` without an agent actor, `analytics` (`true` or an
+ *          `AnalyticsEvent` class), and `queryBudget` (a whole number from 1).
  * Boundary: runs once per declared class, when its module loads, and throws a `TypeError` or `RangeError` naming the
  *           option; gen repeats the same checks from source (STA-340). Returns the shared fields with their defaults.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 21); ADR 0305 (rules 28 and 30: `tool_without_agent_actor`); ADR 0138
- *                     (as amended); STA-1512 (`analytics`).
+ *                     (as amended); STA-1512 (`analytics`); STA-1400 (`queryBudget`).
  */
 import { type AnyClass, kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, Enum, HttpMethod } from "@stackra/contracts";
@@ -28,6 +28,7 @@ interface SharedOptions {
   readonly endpoint?: EndpointOptions | false;
   readonly tool?: boolean;
   readonly analytics?: CallAnalytics;
+  readonly queryBudget?: number;
 }
 
 /**
@@ -35,7 +36,7 @@ interface SharedOptions {
  *
  * @returns the version, area and interceptors with their defaults applied.
  * @throws TypeError for a malformed key, actor list, endpoint or interceptor, or `tool: true` without an agent actor.
- * @throws RangeError for an unknown actor kind, area or method, or a version below 1.
+ * @throws RangeError for an unknown actor kind, area or method, or a version or query budget below 1.
  * @example
  * const shared = readCallOptions("Action", options); // { version: 1, area: "app", interceptors: [] }
  */
@@ -102,6 +103,11 @@ export function readCallOptions(
   )
     throw new TypeError(
       `${base}({ analytics }) is true or a class that extends AnalyticsEvent (${options.key})`,
+    );
+  const { queryBudget } = options;
+  if (queryBudget !== undefined && (!Number.isSafeInteger(queryBudget) || queryBudget < 1))
+    throw new RangeError(
+      `${base}({ queryBudget }) must be a whole number from 1, got ${queryBudget} (${options.key})`,
     );
   return { version, area, interceptors: Object.freeze([...interceptors]) };
 }

@@ -5,7 +5,9 @@
  *          region, point-in-time recovery when the runway asks, a standby when highly available, a private IP on the
  *          runway's VPC (else reachable only through the Cloud SQL connector over TLS), deletion protection, the
  *          deployment's data key when one is passed, and pgaudit (unless the runway turns it off): the Cloud SQL flags
- *          and a sink routing the server's pgaudit entries into a log bucket in its region, kept the runway's days.
+ *          and a sink routing the server's pgaudit entries into a log bucket in its region, kept the runway's days; and
+ *          the slow-statement log (unless the runway turns it off): `log_min_duration_statement` and `auto_explain`
+ *          from `slowQueryMs`, so the server logs each slow statement with its plan.
  * Boundary: creates resources only through Pulumi; agents preview or run it under mocks, never `pulumi up`. The
  *           backup location is the instance's own region, so a backup never leaves the jurisdiction (ADR 0186). The
  *           data key comes from the foundation stack (`dataKeyId`); the Cloud SQL service agent is granted it here.
@@ -13,7 +15,8 @@
  *           `pgaudit.log`, which run inside the database. Switching pgaudit on restarts the server once.
  * Runtime: node
  * Governing contract: ADR 0186 (decisions 1 and 4), ADR 0238, ADR 0354 (open question 1, database only), ADR 0401,
- *                     ADR 0212 (decisions 5 and 6: pgaudit, kept hot thirteen months), ADR 0227 (pgaudit, not CDC).
+ *                     ADR 0212 (decisions 5 and 6: pgaudit, kept hot thirteen months), ADR 0227 (pgaudit, not CDC),
+ *                     data-layer gap scale-performance 7 (STA-1400: the slow-statement log).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as gcp from "@pulumi/gcp";
@@ -69,6 +72,22 @@ export function gcpRuntime(
     );
   }
 
+  const slowMs = database.slowQueryMs === false ? undefined : String(database.slowQueryMs);
+  const databaseFlags = [
+    ...(database.pgaudit === false
+      ? []
+      : [
+          { name: "cloudsql.enable_pgaudit", value: "on" },
+          { name: "pgaudit.log", value: database.pgaudit.log.join(",") },
+        ]),
+    ...(slowMs === undefined
+      ? []
+      : [
+          { name: "log_min_duration_statement", value: slowMs },
+          { name: "cloudsql.enable_auto_explain", value: "on" },
+          { name: "auto_explain.log_min_duration", value: slowMs },
+        ]),
+  ];
   const instance = new gcp.sql.DatabaseInstance(
     `${prefix}-postgres`,
     {
@@ -82,12 +101,7 @@ export function gcpRuntime(
         availabilityType: database.highAvailability ? "REGIONAL" : "ZONAL",
         deletionProtectionEnabled: true,
         userLabels: { ...config.labels },
-        ...(database.pgaudit !== false && {
-          databaseFlags: [
-            { name: "cloudsql.enable_pgaudit", value: "on" },
-            { name: "pgaudit.log", value: database.pgaudit.log.join(",") },
-          ],
-        }),
+        ...(databaseFlags.length > 0 && { databaseFlags }),
         backupConfiguration: {
           enabled: true,
           location: region,

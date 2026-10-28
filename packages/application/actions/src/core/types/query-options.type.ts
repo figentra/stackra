@@ -3,7 +3,8 @@
  * Purpose: `QueryOptions`, what `Query({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the API area, interceptors, the surfaces (`endpoint`, `tool`, `intent`), the `cache` profile and the
  *          offline `replica`, and `reads`: whether `handle` reads a database replica (with the caller's read-your-writes
- *          window kept by `ReplicaReads`), and the analytics event each call writes (`analytics`).
+ *          window kept by `ReplicaReads`), and the analytics event each call writes (`analytics`), and the most statements a
+ *          call may run (`queryBudget`).
  * Boundary: a type only. A query changes no state, so it takes no preconditions, idempotency, job or offline option;
  *           `tool` is on by default (queries are MCP tools under the caller's permissions).
  * Runtime: isomorphic
@@ -60,6 +61,13 @@ export interface QueryOptions {
    * offline `replica` above.
    */
   readonly reads?: "primary" | "replica";
+
+  /**
+   * The most database statements one call's `handle` may run (`QueryBudget` counts them): above it the call is
+   * reported with its key, a warning in production and a failure in strict mode. No count limit when absent; a
+   * statement shape repeated past the configured limit (an N+1 loop) is reported either way.
+   */
+  readonly queryBudget?: number;
 
   /**
    * The analytics event each call writes as `analytics.tracked.v1` when its consent grants `analytics`: `true` for

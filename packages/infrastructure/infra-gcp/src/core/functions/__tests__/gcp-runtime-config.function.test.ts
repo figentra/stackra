@@ -3,7 +3,7 @@
  * Purpose: unit tests of `gcpRuntimeConfig`: production's Postgres server in KSA with a standby, 35 daily backups and
  *          seven days of point-in-time recovery on its VPC; staging's with Cloud SQL's default backups and no recovery
  *          window; a dedicated tenant's in its own project; pgaudit on by default, sized by the runway or off on
- *          `false`, an unknown class refused; no server where the runway declares none; a server without a tier or
+ *          `false`, an unknown class refused; the slow-statement threshold (one second, the runway's, or off); no server where the runway declares none; a server without a tier or
  *          version refused.
  * Boundary: test only; roots are built through `parseRunway`.
  * Runtime: node (vitest)
@@ -27,6 +27,7 @@ describe("gcpRuntimeConfig", () => {
       retainedBackups: 35,
       pitr: { days: 7 },
       pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
+      slowQueryMs: 1000,
       network: "ref:gcp.network.prod",
     });
   });
@@ -39,6 +40,7 @@ describe("gcpRuntimeConfig", () => {
       retainedBackups: null,
       pitr: false,
       pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
+      slowQueryMs: 1000,
       network: null,
     });
   });
@@ -69,6 +71,21 @@ describe("gcpRuntimeConfig", () => {
     });
     expect(() => gcpRuntimeConfig(unknown, "staging")).toThrow(
       /environments\.staging\.shared\.database\.pgaudit/,
+    );
+  });
+
+  it("logs slow statements from one second by default, the runway's threshold, or not at all on false", () => {
+    const set = gcpRoot((draft) => {
+      at(draft, "environments", "production", "shared", "database").slowQueryMs = 250;
+      at(draft, "environments", "staging", "shared", "database").slowQueryMs = false;
+    });
+    expect(gcpRuntimeConfig(set, "production").database?.slowQueryMs).toBe(250);
+    expect(gcpRuntimeConfig(set, "staging").database?.slowQueryMs).toBe(false);
+    const tiny = gcpRoot((draft) => {
+      at(draft, "environments", "staging", "shared", "database").slowQueryMs = 1;
+    });
+    expect(() => gcpRuntimeConfig(tiny, "staging")).toThrow(
+      /environments\.staging\.shared\.database\.slowQueryMs/,
     );
   });
 

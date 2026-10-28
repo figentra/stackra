@@ -4,7 +4,8 @@
  *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`, and the
  *          `timeouts` every runtime session starts with, the `pool` of one instance (ADR 0473), the
  *          `readYourWrites` window a replica query stays on the primary after its caller's write (STA-1504), and the
- *          `region` key of the deployment the database serves (stackra-310).
+ *          `region` key of the deployment the database serves (stackra-310), and the `queries` guard: the slow-statement
+ *          threshold, the repeat limit and the strict switch (stackra-282).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `DatabaseConfig$` can `.extend` it. The defaults equal
  *           `DatabaseConfigOptions`' initializers (tested). No credential: the connection URL is the process's
@@ -20,6 +21,7 @@ import { CANONICAL_DURATION_SCHEMA } from "#core/constants/canonical-duration-sc
 
 import { DATABASE_POOL_SCHEMA } from "#core/constants/database-pool-schema.constant";
 import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
+import { QUERY_GUARD_SCHEMA } from "#core/constants/query-guard-schema.constant";
 import { SESSION_TIMEOUTS_SCHEMA } from "#core/constants/session-timeouts-schema.constant";
 
 /** The shipped `DatabaseConfig$`. */
@@ -32,4 +34,5 @@ export const DATABASE_CONFIG_SCHEMA = z.object({
     .string()
     .regex(/^([a-z][a-z0-9-]*)?$/)
     .default(""),
+  queries: QUERY_GUARD_SCHEMA,
 });

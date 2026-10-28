@@ -80,4 +80,10 @@ describe(readCallOptions, () => {
       readCallOptions("Action", { ...base, actors: [ActorKind.ExternalAgent], tool: true }),
     ).not.toThrow();
   });
+
+  it("refuses a query budget that is not a whole number from 1 (STA-1400)", () => {
+    expect(() => readCallOptions("Action", { ...base, queryBudget: 0 })).toThrow(RangeError);
+    expect(() => readCallOptions("Query", { ...base, queryBudget: 2.5 })).toThrow(/queryBudget/);
+    expect(() => readCallOptions("Query", { ...base, queryBudget: 12 })).not.toThrow();
+  });
 });

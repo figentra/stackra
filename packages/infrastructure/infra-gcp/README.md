@@ -112,6 +112,13 @@ database:
   pgaudit: { log: [ddl, role], retentionDays: 400 } # or false
 ```
 
+Slow statements are logged by the server too, unless `shared.database.slowQueryMs: false`: `log_min_duration_statement`
+and `auto_explain` (`cloudsql.enable_auto_explain`, `auto_explain.log_min_duration`) from `slowQueryMs` (1000 by
+default, 10 to 600000), so each statement above it lands in Cloud Logging with its plan. The application logs its own
+slow statements from `DatabaseConfig.queries.slow` (`@stackra/database`); `pg_stat_statements` (ADR 0160 note of
+2026-10-29) is a migration's `schema.createExtension`, not a flag here. AWS is not configured: Encore Cloud owns the RDS
+parameter group.
+
 The stack exports `egressIps` (for partner allow-lists, and the webhooks member's `webhooks.egress.addresses` with the
 deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self links the network's Cloud NAT takes as
 `natIps` with `natIpAllocateOption: MANUAL_ONLY`).
@@ -124,6 +131,7 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 - Re-link a project's billing after the spend stop detached it, once the cause is fixed.
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
+- Run `create extension pg_stat_statements` where you want statement statistics (or let a migration do it).
 - Run `create extension pgaudit` in each database once the flag is on, and set `pgaudit.log = 'write'` on the roles
   people sign in with (`alter role ... set pgaudit.log`), so their writes are audited and the app's are not.
 - Point the deploy job's auth step at `workloadIdentityProvider` and `infraServiceAccount`.

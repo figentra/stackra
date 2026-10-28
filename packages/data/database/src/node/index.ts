@@ -7,18 +7,21 @@
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `migrate` and `rollback`, the runner
  *          `stackra db` calls; and `seedState` and `applySeed`, the runner `stackra seed-pack` calls;
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
- *          `ConnectionResolver` (stackra-310). The partition upkeep, retention and time series rollup jobs live in
- *          @stackra/data-maintenance (ADR 0462 decision 1) and call `maintainAllPartitions`, `pruneAllRecords` and
- *          `rollUpAllTimeSeries` of the `.` entry. This package's migrations under `database/migrations/` are found by
- *          their path and not exported.
+ *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
+ *          guard), and `LoggerQueryObserverDriver`, the slow-statement log (stackra-282). The partition upkeep,
+ *          retention and time series rollup jobs live in @stackra/data-maintenance (ADR 0462 decision 1) and call
+ *          `maintainAllPartitions`, `pruneAllRecords` and `rollUpAllTimeSeries` of the `.` entry. This package's
+ *          migrations under `database/migrations/` are found by their path and not exported.
  * Boundary: names each re-export and declares nothing. Server only: the entry that starts MikroORM, so it stays out of
  *           the `.` entry that the models and services import.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; ADR 0396; the STA-347 stand-in barrel decision.
  */
 export { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-indicator.driver";
+export { DatabaseQueryBudgetDriver } from "#node/drivers/database-query-budget.driver";
 export { DatabaseReplicaReadsDriver } from "#node/drivers/database-replica-reads.driver";
 export { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
+export { LoggerQueryObserverDriver } from "#node/drivers/logger-query-observer.driver";
 export { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 export { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempotency-store.driver";
 export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-store.driver";

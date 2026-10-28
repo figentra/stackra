@@ -17,7 +17,9 @@
  *          ADR 0472), and a `reads: "replica"` query's `handle` on a replica outside the caller's read-your-writes
  *          window (`ReplicaReads`, opened by each committed action), and a call's `analytics` event
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
- *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output).
+ *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
+ *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
+ *          keeps one answer per key for the call.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -48,7 +50,8 @@
  *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
  *                     never a refusal by itself); ADR 0147 (decision 3: the span attributes, no values) and ADR 0184
  *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504; ADR 0216
- *                     (decision 1: analytics is its own stream), STA-1512.
+ *                     (decision 1: analytics is its own stream), STA-1512; data-layer gaps scale-performance 8 and
+ *                     caching 13 (STA-1400: `QueryBudget` around `handle`, `ctx.memo`).
  */
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
@@ -91,6 +94,7 @@ import { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
 import { LimitReservation } from "#contracts/ports/limit-reservation.port";
 import { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
+import { QueryBudget } from "#contracts/ports/query-budget.port";
 import { RateLimitBudget } from "#contracts/ports/rate-limit-budget.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
@@ -171,6 +175,7 @@ interface Recorded {
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
   readonly analytics?: CallAnalytics;
+  readonly queryBudget?: number;
 }
 
 /** What one call accumulates while it runs. */
@@ -188,6 +193,8 @@ interface CallState {
   tracked: boolean;
   /** When the call started, by `performance.now()`, for the generic analytics event's duration. */
   readonly startedMs: number;
+  /** `ctx.memo`'s answers by key, kept for the call only. */
+  readonly memo: Map<string, Promise<unknown>>;
 }
 
 /** Everything one call carries through the steps. */
@@ -361,6 +368,7 @@ export class ActionPipeline {
       audited: false,
       tracked: false,
       startedMs: globalThis.performance.now(),
+      memo: new Map(),
     };
     const ctx = this.contextOf(descriptor, request, at, state);
     return { type, kind: record.kind, options, registration, descriptor, request, at, state, ctx };
@@ -616,7 +624,8 @@ export class ActionPipeline {
    */
   private intercepted(call: Call, input: unknown): Promise<unknown> {
     const instance = this.resolver.get(call.type) as unknown as Handler;
-    const handle = () => this.routed(call, () => instance.handle(input, call.ctx));
+    const handle = () =>
+      this.budgeted(call, () => this.routed(call, () => instance.handle(input, call.ctx)));
     const accepts = call.kind === "action" ? call.options.accepts : undefined;
     const reviewed =
       accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
@@ -679,6 +688,17 @@ export class ActionPipeline {
     )
       return handle();
     return reads.onReplica(handle);
+  }
+
+  /**
+   * Counts the statements `handle` runs through `QueryBudget` when one is bound: past the call's `queryBudget`, or one
+   * statement shape repeated past the configured limit, the driver warns with the key (fails in strict mode).
+   */
+  private budgeted(call: Call, handle: () => Promise<unknown>): Promise<unknown> {
+    const budget = this.optional(QueryBudget);
+    return budget === undefined
+      ? handle()
+      : budget.within(call.descriptor.key, call.options.queryBudget, handle);
   }
 
   /** Whose read-your-writes window a call opens or reads: the actor in its scope (`<scope>:<actor>`). */
@@ -1004,6 +1024,16 @@ export class ActionPipeline {
       consent: () => {
         consent ??= this.consentOf(descriptor, request.consentSnapshot);
         return consent;
+      },
+      memo: <T>(key: string, load: () => Promise<T>): Promise<T> => {
+        let answer = state.memo.get(key);
+        if (answer === undefined) {
+          answer = load();
+          state.memo.set(key, answer);
+          // A failed load is not kept, so a later read in the call tries again.
+          answer.catch(() => state.memo.delete(key));
+        }
+        return answer as Promise<T>;
       },
       replica: (fill: (bounds: ReplicaBounds) => Promise<readonly ReplicaRow[]>, slice?: string) =>
         new ReplicaFeed(

@@ -69,4 +69,13 @@ describe(fakeActionContext, () => {
     const actor: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
     expect(fakeActionContext({ actor }).actor).toBe(actor);
   });
+
+  it("keeps one memo answer per key (STA-1400)", async () => {
+    const ctx = fakeActionContext();
+    let loads = 0;
+    const load = async () => ++loads;
+    expect(await ctx.memo("k", load)).toBe(1);
+    expect(await ctx.memo("k", load)).toBe(1);
+    expect(await ctx.memo("other", load)).toBe(2);
+  });
 });

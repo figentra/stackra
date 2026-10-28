@@ -1,7 +1,17 @@
 ---
 title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
-description: "Accepted, amended by 0314, 0334 · 2026-10-20"
+description: "Accepted, amended by 0314, 0334 and a 2026-10-29 note (pg_stat_statements) · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-29 (STA-1400, stackra-282; owner answer 7 of the data-layer gap analysis):
+  `pg_stat_statements` is approved, so decision 2 lists seven extensions. It records normalised
+  statements with their call counts and times, which query telemetry reads alongside the
+  application's own slow-statement log; it holds no parameter values. A migration enables it through
+  `schema.createExtension(Extension.PgStatStatements)`; the server must also preload it (Cloud SQL
+  ships it for `create extension`; not verified on Encore's RDS). Decision 2 stands otherwise;
+  `btree_gist` and the preload flags are left to stackra-283, and pg_cron and TimescaleDB stay out.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by

@@ -4,7 +4,8 @@
  *          region with point-in-time recovery, a standby, deletion protection and a private IP on the resolved VPC;
  *          a passed data key encrypts it after the Cloud SQL agent is granted the key; a server without a VPC is
  *          reachable only over TLS through the connector; pgaudit sets its flags and routes its entries into a log bucket
- *          in the region, and is absent when off; no database means no instance.
+ *          in the region, and is absent when off; the slow-statement flags follow `slowQueryMs`; no database means no
+ *          instance.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
@@ -34,6 +35,7 @@ const PRODUCTION: GcpRuntimeConfig = {
     retainedBackups: 35,
     pitr: { days: 7 },
     pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
+    slowQueryMs: 1000,
     network: "ref:gcp.network.prod",
   },
 };
@@ -134,6 +136,9 @@ describe("gcpRuntime", () => {
     expect(settings["databaseFlags"]).toEqual([
       { name: "cloudsql.enable_pgaudit", value: "on" },
       { name: "pgaudit.log", value: "ddl,role" },
+      { name: "log_min_duration_statement", value: "1000" },
+      { name: "cloudsql.enable_auto_explain", value: "on" },
+      { name: "auto_explain.log_min_duration", value: "1000" },
     ]);
     expect(
       (await engine.find("ProjectBucketConfig", "acme-production-pgaudit")).inputs,
@@ -154,7 +159,7 @@ describe("gcpRuntime", () => {
   it("sets no pgaudit flag, bucket or sink when the runway turns it off", async () => {
     const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
     const database = { ...(PRODUCTION.database as NonNullable<GcpRuntimeConfig["database"]>) };
-    gcpRuntime({ ...PRODUCTION, database: { ...database, pgaudit: false } });
+    gcpRuntime({ ...PRODUCTION, database: { ...database, pgaudit: false, slowQueryMs: false } });
 
     const settings = (await engine.find("DatabaseInstance", "acme-production-postgres")).inputs[
       "settings"
@@ -163,6 +168,21 @@ describe("gcpRuntime", () => {
     const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
     expect(types).not.toContain("ProjectBucketConfig");
     expect(types).not.toContain("ProjectSink");
+  });
+
+  it("keeps the slow-statement flags when only pgaudit is off (STA-1400)", async () => {
+    const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+    const database = { ...(PRODUCTION.database as NonNullable<GcpRuntimeConfig["database"]>) };
+    gcpRuntime({ ...PRODUCTION, database: { ...database, pgaudit: false, slowQueryMs: 300 } });
+
+    const settings = (await engine.find("DatabaseInstance", "acme-production-postgres")).inputs[
+      "settings"
+    ] as Record<string, unknown>;
+    expect(settings["databaseFlags"]).toEqual([
+      { name: "log_min_duration_statement", value: "300" },
+      { name: "cloudsql.enable_auto_explain", value: "on" },
+      { name: "auto_explain.log_min_duration", value: "300" },
+    ]);
   });
 
   it("creates no instance without a database", async () => {

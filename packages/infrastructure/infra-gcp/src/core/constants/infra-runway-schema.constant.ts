@@ -4,7 +4,7 @@
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
  *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
  *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
- *          database server, its backups and pgaudit, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
+ *          database server, its backups, pgaudit and slow-statement threshold, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -15,7 +15,8 @@
  *                     (decision 5: budgets, tags and the non-production stop, applied per project), ADR 0186
  *                     (backups), ADR 0296 (root runway), ADR 0401 (spend stop, Cloud SQL recovery, deploy roles),
  *                     ADR 0435 (the Encore Cloud roles), ADR 0402 (decision 2: static egress addresses), ADR 0188
- *                     (decision 3: backups kept 35 days or less, or crypto-shredded), ADR 0212 (decision 5: pgaudit).
+ *                     (decision 3: backups kept 35 days or less, or crypto-shredded), ADR 0212 (decision 5: pgaudit), data-layer gap
+ *                     scale-performance 7 (`slowQueryMs`, STA-1400).
  */
 import { z } from "zod";
 
@@ -135,6 +136,7 @@ const ENVIRONMENT = z.looseObject({
             .optional(),
           backups: BACKUPS.optional(),
           pgaudit: PGAUDIT.optional(),
+          slowQueryMs: z.union([z.literal(false), z.int().min(10).max(600_000)]).optional(),
         })
         .optional(),
       network: z

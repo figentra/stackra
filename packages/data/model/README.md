@@ -187,7 +187,9 @@ fields and every `@Classified` field, whose values never enter a change.
 | `Ref<T>`        | `@OneToOne(() => T, (t) => t.owner)`            | nothing: the inverse side of a one-to-one         |
 
 `link.id` needs no load; `link.load()` runs the owning module's generated read through the resolver the generated
-wiring installs with `Link.useResolver`. Decorators record metadata only (`ManyToOne.members(Model)` reads it back),
+wiring installs with `Link.useResolver`. `Link.loadMany(links)` loads many at once, DataLoader-style: one read per
+target model by id set through the batch resolver the wiring installs with `Link.useBatchResolver` (or one `load()` per
+distinct id without one); `GraphQuery` uses it. Decorators record metadata only (`ManyToOne.members(Model)` reads it back),
 and tsc refuses a relation decorator on a field of the wrong type.
 
 ## Facets

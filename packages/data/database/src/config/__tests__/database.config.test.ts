@@ -65,4 +65,17 @@ describe("DatabaseConfig", () => {
       buildConfig(DatabaseConfig, { values: { readYourWrites: "soon" as Duration } }),
     ).toThrow(ConfigInvalidError);
   });
+
+  it("ships the query guard and refuses a repeat limit below one (STA-1400)", () => {
+    expect(buildConfig(DatabaseConfig).queries).toEqual({
+      slow: Duration.seconds(0.5),
+      repeats: 10,
+      strict: false,
+    });
+    expect(() =>
+      buildConfig(DatabaseConfig, {
+        values: { queries: { slow: Duration.seconds(1), repeats: 0, strict: true } },
+      }),
+    ).toThrow(ConfigInvalidError);
+  });
 });

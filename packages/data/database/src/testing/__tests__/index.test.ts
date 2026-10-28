@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./testing` entry: `Factory` and `usePostgres` (the template's imports), the memory
- *          driver and the plugin are exported, nothing else is, and the template's factory shape compiles against `Faker`.
+ *          driver, the plugin and `strictLoading` are exported, nothing else is, and the template's factory shape compiles against `Faker`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); ADR 0022.
@@ -41,6 +41,7 @@ describe("@stackra/database/testing", () => {
       "Factory",
       "MemoryDatabaseDriver",
       "assertRowSecurity",
+      "strictLoading",
       "usePostgres",
     ]);
     expect("FAKER" in testing).toBe(false);

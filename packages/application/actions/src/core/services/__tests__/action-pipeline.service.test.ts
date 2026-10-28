@@ -27,6 +27,7 @@
  *          committed write or a carried `lastWriteAt`, never for a refused write or another caller's write; and
  *          `analytics` (STA-1512): `action.called` in the unit of work and after a refusal, a declared AnalyticsEvent
  *          with only its fields, a query's event, nothing without granted consent, a skipped misfit, no replay event.
+ *          Also `QueryBudget` around `handle` and the per-call `ctx.memo` (STA-1400).
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -82,6 +83,7 @@ import {
   LimitReservation,
   LiveConfigurationGuard,
   OfflineCapStore,
+  QueryBudget,
   RateLimitBudget,
   RateLimitStore,
   ReplicaLog,
@@ -2316,11 +2318,18 @@ function withAnalytics() {
     [LeadsQuery, new LeadsQuery()],
   ]);
   const tracked = () =>
-    outbox.written.map((record) => record.event).filter((event) => event instanceof AnalyticsTracked);
+    outbox.written
+      .map((record) => record.event)
+      .filter((event) => event instanceof AnalyticsTracked);
   return { pipeline, outbox, submit, capture, lines, tracked };
 }
 
-const GRANTED = { actor: customer, scope: SCOPE, consentSnapshot: "good", locale: "ar-SA" } as const;
+const GRANTED = {
+  actor: customer,
+  scope: SCOPE,
+  consentSnapshot: "good",
+  locale: "ar-SA",
+} as const;
 
 describe("ActionPipeline analytics (STA-1512)", () => {
   it("writes action.called in the unit of work with the consent subject, user and call ids", async () => {
@@ -2391,5 +2400,57 @@ describe("ActionPipeline analytics (STA-1512)", () => {
     await pipeline.execute(SubmitLeadAction, {}, { actor: customer });
     await pipeline.execute(SubmitLeadAction, {}, { actor: customer, consentSnapshot: "forged" });
     expect(tracked()).toEqual([]);
+  });
+});
+
+/** A query budget that records each call it counts and runs the work as it is. */
+class RecordingQueryBudget extends Driver(QueryBudget) {
+  readonly calls: [string, number | undefined][] = [];
+
+  override within<T>(key: string, budget: number | undefined, work: () => Promise<T>): Promise<T> {
+    this.calls.push([key, budget]);
+    return work();
+  }
+}
+
+/** A query that declares a budget and reads one memoised value twice. */
+class BudgetedQuery extends Query({
+  key: "budget.read",
+  actors: [ActorKind.User],
+  queryBudget: 5,
+}) {
+  loads = 0;
+
+  async handle(_input: object, ctx: QueryContext): Promise<number[]> {
+    const load = async () => ++this.loads;
+    return [await ctx.memo("rate", load), await ctx.memo("rate", load)];
+  }
+}
+
+describe("ActionPipeline query budget and request memo (STA-1400)", () => {
+  it("counts handle through QueryBudget with the call's key and budget", async () => {
+    const budget = new RecordingQueryBudget();
+    const { pipeline } = setup([
+      [QueryBudget, budget],
+      [BudgetedQuery, new BudgetedQuery()],
+    ]);
+    await pipeline.execute(BudgetedQuery, {}, { actor: customer });
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer });
+    expect(budget.calls).toEqual([
+      ["budget.read", 5],
+      ["order.get", undefined],
+    ]);
+  });
+
+  it("runs handle as it is when no QueryBudget is bound", async () => {
+    const { pipeline } = setup([[BudgetedQuery, new BudgetedQuery()]]);
+    await expect(pipeline.execute(BudgetedQuery, {}, { actor: customer })).resolves.toEqual([1, 1]);
+  });
+
+  it("memoises per call, never across calls", async () => {
+    const query = new BudgetedQuery();
+    const { pipeline } = setup([[BudgetedQuery, query]]);
+    await expect(pipeline.execute(BudgetedQuery, {}, { actor: customer })).resolves.toEqual([1, 1]);
+    await expect(pipeline.execute(BudgetedQuery, {}, { actor: customer })).resolves.toEqual([2, 2]);
   });
 });

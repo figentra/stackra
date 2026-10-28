@@ -178,6 +178,19 @@ and neither does any query with no `ReplicaReads` bound. Read-your-writes: each 
 write as `CallOptions.lastWriteAt` (a short-lived cookie or header set on a committed action's answer). A forged value
 only costs a replica read. `reads` is not the offline `replica` option.
 
+`queryBudget` (on `Action` and `Query`) is the most database statements one call's `handle` may run. When a
+`QueryBudget` is bound (`DatabaseQueryBudgetDriver` of `@stackra/database`) the pipeline runs `handle` inside it: a call
+over its budget, or one that runs one statement shape more than the configured repeats (an N+1 loop), is reported with
+its key, as a warning in production and a failure in strict mode. With none bound nothing is counted.
+
+`ctx.memo(key, load)` is the call's request memo: the first read of a key runs `load`, every later read in the same call
+shares the answer (a rejected load is forgotten). Nothing outlives the call, so put the scope or any id the answer
+depends on in the key.
+
+```ts
+const rates = await ctx.memo(`fx:${currency}`, () => this.rates.today(currency));
+```
+
 An action that also runs as a job declares `job: { queue, unique, timeout, retries, backoff, cron }` (`backoff` is the
 contracts `Backoff` curve); `cron: { schedule,
 perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.

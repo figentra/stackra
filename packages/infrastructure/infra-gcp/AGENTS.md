@@ -33,6 +33,9 @@ program) and `./testing` (Pulumi's mocks).
   schema refuses anything else. Never raise the ceiling in code.
 - pgaudit is on unless the runway says `pgaudit: false`; its log bucket stays in the server's region. Classes and days
   are runway values (`PGAUDIT_DEFAULTS` only fills what the runway leaves out).
+- The slow-statement flags (`log_min_duration_statement`, `auto_explain`) follow `shared.database.slowQueryMs`
+  (`SLOW_QUERY_MS` only fills what the runway leaves out, `false` turns them off). All flags go in one
+  `databaseFlags` list; never set a second one.
 
 ## PII
 

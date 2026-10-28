@@ -4,7 +4,8 @@
  *          in this process, so unit tests run SQL, migrations and constraints as production does without Docker. It
  *          becomes `Database.current()` when built, and before its first query it creates the approved extensions
  *          and applies the member's compiled migrations (`.stackra/migrations` under the working directory), or,
- *          when the member has none, creates the schema from the registered entities.
+ *          when the member has none, creates the schema from the registered entities. Its statements are counted
+ *          for the query guard like production's (`observedLogger`).
  * Boundary: the testing entry only, so a server never loads PGlite (ADR 0269 decision 3). Built with no arguments, so
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
@@ -42,6 +43,7 @@ import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
 import { runTransaction } from "#core/functions/run-transaction.function";
+import { observedLogger } from "#node/functions/observed-logger.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 
@@ -79,6 +81,8 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       dbName: "memory://",
       entities: [...REGISTERED_ENTITIES],
       filters: deleteFilters(REGISTERED_ENTITIES),
+      // Counted like production, so `strictLoading` and `DatabaseQueryBudgetDriver` see a test's statements.
+      loggerFactory: (settings) => observedLogger(settings, []),
       namingStrategy: StackraNamingStrategy,
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,

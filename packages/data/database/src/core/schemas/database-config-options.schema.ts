@@ -6,7 +6,8 @@
  *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`;
  *          `readYourWrites` is how long a caller's `reads: "replica"` queries stay on the primary after its write.
  *          `region` is the runway region key (`eu`, `me`) of the deployment the database serves, which the tenancy
- *          `RegionGuardDriver` compares a tenant's placement with.
+ *          `RegionGuardDriver` compares a tenant's placement with. `queries` is the query guard: the slow-statement
+ *          threshold, the repeat limit of one statement shape per call and the strict switch (stackra-282).
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
@@ -19,6 +20,7 @@ import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.constant";
 import type { DatabasePool } from "#core/types/database-pool.type";
+import type { QueryGuard } from "#core/types/query-guard.type";
 import type { SessionTimeouts } from "#core/types/session-timeouts.type";
 
 /**
@@ -64,6 +66,14 @@ export class DatabaseConfigOptions extends Schema {
   // reason: a duration in either form, stored canonical; the shipped config schema holds its rule
   @Field(DATABASE_CONFIG_SCHEMA.shape.readYourWrites)
   readYourWrites: Duration = Duration.seconds(5);
+
+  /**
+   * How statements are watched: from `slow` a statement is logged as slow, one shape run more than `repeats` times in
+   * one call is reported as an N+1 loop, and `strict` (tests, development) fails such a call instead of warning.
+   */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(DATABASE_CONFIG_SCHEMA.shape.queries)
+  queries: QueryGuard = { slow: Duration.seconds(0.5), repeats: 10, strict: false };
 
   /**
    * The runway region key of this deployment (`eu`, `me`); runway's `config.database` layer sets it per stack. Empty

@@ -74,6 +74,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `reads: "replica"` routes only a query's `handle` (inside the cache step) through `ReplicaReads`; an action never
   reads a replica. The window opens after the unit of work committed (never for a refusal or a replay), keyed by
   (scope, actor); `lastWriteAt` is caller-sent and may only keep reads on the primary, never move them off it.
+- `QueryBudget` wraps only `handle` (inside the replica routing), never the steps around it; a driver may warn or, in
+  strict mode, fail after `handle`, so the unit of work rolls back. `ctx.memo` answers live in the call's state only;
+  never move them to a module or instance field, which would share answers across callers and scopes.
 - `analytics` writes `AnalyticsTracked` only after `ctx.consent()` grants `analytics` (never on an unverified
   snapshot), only an `AnalyticsEvent`'s declared fields leave, and it never fails or refuses the call: a misfit is a
   warning. A success's event is in the unit of work like the meter; a refusal's after, like the audit.

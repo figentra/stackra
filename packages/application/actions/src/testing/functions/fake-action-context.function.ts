@@ -3,7 +3,8 @@
  * Purpose: `fakeActionContext(overrides?)`, the context a unit test hands a service or extension that takes an
  *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work, `audit` fields and
  *          `publish`ed events are recorded, `period`, `startOfDay` and `now` work on a clock frozen at creation, and
- *          `consent()` reads as refused (`missing`) unless the test passes its own (see `grantedConsent`).
+ *          `consent()` reads as refused (`missing`) unless the test passes its own (see `grantedConsent`), and `memo`
+ *          keeps one answer per key like the pipeline's.
  * Boundary: test only. `run`, `signal`, `dispatch` and `replica` reject with a message unless the test passes its own;
  *           a test that needs the real steps uses `run(...)` instead. Overrides replace members whole.
  * Runtime: node
@@ -42,6 +43,7 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
   const afterCommit: (() => unknown)[] = [];
   const audit: Record<string, Json> = {};
   const published: Event[] = [];
+  const memo = new Map<string, Promise<unknown>>();
   return Object.freeze({
     ...base,
     idempotencyKey: undefined,
@@ -65,6 +67,10 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
     replica: missing("replica"),
     consent: async () =>
       Object.freeze({ verified: false as const, refusal: ConsentRefusal.Missing, granted: [] }),
+    memo: <T>(key: string, load: () => Promise<T>): Promise<T> => {
+      if (!memo.has(key)) memo.set(key, load());
+      return memo.get(key) as Promise<T>;
+    },
     ...overrides,
     recorded: Object.freeze({ authorized, afterCommit, audit, published }),
   });
