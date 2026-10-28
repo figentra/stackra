@@ -60,6 +60,7 @@ export { SoftDeletes } from "#core/traits/soft-deletes.trait";
 export { Archivable } from "#core/traits/archivable.trait";
 export { Partitioned } from "#core/traits/partitioned.trait";
 export { Retention } from "#core/traits/retention.trait";
+export { HasTree } from "#core/traits/has-tree.trait";
 export { Taggable } from "#core/traits/taggable.trait";
 export { Timestamps } from "#core/traits/timestamps.trait";
 export { Translatable } from "#core/traits/translatable.trait";

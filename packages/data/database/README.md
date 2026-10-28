@@ -256,6 +256,28 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
 - `t.scopeId()` and `t.scopePath()` are the scope-tree columns `@stackra/scope` and `@stackra/tenancy` build on;
   tenancy's `belongsToTenant` stays in tenancy.
 
+### Trees (`HasTree`)
+
+A model with `@stackra/model`'s `HasTree` (categories, organisation units) holds `parentId` and an `ltree` `treePath`:
+its ancestors' ids then its own. Its migration writes `t.tree()` (`parent_id`, indexed, and `tree_path` with a GiST
+index; the database needs `Extension.Ltree`), and the boot passes `new TreeSubscriber()` in
+`DatabaseOptions.subscribers`.
+
+```ts
+const shoes = await categories.insert({ name: "Shoes", parentId: root.id }); // treePath "cat_root.cat_shoes"
+await categories.children(root.id); // rows whose parentId is root.id
+await categories.descendants(root.id); // every depth below, each after its parent (GiST `<@`)
+await categories.ancestors(shoes.id); // root first (`@>`)
+await categories.move(shoes.id, sale.id); // the subtree moves in one statement
+```
+
+- `TreeSubscriber` writes `treePath` on create from the parent's (from the same flush, or read in the flush's
+  transaction, so row-level security applies); a parent it cannot read refuses the create.
+- `treePath` is a system field (`system_field_write`), and `update`, `updateWhere` and `upsert` refuse `parentId`: a
+  record changes parent only with `move(id, parentId | null)`, the `repath` rewrite on `treePath`, which refuses a move
+  under itself. Both records must be visible to the caller.
+- A record's id is its path label, so it must be an `ltree` label; every `HasPublicId` id is.
+
 ## Gapless sequences
 
 Invoices, receipts and filings take numbers with no gaps that are never reused (ADR 0342). A module declares a series

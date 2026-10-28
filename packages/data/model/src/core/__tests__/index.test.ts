@@ -127,6 +127,7 @@ describe("@stackra/model", () => {
       "HasCorrections",
       "HasEncryptedFields",
       "HasPublicId",
+      "HasTree",
       "Index",
       "Link",
       "LinkType",

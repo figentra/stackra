@@ -21,7 +21,9 @@
  *           or archives a `SoftDeletes`/`Archivable` model's rows and hard-deletes any other's, `restore` brings kept
  *           rows back, `forceDelete` and `purge` remove them for good; the drivers' `deleted`/`archived` filters hide
  *           kept rows from every read unless `DeletedReadOptions` asks for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
- *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves. An
+ *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves. A `HasTree`
+ *           model reads `children`, `ancestors` and `descendants` by its `treePath`, and changes a record's parent only
+ *           with `move`, the same prefix rewrite on `treePath`; `update`, `updateWhere` and `upsert` refuse `parentId`. An
  *           `AppendOnly` model's rows are never changed: `update`, `updateWhere`, `upsert`, `increment`, `delete`,
  *           `deleteWhere`, `restore` and `repath` refuse with `AppendOnlyWriteError`; `purge` and `forceDelete`
  *           (retention, erasure) still remove them. The bulk verbs match the flush path: `insertMany` and `upsert` write
@@ -38,7 +40,8 @@
  *                     and 6 (table counts) and 10 (metrics grains, aggregates and breakdown);
  *                     data-layer gaps mo5 and mo6 (`expectedVersion`, database errors as refusals); mo10 (native writes
  *                     reach the change feed); mo3 (`AppendOnly` enforced); mo6 P1 part (`lock` options);
- *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields).
+ *                     mo9, mo14 and sc9 (bulk verbs, `each`/`chunk`, offset `page`); ADR 0367 (`upsert`); mo21 (system fields);
+ *                     mo16 (`HasTree` reads and `move`).
  */
 import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -74,11 +77,13 @@ import { filterCondition } from "#core/functions/filter-condition.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { isAppendOnly } from "#core/functions/is-append-only.function";
+import { isTree } from "#core/functions/is-tree.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { rowKey } from "#core/functions/row-key.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
 import { tableCount } from "#core/functions/table-count.function";
+import { treePath } from "#core/functions/tree-path.function";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { watchedNativeWrite } from "#core/functions/watched-native-write.function";
@@ -106,6 +111,9 @@ import { MetricsReader } from "#core/values/metrics-reader.value";
 
 /** The system field a create may set: a caller may mint the id of a new row (a dedup row, an idempotent import). */
 const CREATE_ALLOWED: readonly string[] = ["id"];
+
+/** The writes that change existing rows, so they may not set a `HasTree` record's `parentId`. */
+const TREE_MOVES: ReadonlySet<string> = new Set(["update", "updateWhere", "upsert"]);
 
 /** The most keys a table sort takes before the primary key; each one needs an index to stay fast. */
 const MAX_SORT_KEYS = 3;
@@ -623,24 +631,66 @@ export abstract class CrudService<M extends object> extends Service implements R
       throw new TypeError(`"${to}" lies below "${from}": a subtree cannot move under itself`);
     if (from === to) return 0;
     this.refuseAppendOnly("repath");
-    const em = this.em();
-    const model = this.model();
-    const column = quoteIdentifier(columnOf(em.getMetadata(model), "scopePath"));
-    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
-    return this.watched(
-      "updated",
-      ["scopePath"],
-      filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
-      (filter) =>
-        em.nativeUpdate(
-          model,
-          filter as never,
-          {
-            ...stampFields(model, "update"),
-            scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
-          } as never,
-        ),
-    );
+    return this.rewritePrefix("scopePath", from, to);
+  }
+
+  /**
+   * The children of the `HasTree` record `id`: the visible rows whose `parentId` is `id`.
+   *
+   * @throws TypeError when the model has no `HasTree` trait.
+   */
+  async children(id: string, options?: FindOptions<M> & DeletedReadOptions): Promise<M[]> {
+    this.treeColumn();
+    return this.find({ parentId: id } as unknown as Where<M>, options);
+  }
+
+  /**
+   * The ancestors of the `HasTree` record `id`, root first: the visible rows whose `treePath` lies above its own.
+   *
+   * @throws NotFoundError when `id` is not a visible record.
+   * @throws TypeError when the model has no `HasTree` trait.
+   */
+  async ancestors(id: string): Promise<M[]> {
+    return this.subtreeRead(id, "@>");
+  }
+
+  /**
+   * The descendants of the `HasTree` record `id`, at every depth, each after its parent: the visible rows whose
+   * `treePath` lies below its own, read through the GiST index.
+   *
+   * @throws NotFoundError when `id` is not a visible record.
+   * @throws TypeError when the model has no `HasTree` trait.
+   */
+  async descendants(id: string): Promise<M[]> {
+    return this.subtreeRead(id, "<@");
+  }
+
+  /**
+   * Moves the `HasTree` record `id` under `parentId` (a root when null), with its whole subtree: every row whose
+   * `treePath` is the record's or below it takes the new prefix, and the record takes its new `parentId`, in one
+   * statement inside the caller's transaction (the `repath` rewrite on `treePath`). Both records must be visible.
+   *
+   * @returns the number of rows moved; 0 when the record already sits there.
+   * @throws NotFoundError when `id` or `parentId` is not a visible record.
+   * @throws TypeError when the model has no `HasTree` trait, or `parentId` is the record or lies below it.
+   * @throws AppendOnlyWriteError for an `AppendOnly` model.
+   */
+  async move(id: string, parentId: string | null): Promise<number> {
+    this.treeColumn();
+    this.refuseAppendOnly("move");
+    const from = await this.treePathOf(id);
+    const parent = parentId === null ? undefined : await this.treePathOf(parentId);
+    if (parent !== undefined && (parent === from || parent.startsWith(`${from}.`)))
+      throw new TypeError(`${parentId} lies at or below ${id}: a subtree cannot move under itself`);
+    const to = treePath(parent, id);
+    if (to === from) return 0;
+    const meta = this.em().getMetadata(this.model());
+    const [key = "id"] = meta.primaryKeys;
+    const idColumn = quoteIdentifier(columnOf(meta, key));
+    const parentColumn = quoteIdentifier(columnOf(meta, "parentId"));
+    return this.rewritePrefix("treePath", from, to, {
+      parentId: raw(`case when ${idColumn} = ? then ? else ${parentColumn} end`, [id, parentId]),
+    });
   }
 
   /**
@@ -795,6 +845,9 @@ export abstract class CrudService<M extends object> extends Service implements R
     const field = systemFieldsOf(model).find((name) => given.has(name) && !allowed.includes(name));
     if (field !== undefined)
       throw SystemFieldWriteError.create({ model: model.name, field, operation });
+    // A tree node changes parent only through `move`, which rewrites its subtree's paths with it.
+    if (given.has("parentId") && TREE_MOVES.has(operation) && isTree(model))
+      throw SystemFieldWriteError.create({ model: model.name, field: "parentId", operation });
   }
 
   /** The keep-the-row policy of the model: its filter and field, or `undefined` for a hard delete. */
@@ -804,6 +857,73 @@ export abstract class CrudService<M extends object> extends Service implements R
     for (const [filter, { trait, field }] of Object.entries(DELETE_FILTERS))
       if (names.has(trait)) return { filter, field };
     return undefined;
+  }
+
+  /**
+   * Rewrites the `ltree` prefix `from` of `field` to `to` on every row at or below `from`, with `extra` set alongside,
+   * in one parameterised native statement reported to the change feed: the step of `repath` and `move`.
+   */
+  private rewritePrefix(
+    field: "scopePath" | "treePath",
+    from: string,
+    to: string,
+    extra: Readonly<Record<string, unknown>> = {},
+  ): Promise<number> {
+    const em = this.em();
+    const model = this.model();
+    const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
+    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
+    return this.watched(
+      "updated",
+      [field, ...Object.keys(extra)],
+      filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
+      (filter) =>
+        em.nativeUpdate(
+          model,
+          filter as never,
+          {
+            ...stampFields(model, "update"),
+            ...extra,
+            [field]: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
+          } as never,
+        ),
+    );
+  }
+
+  /**
+   * The quoted `tree_path` column of a `HasTree` model.
+   *
+   * @throws TypeError for any other model.
+   */
+  private treeColumn(): string {
+    const model = this.model();
+    if (!isTree(model))
+      throw new TypeError(`${model.name} has no HasTree trait, so it is not a tree`);
+    return quoteIdentifier(columnOf(this.em().getMetadata(model), "treePath"));
+  }
+
+  /**
+   * The `treePath` of the visible record `id`.
+   *
+   * @throws NotFoundError when there is none.
+   */
+  private async treePathOf(id: string): Promise<string> {
+    const [key = "id"] = this.em().getMetadata(this.model()).primaryKeys;
+    const row = (await this.findOneOrFail({ [key]: id } as Where<M>)) as M & { treePath?: string };
+    return row.treePath ?? "";
+  }
+
+  /** The visible rows whose `treePath` is related to record `id`'s by `operator`, itself left out, by path. */
+  private async subtreeRead(id: string, operator: "@>" | "<@"): Promise<M[]> {
+    const column = this.treeColumn();
+    const path = await this.treePathOf(id);
+    // raw-sql: the ltree ancestor and descendant operators have no typed form; the path is a parameter
+    return this.find(
+      {
+        $raw: raw(`${column} ${operator} ?::ltree and ${column} <> ?::ltree`, [path, path]),
+      } as unknown as Where<M>,
+      { orderBy: { treePath: "asc" } } as unknown as FindOptions<M>,
+    );
   }
 
   /** The filter and the ORM options of a read, with the delete filters a `DeletedReadOptions` turns off. */

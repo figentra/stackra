@@ -600,6 +600,40 @@ describe(compileMigration, () => {
     );
   });
 
+  it("writes the tree columns and the GiST index of a HasTree model, online on an existing table", () => {
+    class CreateCategoriesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Ltree);
+        schema.create("categories", (t: Blueprint) => {
+          t.hasPublicId("cat");
+          t.tree();
+        });
+      }
+    }
+    const [step] = compileMigration(CreateCategoriesMigration, { schema: "catalog" }).steps;
+    expect(step?.sql[1]).toContain('"parent_id" varchar(33) null');
+    expect(step?.sql[1]).toContain('"tree_path" ltree not null');
+    expect(step?.sql).toContain(
+      'create index "idx_categories_parent_id" on "catalog"."categories" ("parent_id")',
+    );
+    expect(step?.sql).toContain(
+      'create index "idx_categories_tree_path" on "catalog"."categories" using gist ("tree_path")',
+    );
+
+    class TreeCategoriesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("categories", (t: Blueprint) => {
+          t.tree();
+        });
+      }
+    }
+    const steps = compileMigration(TreeCategoriesMigration, { schema: "catalog" }).steps;
+    expect(steps.flatMap((each) => each.sql).join("\n")).toContain('"tree_path" ltree null');
+    expect(steps.flatMap((each) => each.sql).join("\n")).toContain(
+      'create index concurrently "idx_categories_tree_path"',
+    );
+  });
+
   it("writes the inherited policy: ancestor reads and writes, and a select-only policy for the paths above", () => {
     class CreateTemplatesMigration extends Migration {
       up(schema: SchemaBuilder): void {

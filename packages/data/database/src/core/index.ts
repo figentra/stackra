@@ -73,6 +73,7 @@ export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
 export { AppendOnlySubscriber } from "#core/orm/append-only.subscriber";
 export { HoldSubscriber } from "#core/orm/hold.subscriber";
 export { StampSubscriber } from "#core/orm/stamp.subscriber";
+export { TreeSubscriber } from "#core/orm/tree.subscriber";
 export { ValidateOnFlushSubscriber } from "#core/orm/validate-on-flush.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";

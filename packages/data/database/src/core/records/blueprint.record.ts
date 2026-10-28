@@ -13,7 +13,8 @@
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
  *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
- *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links).
+ *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links);
+ *                     ADR 0321 (`HasTree`: `t.tree()`).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
@@ -301,6 +302,27 @@ export class BlueprintRecord {
       comment: "When the row was archived; null while it is active.",
     });
     return new ColumnGroupRecord([this.add(archivedAt)]);
+  }
+
+  /** Implements `Blueprint.tree`, documented there. */
+  tree(): ColumnGroupRecord {
+    const parent = this.add(
+      new ColumnRecord("parent_id", this.publicIdColumn, {
+        indexed: true,
+        nullability: "null",
+        comment: "The parent record's id; null for a root.",
+      }),
+    );
+    // An existing table's rows have no path until a backfill writes one, so the column starts nullable there.
+    const path = this.add(
+      new ColumnRecord("tree_path", "ltree", {
+        nullability: this.creating ? "not null" : "null",
+        comment: "The path from the root to this record, kept by the database layer.",
+      }),
+    );
+    const index = this.index([path.name]).using("gist");
+    if (!this.creating) index.concurrently();
+    return new ColumnGroupRecord([parent, path]);
   }
 
   /** Implements `Blueprint.appendOnly`, documented there. */

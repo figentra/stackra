@@ -9,7 +9,8 @@
  *          the count it is asked for, `sum` and `countDistinct` aggregate, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
  *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
- *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` rewrites a subtree's path prefix in one
+ *          connected, `purge` removes only the rows no hold covers, telling it each row's registered subject links. `repath` (and a `HasTree` model's `move`, which
+ *          also sets the new parent; its `children`, `ancestors` and `descendants` read by path) rewrites a subtree's path prefix in one
  *          parameterised statement and refuses a path that is not `ltree` or a move under itself. With a
  *          `NativeWriteWatcher` connected that watches the model, the native verbs read the matching ids first, narrow
  *          the statement to them and report them; a model it does not watch is written as before. An `AppendOnly`
@@ -31,6 +32,7 @@ import {
   AppendOnly,
   Archivable,
   HasEncryptedFields,
+  HasTree,
   HasPublicId,
   Model,
   SoftDeletes,
@@ -600,6 +602,107 @@ describe("CrudService.repath", () => {
   ])("refuses %s", async (_name, from, to) => {
     connect();
     await expect(new OrderService().repath(from, to)).rejects.toThrow(TypeError);
+  });
+});
+
+describe("CrudService tree (HasTree)", () => {
+  class Category extends Model.with(HasPublicId("cat"), HasTree) {}
+
+  class CategoryService extends CrudService<Category> {}
+
+  registerModelPartners([[CategoryService, Category]]);
+
+  const treeMeta = {
+    className: "Category",
+    primaryKeys: ["id"],
+    properties: {
+      id: { fieldNames: ["id"] },
+      parentId: { fieldNames: ["parent_id"] },
+      treePath: { fieldNames: ["tree_path"] },
+    },
+  };
+
+  const paths: Readonly<Record<string, string>> = {
+    cat_a: "cat_a",
+    cat_b: "cat_a.cat_b",
+    cat_c: "cat_c",
+  };
+
+  /** Connects an entity manager over the category tree above. */
+  function connectTree() {
+    const em = connect();
+    em.getMetadata.mockReturnValue(treeMeta as unknown as typeof metadata);
+    em.findOneOrFail.mockImplementation(async (..._args: unknown[]) => {
+      const id = (_args[1] as { id: string }).id;
+      return Object.assign(new Category(), { treePath: paths[id] }) as never;
+    });
+    return em;
+  }
+
+  it("moves a subtree under a new parent in one statement, the record taking its new parent", async () => {
+    const em = connectTree();
+    expect(await new CategoryService().move("cat_b", "cat_c")).toBe(4);
+    const [model, where, data] = em.nativeUpdate.mock.calls[0] as [
+      unknown,
+      object,
+      Record<string, { sql: string; params: unknown[] }>,
+    ];
+    expect(model).toBe(Category);
+    expect(Object.getOwnPropertySymbols(where)[0]?.description).toContain(
+      '"tree_path" <@ ?::ltree',
+    );
+    expect(data["treePath"]).toMatchObject({
+      sql: '?::ltree || subpath("tree_path", nlevel(?::ltree))',
+      params: ["cat_c.cat_b", "cat_a.cat_b"],
+    });
+    expect(data["parentId"]).toMatchObject({
+      sql: 'case when "id" = ? then ? else "parent_id" end',
+      params: ["cat_b", "cat_c"],
+    });
+    await new CategoryService().move("cat_b", null);
+    expect(em.nativeUpdate.mock.calls[1]?.[2]).toMatchObject({
+      treePath: { params: ["cat_b", "cat_a.cat_b"] },
+    });
+  });
+
+  it("moves nothing in place and refuses a move under itself or on a model without the trait", async () => {
+    const em = connectTree();
+    expect(await new CategoryService().move("cat_b", "cat_a")).toBe(0);
+    await expect(new CategoryService().move("cat_a", "cat_b")).rejects.toThrow(/under itself/);
+    await expect(new CategoryService().move("cat_a", "cat_a")).rejects.toThrow(/under itself/);
+    await expect(new OrderService().move("ord_1", null)).rejects.toThrow(/no HasTree trait/);
+    expect(em.nativeUpdate).not.toHaveBeenCalled();
+  });
+
+  it("reads children by parent, and descendants and ancestors by path, in path order", async () => {
+    const em = connectTree();
+    await new CategoryService().children("cat_a");
+    expect(em.find).toHaveBeenLastCalledWith(Category, { parentId: "cat_a" }, undefined);
+    await new CategoryService().descendants("cat_a");
+    const [, below, options] = em.find.mock.calls.at(-1) as [unknown, object, object];
+    expect(Object.getOwnPropertySymbols(below)[0]?.description).toContain(
+      '"tree_path" <@ ?::ltree and "tree_path" <> ?::ltree',
+    );
+    expect(options).toEqual({ orderBy: { treePath: "asc" } });
+    await new CategoryService().ancestors("cat_b");
+    const [, above] = em.find.mock.calls.at(-1) as [unknown, object];
+    expect(Object.getOwnPropertySymbols(above)[0]?.description).toContain(
+      '"tree_path" @> ?::ltree',
+    );
+    await expect(new OrderService().children("ord_1")).rejects.toThrow(/no HasTree trait/);
+  });
+
+  it("refuses a parent change outside move, and the path from any caller", async () => {
+    connectTree();
+    const service = new CategoryService();
+    expect(await refusal(() => service.updateWhere({}, { parentId: "cat_c" }))).toEqual([
+      "parentId",
+      "updateWhere",
+    ]);
+    expect(await refusal(() => service.insert({ treePath: "x" } as never))).toEqual([
+      "treePath",
+      "insert",
+    ]);
   });
 });
 

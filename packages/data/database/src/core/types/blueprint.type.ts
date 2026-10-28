@@ -101,6 +101,14 @@ export interface Blueprint {
   archivable: () => ColumnGroup;
 
   /**
+   * The `HasTree` trait: `parent_id varchar(33)` (the parent's public id, nullable, indexed for `children`) and
+   * `tree_path ltree` (not null on a new table; nullable on an existing one until a backfill writes the paths) with the
+   * GiST index `idx_<table>_tree_path` (`ancestors`, `descendants`, a subtree move), built online on an existing table.
+   * The database needs `Extension.Ltree`.
+   */
+  tree: () => ColumnGroup;
+
+  /**
    * The `AppendOnly` trait: revokes `UPDATE` on the table from `public` and the migrating role (the service's own,
    * which owns its tables), so no session of the service can change a row; inserts, reads and deletes (retention,
    * erasure) stay. On a created or an existing table; the inverse grants `UPDATE` back to the migrating role.
