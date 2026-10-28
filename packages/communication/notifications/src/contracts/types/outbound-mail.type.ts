@@ -37,10 +37,10 @@ export interface OutboundMail {
   /** The plain-text body derived from the HTML. */
   readonly text: string;
 
-  /** Visible copies. */
+  /** The addresses that receive a visible copy. */
   readonly cc?: readonly Email[];
 
-  /** Hidden copies. */
+  /** The addresses that receive a hidden copy. */
   readonly bcc?: readonly Email[];
 
   /** Where a reply goes, when not to `from`. */

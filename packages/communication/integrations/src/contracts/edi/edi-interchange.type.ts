@@ -10,7 +10,7 @@ import type { EdiMessage } from "#contracts/edi/edi-message.type";
 import type { EdiParty } from "#contracts/edi/edi-party.type";
 import type { EdiSyntax } from "#contracts/edi/edi-syntax.enum";
 
-/** An interchange. */
+/** One EDI interchange: its envelope fields and the messages it carries. */
 export interface EdiInterchange {
   /** X12 or EDIFACT. */
   readonly syntax: EdiSyntax;

@@ -15,7 +15,9 @@ import type { CanarySettings } from "#node/types/canary-settings.type";
 
 /** One canary to judge. */
 export type CanaryPromotionRequest = {
+  /** The edge KV writer of the canary's environment. */
   readonly kv: EdgeKvWriter;
+  /** The canary to judge and promote or roll back. */
   readonly promotion: CanaryPromotion;
   /** The canary's requests and errors since it started. */
   readonly sample: CanarySample;

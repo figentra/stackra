@@ -11,6 +11,7 @@ import type { EdgeRelease } from "#node/types/edge-release.type";
 
 /** The outcome of one publish. */
 export type ProductPublishResult = {
+  /** The product that was published. */
   readonly product: string;
   /** Asset store keys, in upload order. */
   readonly uploaded: readonly string[];

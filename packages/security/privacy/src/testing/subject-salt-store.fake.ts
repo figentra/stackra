@@ -3,7 +3,7 @@
  * Purpose: `SubjectSaltStoreFake`, the test double of `SubjectSaltStore`: records every `destroy` call with all its
  *          arguments and answers whether the subject held a salt.
  * Boundary: test only; exported from `./testing`. Built with the subjects that hold a salt; never a real key.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269 (fakes); BUILDER-RULES rule 6e (fakes record every argument); STA-1375.
  */
 import { Fake } from "@stackra/testing";

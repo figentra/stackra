@@ -52,7 +52,7 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
     );
   }
 
-  /** Removes `key`. */
+  /** Removes the row under `key`. */
   override async delete(key: string): Promise<void> {
     await this.run(
       EDGE_PUBLISH_SETTINGS.wrangler,

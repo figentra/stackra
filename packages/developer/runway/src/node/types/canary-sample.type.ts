@@ -9,6 +9,8 @@
 
 /** The canary's traffic since it started. */
 export type CanarySample = {
+  /** The requests the canary served. */
   readonly requests: number;
+  /** The requests that ended in an error. */
   readonly errors: number;
 };

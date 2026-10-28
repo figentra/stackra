@@ -13,6 +13,7 @@ import type { EdgeShellRelease } from "#node/types/edge-shell-release.type";
 
 /** One shell canary to start. */
 export type ShellPublishRequest = {
+  /** The edge KV writer of that environment. */
   readonly kv: EdgeKvWriter;
   /** The shell's surface (`console`). */
   readonly surface: string;

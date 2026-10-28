@@ -14,6 +14,6 @@ export type EdgeBundle = {
   readonly surface: string;
   /** The absolute folder that holds the bundle's files (`<bundleDir>/<surface>/<version>`). */
   readonly folder: string;
-  /** Its manifest. */
+  /** The manifest the bundle build wrote beside it. */
   readonly manifest: BundleManifest;
 };

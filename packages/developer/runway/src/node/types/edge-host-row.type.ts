@@ -11,11 +11,15 @@
 
 /** A platform host's row. */
 export type EdgeHostRow = {
+  /** The product the host belongs to. */
   readonly product: string;
+  /** The surface key the host serves. */
   readonly surface: string;
   /** The region the API calls go to. */
   readonly region: string;
+  /** The host's status (`active`). */
   readonly status: string;
+  /** The sign-in realm of the host's surface (`tenant`). */
   readonly realm: string;
   /** The host search engines index; the same for every host of the surface. */
   readonly canonical: string;

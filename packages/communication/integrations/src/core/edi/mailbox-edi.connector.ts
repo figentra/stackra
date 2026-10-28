@@ -67,7 +67,7 @@ function isSegments(value: unknown): value is readonly (readonly EdiElement[])[]
  * }
  */
 export class MailboxEdiConnector implements EdiConnector {
-  /** The transport. */
+  /** The transport mailbox the interchanges are put to and listed from. */
   readonly mailbox: EdiMailbox;
 
   /** The Connection's envelope settings. */

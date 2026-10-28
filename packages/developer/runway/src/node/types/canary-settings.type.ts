@@ -8,7 +8,10 @@
 
 /** How a canary is judged. */
 export type CanarySettings = {
+  /** Hours the canary runs on the canary scopes before it may promote. */
   readonly windowHours: number;
+  /** The highest error rate (errors / requests) the canary may show before it rolls back. */
   readonly maxErrorRate: number;
+  /** Requests the canary must have served before its error rate counts. */
   readonly minRequests: number;
 };

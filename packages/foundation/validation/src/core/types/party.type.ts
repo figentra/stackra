@@ -12,7 +12,7 @@
 import type { Address } from "#core/types/address.type";
 
 /**
- * A party.
+ * A person or business a provider is told about.
  *
  * @example
  * const customer: Party = { name: "Sara Ali", phone: "+966500000000", address: { lines: ["12 King Road"], country: "SA" } };

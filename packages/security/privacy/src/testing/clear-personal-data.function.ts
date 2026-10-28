@@ -3,7 +3,7 @@
  * Purpose: `clearPersonalData`, which empties the registered personal-data declarations, so each test registers only
  *          its own.
  * Boundary: test only; exported from `./testing`. Clears the process-wide registry `registerPersonalData` writes.
- * Runtime: node (vitest)
+ * Runtime: node
  * Governing contract: ADR 0269; STA-1375.
  */
 import { PERSONAL_DATA_CLASSES } from "#core/constants/personal-data-classes.constant";
