@@ -12,6 +12,7 @@ import * as node from "#node/index";
 describe("@stackra/privacy/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "CreateSubjectSaltsMigration",
       "EraseSubjectAction",
       "EraseSubjectInput",
       "EraseSubjectOutput",
@@ -19,13 +20,16 @@ describe("@stackra/privacy/node", () => {
       "ExportSubjectDataAction",
       "ExportSubjectDataInput",
       "ExportSubjectDataOutput",
+      "PostgresSubjectSaltStoreDriver",
       "PrivacyModule",
       "PurgeSubjectExportsAction",
       "PurgeSubjectExportsInput",
       "PurgeSubjectExportsOutput",
       "RepositoryPersonalDataStoreDriver",
+      "SaltedSubjectCipherResolverDriver",
       "SubjectExportPermissions",
       "SubjectPermissions",
+      "unsealedShredFields",
     ]);
   });
 });

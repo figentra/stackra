@@ -13,17 +13,18 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 
 ## Where code goes
 
-| You are writing…                              | It goes in…                                                |
-| --------------------------------------------- | ---------------------------------------------------------- |
-| The kind base (`Model`)                       | `src/core/bases/model.base.ts`                             |
-| A trait                                       | `src/core/traits/<name>.trait.ts`, made with `createTrait` |
-| A kind factory (`DataClass`, `ModelAddition`) | `src/core/bases/<name>.base.ts`                            |
-| A built-in data class (`PrivilegedDataClass`) | `src/core/access/<name>.data-class.ts`                     |
-| A relation decorator or a table facet         | `src/core/decorators/<name>.decorator.ts`                  |
-| A value (`Link`, `Translated`)                | `src/core/values/<name>.value.ts`                          |
-| An ORM column type or embeddable schema       | `src/core/orm/<name>.type.ts`, `<name>.schema.ts`          |
-| An enum, a function, a constant, a type       | `src/core/{enums,functions,constants,types}/`              |
-| A test                                        | `__tests__/<name>.<kind>.test.ts` beside it                |
+| You are writing…                                    | It goes in…                                                |
+| --------------------------------------------------- | ---------------------------------------------------------- |
+| The kind base (`Model`)                             | `src/core/bases/model.base.ts`                             |
+| A trait                                             | `src/core/traits/<name>.trait.ts`, made with `createTrait` |
+| A kind factory (`DataClass`, `ModelAddition`)       | `src/core/bases/<name>.base.ts`                            |
+| A built-in data class (`PrivilegedDataClass`)       | `src/core/access/<name>.data-class.ts`                     |
+| A relation decorator or a table facet               | `src/core/decorators/<name>.decorator.ts`                  |
+| A value (`Link`, `Translated`)                      | `src/core/values/<name>.value.ts`                          |
+| An ORM column type or embeddable schema             | `src/core/orm/<name>.type.ts`, `<name>.schema.ts`          |
+| An enum, a function, a constant, a type             | `src/core/{enums,functions,constants,types}/`              |
+| A port this package calls (`SubjectCipherResolver`) | `src/core/ports/<name>.port.ts`                            |
+| A test                                              | `__tests__/<name>.<kind>.test.ts` beside it                |
 
 ## Entries and barrels
 
@@ -50,6 +51,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 - `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic` only declares. The embedding
   and the `ai: never` refusal are @stackra/search's and gen's (ADR 0380); never read a provider here.
 - `Model.global(...)` marks a model global by design (no `tenant_id`, ADR 0210 amendment); `Model.isGlobal` reads it.
+- A `HasEncryptedFields({ subject })` model is never sealed under the scope's `FieldCipher`: without a bound
+  `SubjectCipherResolver` the subscriber refuses it, since a shred of it would otherwise be a false erasure
+  (stackra-263). The resolver's implementation is @stackra/privacy's; never import it here.
 - `HasPublicId` mints with `@stackra/contracts`' `mintPublicId`; never add a second minter here (STA-1380).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 - `@OneToOne` (stackra-260): `(() => T, { onDelete })` on the owning side, `(() => T, (t) => t.back)` on the inverse;

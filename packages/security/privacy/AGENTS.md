@@ -16,6 +16,8 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | An isomorphic driver, service or event         | `src/core/{drivers,services,events}/`                     |
 | A job, the saga, a server driver, schemas      | `src/node/{actions,workflows,drivers,schemas}/`           |
 | A job's permissions (`<model>.permissions.ts`) | `src/node/access/`                                        |
+| A function over @stackra/model's registry      | `src/node/functions/`                                     |
+| A migration of `privacy.*`                     | `src/node/database/migrations/<nnnn>-<name>.migration.ts` |
 | A fake or a test helper                        | `src/testing/`                                            |
 | A test                                         | `__tests__/<name>.test.ts` beside it                      |
 
@@ -33,6 +35,9 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
   `ErasureMethod` (update the exact-set test, the README and both schemas that list the methods).
 - Every disposal asks `disposableIds` first; held rows are kept and counted, never touched.
 - Never shred while a held row carries a `shred` field.
+- Never erase while a `shred` field is not subject-sealed (`unsealedShredFields`); the receipt would be false.
+- @stackra/model is imported from `node` only (its runtime is node); `core` and `contracts` stay off it.
+- A salt never leaves `SubjectKeyProviderDriver`: never log, export or put it in an event.
 - Receipts and events carry counts and kinds, never row ids or contents. A shape field is typed with a shape class
   (`ErasedRecordsLine`), never a contracts interface, or gen refuses it (`shape_unknown_type`).
 - Every action key needs its permission in a `Permissions` class under `src/node/access/` (`permission_unknown`).
@@ -53,4 +58,4 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | --------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
 | A subject's declared fields | DSAR zips on the host disk            | random file name; signed link for `exportTtlDays`; purged nightly after that |
 | Subject public id           | `EraseSubjectInput`, receipts, events | pseudonymous id only, kept as the proof the request was honoured             |
-| Subject salt                | the host's `SubjectSaltStore`         | never read here; destroyed on erasure                                        |
+| Subject salt                | `privacy.subject_salts` or the host's | read only to derive the subject key; destroyed on erasure; never logged      |

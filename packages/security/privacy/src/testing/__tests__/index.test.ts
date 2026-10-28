@@ -23,4 +23,14 @@ describe("@stackra/privacy/testing", () => {
     await expect(salts.destroy("usr_1")).resolves.toBe(false);
     expect(salts.calls("destroy")).toEqual(["usr_1", "usr_1"]);
   });
+
+  it("records every find and obtain call and makes a salt on the first obtain", async () => {
+    const salts = new testing.SubjectSaltStoreFake();
+    await expect(salts.find("usr_2")).resolves.toBeUndefined();
+    const salt = await salts.obtain("usr_2");
+    expect(salt).toHaveLength(16);
+    await expect(salts.find("usr_2")).resolves.toBe(salt);
+    expect(salts.calls("find")).toEqual(["usr_2", "usr_2"]);
+    expect(salts.calls("obtain")).toEqual(["usr_2"]);
+  });
 });

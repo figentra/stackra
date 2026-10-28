@@ -19,6 +19,17 @@ and `@stackra/workflow`.
 ## Use
 
 ```ts
+// the model: a shredded field is sealed under the key of the subject the declaration names (stackra-263)
+export class Customer extends Model.with(
+  HasPublicId("cus"),
+  HasEncryptedFields({ subject: "userId" }, "name", "email"),
+) {
+  userId!: string;
+  name!: string | null; // reads as null once the subject is erased
+  email!: string | null;
+  phone!: string | null;
+}
+
 // a module's privacy/customer.personal-data.ts: data only, no exporter or eraser to write
 export class CustomerPersonalData extends PersonalData({
   model: () => Customer,
@@ -61,6 +72,9 @@ export class PrivacyConfig extends BasePrivacyConfig {
 - The last step records `SubjectErased` (`privacy.subject.erased.v1`) and, with `ackAs`, the workflow's
   `ServiceAcked` with the same `kept`, so a cross-service erasure gathers every service's receipt.
 - Erasure has no undo.
+- A `shred` field must be a `HasEncryptedFields({ subject })` field of its model, keyed by the declaration's own
+  `subject` property (`unsealedShredFields`). Otherwise the saga refuses before touching any row: destroying the salt
+  would leave the field readable under the scope's key, and the receipt would be false.
 
 ### Export rules
 
@@ -84,13 +98,20 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `./node`      | `ExportSubjectDataAction`, `PurgeSubjectExportsAction`                                                             | the DSAR export job and the nightly export purge                       |
 | `./node`      | `RepositoryPersonalDataStoreDriver`, `PrivacyModule`                                                               | the database store driver; the root module                             |
 | `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
+| `./node`      | `PostgresSubjectSaltStoreDriver`, `CreateSubjectSaltsMigration`                                                    | the salt store over `privacy.subject_salts`, partitioned per tenant    |
+| `./node`      | `SaltedSubjectCipherResolverDriver`, `unsealedShredFields`                                                         | per-subject ciphers for `EncryptedFieldsSubscriber`; the shred check   |
 | `./node`      | `EraseSubjectInput/Output`, `ExportSubjectDataInput/Output`, `PurgeSubjectExportsInput/Output`                     | schemas                                                                |
 | `./testing`   | `SubjectSaltStoreFake`, `clearPersonalData`                                                                        | a recording salt store; empties the declaration registry between tests |
 
 ## What a host wires
 
-- A `SubjectSaltStore` driver from its key service: the store of the salts `SubjectKeyProviderDriver`
-  (`@stackra/contracts`) derives subject keys from. Only `destroy` is called.
+- A `SubjectSaltStore` driver: `PostgresSubjectSaltStoreDriver` (over the `Database`) or its own key service's. It
+  holds the salts `SubjectKeyProviderDriver` (`@stackra/contracts`) derives subject keys from: `obtain` on a subject's
+  first seal, `find` on each open, `destroy` on erasure. The table is partitioned by `app.tenant_id` (`-` outside a
+  tenant), so a person who is a subject in two tenants has a salt in each and is erased per tenant. Deleting the row
+  does not reach backups; ADR 0188 decision 3 caps how long they live.
+- `SaltedSubjectCipherResolverDriver(keys, salts)` passed as the second argument of `EncryptedFieldsSubscriber`
+  (`@stackra/model`), with the scope's `KeyProvider`, so subject-sealed models are sealed per subject.
 - A `FileSystem` disk that can sign URLs (S3, R2, GCS); the local disk cannot.
 - A `HoldRegistry` through `connectHoldRegistry` (`@stackra/database`); with none, nothing is held.
 

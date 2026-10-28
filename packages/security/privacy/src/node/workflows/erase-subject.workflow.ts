@@ -8,10 +8,13 @@
  *           asked through `disposableIds` before anything is touched (`delete` for a row with a delete field, `edit`
  *           otherwise), and held rows are kept and counted. The key is shredded only when no held row carries a
  *           shredded field, since shredding would destroy what the hold preserves; the receipt says which. Erasure is
- *           not undone, so no step has an undo. Started only by `EraseSubjectAction` through `ctx.run`.
+ *           not undone, so no step has an undo. Started only by `EraseSubjectAction` through `ctx.run`. Before touching
+ *           anything, `erase` refuses when a declared `Shred` field is not sealed under the subject's key
+ *           (`unsealedShredFields`): destroying the salt would leave it readable and the receipt would be false.
  * Runtime: node
  * Governing contract: ADR 0189 (decisions 2 and 4); ADR 0134 (legal holds); ADR 0212 (crypto-shredding); ADR 0210
- *                     (decision 6: `ServiceAcked`); ADR 0294 (decisions 16 and 18); ADR 0151; STA-1312; STA-1375.
+ *                     (decision 6: `ServiceAcked`); ADR 0294 (decisions 16 and 18); ADR 0151; STA-1312; STA-1375; gap
+ *                     gov2 (stackra-263).
  */
 import { Disposal } from "@stackra/database/contracts";
 import { disposableIds } from "@stackra/database";
@@ -29,6 +32,7 @@ import type { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port"
 import type { ErasedRecords } from "#contracts/types/erased-records.type";
 import { SubjectErased } from "#core/events/subject-erased.event";
 import { personalDataDeclarations } from "#core/functions/personal-data-declarations.function";
+import { unsealedShredFields } from "#node/functions/unsealed-shred-fields.function";
 import type { EraseSubjectInput } from "#node/schemas/erase-subject-input.schema";
 import { EraseSubjectOutput } from "#node/schemas/erase-subject-output.schema";
 
@@ -75,12 +79,23 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
     this.salts = salts;
   }
 
-  /** Deletes or anonymises every declared row of the subject that no hold covers; counts what a hold kept. */
+  /**
+   * Deletes or anonymises every declared row of the subject that no hold covers; counts what a hold kept.
+   *
+   * @throws TypeError, before any row is touched, when a shredded field is not sealed under the subject's key.
+   */
   async erase(run: Run<this>): Promise<Erased> {
+    const declarations = personalDataDeclarations();
+    const unsealed = declarations.flatMap(unsealedShredFields);
+    if (unsealed.length > 0)
+      throw new TypeError(
+        `Shred needs a subject-sealed field, so these would stay readable: ${unsealed.join(", ")}. ` +
+          "Seal them with HasEncryptedFields({ subject }) under the declaration's subject property",
+      );
     const erased: ErasedRecords[] = [];
     const kept: KeptRecords[] = [];
     let keepKey = false;
-    for (const { kind, model, subject, fields } of personalDataDeclarations()) {
+    for (const { kind, model, subject, fields } of declarations) {
       const rows = await this.store.find(model, subject, run.input.subject, Object.keys(fields));
       if (rows.length === 0) continue;
       const method = rowMethod(fields);

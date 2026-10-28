@@ -4,7 +4,9 @@
  *          and the model gets its plain text back after the write, an update seals only the fields it writes, a null
  *          stays null, a load and an upsert's returned row are opened, the ORM's snapshot is moved to the plain text,
  *          a failed flush is not sealed twice, a model without the trait is left alone, and a non-string value or an
- *          entity without a module schema is refused.
+ *          entity without a module schema is refused. A subject-sealed model is sealed and opened with its subject's
+ *          cipher, creates no salt for a row of nulls, reseals every field when its subject changes, loads an erased
+ *          subject's fields as null, and is refused without a resolver or a subject id.
  * Boundary: test only; stand-in event arguments shaped like the ORM's, and an in-test `FieldCipher` that is
  *           reversible, not a cipher.
  * Runtime: node (vitest)
@@ -16,6 +18,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { Model } from "#core/bases/model.base";
 import { EncryptedFieldsSubscriber } from "#core/orm/encrypted-fields.subscriber";
+import { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 import { HasEncryptedFields } from "#core/traits/has-encrypted-fields.trait";
 
 /** Seals as `sealed(<context>)<plain reversed>`, and opens only in the same context. */
@@ -23,13 +26,24 @@ class ReversingCipher extends FieldCipher {
   /** Every context a value was sealed in, in order. */
   readonly contexts: string[] = [];
 
+  /** A tag put before the context, standing in for the key (a subject's id). */
+  private readonly tag: string;
+
+  /**
+   * @param tag - the key's stand-in; empty for the scope's cipher.
+   */
+  constructor(tag = "") {
+    super();
+    this.tag = tag;
+  }
+
   override async seal(plain: string, context: string): Promise<string> {
     this.contexts.push(context);
-    return `sealed(${context})${[...plain].reverse().join("")}`;
+    return `sealed(${this.tag}${context})${[...plain].reverse().join("")}`;
   }
 
   override async open(sealed: string, context: string): Promise<string> {
-    const prefix = `sealed(${context})`;
+    const prefix = `sealed(${this.tag}${context})`;
     if (!sealed.startsWith(prefix)) throw new Error("Cannot open");
     return [...sealed.substring(prefix.length)].reverse().join("");
   }
@@ -41,6 +55,32 @@ class CustomerContact extends Model.with(HasEncryptedFields("email", "phone")) {
   phone: string | null = null;
 
   name!: string;
+}
+
+/** Hands out a cipher per subject that tags its sealed form with the subject; forgets erased subjects. */
+class TaggingResolver extends SubjectCipherResolver {
+  /** Every subject a sealing cipher was asked for, in order. */
+  readonly sealed: string[] = [];
+
+  /** The subjects that were erased. */
+  readonly erased = new Set<string>();
+
+  override async sealing(subject: string): Promise<FieldCipher> {
+    this.sealed.push(subject);
+    return new ReversingCipher(subject);
+  }
+
+  override async opening(subject: string): Promise<FieldCipher | undefined> {
+    return this.erased.has(subject) ? undefined : new ReversingCipher(subject);
+  }
+}
+
+class Profile extends Model.with(HasEncryptedFields({ subject: "userId" }, "email", "phone")) {
+  userId!: string;
+
+  email: string | null = null;
+
+  phone: string | null = null;
 }
 
 class Note extends Model {
@@ -200,5 +240,78 @@ describe(EncryptedFieldsSubscriber, () => {
     await expect(
       subscriber.beforeCreate(argsOf(contactOf("a@b.c", null), CustomerContact, { schema: "" })),
     ).rejects.toThrow(TypeError);
+  });
+
+  it("seals a subject-sealed row with its subject's cipher and opens it with the same", async () => {
+    const resolver = new TaggingResolver();
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), resolver);
+    const profile = Object.assign(new Profile(), { userId: "usr_1", email: "hala@example.com" });
+    const args = argsOf(profile, Profile);
+
+    await subscriber.beforeCreate(args);
+    expect(profile.email).toBe("sealed(usr_1crm.profile.email)moc.elpmaxe@alah");
+    expect(profile.phone).toBeNull();
+    expect(resolver.sealed).toEqual(["usr_1"]);
+    subscriber.afterCreate(args);
+
+    const loaded = Object.assign(new Profile(), {
+      userId: "usr_1",
+      email: "sealed(usr_1crm.profile.email)moc.elpmaxe@alah",
+    });
+    await subscriber.onLoad(argsOf(loaded, Profile));
+    expect(loaded.email).toBe("hala@example.com");
+  });
+
+  it("asks for no subject cipher when a row holds only nulls", async () => {
+    const resolver = new TaggingResolver();
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), resolver);
+
+    await subscriber.beforeCreate(
+      argsOf(Object.assign(new Profile(), { userId: "usr_1" }), Profile),
+    );
+    expect(resolver.sealed).toEqual([]);
+  });
+
+  it("reseals every field when an update changes the subject", async () => {
+    const resolver = new TaggingResolver();
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), resolver);
+    const profile = Object.assign(new Profile(), {
+      userId: "usr_2",
+      email: "hala@example.com",
+      phone: "+971500000000",
+    });
+
+    await subscriber.beforeUpdate(argsOf(profile, Profile, { payload: { userId: "usr_2" } }));
+    expect(profile.email).toBe("sealed(usr_2crm.profile.email)moc.elpmaxe@alah");
+    expect(profile.phone).toBe("sealed(usr_2crm.profile.phone)000000005179+");
+  });
+
+  it("loads an erased subject's fields as null", async () => {
+    const resolver = new TaggingResolver();
+    resolver.erased.add("usr_1");
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), resolver);
+    const original: Record<string, unknown> = { email: "sealed(usr_1crm.profile.email)x" };
+    const profile = Object.assign(new Profile(), {
+      userId: "usr_1",
+      email: "sealed(usr_1crm.profile.email)x",
+    });
+
+    await subscriber.onLoad(argsOf(profile, Profile, { original }));
+    expect(profile.email).toBeNull();
+    expect(original["email"]).toBeNull();
+  });
+
+  it("refuses a subject-sealed row without a resolver or without a subject id", async () => {
+    const withoutResolver = new EncryptedFieldsSubscriber(new ReversingCipher());
+    const profile = Object.assign(new Profile(), { userId: "usr_1", email: "a@b.c" });
+    await expect(withoutResolver.beforeCreate(argsOf(profile, Profile))).rejects.toThrow(
+      /needs a SubjectCipherResolver/,
+    );
+
+    const subscriber = new EncryptedFieldsSubscriber(new ReversingCipher(), new TaggingResolver());
+    const orphan = Object.assign(new Profile(), { email: "a@b.c" });
+    await expect(subscriber.beforeCreate(argsOf(orphan, Profile))).rejects.toThrow(
+      /must hold an id/,
+    );
   });
 });
