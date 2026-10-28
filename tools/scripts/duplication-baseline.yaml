@@ -117,7 +117,7 @@ members:
     src: 0
     tests: 0
   packages/design-system/icons:
-    src: 39.08
+    src: 39.09
     tests: 12.55
   packages/design-system/tokens:
     src: 0.5
