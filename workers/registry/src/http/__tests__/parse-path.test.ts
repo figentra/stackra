@@ -49,11 +49,12 @@ describe("parsePath", () => {
     ],
     ["/-/stackra/v1/catalogue/@stackra/core", { kind: "catalogueItem", name: "@stackra/core" }],
     ["/-/stackra/v1/entitlements", { kind: "entitlements" }],
+    ["/", { kind: "landing" }],
   ])("parses %s", (path, route) => {
     expect(parsePath(path)).toEqual(route);
   });
 
-  it.each(["/lodash", "/@Stackra/core", "/-/v1/search", "/@stackra/core/a/b", "/%E0%A4%A", "/"])(
+  it.each(["/lodash", "/@Stackra/core", "/-/v1/search", "/@stackra/core/a/b", "/%E0%A4%A"])(
     "refuses %s",
     (path) => {
       expect(parsePath(path)).toEqual({ kind: "unknown" });

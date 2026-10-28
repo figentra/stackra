@@ -31,6 +31,7 @@ any other licence 403. Its licence rule is `commercial`, and the catalogue never
 
 | Method and path                                              | Does                                                            | Auth                       |
 | ------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------- |
+| `GET /`                                                      | a branded HTML page with the `.npmrc` line; people only         | none                       |
 | `GET /-/ping`                                                | health                                                          | none                       |
 | `GET /-/whoami`                                              | `ci:<repository>` for a publish token, the holder for a licence | any token                  |
 | `GET /@scope/name`                                           | packument; the install media type gets the abbreviated form     | scope read rule            |

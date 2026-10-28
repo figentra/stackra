@@ -9,6 +9,7 @@ import { catalogueItem } from "#src/catalogue/catalogue-item";
 import { handleEntitlements } from "#src/catalogue/handle-entitlements";
 import { listCatalogue } from "#src/catalogue/list-catalogue";
 import { failure } from "#src/http/failure";
+import { handleLanding } from "#src/http/handle-landing";
 import { parsePath } from "#src/http/parse-path";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import { handleAttestations } from "#src/npm/handle-attestations";
@@ -35,6 +36,8 @@ async function dispatch(request: Request, deps: RegistryDeps): Promise<Response>
   const route = parsePath(url.pathname);
   const method = request.method === "HEAD" ? "GET" : request.method;
   switch (route.kind) {
+    case "landing":
+      return method === "GET" ? handleLanding() : notAllowed("GET");
     case "ping":
       return method === "GET" ? handlePing() : notAllowed("GET");
     case "whoami":

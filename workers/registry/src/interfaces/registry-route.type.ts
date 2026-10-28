@@ -8,7 +8,16 @@
 
 /** One route of the registry. */
 export type RegistryRoute =
-  | { readonly kind: "ping" | "whoami" | "keys" | "login" | "catalogue" | "entitlements" }
+  | {
+      readonly kind:
+        | "landing"
+        | "ping"
+        | "whoami"
+        | "keys"
+        | "login"
+        | "catalogue"
+        | "entitlements";
+    }
   | { readonly kind: "package" | "unpublish" | "exchange" | "catalogueItem"; readonly name: string }
   | { readonly kind: "version"; readonly name: string; readonly spec: string }
   | { readonly kind: "tarball"; readonly name: string; readonly file: string }

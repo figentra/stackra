@@ -66,6 +66,7 @@ function parseDash(path: string): RegistryRoute {
  * The route of a request path.
  *
  * @example
+ * parsePath("/"); // { kind: "landing" }
  * parsePath("/@stackra%2fcore"); // { kind: "package", name: "@stackra/core" }
  * parsePath("/@stackra/core/-/core-1.0.0.tgz"); // { kind: "tarball", name: "@stackra/core", file: "core-1.0.0.tgz" }
  */
@@ -76,6 +77,7 @@ export function parsePath(pathname: string): RegistryRoute {
   } catch {
     return UNKNOWN;
   }
+  if (path === "/") return { kind: "landing" };
   if (path.startsWith("/-/")) return parseDash(path);
   const [scope, bare, ...rest] = path.slice(1).split("/");
   const name = scope?.startsWith("@") === true ? scoped(`${scope}/${bare ?? ""}`) : null;

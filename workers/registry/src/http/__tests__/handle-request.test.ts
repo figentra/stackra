@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: end-to-end tests of the registry over fakes (ADR 0453 decisions 4 to 12): the OIDC exchange, publish and
- *          its refusals, packuments (full, abbreviated, KV cached and dropped), versions, tarballs and their cache
- *          headers, signatures against /-/npm/v1/keys, attestations, dist-tags, deprecation, the refused routes, the
- *          scope read rules through the licence port, whoami and the catalogue API.
+ * Purpose: end-to-end tests of the registry over fakes (ADR 0453 decisions 4 to 12): the landing page, the OIDC
+ *          exchange, publish and its refusals, packuments (full, abbreviated, KV cached and dropped), versions, tarballs
+ *          and their cache headers, signatures against /-/npm/v1/keys, attestations, dist-tags, deprecation, the refused
+ *          routes, the scope read rules through the licence port, whoami and the catalogue API.
  * Boundary: test only; D1 is node:sqlite with the real migrations, everything else in memory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (Enforcement).
@@ -49,6 +49,16 @@ describe("handleRequest", () => {
   });
 
   describe("fixed routes", () => {
+    it("serves the branded landing page at / for GET only", async () => {
+      const response = await registry.request("/");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
+      const page = await response.text();
+      expect(page).toContain("<title>Stackra registry</title>");
+      expect(page).toContain("@stackra:registry=https://npm.stackra.figentra.com/");
+      expect((await registry.request("/", { method: "POST", body: {} })).status).toBe(405);
+    });
+
     it("answers ping", async () => {
       const response = await registry.request("/-/ping");
       expect(response.status).toBe(200);
