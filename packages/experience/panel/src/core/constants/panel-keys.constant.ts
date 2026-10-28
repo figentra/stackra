@@ -31,6 +31,8 @@ export const PANEL_KEYS = keys({
       "trashed",
       "trashed_with",
       "trashed_only",
+      "all_views",
+      "saved_views",
     ],
     checklist: [
       "title",

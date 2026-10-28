@@ -35,7 +35,9 @@
     "empty": "Non c'è ancora niente qui.",
     "trashed": "Record eliminati",
     "trashed_with": "Con eliminati",
-    "trashed_only": "Solo eliminati"
+    "trashed_only": "Solo eliminati",
+    "all_views": "Tutto",
+    "saved_views": "Viste salvate"
   },
   "plan_catalogue": {
     "history": "Versioni",

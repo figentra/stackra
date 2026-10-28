@@ -35,7 +35,9 @@
     "empty": "لا يوجد شيء هنا بعد.",
     "trashed": "السجلات المحذوفة",
     "trashed_with": "مع المحذوفة",
-    "trashed_only": "المحذوفة فقط"
+    "trashed_only": "المحذوفة فقط",
+    "all_views": "الكل",
+    "saved_views": "العروض المحفوظة"
   },
   "plan_catalogue": {
     "history": "الإصدارات",

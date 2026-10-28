@@ -35,7 +35,9 @@
     "empty": "Nothing here yet.",
     "trashed": "Deleted records",
     "trashed_with": "With deleted",
-    "trashed_only": "Only deleted"
+    "trashed_only": "Only deleted",
+    "all_views": "All",
+    "saved_views": "Saved views"
   },
   "plan_catalogue": {
     "history": "Versions",

@@ -35,7 +35,9 @@
     "empty": "Hier ist noch nichts.",
     "trashed": "Gelöschte Datensätze",
     "trashed_with": "Mit gelöschten",
-    "trashed_only": "Nur gelöschte"
+    "trashed_only": "Nur gelöschte",
+    "all_views": "Alle",
+    "saved_views": "Gespeicherte Ansichten"
   },
   "plan_catalogue": {
     "history": "Versionen",

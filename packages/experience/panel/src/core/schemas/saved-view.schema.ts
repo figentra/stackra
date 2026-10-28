@@ -1,17 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `SavedView`, a person's saved view of a resource's table, Linear-style: its filter, sort and columns, its
- *          grouping and sub-grouping, the totals per group, and whether it is shared in the owner's scope.
+ *          grouping and sub-grouping, the totals per group, its layout, its version, and whether it is shared with a
+ *          role or the whole of the owner's scope.
  * Boundary: a shape class; it registers this package's own schema for itself when the module loads. A view stores
  *           declared keys only, never a query or code; the resource's list query still gates every row. Saved views
  *           are operational records, edited in live (ADR 0359 decision 4).
  * Runtime: isomorphic
- * Governing contract: ADR 0359 (decisions 4 and 14); ADR 0307 (rule 13 as reopened, rules 6 and 9).
+ * Governing contract: ADR 0359 (decisions 4 and 14); ADR 0307 (rule 13 as reopened, rules 6 and 9); ADR 0271
+ *                     (decisions 2, 3 and 8); ADR 0470 (decision 4).
  */
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import type { Aggregate } from "#core/enums/aggregate.enum";
+import { ViewLayout } from "#core/enums/view-layout.enum";
 import { ViewSharing } from "#core/enums/view-sharing.enum";
 import type { SortNode } from "#core/types/sort-node.type";
 
@@ -59,6 +62,18 @@ export class SavedView extends Schema {
 
   /** Who sees it. */
   sharing: ViewSharing = ViewSharing.Private;
+
+  /** The role key a role copy is shared with; set only when `sharing` is `role`. */
+  role?: string;
+
+  /** The version the store last wrote; a save sends it back and is refused when someone changed the view since. */
+  version = 1;
+
+  /** How the rows are drawn. */
+  layout: ViewLayout = ViewLayout.Table;
+
+  /** The row path a board groups by or a calendar places by. */
+  layoutBy?: string;
 
   /** The row paths shown, in order; the table's columns when absent. */
   columns?: string[];

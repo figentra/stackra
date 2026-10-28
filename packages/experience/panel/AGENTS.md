@@ -12,30 +12,34 @@ Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (
 The panel: the `Resource`, `Widget`, `Document` and `Panel` kinds, their pure builders, the metric shapes and the time
 range input, typed slots and placement layers, the data constructors gen writes, and the web and native renderers
 (ADR 0164, ADR 0307, ADR 0306, ADR 0336 layer 2b). Member at `packages/experience/panel` (`tier:lib`), in the
-programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native`.
+programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native`, `./node` (server only: the saved view store).
 
 ## Where code goes
 
-| You are writing…                                   | It goes in…                                       |
-| -------------------------------------------------- | ------------------------------------------------- |
-| A kind base                                        | `src/core/bases/<name>.base.ts`                   |
-| An enum                                            | `src/core/enums/<name>.enum.ts`                   |
-| A data constructor gen writes (`Column`, `Blocks`) | `src/core/constants/<name>.constant.ts`           |
-| A shipped schema (`X$`)                            | `src/core/constants/<name>-schema.constant.ts`    |
-| A shape class                                      | `src/core/schemas/<name>.schema.ts`               |
-| A public builder or node type                      | `src/core/types/<name>.type.ts`                   |
-| The runtime side of a builder type                 | `src/core/records/<name>.record.ts` (internal)    |
-| A pure function                                    | `src/core/functions/<name>.function.ts`           |
-| A web component or hook and its props              | `src/react/<name>/<name>.tsx`, `<name>.props.ts`  |
-| A native component and its props                   | `src/native/<name>/<name>.tsx`, `<name>.props.ts` |
-| A lang string                                      | `assets/lang/<locale>/panel.json`                 |
-| A test                                             | `__tests__/<name>.<kind>.test.ts(x)` beside it    |
+| You are writing…                                   | It goes in…                                               |
+| -------------------------------------------------- | --------------------------------------------------------- |
+| A kind base                                        | `src/core/bases/<name>.base.ts`                           |
+| An enum                                            | `src/core/enums/<name>.enum.ts`                           |
+| A data constructor gen writes (`Column`, `Blocks`) | `src/core/constants/<name>.constant.ts`                   |
+| A shipped schema (`X$`)                            | `src/core/constants/<name>-schema.constant.ts`            |
+| A shape class                                      | `src/core/schemas/<name>.schema.ts`                       |
+| A public builder or node type                      | `src/core/types/<name>.type.ts`                           |
+| The runtime side of a builder type                 | `src/core/records/<name>.record.ts` (internal)            |
+| A pure function                                    | `src/core/functions/<name>.function.ts`                   |
+| A web component or hook and its props              | `src/react/<name>/<name>.tsx`, `<name>.props.ts`          |
+| A native component and its props                   | `src/native/<name>/<name>.tsx`, `<name>.props.ts`         |
+| A lang string                                      | `assets/lang/<locale>/panel.json`                         |
+| A port                                             | `src/core/ports/<name>.port.ts`                           |
+| A refusal                                          | `src/core/errors/<name>.error.ts`                         |
+| A server model, migration, service or driver       | `src/node/{models,database/migrations,services,drivers}/` |
+| A test                                             | `__tests__/<name>.<kind>.test.ts(x)` beside it            |
 
 ## Entries and barrels
 
 - `src/{core,react,native}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
-- `core` imports no React; `react` and `native` import `core` and never each other.
+- `core` imports no React; `react` and `native` import `core` and never each other. `node` imports `core` and never
+  `react` or `native`; nothing outside `node` imports `node`.
 - The breadcrumb trail is navigation's (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs` in
   `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
   only because the template imports it from here.
@@ -58,7 +62,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - No tenant vocabulary: layer 4 is a scope node's copy (R-59).
 - A filter's drawn value reaches the server only through `filterWireValue` (the `TableFilter` wire form); never send
   an ORM operator object from the page.
-- A display mode is display only: `fieldsForMode` hides, never denies. A saved view stores declared keys only.
+- A display mode is display only: `fieldsForMode` hides, never denies. A saved view stores declared keys only: a
+  `ViewStore` driver checks `unknownViewKeys` on every save, `panel.view.share` before sharing, ownership before a
+  change, and passes the view's `version` as `expectedVersion`. Never draw `groupRows` totals on a paged list.
 - A `LineEntry` slot shows exactly one editor, the highest layer's; never merge editors.
 - Shell slots (ADR 0438): `defineSlot<Props>` in the shell package, `fillSlot` in the product's UI package, each an
   exported const with static options so gen reads them. `Slot.props` is type-only; never set it at run time. A shell
@@ -78,4 +84,6 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 
 ## PII
 
-None: the package holds declarations and renders answers its queries already gated; it stores nothing.
+The `./node` saved view store keeps `panel.stored_views`: a view's name, its owner's principal id (pseudonymous) and
+the filter values a person chose, which may contain what they searched for. Rows are tenant-scoped; nothing else is
+stored.

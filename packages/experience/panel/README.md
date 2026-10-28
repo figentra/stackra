@@ -16,10 +16,11 @@ display), a `Document` (a saved Page or Dashboard of registered blocks, its kind
 pure: gen runs each member once and records the tree in the manifest. The query computes every number; the panel only
 presents it.
 
-**Tier:** `tier:lib` (`packages/experience/panel`). Entries `.`, `./react` and `./native` (the old `./schemas` is folded
+**Tier:** `tier:lib` (`packages/experience/panel`). Entries `.`, `./react`, `./native` and `./node` (the old `./schemas` is folded
 into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/container`, `@stackra/contracts`,
-`@stackra/errors`, `@stackra/experience`, `@stackra/i18n`, `@stackra/iam`, `@stackra/icons`, `@stackra/money`,
-`@stackra/navigation` (the breadcrumb trail and the route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/ui`,
+`@stackra/database` and `@stackra/model` (the `./node` saved view store), `@stackra/errors`, `@stackra/experience`,
+`@stackra/i18n`, `@stackra/iam`, `@stackra/icons`, `@stackra/money`, `@stackra/navigation` (the breadcrumb trail and the
+route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tenancy` (`BelongsToTenant`), `@stackra/ui`,
 `@stackra/validation` and zod. React, React Router and React Native are optional peers.
 
 ## What is here
@@ -36,7 +37,8 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `registerResources`                                                                                                                                                             | hands the generated resource trees to the resource pages       |
 | `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                             | shell slots a product fills (ADR 0438)                         |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                       | what gen records; the placement layer rule                     |
-| `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                           | saved views with grouping, sub-grouping, totals and sharing    |
+| `.`        | `SavedView` (`SavedView$`), `ViewStore` (port), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`, `ViewLayout`                                                          | saved views with grouping, totals, layout and sharing          |
+| `.`        | `unknownViewKeys`, `ViewKeyUnknownError`                                                                                                                                        | the server validator of a saved view (`view_key_unknown`)      |
 | `.`        | `fieldsForMode`                                                                                                                                                                 | the form fields a display mode shows                           |
 | `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                                | the one line editor of a `LineEntry` slot; inert contributions |
 | `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                      | the panel frame and its trail (navigation's, re-exported)      |
@@ -44,7 +46,8 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `./react`  | `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage`, `RelationManager`                                                                                                   | the generic List, View, Create and Edit pages and relations    |
 | `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                       | the widget grid of a panel's slots, one widget as a card       |
 | `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                            | run any action through its declared confirmation               |
-| `./native` | `WidgetSlot`                                                                                                                                                                    | a slot's widgets on mobile                                     |
+| `./native` | `WidgetSlot`, `SavedViewTabs`                                                                                                                                                   | a slot's widgets on mobile; saved view tabs over a list        |
+| `./node`   | `DatabaseViewStoreDriver`, `StoredView`, `StoredViewService`, `ViewPermissions`                                                                                                 | the `database` saved view store in `panel.stored_views`        |
 
 ## Declaring a resource
 
@@ -114,10 +117,16 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
 
 A saved view (ADR 0359 decision 14, reopening rule 13) is a person's filter, sort and columns for a resource, plus a
 grouping (`group: { by, then? }`), totals per group (`count`, `sum`, `average`, `min`, `max` of a row path) and its
-sharing (`private`, or everyone in the owner's `scope` who may read the resource). It stores declared keys only, and
-the list query still gates every row. The host binds a `ViewStore` driver (`list`, `save`, `remove`); `groupRows(rows,
-view)` groups what is on screen in first-met order, so the view's sort holds. A list that pages or that the server
-totals sends its own totals.
+sharing (`private`; `role`, a role copy for the holders of `role`; or everyone in the owner's `scope` who may read the
+resource). It has a `layout` (`table`, `board`, `gallery`, `calendar`, `chart`; a board or calendar names its `layoutBy`
+path) and a `version` for optimistic concurrency (ADR 0271 decisions 2, 3 and 8). It stores declared keys only, and the
+list query still gates every row. `ViewStore` is a port (`list`, `save`, `remove`). `./node` ships its `database` driver,
+`DatabaseViewStoreDriver`, over `panel.stored_views` (tenant policy, `version` column): it lists the viewer's own views,
+the scope's and its roles' copies; on save it refuses undeclared keys with `view_key_unknown` (`unknownViewKeys` against
+the registered table), sharing without `panel.view.share` (`ViewPermissions.share`), someone else's view, and a stale
+version (`StaleVersionError`). `ResourceListPage` takes a `views` store and draws the views as tabs over the table; the
+native `SavedViewTabs` does the same for a native list. `groupRows(rows, view)` groups what is on screen in first-met
+order and is for a fully loaded relation table only (ADR 0470 decision 4); a paged list waits for the server group-by.
 
 ## Display modes
 
@@ -211,8 +220,9 @@ bulk bar and form page wait for those.
 
 ## Not built yet
 
-On the resource pages: the built-in View as JSON, clone and activity tab (ADR 0334), saved views and grouping on the
-List, the modal form of a record action that needs more than the id, a selection-input (`Selection<...>`) action, the
+On the resource pages: the built-in View as JSON, clone and activity tab (ADR 0334), grouping and the board, gallery,
+calendar and chart layouts of a saved view (they draw as the table), saving and editing a view from the List, the
+`.renamed()` migration of stored views, a view that targets a `Report` key, the modal form of a record action that needs more than the id, a selection-input (`Selection<...>`) action, the
 upload and repeater fields, the step wizard (steps show one under another), the id a create mints for its PUT address,
 enum labels (codes show), the native pages, and nesting the resource routes under the panel shell. Elsewhere: the
 queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and

@@ -7,19 +7,27 @@
  *           and reads one page with `useQuery`; `tableInput` builds the closed input, so only declared sorts and
  *           filters are sent. Enum codes show as codes and a value filter is a text filter until gen writes enum labels
  *           and filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
- *           yes or no, and contains and compare as text. A principal column shows the principal's name.
+ *           yes or no, and contains and compare as text. A principal column shows the principal's name. A saved view
+ *           (`view`) sets the columns shown and the filter values and sort the table starts with (`savedViewState`); the
+ *           caller keys the table by view so a new view starts fresh.
  * Runtime: browser
- * Governing contract: ADR 0307 (rules 1, 2, 11 and 12); ADR 0164; reporting gap 5.
+ * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); reporting gaps 5 and 7.
  */
 import { useQuery } from "@stackra/clients/react";
 import { Enum, SortDirection } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
-import type { FilterDefinition, ResourceQuery, TableColumn } from "@stackra/ui/contracts";
+import type {
+  FilterDefinition,
+  FilterState,
+  ResourceQuery,
+  TableColumn,
+} from "@stackra/ui/contracts";
 import { DataTable, EmptyState, FilterBar } from "@stackra/ui/react";
 import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { resourceLabel } from "#core/functions/resource-label.function";
+import { savedViewState } from "#core/functions/saved-view-state.function";
 import { tableInput } from "#core/functions/table-input.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { ColumnNode } from "#core/types/column-node.type";
@@ -64,9 +72,18 @@ export function ResourceTable({
   rowActions,
   bulkActions,
   emptyState,
+  view,
 }: ResourceTableProps): ReactElement {
   const { t } = useTranslation();
-  const [state, setState] = useState<ResourceQuery>({ search: "", filterValues: {}, sort: null });
+  const [state, setState] = useState<ResourceQuery>(() => ({
+    search: "",
+    // reason: a saved view's filter values were drawn by this same filter bar before they were stored
+    filterValues: (view?.filter ?? {}) as FilterState,
+    sort:
+      view?.sort === undefined
+        ? null
+        : { column: view.sort.key, direction: toUi(view.sort.direction) },
+  }));
   const [cursors, setCursors] = useState<readonly (string | undefined)[]>([undefined]);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const cursor = cursors.at(-1);
@@ -96,7 +113,10 @@ export function ResourceTable({
     ...item,
     id: String(item["id"] ?? index),
   }));
-  const nodes = (table?.columns ?? derived(rows)).filter((column) => column.hidden !== true);
+  const nodes =
+    view?.columns === undefined
+      ? (table?.columns ?? derived(rows)).filter((column) => column.hidden !== true)
+      : savedViewState(table, view).columns;
   const columns: TableColumn[] = nodes.map((column) => ({
     id: column.key,
     label: t(resourceLabel(resourceKey, "columns", column.key)),

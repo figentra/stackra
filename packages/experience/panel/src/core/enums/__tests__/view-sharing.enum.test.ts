@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `ViewSharing`: private and scope, codes in order.
+ * Purpose: unit and type tests of `ViewSharing`: private, scope and role, codes in order.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0359 (decision 14).
@@ -12,10 +12,10 @@ import { ViewSharing } from "#core/enums/view-sharing.enum";
 
 describe("ViewSharing", () => {
   it("holds its codes in order", () => {
-    expect(Enum.values(ViewSharing)).toEqual(["private", "scope"]);
+    expect(Enum.values(ViewSharing)).toEqual(["private", "scope", "role"]);
   });
 
   it("types its values", () => {
-    expectTypeOf<ViewSharing>().toEqualTypeOf<"private" | "scope">();
+    expectTypeOf<ViewSharing>().toEqualTypeOf<"private" | "scope" | "role">();
   });
 });

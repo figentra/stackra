@@ -24,6 +24,7 @@ export default {
       index: "src/core/index.ts",
       react: "src/react/index.ts",
       native: "src/native/index.ts",
+      node: "src/node/index.ts",
     },
     { decorators: true },
   ),

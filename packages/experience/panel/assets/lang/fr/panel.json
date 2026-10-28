@@ -35,7 +35,9 @@
     "empty": "Rien ici pour l'instant.",
     "trashed": "Enregistrements supprimés",
     "trashed_with": "Avec les supprimés",
-    "trashed_only": "Supprimés uniquement"
+    "trashed_only": "Supprimés uniquement",
+    "all_views": "Tout",
+    "saved_views": "Vues enregistrées"
   },
   "plan_catalogue": {
     "history": "Versions",

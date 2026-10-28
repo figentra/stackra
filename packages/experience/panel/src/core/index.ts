@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/panel (the Resource, Widget, Document and Panel kinds, the
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
  *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
- *          views with their store port and grouping, the display-mode field filter, the line-editor and inert
+ *          views with their store port, layouts, key validator and grouping, the display-mode field filter, the line-editor and inert
  *          contribution rules, `registerResources` for the generic resource pages, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`CountMetric$`, `MoneyMetric$`, `SavedView$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
@@ -52,7 +52,9 @@ export { Place } from "#core/enums/place.enum";
 export { PlacementLayer } from "#core/enums/placement-layer.enum";
 export { ResourcePage } from "#core/enums/resource-page.enum";
 export { TimeRange } from "#core/enums/time-range.enum";
+export { ViewLayout } from "#core/enums/view-layout.enum";
 export { ViewSharing } from "#core/enums/view-sharing.enum";
+export { ViewKeyUnknownError } from "#core/errors/view-key-unknown.error";
 export { WidgetSize } from "#core/enums/widget-size.enum";
 export { activeContributions } from "#core/functions/active-contributions.function";
 export { describeResource } from "#core/functions/describe-resource.function";
@@ -68,8 +70,10 @@ export { registerWidgets } from "#core/functions/register-widgets.function";
 export { resolvePlacements } from "#core/functions/resolve-placements.function";
 export { resource } from "#core/functions/resource.function";
 export { slots } from "#core/functions/slots.function";
+export { unknownViewKeys } from "#core/functions/unknown-view-keys.function";
 export { fieldsForMode } from "#core/functions/fields-for-mode.function";
 export { widget } from "#core/functions/widget.function";
+export { ViewStore } from "#core/ports/view-store.port";
 export { CountMetric } from "#core/schemas/count-metric.schema";
 export { MoneyMetric } from "#core/schemas/money-metric.schema";
 export { SavedView } from "#core/schemas/saved-view.schema";
@@ -139,7 +143,6 @@ export type { ToneRules } from "#core/types/tone-rules.type";
 export type { ViewBuilder } from "#core/types/view-builder.type";
 export type { ViewGroup } from "#core/types/view-group.type";
 export type { ViewNode } from "#core/types/view-node.type";
-export type { ViewStore } from "#core/types/view-store.type";
 export type { Views } from "#core/types/views.type";
 export type { WidgetDescriptorOptions } from "#core/types/widget-descriptor-options.type";
 export type { WidgetDescriptor } from "#core/types/widget-descriptor.type";

@@ -64,7 +64,10 @@ describe("@stackra/panel", () => {
       "TimeRangeInput",
       "TimeRangeInput$",
       "View",
+      "ViewKeyUnknownError",
+      "ViewLayout",
       "ViewSharing",
+      "ViewStore",
       "Widget",
       "WidgetDisplay",
       "WidgetSize",
@@ -83,6 +86,7 @@ describe("@stackra/panel", () => {
       "resolvePlacements",
       "resource",
       "slots",
+      "unknownViewKeys",
       "widget",
     ]);
   });

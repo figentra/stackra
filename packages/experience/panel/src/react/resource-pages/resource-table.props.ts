@@ -9,6 +9,7 @@ import type { QueryRef } from "@stackra/clients";
 import type { ResourceAction } from "@stackra/ui/contracts";
 import type { ReactElement } from "react";
 
+import type { SavedView } from "#core/schemas/saved-view.schema";
 import type { TableNode } from "#core/types/table-node.type";
 
 /** Props of `ResourceTable`. */
@@ -35,4 +36,6 @@ export interface ResourceTableProps {
   readonly bulkActions?: (ids: readonly string[]) => readonly ResourceAction[];
   /** What an empty, unfiltered list shows. */
   readonly emptyState?: ReactElement;
+  /** The saved view the table starts from: its columns, filter values and sort; the table's own when absent. */
+  readonly view?: SavedView | undefined;
 }

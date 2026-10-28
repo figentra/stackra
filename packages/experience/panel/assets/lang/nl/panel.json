@@ -35,7 +35,9 @@
     "empty": "Hier staat nog niets.",
     "trashed": "Verwijderde records",
     "trashed_with": "Met verwijderde",
-    "trashed_only": "Alleen verwijderde"
+    "trashed_only": "Alleen verwijderde",
+    "all_views": "Alles",
+    "saved_views": "Opgeslagen weergaven"
   },
   "plan_catalogue": {
     "history": "Versies",

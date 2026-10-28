@@ -46,6 +46,11 @@
       "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -75,6 +80,11 @@
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
     },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
     "./assets/*": "./assets/*"
   },
   "publishConfig": {
@@ -97,17 +107,20 @@
     "@stackra/clients": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/experience": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/iam": "workspace:*",
     "@stackra/icons": "workspace:*",
+    "@stackra/model": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/navigation": "workspace:*",
     "@stackra/pricing": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
@@ -160,7 +173,8 @@
     "runtimes": [
       "isomorphic",
       "browser",
-      "react-native"
+      "react-native",
+      "node"
     ],
     "summary": "Use it to declare admin resources, dashboard widgets, documents and panels and to render them in the web shell or native widget slots."
   }

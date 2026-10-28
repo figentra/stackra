@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ResourceListPage`: the recorded columns and their cells, the closed list input (default sort,
  *          page size, the next page's cursor), the header create link, row actions (view, edit, a placed record action
  *          run with the record id, delete) and the bulk bar fanning out per record; a resource with no registered tree
- *          shows the row's own keys.
+ *          shows the row's own keys; a view store's saved views draw as tabs, a view's columns and sort reach the table.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -18,6 +18,8 @@ import { vi } from "vitest";
 import { z } from "zod";
 
 import { Count } from "#core/enums/count.enum";
+import type { ViewStore } from "#core/ports/view-store.port";
+import type { SavedView } from "#core/schemas/saved-view.schema";
 import { registerResources } from "#core/functions/register-resources.function";
 import { resource } from "#core/functions/resource.function";
 import { ResourceListPage } from "#react/resource-pages/resource-list-page";
@@ -50,6 +52,13 @@ vi.mock("@stackra/ui/react", async () => {
     EmptyState: (props: Props) => createElement("div", null, props.title, props.actions),
     FilterBar: (props: Props) =>
       createElement("p", null, props.filters.map((filter: Props) => filter.label).join(",")),
+    Tabs: (props: Props) =>
+      createElement(
+        "div",
+        { "aria-label": props.label },
+        props.items.map((item: Props) => createElement("span", { key: item.id }, item.label)),
+        props.items.at(-1)?.content,
+      ),
     PageHeader: (props: Props) =>
       createElement("header", null, props.title, buttons(props.actions)),
     DataTable: (props: Props) =>
@@ -222,5 +231,43 @@ describe("ResourceListPage", () => {
       screen.getByText("orders::resources.order.columns.id|orders::resources.order.columns.status"),
     ).toBeTruthy();
     expect(spies.useQuery.mock.calls[0]?.[1]).toEqual({ limit: 25 });
+  });
+
+  it("draws a store's saved views as tabs and starts the table from a view", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        table: {
+          columns: [
+            { kind: "value", key: "number" },
+            { kind: "value", key: "status", sortable: true },
+          ],
+          filters: [{ kind: "value", key: "status" }],
+          count: Count.Estimated,
+        },
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    const view = {
+      id: "view_1",
+      name: "Paid",
+      columns: ["status"],
+      filter: {},
+      sort: { key: "status", direction: SortDirection.Asc },
+    } as unknown as SavedView;
+    const views = { list: vi.fn(async () => [view]) } as unknown as ViewStore;
+    render(<ResourceListPage resource={Orders} views={views} />);
+    await vi.waitFor(() => expect(screen.getByText("Paid")).toBeTruthy());
+    expect(screen.getByText("panel::resources.all_views")).toBeTruthy();
+    expect(screen.getByText("orders::resources.order.columns.status")).toBeTruthy();
+    expect(spies.useQuery.mock.calls.at(-1)?.[1]).toMatchObject({
+      sort: { key: "status", direction: SortDirection.Asc },
+    });
+    dispose();
   });
 });
