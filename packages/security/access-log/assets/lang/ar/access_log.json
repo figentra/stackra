@@ -2,6 +2,9 @@
   "permissions": {
     "access_log_entry": {
       "purge": "حذف سجلات الوصول القديمة"
+    },
+    "audit_log_entry": {
+      "read": "قراءة سجل تدقيق العمليات"
     }
   },
   "errors": {

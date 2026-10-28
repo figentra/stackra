@@ -18,6 +18,7 @@ describe("@stackra/access-log", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(accessLog).sort()).toEqual([
       "ACCESS_LOG_WRITE_FAILED",
+      "AUDIT_WRITE_SKIPPED",
       "AccessLogConfig",
       "AccessLogConfig$",
       "AccessLogOptions",
@@ -27,8 +28,10 @@ describe("@stackra/access-log", () => {
       "AccessRecorded",
       "MemoryAccessLogSinkDriver",
       "OutboxAccessLogSinkDriver",
+      "findAuditChainBreak",
       "findChainBreak",
       "linkAccessRecord",
+      "linkAuditEntry",
     ]);
   });
 

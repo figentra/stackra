@@ -14,6 +14,7 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 | The facet                                         | `src/core/decorators/`                           |
 | The model, its migration, a macro, a factory      | `src/node/models/`, `src/node/database/*/`       |
 | A server driver, the job and its schemas          | `src/node/{drivers,actions,schemas}/`            |
+| A query and its schemas                           | `src/node/{queries,schemas}/`                    |
 | A permission (`<Model>Permissions`)               | `src/node/access/`                               |
 | A fake or a matcher                               | `src/testing/`                                   |
 | A label                                           | `assets/lang/{en,ar}/access_log.json`            |
@@ -38,6 +39,9 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 - A sink failure is always logged as `access_log_write_failed`. It fails the logged call only for a class that fails
   closed: a classification in `AccessLogConfig.failClosed` (financial, health and regulated by default, configuration, never
   code) or a facet marked `failClosed: true` (a privileged surface). Every other read is served (ADR 0409).
+- The write audit (`PostgresAuditTrailDriver`, `AuditLogEntry`, `AuditQuery`) is its own chain beside the access
+  chain: build links only with `linkAuditEntry`, verify only with `findAuditChainBreak`, and never fail a call in no
+  tenant (log `audit_write_skipped`). The table reuses migration 0001's `refuse_update()` trigger function.
 - The `outbox` sink sends `AccessRecorded` events to the audit service, which chains them; it never chains itself.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
@@ -52,4 +56,5 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
 | Data                                | Where                                                  | Handling                                                                            |
 | ----------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
 | Actor id and its `onBehalfOf` chain | `AccessRecord.actor`, `access_log_entries.actor`       | Public ids only, written for audit; deleted by the purge job after `retentionDays`. |
+| Audit actor and handler fields      | `audit_log_entries.actor`, `audit_log_entries.fields`  | Public ids and the handler's `ctx.audit` fields only; no retention job yet.         |
 | Subject ids                         | `AccessRecord.subjects`, `access_log_entries.subjects` | Public ids of the people whose data was read, never the data; same retention.       |

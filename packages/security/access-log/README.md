@@ -5,6 +5,10 @@ writes one record per call of a marked action, query or service to the `AccessLo
 records as a SHA-256 hash chain, so a changed, removed or reordered record fails verification (ADR 0212 decision 3).
 pgaudit covers direct database sessions; this package covers the application.
 
+It also holds the write audit store (ADR 0465 decision 4): `PostgresAuditTrailDriver`, the `postgres` driver of the
+`AuditTrail` port of `@stackra/actions`, keeps every audited action call in its own per-tenant hash chain, and
+`AuditQuery` reads it. A host that runs a separate audit service (Figentra OS) keeps the `outbox` driver instead.
+
 **Tier:** `tier:lib` (`packages/security/access-log`). Entries `.`, `./contracts`, `./node` and `./testing`. Depends on
 `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
 `@stackra/errors`, `@stackra/iam`, `@stackra/model`, `@stackra/tenancy` and `@stackra/validation`.
@@ -61,6 +65,11 @@ or query call throws, because `RequestContext` has no actor to log.
 | `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table                 |
 | `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                         |
 | `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L2, system): the permission the retention job runs under |
+| `.`           | `linkAuditEntry`, `findAuditChainBreak`, `AUDIT_WRITE_SKIPPED`        | the audit chain's link and verifier; the skipped-write log event  |
+| `./contracts` | `AuditRecord`, `AuditLink`                                            | the stored write audit and its chain link                         |
+| `./node`      | `PostgresAuditTrailDriver`, `AuditLogEntry`                           | the `AuditTrail` store and its tenant-owned, append-only table    |
+| `./node`      | `AuditQuery`, `AuditQueryInput`, `AuditQueryOutput`                   | `access_log.audit_log_entry.search@1`: filter and page the audit  |
+| `./node`      | `AuditLogEntryView`, `AuditLogEntryPermissions`                       | the page item; `read` (L1), the permission the query derives      |
 | `./testing`   | `AccessLogSinkFake`, `AccessLogEntryFactory`, `toHaveLoggedAccess`    | a failing-capable fake, rows, the matcher                         |
 
 No symbol is exported from two entries. `src/{contracts,core,node,testing}/index.ts` are stand-in barrels until gen
@@ -80,6 +89,23 @@ refuses every UPDATE. The driver writes in a transaction of its own (a rolled-ba
 `withTenant(record.actor, ...)`; a writer that loses the race to the head reads the new head and retries, up to five
 times. A call in no tenant cannot be stored there and is reported as `access_log_write_failed`.
 
+## The write audit
+
+`PostgresAuditTrailDriver` stores each `AuditEntry` the action pipeline writes as one `AuditLogEntry` in
+`access_log.audit_log_entries` (`aud_…` ids), flattened with absent fields as `null`, and chained per tenant exactly
+like the access records (`linkAuditEntry`, `findAuditChainBreak`, the same canonical hash), in a chain of its own. It
+writes inside `withTenant(call.actor, ...)`, a savepoint of the caller's transaction, so a successful call's entry
+commits or rolls back with the call's writes and a refused call's entry, written after the rollback, gets its own
+transaction. A lost race to the head retries from a fresh savepoint up to five times. A call in no tenant cannot be
+stored and is logged as `audit_write_skipped`; the call is never failed for it.
+
+`AuditQuery` (`access_log.audit_log_entry.search@1`, permission `access_log.audit_log_entry.read`, L1) returns a cursor
+page newest first, filtered by `callId`, `key`, `actorId` (the jsonb `actor.id`), `outcome`, `from` and `to`; the
+tenant is always the caller's, by the table's policy. Each item carries its chain fields, so an unfiltered page verifies
+with `findAuditChainBreak`.
+
+Pick the driver in the host's wiring: `AuditTrail` → `postgres`.
+
 ## Retention
 
 `PurgeAccessLogAction` (`access_log.access_log_entry.purge@1`) runs at 03:30 UTC once per tenant and deletes the
@@ -87,6 +113,11 @@ records older than `AccessLogConfig.retentionDays` (400 by default, about the th
 6; at least 90). It is the only delete of the table.
 
 ## Not here
+
+- Retention of the write audit: the table grows until partitioned retention lands (data-layer gap analysis, gap 6);
+  `PurgeAccessLogAction` purges access records only.
+- The per-field before/after diff of a write: that is the `Historical` trait (data-layer gap 3), which `AuditQuery`
+  will join once it exists.
 
 - The daily KMS-signed checkpoint, S3 Object Lock, cold storage and `stackra audit:verify` (ADR 0212 decisions 3 and 6):
   `findChainBreak` is what a verifier calls.

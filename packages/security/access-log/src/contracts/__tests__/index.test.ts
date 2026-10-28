@@ -21,6 +21,10 @@ describe("@stackra/access-log/contracts", () => {
     expectTypeOf<contracts.AccessRecord["subjects"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<contracts.AccessLink>().toExtend<contracts.AccessRecord>();
     expectTypeOf<contracts.AccessLink["sequence"]>().toEqualTypeOf<number>();
+    expectTypeOf<contracts.AuditLink>().toExtend<contracts.AuditRecord>();
+    expectTypeOf<contracts.AuditRecord["actor"]>().toEqualTypeOf<Actor>();
+    expectTypeOf<contracts.AuditRecord["outcome"]>().toEqualTypeOf<"ok" | "refused">();
+    expectTypeOf<contracts.AuditRecord["code"]>().toEqualTypeOf<string | null>();
     expectTypeOf<
       contracts.AccessLoggedOptions["classification"]
     >().toEqualTypeOf<DataClassification>();
