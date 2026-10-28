@@ -80,6 +80,19 @@ class CreateOrdersMigration extends Migration {
 }
 
 describe(compileMigration, () => {
+  it("stores public-id keys as native uuid with publicIds: uuid, stamps staying text (ADR 0135, 2026-10-28)", () => {
+    const [step] = compileMigration(CreateOrdersMigration, {
+      schema: "orders",
+      publicIds: "uuid",
+      macros,
+    }).steps;
+    const sql = step?.sql.join("\n") ?? "";
+    expect(sql).toContain('  "id" uuid not null,');
+    expect(sql).toContain('  "created_by" varchar(33) null,');
+    expect(sql).toMatch(/"order_id" uuid not null/);
+    expect(sql).toMatch(/"variant_id" uuid not null/);
+  });
+
   it("compiles a create migration to one transactional step with its inverse", () => {
     const { after, steps } = compileMigration(CreateOrdersMigration, {
       schema: "orders",

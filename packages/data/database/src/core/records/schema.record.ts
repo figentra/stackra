@@ -13,6 +13,7 @@
  */
 import { Enum } from "@stackra/contracts";
 
+import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { Extension } from "#core/enums/extension.enum";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
@@ -51,24 +52,29 @@ export class SchemaRecord implements SchemaBuilder {
   /** The macros every blueprint installs. */
   private readonly macros: readonly MacroClass[];
 
+  /** The SQL type of a public-id key column: `uuid` or `varchar(33)`. */
+  private readonly publicIdColumn: string;
+
   /** The operations, in the order `up` recorded them. */
   private readonly operations: Operation[] = [];
 
   /**
    * @param macros - the macros every blueprint installs.
+   * @param publicIdColumn - the SQL type of a public-id key column (`CompileOptions.publicIds`).
    */
-  constructor(macros: readonly MacroClass[]) {
+  constructor(macros: readonly MacroClass[], publicIdColumn: string = PUBLIC_ID_TEXT) {
     this.macros = macros;
+    this.publicIdColumn = publicIdColumn;
   }
 
   /** Implements `SchemaBuilder.create`, documented there. */
   create(table: string, define: (t: Blueprint) => void): void {
-    this.record(new BlueprintRecord(table, true, this.macros), define);
+    this.record(new BlueprintRecord(table, true, this.macros, this.publicIdColumn), define);
   }
 
   /** Implements `SchemaBuilder.table`, documented there. */
   table(table: string, define: (t: Blueprint) => void): void {
-    this.record(new BlueprintRecord(table, false, this.macros), define);
+    this.record(new BlueprintRecord(table, false, this.macros, this.publicIdColumn), define);
   }
 
   /**

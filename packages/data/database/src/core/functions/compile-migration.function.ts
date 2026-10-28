@@ -14,6 +14,7 @@ import { kindOf } from "@stackra/container";
 
 import type { MigrationBase } from "#core/bases/migration-base.base";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { SchemaRecord } from "#core/records/schema.record";
 import type { CompileOptions } from "#core/types/compile-options.type";
 import type { CompiledMigration } from "#core/types/compiled-migration.type";
@@ -32,7 +33,10 @@ export function compileMigration(type: MigrationClass, options: CompileOptions):
   const kind = kindOf(type);
   if (kind?.kind !== "migration") throw new TypeError(`${type.name} does not extend Migration`);
   quoteIdentifier(options.schema);
-  const schema = new SchemaRecord(options.macros ?? []);
+  const schema = new SchemaRecord(
+    options.macros ?? [],
+    options.publicIds === "uuid" ? "uuid" : PUBLIC_ID_TEXT,
+  );
   (Reflect.construct(type, []) as MigrationBase).up(schema);
   return {
     after: (kind.options["after"] ?? []) as readonly MigrationId[],

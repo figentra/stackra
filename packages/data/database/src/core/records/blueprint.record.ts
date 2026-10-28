@@ -17,6 +17,7 @@ import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { ColumnRecord } from "#core/records/column.record";
+import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { ColumnChangeRecord } from "#core/records/column-change.record";
 import { ColumnGroupRecord } from "#core/records/column-group.record";
 import { TableIndexRecord } from "#core/records/table-index.record";
@@ -27,9 +28,6 @@ import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
 import type { MacroClass } from "#core/types/macro-class.type";
 import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
-
-/** A public id column: a 6-letter prefix, `_` and 26 characters fit. */
-const PUBLIC_ID = "varchar(33)";
 
 /** A public id prefix: 2 to 6 lowercase letters. */
 const PREFIX = /^[a-z]{2,6}$/;
@@ -89,17 +87,27 @@ export class BlueprintRecord {
   /** The composite primary key, when one was declared. */
   private primaryKey: readonly string[] | undefined = undefined;
 
+  /** The SQL type of a public-id key column (`hasPublicId`, `belongsTo`, `link`). */
+  private readonly publicIdColumn: string;
+
   /**
    * @param table - the table name, snake_case.
    * @param creating - true for `schema.create`, false for `schema.table`.
    * @param macros - the macros to install as methods.
+   * @param publicIdColumn - the SQL type of a public-id key column (`uuid` or `varchar(33)`).
    * @throws TypeError for a table name that is not snake_case, a macro class not named `<Name>Macro`, or a macro whose
    *         name a built-in method already has.
    */
-  constructor(table: string, creating: boolean, macros: readonly MacroClass[]) {
+  constructor(
+    table: string,
+    creating: boolean,
+    macros: readonly MacroClass[],
+    publicIdColumn: string = PUBLIC_ID_TEXT,
+  ) {
     quoteIdentifier(table);
     this.table = table;
     this.creating = creating;
+    this.publicIdColumn = publicIdColumn;
     for (const MacroClass of macros) {
       if (!MacroClass.name.endsWith("Macro") || MacroClass.name === "Macro")
         throw new TypeError(`${MacroClass.name} is not named <Name>Macro`);
@@ -200,14 +208,14 @@ export class BlueprintRecord {
 
   /** Implements `Blueprint.link`, documented there. */
   link(column: string): ColumnDefinition {
-    return this.add(new ColumnRecord(column, PUBLIC_ID, { indexed: true }));
+    return this.add(new ColumnRecord(column, this.publicIdColumn, { indexed: true }));
   }
 
   /** Implements `Blueprint.belongsTo`, documented there. */
   belongsTo(table: string, options: { readonly column: string }): ColumnRecord {
     quoteIdentifier(table);
     return this.add(
-      new ColumnRecord(options.column, PUBLIC_ID, { references: table, indexed: true }),
+      new ColumnRecord(options.column, this.publicIdColumn, { references: table, indexed: true }),
     );
   }
 
@@ -219,7 +227,7 @@ export class BlueprintRecord {
   hasPublicId(prefix: string): ColumnGroupRecord {
     if (!PREFIX.test(prefix))
       throw new TypeError(`"${prefix}" is not a public id prefix: 2 to 6 lowercase letters`);
-    const id = new ColumnRecord("id", PUBLIC_ID, {
+    const id = new ColumnRecord("id", this.publicIdColumn, {
       nullability: "not null",
       comment: `Public id (${prefix}_ and 26 characters of a UUIDv7); the primary key.`,
       primary: true,
@@ -246,7 +254,7 @@ export class BlueprintRecord {
   /** Implements `Blueprint.userStamps`, documented there. */
   userStamps(): ColumnGroupRecord {
     const stamp = (name: string, comment: string) =>
-      this.add(new ColumnRecord(name, PUBLIC_ID, { nullability: "null", comment }));
+      this.add(new ColumnRecord(name, PUBLIC_ID_TEXT, { nullability: "null", comment }));
     return new ColumnGroupRecord([
       stamp(
         "created_by",

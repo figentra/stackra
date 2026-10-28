@@ -109,6 +109,10 @@ an existing table that is not `concurrently()` (which compiles to its own non-tr
 a new table, an extension outside ADR 0160's five and PostGIS (ADR 0314), and a raw `schema.sql` without its `inverse`. A package's `Macro`
 merges into `Blueprint` (gen writes the type) and is installed by name.
 
+Public-id key columns (`hasPublicId`, `belongsTo`, `link`) are `varchar(33)` by default; compiled with
+`publicIds: "uuid"` they are native `uuid` (ADR 0135, 2026-10-28 amendment), read and written through
+`@stackra/model`'s `PublicIdType` and `LinkType(model, prefix)` codec. Principal stamps and `scope_id` stay text.
+
 ### Changing a column
 
 On an existing table (`schema.table`), `t.change(column)` changes a column in place, as a frozen step whose inverse is

@@ -42,6 +42,24 @@ A registered prefix may also be declared by the member that hosts its owner's pa
 owner's module), under that member's own model key; the manifest records the hosted key. See ADR 0294 amendment
 2026-10-26, item 6 (STA-1283).
 
+## Amendment 2026-10-28: native `uuid` storage, the prefix in the codec (STA-1427)
+
+Owner data-layer decision 1 (2026-10-28) fixes the stored form, which decision 1 left open:
+
+1. The database stores the UUIDv7 of a public id as a native `uuid`, never the prefixed text. The 26 base32 characters
+   and the 128 bits of the UUID are the same number (the top two bits of the base32 form are zero), so the conversion
+   is exact and keeps time order.
+2. The prefix lives in the model, not in the row. `PublicIdType(prefix)` (key columns) and `LinkType(model, prefix)`
+   (cross-module links) in `@stackra/model` add it on read and strip it on write; `publicIdToUuid` and
+   `uuidToPublicId` are the pure codec. A raw UUID never leaves a service (decision 4 stands).
+3. Columns that hold ids of several prefixes (principal stamps) or compare with a text setting (`scope_id`) keep
+   `varchar(33)`.
+4. The compiler's `publicIds: "uuid"` option writes the native columns; gen turns it on for every member with the
+   entity codec in one change, before the 0.1.0 publish.
+
+Consequence: keys and their indexes are half the width of the text form, and text that is not a public id cannot be
+stored, since the codec and the `uuid` type refuse it. The codec does not check the prefix; gen's prefix registry does.
+
 ## Supersedes and sources
 
 Supersedes: none.

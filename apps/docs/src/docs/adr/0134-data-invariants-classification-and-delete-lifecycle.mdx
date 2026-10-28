@@ -61,3 +61,17 @@ planned — the validator or gen checks that every field has a classification af
 
 Supersedes: [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins). Amends (final pass): 0071 decision 2. Sources:
 owner intent-map item P4 (accepted, mem L584), delete answer DA7 and DA8 (mem L534), audit answer AU7 (mem L652), 2026-10-20.
+
+## Amendment 2026-10-28: UUIDv7 keys are stored as native `uuid` (STA-1427)
+
+Owner data-layer decision 1 (2026-10-28, `notes/handover/gap-analysis/data-layer/DECISIONS.md`) settles how decision 1's
+UUIDv7 keys are stored. A `HasPublicId` primary key, a same-module foreign key to one and a cross-module `Link` column
+are a native Postgres `uuid` (16 bytes), not the `varchar(33)` text of the public id. The prefixed public id of
+[0135](/adr/0135-public-id-format) stays the only external form: the model's column codec (`PublicIdType`, and
+`LinkType` with the target's prefix, in `@stackra/model`) strips the prefix on write and adds it on read, so code above
+the ORM never sees a bare UUID. Principal stamps (`created_by`, `updated_by`) and `scope_id` keep the text form, since
+they hold ids of several prefixes or compare with a text session setting.
+
+The migration compiler writes the native form when a member compiles with `publicIds: "uuid"`; gen switches every
+member to it together with the entity codec, before the 0.1.0 publish, so no stored data needs converting. The delete
+policies of decision 4 are unchanged by this amendment.

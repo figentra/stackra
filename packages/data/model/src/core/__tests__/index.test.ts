@@ -137,6 +137,7 @@ describe("@stackra/model", () => {
       "OnDelete",
       "OneToMany",
       "PrivilegedDataClass",
+      "PublicIdType",
       "SearchSnippet",
       "Searchable",
       "SoftDeletes",
@@ -152,7 +153,9 @@ describe("@stackra/model", () => {
       "createTrait",
       "currentRows",
       "encryptedFieldsOf",
+      "publicIdToUuid",
       "traitsOf",
+      "uuidToPublicId",
     ]);
   });
 

@@ -19,4 +19,12 @@ export interface CompileOptions {
 
   /** The macros installed on every blueprint, by the name their class gives. */
   readonly macros?: readonly MacroClass[];
+
+  /**
+   * How a public-id key column is stored: `uuid` (owner decision 1, ADR 0135 as amended 2026-10-28; the model's
+   * `PublicIdType`/`LinkType` codec adds and strips the prefix) or `varchar` (`varchar(33)`, the text form); `varchar`
+   * when absent until gen's entities switch to the codec. It covers `hasPublicId`, `belongsTo` and `link`; principal
+   * stamps and `scope_id` keep the text form.
+   */
+  readonly publicIds?: "uuid" | "varchar";
 }

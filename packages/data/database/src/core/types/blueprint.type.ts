@@ -73,13 +73,16 @@ export interface Blueprint {
   /** A `Money` field: `<name>_minor bigint` and `<name>_currency char(3)`. */
   money: (name: string) => ColumnGroup;
 
-  /** A `Link<T>` to another module's model: its public id in `varchar(33)`, indexed, with no foreign key. */
+  /**
+   * A `Link<T>` to another module's model: its public id (`varchar(33)`, or `uuid` with `publicIds: "uuid"`), indexed,
+   * with no foreign key.
+   */
   link: (column: string) => ColumnDefinition;
 
-  /** A same-module relation: `varchar(33)` with the foreign key `fk_<table>_<column>` to `table.id`, indexed. */
+  /** A same-module relation: the key's type with the foreign key `fk_<table>_<column>` to `table.id`, indexed. */
   belongsTo: (table: string, options: { readonly column: string }) => ForeignKeyColumn;
 
-  /** The `HasPublicId(prefix)` trait: the primary key `id varchar(33)`. */
+  /** The `HasPublicId(prefix)` trait: the primary key `id` (`varchar(33)`, or `uuid` with `publicIds: "uuid"`). */
   hasPublicId: (prefix: string) => ColumnGroup;
 
   /** The `Timestamps` trait: `created_at` and `updated_at`, `timestamptz not null default now()`. */
