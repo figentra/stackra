@@ -89,7 +89,8 @@ describe("writeZip", () => {
     await expect(zip([{ name: "a".repeat(0x10000), bytes: [] }])).rejects.toThrow(RangeError);
   });
 
-  it("writes the ZIP64 end records past 65,535 entries", async () => {
+  // 65,536 entries take about 9 s on CI, past the default 5 s.
+  it("writes the ZIP64 end records past 65,535 entries", { timeout: 30_000 }, async () => {
     const count = 0x10000;
     const archive = await zip(
       Array.from({ length: count }, (_, index) => ({
