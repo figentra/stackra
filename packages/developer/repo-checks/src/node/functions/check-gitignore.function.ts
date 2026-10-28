@@ -6,8 +6,8 @@
  * Governing contract: ADR 0295 (decision 5: gen writes tool configs into `.stackra/`).
  */
 
-/** A `.gitignore` line that ignores `.stackra/` or everything in it. */
-const STACKRA_IGNORED = /^\/?\.stackra(\/\*?)?[ \t]*$/m;
+/** A `.gitignore` line that ignores `.stackra/` or everything in it, at the root (a leading slash) or in every member (a leading double star). */
+const STACKRA_IGNORED = /^(?:\/|\*\*\/)?\.stackra(\/\*?)?[ \t]*$/m;
 
 /**
  * The `.gitignore` finding, if any.
