@@ -168,8 +168,15 @@ describe(SchedulerService, () => {
     const expiring = (await stored(jobs)).filter(
       (job) => job.key === "orders.order.expire_unpaid@1",
     );
-    expect(expiring.map((job) => job.scope?.id)).toEqual(["scp_acme", "scp_globex"]);
-    expect(expiring.map((job) => job.input)).toEqual([{ batchSize: 100 }, { batchSize: 100 }]);
+    // The fair queue hands scopes out in turn, so the order is the queue's, not the scheduler's.
+    const fired = expiring.map((job) => [job.scope?.id, job.input]);
+    expect(fired).toHaveLength(2);
+    expect(fired).toEqual(
+      expect.arrayContaining([
+        ["scp_acme", { batchSize: 100 }],
+        ["scp_globex", { batchSize: 100 }],
+      ]),
+    );
   });
 
   it("pushes nothing on a second tick of the same minute and moves each cron's watermark", async () => {

@@ -18,7 +18,11 @@ import { redactSubjectMessages } from "#core/functions/redact-subject-messages.f
 const NOON = new Date(Date.UTC(2026, 9, 28, 12));
 
 /** A message of `kind` with payload `data`. */
-function message(id: PublicId<"evt">, data: unknown, kind = MessageKind.Event): OutboxMessage {
+function message(
+  id: PublicId<"evt">,
+  data: unknown,
+  kind: MessageKind = MessageKind.Event,
+): OutboxMessage {
   return {
     id,
     kind,

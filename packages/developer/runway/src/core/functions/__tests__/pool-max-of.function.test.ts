@@ -53,7 +53,9 @@ describe("poolMaxOf", () => {
   it("puts an unlisted member in the default group and counts one for an isolated one", () => {
     expect(poolMaxOf(root(grouped), service(30), "search", production)).toBe(10);
     expect(poolMaxOf(root(grouped), service(30), "billing", production)).toBe(30);
-    expect(poolMaxOf(root({ topology: { mode: "monolith" } }), service(20), "commerce", production)).toBe(20);
+    expect(
+      poolMaxOf(root({ topology: { mode: "monolith" } }), service(20), "commerce", production),
+    ).toBe(20);
   });
 
   it("takes the root default when the service names no budget, and nothing without either", () => {

@@ -4,5 +4,5 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
-  "tags": ["tier:lib", "category:data", "runtime:isomorphic"],
+  "tags": ["tier:lib", "category:data", "runtime:isomorphic", "runtime:node"],
 }

@@ -66,7 +66,17 @@ describe(reportResultOf, () => {
   });
 
   it("returns the one row of a run with no dimension", () => {
-    const flat = { ...plan, dimensions: [], groupBy: undefined } as ReportPlan;
+    const { report, measures, money, moneyOut, selects, offset, limit } = plan;
+    const flat: ReportPlan = {
+      report,
+      dimensions: [],
+      measures,
+      money,
+      moneyOut,
+      selects,
+      offset,
+      limit,
+    };
     const result = reportResultOf(flat, declaration, [total], 1000);
     expect(result.rows).toEqual([result.totals]);
   });
