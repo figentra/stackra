@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `Container`: it builds bindings from a generated-style wiring table with no reflect-metadata,
- *          selects drivers by override, test choice, config, default or single candidate, fails a boot without a driver with
+ *          selects drivers by override, test choice, config, default (ahead of config) or single candidate, fails a boot without a driver with
  *          `UnresolvedPortError` (and with a TypeError naming a candidate whose import gives no class), resolves named instances, honours the three lifetimes, replaces, merges wirings,
  *          boots only the chosen roots eagerly, runs Explorers once, shuts instances down on close, and lists the
  *          contributions to an extension point with `getAll` (the multi-binding), and lists its bindings by name for
@@ -220,6 +220,30 @@ describe("Container", () => {
         drivers: [
           {
             port: Ledger,
+            default: "memory",
+            candidates: {
+              memory: () => Promise.resolve(MemoryLedgerDriver),
+              postgres: () => Promise.resolve(PostgresLedgerDriver),
+            },
+          },
+        ],
+      });
+      expect((await Container.create([wiring])).get(Ledger)).toBeInstanceOf(MemoryLedgerDriver);
+      const chosen = await Container.create([wiring], {
+        drivers: { byPort: { Ledger: "postgres" } },
+      });
+      expect(chosen.get(Ledger)).toBeInstanceOf(PostgresLedgerDriver);
+    });
+
+    it("takes a selected port's default ahead of config, and a test's choice ahead of both", async () => {
+      // HostPointsConfig's ledger is "postgres": the production value config has in a package's own tests.
+      const wiring = points({
+        config: [{ key: "points", provide: PointsConfig, override: HostPointsConfig }],
+        drivers: [
+          {
+            port: Ledger,
+            key: "points.Ledger",
+            selectedBy: "config:points.ledger",
             default: "memory",
             candidates: {
               memory: () => Promise.resolve(MemoryLedgerDriver),

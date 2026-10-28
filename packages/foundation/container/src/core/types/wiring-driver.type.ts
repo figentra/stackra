@@ -28,8 +28,9 @@ export interface WiringDriver {
   readonly named?: string;
 
   /**
-   * The candidate the port takes when neither a test nor config picks one. Gen sets it only in a package's own wiring
-   * (its `memory` driver, else its one `./testing` driver), which only that package's own tests register.
+   * The candidate the port takes when no test picks one, ahead of config (whose value there is the schema's production
+   * default). Gen sets it only in a package's own wiring (its `memory` driver, else its one `./testing` driver), which
+   * only that package's own tests register.
    */
   readonly default?: string;
 

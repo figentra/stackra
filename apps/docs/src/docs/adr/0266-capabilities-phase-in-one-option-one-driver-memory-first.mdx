@@ -18,10 +18,12 @@ description: "Accepted · 2026-10-21"
   `internal: true` marks a helper its package builds itself and does not export (the console error
   reporter, the no-market context, the sandbox's IPC fetch proxy); it is never a candidate in a
   manifest or a wiring, so no host can select it. `testDefault: true` marks the driver a package's
-  own tests take for a port with several candidates and no selector when the package ships no
-  `memory` driver or single `./testing` driver (`ProviderDefaults` takes `region-map`). In a
-  package's own wiring the order is: the test's choice, config, `memory`, the one `./testing`
-  driver, the one `testDefault` driver. Hosts are unaffected and select through config as before.
+  own tests take for a port with several candidates when the package ships no `memory` driver or
+  single `./testing` driver (`ProviderDefaults` takes `region-map`). In a package's own wiring the
+  order is: the test's choice, `memory`, the one `./testing` driver, the one `testDefault` driver,
+  config. The default goes ahead of config, selected port or not, because config there always holds
+  the schema's production value (`QueueOptions.driver` is `postgres`), which put the queue's own
+  tests on Postgres. Hosts are unaffected and select through config as before.
 </Note>
 
 ## Context

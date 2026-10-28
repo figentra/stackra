@@ -11,7 +11,7 @@
  *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
- *          else its one testing driver, else its one testDefault driver) where nothing selects one, no internal driver,
+ *          else its one testing driver, else its one testDefault driver), a selected port's included, no internal driver,
  *          and the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
@@ -542,6 +542,13 @@ describe("emitWiring's defaults for a package's own tests", () => {
     expect(table(content, "loyalty_kit.AuditSink")).toContain('default: "recording",');
     expect(table(content, "loyalty_kit.Pricer")).not.toContain("default:");
     expect(table(content, "loyalty_kit.LoyaltyLedger")).not.toContain("default:");
+  });
+
+  it("defaults a selected port with several candidates to memory too, so config's production default does not decide", () => {
+    const selected = { ...ir, classes: [...ir.classes, driver("Postgres", "LoyaltyLedger")] };
+    const ledger = table(emitWiring(selected), "loyalty_kit.LoyaltyLedger");
+    expect(ledger).toContain('selectedBy: "config:loyalty_kit.ledger",');
+    expect(ledger).toContain('default: "memory",');
   });
 
   it("gives a service's wiring no default", () => {

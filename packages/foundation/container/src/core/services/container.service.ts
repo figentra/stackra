@@ -486,7 +486,11 @@ export class Container {
     }
   }
 
-  /** The name of the driver a port takes: the test's choice, then config, then its default, then its only candidate. */
+  /**
+   * The name of the driver a port takes: the test's choice, then its default, then config, then its only candidate. Only
+   * a package's own wiring has a default, for its own tests, and it goes ahead of config because config always has a
+   * value there, the schema's production one (`QueueOptions.driver` is `postgres`); a test picks with `useDrivers`.
+   */
   private chooseDriver(driver: MergedDriver, choice: DriverChoice): string {
     const names = Object.keys(driver.candidates);
     const list = names.length === 0 ? "it has no candidate" : `its drivers are ${names.join(", ")}`;
@@ -502,6 +506,7 @@ export class Container {
     const byMember = member === undefined ? undefined : byPort[member];
     if (byMember !== undefined && names.includes(byMember)) return byMember;
     if (choice.fallback !== undefined && names.includes(choice.fallback)) return choice.fallback;
+    if (driver.default !== undefined && names.includes(driver.default)) return driver.default;
     if (driver.selectedBy !== undefined) {
       const selected = this.readConfig(driver.selectedBy);
       if (typeof selected !== "string" || !names.includes(selected))
@@ -511,7 +516,6 @@ export class Container {
         );
       return selected;
     }
-    if (driver.default !== undefined && names.includes(driver.default)) return driver.default;
     const [only] = names;
     if (names.length === 1 && only !== undefined) return only;
     throw new UnresolvedPortError(

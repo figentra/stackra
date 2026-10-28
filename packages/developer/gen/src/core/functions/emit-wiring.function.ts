@@ -19,7 +19,7 @@
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
- *           own tests register, a port with several candidates and no selector defaults to its `memory` driver, else
+ *           own tests register, a port with several candidates (selected or not) defaults to its `memory` driver, else
  *           to its one `./testing` driver, else to the one driver declared `Driver(Port, { testDefault: true })`; a
  *           service's or app's wiring never gets a default. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
  *           library the member does not declare are left out, so the wiring never imports an undeclared library. The
@@ -550,15 +550,16 @@ export function emitWiring(ir: MemberIR): string {
   for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
-    // A package's own wiring is registered only by its own tests: a port they cannot select gets its memory driver,
-    // else its one testing-entry driver (ADR 0266: the module's tests pass on the memory driver and the fake), else the
-    // one driver it marks `testDefault`.
+    // A package's own wiring is registered only by its own tests: a port gets its memory driver, else its one
+    // testing-entry driver (ADR 0266: the module's tests pass on the memory driver and the fake), else the one driver it
+    // marks `testDefault`. A selected port gets it too: the container takes it ahead of config, so the production value
+    // there (`QueueOptions.driver` is `postgres`) does not put the queue's own tests on Postgres (STA-1299).
     const testing = candidates.filter(
       (candidate) =>
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const fallback =
-      ir.layout !== "package" || select !== undefined || candidates.length < 2
+      ir.layout !== "package" || candidates.length < 2
         ? undefined
         : candidates.some((candidate) => candidate.name === "memory")
           ? "memory"
