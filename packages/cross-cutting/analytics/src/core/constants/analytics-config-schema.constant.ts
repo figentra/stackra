@@ -7,7 +7,8 @@
  *          and host, the identity driver, cookie name and
  *          lifetime (identity stitching), and the delivery engine: flush size and window, bounded retry, buffer bound,
  *          sampling (global and per event) and the offline queue; and the destinations (stackra-407): named driver
- *          instances (`drivers`) and the destination list, each with its own gating category and event routing.
+ *          instances (`drivers`) and the destination list, each with its own gating category and event routing; and
+ *          the ad pixel (stackra-412): the conversions the `ad-pixel` driver fires and the `AdPixel` driver.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `AnalyticsConfig$` extends it
  *           (`AnalyticsConfig$.shape.driver.unwrap().default(...)`). The rules sit on the fields: the gating category
@@ -15,7 +16,7 @@
  *           origin is empty or an http(s) URL, and the PostHog host is an http(s) URL. The driver names are the shipped drivers;
  *           the identity cookie name is a cookie token and the identity lives 1 to 400 days; sample rates are
  *           between 0 and 1; `default` is not a `drivers` key (it names the `driver` instance) and a destination's
- *           category is never `necessary`, each driver instance listed once. The defaults equal
+ *           category is never `necessary`, each driver instance listed once; each conversion event is listed once. The defaults equal
  *           `AnalyticsOptions`' initializers (tested).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0298 (decisions 1 and 5).
@@ -34,7 +35,7 @@ const GATING_CATEGORY = z
   });
 
 /** The shipped analytics driver names. */
-const DRIVER = z.enum(["none", "memory", "posthog"]);
+const DRIVER = z.enum(["none", "memory", "posthog", "ad-pixel"]);
 
 /** One destination: a driver instance, its own gating category and its event routing. */
 const DESTINATION = z.object({
@@ -42,6 +43,13 @@ const DESTINATION = z.object({
   category: GATING_CATEGORY,
   include: z.array(z.string().min(1)).default(() => []),
   exclude: z.array(z.string().min(1)).default(() => []),
+});
+
+/** One conversion the `ad-pixel` driver fires: the analytics event, the conversion name and the dedup id property. */
+const CONVERSION = z.object({
+  event: z.string().min(1),
+  name: z.string().min(1),
+  ref: z.string().min(1).optional(),
 });
 
 /** An RFC 6265 cookie-name token: no separators, spaces or controls. */
@@ -90,4 +98,11 @@ export const ANALYTICS_CONFIG_SCHEMA = z.object({
   sampleRates: z.record(z.string().min(1), z.number().min(0).max(1)).default(() => ({})),
   offlineDriver: z.enum(["none", "memory", "storage"]).default("none"),
   offlineLimit: z.number().int().min(0).max(5000).default(500),
+  conversions: z
+    .array(CONVERSION)
+    .refine((list) => new Set(list.map((entry) => entry.event)).size === list.length, {
+      message: "Each analytics event is one conversion; list it once",
+    })
+    .default(() => []),
+  adPixelDriver: z.enum(["none"]).default("none"),
 });

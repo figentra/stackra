@@ -22,6 +22,7 @@ import type {
 describe("@stackra/analytics/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "AdPixel",
       "AnalyticsDeliveryKind",
       "AnalyticsDriver",
       "AnalyticsDriverLookup",

@@ -5,7 +5,8 @@
  *          service with the other connectors (R3-8, STA-1281). The voice folder adds `SpeechService`, `VoicePack`,
  *          `VoiceMeter`, the region-map and memory audio drivers, `VOICE_METERS` and the consent and handover steps. The
  *          accounting folder adds `mapJournal`, `postMappedJournal` and `UnmappedAccountError` (STA-794); the ads folder
- *          adds `matchKeysOf`, the hashed match keys of a person for an ad platform (STA-793). The edi
+ *          adds `matchKeysOf`, the hashed match keys of a person for an ad platform (STA-793), and the conversion
+ *          bridge (`ConversionBridge`, `conversionOf`, the `Conversion` type; stackra-412). The edi
  *          folder adds the X12 and EDIFACT envelope (`readInterchange`, `writeInterchange`), the 997 and CONTRL
  *          `functionalAcknowledgement`, `MailboxEdiConnector`, `MemoryEdiMailboxDriver`, `EDI_MESSAGE_CODES` and
  *          `MalformedEdiError` (stackra-46).
@@ -22,6 +23,9 @@
 export { mapJournal } from "#core/accounting/map-journal.function";
 export { postMappedJournal } from "#core/accounting/post-mapped-journal.function";
 export { UnmappedAccountError } from "#core/accounting/unmapped-account.error";
+export { ConversionBridge } from "#core/ads/conversion-bridge.service";
+export { conversionOf } from "#core/ads/conversion-of.function";
+export type { Conversion } from "#core/ads/conversion.type";
 export { matchKeysOf } from "#core/ads/match-keys-of.function";
 export { Connection } from "#core/bases/connection.base";
 export { EDI_MESSAGE_CODES } from "#core/edi/edi-message-codes.constant";

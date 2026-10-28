@@ -33,6 +33,10 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 - `AnalyticsConfig$` mirrors `AnalyticsOptions` by hand until gen compiles this package's schemas; change both together.
   Every field keeps a default and no object-level refinement, so gen's override schema can `.extend` it.
 - A new driver adds its name to `AnalyticsDriverName` and to the schema's `driver` enum in the same change.
+- The `ad-pixel` driver (stackra-412) fires only what `conversions` names, and is listed as a destination gated by
+  `marketing`; it never checks consent and never makes an id: the event id is the `ref` property's value (shared with
+  the server `Conversion` of `@stackra/integrations`), else the delivery's `eventId`. Vendor pixels are `AdPixel`
+  drivers in OS integrations, never here.
 
 ## This package
 

@@ -5,10 +5,11 @@
  *          the click and browser signals the platform matches it to an ad by.
  * Boundary: a type only. `name` is our event name; the Connection maps it to the platform's own (`Purchase`,
  *           `CompletePayment`, `PURCHASE`, a conversion action) from its settings, never a constant. `eventId` is the
- *           id the browser pixel sent the same event under, so the platform counts it once. Consent is the caller's:
- *           an event of a person who refused ad tracking is never built.
+ *           id the browser pixel sent the same event under (the business id both sides read, stackra-412), so the
+ *           platform counts it once. Consent comes first (ADR 0472 decision 4): an event is built only when the
+ *           visitor's verified snapshot granted `marketing`, and it carries that snapshot's id and categories.
  * Runtime: isomorphic
- * Governing contract: ADR 0355 (decision 1); ADR 0134 (personal data); COM-301; STA-793.
+ * Governing contract: ADR 0355 (decision 1); ADR 0134 (personal data); ADR 0472 (decision 4); COM-301; STA-793.
  */
 import type { Url } from "@stackra/contracts";
 import type { Money } from "@stackra/money";
@@ -51,4 +52,7 @@ export interface ConversionEvent {
 
   /** The visitor's user agent, sent unhashed. */
   readonly userAgent?: string;
+
+  /** The consent snapshot it was built under: its id and the category codes it granted (ADR 0472 decision 4). */
+  readonly consent?: { readonly snapshotId: string; readonly granted: readonly string[] };
 }

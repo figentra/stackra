@@ -31,6 +31,9 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `.`           | `PageViewed`, `ScreenViewed`, `ElementClicked`                                                     | the built-in auto-capture events `page.viewed`, `screen.viewed`, `element.clicked`     |
 | `./react`     | `useAutocapture`                                                                                   | page views per path and `data-track` clicks, as the capture switches allow             |
 | `./native`    | `useScreenViews`                                                                                   | screen views per focused route, while `autocapturePageviews` is on                     |
+| `.`           | `AdPixelAnalyticsDriver`, `NoneAdPixelDriver`, `AnalyticsConversion`                               | the `ad-pixel` driver, the default `AdPixel` and one entry of `conversions`            |
+| `.`           | `adClickIdOf`, `AD_CLICK_ID_PARAMS`                                                                | the ad click id of a landing URL                                                       |
+| `./contracts` | `AdPixel`, `AdPixelEvent`                                                                          | the port a vendor browser pixel implements, and what it fires                          |
 | `./node`      | `RelayTrackedAnalyticsListener`                                                                    | sends the pipeline's server-side `analytics.tracked.v1` events to the bound driver     |
 | `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                    |
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
@@ -122,6 +125,31 @@ and `group` reach every granted destination. The visitor's identity is kept (coo
 uses the offline queue: a named destination drops a batch once its retries are spent. A destination naming an
 instance the `AnalyticsDriverLookup` does not know fails at construction. The shipped lookup (`none`) knows none:
 named instances need the host runtime's lookup over the container's named instances (not built yet).
+
+## Ad pixel and conversions
+
+The `ad-pixel` driver fires conversions on the browser pixels of the ad platforms. It is a destination of its own,
+gated by `marketing`, and fires only the tracked events `conversions` names; everything else (other events,
+`identify`, `group`) is dropped. The value of the conversion's `ref` property is the pixel's event id, and the server
+conversion of the same fact (`ConversionBridge` of `@stackra/integrations`, fed by `order.placed`) reads the same
+business id, so the platform counts the pair once.
+
+```ts
+export class AnalyticsConfig extends BaseAnalyticsConfig {
+  override driver: DriverName<AnalyticsDriver> = "posthog";
+  override drivers = { pixel: "ad-pixel" };
+  override destinations = [
+    { driver: "default", category: ConsentCategory.Analytics },
+    { driver: "pixel", category: ConsentCategory.Marketing },
+  ];
+  override conversions = [{ event: "checkout.completed", name: "purchase", ref: "orderId" }];
+}
+```
+
+The pixel itself is the `AdPixel` port (`adPixelDriver`, `none` by default): vendor pixel drivers, their scripts and
+pixel ids are OS integrations, one driver firing on every pixel its Connections hold. `adClickIdOf(url)` reads the ad
+click id of a landing URL (`fbclid`, `ttclid`, `gclid`, `ScCid`, or the host's own list); the host keeps it with the
+visit once `marketing` is granted and passes it with the order, whose event the server conversion reads `clickId` from.
 
 ## Use
 

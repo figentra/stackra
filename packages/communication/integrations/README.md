@@ -390,6 +390,37 @@ decision 7), built from the vendor's public API documentation and marked certifi
   and SHA-256 hashes it, the phone and our id. The phone format is the Connection's setting: `e164` (Google Ads, TikTok)
   or `digits` (Meta, Snap). Our event names map to the platform's on the Connection; a conversion's `eventId` is the
   pixel's, so the platform counts it once. Consent is checked before a `ConversionEvent` is built.
+- The conversion bridge (stackra-412) turns an integration event into a server conversion. A `Conversion` is data:
+  the conversion name, the payload path of the business id (`ref`, which becomes the `eventId`) and the paths of the
+  person, value, items, click id, page URL, IP, user agent and consent. A host writes one small listener per event and
+  calls `ConversionBridge.relay(conversion, event, ctx.occurredAt)`; the bridge sends through `gateway.ads()` with the
+  Connection's `phoneFormat`. The event must carry the call's consent (`{ snapshotId, granted }`, from
+  `ctx.consent()`, at `consent` by default): without `marketing` among `granted` nothing is built, hashed or sent
+  (ADR 0472 decision 4), and the conversion carries that consent. The browser side is the `ad-pixel` driver of
+  `@stackra/analytics`, which fires the same `ref` value as its event id, so the pair is counted once.
+
+```ts
+const PURCHASE: Conversion = {
+  name: "purchase",
+  ref: "orderId",
+  person: { email: "customer.email", phone: "customer.phone", externalId: "customer.id" },
+  value: "total",
+  items: "lines",
+  clickId: "attribution.clickId",
+};
+
+export class PurchaseConversionListener extends Listener({ queue: Queues.Default }) {
+  constructor(bridge: ConversionBridge) {
+    super();
+    this.bridge = bridge;
+  }
+
+  async handle(event: OrderPlaced, ctx: ListenerContext): Promise<void> {
+    await this.bridge.relay(PURCHASE, event, ctx.occurredAt);
+  }
+}
+```
+
 - Webhooks need no new machinery: Salla's `x-salla-signature` and Meta's `x-hub-signature-256` are `hmac` recipes
   (`WebhookSignature`), Amazon notifies through SQS or EventBridge (no webhook), and any other scheme is a
   `WebhookSchemeRecipe`. The recipes are OS integrations data.

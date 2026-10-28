@@ -6,7 +6,7 @@
  *           platform's catalogue is a separate `ProductFeedConnector` on the same Connection. Conversions carry their
  *           pixel `eventId`, so a retried batch is counted once; `replace` sets the whole audience, so a retry is
  *           harmless too. Members are `MatchKeys`, hashed before they reach the Connection. Which pixel, ad account
- *           and audience a Connection uses are its settings.
+ *           and audience a Connection uses are its settings, and so is `phoneFormat`.
  * Runtime: isomorphic
  * Governing contract: ADR 0355 (decisions 1 and 5); ADR 0134 (personal data); COM-301; STA-793.
  */
@@ -22,6 +22,9 @@ import type { MatchKeys } from "#contracts/ads/match-keys.type";
  * await ads.syncAudience("vip-buyers", members, "replace");
  */
 export interface AdPlatformConnector {
+  /** How this platform hashes a phone (`matchKeysOf`'s format): `e164` keeps the `+`, `digits` drops it; `e164` when absent. */
+  readonly phoneFormat?: "e164" | "digits";
+
   /** Sends `events` to the conversions API. */
   sendConversions: (events: readonly ConversionEvent[]) => Promise<AdBatchResult>;
 

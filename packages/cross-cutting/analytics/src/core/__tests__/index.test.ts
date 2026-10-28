@@ -16,6 +16,8 @@ import type { AnalyticsDriverName } from "#core/index";
 describe("@stackra/analytics", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(analytics).sort()).toEqual([
+      "AD_CLICK_ID_PARAMS",
+      "AdPixelAnalyticsDriver",
       "AnalyticsClient",
       "AnalyticsConfig",
       "AnalyticsConfig$",
@@ -26,6 +28,7 @@ describe("@stackra/analytics", () => {
       "MemoryAnalyticsDriver",
       "MemoryAnalyticsIdentityDriver",
       "MemoryAnalyticsOfflineQueueDriver",
+      "NoneAdPixelDriver",
       "NoneAnalyticsDriver",
       "NoneAnalyticsDriverLookupDriver",
       "NoneAnalyticsOfflineQueueDriver",
@@ -34,11 +37,13 @@ describe("@stackra/analytics", () => {
       "ScreenViewed",
       "StorageAnalyticsIdentityDriver",
       "StorageAnalyticsOfflineQueueDriver",
+      "adClickIdOf",
     ]);
   });
 
   it("keeps the port and the internals out of the entry", () => {
     for (const name of [
+      "AdPixel",
       "AnalyticsDriver",
       "AnalyticsDriverLookup",
       "ANALYTICS_DEFAULT_DESTINATION",
@@ -57,6 +62,6 @@ describe("@stackra/analytics", () => {
   });
 
   it("names the shipped drivers", () => {
-    expectTypeOf<AnalyticsDriverName>().toEqualTypeOf<"none" | "memory" | "posthog">();
+    expectTypeOf<AnalyticsDriverName>().toEqualTypeOf<"none" | "memory" | "posthog" | "ad-pixel">();
   });
 });

@@ -137,6 +137,11 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   settings, never constants. A connector driver passes `runConnectorCase` (and a 3PL `runFulfilmentCase`) with
   recordings from public docs marked `certification: "pending"`. Meta is one Integration (WhatsApp, catalogue, ads,
   pixel) in OS integrations; never add a second.
+- Conversions (stackra-412): a server conversion is built only by `conversionOf` / `ConversionBridge` from a
+  `Conversion` (data: payload paths), and only when the event carries a consent whose `granted` includes `marketing`
+  (ADR 0472 d4); missing means refused, and nothing is hashed before that check. The `ref` value is the `eventId` the
+  `ad-pixel` driver of `@stackra/analytics` fires too; never mint another id for a conversion. A relayed event gets
+  its own small `Listener` in the host; the bridge never subscribes by name.
 - Meters: `voice.minutes` and `speech.seconds` are written only through `VoiceMeter` (the existing `usage.recorded`
   event, `sum`, exact units); rounding and prices are rate-card data. Speech seconds are counted from raw bytes, so
   `AudioEncoding` stays uncompressed; adding a compressed codec needs another way to measure.

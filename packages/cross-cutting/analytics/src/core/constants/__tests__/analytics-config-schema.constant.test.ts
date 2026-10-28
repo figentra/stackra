@@ -40,6 +40,8 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
       sampleRates: {},
       offlineDriver: "none",
       offlineLimit: 500,
+      conversions: [],
+      adPixelDriver: "none",
     });
   });
 
@@ -108,8 +110,30 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     ["a sample rate above 1", { sampleRate: 1.5 }],
     ["a negative per-event sample rate", { sampleRates: { "page.scrolled": -0.1 } }],
     ["an unknown offline driver", { offlineDriver: "indexeddb" }],
+    ["a conversion with no name", { conversions: [{ event: "checkout.completed", name: "" }] }],
+    [
+      "one event listed as two conversions",
+      {
+        conversions: [
+          { event: "checkout.completed", name: "purchase" },
+          { event: "checkout.completed", name: "lead" },
+        ],
+      },
+    ],
+    ["an unknown ad pixel driver", { adPixelDriver: "meta" }],
   ])("refuses %s", (_case, values) => {
     expect(ANALYTICS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
+  });
+
+  it("accepts the ad-pixel driver as an instance with its conversions", () => {
+    const parsed = ANALYTICS_CONFIG_SCHEMA.parse({
+      drivers: { pixel: "ad-pixel" },
+      destinations: [{ driver: "pixel", category: "marketing" }],
+      conversions: [{ event: "checkout.completed", name: "purchase", ref: "orderId" }],
+    });
+    expect(parsed.conversions).toEqual([
+      { event: "checkout.completed", name: "purchase", ref: "orderId" },
+    ]);
   });
 
   it("can be extended field by field, as gen extends it for the mobile app", () => {

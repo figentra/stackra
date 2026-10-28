@@ -14,6 +14,7 @@ import { schemaOf } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
+import type { AnalyticsConversion } from "#core/types/analytics-conversion.type";
 import type { AnalyticsDestination } from "#core/types/analytics-destination.type";
 import { AnalyticsOptions } from "#core/schemas/analytics-options.schema";
 
@@ -37,5 +38,6 @@ describe("AnalyticsOptions", () => {
       Record<string, DriverName<AnalyticsDriver>>
     >();
     expectTypeOf<AnalyticsOptions["destinations"]>().toEqualTypeOf<AnalyticsDestination[]>();
+    expectTypeOf<AnalyticsOptions["conversions"]>().toEqualTypeOf<AnalyticsConversion[]>();
   });
 });

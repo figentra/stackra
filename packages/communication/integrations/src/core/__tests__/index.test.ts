@@ -43,6 +43,7 @@ describe("@stackra/integrations", () => {
       "ConnectionStore",
       "ConnectorGateway",
       "ConnectorKind",
+      "ConversionBridge",
       "EDI_MESSAGE_CODES",
       "HostedConnectionStoreDriver",
       "Integration",
@@ -81,6 +82,7 @@ describe("@stackra/integrations", () => {
       "audioSeconds",
       "connectionsOf",
       "consentSteps",
+      "conversionOf",
       "credentialRef",
       "functionalAcknowledgement",
       "handoverSteps",
@@ -97,6 +99,8 @@ describe("@stackra/integrations", () => {
     ]);
     expect("managedClient" in integrations).toBe(false);
     expect("CONNECTION_REGISTRY" in integrations).toBe(false);
+    expect("valueAt" in integrations).toBe(false);
+    expect("conversionConsentOf" in integrations).toBe(false);
   });
 
   it("resolves its public types", () => {

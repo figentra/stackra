@@ -5,7 +5,8 @@
  *          property names never leave the device, the PostHog project key and host the `posthog` driver sends to, and
  *          where and how long the visitor's identity is kept after consent, and
  *          how the delivery engine batches, retries, samples and keeps events offline, and the destinations: named
- *          driver instances and the list of destinations, each gated by its own consent category (stackra-407).
+ *          driver instances and the list of destinations, each gated by its own consent category (stackra-407), and
+ *          the conversions the `ad-pixel` driver fires with its `AdPixel` driver (stackra-412).
  * Boundary: a shape class; it registers this package's own schema (`ANALYTICS_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(AnalyticsConfig)` validates with no generated file. The defaults send
  *           nothing anywhere: the `none` driver, gated by `analytics`, nothing captured automatically, no cookies.
@@ -20,10 +21,12 @@ import { ConsentCategory } from "@stackra/consent";
 import type { DriverName } from "@stackra/container";
 import { Field, Int, Num, registerSchemas, Schema } from "@stackra/validation";
 
+import type { AdPixel } from "#contracts/ports/ad-pixel.port";
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
 import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
 import { ANALYTICS_CONFIG_SCHEMA } from "#core/constants/analytics-config-schema.constant";
+import type { AnalyticsConversion } from "#core/types/analytics-conversion.type";
 import type { AnalyticsDestination } from "#core/types/analytics-destination.type";
 
 /**
@@ -123,6 +126,14 @@ export class AnalyticsOptions extends Schema {
   destinations: AnalyticsDestination[] = [];
 
   /**
+   * The analytics events the `ad-pixel` driver fires as conversions, each with its conversion name and the property
+   * whose value is the dedup id the server conversion shares; empty fires nothing.
+   */
+  // reason: an array of objects a host override replaces whole; the shipped schema already states its rule
+  @Field(ANALYTICS_CONFIG_SCHEMA.shape.conversions)
+  conversions: AnalyticsConversion[] = [];
+
+  /**
    * The registered `AnalyticsDriver` that sends (the `default` destination); `none` sends nothing, `memory` keeps
    * events, `posthog` sends there.
    */
@@ -172,6 +183,12 @@ export class AnalyticsOptions extends Schema {
    * (the default, nothing kept), `memory` or `storage` (a device's `prefs` area).
    */
   offlineDriver: DriverName<AnalyticsOfflineQueue> = "none";
+
+  /**
+   * The registered `AdPixel` the `ad-pixel` driver fires on: `none` (the default) fires nothing; vendor pixels are OS
+   * integrations drivers.
+   */
+  adPixelDriver: DriverName<AdPixel> = "none";
 }
 
 registerSchemas([[AnalyticsOptions, ANALYTICS_CONFIG_SCHEMA]]);
