@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0079 (decisions 2 and 6).
  */
-import type { Signal } from "#react/signal/signal.type";
+import type { StateSignal } from "#react/signal/state-signal.type";
 
 /**
  * A new signal holding `initial`.
@@ -17,7 +17,7 @@ import type { Signal } from "#react/signal/signal.type";
  * chosen.set(BillingInterval.Year);
  * chosen.get(); // "year"
  */
-export function signal<T>(initial: T): Signal<T> {
+export function signal<T>(initial: T): StateSignal<T> {
   let value = initial;
   const listeners = new Set<(value: T) => void>();
   return Object.freeze({

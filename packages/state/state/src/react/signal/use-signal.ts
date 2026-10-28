@@ -10,7 +10,7 @@
  */
 import { useSyncExternalStore } from "react";
 
-import type { Signal } from "#react/signal/signal.type";
+import type { StateSignal } from "#react/signal/state-signal.type";
 
 /**
  * The current value of `source`.
@@ -18,6 +18,6 @@ import type { Signal } from "#react/signal/signal.type";
  * @example
  * const isOnline = useSignal(platform.network.isOnline);
  */
-export function useSignal<T>(source: Pick<Signal<T>, "get" | "subscribe">): T {
+export function useSignal<T>(source: Pick<StateSignal<T>, "get" | "subscribe">): T {
   return useSyncExternalStore(source.subscribe, source.get, source.get);
 }

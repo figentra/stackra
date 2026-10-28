@@ -11,7 +11,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { signal } from "#react/signal/signal.function";
-import type { Signal } from "#react/signal/signal.type";
+import type { StateSignal } from "#react/signal/state-signal.type";
 
 describe("signal", () => {
   it("holds a value that set replaces", () => {
@@ -19,7 +19,7 @@ describe("signal", () => {
     expect(chosen.get()).toBeNull();
     chosen.set("year");
     expect(chosen.get()).toBe("year");
-    expectTypeOf(chosen).toEqualTypeOf<Signal<"month" | "year" | null>>();
+    expectTypeOf(chosen).toEqualTypeOf<StateSignal<"month" | "year" | null>>();
   });
 
   it("calls subscribers with each new value until they unsubscribe", () => {
