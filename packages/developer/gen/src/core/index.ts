@@ -15,7 +15,8 @@
  *                     and `source` fold into gen); ADR 0438 (the slot and fill IR types, stackra-03); ADR 0436 (surface targets, the
  *                     extension bundle manifest and `modulepreloadOf`, stackra-04); ADR 0336 (`additionsOf`,
  *                     `AdditionEntry`, stackra-64); ADR 0452 (the system graph: `memberGraphOf`, `systemGraph`,
- *                     `GRAPH_NOTICE` and the graph types, stackra-59).
+ *                     `GRAPH_NOTICE` and the graph types, stackra-59); ADR 0470 (`reportsOf`, `emitReports`,
+ *                     stackra-389).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -60,6 +61,7 @@ export { emitMemberModule } from "#core/functions/emit-member-module.function";
 export { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 export { emitPrefixes } from "#core/functions/emit-prefixes.function";
 export { emitRegistrations } from "#core/functions/emit-registrations.function";
+export { emitReports } from "#core/functions/emit-reports.function";
 export { emitRoutes } from "#core/functions/emit-routes.function";
 export { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 export { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -82,6 +84,7 @@ export { openApiOf } from "#core/functions/open-api-of.function";
 export { orderMigrations } from "#core/functions/order-migrations.function";
 export { permissionKey } from "#core/functions/permission-key.function";
 export { portKey } from "#core/functions/port-key.function";
+export { reportsOf } from "#core/functions/reports-of.function";
 export { rootModuleOf } from "#core/functions/root-module-of.function";
 export { routeKey } from "#core/functions/route-key.function";
 export { sequenceKey } from "#core/functions/sequence-key.function";

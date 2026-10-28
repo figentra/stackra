@@ -9,7 +9,8 @@
  *           `port` is a noun kind here.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
- *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`).
+ *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`); ADR 0470
+ *                     (decision 1: `<name>.report.ts`, `<Name>Report`).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -57,6 +58,7 @@ export const KIND_FILES: Readonly<
   prompt: { file: "prompt", suffix: "Prompt" },
   query: { file: "query", suffix: "Query" },
   refusal: { file: "error", suffix: "Error" },
+  report: { file: "report", suffix: "Report" },
   resource: { file: "resource", suffix: "Resource" },
   role: { file: "role", suffix: "Role" },
   route: { file: "route", suffix: "Route" },

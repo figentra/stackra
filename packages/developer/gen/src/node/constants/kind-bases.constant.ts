@@ -9,7 +9,8 @@
  *                     and connections); ADR 0342 (sequences); ADR 0425
  *                     (decision 1: rule outcome kinds); ADR 0399 (Agent) and ADR 0348 (decision 5: Pass), STA-903;
  *                     ADR 0336 (decision 1: `ModelAddition`, stackra-64); ADR 0260 (decision 2: `remoteShape` of
- *                     `@stackra/clients` is a schema base, so `PickType(Remote)` and `extends Remote` compile, STA-1363).
+ *                     `@stackra/clients` is a schema base, so `PickType(Remote)` and `extends Remote` compile, STA-1363);
+ *                     ADR 0470 (decision 1: `Report`, stackra-389).
  */
 
 /** Kind base name to kind code. */
@@ -58,6 +59,7 @@ export const KIND_BASES: Readonly<Record<string, string>> = Object.freeze({
   Prompt: "prompt",
   Query: "query",
   Refusal: "refusal",
+  Report: "report",
   Resource: "resource",
   Role: "role",
   Route: "route",

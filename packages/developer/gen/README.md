@@ -45,6 +45,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitToolConfigs`                                                            | `.stackra/{tsdown,vitest}.config.ts`, `.stackra/vitest.setup.ts`                                  |
 | `.`                   | `emitI18n`                                                                   | `#stackra/i18n`: `I18n` (typed keys of `assets/lang`), `locales`, `catalogues` and `loadMessages` |
 | `.`                   | `emitSettings`                                                               | `#stackra/settings`: `Settings`, the typed setting keys of the member's settings classes          |
+| `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)        |
 | `.`                   | `DocsConfig`, `emitDocsSite`, `DOCS_CONFIG_FILE`, `DOCS_SITE_DIR`            | a docs app's typed site config and the Mintlify site gen assembles (see below)                    |
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                                    |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                                     |
@@ -185,6 +186,18 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   counted model's `create` actions, and an action or query naming it in an `entitlement` option is gated by it. The
   registrations file calls `registerEntitlements` with one row per entitlement, so `PlanSnapshotEntitlementSource`
   resolves every registered class. A class thunk option (`counts: () => Till`) is read as its class.
+
+## Reports (ADR 0470, stackra-389)
+
+`Report<Source>({ key, dimensions, measures })` of `@stackra/reports` is the `report` kind (file
+`reports/<name>.report.ts`, class `<Name>Report`). `reportsOf` lists each one under the manifest's `reports`: key
+`<module>.<key>`, the source model's key, the dimensions, measures and default filter as written, the permission key
+and the generated query key `<module>.report.<key>@1`. It refuses `report_misplaced`, `report_vocabulary_invalid` (a
+grain, measure kind or metric outside ADR 0470's closed set, `REPORT_VOCABULARY`), and `report_dimension_unknown` /
+`report_measure_unknown` (a path whose segment an own source model does not declare, followed through its own
+relations). `emitReports` writes `.stackra/gen/reports.ts` (`#stackra/reports`): `<Name>ReportQuery extends Query({
+key: "report.<key>", permission })`, whose `handle` calls the injected `ReportRunner`. The generated queries are not
+yet registered as actions (endpoint, tool, wiring); the runner's driver is stackra-390.
 
 ## Model additions (ADR 0336)
 

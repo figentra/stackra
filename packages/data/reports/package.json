@@ -1,0 +1,91 @@
+{
+  "name": "@stackra/reports",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Stackra reports: the Report<Source>({ key, dimensions, measures, defaultFilter, permission }) kind base over a model or projection, with typed dimensions (time grains, Link paths) and a closed set of measures (count, countDistinct, sum, avg, min, max and formulas over other measures), the ReportRequest and ReportResult contract of the generated report query, and the ReportRunner port its compiler implements",
+  "keywords": [
+    "analytics",
+    "data",
+    "pivot",
+    "reports",
+    "stackra"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/data/reports#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
+  "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/data/reports"
+  },
+  "files": [
+    "dist",
+    "src",
+    "stackra.manifest.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "data",
+    "runtimes": [
+      "isomorphic"
+    ],
+    "summary": "Use it when a module ships reports: grouped, totalled and pivoted reads over declared dimensions and measures of a model or projection, which REST, MCP, the panel and agents run through one generated query."
+  }
+}

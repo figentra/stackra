@@ -197,6 +197,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/rules` node of ADR 0331). Keep both maps in step.
 - `Projection` (ADR 0294 d16, ADR 0163 d1) is a binding kind declared in `@stackra/database`; gen binds it like a
   service. Its rows are that package's versions table, so gen writes no entity or migration for it.
+- Reports (ADR 0470, stackra-389): `Report` is a `KIND_BASES` and `KIND_FILES` row (`report`, file `report`, suffix
+  `Report`), not a binding kind (the runner takes the class). `reportsOf` is the one place that reads a report's
+  options; `REPORT_VOCABULARY` copies the enums of `@stackra/reports`, so change both together. `emitReports` writes
+  `#stackra/reports`. Keep the `base-matches-suffix` lint table of `@stackra/coding-standard` in step.
 - Model additions (ADR 0336, stackra-64): `ModelAddition` is a `KIND_BASES` row (`model_addition`, a shape kind, file
   `model-addition`, suffix `Addition`); its partner is the base (the call's value argument, as `Driver(Port)`).
   `additionsOf` is the one place that matches the base in the dependencies' `models` and names the side table
