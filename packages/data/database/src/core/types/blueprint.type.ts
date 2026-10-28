@@ -100,6 +100,14 @@ export interface Blueprint {
   /** The `Archivable` trait: `archived_at timestamptz`, nullable. */
   archivable: () => ColumnGroup;
 
+  /**
+   * The `Partitioned` trait: the new table is `partition by range (column)`, with a `<table>_default` partition that
+   * catches rows no dated partition covers yet, the column added to the primary key (Postgres requires it), and a
+   * BRIN index on it unless `brin: false`. A NOT NULL column of this blueprint; a unique index must include it.
+   * `maintainPartitions` creates the dated partitions.
+   */
+  partitionBy: (column: string, options?: { readonly brin?: boolean }) => void;
+
   /** `Translated` fields: one `jsonb` locale map per field. */
   translatable: (fields: readonly string[]) => ColumnGroup;
 

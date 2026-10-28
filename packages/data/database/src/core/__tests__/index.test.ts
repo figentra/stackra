@@ -212,6 +212,7 @@ describe("@stackra/database", () => {
       "formatSequenceNumber",
       "jsonContains",
       "jsonPath",
+      "maintainPartitions",
       "operationAction",
       "operationQuery",
       "registerEntities",

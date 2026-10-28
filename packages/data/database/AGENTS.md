@@ -69,6 +69,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - Delete policies (ADR 0134 d4): `deleteFilters` registers the `deleted` and `archived` filters in both drivers'
   `connect` (keep them the same); `CrudService.delete` picks the policy from the model's traits. A new bulk read that
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.
+- Partitions: `maintainPartitions` is the only code that creates, detaches or drops a partition, and it asks the
+  `HoldRegistry` before dropping one. Never drop `<table>_default`, and never convert an existing table in a migration.
 - Database errors become refusals only at the action boundary (`DatabaseUnitOfWorkDriver` through
   `translateDbError`); `CrudService` leaves them as the driver raised them, because callers catch `UniqueViolation`.
   A refusal carries the constraint name, never a row value.

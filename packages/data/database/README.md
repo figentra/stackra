@@ -316,6 +316,23 @@ archived rows), on `find`, `findOne`, `findOneOrFail` and `count`. `forceDelete(
 rows for good, kept ones included, and a legal hold still protects them. A soft delete or an archive is an update,
 not a disposal. A unique index on a soft-deleted table says `.where("deleted_at is null")`.
 
+## Partitioned tables
+
+A table that grows without bound (outbox changes, access log, meter events, audit, projections) is range-partitioned
+by time with native Postgres partitioning, no extension. The model declares
+`Partitioned({ by: "occurredAt", interval: "month", premake: 2, retain: Duration.days(400) })` (`@stackra/model`) and
+its migration creates the table with `t.partitionBy("occurred_at")`:
+
+- the table is `partition by range ("occurred_at")`, the column joins the primary key, a `<table>_default` partition
+  catches rows no dated partition covers, and a BRIN index on the column is added (`{ brin: false }` skips it);
+- the column must be NOT NULL and every unique index must include it; an existing table is never converted.
+
+`MaintainPartitionsAction` (`./node`, `partition.maintain@1`, daily at 02:15 UTC, system actor) runs
+`maintainPartitions(model, now)` for every registered `Partitioned` model: it creates the current partition and
+`premake` ahead (`<table>_p<yyyymmdd>`), and detaches and drops each dated partition whose span ended more than
+`retain` ago, unless the `HoldRegistry` holds one of its rows (`Disposal.Retention`); a held partition is kept and
+reported. Partition names go to the job's audit entry.
+
 ## Concurrency and database errors
 
 A `Versioned` model's `version` is the ORM's version property, so a unit of work that flushes a row someone else

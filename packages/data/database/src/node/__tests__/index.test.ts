@@ -15,6 +15,9 @@ describe("@stackra/database/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "DatabaseHealthIndicatorDriver",
       "DatabaseUnitOfWorkDriver",
+      "MaintainPartitionsAction",
+      "MaintainPartitionsInput",
+      "MaintainPartitionsOutput",
       "PostgresDatabaseDriver",
       "PostgresIdempotencyStoreDriver",
       "PostgresRateLimitStoreDriver",

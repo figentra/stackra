@@ -90,6 +90,9 @@ export class BlueprintRecord {
   /** The SQL type of a public-id key column (`hasPublicId`, `belongsTo`, `link`). */
   private readonly publicIdColumn: string;
 
+  /** The range-partition column, when `partitionBy` was called. */
+  private partitionColumn: string | undefined = undefined;
+
   /**
    * @param table - the table name, snake_case.
    * @param creating - true for `schema.create`, false for `schema.table`.
@@ -295,6 +298,23 @@ export class BlueprintRecord {
     return new ColumnGroupRecord([this.add(archivedAt)]);
   }
 
+  /**
+   * Implements `Blueprint.partitionBy`, documented there.
+   *
+   * @throws TypeError on an existing table, for a second call, or for a column name that is not snake_case.
+   */
+  partitionBy(column: string, options: { readonly brin?: boolean } = {}): void {
+    quoteIdentifier(column);
+    if (!this.creating)
+      throw new TypeError(
+        `${this.table} exists: only a new table is partitioned (Postgres cannot convert one)`,
+      );
+    if (this.partitionColumn !== undefined)
+      throw new TypeError(`${this.table} is already partitioned by ${this.partitionColumn}`);
+    this.partitionColumn = column;
+    if (options.brin !== false) this.index([column]).using("brin");
+  }
+
   /** Implements `Blueprint.translatable`, documented there. */
   translatable(fields: readonly string[]): ColumnGroupRecord {
     if (fields.length === 0) throw new TypeError("translatable needs at least one field");
@@ -415,6 +435,25 @@ export class BlueprintRecord {
       : this.compileAlter(schema, qualified);
   }
 
+  /**
+   * Refuses a partitioning Postgres would refuse: the column must be a NOT NULL column of this blueprint, and every
+   * unique index must include it.
+   *
+   * @throws TypeError naming the broken rule.
+   */
+  private checkPartition(partition: string): void {
+    const column = this.columns.find((candidate) => candidate.name === partition);
+    if (column?.nullability !== "not null")
+      throw new TypeError(
+        `${this.table} is partitioned by ${partition}, which must be a NOT NULL column of this blueprint`,
+      );
+    for (const index of this.indexes)
+      if (index.unique && !index.columns.includes(partition))
+        throw new TypeError(
+          `${index.name(this.table)}: a unique index of a partitioned table includes ${partition}`,
+        );
+  }
+
   /** Adds `column`, refusing a repeated name. */
   private add(column: ColumnRecord): ColumnRecord {
     if (this.columns.some((known) => known.name === column.name))
@@ -428,18 +467,32 @@ export class BlueprintRecord {
     schema: string,
     qualified: string,
   ): { readonly statements: CompiledStatement[]; readonly online: CompiledStep[] } {
-    const primary =
+    const declared =
       this.primaryKey ??
       this.columns.filter((column) => column.primary).map((column) => column.name);
+    const partition = this.partitionColumn;
+    if (partition !== undefined) this.checkPartition(partition);
+    // Postgres requires a partitioned table's primary key to include the partition column.
+    const primary =
+      partition === undefined || declared.length === 0 || declared.includes(partition)
+        ? declared
+        : [...declared, partition];
     const definitions = this.columns.map((column) => column.definition(this.table, schema));
     if (primary.length > 0)
       definitions.push(`primary key (${primary.map(quoteIdentifier).join(", ")})`);
+    const partitioned =
+      partition === undefined ? "" : ` partition by range (${quoteIdentifier(partition)})`;
     const statements: CompiledStatement[] = [
       {
-        sql: `create table ${qualified} (\n  ${definitions.join(",\n  ")}\n)`,
+        sql: `create table ${qualified} (\n  ${definitions.join(",\n  ")}\n)${partitioned}`,
         inverse: [`drop table if exists ${qualified}`],
       },
     ];
+    if (partition !== undefined)
+      statements.push({
+        sql: `create table ${quoteIdentifier(schema)}.${quoteIdentifier(`${this.table}_default`)} partition of ${qualified} default`,
+        inverse: [],
+      });
     const add = (sql: string | undefined) => {
       if (sql !== undefined) statements.push({ sql, inverse: [] });
     };

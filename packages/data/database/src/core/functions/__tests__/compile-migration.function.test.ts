@@ -80,6 +80,60 @@ class CreateOrdersMigration extends Migration {
 }
 
 describe(compileMigration, () => {
+  it("range-partitions a new table with a default partition, the column in the key and a BRIN index", () => {
+    class CreateMeterEventsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("meter_events", (t: Blueprint) => {
+          t.hasPublicId("mev");
+          t.timestamp("occurred_at").notNull().comment("When the usage happened.");
+          t.partitionBy("occurred_at");
+        });
+      }
+    }
+    const [step] = compileMigration(CreateMeterEventsMigration, { schema: "usage" }).steps;
+    const sql = step?.sql ?? [];
+    expect(sql[0]).toMatch(
+      /primary key \("id", "occurred_at"\)\n\) partition by range \("occurred_at"\)$/,
+    );
+    expect(sql).toContain(
+      'create table "usage"."meter_events_default" partition of "usage"."meter_events" default',
+    );
+    expect(sql.some((text) => text.includes('using brin ("occurred_at")'))).toBe(true);
+  });
+
+  it("refuses a partitioning Postgres would refuse", () => {
+    class NullableMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("events", (t: Blueprint) => {
+          t.hasPublicId("evt");
+          t.timestamp("at").nullable().comment("When.");
+          t.partitionBy("at");
+        });
+      }
+    }
+    expect(() => compileMigration(NullableMigration, { schema: "usage" })).toThrow("NOT NULL");
+    class UniqueMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("events", (t: Blueprint) => {
+          t.hasPublicId("evt");
+          t.timestamp("at").notNull().comment("When.");
+          t.string("ref", 20).notNull().comment("A reference.");
+          t.unique(["ref"]);
+          t.partitionBy("at");
+        });
+      }
+    }
+    expect(() => compileMigration(UniqueMigration, { schema: "usage" })).toThrow("includes at");
+    class ExistingMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("events", (t: Blueprint) => t.partitionBy("at"));
+      }
+    }
+    expect(() => compileMigration(ExistingMigration, { schema: "usage" })).toThrow(
+      "only a new table",
+    );
+  });
+
   it("stores public-id keys as native uuid with publicIds: uuid, stamps staying text (ADR 0135, 2026-10-28)", () => {
     const [step] = compileMigration(CreateOrdersMigration, {
       schema: "orders",
