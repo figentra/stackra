@@ -1,6 +1,6 @@
 # AGENTS — @stackra/theming
 
-The colour scheme a user chooses and the look of a member. Member at `packages/state/theming` (`tier:lib`), in the
+The colour scheme a user chooses, the system's accessibility settings and the look of a member. Member at `packages/state/theming` (`tier:lib`), in the
 programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./react`, `./native`,
 `./testing`.
 
@@ -24,6 +24,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./br
 - The choice lives in `prefs` under `theming.scheme` and is read on every access, never cached.
 - Applying a scheme to the screen is `@stackra/ui`'s provider's job; this package never writes to the DOM or to
   `Appearance`.
+- The accessibility settings (`SystemAccessibility`, `useAccessibility`) are read-only: the app always follows the
+  system and offers no override and no in-app text-size setting (owner, 2026-10-29). `maxFontScale` is a cap, never
+  below 1.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

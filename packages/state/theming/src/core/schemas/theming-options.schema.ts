@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: `ThemingOptions`, the shape of `ThemingConfig`: the look of a member. The theme by name (a `defineTheme`
  *          theme of `@stackra/tokens`), the one logo every icon derives from, the schemes on offer and the first one,
- *          the theme colour and splash background per scheme, self-hosted fonts and whether a tenant's colours may be
- *          layered over the theme.
+ *          the theme colour and splash background per scheme, self-hosted fonts, whether a scope's colours may be
+ *          layered over the theme, and an optional cap on the device's text scale.
  * Boundary: a shape class; it registers this package's own schema (`THEMING_CONFIG_SCHEMA`) for itself when the module
  *           loads. The defaults are the `stackra` theme, no logo, every scheme with `system` first, the theme's
  *           background as the theme and splash colour, self-hosted fonts and no tenant colours (per-tenant brand is
- *           Pro, ADR 0077). Nested values are interfaces, so an override assigns a plain object literal; those fields
- *           and the logo union are `@Field` hatches over the shipped schema. Defaults are constants for gen (ADR 0294
+ *           Pro, ADR 0077). Nested values are interfaces, so an override assigns a plain object literal; those fields,
+ *           the logo union and the nullable `maxFontScale` are `@Field` hatches over the shipped schema. Defaults are constants for gen (ADR 0294
  *           decision 26): the theme name and `STACKRA_BACKGROUND`, which a test pins to the tokens' derived hex.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0302 (decision 2); ADR 0060; ADR 0234 (asset keys).
@@ -47,6 +47,15 @@ export class ThemingOptions extends Schema {
   // reason: Splash is an interface so an override assigns a plain object; the shipped schema checks the hex
   @Field(THEMING_CONFIG_SCHEMA.shape.splash)
   splash: Splash = { background: STACKRA_BACKGROUND };
+
+  /**
+   * The largest text scale a native app renders, for dense screens (a till, a kitchen display); `null` follows the
+   * device's Dynamic Type or font scale with no cap. At least 1: the user's text size is never shrunk, and there is no
+   * in-app text-size setting.
+   */
+  // reason: a nullable number; the shipped schema checks the minimum
+  @Field(THEMING_CONFIG_SCHEMA.shape.maxFontScale)
+  maxFontScale: number | null = null;
 
   /** The theme by name; its web CSS is the stylesheet's and its native CSS the Uniwind theme's. */
   theme = "stackra";

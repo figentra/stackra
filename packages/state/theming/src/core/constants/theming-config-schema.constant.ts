@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `THEMING_CONFIG_SCHEMA`, the zod schema this package ships for `ThemingConfig` (exported as
  *          `ThemingConfig$`): the theme by name, the logo source, the schemes on offer and the first one, the theme
- *          colour and splash background per scheme, self-hosted fonts and the tenant colour switch.
+ *          colour and splash background per scheme, self-hosted fonts, the tenant colour switch and the largest text
+ *          scale a native app renders.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `ThemingConfig$` extends it field by field
  *           (`shape.theme.unwrap().default("acme")`). The defaults equal `ThemingOptions`' initializers (tested) and
@@ -63,4 +64,5 @@ export const THEMING_CONFIG_SCHEMA = z.object({
   splash: z.object({ background: SCHEME_COLORS }).default(() => ({ background: background() })),
   selfHostedFonts: z.boolean().default(true),
   scopeOverride: z.boolean().default(false),
+  maxFontScale: z.number().min(1).nullable().default(null),
 });

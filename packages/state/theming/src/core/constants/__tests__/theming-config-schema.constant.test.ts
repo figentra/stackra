@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `THEMING_CONFIG_SCHEMA`: its defaults come from the `stackra` theme, it offers exactly the
- *          `ColorScheme` values, it checks theme names, asset keys and entries, scheme lists and hex colours, and every
+ *          `ColorScheme` values, it checks theme names, asset keys and entries, scheme lists and hex colours and the text-scale cap, and every
  *          field unwraps to a default a host's generated schema can replace.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -30,6 +30,7 @@ describe("THEMING_CONFIG_SCHEMA", () => {
       splash: { background },
       selfHostedFonts: true,
       scopeOverride: false,
+      maxFontScale: null,
     });
   });
 
@@ -69,6 +70,13 @@ describe("THEMING_CONFIG_SCHEMA", () => {
     expect(shape.schemes.safeParse(["dark", "dark"]).success).toBe(false);
     expect(shape.themeColor.safeParse({ light: "#f7f7f5", dark: "#1c1e22cc" }).success).toBe(true);
     expect(shape.themeColor.safeParse({ light: "#fff", dark: "#000000" }).success).toBe(false);
+  });
+
+  it("caps the text scale at 1 or more, or not at all", () => {
+    expect(shape.maxFontScale.parse(null)).toBeNull();
+    expect(shape.maxFontScale.parse(1.3)).toBe(1.3);
+    expect(shape.maxFontScale.parse(1)).toBe(1);
+    expect(shape.maxFontScale.safeParse(0.8).success).toBe(false);
   });
 
   it("unwraps every field to a replaceable default", () => {

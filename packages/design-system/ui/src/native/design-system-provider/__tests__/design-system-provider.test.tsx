@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the native DesignSystemProvider hands the colour scheme to Uniwind and to React Native's
  *          Appearance (restored on unmount), lays the subtree out in the direction through a Yoga `direction` View,
- *          Uniwind's LayoutDirection and HeroUI Native's `isRTL`, reads the resolved scheme back from Uniwind, and
+ *          Uniwind's LayoutDirection and HeroUI Native's `isRTL`, scales text with the device's text size under an
+ *          optional cap, reads the resolved scheme back from Uniwind, and
  *          gives Lucide icons the md size and the theme's foreground colour.
  * Boundary: React Native does not render in vitest, so react-native, heroui-native, uniwind and lucide-react-native
  *          are replaced by recording stand-ins and the tree renders to the jsdom DOM; what reaches the real libraries
@@ -55,10 +56,19 @@ vi.mock("heroui-native", () => ({
     config,
     children,
   }: {
-    config?: { isRTL?: boolean };
+    config?: {
+      isRTL?: boolean;
+      textProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
+      textInputProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
+    };
     children?: ReactNode;
   }) => (
-    <div data-testid="heroui" data-rtl={String(config?.isRTL)}>
+    <div
+      data-testid="heroui"
+      data-rtl={String(config?.isRTL)}
+      data-text={JSON.stringify(config?.textProps)}
+      data-text-input={JSON.stringify(config?.textInputProps)}
+    >
       {children}
     </div>
   ),
@@ -115,6 +125,25 @@ describe("DesignSystemProvider (native)", () => {
     expect(screen.getByTestId("layout").dataset["rtl"]).toBe("false");
     expect(screen.getByTestId("heroui").dataset["rtl"]).toBe("false");
     expect(screen.getByTestId("state").textContent).toBe("system light en ltr");
+  });
+
+  it("scales text with the device's text size, capped only when the app sets a cap", () => {
+    const { rerender } = render(
+      <DesignSystemProvider>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    const uncapped = JSON.stringify({ allowFontScaling: true, maxFontSizeMultiplier: 0 });
+    expect(screen.getByTestId("heroui").dataset["text"]).toBe(uncapped);
+    expect(screen.getByTestId("heroui").dataset["textInput"]).toBe(uncapped);
+    rerender(
+      <DesignSystemProvider maxFontScale={1.3}>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    const capped = JSON.stringify({ allowFontScaling: true, maxFontSizeMultiplier: 1.3 });
+    expect(screen.getByTestId("heroui").dataset["text"]).toBe(capped);
+    expect(screen.getByTestId("heroui").dataset["textInput"]).toBe(capped);
   });
 
   it("lays the subtree out in the locale's direction through a filling Yoga View", () => {

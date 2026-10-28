@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the props both `DesignSystemProvider`s take, on web (`./react`) and native (`./native`): colour scheme,
- *          locale, direction and theme name. Scheme and locale follow the React convention: controlled with
+ *          locale, direction, theme name and (native) the text-scale cap. Scheme and locale follow the React convention: controlled with
  *          `colorScheme` / `locale` and their `on…Change`, or uncontrolled from `default…`.
  * Boundary: types only.
  * Runtime: isomorphic
@@ -38,4 +38,11 @@ export interface DesignSystemProviderProps {
    * showcase surface asks for glass (ADR 0320 decision 7). A page with no provider gets the stylesheet's own default.
    */
   readonly material?: string | undefined;
+  /**
+   * The largest text scale native text renders at, for dense screens (a till, a kitchen display); leave it out, or
+   * pass `null`, to follow the device's Dynamic Type or font scale with no cap. Text always scales with the device
+   * setting up to this cap, and there is no in-app text-size setting. Native only: the web follows the browser's
+   * own zoom and text size.
+   */
+  readonly maxFontScale?: number | null | undefined;
 }

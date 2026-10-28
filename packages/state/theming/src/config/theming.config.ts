@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `ThemingConfig`, a member's look (key `theming`): the theme by name, the logo source, the schemes, the
- *          theme colour, the splash, self-hosted fonts and the tenant colour switch.
+ *          theme colour, the splash, self-hosted fonts, the tenant colour switch and the text-scale cap.
  * Boundary: a configuration class over `ThemingOptions` with no env map. A host overrides it as
  *           `class ThemingConfig extends BaseThemingConfig` with `override` members only, inheriting the key. Its defaults are gen constants:
  *           `ColorScheme` is a string union, and the base `themeColor` and `splash` are the constant
  *           `STACKRA_BACKGROUND` (pinned to `STACKRA_THEME` by test). Gen reads
  *           it for the icons, manifests and splash it writes; the generated root mounts the design system provider
- *           with its theme and the `ColorSchemeService` scheme. Holds no secret.
+ *           with its theme, its `maxFontScale` and the `ColorSchemeService` scheme. An app that must stay in one
+ *           scheme (an always-dark brand, an always-light till) offers one scheme: `schemes = ["dark"]` with
+ *           `defaultScheme = "dark"`; the default `system` follows the phone live. Holds no secret.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0146 as amended; ADR 0302; ADR 0281 (config files named by
  *                     topic).

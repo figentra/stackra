@@ -45,6 +45,14 @@ splash colour, self-hosted fonts and no tenant colours. `logo` is an asset key o
 are `#RRGGBB` or `#RRGGBBAA`, because the native splash and the web manifest cannot read CSS. `defaultScheme` must be
 one of `schemes`; the service refuses to start otherwise.
 
+A native app follows the phone's appearance live by default (`defaultScheme = "system"`), and the scheme toggle is the
+in-app override. An app that must stay in one scheme offers only that one: an always-dark brand sets
+`schemes = ["dark"]` and `defaultScheme = "dark"`, an always-light till the same with `light`.
+
+`maxFontScale` caps the device's text size for dense screens (a till, a kitchen display); `null`, the default, follows
+Dynamic Type on iOS and the font scale on Android with no cap. It is at least 1, and there is no in-app text-size
+setting. The generated root passes it to `DesignSystemProvider`.
+
 ## Reading and choosing the scheme
 
 ```tsx
@@ -63,6 +71,22 @@ Applying the scheme to the screen (`data-theme` and the `.dark` class on the web
 device) is the job of `@stackra/ui`'s `DesignSystemProvider`, which the generated root mounts with this service's
 scheme and the configured theme. Apps write no theme provider.
 
+## Accessibility settings
+
+```tsx
+const { reduceMotion, boldText, highContrast, fontScale } = useAccessibility();
+const duration = reduceMotion ? 0 : 240;
+```
+
+The app always follows the system's Reduce Motion, Bold Text, high contrast and text size, and never overrides them,
+so the hook has no setter. It reads the `SystemAccessibility` driver of the target: `accessibility-info` on a device
+(`AccessibilityInfo` and `PixelRatio`; Darker Colors on iOS and high-contrast text on Android both read as
+`highContrast`), `browser` on the web (`prefers-reduced-motion`, `prefers-contrast`; `boldText` false and `fontScale`
+1, because the browser scales text itself), `memory` on a server and in tests. A server render shows
+`DEFAULT_ACCESSIBILITY_SETTINGS`. Design system components already follow these settings on their own (HeroUI Native and
+Reanimated under reduce motion, the web stylesheet's media queries); the hook is for code that animates or lays out in
+JavaScript.
+
 ## Strings
 
 `assets/lang/{en,ar}/theming.json` hold the `theming::enums.color_scheme.*` labels gen copies into each app.
@@ -76,4 +100,5 @@ const app = await createTestingModule(AppModule)
   .compile();
 ```
 
-The fake is a real service over memory storage and the memory system driver.
+The fake is a real service over memory storage and the memory system driver. For accessibility, bind a
+`MemorySystemAccessibilityDriver` and change it with `set({ reduceMotion: true, fontScale: 1.5 })`.

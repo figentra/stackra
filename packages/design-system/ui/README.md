@@ -47,6 +47,7 @@ import { DesignSystemProvider } from "@stackra/ui/native";
 | `locale`, `defaultLocale`, `onLocaleChange`                | a BCP 47 locale (default `en`), controlled or uncontrolled               |
 | `direction`                                                | `ltr` or `rtl`; derived from the locale with `directionOf` when left out |
 | `theme`                                                    | the name of the theme the app loads (default `stackra`)                  |
+| `maxFontScale`                                             | native only: the cap on the device's text size; none by default          |
 
 `useDesignSystem()` returns `colorScheme`, `resolvedColorScheme` (light or dark on screen), `locale`, `direction`,
 `theme`, `setColorScheme` and `setLocale`.
@@ -65,7 +66,9 @@ import { DesignSystemProvider } from "@stackra/ui/native";
   so the app passes `useDesignSystem().direction` to NavigationContainer's `direction` (header, back button, swipe
   back) and to the native tabs' `layoutDirection`. The provider owns the interface style while mounted, so it replaces
   an `Appearance` preference the host set itself, and its `flex: 1` View expects a parent that fills the screen (FR-095).
-  The provider never calls `I18nManager.forceRTL`.
+  The provider never calls `I18nManager.forceRTL`. Text and text inputs always scale with the device's text size
+  (Dynamic Type, Android font scale), up to `maxFontScale` when an app sets one (`maxFontSizeMultiplier` in HeroUI
+  Native's `textProps` and `textInputProps`); reduce motion is always followed through HeroUI Native and Reanimated.
 
 ## Own words (catalogue)
 

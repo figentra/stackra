@@ -4,6 +4,17 @@ description: "Accepted, amended by 0303, 0340 · 2026-10-23 · amended 2026-10-2
 ---
 
 <Note>
+  Amended 2026-10-29 (STA-1535, stackra-432): under decision 3, a native app follows the phone's
+  accessibility settings and text size and never overrides them. The native `DesignSystemProvider`
+  keeps font scaling on for text and text inputs, capped only by an app's `maxFontScale`
+  (`ThemingConfig.maxFontScale`, at least 1; no in-app text-size setting), and reduce motion stays
+  HeroUI Native's and Reanimated's. `@stackra/theming` gains the read-only `SystemAccessibility`
+  port (reduce motion, bold text, high contrast, font scale) and `useAccessibility()` for code that
+  animates or lays out in JavaScript. The appearance stays `ThemingConfig.defaultScheme` and
+  `schemes` (default `system`). The rest stands.
+</Note>
+
+<Note>
   Amended 2026-10-24 (STA-469) by
   [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 1: `@stackra/tokens`
   renders a resolved theme to Swift and Kotlin as well as to web and native CSS, and ships one

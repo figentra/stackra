@@ -18,6 +18,7 @@ describe("@stackra/theming", () => {
     expect(Object.keys(theming).sort()).toEqual([
       "ColorScheme",
       "ColorSchemeService",
+      "MemorySystemAccessibilityDriver",
       "MemorySystemColorSchemeDriver",
       "ThemingConfig",
       "ThemingConfig$",

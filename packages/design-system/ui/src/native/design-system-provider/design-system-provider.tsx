@@ -5,15 +5,17 @@
  *          (`Appearance.setColorScheme`, so native headers, tab bar, Liquid Glass and status bar match), lays the
  *          subtree out in the locale's direction (a `flex: 1` View with Yoga `direction`, plus Uniwind's
  *          `LayoutDirection` for the `rtl:` and `ltr:` variants), and tells `HeroUINativeProvider` the direction
- *          through `config.isRTL`. It also gives Lucide icons the `md` size and the theme's foreground colour, which
- *          native hosts override.
+ *          through `config.isRTL`. Text and text inputs scale with the device's text size (Dynamic Type, Android font
+ *          scale), capped by `maxFontScale` when an app sets one; reduce motion is HeroUI Native's and Reanimated's own
+ *          (`useReducedMotion`, `ReduceMotion.System`), so it is always followed. It also gives Lucide icons the `md`
+ *          size and the theme's foreground colour, which native hosts override.
  * Boundary: applies the scheme and direction to this subtree. Yoga content (screens and modals rendered below it
  *          included) inherits the direction; UIKit chrome does not: the app passes `useDesignSystem().direction` to
  *          NavigationContainer's `direction` and the native tabs' `layoutDirection`. The provider never calls
  *          `I18nManager.forceRTL`. The app wraps it in GestureHandlerRootView and SafeAreaProvider, as HeroUI Native
  *          requires.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 3); ADR 0165 (UI contract, HeroUI Native on native); ADR 0060 (RTL).
+ * Governing contract: ADR 0302 (decision 3, 2026-10-29 note); ADR 0303 (decision 3); ADR 0165 (UI contract, HeroUI Native on native); ADR 0060 (RTL).
  */
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
@@ -43,6 +45,7 @@ export function DesignSystemProvider({
   onLocaleChange,
   direction,
   theme = "stackra",
+  maxFontScale = null,
 }: DesignSystemProviderProps): ReactElement {
   const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
   const [ownLocale, setOwnLocale] = useState(defaultLocale);
@@ -92,7 +95,11 @@ export function DesignSystemProvider({
       onLocaleChange,
     ],
   );
-  const config = useMemo(() => ({ isRTL: isRtl }), [isRtl]);
+  // Text follows the device's text size (Dynamic Type, Android font scale); 0 means no cap.
+  const config = useMemo(() => {
+    const scaling = { allowFontScaling: true, maxFontSizeMultiplier: maxFontScale ?? 0 };
+    return { isRTL: isRtl, textProps: scaling, textInputProps: scaling };
+  }, [isRtl, maxFontScale]);
   // LayoutDirection's own View is `display: contents`, which Yoga skips, so its `direction` never reaches the layout.
   const layout = useMemo(() => ({ flex: 1, direction: currentDirection }), [currentDirection]);
   // Native has no `currentColor` cascade: without this default a bare icon would draw black in dark mode.
