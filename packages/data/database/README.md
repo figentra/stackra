@@ -296,6 +296,15 @@ With a driver bound, `CrudService`'s `find`, `findOne`, `findOneOrFail`, `count`
 `GraphQuery`'s source rows, AND its conditions into their filter for the running call's actor (`undefined` outside a
 call; the driver decides what that sees). Without one, reads are unchanged. Writes and `purge` carry no conditions.
 
+## Stamps
+
+`StampSubscriber` (from `.`, passed in `DatabaseOptions.subscribers` by the boot) fills the `Timestamps` and
+`UserStamps` fields of every unit-of-work write: on a create `createdBy` and `updatedBy` take the running call's actor
+id (a value already set, as by a seed, is kept); on an update `updatedAt` moves and `updatedBy` takes the actor.
+`CrudService.increment` and `repath` are native updates with no entity event, so they set the same fields
+themselves. The actor comes from the call's `ContextStorage` through the resolver `connectVisibilityFilter` named; a
+`system` actor or a write outside a call stamps no principal.
+
 ## Legal holds
 
 Every delete, purge and retention path consults one `HoldRegistry` (ADR 0134, 2026-10-24 amendment), which the

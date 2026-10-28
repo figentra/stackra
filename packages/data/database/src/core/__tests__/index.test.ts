@@ -196,6 +196,7 @@ describe("@stackra/database", () => {
       "SequenceNumberOutOfOrderError",
       "SequenceService",
       "StackraNamingStrategy",
+      "StampSubscriber",
       "UniqueViolation",
       "ancestorOf",
       "compileMigration",

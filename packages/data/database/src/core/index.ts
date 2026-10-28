@@ -54,6 +54,7 @@ export { sql } from "#core/functions/sql.function";
 export { table } from "#core/functions/table.function";
 export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
 export { HoldSubscriber } from "#core/orm/hold.subscriber";
+export { StampSubscriber } from "#core/orm/stamp.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
 export { DatabaseConfigOptions } from "#core/schemas/database-config-options.schema";

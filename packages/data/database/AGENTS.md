@@ -63,6 +63,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
   `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
+- Stamps (ADR 0133 d7): `StampSubscriber` and `stampFields` are the only writers of `createdBy`/`updatedBy`, and the
+  actor is the running call's, never input. A new native update path (`nativeUpdate`, a query-builder update) spreads
+  `stampFields(model, "update")` into its data, as `increment` and `repath` do.
 - Collations: `schema.createCollation(name, locale)` creates an ICU collation in the module schema and
   `.collate(name)` names it on a text column; the locale is the migration's literal, never chosen in this package.
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other

@@ -10,7 +10,8 @@
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
  *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock) ANDs in the bound
  *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
- *           carry none. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
+ *           carry none. Native updates (`increment`, `repath`) set the
+ *           `Timestamps`/`UserStamps` fields themselves, since no entity event fires for them. `purge` skips every row the connected `HoldRegistry` holds. `repath` moves
  *           a scope subtree's rows to a new path prefix, the step every service takes when a scope node moves.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
@@ -42,6 +43,7 @@ import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { stampFields } from "#core/functions/stamp-fields.function";
 import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
@@ -151,11 +153,10 @@ export abstract class CrudService<M extends object> extends Service implements R
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
     // raw-sql: `col = col + ?` is the one atomic form; read-modify-write loses concurrent steps. The step is a parameter.
-    return em.nativeUpdate(
-      model,
-      filterOf(where),
-      nest(field, raw(`${column} + ?`, [by])) as never,
-    );
+    return em.nativeUpdate(model, filterOf(where), {
+      ...stampFields(model, "update"),
+      ...nest(field, raw(`${column} + ?`, [by])),
+    } as never);
   }
 
   /** Implements `Repository.create`, documented there. */
@@ -256,7 +257,10 @@ export abstract class CrudService<M extends object> extends Service implements R
     return em.nativeUpdate(
       model,
       filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
-      { scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]) } as never,
+      {
+        ...stampFields(model, "update"),
+        scopePath: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
+      } as never,
     );
   }
 
