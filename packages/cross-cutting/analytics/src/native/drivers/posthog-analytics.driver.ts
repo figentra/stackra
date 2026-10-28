@@ -6,7 +6,9 @@
  * Boundary: extends the core driver and changes only when it posts; consent, the pre-consent queue and its bound stay
  *           in `AnalyticsClient`, which calls `send` only once the category is granted. The buffer is in memory only.
  *           A failed batch goes back to the front of the buffer, which holds at most 1,000 events (the newest
- *           dropped beyond that, as the client's queue does), and is tried again on the next flush.
+ *           dropped beyond that, as the client's queue does), and is tried again on the next flush; `send` resolves
+ *           once the buffer holds the events, so the client's delivery engine (stackra-406) never retries what this
+ *           buffer already owns. There is no beacon on a device.
  * Runtime: react-native
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0071; ADR 0294 (decisions 15, 16 and 17).
  */
@@ -44,13 +46,13 @@ export class PosthogAnalyticsDriver extends CorePosthogAnalyticsDriver {
   }
 
   /**
-   * Buffers `deliveries` in order and sends the buffer once it holds 20 events.
-   *
-   * @throws Error when that send fails; the events stay buffered for the next flush.
+   * Buffers `deliveries` in order and sends the buffer once it holds 20 events. The device buffer owns these events
+   * once taken: a failed post keeps them for the next flush and resolves, so the client's retry never sends them
+   * twice.
    */
   override send(deliveries: readonly AnalyticsDelivery[]): Promise<void> {
     this.buffer.push(...deliveries);
-    return this.buffer.length >= FLUSH_AT ? this.flush() : Promise.resolve();
+    return this.buffer.length >= FLUSH_AT ? this.flush().catch(() => undefined) : Promise.resolve();
   }
 
   /** Sends everything buffered as one batch; on failure puts it back in front, within the buffer limit. */

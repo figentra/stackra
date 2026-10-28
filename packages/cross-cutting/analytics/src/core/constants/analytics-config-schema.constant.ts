@@ -3,13 +3,16 @@
  * Purpose: `ANALYTICS_CONFIG_SCHEMA`, the zod schema this package ships for `AnalyticsConfig` (exported as
  *          `AnalyticsConfig$`): the driver, the consent category that gates delivery, the bound of the pre-consent
  *          queue, the capture switches a vendor driver reads, the ingest origin, the deny list, the PostHog key
- *          and host, and the identity driver, cookie name and lifetime (identity stitching).
+ *          and host, the identity driver, cookie name and
+ *          lifetime (identity stitching), and the delivery engine: flush size and window, bounded retry, buffer bound,
+ *          sampling (global and per event) and the offline queue.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `AnalyticsConfig$` extends it
  *           (`AnalyticsConfig$.shape.driver.unwrap().default(...)`). The rules sit on the fields: the gating category
  *           is never `necessary` (that would send without asking), the queue holds 0 to 1,000 events, the ingest
  *           origin is empty or an http(s) URL, and the PostHog host is an http(s) URL. The driver names are the shipped drivers;
- *           the identity cookie name is a cookie token and the identity lives 1 to 400 days. The defaults equal
+ *           the identity cookie name is a cookie token and the identity lives 1 to 400 days; sample rates are
+ *           between 0 and 1. The defaults equal
  *           `AnalyticsOptions`' initializers (tested).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0298 (decisions 1 and 5).
@@ -44,4 +47,14 @@ export const ANALYTICS_CONFIG_SCHEMA = z.object({
   identityDriver: z.enum(["memory", "cookie", "storage"]).default("memory"),
   identityCookieName: z.string().regex(COOKIE_NAME).default("stk_aid"),
   identityExpiryDays: z.number().int().min(1).max(400).default(365),
+  flushAt: z.number().int().min(1).max(100).default(20),
+  flushIntervalMs: z.number().int().min(0).max(60_000).default(5000),
+  retryAttempts: z.number().int().min(0).max(10).default(3),
+  retryBaseMs: z.number().int().min(100).max(60_000).default(1000),
+  retryMaxMs: z.number().int().min(1000).max(600_000).default(30_000),
+  bufferLimit: z.number().int().min(1).max(10_000).default(1000),
+  sampleRate: z.number().min(0).max(1).default(1),
+  sampleRates: z.record(z.string().min(1), z.number().min(0).max(1)).default(() => ({})),
+  offlineDriver: z.enum(["none", "memory", "storage"]).default("none"),
+  offlineLimit: z.number().int().min(0).max(5000).default(500),
 });

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the template's config overrides and gen wiring import
- *          `AnalyticsDriver` from `@stackra/analytics/contracts`; the values are the two ports and the delivery kind enum,
+ *          `AnalyticsDriver` from `@stackra/analytics/contracts`; the values are the three ports and the delivery kind enum,
  *          `AnalyticsDelivery` (envelope v2 with kind and groups) and its `AnalyticsContext` resolve to the shape a
  *          driver receives, and `AnalyticsIdentityRecord` to the kept identity.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
@@ -25,6 +25,7 @@ describe("@stackra/analytics/contracts", () => {
       "AnalyticsDeliveryKind",
       "AnalyticsDriver",
       "AnalyticsIdentity",
+      "AnalyticsOfflineQueue",
     ]);
   });
 

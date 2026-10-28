@@ -111,6 +111,15 @@ describe("native PosthogAnalyticsDriver", () => {
     expect(sent(fetch)).toEqual(["e.0", "e.1", "e.2"]);
   });
 
+  it("accepts a batch of 20 even when its post fails, keeping it for the next flush", async () => {
+    answer(503);
+    const driver = new PosthogAnalyticsDriver(config);
+    await expect(driver.send(deliveries(20))).resolves.toBeUndefined();
+    const fetch = answer();
+    await moveTo("background");
+    expect(sent(fetch)).toHaveLength(20);
+  });
+
   it("still posts a batch when the runtime has no global crypto", async () => {
     const fetch = answer();
     vi.stubGlobal("crypto", undefined);

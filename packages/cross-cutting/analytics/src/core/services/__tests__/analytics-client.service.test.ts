@@ -7,7 +7,9 @@
  *          driver failure kept from the caller, the ledger watched only while events wait or an identity is kept, the
  *          envelope v2 ids and context (event id per event, visitor and session ids made only after consent and kept
  *          for the launch), and identity stitching (identify, group, reset, the anonymous id kept only after consent,
- *          restored on a new launch and forgotten on withdrawal).
+ *          restored on a new launch and forgotten on withdrawal), and the delivery engine (batch at `flushAt`, the flush
+ *          window, `flush()`, retry with backoff holding later events, the offline queue after spent retries, sampling
+ *          per visitor and per event, the beacon on page hide, and the refusal dropping both).
  * Boundary: test only; registers each event's zod schema the way gen does; the memory driver records what left.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0298 (decisions 1, 2 and 5); ADR 0305 (rule 20).
@@ -30,11 +32,14 @@ import { z } from "zod";
 import { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
+import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
+import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import type { AnalyticsIdentityRecord } from "#contracts/types/analytics-identity-record.type";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 import { AnalyticsClient } from "#core/services/analytics-client.service";
 import { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
 import { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
+import { MemoryAnalyticsOfflineQueueDriver } from "#core/drivers/memory-analytics-offline-queue.driver";
 
 /** The template's contact-page event. */
 class LeadSubmitted extends AnalyticsEvent({ name: "lead.submitted" }) {
@@ -66,11 +71,18 @@ class FailingAnalyticsDriver extends Driver(AnalyticsDriver) {
   }
 }
 
+/** The engine settings of the tests that read deliveries at once: one per batch, no window, no retry. */
+const SEND_AT_ONCE = { flushAt: 1, flushIntervalMs: 0, retryAttempts: 0 } as const;
+
 /** A client over a fresh ledger with nothing decided and the memory driver, with `values` layered on the config. */
 function setUp(values: Partial<ConfigValues<AnalyticsConfig>> = {}) {
   const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
   const driver = new MemoryAnalyticsDriver();
-  const client = new AnalyticsClient(buildConfig(AnalyticsConfig, { values }), driver, ledger);
+  const client = new AnalyticsClient(
+    buildConfig(AnalyticsConfig, { values: { ...SEND_AT_ONCE, ...values } }),
+    driver,
+    ledger,
+  );
   return { client, driver, ledger };
 }
 
@@ -193,7 +205,7 @@ describe("AnalyticsClient", () => {
     const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
     ledger.set(ConsentCategory.Analytics, true);
     const client = new AnalyticsClient(
-      buildConfig(AnalyticsConfig),
+      buildConfig(AnalyticsConfig, { values: SEND_AT_ONCE }),
       new FailingAnalyticsDriver(),
       ledger,
     );
@@ -281,7 +293,12 @@ function withIdentity(kept: AnalyticsIdentityRecord | null = null) {
   if (kept !== null) identity.write(kept);
   const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
   const driver = new MemoryAnalyticsDriver();
-  const client = new AnalyticsClient(buildConfig(AnalyticsConfig), driver, ledger, identity);
+  const client = new AnalyticsClient(
+    buildConfig(AnalyticsConfig, { values: SEND_AT_ONCE }),
+    driver,
+    ledger,
+    identity,
+  );
   return { client, driver, ledger, identity };
 }
 
@@ -388,5 +405,196 @@ describe("AnalyticsClient identity (stackra-405)", () => {
     expect(() => client.identify("")).toThrow(RangeError);
     expect(() => client.group("", "scp_1")).toThrow(RangeError);
     expect(() => client.group("scope", "")).toThrow(RangeError);
+  });
+});
+
+/** A driver that records each batch, fails the first `failing` sends, and takes beacons when `beacons` is set. */
+class BatchRecordingDriver extends Driver(AnalyticsDriver) {
+  readonly batches: string[][] = [];
+
+  readonly beaconed: string[][] = [];
+
+  failing: number;
+
+  private readonly beacons: boolean;
+
+  /**
+   * @param failing - how many sends reject before they succeed.
+   * @param beacons - whether `beacon` takes a batch.
+   */
+  constructor(failing = 0, beacons = false) {
+    super();
+    this.failing = failing;
+    this.beacons = beacons;
+  }
+
+  /** Records `deliveries` by name, or rejects while failures remain. */
+  send(deliveries: readonly AnalyticsDelivery[]): Promise<void> {
+    if (this.failing > 0) {
+      this.failing -= 1;
+      return Promise.reject(new Error("provider down"));
+    }
+    this.batches.push(
+      deliveries.map((delivery) => String(delivery.properties.plan ?? delivery.name)),
+    );
+    return Promise.resolve();
+  }
+
+  /** Records a beacon when allowed. */
+  override beacon(deliveries: readonly AnalyticsDelivery[]): boolean {
+    if (!this.beacons) return false;
+    this.beaconed.push(deliveries.map((delivery) => String(delivery.properties.plan)));
+    return true;
+  }
+}
+
+/** A granted client over `driver` with the engine settings `values` and `offline` as the offline queue. */
+function engineWith(
+  driver: AnalyticsDriver,
+  values: Partial<ConfigValues<AnalyticsConfig>> = {},
+  offline?: AnalyticsOfflineQueue,
+) {
+  const config = buildConfig(AnalyticsConfig, { values });
+  const ledger = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
+  ledger.set(ConsentCategory.Analytics, true);
+  const client = new AnalyticsClient(
+    config,
+    driver,
+    ledger,
+    new MemoryAnalyticsIdentityDriver(),
+    offline ?? new MemoryAnalyticsOfflineQueueDriver(config),
+  );
+  return { client, ledger, config };
+}
+
+/** Tracks one lead per plan. */
+function trackPlans(client: AnalyticsClient, ...plans: string[]): void {
+  for (const plan of plans) client.track(LeadSubmitted.create({ plan }));
+}
+
+describe("AnalyticsClient delivery engine (stackra-406)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("sends one batch once flushAt deliveries wait", () => {
+    const driver = new BatchRecordingDriver();
+    const { client } = engineWith(driver, { flushAt: 3, flushIntervalMs: 10_000 });
+    trackPlans(client, "a", "b");
+    expect(driver.batches).toEqual([]);
+    trackPlans(client, "c");
+    expect(driver.batches).toEqual([["a", "b", "c"]]);
+  });
+
+  it("sends what waits once the flush window passes", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const driver = new BatchRecordingDriver();
+    const { client } = engineWith(driver, { flushAt: 20, flushIntervalMs: 5000 });
+    trackPlans(client, "a", "b");
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(driver.batches).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(driver.batches).toEqual([["a", "b"]]);
+  });
+
+  it("sends at once on flush()", async () => {
+    const driver = new BatchRecordingDriver();
+    const { client } = engineWith(driver, { flushAt: 20, flushIntervalMs: 60_000 });
+    trackPlans(client, "a");
+    await client.flush();
+    expect(driver.batches).toEqual([["a"]]);
+  });
+
+  it("retries a failed batch with backoff, holding new events until it goes, in order", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const driver = new BatchRecordingDriver(2);
+    const { client } = engineWith(driver, {
+      flushAt: 1,
+      flushIntervalMs: 0,
+      retryAttempts: 3,
+      retryBaseMs: 1000,
+      retryMaxMs: 30_000,
+    });
+    trackPlans(client, "a");
+    await vi.advanceTimersByTimeAsync(0);
+    trackPlans(client, "b");
+    expect(driver.batches).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(driver.batches).toEqual([]);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(driver.batches).toEqual([["a", "b"]]);
+  });
+
+  it("keeps a batch offline once its retries are spent, and sends it first on the next launch", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const config = buildConfig(AnalyticsConfig);
+    const offline = new MemoryAnalyticsOfflineQueueDriver(config);
+    const failing = new BatchRecordingDriver(10);
+    const first = engineWith(failing, { flushAt: 1, retryAttempts: 1, retryBaseMs: 100 }, offline);
+    trackPlans(first.client, "a");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(offline.load().map((delivery) => delivery.properties.plan)).toEqual(["a"]);
+    const working = new BatchRecordingDriver();
+    const second = engineWith(working, { flushAt: 1, flushIntervalMs: 0 }, offline);
+    trackPlans(second.client, "b");
+    expect(working.batches).toEqual([["a", "b"]]);
+    expect(offline.load()).toEqual([]);
+  });
+
+  it("samples per visitor: a zero rate sends no event but still sends identify", () => {
+    const driver = new BatchRecordingDriver();
+    const { client } = engineWith(driver, { flushAt: 1, flushIntervalMs: 0, sampleRate: 0 });
+    trackPlans(client, "a");
+    client.identify("usr_1");
+    expect(driver.batches).toEqual([["identify"]]);
+  });
+
+  it("lets an event's own rate replace the global one", () => {
+    const driver = new BatchRecordingDriver();
+    const { client } = engineWith(driver, {
+      flushAt: 1,
+      flushIntervalMs: 0,
+      sampleRate: 0,
+      sampleRates: { "lead.submitted": 1 },
+    });
+    trackPlans(client, "a");
+    client.track(NewsletterJoined.create({ source: "footer", email: "lina@acme.example" }));
+    expect(driver.batches).toEqual([["a"]]);
+  });
+
+  it("hands the buffer to the beacon when the page hides, else sends it", () => {
+    const listeners = new Map<string, () => void>();
+    vi.stubGlobal("addEventListener", (type: string, listener: () => void) => {
+      listeners.set(type, listener);
+    });
+    const beaconing = new BatchRecordingDriver(0, true);
+    const one = engineWith(beaconing, { flushAt: 20, flushIntervalMs: 60_000 });
+    trackPlans(one.client, "a", "b");
+    listeners.get("pagehide")?.();
+    expect(beaconing.beaconed).toEqual([["a", "b"]]);
+    expect(beaconing.batches).toEqual([]);
+
+    const plain = new BatchRecordingDriver();
+    const two = engineWith(plain, { flushAt: 20, flushIntervalMs: 60_000 });
+    trackPlans(two.client, "c");
+    listeners.get("pagehide")?.();
+    expect(plain.batches).toEqual([["c"]]);
+  });
+
+  it("drops the buffer and the offline queue when consent is withdrawn", () => {
+    const driver = new BatchRecordingDriver();
+    const config = buildConfig(AnalyticsConfig);
+    const offline = new MemoryAnalyticsOfflineQueueDriver(config);
+    const { client, ledger } = engineWith(
+      driver,
+      { flushAt: 20, flushIntervalMs: 60_000 },
+      offline,
+    );
+    trackPlans(client, "a");
+    offline.save([]);
+    ledger.set(ConsentCategory.Analytics, false);
+    void client.flush();
+    expect(driver.batches).toEqual([]);
+    expect(offline.load()).toEqual([]);
   });
 });

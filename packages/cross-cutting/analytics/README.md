@@ -40,7 +40,8 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
    waited), refused drops, undecided queues.
 4. The queue holds at most `queueLimit` events. A full queue drops the newest, so the first view survives.
 5. On acceptance the queue is sent in its order, each event with the time it was captured. On refusal it is discarded.
-6. A driver owns its retries. A failed send never reaches the code that tracked.
+6. After consent, the delivery engine batches, retries and samples (below). A failed send never reaches the code that
+   tracked.
 
 ## The delivery envelope (v2)
 
@@ -74,6 +75,21 @@ the launch (the default), `cookie` keeps one first-party cookie (`identityCookie
 `storage` the device's `prefs` area. The client writes it only while the category is granted and removes it as soon as
 it is refused or on `reset`; the session id is never kept, and the user id and groups are not restored (call
 `identify` and `group` again after sign-in). A destination that must not see the raw user id hashes it.
+
+## The delivery engine
+
+Once consent allows a send, each delivery goes into a buffer (at most `bufferLimit`) that is sent as one batch when it
+holds `flushAt` deliveries (default 20) or `flushIntervalMs` after the first one waited (default 5 s; `0` sends at
+once). `flush()` sends it now. A batch the driver rejects goes back to the front and is retried `retryAttempts` times
+(default 3) after `backoffDelay` waits with equal jitter from `retryBaseMs` to `retryMaxMs`; new deliveries wait behind
+it, so order holds. When the retries are spent the batch goes to the offline queue (`offlineDriver`: `none` drops it,
+`storage` keeps up to `offlineLimit` on the device), and the next launch sends it first once consent is granted. When
+the page hides (`pagehide`, or `visibilitychange` to hidden) the buffer leaves at once through the driver's `beacon`
+(`navigator.sendBeacon`), or `send` with `keepalive` when the driver has none.
+
+Sampling is per visitor: `sampleRate` (0 to 1) keeps the same share of anonymous ids for every event, so funnels stay
+whole, and `sampleRates` gives one event its own rate (`{ "page.scrolled": 0.1 }`). `identify` and `group` are never
+sampled. A refusal drops the buffer and the offline queue.
 
 ## Use
 

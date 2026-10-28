@@ -9,7 +9,8 @@
  *           `identify` delivery is PostHog's `$identify` (with `$anon_distinct_id`, which merges the two) and a `group`
  *           delivery its `$groupidentify`. Only an identified visitor's events build a person profile
  *           (`$process_person_profile`). Each delivery's capture time is its `timestamp`. A missing
- *           key or an error status rejects; the client swallows it.
+ *           key or an error status rejects, and the client's delivery engine retries the batch (the driver never
+ *           does). `beacon` sends the same body through `navigator.sendBeacon` when the page closes.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0071 (no identifier before consent); ADR 0294 (decisions 16
  *                     and 17); ADR 0266 (one option, one driver).
@@ -95,26 +96,55 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
   }
 
   /**
+   * Hands `deliveries` to `navigator.sendBeacon` as one batch capture body, for a closing page; `false` where the
+   * platform has no beacon (a server, React Native), no key is set, or the browser refuses the payload.
+   */
+  override beacon(deliveries: readonly AnalyticsDelivery[]): boolean {
+    if (deliveries.length === 0) return true;
+    const scope = globalThis as {
+      readonly navigator?: { readonly sendBeacon?: (url: string, data: Blob) => boolean };
+    };
+    const send = scope.navigator?.sendBeacon;
+    const { posthogKey } = this.config;
+    if (typeof send !== "function" || posthogKey === null || posthogKey === "") return false;
+    const { url, body } = this.requestOf(deliveries);
+    return send.call(scope.navigator, url, new Blob([body], { type: "application/json" }));
+  }
+
+  /**
    * One batch capture request for `deliveries`; nothing is requested for an empty list.
    *
    * @throws Error when no PostHog key is configured, the request fails or PostHog answers with an error status.
    */
   protected async post(deliveries: readonly AnalyticsDelivery[]): Promise<void> {
     if (deliveries.length === 0) return;
-    const { posthogKey, posthogHost, ingestOrigin } = this.config;
-    if (posthogKey === null || posthogKey === "")
-      throw new Error("AnalyticsConfig.posthogKey is not set, so PostHog cannot be sent to");
-    const response = await fetch(`${(ingestOrigin || posthogHost).replace(/\/+$/, "")}/batch/`, {
+    const { url, body } = this.requestOf(deliveries);
+    const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       // Lets the last events of a closing page still arrive.
       keepalive: true,
+      body,
+    });
+    if (!response.ok)
+      throw new Error(`PostHog answered the batch capture with HTTP ${response.status}`);
+  }
+
+  /**
+   * The batch capture URL and JSON body of `deliveries`.
+   *
+   * @throws Error when no PostHog key is configured.
+   */
+  private requestOf(deliveries: readonly AnalyticsDelivery[]): { url: string; body: string } {
+    const { posthogKey, posthogHost, ingestOrigin } = this.config;
+    if (posthogKey === null || posthogKey === "")
+      throw new Error("AnalyticsConfig.posthogKey is not set, so PostHog cannot be sent to");
+    return {
+      url: `${(ingestOrigin || posthogHost).replace(/\/+$/, "")}/batch/`,
       body: JSON.stringify({
         api_key: posthogKey,
         batch: deliveries.map((delivery) => posthogEventOf(delivery)),
       }),
-    });
-    if (!response.ok)
-      throw new Error(`PostHog answered the batch capture with HTTP ${response.status}`);
+    };
   }
 }

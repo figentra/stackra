@@ -30,6 +30,16 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
       identityDriver: "memory",
       identityCookieName: "stk_aid",
       identityExpiryDays: 365,
+      flushAt: 20,
+      flushIntervalMs: 5000,
+      retryAttempts: 3,
+      retryBaseMs: 1000,
+      retryMaxMs: 30_000,
+      bufferLimit: 1000,
+      sampleRate: 1,
+      sampleRates: {},
+      offlineDriver: "none",
+      offlineLimit: 500,
     });
   });
 
@@ -67,6 +77,12 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     ["an unknown identity driver", { identityDriver: "localStorage" }],
     ["an identity cookie name with a space", { identityCookieName: "my id" }],
     ["an identity kept past 400 days", { identityExpiryDays: 401 }],
+    ["an empty batch", { flushAt: 0 }],
+    ["a flush window past a minute", { flushIntervalMs: 60_001 }],
+    ["more than 10 retries", { retryAttempts: 11 }],
+    ["a sample rate above 1", { sampleRate: 1.5 }],
+    ["a negative per-event sample rate", { sampleRates: { "page.scrolled": -0.1 } }],
+    ["an unknown offline driver", { offlineDriver: "indexeddb" }],
   ])("refuses %s", (_case, values) => {
     expect(ANALYTICS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

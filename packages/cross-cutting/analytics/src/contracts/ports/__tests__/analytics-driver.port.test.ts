@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: type and shape tests of the `AnalyticsDriver` port: an abstract port class with one asynchronous `send` of
- *          an ordered list of deliveries, and a driver of it is an instance of it.
+ *          an ordered list of deliveries and a `beacon` that answers `false` by default, and a driver of it is an
+ *          instance of it.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 16 and 17).
@@ -47,5 +48,10 @@ describe("AnalyticsDriver", () => {
       [readonly AnalyticsDelivery[]]
     >();
     expectTypeOf<AnalyticsDriver["send"]>().returns.toEqualTypeOf<Promise<void>>();
+  });
+
+  it("answers false to a beacon unless a driver can send one", () => {
+    expect(new CountingAnalyticsDriver().beacon([])).toBe(false);
+    expectTypeOf<AnalyticsDriver["beacon"]>().returns.toEqualTypeOf<boolean>();
   });
 });

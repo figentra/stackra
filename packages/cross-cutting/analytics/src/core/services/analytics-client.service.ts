@@ -16,14 +16,22 @@
  *           `identify` and `group` are deliveries of their own kind, gated and queued like events. `userId` is the
  *           person's public id, never a contact field; a destination that needs it hashed hashes it. A full queue drops
  *           the newest event, so the first view and the events before the answer survive. A driver's failure never
- *           reaches the caller.
+ *           reaches the caller. The delivery engine (stackra-406) sits after consent: sampled-in deliveries wait in a
+ *           buffer (at most `bufferLimit`) that is sent at `flushAt` deliveries or after `flushIntervalMs`; a failed
+ *           batch goes back to the front and is retried `retryAttempts` times with backoff (`backoffDelay`, equal
+ *           jitter, `retryBaseMs` to `retryMaxMs`), then kept in the `AnalyticsOfflineQueue` (the `none` default
+ *           drops it); when the page hides, the buffer leaves through the driver's `beacon`, or `send` when it has
+ *           none. Sampling is per visitor: `sampleRate`, or the event's own `sampleRates` entry; `identify` and `group`
+ *           are never sampled. A refusal drops the buffer and the offline queue.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1, 2 and 5); ADR 0071 (no identifier before consent); ADR 0305 (rule 20);
- *                     ADR 0294 (decisions 16, 17 and 26); analytics gap 5 (identity stitching, stackra-405).
+ *                     ADR 0294 (decisions 16, 17 and 26); analytics gaps 5 and 6 (identity stitching, stackra-405; the
+ *                     delivery engine, stackra-406); owner D10 2026-10-28 (one backoff formula).
  */
 import type { ConsentLedger } from "@stackra/consent";
 import { ConsentStatus } from "@stackra/consent";
 import { type AnyClass, kindOf, Service } from "@stackra/container";
+import { backoffDelay, Duration, Jitter } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
 import { schemaOf } from "@stackra/validation";
 
@@ -31,11 +39,14 @@ import type { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
+import type { AnalyticsOfflineQueue } from "#contracts/ports/analytics-offline-queue.port";
 import type { AnalyticsContext } from "#contracts/types/analytics-context.type";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 import { MemoryAnalyticsIdentityDriver } from "#core/drivers/memory-analytics-identity.driver";
+import { NoneAnalyticsOfflineQueueDriver } from "#core/drivers/none-analytics-offline-queue.driver";
 import { analyticsId } from "#core/functions/analytics-id.function";
+import { sampleScore } from "#core/functions/sample-score.function";
 
 /** The library name every delivery's context carries. */
 const LIBRARY = "@stackra/analytics";
@@ -75,23 +86,38 @@ export class AnalyticsClient extends Service {
 
   private kept: string | null = null;
 
+  private readonly offline: AnalyticsOfflineQueue;
+
+  private readonly buffer: AnalyticsDelivery[] = [];
+
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  private failures = 0;
+
+  private restored = false;
+
+  private hooked = false;
+
   /**
    * @param config - the driver, the gating category, the queue bound and the deny list.
    * @param driver - the selected driver that sends.
    * @param ledger - the consent ledger that decides.
    * @param identity - where the visitor's identity is kept after consent; in memory for this launch when absent.
+   * @param offline - where undelivered batches wait for the next launch; nothing is kept when absent.
    */
   constructor(
     config: AnalyticsConfig,
     driver: AnalyticsDriver,
     ledger: ConsentLedger,
     identity: AnalyticsIdentity = new MemoryAnalyticsIdentityDriver(),
+    offline: AnalyticsOfflineQueue = new NoneAnalyticsOfflineQueueDriver(),
   ) {
     super();
     this.config = config;
     this.driver = driver;
     this.ledger = ledger;
     this.identity = identity;
+    this.offline = offline;
   }
 
   /** Where delivery stands: the consent status of `AnalyticsConfig.consentCategory`, read now. */
@@ -153,6 +179,23 @@ export class AnalyticsClient extends Service {
     this.identity.clear();
   }
 
+  /**
+   * Sends everything buffered now, in one batch (a host calls it before a known exit; the engine calls it at
+   * `flushAt` or after `flushIntervalMs`). A failure puts the batch back for a retry and never rejects.
+   */
+  async flush(): Promise<void> {
+    this.clearTimer();
+    const batch = this.buffer.splice(0);
+    if (batch.length === 0) return;
+    try {
+      await this.driver.send(batch);
+      this.failures = 0;
+      if (this.buffer.length > 0) this.schedule();
+    } catch {
+      this.retry(batch);
+    }
+  }
+
   /** Sends `delivery` now, queues it while undecided, or drops it on refusal. */
   private enqueue(delivery: Captured): void {
     if (this.state !== AnalyticsState.Pending) {
@@ -181,9 +224,103 @@ export class AnalyticsClient extends Service {
     this.sessionId ??= analyticsId("ses_");
     this.remember();
     const ids = { anonymousId: this.anonymousId, sessionId: this.sessionId };
-    const deliveries = captured.map((delivery) => ({ ...delivery, ...ids }));
-    // A driver owns its retries; a failed send must never break the page that tracked.
-    this.driver.send(deliveries).catch(() => undefined);
+    const deliveries = captured
+      .map((delivery) => ({ ...delivery, ...ids }))
+      .filter((delivery) => this.sampled(delivery));
+    this.restore();
+    for (const delivery of deliveries)
+      if (this.buffer.length < this.config.bufferLimit) this.buffer.push(delivery);
+    this.schedule();
+  }
+
+  /** Whether `delivery` is in the sample: `identify` and `group` always, an event by its rate for this visitor. */
+  private sampled(delivery: AnalyticsDelivery): boolean {
+    if ((delivery.kind ?? AnalyticsDeliveryKind.Track) !== AnalyticsDeliveryKind.Track) return true;
+    const own = this.config.sampleRates[delivery.name];
+    if (own !== undefined) return sampleScore(`${delivery.anonymousId}|${delivery.name}`) < own;
+    return sampleScore(delivery.anonymousId) < this.config.sampleRate;
+  }
+
+  /** Sends the buffer now when it is full or the window is zero, else once the window passes; never during a backoff. */
+  private schedule(): void {
+    this.hookPageHide();
+    if (this.buffer.length === 0 || (this.failures > 0 && this.timer !== null)) return;
+    if (this.buffer.length >= this.config.flushAt || this.config.flushIntervalMs === 0) {
+      void this.flush();
+      return;
+    }
+    this.timer ??= setTimeout(() => void this.flush(), this.config.flushIntervalMs);
+  }
+
+  /** A failed `batch`: back to the front within the bound and retried after backoff, or kept offline once spent. */
+  private retry(batch: readonly AnalyticsDelivery[]): void {
+    this.failures += 1;
+    if (this.failures > this.config.retryAttempts) {
+      this.failures = 0;
+      this.offline.save([...this.offline.load(), ...batch]);
+      if (this.buffer.length > 0) this.schedule();
+      return;
+    }
+    this.buffer.unshift(...batch);
+    this.buffer.length = Math.min(this.buffer.length, this.config.bufferLimit);
+    this.clearTimer();
+    const wait = backoffDelay(
+      {
+        base: Duration.seconds(this.config.retryBaseMs / 1000),
+        max: Duration.seconds(this.config.retryMaxMs / 1000),
+        jitter: Jitter.Equal,
+      },
+      this.failures,
+    );
+    this.timer = setTimeout(() => void this.flush(), wait);
+  }
+
+  /** Once per launch, after consent: what an earlier launch could not deliver goes to the front of the buffer. */
+  private restore(): void {
+    if (this.restored) return;
+    this.restored = true;
+    const saved = this.offline.load();
+    if (saved.length === 0) return;
+    this.offline.clear();
+    this.buffer.unshift(...saved);
+    this.buffer.length = Math.min(this.buffer.length, this.config.bufferLimit);
+  }
+
+  /** When the page hides or closes, the buffer leaves at once: by beacon when the driver can, else by `send`. */
+  private hookPageHide(): void {
+    if (this.hooked) return;
+    this.hooked = true;
+    const scope = globalThis as {
+      readonly addEventListener?: (type: string, listener: () => void) => void;
+      readonly document?: { readonly visibilityState?: string };
+    };
+    if (typeof scope.addEventListener !== "function") return;
+    const leave = (): void => this.leave();
+    scope.addEventListener("pagehide", leave);
+    scope.addEventListener("visibilitychange", () => {
+      if (scope.document?.visibilityState === "hidden") leave();
+    });
+  }
+
+  /** Hands the whole buffer to the driver for a closing page; what neither path takes is kept offline. */
+  private leave(): void {
+    this.clearTimer();
+    const batch = this.buffer.splice(0);
+    if (batch.length === 0) return;
+    let handed: boolean;
+    try {
+      handed = this.driver.beacon(batch);
+    } catch {
+      handed = false;
+    }
+    if (handed) return;
+    this.driver.send(batch).catch(() => this.offline.save([...this.offline.load(), ...batch]));
+  }
+
+  /** Stops a pending flush or retry. */
+  private clearTimer(): void {
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
   }
 
   /** Keeps the identity while consent holds, and watches the ledger so a later refusal removes it at once. */
@@ -203,6 +340,10 @@ export class AnalyticsClient extends Service {
   private forget(): void {
     this.stopGuarding?.();
     this.stopGuarding = null;
+    this.clearTimer();
+    this.buffer.length = 0;
+    this.failures = 0;
+    this.offline.clear();
     this.anonymousId = null;
     this.sessionId = null;
     this.kept = null;

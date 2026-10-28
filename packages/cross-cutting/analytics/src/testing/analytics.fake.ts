@@ -7,7 +7,8 @@
  * Boundary: test code only. It is the real client, not a mock, so the queue, its bound and the refusal behave as in the
  *           app; a render helper binds it as `AnalyticsClient` and its `consent` as `ConsentLedger`, so a banner's
  *           decision reaches it as it reaches the real package. Nothing is decided at first; two fakes never share
- *           state. Builds the consent ledger itself: no other package's `./testing` is imported.
+ *           state. The delivery engine sends each delivery at once (`flushAt: 1`, no window), so `delivered()` reads
+ *           what left without waiting. Builds the consent ledger itself: no other package's `./testing` is imported.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3: domain helpers in the owning package's ./testing); ADR 0266; ADR 0298.
  */
@@ -39,7 +40,13 @@ export class AnalyticsFake extends AnalyticsClient {
   constructor() {
     const consent = new ConsentLedger(buildConfig(ConsentConfig), new MemoryConsentStoreDriver());
     const memory = new MemoryAnalyticsDriver();
-    super(buildConfig(AnalyticsConfig, { values: { driver: "memory" } }), memory, consent);
+    super(
+      buildConfig(AnalyticsConfig, {
+        values: { driver: "memory", flushAt: 1, flushIntervalMs: 0 },
+      }),
+      memory,
+      consent,
+    );
     this.consent = consent;
     this.memory = memory;
   }

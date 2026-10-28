@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of the `posthog` `AnalyticsDriver`: the batch request it sends (endpoint, key, events in order
  *          with their capture time, no person profile before identify), the envelope ids and page path mapped to PostHog,
- *          the user, groups, `$identify` and `$groupidentify` of identity stitching, the ingest
+ *          the user, groups, `$identify` and `$groupidentify` of identity stitching, the
+ *          `sendBeacon` path for a closing page, the ingest
  *          origin preferred over the host, no request for an empty list, and the errors for a missing key and an
  *          error status.
  * Boundary: test only; `fetch` is stubbed, no network.
@@ -132,6 +133,27 @@ describe("PosthogAnalyticsDriver", () => {
       properties: { distinct_id: "usr_1", $group_type: "scope", $group_key: "scp_1" },
     });
     expect(group.properties).not.toHaveProperty("type");
+  });
+
+  it("hands a batch to sendBeacon as the same body, and answers whether the browser took it", async () => {
+    const beacon = vi.fn((_url: string, _data: Blob) => true);
+    vi.stubGlobal("navigator", { sendBeacon: beacon });
+    const driver = new PosthogAnalyticsDriver(config);
+    expect(driver.beacon([delivery("lead.submitted", { plan: "pro" })])).toBe(true);
+    const [url, data] = beacon.mock.calls[0] as [string, Blob];
+    expect(url).toBe("https://eu.i.posthog.com/batch/");
+    const body = JSON.parse(await data.text());
+    expect(body).toMatchObject({ api_key: "phc_test", batch: [{ event: "lead.submitted" }] });
+    beacon.mockReturnValueOnce(false);
+    expect(driver.beacon([delivery("a.one")])).toBe(false);
+  });
+
+  it("answers false to a beacon without sendBeacon or a key", () => {
+    vi.stubGlobal("navigator", {});
+    expect(new PosthogAnalyticsDriver(config).beacon([delivery("a.one")])).toBe(false);
+    vi.stubGlobal("navigator", { sendBeacon: () => true });
+    const keyless = buildConfig(AnalyticsConfig, { values: { posthogKey: null } });
+    expect(new PosthogAnalyticsDriver(keyless).beacon([delivery("a.one")])).toBe(false);
   });
 
   it("sends to the ingest origin when one is set", async () => {
