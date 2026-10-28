@@ -66,6 +66,9 @@ const STALLING_CHILD = `export function serveSandboxChild() {
   });
   process.send({ type: "ready" });
 }`;
+/** Real Pyodide: its load took 32 s on a busy CI runner, past the 30 s default start-up deadline. */
+const PYODIDE = { ...OPTIONS, startupMs: 90_000 };
+
 const STALLING = {
   ...OPTIONS,
   module: `data:text/javascript,${encodeURIComponent(STALLING_CHILD)}`,
@@ -201,7 +204,7 @@ describe(SandboxPool, () => {
 
   it("runs a Python step in Pyodide, relays its fetch, and replaces the process after it", async () => {
     const proxy = new EchoProxy();
-    const pool = poolOf(proxy);
+    const pool = poolOf(proxy, PYODIDE);
     const result = await pool.run({
       code: 'r = await fetch("https://api.example.com/a")\nprint("hi")\nreturn {"sum": input["a"] + input["b"], "body": r["body"]}',
       language: "python",
@@ -227,7 +230,7 @@ describe(SandboxPool, () => {
   }, 120_000);
 
   it("refuses a Python step's own error as the same refusal", async () => {
-    const pool = poolOf();
+    const pool = poolOf(undefined, PYODIDE);
     await expect(
       pool.run({
         code: 'raise ValueError("nope")',
