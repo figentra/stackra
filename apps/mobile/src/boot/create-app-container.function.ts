@@ -14,13 +14,13 @@ import type { Token } from "@stackra/container";
 import { I18nConfig } from "@stackra/i18n";
 import { PushConfig } from "@stackra/platform";
 import { SystemSettings } from "@stackra/platform/contracts";
+import { ExpoSystemSettingsDriver } from "@stackra/platform/native";
 import { MemorySettingValueStoreDriver } from "@stackra/settings";
 import { SettingValueStore } from "@stackra/settings/contracts";
 import { ThemingConfig } from "@stackra/theming";
 import { SystemAccessibility } from "@stackra/theming/contracts";
 import { AccessibilityInfoSystemAccessibilityDriver } from "@stackra/theming/native";
 
-import { AppSystemSettingsDriver } from "./app-system-settings.driver";
 import { MobileI18nConfig } from "./mobile-i18n.config";
 
 /**
@@ -38,7 +38,7 @@ export function createAppContainer(): Promise<Container> {
       [ThemingConfig, new ThemingConfig()],
       [PushConfig, new PushConfig()],
       [SystemAccessibility, new AccessibilityInfoSystemAccessibilityDriver()],
-      [SystemSettings, new AppSystemSettingsDriver()],
+      [SystemSettings, new ExpoSystemSettingsDriver()],
       [ConsentConfig, consent],
       // shortcut: consent and settings live in memory until the app signs people in and calls the server's operations.
       [ConsentLedger, new ConsentLedger(consent, new MemoryConsentStoreDriver())],

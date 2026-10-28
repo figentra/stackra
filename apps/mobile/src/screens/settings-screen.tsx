@@ -31,7 +31,6 @@ import { LanguageSwitcher } from "@stackra/i18n/native";
 import { useAccessibility } from "@stackra/theming/react";
 import { useDesignSystem } from "@stackra/ui/native";
 import Constants from "expo-constants";
-import * as Updates from "expo-updates";
 import { Button, Card, Label, Separator, Slider, Switch, TextArea, TextField } from "heroui-native";
 import { useState, type ReactNode } from "react";
 import { Share, Text, View } from "react-native";
@@ -312,7 +311,7 @@ export function SettingsScreen() {
           value={colorScheme}
           onSelect={(id) => setColorScheme(id as (typeof SCHEMES)[number]["id"])}
         />
-        <LanguageSwitcher reload={Updates.reloadAsync}>
+        <LanguageSwitcher>
           {(switcher) =>
             switcher.mode === NativeSwitcher.System ? (
               <View className="gap-2">

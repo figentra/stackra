@@ -25,11 +25,11 @@ import {
   startingLocale,
 } from "@stackra/i18n";
 import type { Locale, Messages } from "@stackra/i18n";
+import { deviceLanguageTags, deviceRegion } from "@stackra/i18n/native";
 import { I18nProvider } from "@stackra/i18n/react";
 import { SettingValueStore } from "@stackra/settings/contracts";
 import { ThemingConfig } from "@stackra/theming";
 import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
-import { getLocales } from "expo-localization";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useThemeColor } from "heroui-native";
@@ -39,7 +39,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { createAppContainer } from "./boot/create-app-container.function";
-import { deviceRegion } from "./boot/device-region.function";
 import { followSystem } from "./boot/follow-system.function";
 import { linking } from "./navigation/linking";
 import { RootNavigator } from "./navigation/root-navigator";
@@ -102,7 +101,7 @@ const phoneLocale = (config: I18nConfig): Locale =>
     followDevice: config.followDevice,
     mode: switcherOf(config),
     // On iOS the phone's per-app language leads the list.
-    deviceTags: getLocales().map((language) => language.languageTag),
+    deviceTags: deviceLanguageTags(),
     chosen: null,
   });
 
@@ -111,7 +110,7 @@ function Localized({ container }: { container: Container }) {
   const config = container.get(I18nConfig);
   const { maxFontScale } = container.get(ThemingConfig);
   const [locale, setActiveLocale] = useState(() => phoneLocale(config));
-  const [device, setDevice] = useState(deviceRegion);
+  const [device, setDevice] = useState(() => deviceRegion());
 
   useEffect(() => {
     void followSystem(container);
