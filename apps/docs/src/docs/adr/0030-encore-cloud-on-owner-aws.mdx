@@ -1,7 +1,17 @@
 ---
 title: "0030 — Encore Cloud deploys into the owner's AWS; four environments"
-description: "Superseded by 0170 · 2026-10-20"
+description: "Superseded by 0170, decision 3 retired by 0468 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0030, Encore Cloud on the owner AWS (superseded by 0170). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+
+<Note>
+  Decision 3 ("production is promoted manually") retired 2026-10-28 (STA-1395) by [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval), as
+  already superseded by [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) DP6: a
+  merge to main deploys staging, and production is promoted by `pnpm runway promote <sha>`, which an agent may
+  start and which waits on the owner's GitHub Environment approval. No workstation `encore deploy`; Encore
+  deploys run in CI (0468 decision 6).
+</Note>
 
 <Note>
   Superseded by [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted).

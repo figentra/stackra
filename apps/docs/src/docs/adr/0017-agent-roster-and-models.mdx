@@ -1,7 +1,20 @@
 ---
 title: "0017 — Agent roster and models"
-description: "Superseded by 0193 · 2026-10-20"
+description: "Superseded by 0193, rule 6 retired by 0468 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0017, the first agent roster (superseded by 0193). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+
+<Note>
+  Rule 6 retired 2026-10-28 (STA-1395) by
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval),
+  owner decision of that date: agents develop and deploy end to end. They merge through `pnpm
+  pr:merge`, deploy and publish to dev and staging without asking, and start production releases and
+  promotions, which wait on the owner's one GitHub Environment approval. "A human decides" now means
+  that approval, plus the owner-approval review of
+  [0230](/adr/0230-reviewer-identity-separate-from-builder). The note below (0119) is superseded
+  with it.
+</Note>
 
 <Note>
   Superseded by [0193](/adr/0193-agents-and-model-policy): five tiers replace economy, standard and
