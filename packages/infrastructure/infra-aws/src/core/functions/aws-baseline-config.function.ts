@@ -3,8 +3,8 @@
  * Purpose: `awsBaselineConfig(root, environment, origins)`, one environment's AWS foundation config from the root
  *          runway: its account and whether it owns the account's account-wide resources, the cost tags, the budget
  *          (stopping spend only where production does not run), the Postgres backups (point-in-time recovery and
- *          35-day snapshot copies in the backup account), the files bucket (when a service default puts files or
- *          media on the `s3` disk), the static egress addresses, the jurisdiction, the GitHub repository and the
+ *          35-day snapshot copies in the backup account), the files bucket (when a service default puts
+ *          `filesystem.disk` on `s3`; media stores through it and a runway `media.disk` is ignored, ADR 0465), the static egress addresses, the jurisdiction, the GitHub repository and the
  *          Encore Cloud account link. Backups never leave the jurisdiction: an environment with backups whose AWS
  *          regions are not the foundation's region, or sit in another jurisdiction, is refused.
  * Boundary: plain data in and out, so gen can write the result as `<env>.infra.config.json`; account ids, amounts and
@@ -12,7 +12,7 @@
  *           which knows the app members' hosts; the root runway does not list them.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decisions 1 to 4), ADR 0172 (decisions 1, 2 and 5), ADR 0186 (decisions 1 to 3 as
- *                     amended 2026-10-24), ADR 0289 (decision 5), ADR 0222 (media direct uploads), ADR 0353 (residency),
+ *                     amended 2026-10-24), ADR 0289 (decision 5), ADR 0222 (media direct uploads), ADR 0465 (decision 1), ADR 0353 (residency),
  *                     ADR 0402 (backups stay in the jurisdiction; static egress addresses).
  */
 import { RunwayEnvironment, RunwayInvalidError } from "@stackra/runway";
@@ -30,10 +30,10 @@ import type { InfraRunway } from "#core/types/infra-runway.type";
 /** An origin a browser uploads from: https, a host, an optional port and nothing else. */
 const ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/;
 
-/** Whether a service default puts files or media on the `s3` disk, so the files bucket (and its replica) exists. */
+/** Whether a service default puts the file disk on `s3` (media stores through it, ADR 0465), so the files bucket exists. */
 function onS3Of(settings: InfraRunway["environments"][string] | undefined): boolean {
   const config = settings?.defaults?.service?.config;
-  return config?.filesystem?.disk === "s3" || config?.media?.disk === "s3";
+  return config?.filesystem?.disk === "s3";
 }
 
 /**

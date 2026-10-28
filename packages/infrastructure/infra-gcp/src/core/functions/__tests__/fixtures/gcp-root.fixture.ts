@@ -66,7 +66,7 @@ export function gcpRoot(change: (root: Record<string, unknown>) => void = () => 
           },
           network: { vpc: "ref:gcp.network.prod" },
         },
-        defaults: { service: { config: { media: { disk: "s3" } } } },
+        defaults: { service: { config: { filesystem: { disk: "s3" } } } },
         dedicated: { firm: { tenant: "tenant-1", cloud: { name: "gcp", account: "firm" } } },
       },
     },

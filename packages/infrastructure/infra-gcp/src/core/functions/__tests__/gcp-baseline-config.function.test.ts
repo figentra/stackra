@@ -6,7 +6,7 @@
  *          Cloud service account is named only where services deploy to Encore Cloud, and must be a service account;
  *          every missing budget input is reported with its path; a deployment not on GCP, a project the runway does
  *          not list, a project name too long for a service account id and an upload origin that is not https fail;
- *          the static egress addresses come from `shared.network.egress`.
+ *          the static egress addresses come from `shared.network.egress`; a runway `media.disk` is ignored (ADR 0465).
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0354, ADR 0171, ADR 0172, ADR 0222, ADR 0400, ADR 0401,
@@ -149,6 +149,17 @@ describe("gcpBaselineConfig", () => {
     const config = gcpBaselineConfig(root, "staging");
 
     expect([config.budgets, config.files, config.github]).toEqual([null, null, null]);
+  });
+
+  it("ignores a runway media.disk: only filesystem.disk asks for the files bucket (ADR 0465)", () => {
+    const root = gcpRoot((draft) => {
+      at(draft, "environments", "staging", "defaults", "service").config = {
+        filesystem: { disk: "local" },
+        media: { disk: "s3" },
+      };
+    });
+
+    expect(gcpBaselineConfig(root, "staging").files).toBeNull();
   });
 
   it("reports every missing budget input with its path", () => {

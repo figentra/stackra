@@ -4,7 +4,7 @@
  *          read, checked strictly: the project, `providers.gcp` (default region, projects, required labels, billing
  *          account, budgets and the non-production spend stop, the Encore Cloud service account), the GitHub
  *          repository, the regions, and per environment its destinations, `cloud`, regions, dedicated deployments,
- *          database server and backups, network (its VPC and static egress addresses), bucket defaults and file disks. Every other key passes through untouched.
+ *          database server and backups, network (its VPC and static egress addresses), bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open (`providers` has a catch-all), so `providers.gcp` reaches here unchecked; this schema
  *           narrows only what infra-gcp reads. Which project an environment runs in is its runway `cloud` (ADR 0400),
@@ -77,7 +77,7 @@ const BACKUPS = z.looseObject({
   pitrDays: z.int().min(1).max(35).optional(),
 });
 
-/** A config section that selects a disk (`filesystem.disk`, `media.disk`). */
+/** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
 /** One environment, as far as the GCP foundation reads it. */
@@ -129,7 +129,7 @@ const ENVIRONMENT = z.looseObject({
     .looseObject({
       service: z
         .looseObject({
-          config: z.looseObject({ filesystem: DISK, media: DISK }).optional(),
+          config: z.looseObject({ filesystem: DISK }).optional(),
         })
         .optional(),
     })

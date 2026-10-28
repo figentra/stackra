@@ -4,7 +4,8 @@
  *          tags, budgets (stopping only outside production), backups, files bucket, repository and Encore link;
  *          account ownership and sharing follow promotion order; static egress addresses and the jurisdiction come
  *          from the runway; backups that would leave an environment region's jurisdiction are refused; every missing
- *          input is reported with its path; an upload origin that is not https fails.
+ *          input is reported with its path; an upload origin that is not https fails; a runway `media.disk` is
+ *          ignored (ADR 0465).
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0289, 0353, 0402.
@@ -184,6 +185,17 @@ describe("awsBaselineConfig", () => {
       null,
       null,
     ]);
+  });
+
+  it("ignores a runway media.disk: only filesystem.disk asks for the files bucket (ADR 0465)", () => {
+    const root = templateRoot((draft) => {
+      at(draft, "environments", "staging", "defaults", "service").config = {
+        filesystem: { disk: "local" },
+        media: { disk: "s3" },
+      };
+    });
+
+    expect(awsBaselineConfig(root, "staging").files).toBeNull();
   });
 
   it("reports every missing input with its path", () => {

@@ -3,7 +3,7 @@
  * Purpose: `INFRA_RUNWAY_SCHEMA`, the parts of an already parsed root runway that the AWS foundation reads, checked
  *          strictly: the project, `providers.aws` (region, accounts, required tags, budgets), the GitHub repository,
  *          the Encore Cloud account link, the regions, and per environment its regions, services destination, Encore
- *          account, database backups, static egress addresses, bucket defaults and file disks. Every other key passes through untouched.
+ *          account, database backups, static egress addresses, bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
  *           blocks stay open; this schema narrows only what infra-aws reads, so a misspelt budget or account fails
  *           here before any Pulumi program runs. An account id must be a quoted string: YAML would read an unquoted
@@ -31,7 +31,7 @@ const AMOUNT = z.union([
   z.string().regex(/^(\d+(\.\d+)?|ref:[A-Za-z0-9_.-]+)$/, "Expected an amount or ref:<path>"),
 ]);
 
-/** A config section that selects a disk (`filesystem.disk`, `media.disk`). */
+/** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
 
 /** One environment, as far as the AWS foundation reads it. */
@@ -75,7 +75,7 @@ const ENVIRONMENT = z.looseObject({
     .looseObject({
       service: z
         .looseObject({
-          config: z.looseObject({ filesystem: DISK, media: DISK }).optional(),
+          config: z.looseObject({ filesystem: DISK }).optional(),
         })
         .optional(),
     })

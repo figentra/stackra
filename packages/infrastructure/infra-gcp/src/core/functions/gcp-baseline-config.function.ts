@@ -3,7 +3,8 @@
  * Purpose: `gcpBaselineConfig(root, environment, origins, dedicated?)`, one deployment's GCP foundation config from the
  *          root runway: the deployment (`gcpDeploymentOf`: the project its runway `cloud` names, its region, its stack
  *          prefix, ownership and labels), the budget and its non-production spend stop, the files bucket (when a
- *          service default puts files or media on the `s3` disk, which reaches GCS through its S3-compatible endpoint),
+ *          service default puts `filesystem.disk` on `s3`, which reaches GCS through its S3-compatible endpoint; media
+ *          stores through the file disk, so a runway `media.disk` is ignored, ADR 0465),
  *          the GitHub repository, and the Encore Cloud service account when the environment's services deploy to
  *          `encore-cloud`, and the static egress addresses (`shared.network.egress.staticIps`).
  * Boundary: plain data in and out, so gen can write the result as a config file; project ids, numbers, the billing
@@ -12,7 +13,7 @@
  *           Spend never stops in a project production runs in: a detached billing account stops production too.
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (decisions 1, 3 and 4), ADR 0171 (decisions 1 to 4), ADR 0172 (decision 5 per project),
- *                     ADR 0222 (media direct uploads), ADR 0400, ADR 0401 (the spend stop), ADR 0435 (Encore roles),
+ *                     ADR 0222 (media direct uploads), ADR 0465 (decision 1), ADR 0400, ADR 0401 (the spend stop), ADR 0435 (Encore roles),
  *                     ADR 0402 (decision 2: static egress addresses).
  */
 import { RunwayEnvironment, RunwayInvalidError } from "@stackra/runway";
@@ -91,7 +92,7 @@ export function gcpBaselineConfig(
   if (issues.length > 0) throw new RunwayInvalidError(ROOT_SOURCE, issues);
 
   const config = settings?.defaults?.service?.config;
-  const onS3 = config?.filesystem?.disk === "s3" || config?.media?.disk === "s3";
+  const onS3 = config?.filesystem?.disk === "s3";
   const buckets = settings?.shared?.buckets;
   const egress = settings?.shared?.network?.egress;
 
