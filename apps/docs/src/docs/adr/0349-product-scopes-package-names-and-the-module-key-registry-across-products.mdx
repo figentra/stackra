@@ -1,7 +1,18 @@
 ---
 title: "0349 — Product scopes, package names and the module-key registry across products"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0453 · 2026-10-24"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0349, Product scopes, package names and the module-key registry across products. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decision 4 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+  for the channel only: the restricted channel of `@figentra/*` is the Stackra registry's `internal`
+  read rule (0453 decision 10), whose row the first OS batch that publishes adds, with the OS
+  release workflow as its trusted publisher; not Keygen. The Pro form of 0316 decision 2 and the
+  rest of decision 4 stand.
+</Note>
 
 <Note>
   Amends [0231](/adr/0231-naming-and-casing-standard) (the package row of the naming table),

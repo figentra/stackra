@@ -1,7 +1,18 @@
 ---
 title: "0168 — Runway: public reusable workflows, build order and the runway.yaml schema"
-description: "Accepted, amended by 0289, 0296, 0352 · 2026-10-20"
+description: "Accepted, amended by 0289, 0296, 0352, 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0168, Runway: public reusable workflows, build order and the runway.yaml schema. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decision 6 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decision 6: publishing goes to the Stackra registry at `npm.stackra.figentra.com`, through GitHub
+  OIDC from the release workflows only (the reusable `runway-npm.yml` takes the registry from the
+  root runway's `providers.npm.registry`), not to npmjs or Keygen. `npm.figentra.com` stays excluded
+  and is retired (0453 decision 17).
+</Note>
 
 <Note>
   Amended by

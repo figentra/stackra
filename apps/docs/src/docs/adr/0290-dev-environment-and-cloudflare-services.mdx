@@ -1,7 +1,18 @@
 ---
 title: "0290 — Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended by 0453 · 2026-10-22"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0290, Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decisions 16 and 17 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decisions 1 and 17: decision 17 is reversed, and `npm.stackra.figentra.com` stays as the host of
+  the Stackra registry (Worker `stackra-registry`). The npflared Worker `npm-registry` keeps only
+  `npm.figentra.com` (decision 16) until its last consumer has moved to our registry; then that name
+  answers 410 Gone for 30 days and the Worker, its R2 bucket and its DNS record are deleted.
+</Note>
 
 <Note>
   Amends [0175](/adr/0175-edge-domains-and-tls): decision 1 of this ADR sets the dev zone, decision

@@ -1,7 +1,19 @@
 ---
 title: "0178 — Licensing: Keygen licences and the @stackra/licensing verifier"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0178, Licensing: Keygen licences and the @stackra/licensing verifier. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decisions 1 to 3 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decisions 13 to 15, for registry access: licences, grants, tokens and expiry live in our own
+  licence engine (D1 of the `stackra-registry` Worker), not in Keygen; Figentra OS billing issues,
+  renews, suspends and revokes them through the licence API (0453 decision 14); `@stackra/licensing`
+  gains the `registry` issuer driver as its default, and the `keygen` driver stays optional for an
+  on-prem customer who runs Keygen. Decisions 4 to 6 stand.
+</Note>
 
 <Note>
   Amends decision 3 of [0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped) (wave 3 owns

@@ -1,7 +1,17 @@
 ---
 title: "0175 — Edge, domains and TLS"
-description: "Accepted, amended by 0290 · 2026-10-20"
+description: "Accepted, amended by 0290, 0453 · 2026-10-20"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0175, Edge, domains and TLS. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decision 3 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decision 1: `npm.stackra.figentra.com` is kept, not pointed at Keygen. It is the Stackra registry,
+  the Cloudflare Worker `stackra-registry` on a Worker Custom Domain, serving `@stackra/*` and
+  `@stackra-pro/*`. The `docs.` name and decisions 1, 2, 4 and 5 stand.
+</Note>
 
 <Note>
   Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services): the dev and preview zone is

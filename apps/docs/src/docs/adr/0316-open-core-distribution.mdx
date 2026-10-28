@@ -1,7 +1,19 @@
 ---
 title: "0316 — Open-core distribution: readable community packages, minified Pro packages and private source maps"
-description: "Accepted · 2026-10-24 · amended 2026-10-24 (STA-465)"
+description: "Accepted, amended by 0453 · 2026-10-24 · amended 2026-10-24 (STA-465)"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0316, Open-core distribution: readable community packages, minified Pro packages and private source maps. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decisions 1 and 2 amended 2026-10-27 (STA-1333) by
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+  for the channel only: `@stackra/*` publish to our own registry at `npm.stackra.figentra.com`
+  (npmjs is an optional mirror, 0453 decision 16), and `@stackra-pro/*` come from the same registry
+  under the `licensed` read rule with a token from our own licence engine, not from Keygen Cloud.
+  What each scope ships (readable or minified `dist`, source maps, the `@stackra/source` condition)
+  is unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-465), reads with

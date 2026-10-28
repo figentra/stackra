@@ -1,9 +1,17 @@
 ---
 title: "0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine"
-description: "Accepted · 2026-10-27"
+description: "Accepted, amended by 0461 · 2026-10-27"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0453, the Stackra registry: its host, the workers/registry member, the R2, D1 and KV split, the npm protocol surface, CI-only publish through GitHub OIDC, integrity and registry signatures, the read rules of the @stackra and @stackra-pro scopes, the `stackra.kind` values and the catalogue API, the licence model and the OS billing hook, the optional npmjs mirror and the retirement of npm.figentra.com. Boundary: decision text only; the Worker is built by stackra-182, the licence engine by stackra-183, the CLI kinds by stackra-184, the release and template switch by stackra-185. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0024, 0077, 0173, 0177, 0178, 0284, 0316, 0349; STA-1333. */}
+{/* Stackra file contract. Purpose: ADR 0453, the Stackra registry: its host, the workers/registry member, the R2, D1 and KV split, the npm protocol surface, CI-only publish through GitHub OIDC, integrity and registry signatures, the read rules of the @stackra and @stackra-pro scopes, the `stackra.kind` values and the catalogue API, the licence model and the OS billing hook, the optional npmjs mirror and the retirement of npm.figentra.com. Boundary: decision text only; the Worker is built by stackra-182, the licence engine by stackra-183, the CLI kinds by stackra-184, the release and template switch by stackra-185. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0024, 0077, 0173, 0177, 0178, 0284, 0316, 0349; STA-1333. Amendment note from ADR 0461 added by stackra-90 (2026-10-28). */}
+
+<Note>
+  Decision 10 amended 2026-10-27 (STA-1355) by
+  [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+  decision 3: inside the `@stackra-pro` scope a per-name `internal` row covers `@stackra-pro/ui`, so
+  only Figentra's own internal tokens read it and a customer grant, `names: "*"` included, never
+  covers it. The two scope rows and the rest of decision 10 stand.
+</Note>
 
 <Note>
   Accepted 2026-10-27 (STA-1333, batch stackra-181): the owner decided the registry in the
