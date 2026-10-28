@@ -5,11 +5,14 @@
  *          statement, lock and idle-in-transaction timeouts every runtime session starts with; `pool` is the connection
  *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`;
  *          `readYourWrites` is how long a caller's `reads: "replica"` queries stay on the primary after its write.
+ *          `region` is the runway region key (`eu`, `me`) of the deployment the database serves, which the tenancy
+ *          `RegionGuardDriver` compares a tenant's placement with.
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); registry gap R-27; gap analysis devx-ops "Health checks" (P0,
- *                     owner D10); ADR 0473 (decision 2: the pool); STA-1504 (the read-your-writes window).
+ *                     owner D10); ADR 0473 (decision 2: the pool); STA-1504 (the read-your-writes window); ADR
+ *                     0172 (decision 3: the tenant region) and ADR 0353 (decision 1: region keys), stackra-310.
  */
 import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
@@ -61,6 +64,12 @@ export class DatabaseConfigOptions extends Schema {
   // reason: a duration in either form, stored canonical; the shipped config schema holds its rule
   @Field(DATABASE_CONFIG_SCHEMA.shape.readYourWrites)
   readYourWrites: Duration = Duration.seconds(5);
+
+  /**
+   * The runway region key of this deployment (`eu`, `me`); runway's `config.database` layer sets it per stack. Empty
+   * on a deployment that names no region, where a bound region guard fails closed.
+   */
+  region = "";
 }
 
 registerSchemas([[DatabaseConfigOptions, DATABASE_CONFIG_SCHEMA]]);

@@ -29,6 +29,9 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 | `.`         | `revocationPlan`                                                       | keep (severed) or delete each received copy on revocation                                                     |
 | `.`         | `TenantTokenService`, `TenantTokens`, `MemoryTenantTokensDriver`       | anonymous tenant resolution by token (an iCal feed, a public link)                                            |
 | `.`         | `TenantBillingContacts`, `MemoryTenantBillingContactsDriver`           | who a tenant's billing messages go to                                                                         |
+| `.`         | `TenantPlacement`, `Placement`, `MemoryTenantPlacementDriver`          | the placement map: a tenant's `region` and `cell`                                                             |
+| `.`         | `RegionGuardDriver`, `RegionMismatchError`, `tenantOf`                 | refuse a call whose tenant lives in another region; a scope's tenant                                          |
+| `.`         | `TenantPlacementConnectionResolverDriver`                              | `@stackra/database`'s `ConnectionResolver` from the tenant's cell                                             |
 | `./node`    | `BelongsToTenant`                                                      | the trait of a tenant-owned model (`tenantId`)                                                                |
 | `./node`    | `BelongsToTenantOrPlatform`                                            | the nullable form: `tenantId` or `null` for a platform row                                                    |
 | `./node`    | `BelongsToTenantMacro`                                                 | `t.belongsToTenant()`: the column and the equality policy                                                     |
@@ -180,6 +183,21 @@ const { memberships, switchTo } = useTenantSwitcher();
 ```
 
 `useTenant()` without `optional` refuses `tenant_required` while no tenant is active.
+
+## Placement and the region guard
+
+Every tenant has a `region` (the runway region key chosen at sign-up, ADR 0353 d1) and a `cell` (a connection-set
+name, `primary` until cells exist). The OS tenancy service keeps them on the tenant row and answers them through the
+`TenantPlacement` port; `MemoryTenantPlacementDriver` serves tests (stackra-310).
+
+`RegionGuardDriver` binds the pipeline's `TenancyCheck`, so it runs first for every request and job: it finds the
+call's tenant (`tenantOf`: the scope itself or its nearest tenant ancestor) and refuses `region_mismatch`
+(`RegionMismatchError`, 412, with the tenant's region key) when the placement is not this deployment's
+`DatabaseConfig.region`. Platform calls pass. A tenant with no placement or a deployment with no region key throws:
+the guard never passes what it cannot check. A host that has its own tenant-state check calls the guard from it.
+
+`TenantPlacementConnectionResolverDriver` answers `@stackra/database`'s `ConnectionResolver` with the tenant's cell, so
+"a later cell is data plus a picker" (ADR 0186): the routing `Database` driver and move-tenant are stackra-322.
 
 ## Testing
 

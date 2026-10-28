@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `DATABASE_CONFIG_SCHEMA`, the zod schema this package ships for `DatabaseConfig` (exported as
  *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`, and the
- *          `timeouts` every runtime session starts with, the `pool` of one instance (ADR 0473), and the
- *          `readYourWrites` window a replica query stays on the primary after its caller's write (STA-1504).
+ *          `timeouts` every runtime session starts with, the `pool` of one instance (ADR 0473), the
+ *          `readYourWrites` window a replica query stays on the primary after its caller's write (STA-1504), and the
+ *          `region` key of the deployment the database serves (stackra-310).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `DatabaseConfig$` can `.extend` it. The defaults equal
  *           `DatabaseConfigOptions`' initializers (tested). No credential: the connection URL is the process's
@@ -27,4 +28,8 @@ export const DATABASE_CONFIG_SCHEMA = z.object({
   timeouts: SESSION_TIMEOUTS_SCHEMA,
   pool: DATABASE_POOL_SCHEMA,
   readYourWrites: CANONICAL_DURATION_SCHEMA.default(Duration.seconds(5)),
+  region: z
+    .string()
+    .regex(/^([a-z][a-z0-9-]*)?$/)
+    .default(""),
 });

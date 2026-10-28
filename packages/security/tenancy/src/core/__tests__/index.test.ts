@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: pins the exports of the `.` entry of @stackra/tenancy: the switcher, the tenant level and its alias, the
- *          resolver step, the cron scopes driver, the tenant id check and the refusals; no `TenantMembership` (it is `./react`'s) and nothing
+ *          resolver step, the cron scopes driver, the tenant id check and the refusals, the placement map (stackra-310); no `TenantMembership` (it is `./react`'s) and nothing
  *          server-only.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -25,8 +25,11 @@ describe("@stackra/tenancy", () => {
     expect(Object.keys(core).sort()).toEqual([
       "MemorySandboxTenantsDriver",
       "MemoryTenantBillingContactsDriver",
+      "MemoryTenantPlacementDriver",
       "MemoryTenantSharesDriver",
       "MemoryTenantTokensDriver",
+      "RegionGuardDriver",
+      "RegionMismatchError",
       "RevokedCopy",
       "SandboxNotFoundError",
       "SandboxTenantService",
@@ -40,6 +43,8 @@ describe("@stackra/tenancy", () => {
       "TenantBillingContacts",
       "TenantEnvironment",
       "TenantMembershipMissingError",
+      "TenantPlacement",
+      "TenantPlacementConnectionResolverDriver",
       "TenantRequiredError",
       "TenantScopeResolverDriver",
       "TenantShareService",
@@ -51,6 +56,7 @@ describe("@stackra/tenancy", () => {
       "TransferRefusedError",
       "isTenantId",
       "revocationPlan",
+      "tenantOf",
     ]);
   });
 

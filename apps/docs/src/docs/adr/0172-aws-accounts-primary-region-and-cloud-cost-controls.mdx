@@ -4,6 +4,15 @@ description: "Accepted, amended by 0353, 0354, OS 0001 · 2026-10-20"
 ---
 
 <Note>
+  Amended 2026-10-28 (stackra-310, STA-1473): decision 3 is built as a placement map, not a column on
+  a core table. A tenant's `region` and `cell` are the `Placement` the OS tenant registry keeps on the
+  tenant row and answers through `@stackra/tenancy`'s `TenantPlacement` port; the deployment's own
+  region key is `DatabaseConfig.region`, set per stack by runway. `RegionGuardDriver`, the pipeline's
+  tenancy step, refuses `region_mismatch` for a call whose tenant is placed in another region and
+  fails closed when a placement or the region key is missing. Decision 3 otherwise stands.
+</Note>
+
+<Note>
   Amended 2026-10-25 by
   [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) decision 2 (owner,
   OS-1): decision 1 becomes one AWS account per product and region, plus the shared and tooling

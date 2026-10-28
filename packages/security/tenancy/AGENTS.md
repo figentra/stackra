@@ -49,6 +49,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
 - A tenant token is stored by its SHA-256 only and resolves for its one purpose; never log or store the token itself.
 - `./testing` imports `./node` internals only, never another package's `./testing`.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- Placement (stackra-310): a tenant's `region` and `cell` come only from the `TenantPlacement` port (the tenant
+  registry's row); the deployment's region only from `DatabaseConfig.region` (runway data). Never hard-code a region
+  key or a cell, and never let the region guard or the placement resolver pass or fall back when a placement is
+  missing: both fail closed.
 - `tenantIsolationOptions()` (`./testing`, stackra-258) is data for `@stackra/database/testing`'s
   `assertRowSecurity`; this entry never imports another package's `./testing`, so the generated test joins them.
 

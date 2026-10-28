@@ -6,9 +6,10 @@
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `migrate` and `rollback`, the runner
  *          `stackra db` calls; and `seedState` and `applySeed`, the runner `stackra seed-pack` calls;
- *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe. The partition upkeep and retention jobs live in
- *          @stackra/data-maintenance (ADR 0462 decision 1) and call `maintainAllPartitions` and `pruneAllRecords` of the
- *          `.` entry. This package's migrations under `database/migrations/` are found by their path and not exported.
+ *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
+ *          `ConnectionResolver` (stackra-310). The partition upkeep and retention jobs live in @stackra/data-maintenance
+ *          (ADR 0462 decision 1) and call `maintainAllPartitions` and `pruneAllRecords` of the `.` entry. This package's
+ *          migrations under `database/migrations/` are found by their path and not exported.
  * Boundary: names each re-export and declares nothing. Server only: the entry that starts MikroORM, so it stays out of
  *           the `.` entry that the models and services import.
  * Runtime: node
@@ -20,6 +21,7 @@ export { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.dr
 export { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 export { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempotency-store.driver";
 export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-store.driver";
+export { PrimaryConnectionResolverDriver } from "#node/drivers/primary-connection-resolver.driver";
 export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.driver";
 export { applySeed } from "#node/functions/apply-seed.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";

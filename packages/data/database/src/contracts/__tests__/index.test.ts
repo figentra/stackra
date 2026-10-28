@@ -14,9 +14,11 @@ import type { Where } from "#contracts/index";
 describe("@stackra/database/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ConnectionResolver",
       "Disposal",
       "HoldChannel",
       "HoldRegistry",
+      "PRIMARY_CONNECTION",
       "SequenceTimeZone",
       "VisibilityFilter",
     ]);

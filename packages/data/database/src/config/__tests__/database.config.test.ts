@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `DatabaseConfig`: a configuration over `DatabaseConfigOptions` keyed `database`, built
  *          with its defaults and a runway values layer, refusing a timeout that is not a duration and a pool whose `min`
- *          is above its `max`, and the read-your-writes window.
+ *          is above its `max`, the read-your-writes window, and taking the deployment's region key.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decisions 19 and
@@ -36,6 +36,14 @@ describe("DatabaseConfig", () => {
         values: { health: { timeout: "two seconds" as Duration, critical: true } },
       }),
     ).toThrow(ConfigInvalidError);
+  });
+
+  it("takes the deployment's region key and refuses one that is not a runway key (stackra-310)", () => {
+    expect(buildConfig(DatabaseConfig).region).toBe("");
+    expect(buildConfig(DatabaseConfig, { values: { region: "me" } }).region).toBe("me");
+    expect(() => buildConfig(DatabaseConfig, { values: { region: "Middle East" } })).toThrow(
+      ConfigInvalidError,
+    );
   });
 
   it("ships the pg pool defaults and refuses a pool that keeps more than it may open", () => {
