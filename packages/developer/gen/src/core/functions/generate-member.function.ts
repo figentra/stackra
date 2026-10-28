@@ -8,7 +8,7 @@
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
- *          ADR 0470), `#stackra/i18n` from
+ *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6), `#stackra/i18n` from
  *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs and the
  *          member's part of the system graph (`.stackra/graph.json`, ADR 0452), after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
@@ -68,6 +68,7 @@ import { emitMemberModule } from "#core/functions/emit-member-module.function";
 import { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 import { emitPrefixes } from "#core/functions/emit-prefixes.function";
 import { emitReports } from "#core/functions/emit-reports.function";
+import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
@@ -190,6 +191,7 @@ export function generateMember(
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/settings.ts", emitSettings(ir)],
     [".stackra/gen/reports.ts", emitReports(ir)],
+    [".stackra/gen/search.ts", emitSearchQueries(ir)],
     [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
