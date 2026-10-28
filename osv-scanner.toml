@@ -26,6 +26,13 @@ vulnerability.ignore = true
 reason = "GHSA-mrhx-c7xc-m3w5: fixed only in zod 4; dev-only parent (@expo/cli) needs zod 3"
 effectiveUntil = 2027-01-31
 
+# deepmerge: no fixed release exists (4.3.1 is the latest). Only build tooling merges with it, over config objects
+# we write: Expo's config loader (@expo/config) and Rollup's node-resolve plugin. No runtime package depends on it.
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-01-31
+reason = "deepmerge mergeObject prototype poisoning: no fixed release; build-time only via @expo/config and @rollup/plugin-node-resolve"
+
 # node-forge: no fixed release exists. Only Expo's CLI and its code-signing helper use it, at development time.
 [[IgnoredVulns]]
 id = "GHSA-86w9-cpqp-85rv"

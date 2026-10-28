@@ -42,7 +42,9 @@ jobs:
       # The `docs` environment (owner: main only, and an Infisical trust for its subject, STA-605).
       environment: docs
       # The docs scripts run `stackra` (@stackra/cli) and gen, so their workspace dependencies are installed and built.
-      install-args: --frozen-lockfile --filter=@figentra/docs...
+      # turbo counts the root's workspace devDependency @stackra/commitlint-config in build-first's graph, so the
+      # install selects the root (`stackra...`) as well, or that member builds without its typescript-config preset.
+      install-args: --frozen-lockfile --filter=@figentra/docs... --filter=stackra...
       build-first: "@stackra/cli..."
       mintlify-project-id: ${{ vars.MINTLIFY_PROJECT_ID }}
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
