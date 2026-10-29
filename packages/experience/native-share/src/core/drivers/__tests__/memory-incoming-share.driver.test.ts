@@ -59,10 +59,13 @@ describe("MemoryIncomingShareDriver", () => {
   });
 
   it("applies the configured limits", async () => {
-    const config = new NativeShareConfig();
-    config.maxItems = 1;
-    config.maxTextLength = 3;
-    const share = new MemoryIncomingShareDriver(config);
+    /** A host that takes one item and three characters of text. */
+    class TightConfig extends NativeShareConfig {
+      override maxItems = 1;
+
+      override maxTextLength = 3;
+    }
+    const share = new MemoryIncomingShareDriver(new TightConfig());
     share.receive(TEXT);
     share.receive(PHOTO);
     share.receive(PDF);
@@ -70,9 +73,11 @@ describe("MemoryIncomingShareDriver", () => {
   });
 
   it("reads a file within maxBytes and refuses a larger one, a text and a refused type", async () => {
-    const config = new NativeShareConfig();
-    config.maxBytes = 4;
-    const share = new MemoryIncomingShareDriver(config);
+    /** A host that reads files of four bytes at most. */
+    class SmallFilesConfig extends NativeShareConfig {
+      override maxBytes = 4;
+    }
+    const share = new MemoryIncomingShareDriver(new SmallFilesConfig());
     share.receive(PHOTO, new Blob(["jpg"]));
     share.receive(PDF, new Blob(["too large"]));
     share.receive(ZIP, new Blob(["z"]));
