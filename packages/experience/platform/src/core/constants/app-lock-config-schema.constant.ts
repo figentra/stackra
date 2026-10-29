@@ -18,6 +18,9 @@ export const APP_LOCK_CONFIG_SCHEMA = z.object({
   allowPasscode: z.boolean(),
   roles: z.record(
     z.string(),
-    z.object({ isEnabled: z.boolean().optional(), lockAfter: DURATION_SCHEMA.optional() }),
+    z.object({
+      isEnabled: z.boolean().exactOptional(),
+      lockAfter: DURATION_SCHEMA.exactOptional(),
+    }),
   ),
 });
