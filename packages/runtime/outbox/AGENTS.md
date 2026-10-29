@@ -15,7 +15,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 | A port, a stored type or its enum           | `src/contracts/{ports,types,enums}/`                      |
 | An isomorphic driver, refusal or registry   | `src/core/{drivers,errors,functions,constants}/`          |
 | The writer, relay, inbox or a server driver | `src/node/{services,drivers}/`                            |
-| A job (action) and its schemas              | `src/node/{actions,schemas}/`                             |
+| A job (action)                              | never here: `@stackra/data-maintenance` (ADR 0462)        |
 | A facet (`@ConsumesChanges`)                | `src/core/decorators/`                                    |
 | A migration                                 | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | A test                                      | `__tests__/<name>.<kind>.test.ts` beside it               |
@@ -43,14 +43,15 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
   @stackra/privacy's saga): `holding` matches a string value at any payload depth, never a key; `rewrite` replaces
   the payload and keeps the delivery state. Never import @stackra/privacy here (privacy depends on outbox).
-- `pruneDead` deletes dead letters only; never prune a live (due or retrying) message. The inbox prune window
+- `pruneOutbox` is the one prune path (the job of @stackra/data-maintenance calls it, and outbox never depends on
+  that add-on). `pruneDead` deletes dead letters only; never prune a live (due or retrying) message. The inbox prune window
   (`pruneAfterDays`) must outlast every producer's retries, or a late redelivery runs twice.
 - The batch window (`outbox.batchWindowSeconds`) is the relay's only setting; the rest of `OUTBOX_DEFAULTS` is fixed.
   A held tick returns `0`, so `work` pauses the poll interval and checks again.
 - Row changes go to the change log (`outbox.changes`), never to `outbox.messages`: they are kept after delivery and
   read per consumer from its cursor. Never delete a change on delivery; retention drops whole partitions
-  (`change_log.maintain`). `ChangeFeed.read` lists only entries older than the snapshot's `xmin` (a cursor must never
-  pass a change that commits late). A failing consumer stalls itself only; it never dead-letters a change.
+  (`ChangeFeed.maintain`, run daily by `data_maintenance.change_log.maintain`). `ChangeFeed.read` lists only entries
+  older than the snapshot's `xmin` (a cursor must never pass a change that commits late). A failing consumer stalls itself only; it never dead-letters a change.
 - Change values are opt-in (`CapturesChanges({ values: true })`) and go through `changeCaptureOf`, which drops
   encrypted, `@Classified` and excluded fields. Never put a value in a change any other way.
 - One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery that opens a scope runs

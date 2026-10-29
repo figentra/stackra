@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the configuration with its shipped schema under the generated name
- *          `OutboxConfig$`, the memory drivers, the `EventOutbox` driver, the two registrations and the refusal are
- *          its values, and nothing else is.
+ *          `OutboxConfig$`, the memory drivers, the `EventOutbox` driver, the registrations, `pruneOutbox` and the
+ *          refusal are its values, and nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -26,6 +26,7 @@ describe("@stackra/outbox", () => {
       "OutboxOptions",
       "UnknownEventError",
       "coalesceChanges",
+      "pruneOutbox",
       "redactSubjectMessages",
       "registerChangeConsumers",
       "registerEventNames",

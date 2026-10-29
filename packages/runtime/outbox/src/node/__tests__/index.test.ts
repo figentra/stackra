@@ -16,9 +16,6 @@ describe("@stackra/outbox/node", () => {
       "ChangeFeedService",
       "InboxEventPublisherDriver",
       "InboxService",
-      "MaintainChangeLogAction",
-      "MaintainChangeLogInput",
-      "MaintainChangeLogOutput",
       "OutboxRelayService",
       "OutboxWriterService",
       "PostgresChangeFeedDriver",
@@ -27,9 +24,6 @@ describe("@stackra/outbox/node", () => {
       "PostgresOfflineCapStoreDriver",
       "PostgresOutboxDriver",
       "PostgresReplicaLogDriver",
-      "PruneOutboxAction",
-      "PruneOutboxInput",
-      "PruneOutboxOutput",
     ]);
   });
 });
