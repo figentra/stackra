@@ -5,13 +5,14 @@
  *          `<model>.search`), the one search API the Cmd+K palette and public search widgets read (ADR 0221 d6).
  * Boundary: pure; reads `ir.classes`. Undefined when the member has no own `@Searchable` model, or does not declare
  *           `@stackra/search`. A member class already named `Search<Model>Query` (a hand-written public search) takes
- *           the generated one's place, so that model is skipped. Registering these classes as actions (endpoint, tool,
- *           wiring) is not done here yet, as for the generated report queries.
+ *           the generated one's place, so that model is skipped (`searchQueriesOf`, which also declares the
+ *           queries `generateMember` registers like authored ones, STA-1459).
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 4 and 6); ADR 0294 (decisions 16 and 21); ADR 0155 (queries are MCP tools).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { searchQueriesOf } from "#core/functions/search-queries-of.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**
@@ -22,14 +23,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * emitSearchQueries(ir); // '... export class SearchProductQuery extends SearchQuery(Product) {}'
  */
 export function emitSearchQueries(ir: MemberIR): string | undefined {
-  if (ir.packages !== undefined && !ir.packages.includes("@stackra/search")) return undefined;
-  const authored = new Set(ir.classes.map((declared) => declared.name));
-  const models = ir.classes.filter(
-    (declared) =>
-      declared.kind === "model" &&
-      declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class") &&
-      !authored.has(`Search${declared.name}Query`),
-  );
+  const models = searchQueriesOf(ir).map((pair) => pair.model);
   if (models.length === 0) return undefined;
   const imports = new Map<string, Map<string, boolean>>([
     ["@stackra/search/node", new Map([["SearchQuery", false]])],

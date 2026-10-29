@@ -7,20 +7,16 @@
  * Boundary: pure; reads `ir.classes`. Undefined when the member has no report with a written key, or does not declare
  *           `@stackra/reports`. The file imports `@stackra/actions` and `@stackra/reports`, so a member that lacks
  *           either is refused by `generated_dependency_missing`. The permission is the report's own `Permissions`
- *           static, imported where gen read it; without one the query reads its default. Registering these classes as
- *           actions (endpoint, tool, wiring) is not done here yet.
+ *           static, imported where gen read it; without one the query reads its default. `reportQueriesOf` picks the
+ *           reports and declares their queries, which `generateMember` registers like authored ones (STA-1459).
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decisions 1 and 3); ADR 0294 (decisions 16 and 20); ADR 0155 (queries are MCP tools).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** Whether `value` is a static member of a class written as a value. */
-function isMemberValue(value: unknown): value is ClassValue & { readonly member: string } {
-  return typeof value === "object" && value !== null && "$class" in value && "member" in value;
-}
 
 /**
  * The `#stackra/reports` file of `ir`, or undefined when there is nothing to write.
@@ -30,10 +26,7 @@ function isMemberValue(value: unknown): value is ClassValue & { readonly member:
  * emitReports(ir); // '... export class OrderSalesReportQuery extends Query({ key: "report.order_sales", ... }) { ... }'
  */
 export function emitReports(ir: MemberIR): string | undefined {
-  if (ir.packages !== undefined && !ir.packages.includes("@stackra/reports")) return undefined;
-  const reports = ir.classes.filter(
-    (declared) => declared.kind === "report" && typeof declared.options["key"] === "string",
-  );
+  const reports = reportQueriesOf(ir);
   if (reports.length === 0) return undefined;
   const imports = new Map<string, Map<string, boolean>>([
     ["@stackra/actions", new Map([["Query", false]])],
@@ -49,14 +42,17 @@ export function emitReports(ir: MemberIR): string | undefined {
   const use = (from: string, name: string): void => {
     imports.set(from, (imports.get(from) ?? new Map<string, boolean>()).set(name, false));
   };
-  const classes = reports.map((declared) => {
+  const classes = reports.map(({ report: declared, query }) => {
     use(declared.importPath, declared.name);
     const written = String(declared.options["key"]);
-    const permission = declared.options["permission"];
-    if (isMemberValue(permission)) use(permission.from, permission.$class);
+    // `reportQueriesOf` keeps the permission only when it names a Permissions static.
+    const permission = query.options["permission"] as
+      | (ClassValue & { readonly member: string })
+      | undefined;
+    if (permission !== undefined) use(permission.from, permission.$class);
     const options = [
-      `key: ${JSON.stringify(`report.${written}`)}`,
-      ...(isMemberValue(permission)
+      `key: ${JSON.stringify(query.options["key"])}`,
+      ...(permission !== undefined
         ? [`permission: ${permission.$class}.${permission.member}`]
         : []),
     ];

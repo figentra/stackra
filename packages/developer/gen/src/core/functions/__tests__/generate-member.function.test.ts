@@ -5,7 +5,8 @@
  *          HTTP adapter of a service that runs @stackra/app,
  *          prefixes, server entry, tool configs), of an app (route tables and blocks per runtime, client entries) and
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
- *          refuses, and `@Renamed` accepted by the lock. Every full run ends with the member graph (ADR 0452).
+ *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry, endpoint,
+ *          tool and wiring binding like an authored query (STA-1459). Every full run ends with the member graph (ADR 0452).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -53,6 +54,7 @@ describe("generateMember", () => {
     expect(errors).toEqual([]);
     expect(files.map((file) => file.path)).toEqual([
       "stackra.manifest.json",
+      "openapi.json",
       ".stackra/gen/schemas/billing.ts",
       ".stackra/gen/schemas/crm.ts",
       ".stackra/gen/entities/billing.ts",
@@ -63,6 +65,7 @@ describe("generateMember", () => {
       ".stackra/gen/boot.ts",
       ".stackra/gen/webhooks.ts",
       ".stackra/gen/prefixes.ts",
+      ".stackra/gen/search.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/database.ts",
       ".stackra/encore/billing/queues.ts",
@@ -79,6 +82,25 @@ describe("generateMember", () => {
     expect(server).toContain('import "#stackra/registrations";');
     const setup = files.find((file) => file.path === ".stackra/vitest.setup.ts")?.content;
     expect(setup).toContain('import "#stackra/registrations";');
+  });
+
+  it("registers the generated search query like an authored one (STA-1459)", () => {
+    const { files, errors, manifest } = generateMember(BILLING_IR);
+    expect(errors).toEqual([]);
+    const entry = manifest.actions?.find((action) => action["class"] === "SearchInvoiceQuery");
+    expect(entry).toMatchObject({
+      key: "billing.invoice.search@1",
+      kind: "query",
+      module: "billing",
+      file: ".stackra/gen/search.ts",
+      permission: "billing.invoice.read",
+      actors: ["user", "agent", "service"],
+      endpoint: { method: "GET", path: "/invoices/search", derived: true },
+    });
+    expect(entry?.["tool"]).toBeDefined();
+    const wiring = files.find((file) => file.path === ".stackra/gen/wiring.ts")?.content;
+    expect(wiring).toContain('import { SearchInvoiceQuery } from "#stackra/search";');
+    expect(wiring).toContain("provide: SearchInvoiceQuery");
   });
 
   it("writes the route tables, blocks and client entries of an app", () => {

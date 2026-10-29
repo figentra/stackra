@@ -114,7 +114,8 @@ the cache drivers its tokens reach), so an invalidating event forgets the cached
 `per: principal` and the scope's otherwise), each route subscribed on the bus for its registered event class and sent
 through `RealtimeRelay` when bound, else `RealtimeBroadcaster`.
 
-A service with a `reads: "replica"` query (STA-1504) reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
+A service with a `reads: "replica"` query (STA-1504), its own or one a hosted package's manifest records (`buildManifest`
+writes a query's `reads`), reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
 pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:
 `@stackra/database`'s `DatabaseReplicaReadsDriver` (`database`) with the `DatabaseConfig` row (`readYourWrites`).
 
@@ -210,8 +211,11 @@ and the generated query key `<module>.report.<key>@1`. It refuses `report_mispla
 grain, measure kind or metric outside ADR 0470's closed set, `REPORT_VOCABULARY`), and `report_dimension_unknown` /
 `report_measure_unknown` (a path whose segment an own source model does not declare, followed through its own
 relations). `emitReports` writes `.stackra/gen/reports.ts` (`#stackra/reports`): `<Name>ReportQuery extends Query({
-key: "report.<key>", permission })`, whose `handle` calls the injected `ReportRunner`. The generated queries are not
-yet registered as actions (endpoint, tool, wiring); the runner's driver is stackra-390.
+key: "report.<key>", permission })`, whose `handle` calls the injected `ReportRunner`. `emitSearchQueries` writes `.stackra/gen/search.ts`
+(`#stackra/search`): `Search<Model>Query extends SearchQuery(<Model>)` per own `@Searchable` model (key `<model>.search`).
+Both generated kinds are declared beside the authored queries (`reportQueriesOf`, `searchQueriesOf`), so
+`generateMember` gives each its manifest entry, derived endpoint, MCP tool and wiring binding like an authored query
+(STA-1459); the runner's driver is stackra-390.
 
 ## Model additions (ADR 0336)
 

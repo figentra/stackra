@@ -8,7 +8,9 @@
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
- *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6), `#stackra/i18n` from
+ *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
+ *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
+ *          MCP tool and wiring, STA-1459), `#stackra/i18n` from
  *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs and the
  *          member's part of the system graph (`.stackra/graph.json`, ADR 0452), after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
@@ -82,7 +84,9 @@ import { emitWiring } from "#core/functions/emit-wiring.function";
 import { usesContainer } from "#core/functions/uses-container.function";
 import { memberGraphOf } from "#core/functions/member-graph-of.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
+import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import { searchQueriesOf } from "#core/functions/search-queries-of.function";
 import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -92,9 +96,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
 const json = formatJson;
 
 /**
- * Every file gen-core writes for `ir`.
+ * Every file gen-core writes for `authored`.
  *
- * @param ir - the member read by discovery.
+ * @param authored - the member read by discovery.
  * @param previous - the committed manifest, whose identities are locked; absent on the first run.
  * @param options - `pass`: `"manifests"` returns the manifest alone, refused by anything but a consumed workspace
  *                  service still to come; `"clients"` returns the client files alone, refused only by the clients
@@ -104,7 +108,7 @@ const json = formatJson;
  * if (errors.length === 0) files.map((file) => file.path);
  */
 export function generateMember(
-  ir: MemberIR,
+  authored: MemberIR,
   previous?: StackraManifest,
   options: { readonly pass?: "manifests" | "clients" } = {},
 ): {
@@ -112,6 +116,15 @@ export function generateMember(
   readonly errors: readonly GenError[];
   readonly manifest: StackraManifest;
 } {
+  // The generated report and search queries are queries like any authored one (STA-1459).
+  const ir: MemberIR = {
+    ...authored,
+    classes: [
+      ...authored.classes,
+      ...reportQueriesOf(authored).map((pair) => pair.query),
+      ...searchQueriesOf(authored).map((pair) => pair.query),
+    ],
+  };
   const { manifest, errors } = buildManifest(ir);
   const all: GenError[] = [...ir.errors, ...errors];
   if (previous !== undefined) {
@@ -192,8 +205,8 @@ export function generateMember(
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/settings.ts", emitSettings(ir)],
-    [".stackra/gen/reports.ts", emitReports(ir)],
-    [".stackra/gen/search.ts", emitSearchQueries(ir)],
+    [".stackra/gen/reports.ts", emitReports(authored)],
+    [".stackra/gen/search.ts", emitSearchQueries(authored)],
     [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });

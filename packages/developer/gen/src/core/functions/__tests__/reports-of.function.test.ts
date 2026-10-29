@@ -5,7 +5,8 @@
  *          the refusals `identity_missing`, `identity_collision`, `report_misplaced`, `report_vocabulary_invalid`,
  *          `report_dimension_unknown` and `report_measure_unknown` (followed through an own relation, not judged after
  *          a plain field or on a source that is no own model); and the `#stackra/reports` query file, absent without a
- *          report or without `@stackra/reports`.
+ *          report or without `@stackra/reports`; `reportQueriesOf` declares each generated query, which the manifest
+ *          then lists with its key, permission, endpoint and tool like an authored query (STA-1459).
  * Boundary: test only; runs on a hand-built orders service IR with an order and a customer model.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0470 (decisions 1 and 2; Enforcement).
@@ -15,6 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitReports } from "#core/functions/emit-reports.function";
 import { modelKey } from "#core/functions/model-key.function";
+import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { FieldIR } from "#core/types/field-ir.type";
@@ -287,5 +289,38 @@ describe("emitReports", () => {
   it("writes nothing without a report or without @stackra/reports", () => {
     expect(emitReports(service([]))).toBeUndefined();
     expect(emitReports(service([report()], { packages: ["@stackra/actions"] }))).toBeUndefined();
+  });
+});
+
+describe("reportQueriesOf", () => {
+  it("declares the generated query of each report, which the manifest lists like an authored one", () => {
+    const ir = service([report()], { packages: ["@stackra/actions", "@stackra/reports"] });
+    const [pair] = reportQueriesOf(ir);
+    expect(pair?.report.name).toBe("OrderSalesReport");
+    expect(pair?.query).toMatchObject({
+      name: "OrderSalesReportQuery",
+      kind: "query",
+      module: "orders",
+      importPath: "#stackra/reports",
+      options: { key: "report.order_sales", permission: OPTIONS.permission },
+      deps: [{ class: { name: "ReportRunner", from: "@stackra/reports" } }],
+    });
+    const { manifest } = buildManifest({
+      ...ir,
+      classes: [...ir.classes, ...reportQueriesOf(ir).map((each) => each.query)],
+    });
+    const entry = manifest.actions?.find((action) => action["class"] === "OrderSalesReportQuery");
+    expect(entry).toMatchObject({
+      key: "orders.report.order_sales@1",
+      kind: "query",
+      permission: "orders.order.report",
+      endpoint: { method: "GET", path: "/reports/order-sales", derived: true },
+    });
+    expect(entry?.["tool"]).toBeDefined();
+  });
+
+  it("declares nothing without @stackra/reports or without a keyed report", () => {
+    expect(reportQueriesOf(service([report()], { packages: ["@stackra/actions"] }))).toEqual([]);
+    expect(reportQueriesOf(service([report({})]))).toEqual([]);
   });
 });
