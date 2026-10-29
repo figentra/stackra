@@ -119,6 +119,10 @@ test("preflight: present, missing and placeholder by name; values never printed"
     out,
     /^missing +GOOGLE_PLAY_SERVICE_ACCOUNT_JSON  prod:\/ci\/store  \(store root kit\)/m,
   );
+  assert.match(
+    out,
+    /^placement: CI reads prod secrets only in the GitHub environment `production`$/m,
+  );
   for (const v of values) assert.ok(!out.includes(v));
 });
 

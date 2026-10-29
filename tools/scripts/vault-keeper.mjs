@@ -3,7 +3,8 @@
  * Stackra file contract:
  * Purpose: `pnpm vault`, the vault-keeper's tool (ADR 0480, extending ADR 0257). Names in, names out:
  *     preflight --env e [--root dir]    every secret a deploy or a store release of `e` needs, by NAME and path:
- *                                       present, missing or placeholder. Exit 1 when any is missing or a placeholder.
+ *                                       present, missing or placeholder, and where CI may read them (PLACEMENT).
+ *                                       Exit 1 when any is missing or a placeholder.
  *     generate NAME --env e --path p    a random machine secret (--bytes 32, --encoding base64url|hex), written blind
  *              [--rotate]               into Infisical through secrets-import's core; --rotate replaces an existing
  *                                       one, without it an existing secret is refused. --dry-run first; for prod the
@@ -49,6 +50,17 @@ export const STORE_KIT = [
 const PLACEHOLDER =
   /^(?:placeholder|changeme|change-me|todo|tbd|xxx+|dummy|fake|test|none|null|-)$/i;
 const RUNWAY_ENV = { dev: "dev", staging: "staging", prod: "production" };
+/**
+ * Where a CI job may read each environment's secrets (owner decision 2026-10-29): production secrets (the Cloudflare
+ * token, the store and signing keys, production API keys) only in each repository's `production` GitHub environment,
+ * never repository-wide, through an Infisical identity that trusts only `environment:production`. stackra-pro's
+ * publish credentials sit in its `release` environment instead.
+ */
+export const PLACEMENT = {
+  dev: "repository-wide or a dev environment",
+  staging: "repository-wide or a staging environment",
+  prod: "only the GitHub environment `production`",
+};
 
 /** `{ name, path, why }` for every secret `env` needs: runway CI and member secrets, and the mobile apps' store secrets. */
 export function declared(env, { root = ROOT } = {}) {
@@ -160,6 +172,7 @@ export async function main(
       say(`${state.padEnd(11)} ${d.name}  ${o.env}:${d.path}  (${d.why})`);
     }
     say(`preflight ${o.env}: ${need.length} declared, ${bad} missing or placeholder`);
+    say(`placement: CI reads ${o.env} secrets ${PLACEMENT[o.env]}`);
     return bad ? 1 : 0;
   }
 

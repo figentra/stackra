@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: hold the release automation to its contract (ADR 0480): the transport sends nothing in a dry run and
  *          refuses live outside CI; the App Store Connect and Play clients walk their flows against recorded fixtures;
- *          owner-approved steps refuse outside `store-production`; the store/ source of truth is checked and turned
+ *          owner-approved steps refuse outside the `production` environment; the store/ source of truth is checked and turned
  *          into store sizes and privacy answers; no credential or demo password reaches the output.
  * Boundary: throwaway app folders and the fixtures in __fixtures__/store; Apple, Google and Expo are never called.
  * Runtime: node
@@ -284,9 +284,9 @@ test("ios stops at a missing app record (a browser step)", async () => {
   assert.match(out, /dry run: \d+ call\(s\) planned, none sent/);
 });
 
-test("submit and promote run only in store-production", async () => {
-  assert.throws(() => assertApproved("live", { STORE_ENVIRONMENT: "store" }), /store-production/);
-  assertApproved("live", { STORE_ENVIRONMENT: "store-production" });
+test("submit and promote run only in the production environment", async () => {
+  assert.throws(() => assertApproved("live", { STORE_ENVIRONMENT: "store" }), /production/);
+  assertApproved("live", { STORE_ENVIRONMENT: "production" });
   const { env } = secrets();
   const refused = await main(
     ["submit", ...product().args, "--version", "1.0.0", "--build", "7", "--live"],

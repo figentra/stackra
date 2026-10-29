@@ -49,6 +49,13 @@ ADR 0257). `pnpm vault` reads values only inside its own process and prints name
   dry-run line and ask yes or no; only on yes, re-run with `--confirm <token>`.
 - `pnpm secrets:import --list`: inbox file NAMES, to tell the owner which delivered files are waiting.
 
+## Placement (owner decision 2026-10-29)
+
+CI reads production secrets (the Cloudflare token, the store and signing keys, production API keys) only in each
+repository's `production` GitHub environment, which accepts only the protected main branch; never repository-wide.
+Dev, preview and staging secrets may be repository-wide or in their own environment. stackra-pro's publish credentials
+sit in its `release` environment. A production secret found anywhere else is a finding for the owner.
+
 ## Report
 
 Per secret: NAME, env:path, state or result. A missing third-party credential (a store key, an API token) is the

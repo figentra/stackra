@@ -1,12 +1,14 @@
 # Stackra file contract:
 # Purpose: Runway's `store` provider, a reusable workflow a product repository calls for one mobile app and one launch
 #          step (ADR 0480, ADR 0441, ADR 0439):
-#            build    EAS build of the production profile and EAS submit (TestFlight, Play internal)    env `store`
-#            prepare  `store ios|android`: metadata, screenshots, review details, TestFlight groups      env `store`
-#            probe    the review demo account signs in on production and sees data                       env `store`
-#            submit   iOS submit for App Review                                                 env `store-production`
-#            promote  Android production track (optionally staged)                              env `store-production`
-#            seed     seed the review demo account on production, then probe                    env `store-production`
+#            build    EAS build of the production profile and EAS submit (TestFlight, Play internal)
+#            prepare  `store ios|android`: metadata, screenshots, review details, TestFlight groups
+#            probe    the review demo account signs in on production and sees data
+#            submit   iOS submit for App Review
+#            promote  Android production track (optionally staged); the owner dispatches it, never an agent
+#            seed     seed the review demo account on production, then probe
+#          A live run of any step runs in the caller's `production` environment: the store and signing keys are
+#          production secrets, which live only there (owner decision 2026-10-29). A dry run takes no environment.
 #          The app is the caller's root runway.yaml `mobile.<app>`; its listing is the `assets/store/<app>/` folder it
 #          names. `live: false` (the default) runs every step as a dry run: nothing reaches Apple, Google or Expo.
 # Boundary: the build runs in Runway's checkout of the app's OS template line (`template-dir`, produced by Runway's
@@ -85,15 +87,15 @@ jobs:
     name: ${{ inputs.action }} ${{ inputs.app }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Runbook (release): the owner keeps both environments restricted to main; `store-production` has the owner as its
-    # required reviewer, so submit, promote and the production seed each wait for one approval. The Infisical identity
-    # trusts the environment in the OIDC subject, so a branch cannot obtain the keys.
-    environment: ${{ contains(fromJSON('["submit","promote","seed"]'), inputs.action) && 'store-production' || 'store' }}
+    # Runbook (release): `production` accepts only the protected main branch; the owner sets its reviewers. The Infisical
+    # identity trusts only `environment:production` in the OIDC subject, so no branch and no other environment obtains
+    # the keys. A dry run reads no secret and takes no environment.
+    environment: ${{ inputs.live && 'production' || '' }}
     permissions:
       contents: read
       id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/store
     env:
-      STORE_ENVIRONMENT: ${{ contains(fromJSON('["submit","promote","seed"]'), inputs.action) && 'store-production' || 'store' }}
+      STORE_ENVIRONMENT: ${{ inputs.live && 'production' || '' }}
       MODE: ${{ inputs.live && '--live' || '--dry-run' }}
       APP: ${{ inputs.app }}
       VERSION: ${{ inputs.version }}

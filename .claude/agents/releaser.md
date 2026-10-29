@@ -28,7 +28,7 @@ after a build.
   store data, the screenshots and privacy answers, the checklist.
 - `pnpm store ios|android|review probe|submit|promote --root <product> --app <key> --dry-run [--version v --build n --version-code n]`:
   the calls a step would make. Nothing is sent.
-- `gh workflow run store.yml -f action=<build|prepare|probe|submit|promote|seed> -f app=<key> [-f version=…]
+- `gh workflow run store.yml -f action=<build|prepare|probe|submit|seed> -f app=<key> [-f version=…]
 [-f build=…] [-f version-code=…] [-f live=true]`, then `gh run watch` / `gh run view` for the result.
 
 ## Order of a launch
@@ -37,7 +37,8 @@ after a build.
    App Privacy, the first Play forms), with the generated answers.
 2. `build` (EAS build and submit), then `prepare` with the build number and version code.
 3. `seed` if the app has accounts (owner approval), then `probe`: the demo account signs in on production and sees data.
-4. `submit` and `promote`: the owner approves each in the `store-production` environment.
+4. `submit` runs in the product's `production` environment (every live run does: the store keys live only there).
+   `promote` is the owner's own dispatch: hand it over with the version code and fraction, never dispatch it.
 
 ## Never
 

@@ -444,7 +444,7 @@ function checklist(config, problems) {
     "- [ ] App Store Connect: App Privacy, from privacy-answers.md",
     "- [ ] Play Console: create the app once; content rating, target audience, Data safety from privacy-answers.md",
     "",
-    "## Owner approval (one click each, GitHub environment `store-production`)",
+    "## Owner approval (the `production` environment; promote is the owner's own dispatch)",
     "- [ ] Submit for App Review",
     "- [ ] Promote to the Play production track",
     "",

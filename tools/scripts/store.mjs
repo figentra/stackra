@@ -9,14 +9,15 @@
  *     android [--version-code N] listing, screenshots; with --version-code, a release on --track (default internal)
  *     review seed|probe          seed the review demo account, then sign in with it on production and see data
  *     submit                     iOS: attach --build to the version and submit for App Review   (owner approval)
- *     promote                    Android: move --version-code to the production track          (owner approval)
+ *     promote                    Android: move --version-code to the production track          (the owner dispatches it)
  *     eas-submit                 write store.yaml's ascAppId into the template checkout's eas.json (before EAS)
  *   Flags: --app <key> (default app), --root <product repo> (default the current folder), --template <runway's
  *   template checkout of the app> (its app.json and dependencies), --captures <dir> (default .stackra/captures/<app>),
  *   --version <x.y.z>, --dry-run (default) | --live | --record, --fixtures <dir> (dry-run reads answers from it;
  *   record writes them), --replay (tests).
- * Boundary: the store APIs through store-http.mjs. --live and --record run only in GitHub Actions; `submit` and
- *   `promote` only in the `store-production` environment, whose required reviewer is the owner.
+ * Boundary: the store APIs through store-http.mjs. --live and --record run only in GitHub Actions; `submit`,
+ *   `promote` and `seed` only in the product repository's `production` environment (main only; owner decision
+ *   2026-10-29: production secrets live only there).
  * Runtime: node
  * Governing contract: ADR 0480; ADR 0257 (nobody reads a value).
  * Secrets: ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON and the secrets store.yaml names come from the environment
@@ -33,13 +34,15 @@ import { createPlay, playCredentials } from "./store-play.mjs";
 
 const USAGE =
   "usage: pnpm store build|ios|android|review seed|review probe|submit|promote|eas-submit [--app key] [--root dir] [--template dir] [--captures dir] [--version v] [--build n] [--version-code n] [--dry-run|--live|--record] [--fixtures dir]";
-const APPROVED_ENV = "store-production";
+const APPROVED_ENV = "production";
 
 /** Fails unless this run may do an owner-approved step. */
 export function assertApproved(mode, env = process.env) {
   if (mode === "dry-run" || mode === "replay") return;
   if (env.STORE_ENVIRONMENT !== APPROVED_ENV)
-    throw new Error(`this step runs only in the ${APPROVED_ENV} environment (one owner approval)`);
+    throw new Error(
+      `this step runs only in the ${APPROVED_ENV} environment (protected main, the owner's rules)`,
+    );
 }
 
 const secret = (env, name, what) => {

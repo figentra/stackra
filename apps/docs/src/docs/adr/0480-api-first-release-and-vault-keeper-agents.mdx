@@ -27,7 +27,7 @@ secret value.
    secret): an App Store Connect API key with the Admin role (`ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`,
    `ASC_API_PRIVATE_KEY`); a Google Play Console organisation account with a service account granted API access
    (`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`); an EAS robot token (`EXPO_TOKEN`); and an Infisical machine identity that
-   trusts each product repository's `store` and `store-production` environments over GitHub OIDC and reads
+   trusts only each product repository's `production` environment over GitHub OIDC and reads
    `/ci/store` (its id is passed to the workflow as a repository variable). Nothing else in a launch needs a new owner credential.
 2. **Store presence is data in the product repository** ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)
    decisions 1 to 3). The app's identity (bundle id, package, name per locale) and capabilities come from the root
@@ -55,9 +55,11 @@ build --root <product> --app <key>` checks all of it and generates every store s
    `--record` run only inside GitHub Actions. Nothing calls Apple, Google or Expo for real until the owner has created
    the root kit and approved the first live run.
 6. **One owner approval per irreversible step.** `.github/workflows/runway-store.yml`, Runway's reusable `store`
-   provider, runs each launch step from the product's main, building in Runway's checkout of the app's template line. `build`, `prepare` and `probe` run in the `store` environment. `submit` (App Review), `promote` (Play
-   production) and `seed` (a production write) run in `store-production`, whose required reviewer is the owner, and
-   the CLI refuses them outside it. Production deploys keep their own approval under
+   provider, runs each launch step from the product's main, building in Runway's checkout of the app's template line. A live run of any step runs in the product's `production` environment, which accepts only the protected main
+   branch: the store and signing keys are production secrets, and production secrets live only there, never
+   repository-wide (owner decision 2026-10-29). A dry run reads no secret and takes no environment. The CLI refuses a
+   live `submit` (App Review), `promote` (Play production) or `seed` (a production write) outside `production`, and
+   `promote` is the owner's own dispatch: no agent starts it (the promote-guard hook). Production deploys keep their own approval under
    [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted).
 7. **The review demo account is a release check.** `pnpm store review seed` calls the app's seed endpoint and `pnpm
 store review probe` signs in with the demo account on production and must see data before a submission.
@@ -72,26 +74,26 @@ store review probe` signs in with the demo account on production and must see da
 
 ## Consequences
 
-- A launch is: the owner creates the root kit once, does the few browser steps from the checklist, and clicks two
-  approvals (submit, promote). Every other step is a workflow dispatch an agent can make.
+- A launch is: the owner creates the root kit once, does the few browser steps from the checklist, approves the
+  submit in the `production` environment and dispatches the promote itself. Every other step is a workflow dispatch an agent can make.
 - The iPad set, the 9:16 Play set, the privacy answers and the demo account can no longer be forgotten: `store build`
   and the probe fail first.
 - Apple and Google change their APIs; the fixtures are in the documented response shapes until the first live run
   re-records them (`--record`), and a drift shows up as a replay failure, not on launch day.
 - The App Store Connect key has the Admin role because app management needs it; it lives only in `prod:/ci/store`,
-  readable only by jobs in the two protected environments.
+  readable only by jobs in the `production` environment.
 - Data safety and App Privacy stay browser forms until the APIs accept them; the answers are generated, so the form is
   copying, not deciding.
 
 ## Enforcement
 
 - `tools/scripts/__tests__/store.test.mjs`: the dry run sends nothing; live and record refuse outside CI; recorded
-  fixtures for the App Store Connect and Play flows; `submit` and `promote` refuse outside `store-production`; no
+  fixtures for the App Store Connect and Play flows; `submit`, `promote` and `seed` refuse outside `production`; no
   credential or demo password reaches the output; `store build` checks consent categories, SDK rows, text limits and
   screenshot counts, and renders the exact store sizes.
 - `tools/scripts/__tests__/vault-keeper.test.mjs`: preflight is names-only; generate and rotate write blind; the
   production token is bound to the operation.
-- `.github/workflows/runway-store.yml`: environments `store` and `store-production`; protection is applied by the
+- `.github/workflows/runway-store.yml`: a live run takes the `production` environment; its protection is applied by the
   owner (runbook), not checked by CI.
 - `.agents/agents/releaser.md` and `.agents/agents/vault-keeper.md`: each agent is allowed only its own commands
   (`pnpm store`, the dispatch of the product's store workflow; `pnpm vault`).
