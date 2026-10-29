@@ -51,9 +51,13 @@ describe("loadSearchRunner", () => {
   });
 
   it("answers status without the add-on, and names the fix for a reindex", async () => {
-    const runner = await loadSearchRunner(
-      member({ search: "export const searchStatus = async () => [];\n" }),
-    );
+    const root = member({ search: "export const searchStatus = async () => [];\n" });
+    // An add-on with no `./node` entry fails resolution here: with none, Node walks up past the temp folder and
+    // may reach a real install, whose import hangs the test.
+    const addOn = join(root, "node_modules", "@stackra", "data-maintenance");
+    mkdirSync(addOn, { recursive: true });
+    writeFileSync(join(addOn, "package.json"), '{"name":"@stackra/data-maintenance","exports":{}}');
+    const runner = await loadSearchRunner(root);
     expect(await runner.searchStatus()).toEqual([]);
     await expect(runner.searchReindex({})).rejects.toThrow(
       "add @stackra/data-maintenance to its dependencies",
