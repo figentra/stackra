@@ -40,6 +40,13 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   the server side (`./node`'s passkey actions over `IdpAdmin`) asks the provider and verifies. Library errors become
   `PasskeyRefusal` values, never throws. A passkey action finds the caller's provider user by the actor's `usr_` id
   (`IdpAdmin.findUserId`), never by a body field.
+- Sign in with Apple (STA-1578): the web and the hosted flow go through ZITADEL's Apple provider
+  (`externalSignIn(SocialProvider.Apple, …)`; `signInProvidersOf` offers a configured Apple in every market).
+  `AppleSignIn` is the native device step only, like `Passkeys`: nonce in, Apple's token out, refusals as values.
+  `expo-apple-authentication` is an optional peer (`catalog:mobile`); `ExpoAppleSignInDriver` requires it on use
+  and throws a clear error without it. Never add a static import of it.
+- User-facing labels live in `assets/lang/<locale>/identity.json`, all seven locales (`ar`, `de`, `en`, `es`, `fr`,
+  `it`, `nl`).
 - `EndErasedSubjectSessionsListener` imports @stackra/privacy's event; privacy must never depend on identity, or the
   graph closes a cycle.
 - No secret, ever: a browser has no client credential (the BFF holds it, by name), and a device is a public client.

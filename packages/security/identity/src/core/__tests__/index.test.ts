@@ -61,6 +61,7 @@ describe("@stackra/identity", () => {
       "SessionStatus",
       "SignInCancelledError",
       "SignInMethod",
+      "SocialProvider",
       "StaffPinLockedError",
       "StaffPinRejectedError",
       "StaffPinService",

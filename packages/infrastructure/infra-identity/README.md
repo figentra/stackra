@@ -16,7 +16,7 @@ seed reader and the Pulumi slice). Depends on `@stackra/contracts`, `@stackra/ru
 | `.`      | `IdentityAppKind`, `InstanceRole`                      | enums: `bff` or `native`; ZITADEL's instance roles in snake_case                                               |
 | `.`      | `IdentityInfraInvalidError`                            | every seed or runway failure at once, with its path                                                            |
 | `.`      | `IdentityHealthIndicatorDriver`, `InfraIdentityConfig` | the `HealthIndicator` driver: the issuer's discovery document is served; its target is `config.infra_identity` |
-| `.`      | `IdentitySeed`, `IdentityPlan`, `IdentityPlanApp`      | types                                                                                                          |
+| `.`      | `IdentitySeed`, `IdentityPlan`, `IdentityPlanApp`      | types (`IdentityPlan.appleSignIn`: the Apple ids and key secret name, or `null`)                               |
 | `./node` | `readIdentitySeed(file)`                               | read, YAML-parse and check a seed file                                                                         |
 | `./node` | `identityStack(plan)`                                  | inside the Pulumi program: create the instance's resources, export the ids                                     |
 
@@ -98,6 +98,11 @@ branding:
     background: "#0d1117"
     warn: "#f85149"
     font: "#f0f6fc"
+appleSignIn: # optional; Sign in with Apple, off without it (STA-1578)
+  teamId: TEAM000001 # the Apple Developer team id
+  serviceId: example.acme.signin # the Sign in with Apple services id
+  keyId: KEY0000001 # the Sign in with Apple key's id
+  privateKeySecret: APPLE_SIGN_IN_KEY # the NAME of the stack config secret holding the .p8 key, never the key
 ```
 
 An instance holds the callbacks of the environments it serves; an app with none there (and no device code) gets no
@@ -130,10 +135,18 @@ export const identity = identityStack(plan);
 | Project and roles       | roles asserted in tokens; a user's own organisation brands the sign-in pages                           | ADR 0208, ADR 0268 R3      |
 | One OIDC client per app | code with PKCE and no secret, JWT access tokens, roles asserted; device code and token exchange on ask | ADR 0206 d8, ADR 0277      |
 | Machine users           | JWT access tokens, instance roles and project roles from the seed                                      | ADR 0207 d2                |
+| Apple identity provider | the seed's Apple ids and the named key; allowed on the default login policy; only when `appleSignIn`   | STA-1578 (App Store 4.8)   |
 
 The outputs are ids, never a secret: `issuer`, `orgId`, `projectId`, `clients.<app>` (what a runway's
 `ref:identity.clients.<app>.<instance>` names in the stacks repository's stack config), `machines.<key>` and
-`firstPartyClients` (the gateway's first-party list, exempt from the app-grant check, ADR 0274 decision 5).
+`firstPartyClients` (the gateway's first-party list, exempt from the app-grant check, ADR 0274 decision 5) and
+`appleIdp` (the Apple provider's id, or `null`: what `@stackra/identity`'s `IdentityConfig.externalProviders.apple`
+names).
+
+`@pulumiverse/zitadel` 0.2.0 has no Apple resource, so the Apple provider is a Pulumi dynamic resource over ZITADEL's
+admin API (`POST /admin/v1/idps/apple`, then `POST /admin/v1/policies/login/idps`). It signs in with the
+provisioner's key; the state keeps the Apple ids and a SHA-256 of the `.p8` key (to see a rotation), never the key, and
+the provisioner's key only as an encrypted Pulumi secret, which a delete needs.
 
 ## Owner steps
 
@@ -145,4 +158,9 @@ Agents run `pulumi preview` at most; `pulumi up` is the owner's. Before the firs
 - after `up`, creates each machine user's key and imports it into Infisical through `pnpm secrets:import` (ADR 0173);
   the `identity` machine's token is `@stackra/identity`'s `IDENTITY_IDP_ADMIN_TOKEN` (the `IdpAdmin` ZITADEL driver);
 - turns on token exchange on the instance when an app asks for it;
-- adds the external sign-in providers and uploads the logos (not in this stack).
+- for Sign in with Apple (STA-1557): in the Apple Developer account, enables Sign in with Apple on each app id,
+  creates a services id with ZITADEL's Apple return URL (`https://<domain>/ui/login/login/externalidp/callback/form`, as ZITADEL's Apple guide gives it) and the instance
+  domain as its domain, creates a Sign in with Apple key, puts the team id, services id and key id in the seed's
+  `appleSignIn`, and sets the `.p8` key as the secret stack config value `zitadel:<privateKeySecret>` (Infisical
+  first, ADR 0173 and ADR 0257);
+- adds the other external sign-in providers and uploads the logos (not in this stack).

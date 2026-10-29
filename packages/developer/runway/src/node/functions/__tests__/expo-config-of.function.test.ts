@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `expoConfigOf`: the runway identity, tablet, links, EAS project and template line land in the
  *          template's base config; a disabled capability's base plugin, Info.plist key and entitlement are removed and
- *          its permission blocked, and the enabled flags land in `extra.capabilities`; a white-label variant's identity replaces the entry's key by key.
+ *          its permission blocked, and the enabled flags land in `extra.capabilities`; a white-label variant's identity
+ *          replaces the entry's key by key; an app offering Apple gets the Sign in with Apple entitlement and one
+ *          without it does not.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0439 (decisions 2, 3, 6 and 8).
+ * Governing contract: ADR 0022 (test placement); ADR 0439 (decisions 2, 3, 6 and 8); STA-1578.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -48,6 +50,16 @@ const CAPABILITIES: MobileCapabilityConfig = {
   removedEntitlements: [],
   blockedPermissions: ["android.permission.CAMERA"],
 };
+
+/** The `ios` block of `entry`'s config. */
+function iosOf(entry: MobileApp): Record<string, unknown> {
+  return expoConfigOf(BASE, {
+    project: "mezzora",
+    app: "staff",
+    entry,
+    capabilities: CAPABILITIES,
+  })["ios"] as Record<string, unknown>;
+}
 
 describe("expoConfigOf", () => {
   it("writes the runway identity and strips the disabled capabilities", () => {
@@ -109,5 +121,17 @@ describe("expoConfigOf", () => {
     expect((config["android"] as Record<string, unknown>)["package"]).toBe(
       "com.figentra.mezzora.staff",
     );
+  });
+
+  it("adds the Sign in with Apple entitlement only when the app offers Apple", () => {
+    expect(iosOf({ ...ENTRY, signIn: { social: ["google", "apple"] } })).toMatchObject({
+      usesAppleSignIn: true,
+      entitlements: {
+        "aps-environment": "production",
+        "com.apple.developer.applesignin": ["Default"],
+      },
+    });
+    expect(iosOf({ ...ENTRY, signIn: { social: [] } })).not.toHaveProperty("usesAppleSignIn");
+    expect(iosOf(ENTRY)["entitlements"]).toEqual({ "aps-environment": "production" });
   });
 });

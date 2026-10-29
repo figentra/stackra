@@ -57,6 +57,9 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./contracts` | `Passkeys`, `PasskeyRefusal`, `PasskeyCreationOptions`, `PasskeyRequestOptions`, `PasskeyCredential`, `PasskeyResult` | the device step of a passkey registration or sign-in, refusals as values                       |
 | `.`           | `MemoryPasskeysDriver`                                                                                                | passkeys in memory: tests, web, local runs                                                     |
 | `./native`    | `ExpoPasskeysDriver`                                                                                                  | Expo: the iOS and Android credential manager through `react-native-passkey`                    |
+| `.`           | `SocialProvider`                                                                                                      | the providers offered in every market once configured: `apple`                                 |
+| `./contracts` | `AppleSignIn`, `AppleSignInRefusal`, `AppleCredential`, `AppleSignInResult`                                           | the native Sign in with Apple device step, refusals as values                                  |
+| `./native`    | `ExpoAppleSignInDriver`                                                                                               | Expo on iOS: the Apple sheet through `expo-apple-authentication`, required on use              |
 | `./native`    | `ExpoSignInBrowserDriver`                                                                                             | Expo: the system authentication session and the app's link                                     |
 | `./desktop`   | `ElectronSignInBrowserDriver`                                                                                         | Electron main: the system browser and a loopback redirect                                      |
 | `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                                       | the session in a component                                                                     |
@@ -242,6 +245,16 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
 - **External providers.** A market pack lists its sign-in providers under `signInProvidersKey`; `externalProviders`
   maps each to its id at this deployment. `session.signIn(externalSignIn(key, identity))` sends the hosted sign-in
   straight there.
+- **Sign in with Apple** (STA-1578, App Store guideline 4.8). Set `externalProviders.apple` to the id of ZITADEL's
+  Apple provider (`@stackra/infra-identity`'s `appleIdp` output); `signInProvidersOf` then offers `apple` in every
+  market, after the pack's providers, and `externalSignIn(SocialProvider.Apple, identity)` sends the hosted sign-in
+  (web, desktop, and the phone's system authentication session) to Apple through ZITADEL. A phone app that wants
+  Apple's native sheet uses the `AppleSignIn` port: `ExpoAppleSignInDriver` needs `expo-apple-authentication` in the
+  app (an optional peer, `catalog:mobile`; without it every call throws an error naming it), the app renders that
+  library's `AppleAuthenticationButton`, and the server checks the token's nonce and exchanges it (not built here).
+  An iOS app that offers any social provider must offer Apple too; runway's `mobile.<app>.signIn.social` refuses one
+  that does not and adds the `com.apple.developer.applesignin` entitlement. The labels are
+  `identity::enums.social_provider.apple` and `identity::ui.sign_in.continue_with_apple`.
 - **Staff PINs.** `StaffPinService.enrol`, `switchTo` and `override` keep a salted PBKDF2 hash per device and staff
   member (in the `secrets` area on the till), lock out after `pinMaxAttempts`, and check the manager's permission
   through the IAM decision point.

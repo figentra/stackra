@@ -54,6 +54,9 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   unless an enabled flag lists it), and never hide a feature at run time instead. It
   never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
   store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
+- The one entitlement written from runway data rather than a capability is Sign in with Apple: `apple` in
+  `mobile.<app>.signIn.social` sets `usesAppleSignIn` and `com.apple.developer.applesignin` (STA-1578). A social list
+  without `apple` is a schema refusal (App Store guideline 4.8); keep that refine and both JSON schema copies in step.
 - The brand step (`runBrandStep`) runs the @stackra/brand-kit binary and never imports the kit; output codes and
   folders live in `BRAND_STEP_SETTINGS`. Generated brand files stay under `.stackra/brand` and are never committed:
   `committedBrandOutputs` fails the step on any tracked file a kit manifest lists. Do not edit @stackra/brand-kit from

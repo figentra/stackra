@@ -1,0 +1,17 @@
+{
+  "enums": {
+    "social_provider": {
+      "apple": "Apple"
+    },
+    "apple_sign_in_refusal": {
+      "unsupported": "Iniciar sesión con Apple no está disponible en este dispositivo",
+      "cancelled": "Se canceló el inicio de sesión con Apple",
+      "failed": "No se pudo iniciar sesión con Apple. Inténtalo de nuevo."
+    }
+  },
+  "ui": {
+    "sign_in": {
+      "continue_with_apple": "Continuar con Apple"
+    }
+  }
+}

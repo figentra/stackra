@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `SessionStore`, `SignInBrowser`,
  *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals` and
- *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `LoginDirectoryStore` port
+ *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
+ *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
  *          and enums their signatures name)
  *          until `stackra gen` writes the entry barrels (STA-339).
@@ -13,6 +14,7 @@
  */
 export { AppApprovalPurpose } from "#contracts/enums/app-approval-purpose.enum";
 export { AppApprovalStatus } from "#contracts/enums/app-approval-status.enum";
+export { AppleSignInRefusal } from "#contracts/enums/apple-sign-in-refusal.enum";
 export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
 export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { LoginIdentifierKind } from "#contracts/enums/login-identifier-kind.enum";
@@ -23,6 +25,7 @@ export { VerificationUse } from "#contracts/enums/verification-use.enum";
 export { loginDirectoryPrefix } from "#contracts/functions/login-directory-prefix.function";
 export { ApiKeyStore } from "#contracts/ports/api-key-store.port";
 export { AppApprovalChallenges } from "#contracts/ports/app-approval-challenges.port";
+export { AppleSignIn } from "#contracts/ports/apple-sign-in.port";
 export { AutomationPrincipals } from "#contracts/ports/automation-principals.port";
 export { Guardianship } from "#contracts/ports/guardianship.port";
 export { IdpAdmin } from "#contracts/ports/idp-admin.port";
@@ -35,6 +38,8 @@ export { Verification } from "#contracts/ports/verification.port";
 export type { ApiKeyRecord } from "#contracts/types/api-key-record.type";
 export type { AppApprovalChallenge } from "#contracts/types/app-approval-challenge.type";
 export type { AppApprovalRequester } from "#contracts/types/app-approval-requester.type";
+export type { AppleCredential } from "#contracts/types/apple-credential.type";
+export type { AppleSignInResult } from "#contracts/types/apple-sign-in-result.type";
 export type { AutomationPrincipalInput } from "#contracts/types/automation-principal-input.type";
 export type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";

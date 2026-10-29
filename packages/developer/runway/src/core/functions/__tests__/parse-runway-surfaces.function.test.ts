@@ -3,11 +3,13 @@
  * Purpose: unit tests of `parseRunway` for the root `surfaces` and `mobile` blocks: the product repositories' drafts
  *          (Mezzora, Academorix) parse; the `ops` surface holds only a declarative contribution (a shell, a component
  *          or a module path as a block fails); asset paths outside `assets/` fail; two canonical hosts, a repeated
- *          capability and a repository index used twice fail; an app runway takes per-tenant white-label variants.
+ *          capability and a repository index used twice fail; an app runway takes per-tenant white-label variants; social
+ *          sign-in without Apple fails with the guideline named.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0441 (decision 3, enforcement); ADR 0439; app-shells section 16
- *                     point 7; STA-863.
+ *                     point 7; STA-863;
+ *                     STA-1578.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -60,6 +62,10 @@ const withSurfaces = (surfaces: unknown) => () => parseRunway("root", { ...ROOT,
 const withMobile = (mobile: unknown) => () => parseRunway("root", { ...ROOT, mobile });
 const appWithWhiteLabel = (whiteLabel: unknown) =>
   parseRunway("app", { version: 3, environments: {}, release: { mobile: { whiteLabel } } });
+
+/** Parses the staff app offering `providers` for social sign-in. */
+const social = (providers: string[]) =>
+  withMobile({ staff: { ...STAFF, signIn: { social: providers } } });
 
 describe("parseRunway surfaces and mobile", () => {
   it("accepts Mezzora's draft blocks and Academorix's hosts, tablet and white-label", () => {
@@ -168,6 +174,15 @@ describe("parseRunway surfaces and mobile", () => {
       ["mobile.staff.capabilities"],
     );
     expect(issuePaths(withMobile({ staff: { ...STAFF, flavour: "x" } }))).toEqual(["mobile.staff"]);
+  });
+
+  it("takes social sign-in with Apple and refuses it without Apple", () => {
+    expect(social(["google", "apple"])().mobile?.["staff"]?.signIn).toEqual({
+      social: ["google", "apple"],
+    });
+    expect(social([])().mobile?.["staff"]?.signIn).toEqual({ social: [] });
+    expect(issuePaths(social(["google"]))).toEqual(["mobile.staff.signIn.social"]);
+    expect(social(["google"])).toThrow(/App Store guideline 4\.8/);
   });
 
   it("refuses a repository index used twice in the lanes table", () => {

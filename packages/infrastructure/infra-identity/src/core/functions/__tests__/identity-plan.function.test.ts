@@ -3,11 +3,12 @@
  * Purpose: unit tests of `identityPlan`: the non-production instance gets the callbacks of dev, preview and staging
  *          (a BFF's `http://` dev callback in dev mode), the production instance only production's, an app with no
  *          callback there is left off unless it uses the device code, and every refusal (no `providers.zitadel`, an
- *          invalid block, an unknown instance, a callback the instance cannot hold) names its path.
+ *          invalid block, an unknown instance, a callback the instance cannot hold) names its path; Sign in with Apple
+ *          comes from the seed and is off without it.
  * Boundary: test only; the root runway is checked by `@stackra/runway`'s `parseRunway`, as `readRunway` would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0206 (decision 8); ADR 0277 (decisions 1 and 2); ADR 0290
- *                     (decision 8).
+ *                     (decision 8); STA-1578.
  */
 import { parseRunway } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
@@ -228,5 +229,19 @@ describe("identityPlan", () => {
     });
 
     expect(identityPlan(ROOT, seed, "nonprod").apps.map((app) => app.key)).toEqual(["console"]);
+  });
+
+  it("carries Sign in with Apple from the seed, off without it", () => {
+    const apple = {
+      teamId: "TEAM000001",
+      serviceId: "example.acme.signin",
+      keyId: "KEY0000001",
+      privateKeySecret: "APPLE_SIGN_IN_KEY",
+    };
+
+    expect(identityPlan(ROOT, SEED, "nonprod").appleSignIn).toBeNull();
+    expect(
+      identityPlan(ROOT, parseIdentitySeed({ ...SEED, appleSignIn: apple }), "nonprod").appleSignIn,
+    ).toEqual(apple);
   });
 });

@@ -12,6 +12,7 @@ ZITADEL per environment (ADR 0171, ADR 0206). Member at `packages/infrastructure
 | An error                                    | `src/core/errors/<name>.error.ts`           |
 | An isomorphic function (no Pulumi, no Node) | `src/core/functions/<name>.function.ts`     |
 | A Node or Pulumi function                   | `src/node/functions/<name>.function.ts`     |
+| A Pulumi dynamic provider (internal)        | `src/node/constants/<name>.constant.ts`     |
 | A test                                      | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Rules
@@ -19,7 +20,11 @@ ZITADEL per environment (ADR 0171, ADR 0206). Member at `packages/infrastructure
 - `.` stays bundle-safe: no `@pulumi/*`, `@pulumiverse/*` or `node:*` import.
 - No client secret: every app is code with PKCE (ADR 0206 decision 8). A key or secret value never enters the seed,
   the plan, the stack's outputs or a test.
-- Agents never run `pulumi` or call ZITADEL; the slice is tested under `runtime.setMocks`.
+- Agents never run `pulumi` or call ZITADEL; the slice is tested under `runtime.setMocks`, the dynamic provider with a
+  stand-in `fetch`.
+- Sign in with Apple (STA-1578) is off unless the seed has `appleSignIn`. The seed holds Apple's public ids and the
+  NAME of the `.p8` key's stack config secret, never the key (ADR 0173). `@pulumiverse/zitadel` has no Apple
+  resource, so `APPLE_IDP_PROVIDER` calls ZITADEL's admin API; its state keeps no Apple key.
 - Tenant organisations, their grants and branding, and the claims action are the identity service's, not this stack's.
 - The health driver's target is `InfraIdentityConfig` (`src/config/infra-identity.config.ts`, key `infra_identity`), injected by type:
   the runway's `config.infra_identity` sets it. Never a constructor options object (gen's `token_not_a_class`).

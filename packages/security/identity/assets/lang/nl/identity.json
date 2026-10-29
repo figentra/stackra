@@ -1,0 +1,17 @@
+{
+  "enums": {
+    "social_provider": {
+      "apple": "Apple"
+    },
+    "apple_sign_in_refusal": {
+      "unsupported": "Inloggen met Apple is niet beschikbaar op dit apparaat",
+      "cancelled": "Inloggen met Apple is geannuleerd",
+      "failed": "Inloggen met Apple is mislukt. Probeer het opnieuw."
+    }
+  },
+  "ui": {
+    "sign_in": {
+      "continue_with_apple": "Doorgaan met Apple"
+    }
+  }
+}

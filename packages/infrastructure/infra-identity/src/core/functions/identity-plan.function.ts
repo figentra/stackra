@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `identityPlan(root, seed, instance)`, what one ZITADEL instance holds: its domain and the environments it
  *          serves from the root runway's `providers.zitadel`, and from the seed the staff organisation, the project
- *          and its roles, each app with the callbacks of those environments, the machine users and the branding.
+ *          and its roles, each app with the callbacks of those environments, the machine users, the branding and
+ *          Sign in with Apple.
  * Boundary: pure: a parsed root runway and seed in, a plan out. Reports every failure at once. An app with no
  *           callback on the instance (and no device code) is left off it, so an app that runs only in production has
  *           no client on the non-production instance. Reads no file and calls no cloud; the Pulumi slice is
@@ -10,7 +11,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decisions 4, 5 and 8), ADR 0241 (decisions 2 and 4), ADR 0277 (decisions 1 and 2),
  *                     ADR 0290 (decision 8), ADR 0296 (decision 2: accounts and vendors are root facts), ADR 0171
- *                     (decision 3).
+ *                     (decision 3), STA-1578.
  */
 import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
@@ -139,5 +140,6 @@ export function identityPlan(root: RootRunway, seed: IdentitySeed, instance: str
     apps,
     machines: seed.machines,
     branding: seed.branding ?? null,
+    appleSignIn: seed.appleSignIn ?? null,
   };
 }
