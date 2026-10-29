@@ -6,7 +6,8 @@
  *          their verification by hash, automation principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
- *          configuration and memory driver, the passkeys memory driver, and the refusals) until `stackra gen` writes the
+ *          configuration and memory driver, the passkeys memory driver with the client halves of a passkey sign-in and
+ *          registration (`signInWithPasskey`, `registerPasskey`), and the refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
  *           from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its generated name
@@ -65,10 +66,12 @@ export { externalSignIn } from "#core/functions/external-sign-in.function";
 export { isOriginAllowed } from "#core/functions/is-origin-allowed.function";
 export { mintApiKey } from "#core/functions/mint-api-key.function";
 export { parseApiKey } from "#core/functions/parse-api-key.function";
+export { registerPasskey } from "#core/functions/register-passkey.function";
 export { requireAssurance } from "#core/functions/require-assurance.function";
 export { sessionUserOf } from "#core/functions/session-user-of.function";
 export { signInMethodsOf } from "#core/functions/sign-in-methods-of.function";
 export { signInProvidersOf } from "#core/functions/sign-in-providers-of.function";
+export { signInWithPasskey } from "#core/functions/sign-in-with-passkey.function";
 export { stepUpSignIn } from "#core/functions/step-up-sign-in.function";
 export { IdentityOptions } from "#core/schemas/identity-options.schema";
 export { IdpAdminOptions } from "#core/schemas/idp-admin-options.schema";

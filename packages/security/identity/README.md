@@ -5,9 +5,9 @@ on the web, the authorization-code flow with PKCE in the system browser on deskt
 screen reads, and the claims mapping that turns a provider's token into a Stackra user. Stackra builds no login UI
 (ADR 0268 R3): the provider's hosted sign-in is used.
 
-**Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
-`@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
-`@stackra/iam`, `@stackra/query` (the offline stores' session port), `@stackra/scope`, `@stackra/storage`,
+**Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./desktop`, `./native`, `./node`, `./react` and
+`./testing`. Depends on `@stackra/actions` (the `./node` actions), `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
+`@stackra/iam`, `@stackra/privacy` (the erasure event the `./node` listener handles), `@stackra/query` (the offline stores' session port), `@stackra/scope`, `@stackra/storage`,
 `@stackra/support` (`ageOn`, `crc32`), `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React is an optional peer of `./react`, vitest of `./testing`.
 
 ## What is here
@@ -36,6 +36,9 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                                   | secret and publishable keys; the origin-bound Storefront key                                   |
 | `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                                      | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
 | `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                     | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
+| `.`           | `signInWithPasskey`, `registerPasskey`                                                                                | a `Passkeys` driver wired to the passkey actions (the client half)                             |
+| `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
+| `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions on `SubjectErased`                                  |
 | `.`           | `MemoryAutomationPrincipalsDriver`                                                                                    | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                                   | a guardian acting for a minor, after the relationship check                                    |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                                     | KYC and KYB through the providers the market pack lists                                        |
@@ -111,6 +114,10 @@ fresh sign-in, since the wipe took the stored tokens) unlocks the device. When t
 default) passes without a sync, the lock wipes the same way and calls the driver's `end`, which signs out on the
 device even when the provider cannot be told.
 
+An erasure revokes too: `./node`'s `EndErasedSubjectSessionsListener` handles @stackra/privacy's `SubjectErased` and
+ends every provider session of the erased subject, so each of its devices turns `revoked` on its next refresh and wipes
+what it keeps, the on-device search index among it. It lives here because privacy does not depend on identity.
+
 ## The flows
 
 The BFF (web, PWA): `GET <api><bffEndpoint>/session` answers `{ user } | null` with the cookie; sign-in leaves for
@@ -135,15 +142,27 @@ R3 still holds: a button, not a login form):
 ```ts
 const passkeys = useContainer().get(Passkeys);
 if (!passkeys.isSupported()) return; // hide the button
-const options = await api.passkeyChallenge(); // server: ZITADEL session `challenges.webAuthN`, `publicKey` unwrapped
-const result = await passkeys.authenticate(options);
-if (result.ok)
-  await api.passkeyVerify(result.data); // server: the session's `checks.webAuthN`
-else if (result.error === PasskeyRefusal.NoCredential) await session.signIn(); // fall back to the hosted sign-in
+const result = await signInWithPasskey(passkeys, loginName, {
+  challenge: (input) => client.identity.passkey.challenge(input), // POST /passkeys/challenge
+  verify: (input) => client.identity.passkey.verify(input), // POST /passkeys/verify
+});
+if (!result.ok && result.error === PasskeyRefusal.NoCredential) await session.signIn(); // the hosted sign-in
 ```
 
-Registration is the same with `register` and ZITADEL's `POST /v2/users/{id}/passkeys`. The relying party is the
-provider's domain, so the app must list it: `webcredentials:<issuer host>` in the iOS associated domains, and the
+The server half is `./node`'s actions, which the BFF serves over `IdpAdmin`:
+
+| Action                                         | Actor     | Does                                                                                         |
+| ---------------------------------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| `ChallengePasskeyAction` (`passkey.challenge`) | anonymous | a ZITADEL v2 session with the login's user check and a `webAuthN` challenge; its `publicKey` |
+| `VerifyPasskeyAction` (`passkey.verify`)       | anonymous | the session's `checks.webAuthN`; answers the verified session the BFF turns into its own     |
+| `RegisterPasskeyAction` (`passkey.register`)   | user      | `POST /v2/users/{id}/passkeys` for the caller's own provider user; its `publicKey`           |
+| `ConfirmPasskeyAction` (`passkey.confirm`)     | user      | `POST /v2/users/{id}/passkeys/{passkeyId}` with the credential and a name                    |
+
+The sign-in pair runs in the public API area with its own bucket (10 a minute); a refused credential or an unknown
+login is `UnauthenticatedError`. `registerPasskey(passkeys, name, { register, confirm })` is the client half of
+registration. The caller's provider user is found by its `usr_` id, which `IdpAdmin.createUser` keeps as the
+`stackra_user_id` metadata (`stackraUserId`). The relying party is the provider's domain (the host of
+`IdpAdminConfig.url`), so the app must list it: `webcredentials:<issuer host>` in the iOS associated domains, and the
 provider's domain must serve `/.well-known/apple-app-site-association` (`webcredentials.apps`) and
 `/.well-known/assetlinks.json` (`delegate_permission/common.get_login_creds`) for the app's team id, bundle id and
 signing certificate. Without them every call refuses `unsupported`. `ExpoPasskeysDriver` needs

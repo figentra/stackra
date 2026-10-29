@@ -76,10 +76,12 @@ describe("@stackra/identity", () => {
       "isOriginAllowed",
       "mintApiKey",
       "parseApiKey",
+      "registerPasskey",
       "requireAssurance",
       "sessionUserOf",
       "signInMethodsOf",
       "signInProvidersOf",
+      "signInWithPasskey",
       "stepUpSignIn",
     ]);
   });

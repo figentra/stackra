@@ -5,16 +5,22 @@
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
  *          management API (added the first time, updated after, then its external providers and second factors brought
  *          to exactly the listed ones); a user's enrolled authentication methods through the
- *          v2 user service, mapped to RFC 8176 `amr` codes.
+ *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
+ *          the `stackra_user_id` metadata `createUser` writes; and passkeys: sign-in as a v2 session with a `webAuthN`
+ *          challenge checked by a session update, registration through the v2 user passkey endpoints.
  * Boundary: one HTTPS call per step, with the service account token of `IdpAdminConfig` as a bearer token and the
  *           configured timeout, through the global fetch. Managed or bring-your-own is the configured URL: the
  *           platform's ZITADEL or a tenant's own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
- *           Ending a session that is already gone (404) succeeds. Personal data and secrets are never logged.
+ *           Ending a session that is already gone (404) succeeds. A refused passkey check or an unknown login is
+ *           `UnauthenticatedError`. The passkey relying party is the configured URL's host, so the app lists that host
+ *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
- * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263.
+ * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
+ *                     STA-1538 (passkeys); STA-1543 (erasure).
  */
 import { Driver } from "@stackra/container";
+import { UnauthenticatedError } from "@stackra/errors";
 
 import type { IdpAdminConfig } from "#config/idp-admin.config";
 import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
@@ -23,14 +29,24 @@ import type {
   DeviceTokenResult,
   IdpMachineCredential,
   IdpMachineUserInput,
+  IdpSessionGrant,
   IdpUserInput,
   LoginPolicy,
+  PasskeyCredential,
+  PasskeyRegistrationChallenge,
+  PasskeySignInChallenge,
 } from "#contracts/index";
 import { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
 
 /** The OAuth grant type of a device-flow poll. */
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
+
+/** The user metadata key holding the Stackra `usr_` id; the claim action reads the same key. */
+const STACKRA_USER_ID = "stackra_user_id";
+
+/** The statuses ZITADEL answers a refused passkey check or an unknown login with. */
+const REFUSED: readonly number[] = [400, 403, 404, 412];
 
 /** How many sessions one search reads. */
 const PAGE = 100;
@@ -68,7 +84,7 @@ const SECOND_FACTOR_TYPE: Readonly<Record<IdpSecondFactor, string>> = {
 
 /** One request: the method, the path, a JSON or form body, and the organisation it acts in. */
 interface Call {
-  readonly method: "GET" | "POST" | "PUT" | "DELETE";
+  readonly method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   readonly path: string;
   readonly json?: object;
   readonly form?: Readonly<Record<string, string>>;
@@ -92,6 +108,9 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
   /** Milliseconds one call may take. */
   private readonly timeoutMs: number;
 
+  /** The passkey relying party: the provider's host. */
+  private readonly domain: string;
+
   /**
    * @param config - the provider's URL, token and timeout.
    * @throws TypeError when the URL or the token is not set.
@@ -105,6 +124,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     this.base = config.url.replace(/\/+$/, "");
     this.token = config.token;
     this.timeoutMs = config.timeoutSeconds * 1000;
+    this.domain = new URL(this.base).hostname;
   }
 
   /** Implements `IdpAdmin.createUser`, documented there. */
@@ -117,6 +137,9 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
         organization: { orgId: input.organizationId },
         profile: { givenName: input.givenName, familyName: input.familyName },
         email: { email: input.email, isVerified: input.emailVerified === true },
+        ...(input.stackraUserId === undefined
+          ? {}
+          : { metadata: [{ key: STACKRA_USER_ID, value: btoa(input.stackraUserId) }] }),
       },
     });
     return stringOf(body, "userId");
@@ -253,6 +276,108 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       .map((type) => (typeof type === "string" ? AMR_OF_METHOD[type] : undefined))
       .filter((code): code is string => code !== undefined);
     return [...new Set(codes)];
+  }
+
+  /** See `IdpAdmin.findUserId`: one v2 user search on the `stackra_user_id` metadata. */
+  async findUserId(stackraUserId: string): Promise<string | undefined> {
+    const { body } = await this.call({
+      method: "POST",
+      path: "/v2/users",
+      json: {
+        query: { offset: 0, limit: 1 },
+        queries: [
+          {
+            andQuery: {
+              queries: [
+                { metadataKeyFilter: { key: STACKRA_USER_ID, method: "TEXT_FILTER_METHOD_EQUALS" } },
+                {
+                  metadataValueFilter: {
+                    value: btoa(stackraUserId),
+                    method: "BYTE_FILTER_METHOD_EQUALS",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const id = (body as { result?: readonly { userId?: unknown }[] }).result?.[0]?.userId;
+    return typeof id === "string" && id !== "" ? id : undefined;
+  }
+
+  /** See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. */
+  async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
+    const { status, body } = await this.call(
+      {
+        method: "POST",
+        path: "/v2/sessions",
+        json: {
+          checks: { user: { loginName } },
+          challenges: {
+            webAuthN: {
+              domain: this.domain,
+              userVerificationRequirement: "USER_VERIFICATION_REQUIREMENT_REQUIRED",
+            },
+          },
+        },
+      },
+      REFUSED,
+    );
+    refuseOn(status);
+    const options = (
+      body as {
+        challenges?: { webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } } };
+      }
+    ).challenges?.webAuthN?.publicKeyCredentialRequestOptions?.publicKey;
+    return { sessionId: stringOf(body, "sessionId"), options: objectOf(options) };
+  }
+
+  /** See `IdpAdmin.finishPasskeySignIn`: the session's `webAuthN` check. */
+  async finishPasskeySignIn(
+    sessionId: string,
+    credential: PasskeyCredential,
+  ): Promise<IdpSessionGrant> {
+    const { status, body } = await this.call(
+      {
+        method: "PATCH",
+        path: `/v2/sessions/${encodeURIComponent(sessionId)}`,
+        json: { checks: { webAuthN: { credentialAssertionData: credential } } },
+      },
+      REFUSED,
+    );
+    refuseOn(status);
+    return { sessionId, sessionToken: stringOf(body, "sessionToken") };
+  }
+
+  /** See `IdpAdmin.startPasskeyRegistration`: a platform passkey on the provider's host. */
+  async startPasskeyRegistration(userId: string): Promise<PasskeyRegistrationChallenge> {
+    const { body } = await this.call({
+      method: "POST",
+      path: `/v2/users/${encodeURIComponent(userId)}/passkeys`,
+      json: { domain: this.domain, authenticator: "PASSKEY_AUTHENTICATOR_PLATFORM" },
+    });
+    const options = (body as { publicKeyCredentialCreationOptions?: { publicKey?: unknown } })
+      .publicKeyCredentialCreationOptions?.publicKey;
+    return { passkeyId: stringOf(body, "passkeyId"), options: objectOf(options) };
+  }
+
+  /** See `IdpAdmin.finishPasskeyRegistration`: the v2 passkey verification. */
+  async finishPasskeyRegistration(
+    userId: string,
+    passkeyId: string,
+    credential: PasskeyCredential,
+    name: string,
+  ): Promise<void> {
+    const { status } = await this.call(
+      {
+        method: "POST",
+        path: `/v2/users/${encodeURIComponent(userId)}/passkeys/${encodeURIComponent(passkeyId)}`,
+        json: { publicKeyCredential: credential, passkeyName: name },
+      },
+      REFUSED,
+    );
+    refuseOn(status);
   }
 
   /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */
@@ -396,6 +521,26 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     const text = await response.text();
     return { status, body: text === "" ? {} : (JSON.parse(text) as unknown) };
   }
+}
+
+/**
+ * Throws `UnauthenticatedError` when `status` is one of the refusals.
+ *
+ * @throws UnauthenticatedError on a refused passkey check or an unknown login.
+ */
+function refuseOn(status: number): void {
+  if (REFUSED.includes(status)) throw UnauthenticatedError.create();
+}
+
+/**
+ * The WebAuthn options object of a provider answer, passed through unread.
+ *
+ * @throws Error when the answer lacks it.
+ */
+function objectOf<T>(value: unknown): T {
+  if (typeof value !== "object" || value === null)
+    throw new Error("ZITADEL's answer has no publicKey options");
+  return value as T;
 }
 
 /**

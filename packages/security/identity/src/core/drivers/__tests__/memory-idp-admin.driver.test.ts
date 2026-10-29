@@ -3,11 +3,13 @@
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
  *          taken login name refused per organisation; deactivation, removal and ending sessions; the device flow stays
  *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last; enrolled methods are listed once
- *          each and dropped with the user.
+ *          each and dropped with the user; a user is found by its Stackra id; a passkey sign-in needs a known login and
+ *          a live session; a passkey registration finishes once and enrols `swk`.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264.
+ * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543.
  */
+import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
 import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
@@ -113,5 +115,38 @@ describe(MemoryIdpAdminDriver, () => {
     });
     await idp.setLoginPolicy("org_1", { ...POLICY, externalProviderIds: [] });
     expect(idp.policies.get("org_1")?.externalProviderIds).toEqual([]);
+  });
+
+  it("finds a user by its Stackra id", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const userId = await idp.createUser({ ...RANA, stackraUserId: "usr_1" });
+    expect(await idp.findUserId("usr_1")).toBe(userId);
+    expect(await idp.findUserId("usr_2")).toBeUndefined();
+  });
+
+  it("signs in with a passkey on a known login and a live session only", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    await idp.createUser(RANA);
+    await expect(idp.startPasskeySignIn("nobody")).rejects.toBeInstanceOf(UnauthenticatedError);
+    const { sessionId } = await idp.startPasskeySignIn("rana");
+    const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    expect((await idp.finishPasskeySignIn(sessionId, credential)).sessionId).toBe(sessionId);
+    await idp.endSession(sessionId);
+    await expect(idp.finishPasskeySignIn(sessionId, credential)).rejects.toBeInstanceOf(
+      UnauthenticatedError,
+    );
+  });
+
+  it("registers a passkey once and enrols the swk method", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const userId = await idp.createUser(RANA);
+    const { passkeyId } = await idp.startPasskeyRegistration(userId);
+    const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    await idp.finishPasskeyRegistration(userId, passkeyId, credential, "iPhone");
+    expect(idp.passkeys.get(passkeyId)).toEqual({ userId, name: "iPhone" });
+    expect(await idp.listAuthMethods(userId)).toEqual(["swk"]);
+    await expect(
+      idp.finishPasskeyRegistration(userId, passkeyId, credential, "again"),
+    ).rejects.toBeInstanceOf(UnauthenticatedError);
   });
 });

@@ -1,14 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryIdpAdminDriver`, an `IdpAdmin` held in memory, for tests and local runs: users, machine users,
- *          sessions, device flows, login policies (with their providers and second factors) and enrolled authentication methods live in maps a test can read back.
+ *          sessions, device flows, login policies (with their providers and second factors), enrolled authentication
+ *          methods and passkeys live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
  *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end;
- *           `enrolAuthMethod` adds an `amr` code to a user.
+ *           `enrolAuthMethod` adds an `amr` code to a user. A user created with a `stackraUserId` is found by it. A
+ *           passkey sign-in needs a known login name; any credential passes its check (no signature is verified), and
+ *           a finished registration adds the `swk` method.
  * Runtime: isomorphic
- * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263.
+ * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263; STA-1538; STA-1543.
  */
 import { Driver } from "@stackra/container";
+import { UnauthenticatedError } from "@stackra/errors";
 
 import { DeviceTokenStatus, IdpAdmin } from "#contracts/index";
 import type {
@@ -16,8 +20,12 @@ import type {
   DeviceTokenResult,
   IdpMachineCredential,
   IdpMachineUserInput,
+  IdpSessionGrant,
   IdpUserInput,
   LoginPolicy,
+  PasskeyCredential,
+  PasskeyRegistrationChallenge,
+  PasskeySignInChallenge,
 } from "#contracts/index";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
 import { randomToken } from "#core/functions/random-token.function";
@@ -27,6 +35,7 @@ interface HeldUser {
   readonly organizationId: string;
   readonly username: string;
   readonly machine: boolean;
+  readonly stackraUserId?: string;
   active: boolean;
 }
 
@@ -50,12 +59,15 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
   /** User id to the `amr` codes of its enrolled methods. */
   readonly authMethods = new Map<string, string[]>();
 
+  /** Passkey id to its user id and, once registered, its name. */
+  readonly passkeys = new Map<string, { readonly userId: string; name?: string }>();
+
   /** Device code to its state. */
   private readonly devices = new Map<string, DeviceTokenStatus>();
 
   /** Implements `IdpAdmin.createUser`, documented there. */
   async createUser(input: IdpUserInput): Promise<string> {
-    return this.add(input.organizationId, input.username, false);
+    return this.add(input.organizationId, input.username, false, input.stackraUserId);
   }
 
   /** Implements `IdpAdmin.createMachineUser`, documented there. */
@@ -150,13 +162,76 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     });
   }
 
+  /** See `IdpAdmin.findUserId`; a user created without a Stackra id is never found. */
+  async findUserId(stackraUserId: string): Promise<string | undefined> {
+    for (const [userId, user] of this.users) if (user.stackraUserId === stackraUserId) return userId;
+    return undefined;
+  }
+
+  /** See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. */
+  async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
+    const userId = [...this.users].find(([, user]) => user.username === loginName)?.[0];
+    if (userId === undefined) throw UnauthenticatedError.create();
+    return {
+      sessionId: this.openSession(userId),
+      options: { challenge: randomToken(), rpId: "id.example", userVerification: "required" },
+    };
+  }
+
+  /** See `IdpAdmin.finishPasskeySignIn`; an unknown session is refused. */
+  async finishPasskeySignIn(sessionId: string): Promise<IdpSessionGrant> {
+    if (!this.sessions.has(sessionId)) throw UnauthenticatedError.create();
+    return { sessionId, sessionToken: randomToken() };
+  }
+
+  /** See `IdpAdmin.startPasskeyRegistration`. */
+  async startPasskeyRegistration(userId: string): Promise<PasskeyRegistrationChallenge> {
+    const user = this.users.get(userId);
+    if (user === undefined) throw UnauthenticatedError.create();
+    const passkeyId = `pk_${randomToken()}`;
+    this.passkeys.set(passkeyId, { userId });
+    return {
+      passkeyId,
+      options: {
+        challenge: randomToken(),
+        rp: { id: "id.example", name: "Example" },
+        user: { id: userId, name: user.username, displayName: user.username },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+      },
+    };
+  }
+
+  /** See `IdpAdmin.finishPasskeyRegistration`; a passkey not pending for `userId` is refused. */
+  async finishPasskeyRegistration(
+    userId: string,
+    passkeyId: string,
+    _credential: PasskeyCredential,
+    name: string,
+  ): Promise<void> {
+    const passkey = this.passkeys.get(passkeyId);
+    if (passkey?.userId !== userId || passkey.name !== undefined) throw UnauthenticatedError.create();
+    passkey.name = name;
+    this.enrolAuthMethod(userId, "swk");
+  }
+
   /** Adds a user, refusing a login name already taken in the organisation. */
-  private add(organizationId: string, username: string, machine: boolean): string {
+  private add(
+    organizationId: string,
+    username: string,
+    machine: boolean,
+    stackraUserId?: string,
+  ): string {
     for (const user of this.users.values())
       if (user.organizationId === organizationId && user.username === username)
         throw IdpUserExistsError.create();
     const userId = `idp_${randomToken()}`;
-    this.users.set(userId, { organizationId, username, machine, active: true });
+    this.users.set(userId, {
+      organizationId,
+      username,
+      machine,
+      ...(stackraUserId === undefined ? {} : { stackraUserId }),
+      active: true,
+    });
     return userId;
   }
 }

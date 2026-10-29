@@ -6,12 +6,15 @@
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
  *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
- *          brought to exactly the listed ones.
+ *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata;
+ *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey`, and turn a
+ *          refusal into `UnauthenticatedError`.
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263.
+ * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543.
  */
 import { buildConfig } from "@stackra/config";
+import { UnauthenticatedError } from "@stackra/errors";
 import { SecretStore } from "@stackra/config/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -306,5 +309,103 @@ describe(ZitadelIdpAdminDriver, () => {
       ignoreUnknownUsernames: true,
     });
     expect(sent).toHaveLength(2);
+  });
+
+  it("creates a user with and finds it by its stackra_user_id metadata", async () => {
+    const { idp, sent } = driverWith([
+      [201, { userId: "u_1" }],
+      [200, { result: [{ userId: "u_1" }] }],
+      [200, { result: [] }],
+    ]);
+    await idp.createUser({
+      organizationId: "org_1",
+      username: "rana",
+      givenName: "Rana",
+      familyName: "Haddad",
+      email: "rana@acme.example",
+      stackraUserId: "usr_1",
+    });
+    expect(JSON.parse(sent[0]?.body ?? "").metadata).toEqual([
+      { key: "stackra_user_id", value: btoa("usr_1") },
+    ]);
+    expect(await idp.findUserId("usr_1")).toBe("u_1");
+    expect(sent[1]?.url).toBe("https://id.acme.example/v2/users");
+    expect(JSON.parse(sent[1]?.body ?? "").queries[0].andQuery.queries).toEqual([
+      { metadataKeyFilter: { key: "stackra_user_id", method: "TEXT_FILTER_METHOD_EQUALS" } },
+      { metadataValueFilter: { value: btoa("usr_1"), method: "BYTE_FILTER_METHOD_EQUALS" } },
+    ]);
+    expect(await idp.findUserId("usr_2")).toBeUndefined();
+  });
+
+  it("signs in with a passkey through a v2 session and its webAuthN check", async () => {
+    const publicKey = { challenge: "ch", rpId: "id.acme.example", userVerification: "required" };
+    const credential = { id: "c", rawId: "c", type: "public-key", response: { signature: "s" } } as const;
+    const { idp, sent } = driverWith([
+      [
+        201,
+        {
+          sessionId: "s_1",
+          sessionToken: "t_0",
+          challenges: { webAuthN: { publicKeyCredentialRequestOptions: { publicKey } } },
+        },
+      ],
+      [200, { sessionToken: "t_1" }],
+      [400, { message: "invalid assertion" }],
+    ]);
+    expect(await idp.startPasskeySignIn("rana@acme.example")).toEqual({
+      sessionId: "s_1",
+      options: publicKey,
+    });
+    expect(JSON.parse(sent[0]?.body ?? "")).toEqual({
+      checks: { user: { loginName: "rana@acme.example" } },
+      challenges: {
+        webAuthN: {
+          domain: "id.acme.example",
+          userVerificationRequirement: "USER_VERIFICATION_REQUIREMENT_REQUIRED",
+        },
+      },
+    });
+    expect(await idp.finishPasskeySignIn("s_1", credential)).toEqual({
+      sessionId: "s_1",
+      sessionToken: "t_1",
+    });
+    expect([sent[1]?.method, sent[1]?.url]).toEqual([
+      "PATCH",
+      "https://id.acme.example/v2/sessions/s_1",
+    ]);
+    expect(JSON.parse(sent[1]?.body ?? "")).toEqual({
+      checks: { webAuthN: { credentialAssertionData: credential } },
+    });
+    await expect(idp.finishPasskeySignIn("s_1", credential)).rejects.toBeInstanceOf(
+      UnauthenticatedError,
+    );
+  });
+
+  it("refuses a passkey sign-in for an unknown login", async () => {
+    const { idp } = driverWith([[404, { message: "not found" }]]);
+    await expect(idp.startPasskeySignIn("nobody")).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
+
+  it("registers a passkey through the v2 user passkey endpoints", async () => {
+    const publicKey = { challenge: "ch", rp: { id: "id.acme.example", name: "Acme" } };
+    const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    const { idp, sent } = driverWith([
+      [201, { passkeyId: "pk_1", publicKeyCredentialCreationOptions: { publicKey } }],
+      [200, {}],
+    ]);
+    expect(await idp.startPasskeyRegistration("u_1")).toEqual({
+      passkeyId: "pk_1",
+      options: publicKey,
+    });
+    expect(JSON.parse(sent[0]?.body ?? "")).toEqual({
+      domain: "id.acme.example",
+      authenticator: "PASSKEY_AUTHENTICATOR_PLATFORM",
+    });
+    await idp.finishPasskeyRegistration("u_1", "pk_1", credential, "iPhone");
+    expect(sent[1]?.url).toBe("https://id.acme.example/v2/users/u_1/passkeys/pk_1");
+    expect(JSON.parse(sent[1]?.body ?? "")).toEqual({
+      publicKeyCredential: credential,
+      passkeyName: "iPhone",
+    });
   });
 });

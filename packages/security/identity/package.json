@@ -2,7 +2,7 @@
   "name": "@stackra/identity",
   "version": "0.0.0",
   "private": false,
-  "description": "Stackra identity, provider-neutral over ZITADEL (ADR 0206): the IdentityConfig configuration with its shipped schema, the SessionStore port with the BFF cookie and PKCE drivers, the SessionService with the session claims mapping, the ClientSession and memory IdentityResolver drivers, the React useSession hook, and the fakeSession and fakeIdentity test helpers; step-up (assurance levels, stepUpSignIn), national and other external identity providers chosen by market pack, the Expo (./native) and Electron (./desktop) SignInBrowser drivers, staff PIN quick-switch with manager override, publishable origin-bound API keys, a guardian acting for a minor, the KYC and KYB Verification port with VerificationService selecting providers from market-pack data, the Passkeys port with its memory and Expo (react-native-passkey) drivers, and app approval sign-in and step-up (number matching and QR) with the AppApprovalChallenges port, its memory driver, the sessions.app_approval events and the web and app hooks",
+  "description": "Stackra identity, provider-neutral over ZITADEL (ADR 0206): the IdentityConfig configuration with its shipped schema, the SessionStore port with the BFF cookie and PKCE drivers, the SessionService with the session claims mapping, the ClientSession and memory IdentityResolver drivers, the React useSession hook, and the fakeSession and fakeIdentity test helpers; step-up (assurance levels, stepUpSignIn), national and other external identity providers chosen by market pack, the Expo (./native) and Electron (./desktop) SignInBrowser drivers, staff PIN quick-switch with manager override, publishable origin-bound API keys, a guardian acting for a minor, the KYC and KYB Verification port with VerificationService selecting providers from market-pack data, the Passkeys port with its memory and Expo (react-native-passkey) drivers, the ZITADEL passkey sign-in and registration actions a BFF serves (./node) with the signInWithPasskey and registerPasskey client halves, the listener that ends an erased subject's provider sessions, and app approval sign-in and step-up (number matching and QR) with the AppApprovalChallenges port, its memory driver, the sessions.app_approval events and the web and app hooks",
   "keywords": [
     "authentication",
     "identity",
@@ -62,6 +62,11 @@
       "./src/native/*.ts",
       "./src/native/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -101,6 +106,11 @@
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
     },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
       "types": "./dist/react.d.mts",
@@ -127,6 +137,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
     "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
@@ -136,6 +147,7 @@
     "@stackra/iam": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "@stackra/outbox": "workspace:*",
+    "@stackra/privacy": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",

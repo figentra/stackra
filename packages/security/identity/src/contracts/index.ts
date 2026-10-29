@@ -41,14 +41,17 @@ export type { DeviceTokenResult } from "#contracts/types/device-token-result.typ
 export type { GuardianLink } from "#contracts/types/guardian-link.type";
 export type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
 export type { IdpMachineUserInput } from "#contracts/types/idp-machine-user-input.type";
+export type { IdpSessionGrant } from "#contracts/types/idp-session-grant.type";
 export type { IdpUserInput } from "#contracts/types/idp-user-input.type";
 export type { LoginDirectoryKey } from "#contracts/types/login-directory-key.type";
 export type { LoginIdentifier } from "#contracts/types/login-identifier.type";
 export type { LoginPolicy } from "#contracts/types/login-policy.type";
 export type { PasskeyCreationOptions } from "#contracts/types/passkey-creation-options.type";
 export type { PasskeyCredential } from "#contracts/types/passkey-credential.type";
+export type { PasskeyRegistrationChallenge } from "#contracts/types/passkey-registration-challenge.type";
 export type { PasskeyRequestOptions } from "#contracts/types/passkey-request-options.type";
 export type { PasskeyResult } from "#contracts/types/passkey-result.type";
+export type { PasskeySignInChallenge } from "#contracts/types/passkey-sign-in-challenge.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";

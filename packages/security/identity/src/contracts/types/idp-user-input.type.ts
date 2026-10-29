@@ -4,7 +4,7 @@
  *          email, and whether the email is already verified.
  * Boundary: a type only; personal data, so a driver sends it to the identity provider and never logs it.
  * Runtime: isomorphic
- * Governing contract: ADR 0206; ADR 0410 (STA-834).
+ * Governing contract: ADR 0206; ADR 0410 (STA-834); STA-1543.
  */
 
 /** A human user to create. */
@@ -26,4 +26,7 @@ export interface IdpUserInput {
 
   /** `true` when the caller already proved the address, so the provider sends no verification mail. */
   readonly emailVerified?: boolean;
+
+  /** The user's Stackra `usr_` id, kept on the provider's user so `IdpAdmin.findUserId` finds it. */
+  readonly stackraUserId?: string;
 }

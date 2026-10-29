@@ -2,7 +2,8 @@
 
 Identity, provider-neutral over ZITADEL: the sign-in flows (BFF on the web, PKCE on devices), the client's session and
 the claims mapping (ADR 0206, 0241, 0277). Member at `packages/security/identity` (`tier:lib`), in the programming
-model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./native`, `./react`, `./testing`.
+model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./native`, `./node`, `./react`,
+`./testing`.
 
 ## Where code goes
 
@@ -16,6 +17,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 | A claims or PKCE helper              | `src/core/functions/`                           |
 | A refusal                            | `src/core/errors/`                              |
 | An integration event                 | `src/core/events/`                              |
+| A server action and its schemas      | `src/node/{actions,schemas,access}/`            |
+| A listener of another package        | `src/node/listeners/`                           |
 | React code                           | `src/react/session/`, `src/react/app-approval/` |
 | React Native hooks                   | `src/native/app-approval/`                      |
 | A test helper or fake                | `src/testing/`                                  |
@@ -23,7 +26,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 
 ## Entries and barrels
 
-- `src/{core,contracts,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/{core,contracts,node,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel and to that entry's `index.test.ts`.
 - The session-user schema and the PKCE helpers (`randomToken`, `codeChallengeOf`, `jwtClaimsOf`, `base64UrlOf`) stay
   internal.
@@ -34,7 +37,11 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 ## This package
 
 - `Passkeys` is the device step only: options in, credential JSON out. Never make or check a WebAuthn challenge here;
-  the server side asks the provider and verifies. Library errors become `PasskeyRefusal` values, never throws.
+  the server side (`./node`'s passkey actions over `IdpAdmin`) asks the provider and verifies. Library errors become
+  `PasskeyRefusal` values, never throws. A passkey action finds the caller's provider user by the actor's `usr_` id
+  (`IdpAdmin.findUserId`), never by a body field.
+- `EndErasedSubjectSessionsListener` imports @stackra/privacy's event; privacy must never depend on identity, or the
+  graph closes a cycle.
 - No secret, ever: a browser has no client credential (the BFF holds it, by name), and a device is a public client.
 - Every BFF call carries `IdentityConfig.csrfHeader` (equal to the API's `CsrfConfig.headerName`). Never import
   @stackra/app for it: app depends on identity, so that would close a cycle.
