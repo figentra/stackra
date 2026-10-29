@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./native` entry of @stackra/platform (`ExpoPlatformDriver`,
  *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`, `ExpoSystemSettingsDriver`,
- *          `ExpoDevicePermissionsDriver` for the host to subclass, and `createNotificationChannels` for the push context),
+ *          `ExpoDevicePermissionsDriver`, and `createNotificationChannels` for the push context),
  *          what gen lists as candidates for the Expo target, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Loaded on a device only; the permission helpers stay internal.
  * Runtime: react-native

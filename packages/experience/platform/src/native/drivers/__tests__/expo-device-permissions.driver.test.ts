@@ -3,8 +3,8 @@
  * Purpose: unit tests of `ExpoDevicePermissionsDriver`: camera, microphone, location and photos read and prompt
  *          through the Expo libraries, a refusal the OS will not ask about again reads `blocked` and is not asked
  *          again, a missing library reads `denied`, Bluetooth asks through `PermissionsAndroid` on Android 12 and
- *          later only, and the settings deep link opens.
- * Boundary: test only; react-native is mocked, and the Expo libraries are handed over as fakes.
+ *          later only, and the settings deep link opens; constructed bare, it asks through the Expo libraries it imports.
+ * Boundary: test only; react-native and the Expo libraries are mocked, and a subclass also hands fakes in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0250 (2026-10-29 note).
  */
@@ -31,6 +31,47 @@ vi.mock("react-native", () => ({
   Platform: mocks.os,
 }));
 
+vi.mock("expo-camera", () => ({
+  Camera: {
+    getCameraPermissionsAsync: async () => ({
+      granted: true,
+      status: "granted",
+      canAskAgain: true,
+    }),
+    requestCameraPermissionsAsync: async () => ({
+      granted: true,
+      status: "granted",
+      canAskAgain: true,
+    }),
+    getMicrophonePermissionsAsync: async () => ({
+      granted: true,
+      status: "granted",
+      canAskAgain: true,
+    }),
+    requestMicrophonePermissionsAsync: async () => ({
+      granted: true,
+      status: "granted",
+      canAskAgain: true,
+    }),
+  },
+}));
+vi.mock("expo-location", () => ({
+  getForegroundPermissionsAsync: async () => ({
+    granted: false,
+    status: "undetermined",
+    canAskAgain: true,
+  }),
+  requestForegroundPermissionsAsync: async () => ({
+    granted: true,
+    status: "granted",
+    canAskAgain: true,
+  }),
+}));
+vi.mock("expo-media-library", () => ({
+  getPermissionsAsync: async () => ({ granted: false, status: "denied", canAskAgain: false }),
+  requestPermissionsAsync: async () => ({ granted: false, status: "denied", canAskAgain: false }),
+}));
+
 const UNASKED: ExpoPermissionResponse = {
   granted: false,
   status: "undetermined",
@@ -39,7 +80,7 @@ const UNASKED: ExpoPermissionResponse = {
 const GRANTED: ExpoPermissionResponse = { granted: true, status: "granted", canAskAgain: true };
 const BLOCKED: ExpoPermissionResponse = { granted: false, status: "denied", canAskAgain: false };
 
-/** A driver over `modules`, as the host declares it. */
+/** A driver over fake `modules`, as a test subclass hands them in. */
 function driverWith(modules: Partial<ExpoPermissionModules> = {}): ExpoDevicePermissionsDriver {
   const all: ExpoPermissionModules = {
     camera: null,
@@ -62,6 +103,13 @@ beforeEach(() => {
 describe("ExpoDevicePermissionsDriver", () => {
   it("is a DevicePermissions driver", () => {
     expect(driverWith()).toBeInstanceOf(DevicePermissions);
+  });
+
+  it("asks through the Expo libraries it imports when constructed bare", async () => {
+    const permissions = new ExpoDevicePermissionsDriver();
+    expect(await permissions.status("camera")).toBe("granted");
+    expect(await permissions.request("location")).toBe("granted");
+    expect(await permissions.status("photos")).toBe("blocked");
   });
 
   it("prompts for the camera through expo-camera when unasked", async () => {
@@ -92,7 +140,7 @@ describe("ExpoDevicePermissionsDriver", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("reads a permission whose library the app does not ship as denied", async () => {
+  it("reads a permission whose library is absent as denied", async () => {
     const permissions = driverWith();
     expect(await permissions.status("photos")).toBe("denied");
     expect(await permissions.request("photos")).toBe("denied");

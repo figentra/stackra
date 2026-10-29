@@ -56,6 +56,23 @@
           "recordAudioAndroid": false
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Stackra uses your location only while you use the app, when a feature you open needs it.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Stackra reads only the photos you choose to attach.",
+          "savePhotosPermission": "Stackra saves images to your photo library only when you ask it to.",
+          "granularPermissions": ["photo"]
+        }
+      ],
       "expo-notifications"
     ]
   }

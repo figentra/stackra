@@ -3,15 +3,19 @@
  * Purpose: `ExpoDevicePermissionsDriver`, the `DevicePermissions` driver of the Expo (phone) target: camera and
  *          microphone through expo-camera, location through expo-location, photos through expo-media-library,
  *          Bluetooth through React Native's `PermissionsAndroid`, and the settings deep link from `Linking`.
- * Boundary: device only, and abstract: the host app subclasses it and declares `modules` (the Expo libraries it ships),
- *           because those libraries are the app's own dependencies; the constructor takes nothing. A library the app
- *           does not ship reads `denied`. Bluetooth is a runtime permission on Android 12 (API 31) and later only
- *           (scan and connect); below that it is granted at install, and on iOS the OS asks on first use, so both read
- *           `granted`. Android's `check` cannot tell unasked from refused, so a missing Bluetooth grant reads `prompt`.
+ * Boundary: device only, and concrete: it imports expo-camera, expo-location and expo-media-library itself (optional
+ *           peers the app adds to its own dependencies, so they link); the constructor takes nothing. `modules` is
+ *           protected so a test subclass hands fakes in, and a `null` library reads `denied`. Bluetooth is a runtime
+ *           permission on Android 12 (API 31) and later only (scan and connect); below that it is granted at install,
+ *           and on iOS the OS asks on first use, so both read `granted`. Android's `check` cannot tell unasked from
+ *           refused, so a missing Bluetooth grant reads `prompt`.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0478 (Expo's own libraries, no hand-written native code).
  */
 import { Driver } from "@stackra/container";
+import { Camera } from "expo-camera";
+import * as Location from "expo-location";
+import * as MediaLibrary from "expo-media-library";
 import { Linking, PermissionsAndroid, Platform as Os } from "react-native";
 
 import { DevicePermissions } from "#contracts/ports/device-permissions.port";
@@ -34,17 +38,15 @@ const BLUETOOTH_RUNTIME_API = 31;
  * Device permissions on a phone.
  *
  * @example
- * import { Camera } from "expo-camera";
- * import * as Location from "expo-location";
- * import * as MediaLibrary from "expo-media-library";
- *
- * export class AppDevicePermissionsDriver extends ExpoDevicePermissionsDriver {
- *   protected readonly modules = { camera: Camera, location: Location, mediaLibrary: MediaLibrary };
- * }
+ * { provide: DevicePermissions, useClass: ExpoDevicePermissionsDriver }
  */
-export abstract class ExpoDevicePermissionsDriver extends Driver(DevicePermissions) {
-  /** The Expo libraries the app ships; declared by the host's subclass. */
-  protected abstract readonly modules: ExpoPermissionModules;
+export class ExpoDevicePermissionsDriver extends Driver(DevicePermissions) {
+  /** The Expo libraries permissions are asked through; a test subclass replaces them. */
+  protected readonly modules: ExpoPermissionModules = {
+    camera: Camera,
+    location: Location,
+    mediaLibrary: MediaLibrary,
+  };
 
   /** Where `permission` stands, without prompting. */
   async status(permission: DevicePermission): Promise<DevicePermissionStatus> {
@@ -82,7 +84,7 @@ export abstract class ExpoDevicePermissionsDriver extends Driver(DevicePermissio
     return Os.OS === "android" && Number(Os.Version) >= BLUETOOTH_RUNTIME_API;
   }
 
-  /** Reads (`prompt` false) or prompts for `permission` through its library; `null` when the app lacks it. */
+  /** Reads (`prompt` false) or prompts for `permission` through its library; `null` when the library is absent. */
   private expo(
     permission: Exclude<DevicePermission, "bluetooth">,
     prompt: boolean,

@@ -19,6 +19,8 @@ vi.mock("expo-tracking-transparency", () => ({}));
 vi.mock("expo-battery", () => ({}));
 vi.mock("expo-background-task", () => ({ BackgroundTaskStatus: { Available: 2 } }));
 vi.mock("expo-camera", () => ({ Camera: {}, CameraView: {} }));
+vi.mock("expo-location", () => ({}));
+vi.mock("expo-media-library", () => ({}));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
 }));

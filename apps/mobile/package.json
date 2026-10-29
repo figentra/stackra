@@ -81,6 +81,8 @@
     "expo-haptics": "catalog:mobile",
     "expo-linking": "catalog:mobile",
     "expo-localization": "catalog:mobile",
+    "expo-location": "catalog:mobile",
+    "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "expo-splash-screen": "catalog:mobile",
     "expo-status-bar": "catalog:mobile",

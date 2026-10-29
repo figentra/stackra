@@ -134,8 +134,10 @@ if ((await permissions.request("bluetooth")) === "blocked")
   );
 ```
 
-- `ExpoDevicePermissionsDriver` (`./native`) is abstract like the settings driver: the app's subclass declares
-  `modules` (expo-camera's `Camera`, expo-location, expo-media-library, each `null` when absent, which reads `denied`).
+- `ExpoDevicePermissionsDriver` (`./native`) is concrete like the settings driver: it imports expo-camera's `Camera`,
+  expo-location and expo-media-library itself. They are optional peers, so the app adds them to its own dependencies
+  and declares their config plugins with the permission strings in `app.json`. A test subclass replaces `modules` with
+  fakes; a `null` module reads `denied`.
   Bluetooth asks through React Native's `PermissionsAndroid` on Android 12 and later; elsewhere it reads `granted`, since
   iOS asks on first use and older Android grants it at install.
 - `MemoryDevicePermissionsDriver` (`.`) is the web, desktop and test driver: every permission starts `prompt`.

@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `ExpoPermissionModules`, the Expo libraries `ExpoDevicePermissionsDriver` asks through, as the host app's
- *          subclass hands them over: expo-camera (camera and microphone), expo-location and expo-media-library.
- * Boundary: a type only, the slice of each library the driver calls, so this package needs none of them installed; the
- *           app depends on the ones it uses (an Expo module must be the app's own dependency to be linked). `null`
- *           means the app does not ship that library, and its permissions read `denied`.
+ * Purpose: `ExpoPermissionModules`, the Expo libraries `ExpoDevicePermissionsDriver` asks through: expo-camera (camera
+ *          and microphone), expo-location and expo-media-library, which the driver imports and a test subclass
+ *          replaces with fakes.
+ * Boundary: a type only, the slice of each library the driver calls. `null` reads that library as absent, and its
+ *           permissions read `denied`.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0478 (Expo's own libraries, no hand-written native code).
  */
@@ -17,11 +17,9 @@ type Ask = () => Promise<ExpoPermissionResponse>;
  * The Expo libraries device permissions are asked through.
  *
  * @example
- * import { Camera } from "expo-camera";
- * import * as Location from "expo-location";
- * import * as MediaLibrary from "expo-media-library";
- *
- * const modules: ExpoPermissionModules = { camera: Camera, location: Location, mediaLibrary: MediaLibrary };
+ * class FakeDevicePermissions extends ExpoDevicePermissionsDriver {
+ *   protected override readonly modules: ExpoPermissionModules = { camera: null, location: null, mediaLibrary: null };
+ * }
  */
 export interface ExpoPermissionModules {
   /** expo-camera's `Camera`, for the camera and the microphone. */

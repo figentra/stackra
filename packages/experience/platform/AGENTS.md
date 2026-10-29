@@ -46,7 +46,9 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
   of a system-owned setting. Its Expo driver imports expo-tracking-transparency, expo-battery,
   expo-background-task and NetInfo (optional peers, catalog:mobile); `modules` stays protected only so tests hand fakes in.
 - `DevicePermissions` is the one permission helper (camera, location, photos, Bluetooth, microphone); a package that
-  needs one of them asks through it, never through its own library call. Its explanations live in
+  needs one of them asks through it, never through its own library call. Its Expo driver imports expo-camera,
+  expo-location and expo-media-library (optional peers, catalog:mobile); `modules` stays protected only so tests hand
+  fakes in. Its explanations live in
   `assets/lang/*/platform.json` (`platform::permissions.*`); add a permission to all seven locales at once.
 - A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
   options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.

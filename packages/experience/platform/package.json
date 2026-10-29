@@ -195,6 +195,8 @@
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
+    "expo-location": "catalog:mobile",
+    "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "expo-tracking-transparency": "catalog:mobile",
     "fake-indexeddb": "catalog:quality",
@@ -216,6 +218,8 @@
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
+    "expo-location": "catalog:mobile",
+    "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "expo-tracking-transparency": "catalog:mobile",
     "react": "catalog:frontend",
@@ -241,6 +245,12 @@
       "optional": true
     },
     "expo-haptics": {
+      "optional": true
+    },
+    "expo-location": {
+      "optional": true
+    },
+    "expo-media-library": {
       "optional": true
     },
     "expo-notifications": {
