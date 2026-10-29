@@ -12,8 +12,8 @@
  *           configured timeout, through the global fetch. Managed or bring-your-own is the configured URL: the
  *           platform's ZITADEL or a tenant's own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
- *           Ending a session that is already gone (404) succeeds. A refused passkey check or an unknown login is
- *           `UnauthenticatedError`. The passkey relying party is the configured URL's host, so the app lists that host
+ *           Ending a session that is already gone (404) succeeds. A refused passkey check (400, 404, 412) or an
+ *           unknown login or user (404) is `UnauthenticatedError`; a 403 (a missing permission) stays a bug. The passkey relying party is the configured URL's host, so the app lists that host
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
@@ -45,8 +45,11 @@ const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 /** The user metadata key holding the Stackra `usr_` id; the claim action reads the same key. */
 const STACKRA_USER_ID = "stackra_user_id";
 
-/** The statuses ZITADEL answers a refused passkey check or an unknown login with. */
-const REFUSED: readonly number[] = [400, 403, 404, 412];
+/** The statuses ZITADEL answers an unknown login or user with; a 403 is a missing permission, so a bug. */
+const UNKNOWN: readonly number[] = [404];
+
+/** The statuses ZITADEL answers a refused passkey check with. */
+const REFUSED: readonly number[] = [400, 404, 412];
 
 /** How many sessions one search reads. */
 const PAGE = 100;
@@ -289,7 +292,9 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
           {
             andQuery: {
               queries: [
-                { metadataKeyFilter: { key: STACKRA_USER_ID, method: "TEXT_FILTER_METHOD_EQUALS" } },
+                {
+                  metadataKeyFilter: { key: STACKRA_USER_ID, method: "TEXT_FILTER_METHOD_EQUALS" },
+                },
                 {
                   metadataValueFilter: {
                     value: btoa(stackraUserId),
@@ -322,9 +327,9 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
           },
         },
       },
-      REFUSED,
+      UNKNOWN,
     );
-    refuseOn(status);
+    refuseOn(status, UNKNOWN);
     const options = (
       body as {
         challenges?: { webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } } };
@@ -346,17 +351,21 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       },
       REFUSED,
     );
-    refuseOn(status);
+    refuseOn(status, REFUSED);
     return { sessionId, sessionToken: stringOf(body, "sessionToken") };
   }
 
   /** See `IdpAdmin.startPasskeyRegistration`: a platform passkey on the provider's host. */
   async startPasskeyRegistration(userId: string): Promise<PasskeyRegistrationChallenge> {
-    const { body } = await this.call({
-      method: "POST",
-      path: `/v2/users/${encodeURIComponent(userId)}/passkeys`,
-      json: { domain: this.domain, authenticator: "PASSKEY_AUTHENTICATOR_PLATFORM" },
-    });
+    const { status, body } = await this.call(
+      {
+        method: "POST",
+        path: `/v2/users/${encodeURIComponent(userId)}/passkeys`,
+        json: { domain: this.domain, authenticator: "PASSKEY_AUTHENTICATOR_PLATFORM" },
+      },
+      UNKNOWN,
+    );
+    refuseOn(status, UNKNOWN);
     const options = (body as { publicKeyCredentialCreationOptions?: { publicKey?: unknown } })
       .publicKeyCredentialCreationOptions?.publicKey;
     return { passkeyId: stringOf(body, "passkeyId"), options: objectOf(options) };
@@ -377,7 +386,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       },
       REFUSED,
     );
-    refuseOn(status);
+    refuseOn(status, REFUSED);
   }
 
   /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */
@@ -524,12 +533,12 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
 }
 
 /**
- * Throws `UnauthenticatedError` when `status` is one of the refusals.
+ * Throws `UnauthenticatedError` when `status` is one of `refused`.
  *
- * @throws UnauthenticatedError on a refused passkey check or an unknown login.
+ * @throws UnauthenticatedError on a refused passkey check or an unknown login or user.
  */
-function refuseOn(status: number): void {
-  if (REFUSED.includes(status)) throw UnauthenticatedError.create();
+function refuseOn(status: number, refused: readonly number[]): void {
+  if (refused.includes(status)) throw UnauthenticatedError.create();
 }
 
 /**

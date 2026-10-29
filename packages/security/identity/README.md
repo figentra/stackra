@@ -38,7 +38,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                     | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
 | `.`           | `signInWithPasskey`, `registerPasskey`                                                                                | a `Passkeys` driver wired to the passkey actions (the client half)                             |
 | `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
-| `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions on `SubjectErased`                                  |
+| `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
 | `.`           | `MemoryAutomationPrincipalsDriver`                                                                                    | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                                   | a guardian acting for a minor, after the relationship check                                    |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                                     | KYC and KYB through the providers the market pack lists                                        |
@@ -116,7 +116,10 @@ device even when the provider cannot be told.
 
 An erasure revokes too: `./node`'s `EndErasedSubjectSessionsListener` handles @stackra/privacy's `SubjectErased` and
 ends every provider session of the erased subject, so each of its devices turns `revoked` on its next refresh and wipes
-what it keeps, the on-device search index among it. It lives here because privacy does not depend on identity.
+what it keeps, the on-device search index among it; then it removes the subject's provider user, so it cannot sign in
+again and the provider's copy of its name and email is gone. The user is found by the `stackra_user_id` metadata, so
+provisioning must pass `IdpUserInput.stackraUserId` to `createUser`; a user created without it is not found, and the
+listener logs `identity.erasure.no_provider_user` with the erasure id. It lives here because privacy does not depend on identity.
 
 ## The flows
 

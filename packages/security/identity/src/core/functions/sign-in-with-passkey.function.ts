@@ -32,7 +32,9 @@ export async function signInWithPasskey<T>(
     readonly challenge: (input: { loginName: string }) => Promise<PasskeySignInChallenge>;
     readonly verify: (input: { sessionId: string; credential: PasskeyCredential }) => Promise<T>;
   },
-): Promise<{ readonly ok: true; readonly data: T } | { readonly ok: false; readonly error: PasskeyRefusal }> {
+): Promise<
+  { readonly ok: true; readonly data: T } | { readonly ok: false; readonly error: PasskeyRefusal }
+> {
   const { sessionId, options } = await calls.challenge({ loginName });
   const result = await passkeys.authenticate(options);
   if (!result.ok) return result;

@@ -8,7 +8,7 @@
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
  *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata;
  *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey`, and turn a
- *          refusal into `UnauthenticatedError`.
+ *          refusal or an unknown login or user into `UnauthenticatedError`, while a 403 stays an `Error`.
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543.
@@ -339,7 +339,12 @@ describe(ZitadelIdpAdminDriver, () => {
 
   it("signs in with a passkey through a v2 session and its webAuthN check", async () => {
     const publicKey = { challenge: "ch", rpId: "id.acme.example", userVerification: "required" };
-    const credential = { id: "c", rawId: "c", type: "public-key", response: { signature: "s" } } as const;
+    const credential = {
+      id: "c",
+      rawId: "c",
+      type: "public-key",
+      response: { signature: "s" },
+    } as const;
     const { idp, sent } = driverWith([
       [
         201,
@@ -384,6 +389,30 @@ describe(ZitadelIdpAdminDriver, () => {
   it("refuses a passkey sign-in for an unknown login", async () => {
     const { idp } = driverWith([[404, { message: "not found" }]]);
     await expect(idp.startPasskeySignIn("nobody")).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
+
+  it("treats a 403 on a passkey call as a bug, not a refusal", async () => {
+    const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    const calls = [
+      (idp: ZitadelIdpAdminDriver) => idp.startPasskeySignIn("rana@acme.example"),
+      (idp: ZitadelIdpAdminDriver) => idp.finishPasskeySignIn("s_1", credential),
+      (idp: ZitadelIdpAdminDriver) => idp.startPasskeyRegistration("u_1"),
+      (idp: ZitadelIdpAdminDriver) => idp.finishPasskeyRegistration("u_1", "pk_1", credential, "a"),
+    ];
+    for (const run of calls) {
+      const failure = await run(driverWith([[403, { message: "missing permission" }]]).idp).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect(failure).toBeInstanceOf(Error);
+      expect(failure).not.toBeInstanceOf(UnauthenticatedError);
+      expect((failure as Error).message).toMatch(/^ZITADEL answered 403 to /);
+    }
+  });
+
+  it("refuses a passkey registration for an unknown user", async () => {
+    const { idp } = driverWith([[404, { message: "not found" }]]);
+    await expect(idp.startPasskeyRegistration("u_9")).rejects.toBeInstanceOf(UnauthenticatedError);
   });
 
   it("registers a passkey through the v2 user passkey endpoints", async () => {

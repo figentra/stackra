@@ -149,4 +149,10 @@ describe(MemoryIdpAdminDriver, () => {
       idp.finishPasskeyRegistration(userId, passkeyId, credential, "again"),
     ).rejects.toBeInstanceOf(UnauthenticatedError);
   });
+
+  it("refuses a passkey registration for an unknown user", async () => {
+    await expect(
+      new MemoryIdpAdminDriver().startPasskeyRegistration("idp_9"),
+    ).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
 });

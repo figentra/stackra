@@ -116,6 +116,7 @@ export abstract class IdpAdmin extends Port {
   /**
    * Starts registering a passkey for the provider user `userId` and resolves to the options the device answers.
    *
+   * @throws UnauthenticatedError when the provider knows no such user.
    * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
    */
   abstract startPasskeyRegistration(userId: string): Promise<PasskeyRegistrationChallenge>;

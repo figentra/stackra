@@ -9,5 +9,6 @@ challenge and its check) and `startPasskeyRegistration` and `finishPasskeyRegist
 endpoints); the ZITADEL and memory drivers implement them. A custom `IdpAdmin` driver must implement the five new
 methods. The new `./node` entry ships `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction` and
 `ConfirmPasskeyAction` with `PasskeyPermissions` and their schemas, and `EndErasedSubjectSessionsListener`, which ends
-every provider session of the subject of @stackra/privacy's `SubjectErased`. `signInWithPasskey` and `registerPasskey`
+every provider session of the subject of @stackra/privacy's `SubjectErased` and then removes its provider user (it takes
+a `Logger` and warns when the provider has no user for the subject). `signInWithPasskey` and `registerPasskey`
 in `.` wire a `Passkeys` driver (`ExpoPasskeysDriver` on a phone) to those actions.

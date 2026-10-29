@@ -30,7 +30,10 @@ async function setup() {
   const verify = vi.fn((input: { sessionId: string; credential: unknown }) =>
     idp.finishPasskeySignIn(input.sessionId),
   );
-  const calls = { challenge: (input: { loginName: string }) => idp.startPasskeySignIn(input.loginName), verify };
+  const calls = {
+    challenge: (input: { loginName: string }) => idp.startPasskeySignIn(input.loginName),
+    verify,
+  };
   return { passkeys, calls, verify };
 }
 

@@ -164,7 +164,8 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
 
   /** See `IdpAdmin.findUserId`; a user created without a Stackra id is never found. */
   async findUserId(stackraUserId: string): Promise<string | undefined> {
-    for (const [userId, user] of this.users) if (user.stackraUserId === stackraUserId) return userId;
+    for (const [userId, user] of this.users)
+      if (user.stackraUserId === stackraUserId) return userId;
     return undefined;
   }
 
@@ -184,7 +185,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return { sessionId, sessionToken: randomToken() };
   }
 
-  /** See `IdpAdmin.startPasskeyRegistration`. */
+  /** See `IdpAdmin.startPasskeyRegistration`; an unknown user is refused, as ZITADEL's 404 is. */
   async startPasskeyRegistration(userId: string): Promise<PasskeyRegistrationChallenge> {
     const user = this.users.get(userId);
     if (user === undefined) throw UnauthenticatedError.create();
@@ -209,7 +210,8 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     name: string,
   ): Promise<void> {
     const passkey = this.passkeys.get(passkeyId);
-    if (passkey?.userId !== userId || passkey.name !== undefined) throw UnauthenticatedError.create();
+    if (passkey?.userId !== userId || passkey.name !== undefined)
+      throw UnauthenticatedError.create();
     passkey.name = name;
     this.enrolAuthMethod(userId, "swk");
   }
