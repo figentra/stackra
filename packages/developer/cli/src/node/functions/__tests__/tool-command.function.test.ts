@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `toolCommand`: its usage lists the task's options; in a member it runs gen first (not for
- *          lint, not without `stackra.config.ts`) and stops on a refusal; at the workspace root it fans out through
+ *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
+ *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`.
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
@@ -62,12 +63,22 @@ describe("toolCommand", () => {
 
   it("generates, then starts the member's tool", async () => {
     pkg();
+    writeFileSync(join(root, "tsdown.config.ts"), "export default {};\n");
     expect(await toolCommand("build", "Build").run(context())).toBe(0);
     expect(gen).toHaveBeenCalledWith(root, { base: root }, expect.anything());
     expect(spawn).toHaveBeenCalledWith(
       { command: "tsdown", args: [], cwd: root },
       expect.anything(),
     );
+  });
+
+  it("builds nothing in a package gen wrote no entry for", async () => {
+    pkg();
+    const { io, output } = captureIo();
+    expect(await toolCommand("build", "Build").run({ ...context(), io })).toBe(0);
+    expect(gen).toHaveBeenCalled();
+    expect(spawn).not.toHaveBeenCalled();
+    expect(output()).toContain("nothing to build");
   });
 
   it("stops before the tool when gen refuses", async () => {

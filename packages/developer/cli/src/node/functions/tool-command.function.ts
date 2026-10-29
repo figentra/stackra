@@ -7,6 +7,8 @@
  *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since Mintlify
  *          checks the site gen assembles: `dev` keeps gen watching `src/` while `mint dev` runs, and `lint` runs
  *          `mint broken-links`, then `mint a11y`.
+ *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
+ *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown.
  * Boundary: starts at most one tool (two in sequence for a docs app's `lint`); a gen refusal stops before the tool
  *           and exits 1.
  * Runtime: node
@@ -27,6 +29,14 @@ import { runProcess } from "#node/functions/run-process.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { ToolTask } from "#node/types/tool-task.type";
 
+/** The member-root config names tsdown finds itself. */
+const TSDOWN_CONFIGS = [
+  "tsdown.config.ts",
+  "tsdown.config.mts",
+  "tsdown.config.js",
+  "tsdown.config.mjs",
+];
+
 /** The options each task accepts. */
 const OPTIONS: Readonly<Record<ToolTask, CliCommand["options"]>> = {
   dev: { target: { type: "string" } },
@@ -36,6 +46,13 @@ const OPTIONS: Readonly<Record<ToolTask, CliCommand["options"]>> = {
   test: { tier: { type: "string" }, target: { type: "string" } },
   lint: {},
 };
+
+/** Whether gen wrote a tsdown config for the member's entries, or the member keeps one of its own. */
+function hasTsdownConfig(cwd: string): boolean {
+  return [".stackra/tsdown.config.ts", ...TSDOWN_CONFIGS].some((file) =>
+    existsSync(join(cwd, file)),
+  );
+}
 
 /**
  * The command that runs `task`.
@@ -71,7 +88,12 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       if (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts")))) {
         if (!(await runGen(cwd, { base: cwd }, io))) return 1;
       }
-      const tool = resolveTool(task, readMember(cwd), { target, tier });
+      const member = readMember(cwd);
+      if (task === "build" && member.layout === "package" && !hasTsdownConfig(cwd)) {
+        io.out(`nothing to build in ${cwd}: gen wrote no entry\n`);
+        return 0;
+      }
+      const tool = resolveTool(task, member, { target, tier });
       if (docs && task === "lint") {
         const code = await runProcess(tool, io);
         return code === 0 ? runProcess({ ...tool, args: ["a11y"] }, io) : code;
