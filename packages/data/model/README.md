@@ -52,25 +52,25 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 
 ## Traits
 
-| Trait                                          | Adds                                              | Notes                                                          |
-| ---------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| `HasPublicId(prefix)`                          | `id: PublicId<prefix>`, minted on create (UUIDv7) | Prefix 2 to 6 lowercase letters (ADR 0135)                     |
-| `Timestamps`                                   | `createdAt`, `updatedAt`                          | `updatedAt` moves on every changing flush                      |
-| `UserStamps`                                   | `createdBy`, `updatedBy` (principal public ids)   | Filled from the actor, never from input                        |
-| `Versioned`                                    | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`          |
-| `SoftDeletes`                                  | `deletedAt`                                       | Delete policy `soft`; reads hide deleted rows (`deleted`)      |
-| `Archivable`                                   | `archivedAt`                                      | Delete policy `archive`; reads hide archived rows (`archived`) |
-| `Partitioned({ by, interval })`                | nothing (marker with options)                     | Range-partitioned by time; see @stackra/database               |
-| `AppendOnly`                                   | nothing                                           | Marker read by `traitsOf`; updates are refused                 |
-| `HasCorrections`                               | `corrects` (the corrected row's id)               | With `AppendOnly`; `currentRows` keeps the latest correction   |
-| `Commentable`                                  | nothing                                           | Marker; comments live in the collaboration service             |
-| `HasAttachments`                               | nothing                                           | Marker; attached files live in the files service               |
-| `Taggable`                                     | `tags` (tag keys)                                 | Keys from the tenant's tag list; GIN index to filter           |
-| `Translatable(fields)`                         | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`)   |
-| `HasEncryptedFields([{ subject },] ...fields)` | nothing                                           | Names string fields that rest sealed; see below                |
-| `CapturesChanges({ values })`                  | nothing (marker with options)                     | Row changes enter the outbox change feed; see @stackra/outbox  |
-| `Retention({ keep, basis, policy })`           | nothing (marker with options)                     | Expired rows archived, soft- or hard-deleted by `record.prune` |
-| `ValidateOnFlush`                              | nothing                                           | Each written row is checked against `X$` at flush; see below   |
+| Trait                                          | Adds                                              | Notes                                                                           |
+| ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `HasPublicId(prefix)`                          | `id: PublicId<prefix>`, minted on create (UUIDv7) | Prefix 2 to 6 lowercase letters (ADR 0135)                                      |
+| `Timestamps`                                   | `createdAt`, `updatedAt`                          | `updatedAt` moves on every changing flush                                       |
+| `UserStamps`                                   | `createdBy`, `updatedBy` (principal public ids)   | Filled from the actor, never from input                                         |
+| `Versioned`                                    | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`                           |
+| `SoftDeletes`                                  | `deletedAt`                                       | Delete policy `soft`; reads hide deleted rows (`deleted`)                       |
+| `Archivable`                                   | `archivedAt`                                      | Delete policy `archive`; reads hide archived rows (`archived`)                  |
+| `Partitioned({ by, interval })`                | nothing (marker with options)                     | Range-partitioned by time; see @stackra/database                                |
+| `AppendOnly`                                   | nothing                                           | Marker read by `traitsOf`; updates are refused                                  |
+| `HasCorrections`                               | `corrects` (the corrected row's id)               | With `AppendOnly`; `currentRows` keeps the latest correction                    |
+| `Commentable`                                  | nothing                                           | Marker; comments live in the collaboration service                              |
+| `HasAttachments`                               | nothing                                           | Marker; attached files live in the files service                                |
+| `Taggable`                                     | `tags` (tag keys)                                 | Keys from the tenant's tag list; GIN index to filter                            |
+| `Translatable(fields)`                         | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`)                    |
+| `HasEncryptedFields([{ subject },] ...fields)` | nothing                                           | Names string fields that rest sealed; see below                                 |
+| `CapturesChanges({ values })`                  | nothing (marker with options)                     | Row changes enter the outbox change feed; see @stackra/outbox                   |
+| `Retention({ keep, basis, policy })`           | nothing (marker with options)                     | Expired rows archived, soft- or hard-deleted by `data_maintenance.record.prune` |
+| `ValidateOnFlush`                              | nothing                                           | Each written row is checked against `X$` at flush; see below                    |
 
 Ownership by a tenant is not a model trait: `BelongsToTenant` is `@stackra/tenancy/node`'s (ADR 0321, ADR 0323
 decision 3), built with `createTrait`, as in the example above. `createTrait(name, apply, options)` makes a trait for

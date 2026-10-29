@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `Retention({ keep, basis, policy })`, the trait of a model whose rows expire: once a row's `basis` date is
- *          older than `keep`, the daily `record.prune` job archives, soft-deletes or deletes it.
+ *          older than `keep`, the daily `data_maintenance.record.prune` job archives, soft-deletes or deletes it.
  * Boundary: a marker with options: it adds no field (the `basis` field is the model's own; `archive` and `soft` need
  *           the `Archivable` or `SoftDeletes` trait, which the job checks). @stackra/database's `pruneRecords` reads
  *           the options; a hard delete asks the `HoldRegistry` with `Disposal.Retention`.
