@@ -9,7 +9,7 @@
 import { formatMessage, Locale } from "@stackra/i18n";
 import { describe, expect, it } from "vitest";
 
-import { SHARE_INBOX_KEYS } from "../../constants/share-inbox-keys.constant";
+import { SHARE_INBOX_KEYS } from "#src/constants/share-inbox-keys.constant";
 import { appMessages } from "../app-messages.function";
 
 describe("appMessages", () => {

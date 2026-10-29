@@ -4,5 +4,5 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
-  "tags": ["tier:lib", "category:foundation", "runtime:isomorphic"],
+  "tags": ["tier:lib", "category:foundation", "runtime:isomorphic", "runtime:react-native"],
 }

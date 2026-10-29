@@ -4,5 +4,11 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
-  "tags": ["tier:lib", "category:data", "runtime:isomorphic", "runtime:node"],
+  "tags": [
+    "tier:lib",
+    "category:data",
+    "runtime:isomorphic",
+    "runtime:node",
+    "runtime:react-native",
+  ],
 }
