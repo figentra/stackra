@@ -27,6 +27,7 @@
     "plugin/src",
     "app.plugin.js",
     "assets",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

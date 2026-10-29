@@ -30,6 +30,7 @@
     "plugin/src",
     "app.plugin.js",
     "expo-module.config.json",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
