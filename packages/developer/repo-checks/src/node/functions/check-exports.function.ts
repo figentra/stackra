@@ -2,13 +2,17 @@
  * Stackra file contract:
  * Purpose: `checkExports(exports)`, the ADR 0025 shape of a library's `exports`: a module entry is
  *          `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }` with the source
- *          condition first; a plain string entry is a static asset and must not name a module.
+ *          condition first; a plain string entry is a static asset and must not name a module. An Expo module's
+ *          `./app.plugin.js` entry is exempt: Expo CLI requires that exact path as a CommonJS file at the package root.
  * Boundary: pure.
  * Runtime: node
  * Governing contract: ADR 0025.
  */
 
 const MODULE = /\.(ts|tsx|mts|js|mjs|cjs)$/;
+
+/** An Expo config plugin entry: Expo CLI resolves exactly `<package>/app.plugin.js`, a CommonJS file at the root. */
+const EXPO_CONFIG_PLUGIN = "./app.plugin.js";
 
 /**
  * The findings for a `package.json` `exports` value.
@@ -22,6 +26,8 @@ export function checkExports(exports: unknown): string[] {
   const entries: [string, unknown][] =
     typeof exports === "string" ? [[".", exports]] : Object.entries((exports ?? {}) as object);
   for (const [key, value] of entries) {
+    // Expo loads `./app.plugin.js` with require at prebuild, so it is a root CommonJS file, never a dist build.
+    if (key === EXPO_CONFIG_PLUGIN) continue;
     if (typeof value === "string") {
       if (MODULE.test(value))
         out.push(

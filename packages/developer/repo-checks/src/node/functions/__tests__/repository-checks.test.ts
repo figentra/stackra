@@ -290,6 +290,11 @@ test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are 
   assert.deepEqual(checkExports(undefined), []);
 });
 
+test("checkExports: an Expo module's ./app.plugin.js stays a root CommonJS file", () => {
+  assert.deepEqual(checkExports({ "./app.plugin.js": { default: "./app.plugin.js" } }), []);
+  assert.equal(checkExports({ "./plugin.js": { default: "./plugin.js" } }).length, 3);
+});
+
 // @covers sta-347:FR-005 sta-347:P-004
 test("transition: a v2 service keeps src/main.ts and an existing stackra.module (until STA-344)", () => {
   const dir = "services/notes";
