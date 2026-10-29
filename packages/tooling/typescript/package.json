@@ -1,6 +1,6 @@
 {
   "name": "@stackra/typescript-config",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": false,
   "description": "Shared tsconfig presets. A workspace extends exactly one role preset and adds no compiler options of its own.",
   "keywords": [
