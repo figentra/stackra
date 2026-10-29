@@ -11,6 +11,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0216 (decision 1); ADR 0472 (decision 3); ADR 0141; gap analysis analytics 10 (STA-1512).
  */
+import type { Json } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
 import { registerSchemas } from "@stackra/validation";
 import { z } from "zod";
@@ -29,7 +30,7 @@ export class AnalyticsTracked extends IntegrationEvent({ name: "analytics.tracke
   name!: string;
 
   /** The analytics event's declared fields, or the generic event's key, outcome, duration and origin. */
-  properties!: Record<string, unknown>;
+  properties!: Record<string, Json>;
 
   /** When the call ran, ISO 8601. */
   occurredAt!: string;
@@ -60,7 +61,10 @@ registerSchemas([
     z.object({
       eventId: z.string(),
       name: z.string(),
-      properties: z.record(z.string(), z.unknown()),
+      properties: z.record(
+        z.string(),
+        z.custom<Json>(() => true),
+      ),
       occurredAt: z.string(),
       anonymousId: z.string(),
       userId: z.string().optional(),

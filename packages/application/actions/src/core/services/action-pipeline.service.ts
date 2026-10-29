@@ -861,7 +861,7 @@ export class ActionPipeline {
     const consent = await ctx.consent();
     if (!consent.verified || !consent.granted.includes(ANALYTICS_CONSENT_CATEGORY)) return;
     let name = ACTION_CALLED_EVENT;
-    let properties: Record<string, unknown> = {
+    let properties: Record<string, Json> = {
       key: descriptor.key,
       outcome,
       ...(code === undefined ? {} : { code }),
@@ -884,7 +884,7 @@ export class ActionPipeline {
         | { readonly name?: string }
         | undefined;
       name = record?.name ?? declared.name;
-      properties = parsed.data as Record<string, unknown>;
+      properties = parsed.data as Record<string, Json>;
     }
     const { actor } = descriptor;
     await this.required(
