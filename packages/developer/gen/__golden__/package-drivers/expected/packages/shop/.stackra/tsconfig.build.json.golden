@@ -9,6 +9,8 @@
     "entry"
   ],
   "exclude": [
-    "../src/**/__tests__/**"
+    "../src/**/__tests__/**",
+    "../src/*.ts",
+    "../src/*.tsx"
   ]
 }

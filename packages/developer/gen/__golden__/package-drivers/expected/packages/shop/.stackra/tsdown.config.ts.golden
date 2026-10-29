@@ -17,7 +17,11 @@ const config: ReturnType<typeof library> = {
     "node": fileURLToPath(new URL("entry/node.ts", import.meta.url)),
   }),
   cwd: fileURLToPath(new URL("..", import.meta.url)),
-  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },
+  dts: {
+    tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)),
+    // rolldown-plugin-dts otherwise roots declarations at the entries' folder, `.stackra/`.
+    compilerOptions: { rootDir: fileURLToPath(new URL("..", import.meta.url)) },
+  },
 };
 
 export default config;

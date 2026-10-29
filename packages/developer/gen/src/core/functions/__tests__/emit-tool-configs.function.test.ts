@@ -40,7 +40,11 @@ describe("emitToolConfigs", () => {
     expect(content(".stackra/tsdown.config.ts")).toContain(
       'const config: ReturnType<typeof library> = {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
         '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n' +
-        '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },\n};\n\n' +
+        "  dts: {\n" +
+        '    tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)),\n' +
+        "    // rolldown-plugin-dts otherwise roots declarations at the entries' folder, `.stackra/`.\n" +
+        '    compilerOptions: { rootDir: fileURLToPath(new URL("..", import.meta.url)) },\n' +
+        "  },\n};\n\n" +
         "export default config;",
     );
   });
@@ -50,7 +54,7 @@ describe("emitToolConfigs", () => {
     expect(tsconfig["extends"]).toBe("../tsconfig.json");
     expect(tsconfig["include"]).toEqual(["../src", "entry"]);
     expect(tsconfig["compilerOptions"]).toEqual({ rootDir: ".." });
-    expect(tsconfig["exclude"]).toEqual(["../src/**/__tests__/**"]);
+    expect(tsconfig["exclude"]).toEqual(["../src/**/__tests__/**", "../src/*.ts", "../src/*.tsx"]);
   });
 
   it("runs the unit tier on the decorators preset with the coverage gate", () => {

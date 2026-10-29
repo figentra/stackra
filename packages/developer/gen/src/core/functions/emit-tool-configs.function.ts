@@ -63,7 +63,11 @@ export function emitToolConfigs(
     ),
     "  }),",
     '  cwd: fileURLToPath(new URL("..", import.meta.url)),',
-    '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },',
+    "  dts: {",
+    '    tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)),',
+    "    // rolldown-plugin-dts otherwise roots declarations at the entries' folder, `.stackra/`.",
+    '    compilerOptions: { rootDir: fileURLToPath(new URL("..", import.meta.url)) },',
+    "  },",
     "};",
     "",
     "export default config;",
@@ -185,10 +189,11 @@ export function emitToolConfigs(
     {
       $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus the entries gen writes.`,
       extends: "../tsconfig.json",
-      // The presets' `${configDir}` is `.stackra/` here, so the root is named; tests ship no declarations.
+      // The presets' `${configDir}` is `.stackra/` here, so the root is named. Tests and the
+      // hand-written entries directly in `src/` (no barrel re-exports them) ship no declarations.
       compilerOptions: { rootDir: ".." },
       include: ["../src", "entry"],
-      exclude: ["../src/**/__tests__/**"],
+      exclude: ["../src/**/__tests__/**", "../src/*.ts", "../src/*.tsx"],
     },
     null,
     2,
