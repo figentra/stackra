@@ -16,6 +16,9 @@ import type { SessionState } from "#core/index";
 describe("@stackra/identity", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(identity).sort()).toEqual([
+      "AccountDeletionCancelled",
+      "AccountDeletionScheduled",
+      "AccountDeletionStarted",
       "ApiKeyKind",
       "ApiKeyRejectedError",
       "ApiKeyVerifierService",
@@ -42,6 +45,7 @@ describe("@stackra/identity", () => {
       "LoginDirectoryConfig$",
       "LoginDirectoryOptions",
       "LoginDirectoryWriterService",
+      "MemoryAccountDeletionsDriver",
       "MemoryApiKeyStoreDriver",
       "MemoryAppApprovalChallengesDriver",
       "MemoryAutomationPrincipalsDriver",

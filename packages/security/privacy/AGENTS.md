@@ -52,6 +52,8 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - Business values (export window, folder) are `PrivacyConfig`, never constants.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 - No `tenant` identifiers (R-59); the running scope comes from row-level security.
+- `SubjectHolds` (`./contracts`, STA-1567) asks only whether a live hold names a subject's public id, in the session's
+  partition (`PostgresSubjectHoldsDriver`), never across tenants: the caller runs per scope, as the erasure does.
 
 - `test:int` (`vitest.int.config.ts`, which wraps `vitest.config.ts` in `intTier` from `@stackra/vitest-config/int`)
   runs the `.int.test.ts` files on a Testcontainers Postgres and needs Docker; `test` never runs them (STA-1570).

@@ -30,6 +30,7 @@ describe("@stackra/privacy/node", () => {
       "PlaceHoldInput",
       "PlaceHoldOutput",
       "PostgresHoldRegistryDriver",
+      "PostgresSubjectHoldsDriver",
       "PostgresSubjectSaltStoreDriver",
       "PrivacyModule",
       "PurgeSubjectExportsAction",

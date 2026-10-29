@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: exactly its values (the enum and the two ports), the
+ * Purpose: the consumer contract of the `./contracts` entry: exactly its values (the enum and the three ports), the
  *          erasure methods as an exact set, and the receipt and export shapes.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -17,6 +17,7 @@ describe("@stackra/privacy/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ErasureMethod",
       "PersonalDataStore",
+      "SubjectHolds",
       "SubjectSaltStore",
     ]);
   });
@@ -30,9 +31,10 @@ describe("@stackra/privacy/contracts", () => {
     expectTypeOf<contracts.ErasureMethod>().toEqualTypeOf<"shred" | "delete" | "anonymise">();
   });
 
-  it("makes both stores ports", () => {
+  it("makes the stores and the hold check ports", () => {
     expect(contracts.PersonalDataStore.prototype).toBeInstanceOf(Port);
     expect(contracts.SubjectSaltStore.prototype).toBeInstanceOf(Port);
+    expect(contracts.SubjectHolds.prototype).toBeInstanceOf(Port);
   });
 
   it("keeps the receipt and export shapes", () => {

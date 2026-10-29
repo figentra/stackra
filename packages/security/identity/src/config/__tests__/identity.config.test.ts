@@ -108,6 +108,7 @@ describe("IdentityConfig", () => {
       appApprovalMaxRequests: 5,
       appApprovalWindowMinutes: 15,
       appApprovalAssurance: "aal2",
+      accountDeletionGraceDays: 30,
     });
   });
 

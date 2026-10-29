@@ -16,11 +16,12 @@ vi.mock("expo-web-browser", () => ({ openAuthSessionAsync: vi.fn() }));
 vi.mock("react-native-passkey", () => ({ Passkey: {} }));
 
 describe("@stackra/identity/native", () => {
-  it("exports exactly the Expo Apple, passkeys and sign-in browser drivers and the approve sheet hook", () => {
+  it("exports exactly the Expo Apple, passkeys and sign-in browser drivers, the approve sheet hook and the account deletion hook", () => {
     expect(Object.keys(native).sort()).toEqual([
       "ExpoAppleSignInDriver",
       "ExpoPasskeysDriver",
       "ExpoSignInBrowserDriver",
+      "useAccountDeletionSheet",
       "useAppApprovalSheet",
     ]);
   });

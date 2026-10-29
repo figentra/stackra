@@ -12,6 +12,17 @@
   "ui": {
     "sign_in": {
       "continue_with_apple": "Mit Apple fortfahren"
+    },
+    "account_deletion": {
+      "title": "Konto löschen",
+      "body": "Wenn du dein Konto löschst, werden deine personenbezogenen Daten gelöscht und du wirst auf allen Geräten abgemeldet. Du kannst innerhalb von {days} Tagen abbrechen.",
+      "confirm": "Mein Konto löschen",
+      "scheduled": "Dein Konto wird am {date} gelöscht.",
+      "cancel": "Konto behalten",
+      "cancelled": "Dein Konto wird nicht gelöscht.",
+      "step_up": "Melde dich erneut an, um zu bestätigen, dass du es bist.",
+      "verify_prompt": "Bestätigen, um dein Konto zu löschen",
+      "held": "Einige deiner Daten müssen wir aus rechtlichen Gründen aufbewahren; der Rest wird wie geplant gelöscht."
     }
   }
 }

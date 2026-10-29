@@ -98,6 +98,14 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   `session`, `logout`) and answers equal to what the driver calls. Sign-out is server-side: `logout` ends the provider
   session through `IdpAdmin.endSession` before it clears the cookie. A return URL passes `isOriginAllowed` against
   `BffConfig.returnOrigins` or is refused, never followed. It is a service, not a `Controller`: the host wraps it.
+- Account deletion (STA-1567, App Store 5.1.1(v)): the account is always the actor's own `usr_` id, never a body
+  field, and a call on someone's behalf is refused; asking needs `stepUp: aal2`. The job never calls `IdpAdmin`
+  itself: the provider user goes only on `SubjectErased`, after the saga, so no personal data outlives the login. A
+  subject a legal hold names (`SubjectHolds`) is deferred, never dropped. The grace period is
+  `IdentityConfig.accountDeletionGraceDays`, never a constant. Everything acts in the session's tenant partition (the job is `perScope`; no cross-tenant read). Its code:
+  `src/node/{actions,queries,drivers,database}/`, the hooks in
+  `src/react/account-deletion/` and `src/native/account-deletion/`. No screen lives in core: template lines wire the
+  hooks.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

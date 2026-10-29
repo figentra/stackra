@@ -6,7 +6,7 @@
  *          lists a market's, the assurance each method reaches and how long a step-up lasts, the staff PIN rules, the
  *          API key prefixes and how often a key's last use is written, the pack key of the verification providers and the desktop sign-in wait,
  *          the pack key of the built-in sign-in methods, and the app approval values (time to live, digits, decoys, the
- *          bound-device rule, the rate limits, the assurance it reaches).
+ *          bound-device rule, the rate limits, the assurance it reaches), and the account deletion grace period.
  * Boundary: a shape class; it registers this package's own schema (`IDENTITY_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(IdentityConfig)` validates with no generated file. It holds no secret: a browser has
  *           no client credential (the BFF holds it, by name), and a device is a public client whose id and issuer are
@@ -54,6 +54,16 @@ export class IdentityOptions extends Schema {
     max: 1440,
   })
   stepUpMaxAgeMinutes = 10;
+
+  /**
+   * Days between a user asking to delete their account and its erasure, during which they can cancel (App Store
+   * 5.1.1(v) asks for deletion, not deactivation; the grace period only lets a mistake be undone).
+   */
+  @Int({
+    min: 0,
+    max: 90,
+  })
+  accountDeletionGraceDays = 30;
 
   /** Digits a staff PIN has at least. */
   @Int({

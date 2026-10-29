@@ -28,9 +28,9 @@
     "directory": "packages/security/identity"
   },
   "files": [
+    "assets",
     "dist",
     "src",
-    "assets",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
@@ -134,6 +134,7 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
@@ -144,6 +145,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
@@ -151,6 +153,8 @@
     "@stackra/outbox": "workspace:*",
     "@stackra/privacy": "workspace:*",
     "@stackra/query": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/support": "workspace:*",

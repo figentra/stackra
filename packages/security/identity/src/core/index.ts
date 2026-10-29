@@ -7,7 +7,8 @@
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
  *          configuration and memory driver, the passkeys memory driver with the client halves of a passkey sign-in and
- *          registration (`signInWithPasskey`, `registerPasskey`), and the refusals) until `stackra gen` writes the
+ *          registration (`signInWithPasskey`, `registerPasskey`), account deletion's memory driver and events, and the
+ *          refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
  *           from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its generated name
@@ -24,6 +25,7 @@ export { IDENTITY_CONFIG_SCHEMA as IdentityConfig$ } from "#core/constants/ident
 export { IDP_ADMIN_CONFIG_SCHEMA as IdpAdminConfig$ } from "#core/constants/idp-admin-config-schema.constant";
 export { LOGIN_DIRECTORY_CONFIG_SCHEMA as LoginDirectoryConfig$ } from "#core/constants/login-directory-config-schema.constant";
 export { BffSessionStoreDriver } from "#core/drivers/bff-session-store.driver";
+export { MemoryAccountDeletionsDriver } from "#core/drivers/memory-account-deletions.driver";
 export { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
 export { MemoryAppApprovalChallengesDriver } from "#core/drivers/memory-app-approval-challenges.driver";
 export { MemoryAutomationPrincipalsDriver } from "#core/drivers/memory-automation-principals.driver";
@@ -57,6 +59,9 @@ export { StaffPinLockedError } from "#core/errors/staff-pin-locked.error";
 export { StaffPinRejectedError } from "#core/errors/staff-pin-rejected.error";
 export { StepUpRequiredError } from "#core/errors/step-up-required.error";
 export { VerificationUnavailableError } from "#core/errors/verification-unavailable.error";
+export { AccountDeletionCancelled } from "#core/events/account-deletion-cancelled.event";
+export { AccountDeletionScheduled } from "#core/events/account-deletion-scheduled.event";
+export { AccountDeletionStarted } from "#core/events/account-deletion-started.event";
 export { AppApprovalApproved } from "#core/events/app-approval-approved.event";
 export { AppApprovalDenied } from "#core/events/app-approval-denied.event";
 export { AppApprovalRequested } from "#core/events/app-approval-requested.event";

@@ -12,6 +12,17 @@
   "ui": {
     "sign_in": {
       "continue_with_apple": "Continue with Apple"
+    },
+    "account_deletion": {
+      "title": "Delete account",
+      "body": "Deleting your account erases your personal data and signs you out on every device. You can cancel within {days} days.",
+      "confirm": "Delete my account",
+      "scheduled": "Your account will be deleted on {date}.",
+      "cancel": "Keep my account",
+      "cancelled": "Your account will not be deleted.",
+      "step_up": "Sign in again to confirm it is you.",
+      "verify_prompt": "Confirm to delete your account",
+      "held": "We must keep some of your data for a legal reason; the rest is deleted as scheduled."
     }
   }
 }
