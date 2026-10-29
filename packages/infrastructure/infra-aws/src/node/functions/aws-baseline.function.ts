@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `awsBaseline(config, opts?)`, the Pulumi program of one environment's free AWS foundation: an AWS provider
  *          pinned to the environment's account and region with the cost tags as default tags, then the data key, the
- *          files bucket (with replication to the backup account), the Postgres backups, the static egress addresses,
- *          the GitHub OIDC infra role, and, from the account's first environment, the Encore Cloud role and the budget
- *          with its stop action.
+ *          files bucket (with replication to the backup account), the Postgres backups (with their failure alerts),
+ *          the static egress addresses, the GitHub OIDC infra role, and, from the account's first environment, the
+ *          Encore Cloud role and the budget with its stop action.
  * Boundary: creates resources only through Pulumi; agents run it under `stackra infra preview` or Pulumi's mocks and
  *           never apply it (`pulumi up` is the owner's or the deploy job's). The VPC, the database server, caches and
  *           queues are Encore Cloud's or the runtime stack's, not this program's. The provider refuses any account but
@@ -18,6 +18,7 @@ import * as pulumi from "@pulumi/pulumi";
 import type { AwsBaselineConfig } from "#core/types/aws-baseline-config.type";
 import { accountId } from "#node/functions/account-id.function";
 import { accountProvider } from "#node/functions/account-provider.function";
+import { backupAlerts } from "#node/functions/backup-alerts.function";
 import { backupTargets } from "#node/functions/backup-targets.function";
 import { ciAccess } from "#node/functions/ci-access.function";
 import { costControls } from "#node/functions/cost-controls.function";
@@ -103,6 +104,8 @@ export function awsBaseline(
           },
           options,
         );
+  const alerts =
+    vault === null ? null : backupAlerts(prefix, { account, vaultName: vault.name }, options);
 
   const egress =
     config.egress === null
@@ -157,6 +160,7 @@ export function awsBaseline(
     dataKeyArn: key.arn,
     filesBucket: files?.bucket ?? null,
     backupVaultArn: vault?.arn ?? null,
+    backupAlertTopicArn: alerts?.arn ?? null,
     infraRoleArn: infra?.arn ?? null,
     encoreRoleArn: encore?.arn ?? null,
     budgetTopicArn: topic?.arn ?? null,

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `AwsBaselineOutputs`, what an environment's AWS foundation exports: the data key, the files bucket, the
- *          backup vault, the infra and Encore Cloud role ARNs, the budget topic and the static egress addresses; `null` where the runway asked for
- *          none or another environment owns the account-wide resource.
+ *          backup vault and its alert topic, the infra and Encore Cloud role ARNs, the budget topic and the static
+ *          egress addresses; `null` where the runway asked for none or another environment owns the account-wide
+ *          resource.
  * Boundary: type only; the stack exports these, and the stacks repository turns the bucket name into the services'
  *           `filesystem.s3.bucket` and the Encore role ARN into Encore Cloud's AWS connection.
  * Runtime: node
@@ -18,6 +19,8 @@ export type AwsBaselineOutputs = {
   readonly filesBucket: pulumi.Output<string> | null;
   /** The environment's backup vault. */
   readonly backupVaultArn: pulumi.Output<string> | null;
+  /** The topic the backup vault's failed jobs go to. */
+  readonly backupAlertTopicArn: pulumi.Output<string> | null;
   /** The role the GitHub deploy job of this environment assumes. */
   readonly infraRoleArn: pulumi.Output<string> | null;
   /** The role Encore Cloud assumes. */

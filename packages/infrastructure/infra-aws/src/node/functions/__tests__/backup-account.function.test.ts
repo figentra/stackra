@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `backupAccount` under Pulumi's mocks: the vault and replica bucket carry the fixed names the
  *          environment stacks copy into; the vault takes copies from the environment accounts and denies early
- *          deletion to everyone; the replica bucket lets each environment's replication role write and keeps replaced
+ *          deletion to everyone; it is locked in governance mode unless compliance is asked for, and its failures are
+ *          alerted on a topic only AWS Backup of the account publishes to; the replica bucket lets each environment's replication role write and keeps replaced
  *          versions 35 days; environments sharing an account become one user; missing accounts are refused.
  * Boundary: test only; no engine and no cloud call.
  * Runtime: node (vitest)
@@ -13,6 +14,7 @@ import { describe, expect, it } from "@stackra/testing";
 import type { AwsAccounts } from "#core/types/aws-accounts.type";
 import { backupAccount } from "#node/functions/backup-account.function";
 import { mockPulumi } from "#testing/functions/mock-pulumi.function";
+import { outputOf } from "#testing/functions/output-of.function";
 import type { MockedResource } from "#testing/types/mocked-resource.type";
 
 /** Staging and production in one account, plus the backup account. */
@@ -21,6 +23,7 @@ const ACCOUNTS: AwsAccounts = {
   region: "me-central-1",
   shared: null,
   backup: "999999999999",
+  backupLock: { minRetentionDays: 35, maxRetentionDays: 35, changeableForDays: null },
   requiredTags: [],
   environments: [
     { environment: "staging", name: "product", account: "111111111111" },
@@ -67,6 +70,48 @@ describe("backupAccount", () => {
         Resource: "*",
       },
     ]);
+  });
+
+  it("locks the vault in governance mode by default", async () => {
+    const engine = await mockPulumi();
+    backupAccount(ACCOUNTS);
+
+    const lock = await engine.find("VaultLockConfiguration", "acme-backup");
+    expect(lock.inputs).toMatchObject({
+      backupVaultName: "acme-backup",
+      minRetentionDays: 35,
+      maxRetentionDays: 35,
+    });
+    expect(lock.inputs["changeableForDays"]).toBeUndefined();
+  });
+
+  it("locks the vault in compliance mode only when the runway asks for it", async () => {
+    const engine = await mockPulumi();
+    backupAccount({
+      ...ACCOUNTS,
+      backupLock: { minRetentionDays: 7, maxRetentionDays: 35, changeableForDays: 3 },
+    });
+
+    expect((await engine.find("VaultLockConfiguration", "acme-backup")).inputs).toMatchObject({
+      minRetentionDays: 7,
+      maxRetentionDays: 35,
+      changeableForDays: 3,
+    });
+  });
+
+  it("alerts the vault's failed jobs on a topic only the backup account's AWS Backup publishes to", async () => {
+    const engine = await mockPulumi();
+    const outputs = backupAccount(ACCOUNTS);
+
+    expect(
+      statementsOf(await engine.find("TopicPolicy", "acme-backup-backup-alerts"))[0]?.["Condition"],
+    ).toEqual({ StringEquals: { "aws:SourceAccount": "999999999999" } });
+    expect(
+      (await engine.find("VaultNotifications", "acme-backup-backup-alerts")).inputs[
+        "backupVaultName"
+      ],
+    ).toBe("acme-backup");
+    expect(await outputOf(outputs.alertTopicArn)).toBe("arn:aws:mock:::acme-backup-backup-alerts");
   });
 
   it("lets each environment's replication role write the replica bucket", async () => {

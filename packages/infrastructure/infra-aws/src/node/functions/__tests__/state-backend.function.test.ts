@@ -20,6 +20,7 @@ const ACCOUNTS: AwsAccounts = {
   region: "me-central-1",
   shared: "ref:aws.accounts.shared",
   backup: null,
+  backupLock: { minRetentionDays: 35, maxRetentionDays: 35, changeableForDays: null },
   requiredTags: ["env"],
   environments: [
     { environment: "staging", name: "nonprod", account: "111111111111" },
