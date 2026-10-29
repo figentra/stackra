@@ -87,6 +87,14 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 - The login directory (ADR 0451): `loginDirectoryPrefix` in `./contracts` is the only code that spells a `dir:` key;
   the writer writes only keys ending in its own region, never the identifier in clear, never a read. It declares no
   event: the host's listeners call it. Never log an identifier or the `IDENTITY_LOGIN_DIRECTORY_KEY` secret.
+- Account deletion (STA-1567, App Store 5.1.1(v)): the account is always the actor's own `usr_` id, never a body
+  field, and a call on someone's behalf is refused; asking needs `stepUp: aal2`. The job never calls `IdpAdmin`
+  itself: the provider user goes only on `SubjectErased`, after the saga, so no personal data outlives the login. A
+  subject a legal hold names (`SubjectHolds`) is deferred, never dropped. The grace period is
+  `IdentityConfig.accountDeletionGraceDays`, never a constant. Everything acts in the session's tenant partition (the job is `perScope`; no cross-tenant read). Its code:
+  `src/node/{actions,queries,drivers,database}/`, the hooks in
+  `src/react/account-deletion/` and `src/native/account-deletion/`. No screen lives in core: template lines wire the
+  hooks.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

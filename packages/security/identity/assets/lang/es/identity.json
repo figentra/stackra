@@ -1,0 +1,15 @@
+{
+  "ui": {
+    "account_deletion": {
+      "title": "Eliminar cuenta",
+      "body": "Al eliminar tu cuenta se borran tus datos personales y se cierra tu sesión en todos los dispositivos. Puedes cancelar en un plazo de {days} días.",
+      "confirm": "Eliminar mi cuenta",
+      "scheduled": "Tu cuenta se eliminará el {date}.",
+      "cancel": "Conservar mi cuenta",
+      "cancelled": "Tu cuenta no se eliminará.",
+      "step_up": "Vuelve a iniciar sesión para confirmar que eres tú.",
+      "verify_prompt": "Confirma para eliminar tu cuenta",
+      "held": "Debemos conservar algunos de tus datos por un motivo legal; el resto se elimina según lo previsto."
+    }
+  }
+}

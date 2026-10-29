@@ -99,6 +99,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `.`           | `MemoryPersonalDataStoreDriver`, `MemorySubjectSaltStoreDriver`                                                    | memory drivers for tests and previews; seed them with `put`            |
 | `.`           | `SubjectErased`, `ErasedRecordsLine`, `PERSONAL_DATA_STORE_DRIVERS`                                                | the receipt event and its line shape; the store driver names           |
 | `./contracts` | `ErasureMethod`, `PersonalDataStore`, `SubjectSaltStore`                                                           | the enum and the ports                                                 |
+| `./contracts` | `SubjectHolds`                                                                                                     | is a subject held; account deletion defers on it (STA-1567)            |
 | `./contracts` | `ErasureReceipt`, `ErasedRecords`, `SubjectExport`, `SubjectExportSection`, `SubjectRecord`, `PersonalDataOptions` | types                                                                  |
 | `./node`      | `EraseSubjectWorkflow`, `EraseSubjectAction`                                                                       | the erasure saga and the job that starts it                            |
 | `./node`      | `UnindexErasedSubjectListener`                                                                                     | removes an erased subject's remaining rows from search                 |
@@ -106,6 +107,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `./node`      | `RepositoryPersonalDataStoreDriver`, `PrivacyModule`                                                               | the database store driver; the root module                             |
 | `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
 | `./node`      | `PostgresSubjectSaltStoreDriver`, `CreateSubjectSaltsMigration`                                                    | the salt store over `privacy.subject_salts`, partitioned per tenant    |
+| `./node`      | `PostgresSubjectHoldsDriver`                                                                                       | `SubjectHolds` over `privacy.legal_holds`, in the session's tenant     |
 | `./node`      | `SaltedSubjectCipherResolverDriver`, `unsealedShredFields`                                                         | per-subject ciphers for `EncryptedFieldsSubscriber`; the shred check   |
 | `./node`      | `PostgresHoldRegistryDriver`, `CreateLegalHoldsMigration`                                                          | the `HoldRegistry` over `privacy.legal_holds`, for a product off OS    |
 | `./node`      | `PlaceHoldAction`, `ReleaseHoldAction`, `ListHoldsQuery` (and their `Input/Output` schemas)                        | place, release and list legal holds in the session's tenant            |

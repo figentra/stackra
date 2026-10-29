@@ -28,6 +28,7 @@
     "directory": "packages/security/identity"
   },
   "files": [
+    "assets",
     "dist",
     "src",
     "stackra.manifest.json",
@@ -120,7 +121,8 @@
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",
@@ -142,6 +144,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
@@ -149,6 +152,8 @@
     "@stackra/outbox": "workspace:*",
     "@stackra/privacy": "workspace:*",
     "@stackra/query": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/support": "workspace:*",

@@ -6,8 +6,8 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 (ADR 0268 R3): the provider's hosted sign-in is used.
 
 **Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./desktop`, `./native`, `./node`, `./react` and
-`./testing`. Depends on `@stackra/actions` (the `./node` actions), `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
-`@stackra/iam`, `@stackra/privacy` (the erasure event the `./node` listener handles), `@stackra/query` (the offline stores' session port), `@stackra/scope`, `@stackra/storage`,
+`./testing`. Depends on `@stackra/actions` (the `./node` actions), `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database` (the account deletion store), `@stackra/errors`,
+`@stackra/iam`, `@stackra/privacy` (the erasure event the `./node` listener handles, and the erasure job and hold check account deletion uses), `@stackra/query` (the offline stores' session port), `@stackra/queue` and `@stackra/scheduler` (the account deletion job's generated registration), `@stackra/scope`, `@stackra/storage`,
 `@stackra/support` (`ageOn`, `crc32`), `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React is an optional peer of `./react`, vitest of `./testing`.
 
 ## What is here
@@ -39,6 +39,12 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `signInWithPasskey`, `registerPasskey`                                                                                | a `Passkeys` driver wired to the passkey actions (the client half)                             |
 | `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
 | `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
+| `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`          | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
+| `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                   | the durable store, `identity.account_deletions`, per tenant partition                          |
+| `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`      | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
+| `./contracts` | `AccountDeletions`, `AccountDeletion`, `AccountDeletionState`                                                         | the store of scheduled deletions; what the calls answer                                        |
+| `./react`     | `useAccountDeletion`                                                                                                  | the settings section: the date, request, cancel                                                |
+| `./native`    | `useAccountDeletionSheet`                                                                                             | the same with the device's biometric check before a request                                    |
 | `.`           | `MemoryAutomationPrincipalsDriver`                                                                                    | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
 | `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                                   | a guardian acting for a minor, after the relationship check                                    |
 | `.`           | `VerificationService`, `MemoryVerificationDriver`                                                                     | KYC and KYB through the providers the market pack lists                                        |
@@ -227,6 +233,69 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
   package keeps the port, `VerificationService`, `MemoryVerificationDriver` and the harness below. Each vendor driver
   ships recorded cases from the vendor's public documentation, marked `certification: "pending"` until a run against
   the vendor's sandbox passes (owner decision D3, 2026-10-27).
+
+## Account deletion (App Store 5.1.1(v), Play)
+
+App Store Review Guideline 5.1.1(v) and Google Play's account deletion policy ask that an app which lets people create
+an account lets them delete it from inside the app. This package ships the server side and the client hooks; the screen
+belongs to the template line (os/mobile, os/console), never to core's reference app.
+
+1. **Ask.** `DeleteMyAccountAction` (`identity.account_deletion.request@1`, `POST /account-deletion`) schedules the
+   caller's own account (the actor's `usr_` id, never a body field; a call on someone else's behalf is refused). It
+   needs a fresh step-up (`stepUp: aal2`): an old sign-in gets `step_up_required`, the screen signs in with `stepUpSignIn()` and
+   asks again. It answers `{ requestedAt, dueAt }`, `dueAt` being `IdentityConfig.accountDeletionGraceDays` later (30
+   by default, 0 to 90), and records `identity.account_deletion.scheduled.v1`. Asking again answers the same date.
+2. **Change of mind.** `CancelAccountDeletionAction` (`.cancel@1`, `DELETE /account-deletion`) removes it and records
+   `identity.account_deletion.cancelled.v1`; `ShowAccountDeletionQuery` (`.read@1`) answers the date for the screen.
+3. **Erasure.** The hourly system job `EraseDueAccountsAction` (`.erase@1`) runs once per scope and takes that scope's
+   due ones. A subject a live legal hold names (`@stackra/privacy/contracts`' `SubjectHolds`) is pushed back a day and
+   logged by erasure id, so held ones never take the batch; any other is handed
+   to privacy's `EraseSubjectAction` (the erasure saga, which keeps held rows too) and records
+   `identity.account_deletion.started.v1`. The saga's `SubjectErased` reaches `EndErasedSubjectSessionsListener`,
+   which ends every provider session and then removes the provider user: personal data first, the login last.
+
+A host binds `AccountDeletions` to `PostgresAccountDeletionsDriver` (`./node`, migration `identity.0001`,
+`identity.account_deletions`; `MemoryAccountDeletionsDriver` in tests and previews) and `SubjectHolds` to privacy's
+`PostgresSubjectHoldsDriver`, and serves the three user calls through its BFF. Both stores, the hold check and the
+erasure act in the session's tenant partition (null or `-` outside one) under forced row-level security; nothing reads
+across tenants. A deletion is found in the tenant whose session asked for it.
+
+**Wiring the screen in a template line.** The settings screen calls the generated client through the hook and takes
+its words from the `identity.ui.account_deletion` lang keys (`assets/lang/<locale>/identity.json`, seven locales):
+
+```tsx
+// os/mobile: app/(settings)/account.tsx
+import { stepUpSignIn, StepUpRequiredError } from "@stackra/identity";
+import { useSession } from "@stackra/identity/react";
+import { useAccountDeletionSheet } from "@stackra/identity/native";
+import { authenticateAsync } from "expo-local-authentication";
+
+const deletion = useAccountDeletionSheet({
+  load: () => api.identity.accountDeletion.read({}),
+  request: () => api.identity.accountDeletion.request({}),
+  cancel: () => api.identity.accountDeletion.cancel({}),
+  verify: () =>
+    authenticateAsync({ promptMessage: t("identity.ui.account_deletion.verify_prompt") }).then(
+      (r) => r.success,
+    ),
+});
+const session = useSession();
+if (deletion.error instanceof StepUpRequiredError) await session.signIn(stepUpSignIn()); // then deletion.request() again
+return deletion.dueAt ? (
+  <Notice
+    text={t("identity.ui.account_deletion.scheduled", { date: formatDate(deletion.dueAt) })}
+    action={deletion.cancel}
+  />
+) : (
+  <DangerButton onPress={deletion.request}>
+    {t("identity.ui.account_deletion.confirm")}
+  </DangerButton>
+);
+```
+
+The console (os/console) does the same with `useAccountDeletion` from `./react`, with no device check. Put the entry
+where App Review finds it (Settings, Account), not behind support, and keep the screen reachable while a deletion is
+scheduled so it can be cancelled.
 
 ## The login directory (ADR 0451)
 

@@ -5,7 +5,7 @@
  *          CSRF header (STA-1385), the
  *          device redirect path, the route after sign-out, the idle rule and the refresh switches, plus the external
  *          providers, the step-up rule, the staff PIN rules, the API key prefixes, the last-use write interval, the market-pack keys sign-in and
- *          verification read, and the app approval values (STA-1304).
+ *          verification read, the app approval values (STA-1304) and the account deletion grace period (STA-1567).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `IdentityConfig$` extends it
  *           (`IdentityConfig$.shape.idleMinutes.unwrap().default(30)`). The rules sit on the fields: a flow is keyed by
@@ -124,4 +124,5 @@ export const IDENTITY_CONFIG_SCHEMA = z.object({
   appApprovalMaxRequests: z.number().int().min(1).max(100).default(5),
   appApprovalWindowMinutes: z.number().int().min(1).max(1440).default(15),
   appApprovalAssurance: z.enum(Enum.values(AssuranceLevel)).default(AssuranceLevel.Aal2),
+  accountDeletionGraceDays: z.number().int().min(0).max(90).default(30),
 });

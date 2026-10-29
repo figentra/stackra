@@ -1,0 +1,15 @@
+{
+  "ui": {
+    "account_deletion": {
+      "title": "Account verwijderen",
+      "body": "Als je je account verwijdert, worden je persoonsgegevens gewist en word je op al je apparaten afgemeld. Je kunt binnen {days} dagen annuleren.",
+      "confirm": "Mijn account verwijderen",
+      "scheduled": "Je account wordt verwijderd op {date}.",
+      "cancel": "Account behouden",
+      "cancelled": "Je account wordt niet verwijderd.",
+      "step_up": "Log opnieuw in om te bevestigen dat jij het bent.",
+      "verify_prompt": "Bevestig om je account te verwijderen",
+      "held": "Sommige gegevens moeten we om juridische redenen bewaren; de rest wordt zoals gepland verwijderd."
+    }
+  }
+}

@@ -57,6 +57,7 @@ describe("IDENTITY_CONFIG_SCHEMA", () => {
       appApprovalMaxRequests: 5,
       appApprovalWindowMinutes: 15,
       appApprovalAssurance: "aal2",
+      accountDeletionGraceDays: 30,
     });
   });
 

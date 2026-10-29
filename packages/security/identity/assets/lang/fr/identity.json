@@ -1,0 +1,15 @@
+{
+  "ui": {
+    "account_deletion": {
+      "title": "Supprimer le compte",
+      "body": "La suppression de votre compte efface vos données personnelles et vous déconnecte sur tous vos appareils. Vous pouvez annuler dans un délai de {days} jours.",
+      "confirm": "Supprimer mon compte",
+      "scheduled": "Votre compte sera supprimé le {date}.",
+      "cancel": "Conserver mon compte",
+      "cancelled": "Votre compte ne sera pas supprimé.",
+      "step_up": "Reconnectez-vous pour confirmer qu'il s'agit bien de vous.",
+      "verify_prompt": "Confirmez pour supprimer votre compte",
+      "held": "Nous devons conserver certaines de vos données pour une raison légale ; le reste est supprimé comme prévu."
+    }
+  }
+}

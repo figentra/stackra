@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `SessionStore`, `SignInBrowser`,
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `SessionStore`, `SignInBrowser`,
  *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals` and
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
@@ -21,6 +21,7 @@ export { VerificationKind } from "#contracts/enums/verification-kind.enum";
 export { VerificationStatus } from "#contracts/enums/verification-status.enum";
 export { VerificationUse } from "#contracts/enums/verification-use.enum";
 export { loginDirectoryPrefix } from "#contracts/functions/login-directory-prefix.function";
+export { AccountDeletions } from "#contracts/ports/account-deletions.port";
 export { ApiKeyStore } from "#contracts/ports/api-key-store.port";
 export { AppApprovalChallenges } from "#contracts/ports/app-approval-challenges.port";
 export { AutomationPrincipals } from "#contracts/ports/automation-principals.port";
@@ -32,6 +33,8 @@ export { SessionStore } from "#contracts/ports/session-store.port";
 export { SignInBrowser } from "#contracts/ports/sign-in-browser.port";
 export { StaffPinStore } from "#contracts/ports/staff-pin-store.port";
 export { Verification } from "#contracts/ports/verification.port";
+export type { AccountDeletion } from "#contracts/types/account-deletion.type";
+export type { AccountDeletionState } from "#contracts/types/account-deletion-state.type";
 export type { ApiKeyRecord } from "#contracts/types/api-key-record.type";
 export type { AppApprovalChallenge } from "#contracts/types/app-approval-challenge.type";
 export type { AppApprovalRequester } from "#contracts/types/app-approval-requester.type";
