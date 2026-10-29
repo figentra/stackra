@@ -160,13 +160,14 @@ since the runner cannot see the holder's market (ADR 0395). Live configuration c
 
 ## Search indexes
 
-`stackra search:reindex [Model]` hands the request to the member's `@stackra/search/node` runner (`searchReindex`),
-which queues one reindex job in the member's queue and returns; the member's workers run it, where its `@Searchable`
+`stackra search:reindex [Model]` hands the request to the member's `@stackra/data-maintenance/node` runner
+(`searchReindex`), which queues one reindex job (`data_maintenance.index.reindex`, or
+`data_maintenance.index.reindex_semantic` with `--semantic`) in the member's queue and returns; the member's workers run it, where its `@Searchable`
 models are registered. No model reindexes every registered one; `--scope-id`/`--scope-path` run it in that scope (else
 platform-wide); `--since <ISO 8601>` indexes only rows updated since then; `--semantic` backfills the vector passages
 instead. A full rebuild records its cursor in `search.indexes`, so a stopped one resumes. `stackra search:status`
 prints each index's state (`valid`, `invalid` after a facet change, `rebuilding`), document count, resume cursor and
-last rebuild (`searchStatus`). Both connect with `directDatabaseUrl()` of `@stackra/database/node`: the member's
+last rebuild (`searchStatus` of `@stackra/search/node`). Both connect with `directDatabaseUrl()` of `@stackra/database/node`: the member's
 `DATABASE_DIRECT_URL`, else its `DATABASE_URL` (ADR 0473).
 
 ## Not here yet

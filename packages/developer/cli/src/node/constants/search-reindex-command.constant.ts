@@ -4,7 +4,9 @@
  *          [--since <ISO 8601>] [--semantic]`: queues a reindex job in the member's queue (every registered model when
  *          none is named, the vector passages with `--semantic`, only rows updated since an instant with `--since`) and
  *          prints the job id. A full rebuild resumes from the cursor a stopped one recorded.
- * Boundary: queues and returns: the member's workers run the job where its models are registered, and
+ * Boundary: queues and returns through the member's `@stackra/data-maintenance/node` runner, the add-on that holds
+ *           the reindex jobs (`data_maintenance.index.reindex`, `data_maintenance.index.reindex_semantic`); the
+ *           member's workers run the job where its models are registered, and
  *           `stackra search:status` shows its progress. Without a scope the job is platform-wide. The CLI checks the
  *           spelling of what it can see (the scope, the instant); the job checks the model.
  * Runtime: node

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `SearchRunner`, what `stackra search:reindex` and `search:status` call in the member's
- *          `@stackra/search/node`: `searchReindex` queues a reindex job in the member's queue and answers its id, and
- *          `searchStatus` answers every row of the member's index registry.
+ * Purpose: `SearchRunner`, what `stackra search:reindex` and `search:status` call in the member:
+ *          `searchReindex` (of `@stackra/data-maintenance/node`) queues a reindex job in the member's queue and answers
+ *          its id, and `searchStatus` (of `@stackra/search/node`) answers every row of the member's index registry.
  * Boundary: type only. The CLI declares the shape it needs and imports the module from the member at run time, as it
  *           does for the settings runner; it never loads a model or reads a database itself.
  * Runtime: node
