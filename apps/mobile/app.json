@@ -85,7 +85,12 @@
           "granularPermissions": ["photo"]
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
       [
         "expo-local-authentication",
         {
