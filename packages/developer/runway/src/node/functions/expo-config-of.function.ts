@@ -3,12 +3,14 @@
  * Purpose: `expoConfigOf(base, input)`, the Expo app config of one product app (or one scope's white-label variant of
  *          it): the template line's base `expo` block with the runway identity (name, ids, scheme, app links, tablet),
  *          the runtime version from the template line, the EAS project and update URL, the config plugins of the
- *          enabled capabilities and their flags (`extra.capabilities`, which the app reads to wire its drivers), and
- *          every disabled capability's plugins, Info.plist keys, entitlements and Android permissions taken out.
+ *          enabled capabilities and their flags (`extra.capabilities`, which the app reads to wire its drivers),
+ *          every disabled capability's plugins, Info.plist keys, entitlements and Android permissions taken out, and
+ *          the Sign in with Apple entitlement when the app offers Apple.
  * Boundary: pure: data in, the `expo` block out; the job writes it. The slug is `<project>-<app>`, the slug of the
  *           app's EAS project. The first entry of `identity.name` is the store name; per-locale names are not written.
  * Runtime: node
- * Governing contract: ADR 0439 (decisions 2, 3, 6 and 8), ADR 0441 (decision 3), ADR 0180 (updates on the channel).
+ * Governing contract: ADR 0439 (decisions 2, 3, 6 and 8), ADR 0441 (decision 3), ADR 0180 (updates on the channel),
+ *                     STA-1578 (App Store guideline 4.8).
  */
 import type { ExpoPluginEntry } from "#node/types/expo-plugin-entry.type";
 import type { MobileCapabilityConfig } from "#node/types/mobile-capability-config.type";
@@ -69,6 +71,10 @@ export function expoConfigOf(
   if (links.length > 0) ios["associatedDomains"] = links.map((host) => `applinks:${host}`);
   ios["infoPlist"] = without(ios["infoPlist"], capabilities.removedInfoPlist);
   ios["entitlements"] = without(ios["entitlements"], capabilities.removedEntitlements);
+  if (entry.signIn?.social.includes("apple") === true) {
+    ios["usesAppleSignIn"] = true;
+    (ios["entitlements"] as Block)["com.apple.developer.applesignin"] = ["Default"];
+  }
 
   const android = without(base["android"], []);
   if (identity.android?.package !== undefined) android["package"] = identity.android.package;

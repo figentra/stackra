@@ -44,6 +44,7 @@ export { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 export { AuthFlow } from "#core/enums/auth-flow.enum";
 export { SessionStatus } from "#core/enums/session-status.enum";
 export { SignInMethod } from "#core/enums/sign-in-method.enum";
+export { SocialProvider } from "#core/enums/social-provider.enum";
 export { ApiKeyRejectedError } from "#core/errors/api-key-rejected.error";
 export { AppApprovalRateLimitedError } from "#core/errors/app-approval-rate-limited.error";
 export { AppApprovalRejectedError } from "#core/errors/app-approval-rejected.error";

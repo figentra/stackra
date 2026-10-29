@@ -4,12 +4,13 @@
  *          gets the ten-minute token lifetimes, the 12-character password rule and the branding, the staff
  *          organisation gets its MFA sign-in policy, the project its roles, each app one PKCE client with no secret
  *          and its extra grants, each machine user its instance and project roles; the outputs carry the client and
- *          user ids; an unset provisioner key fails naming it.
+ *          user ids; an unset provisioner key fails naming it; Apple is off by default, and on it is one Apple identity
+ *          provider with the plan's ids whose key comes from the named secret.
  * Boundary: test only; `runtime.setMocks` and `runtime.setAllConfig` stand in for the engine and the stack config,
  *           so nothing reaches ZITADEL.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 2 to 4); ADR 0206 (decision 8); ADR 0207
- *                     (decision 3); ADR 0274 (decision 5); ADR 0277 (decisions 2 and 4).
+ *                     (decision 3); ADR 0274 (decision 5); ADR 0277 (decisions 2 and 4); STA-1578.
  */
 import { all, runtime } from "@pulumi/pulumi";
 import type { Output } from "@pulumi/pulumi";
@@ -73,6 +74,15 @@ const PLAN: IdentityPlan = {
     },
   },
   branding: { light: PALETTE, dark: DARK },
+  appleSignIn: null,
+};
+
+/** The Apple ids the owner creates (placeholders) and the name of the key's stack config secret. */
+const APPLE = {
+  teamId: "TEAM000001",
+  serviceId: "example.acme.signin",
+  keyId: "KEY0000001",
+  privateKeySecret: "APPLE_SIGN_IN_KEY",
 };
 
 /** One registered resource: its class (the last segment of its type token), name and resolved inputs. */
@@ -260,6 +270,37 @@ describe("identityStack", () => {
       "app-mobile-client",
       "app-cli-client",
     ]);
+  });
+
+  it("creates no Apple identity provider unless the plan turns it on", async () => {
+    const stack = identityStack(PLAN);
+    await settle(stack);
+
+    expect(stack.appleIdp).toBeNull();
+    expect(registered.map((resource) => resource.name)).not.toContain("apple-idp");
+  });
+
+  it("creates the Apple identity provider with the plan's ids and exports its id", async () => {
+    runtime.setAllConfig({
+      "zitadel:jwtProfileJson": '{"type":"serviceaccount"}',
+      "zitadel:APPLE_SIGN_IN_KEY": "p8",
+    });
+    const stack = identityStack({ ...PLAN, appleSignIn: APPLE });
+    await settle(stack);
+
+    expect(inputsOf("Resource", "apple-idp")).toMatchObject({
+      domain: "id.staging.acme.example",
+      clientId: "example.acme.signin",
+      teamId: "TEAM000001",
+      keyId: "KEY0000001",
+    });
+    expect(stack.appleIdp === null ? null : await valueOf(stack.appleIdp)).toBe("apple-idp-id");
+  });
+
+  it("fails when the Apple key's secret is not in the stack config, naming it", () => {
+    expect(() => identityStack({ ...PLAN, appleSignIn: APPLE })).toThrow(
+      "zitadel:APPLE_SIGN_IN_KEY",
+    );
   });
 
   it("fails when the provisioner key is not in the stack config, naming it", () => {

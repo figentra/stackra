@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `parseIdentitySeed`: a minimal seed gets every default, a full seed passes as written, and
  *          every failure (an unknown key, another version, a bad role code or colour, a role declared twice or held but
- *          not declared, the device code or token exchange on a BFF) is one `IdentityInfraInvalidError` naming its
- *          path.
+ *          not declared, the device code or token exchange on a BFF, a malformed Apple id or a key given as anything
+ *          but a secret name) is one `IdentityInfraInvalidError` naming its path.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0206 (decisions 5 and 8); ADR 0208 (role codes).
+ * Governing contract: ADR 0022 (test placement); ADR 0206 (decisions 5 and 8); ADR 0208 (role codes);
+ *                     STA-1578.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -149,5 +150,27 @@ describe("parseIdentitySeed", () => {
         },
       }),
     ).toEqual(["apps.console.kind", "apps.web.kind"]);
+  });
+
+  it("takes Sign in with Apple by ids and secret name, and refuses anything else", () => {
+    const apple = {
+      teamId: "TEAM000001",
+      serviceId: "example.acme.signin",
+      keyId: "KEY0000001",
+      privateKeySecret: "APPLE_SIGN_IN_KEY",
+    };
+
+    expect(parseIdentitySeed({ ...FULL, appleSignIn: apple }).appleSignIn).toEqual(apple);
+    expect(
+      pathsOf({
+        ...FULL,
+        appleSignIn: {
+          teamId: "team",
+          serviceId: "signin",
+          keyId: "KEY0000001",
+          privateKeySecret: "-----BEGIN PRIVATE KEY-----",
+        },
+      }),
+    ).toEqual(["appleSignIn.teamId", "appleSignIn.serviceId", "appleSignIn.privateKeySecret"]);
   });
 });

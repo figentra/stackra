@@ -3,23 +3,25 @@
  * Purpose: `identityStack(plan)`, the identity slice of the Pulumi program `stackra infra gen` composes, one stack per
  *          ZITADEL instance: the instance's token lifetimes, password rule and branding, the staff organisation with
  *          its sign-in policy, the project and its roles, one OIDC client per app, and the machine users with their
- *          instance and project roles.
+ *          instance and project roles, and the Apple identity provider when the plan turns it on.
  * Boundary: runs inside a Pulumi program. The provider signs in with the provisioner's key from the stack config
- *           (`zitadel:jwtProfileJson`, a secret the owner sets); the instance itself, its custom domain, machine keys
- *           and external sign-in providers are owner steps. Every client is code with PKCE and no secret, so the stack
+ *           (`zitadel:jwtProfileJson`, a secret the owner sets); the Apple `.p8` key is the secret stack config value
+ *           the plan names (`zitadel:<privateKeySecret>`), never in the seed. The instance itself, its custom domain,
+ *           machine keys, the Apple ids and other external sign-in providers are owner steps. Every client is code with PKCE and no secret, so the stack
  *           holds no secret value. Agents run `pulumi preview` at most; `up` is the owner's.
  * Runtime: node
  * Governing contract: ADR 0171 (decisions 2 to 5), ADR 0206 (decisions 3, 5 and 8), ADR 0207 (decisions 2 and 3),
  *                     ADR 0268 (R3: ZITADEL's own branding), ADR 0274 (decision 5), ADR 0277 (decisions 1, 2 and 4),
- *                     ADR 0345 (decision 3).
+ *                     ADR 0345 (decision 3), ADR 0173 (the Apple key by name), STA-1578 (App Store guideline 4.8).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
-import { Config, all } from "@pulumi/pulumi";
+import { Config, all, dynamic } from "@pulumi/pulumi";
 import type { Output } from "@pulumi/pulumi";
 import * as zitadel from "@pulumiverse/zitadel";
 
 import { IdentityAppKind } from "#core/enums/identity-app-kind.enum";
 import type { IdentityPlan } from "#core/types/identity-plan.type";
+import { APPLE_IDP_PROVIDER } from "#node/constants/apple-idp-provider.constant";
 import type { IdentityStack } from "#node/types/identity-stack.type";
 
 /** Twelve hours, the staff session cap (ADR 0207 decision 3, ADR 0277 decision 4). */
@@ -29,16 +31,16 @@ const STAFF_CHECK = "12h0m0s";
  * Creates one instance's identity resources.
  *
  * @param plan - the plan `identityPlan` built for this instance.
- * @throws Error (Pulumi's missing-configuration error) when `zitadel:jwtProfileJson` is not set in the stack config.
+ * @throws Error (Pulumi's missing-configuration error) when `zitadel:jwtProfileJson`, or the Apple key the plan
+ *         names, is not set in the stack config.
  * @example
  * // .stackra/infra/identity.ts (generated), stack `identity-nonprod`
  * export const identity = identityStack(identityPlan(root, readIdentitySeed(".stackra/zitadel/seed.yaml"), "nonprod"));
  */
 export function identityStack(plan: IdentityPlan): IdentityStack {
-  const provider = new zitadel.Provider("zitadel", {
-    domain: plan.domain,
-    jwtProfileJson: new Config("zitadel").requireSecret("jwtProfileJson"),
-  });
+  const config = new Config("zitadel");
+  const jwtProfileJson = config.requireSecret("jwtProfileJson");
+  const provider = new zitadel.Provider("zitadel", { domain: plan.domain, jwtProfileJson });
   const options = { provider };
 
   // ADR 0206 decision 8 and 0277 decision 4: JWT access tokens last ten minutes; refresh tokens rotate and last 30 days.
@@ -194,6 +196,24 @@ export function identityStack(plan: IdentityPlan): IdentityStack {
     machines[key] = user.id;
   }
 
+  // App Store guideline 4.8: Sign in with Apple beside every social provider; the provider has no Apple resource.
+  const appleIdp =
+    plan.appleSignIn === null
+      ? null
+      : new dynamic.Resource(
+          APPLE_IDP_PROVIDER,
+          "apple-idp",
+          {
+            domain: plan.domain,
+            jwtProfileJson,
+            clientId: plan.appleSignIn.serviceId,
+            teamId: plan.appleSignIn.teamId,
+            keyId: plan.appleSignIn.keyId,
+            privateKey: config.requireSecret(plan.appleSignIn.privateKeySecret),
+          },
+          { additionalSecretOutputs: ["jwtProfileJson"] },
+        ).id;
+
   return {
     issuer: plan.issuer,
     orgId: org.id,
@@ -201,5 +221,6 @@ export function identityStack(plan: IdentityPlan): IdentityStack {
     clients,
     machines,
     firstPartyClients: all(Object.values(clients)),
+    appleIdp,
   };
 }

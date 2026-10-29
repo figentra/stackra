@@ -155,9 +155,13 @@ Connect key or Google Play service account, else the platform account in `mobile
 4. Writes the template checkout's `app.json`: the runway identity (name, bundle id, package, scheme, `applinks:` and
    verified intent filters for `links`, tablet), slug `<project>-<app>`, runtime version from the template line, the
    EAS project and update URL, the enabled flags' plugins, and the disabled flags' plugins, Info.plist keys and
-   entitlements removed and Android permissions blocked; and `package.json` `expo.autolinking.exclude` with their
+   entitlements removed and Android permissions blocked; with `apple` in `mobile.<app>.signIn.social`, `usesAppleSignIn`
+   and the `com.apple.developer.applesignin` entitlement; and `package.json` `expo.autolinking.exclude` with their
    native modules. Nothing is merely hidden at run time.
-5. Starts `eas build` on the app's channel through `EasProviderDriver` from the checked-out commit.
+
+`mobile.<app>.signIn.social` lists the app's social sign-in providers (`@stackra/identity`'s `externalProviders` keys,
+national ID services excluded). Every app ships to iOS, so `parseRunway` refuses a non-empty list without `apple`
+(App Store guideline 4.8, STA-1578): `signIn: { social: [google, apple] }`. 5. Starts `eas build` on the app's channel through `EasProviderDriver` from the checked-out commit.
 
 ```ts
 import { storeAccountsOf } from "@stackra/infra-mobile";

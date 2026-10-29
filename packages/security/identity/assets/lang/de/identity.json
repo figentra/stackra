@@ -1,0 +1,17 @@
+{
+  "enums": {
+    "social_provider": {
+      "apple": "Apple"
+    },
+    "apple_sign_in_refusal": {
+      "unsupported": "„Mit Apple anmelden“ ist auf diesem Gerät nicht verfügbar",
+      "cancelled": "„Mit Apple anmelden“ wurde abgebrochen",
+      "failed": "„Mit Apple anmelden“ ist fehlgeschlagen. Versuche es erneut."
+    }
+  },
+  "ui": {
+    "sign_in": {
+      "continue_with_apple": "Mit Apple fortfahren"
+    }
+  }
+}

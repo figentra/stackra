@@ -1,0 +1,17 @@
+{
+  "enums": {
+    "social_provider": {
+      "apple": "Apple"
+    },
+    "apple_sign_in_refusal": {
+      "unsupported": "Se connecter avec Apple n’est pas disponible sur cet appareil",
+      "cancelled": "La connexion avec Apple a été annulée",
+      "failed": "La connexion avec Apple a échoué. Réessayez."
+    }
+  },
+  "ui": {
+    "sign_in": {
+      "continue_with_apple": "Continuer avec Apple"
+    }
+  }
+}

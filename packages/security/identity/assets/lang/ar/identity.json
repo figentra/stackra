@@ -1,0 +1,17 @@
+{
+  "enums": {
+    "social_provider": {
+      "apple": "Apple"
+    },
+    "apple_sign_in_refusal": {
+      "unsupported": "تسجيل الدخول باستخدام Apple غير متاح على هذا الجهاز",
+      "cancelled": "تم إلغاء تسجيل الدخول باستخدام Apple",
+      "failed": "تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى."
+    }
+  },
+  "ui": {
+    "sign_in": {
+      "continue_with_apple": "المتابعة باستخدام Apple"
+    }
+  }
+}

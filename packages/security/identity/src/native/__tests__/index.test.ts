@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./native` entry: it exports exactly `ExpoPasskeysDriver`,
+ * Purpose: the consumer contract of the `./native` entry: it exports exactly `ExpoAppleSignInDriver`, `ExpoPasskeysDriver`,
  *          `ExpoSignInBrowserDriver` and `useAppApprovalSheet`.
  * Boundary: test only; the Expo modules are replaced by stand-ins so the barrel loads under node.
  * Runtime: node (vitest)
@@ -16,8 +16,9 @@ vi.mock("expo-web-browser", () => ({ openAuthSessionAsync: vi.fn() }));
 vi.mock("react-native-passkey", () => ({ Passkey: {} }));
 
 describe("@stackra/identity/native", () => {
-  it("exports exactly the Expo passkeys and sign-in browser drivers and the approve sheet hook", () => {
+  it("exports exactly the Expo Apple, passkeys and sign-in browser drivers and the approve sheet hook", () => {
     expect(Object.keys(native).sort()).toEqual([
+      "ExpoAppleSignInDriver",
       "ExpoPasskeysDriver",
       "ExpoSignInBrowserDriver",
       "useAppApprovalSheet",

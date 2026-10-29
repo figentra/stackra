@@ -1085,6 +1085,24 @@
         "tablet": {
           "type": "boolean"
         },
+        "signIn": {
+          "type": "object",
+          "description": "Sign-in this app offers. An iOS app that lists any social provider must list apple too (App Store guideline 4.8, STA-1578); with apple the build adds the com.apple.developer.applesignin entitlement.",
+          "additionalProperties": false,
+          "required": ["social"],
+          "properties": {
+            "social": {
+              "type": "array",
+              "uniqueItems": true,
+              "description": "The social sign-in providers, @stackra/identity's externalProviders keys; a national ID service is not social and is not listed.",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "examples": [["google", "apple"]]
+            }
+          }
+        },
         "stores": {
           "type": "object",
           "properties": {

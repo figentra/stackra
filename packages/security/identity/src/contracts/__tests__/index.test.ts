@@ -21,6 +21,8 @@ describe("@stackra/identity/contracts", () => {
       "AppApprovalChallenges",
       "AppApprovalPurpose",
       "AppApprovalStatus",
+      "AppleSignIn",
+      "AppleSignInRefusal",
       "AutomationPrincipals",
       "DeviceTokenStatus",
       "Guardianship",
