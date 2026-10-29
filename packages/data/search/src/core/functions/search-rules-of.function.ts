@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `searchRulesOf`, the ranking rules of one index for one phrase, read from the `search.rules` setting text:
- *          the pins and hides of that phrase, every boost and the recency decay.
+ * Purpose: `searchRulesOf`, the ranking rules of one index for one phrase, read from the `search.rankingRules` setting
+ *          text: the pins and hides of that phrase, every boost and the recency decay.
  * Boundary: pure, internal to this package. A pin or hide applies when its phrase normalises (`searchWordsOf`) to the
  *           read's words in the same order. A boost value `true` or `false` is a boolean, a number is a number,
  *           anything else a string; a factor is above 0 and at most 10, and a recency's days above 0, else the line is

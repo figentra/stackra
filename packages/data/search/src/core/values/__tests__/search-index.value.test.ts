@@ -599,7 +599,7 @@ async function ruled(values: Readonly<Record<string, unknown>>) {
 describe("SearchIndex ranking rules, query log and suggestions", () => {
   it("pins and hides the rows its rules name for the phrase", async () => {
     const { products } = await ruled({
-      rules: "products pin linen shirt: prd_2\ncatalogue.products hide linen shirt: prd_3",
+      rankingRules: "products pin linen shirt: prd_2\ncatalogue.products hide linen shirt: prd_3",
     });
     expect(await products.find("Linen Shirt")).toEqual([ROWS[1], ROWS[0]]);
     expect(await products.find("linen")).toEqual([ROWS[0], ROWS[2]]);

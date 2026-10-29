@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchRules`, the ranking rules of one index that apply to one phrase, as `searchRulesOf` reads them from
- *          the `search.rules` setting.
+ *          the `search.rankingRules` setting.
  * Boundary: a type only, internal to this package; `SearchIndex` passes its members on as `SearchRequest` fields.
  * Runtime: isomorphic
  * Governing contract: ADR 0221; ADR 0307 (rules 22 to 24); data-layer gap se11 (stackra-326).

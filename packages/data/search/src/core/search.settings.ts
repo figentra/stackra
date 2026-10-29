@@ -1,15 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchSettings`, the runtime search settings an admin edits per scope without a deploy: `synonyms`, the
- *          synonym sets of each index and language (`products en: sofa, couch, settee`, one set per line); `rules`,
- *          the ranking rules (pins, hides, boosts, recency) in the line form `SEARCH_RULE_LINE`; and `querySample`,
- *          the share of reads the query log records (off by default).
- * Boundary: this package's one settings group; its key is `search` and its setting `search.synonyms`. A setting value
- *           is a scalar, so the sets are one text in the line form `SEARCH_SYNONYM_LINE` describes, and the schema
- *           refuses a text with a line that breaks it. Resolved through the settings cascade: the platform's default,
- *           then a scope node below (the level tenancy contributes, never named here, R-59). `SearchIndex` reads it on
- *           each find, page and facet count and adds the sets as alternatives of the phrase words. Never a secret.
- *           It registers its schema when the module loads (STA-339 replaces the registration).
+ *          synonym sets of each index and language (`products en: sofa, couch, settee`, one set per line);
+ *          `rankingRules`, the ranking rules (pins, hides, boosts, recency) in the line form `SEARCH_RULE_LINE`; and
+ *          `querySample`, the share of reads the query log records (off by default).
+ * Boundary: this package's one settings group; its key is `search` and its settings `search.synonyms`,
+ *           `search.rankingRules` and `search.querySample`. The rules field is not named `rules`: that member is the
+ *           settings base's cross-field rules method. A setting value is a scalar, so the sets are one text in the line
+ *           form `SEARCH_SYNONYM_LINE` describes, and the schema refuses a text with a line that breaks it. Resolved
+ *           through the settings cascade: the platform's default, then a scope node below (the level tenancy
+ *           contributes, never named here, R-59). `SearchIndex` reads it on each find, page and facet count and adds
+ *           the sets as alternatives of the phrase words. Never a secret. It registers its schema when the module loads
+ *           (STA-339 replaces the registration).
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decision 3); ADR 0307 (rules 22 to 24); ADR 0294 (decisions 16 and 20); ADR 0323;
  *                     ADR 0403 (per-language analysis); stackra-326 (rules and the query sample).
@@ -42,7 +44,7 @@ export class SearchSettings extends Settings({
    * `<index> boost <path>=<value>: <factor>` or `<index> recency <path>: <days>`; `#` starts a comment line.
    */
   @Str({ max: MAX_SYNONYMS_LENGTH })
-  rules = "";
+  rankingRules = "";
 
   /** The share of reads and clicks the query log records, 0 (none, the default) to 1 (every one). */
   @Num({
@@ -62,7 +64,7 @@ registerSchemas([
         .max(MAX_SYNONYMS_LENGTH)
         .refine((text) => text.split("\n").every((line) => SEARCH_SYNONYM_LINE.test(line)))
         .default(""),
-      rules: z
+      rankingRules: z
         .string()
         .max(MAX_SYNONYMS_LENGTH)
         .refine((text) => text.split("\n").every((line) => SEARCH_RULE_LINE.test(line)))

@@ -10,9 +10,9 @@
  * Runtime: isomorphic
  *           `anyOf`, `ranges` and `sort` reach only a driver whose `fieldKinds` is true; `SearchIndex` refuses them for
  *           any other, so no driver ignores them silently. The ranking rules (`pinned`, `hidden`, `boosts`, `recency`)
- *           come from the `search.rules` setting, never input, and reach only a driver whose `appliesRules` is true.
- *           Pinned rows rank first in their listed order when they pass the filters and visibility, matching the words
- *           or not; hidden rows never rank; boosts and recency scale relevance and never admit a row.
+ *           come from the `search.rankingRules` setting, never input, and reach only a driver whose `appliesRules` is
+ *           true. Pinned rows rank first in their listed order when they pass the filters and visibility, matching the
+ *           words or not; hidden rows never rank; boosts and recency scale relevance and never admit a row.
  * Governing contract: ADR 0221 (decisions 1 and 3: hybrid search, Arabic); ADR 0333 (amendment: visibility bounds
  *                     search); OS-173 (Arabizi); ADR 0403 (synonyms per language); ADR 0089 (decision 6: every query
  *                     scoped); ADR 0327 (decision 9); stackra-301 (the vector lane); stackra-302 (any-of, ranges and

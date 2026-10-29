@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `SEARCH_RULE_LINE`, the form of one line of the `search.rules` setting: a blank line, a `#` comment, or one
- *          ranking rule of an index:
+ * Purpose: `SEARCH_RULE_LINE`, the form of one line of the `search.rankingRules` setting: a blank line, a `#` comment,
+ *          or one ranking rule of an index:
  *          `<index> pin <phrase>: id, id` (those rows first for that phrase),
  *          `<index> hide <phrase>: id, id` (those rows never for that phrase),
  *          `<index> boost <path>=<value>: <factor>` (matches holding the value scaled by the factor),

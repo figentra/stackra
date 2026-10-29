@@ -2,8 +2,8 @@
 "@stackra/search": minor
 ---
 
-Search ranking rules, query log and suggestions (data-layer gaps se11 to se13). `SearchSettings` gains `rules` (pin,
-hide, boost and recency lines per index and phrase) and `querySample`. The `SearchDriver` port gains `appliesRules`,
+Search ranking rules, query log and suggestions (data-layer gaps se11 to se13). `SearchSettings` gains `rankingRules`
+(pin, hide, boost and recency lines per index and phrase) and `querySample`. The `SearchDriver` port gains `appliesRules`,
 the request `pinned`, `hidden`, `boosts` and `recency`, and a `neighbours` lookup (did-you-mean); the memory and
 Postgres drivers apply them. A new `SearchQueryLog` port (memory driver in `.`, the abstract
 `PostgresSearchQueryLogDriver` in `./node` over the new `search.queries` table, whose queued `record` and its

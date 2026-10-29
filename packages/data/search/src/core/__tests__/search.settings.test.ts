@@ -18,20 +18,21 @@ describe("SearchSettings", () => {
     );
     expect(settings).toBeInstanceOf(SearchSettings);
     expect(settings.synonyms).toBe("");
-    expect(settings.rules).toBe("");
+    expect(settings.rankingRules).toBe("");
     expect(settings.querySample).toBe(0);
   });
 
   it("reads stored rules and the query sample, and refuses a broken rule or a sample above 1", async () => {
     const store = new MemorySettingValueStoreDriver().seed("search", {
-      rules: "# merchandising\nproducts pin linen shirt: prd_9\nproducts boost featured=true: 2",
+      rankingRules:
+        "# merchandising\nproducts pin linen shirt: prd_9\nproducts boost featured=true: 2",
       querySample: 0.25,
     });
     const settings = await new SettingsReader(store).get(SearchSettings);
     expect(settings.querySample).toBe(0.25);
     await expect(
       new SettingsReader(
-        new MemorySettingValueStoreDriver().seed("search", { rules: "pin everything" }),
+        new MemorySettingValueStoreDriver().seed("search", { rankingRules: "pin everything" }),
       ).get(SearchSettings),
     ).rejects.toThrow();
     await expect(

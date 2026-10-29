@@ -17,9 +17,9 @@
  *           the other words of the set. A snippet never shows a `no_snippet` field outside the record's team. Each
  *           document carries its row's scope; for an engine that does not isolate scopes in the database, every read
  *           also carries the scope paths of the session (`app.scope_paths`, read from the database, never input), so
- *           pages and facet counts never cross scopes. The index's ranking rules (`search.rules`: pins, hides, boosts,
- *           recency) reach a driver that applies them; a sampled read or click goes to the query log (never awaited,
- *           its phrase withheld when personal); `suggest` completes a prefix from the log and corrects a prefix that
+ *           pages and facet counts never cross scopes. The index's ranking rules (`search.rankingRules`: pins, hides,
+ *           boosts, recency) reach a driver that applies them; a sampled read or click goes to the query log (never
+ *           awaited, its phrase withheld when personal); `suggest` completes a prefix from the log and corrects a prefix that
  *           finds nothing from the indexed words the caller may see. A filter may name several values (any of them holds), a range
  *           field may be bounded and sortable fields order the rows before relevance, on a driver whose `fieldKinds`
  *           says it applies them; a row the facet's `when` refuses is removed instead of indexed.
@@ -684,9 +684,10 @@ export class SearchIndex<M extends object> {
     words: readonly string[],
     settings: SearchSettings | undefined,
   ): Pick<SearchRequest, "pinned" | "hidden" | "boosts" | "recency"> {
-    if (settings === undefined || settings.rules === "" || !this.driver.appliesRules) return {};
+    if (settings === undefined || settings.rankingRules === "" || !this.driver.appliesRules)
+      return {};
     const { pinned, hidden, boosts, recency } = searchRulesOf(
-      settings.rules,
+      settings.rankingRules,
       this.indexNames(),
       words,
     );

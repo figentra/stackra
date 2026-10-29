@@ -112,7 +112,8 @@ await search.in(Product).page(input.q, {
 
 ## Ranking rules, query log and suggestions
 
-Ranking rules are settings data (`search.rules`, per scope), one per line, for an index named as synonyms name it:
+Ranking rules are settings data (`search.rankingRules`, per scope), one per line, for an index named as
+synonyms name it:
 
 ```text
 # merchandising

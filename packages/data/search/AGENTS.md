@@ -92,7 +92,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   (`searchDocumentOf`), so the macro writes no column for them; `boost` reaches a driver as `SearchDocument.weights`.
   Every path a document reads comes from `searchPathsOf` (change consumers, relation hops, populate hints); a new
   field kind joins there. `when` is applied in `SearchIndex` only (a refused row is removed, never indexed).
-- Ranking rules (stackra-326) are settings data (`search.rules`, line form `SEARCH_RULE_LINE`), read per call
+- Ranking rules (stackra-326) are settings data (`search.rankingRules`, line form `SEARCH_RULE_LINE`), read per call
   through `searchRulesOf`; never a code list. They reach only a driver whose `appliesRules` is true. A pin ranks a
   row first only when it passes the same filters, visibility and scope as every lane; never pin around visibility.
 - The query log is analytics, never data a read depends on: `SearchIndex` never awaits `SearchQueryLog.record`, the
