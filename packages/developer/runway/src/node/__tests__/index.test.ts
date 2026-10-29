@@ -60,7 +60,7 @@ describe("@stackra/runway/node", () => {
       "deployProduct",
       "devServer",
       "dryRunCommand",
-      "entryOf",
+      "exportSourceOf",
       "platformRows",
       "prepareMobileDev",
       "promoteCanary",

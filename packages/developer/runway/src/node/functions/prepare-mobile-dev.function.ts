@@ -19,7 +19,7 @@ import { capabilityConfig } from "#node/functions/capability-config.function";
 import { checkoutLine } from "#node/functions/checkout-line.function";
 import { expoConfigOf } from "#node/functions/expo-config-of.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { entryOf } from "#node/functions/entry-of.function";
+import { exportSourceOf } from "#node/functions/export-source-of.function";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
 import type { MobileDev } from "#node/types/mobile-dev.type";
@@ -55,7 +55,8 @@ export async function prepareMobileDev(request: MobileDevRequest): Promise<Mobil
   const issues: { path: string; message: string }[] = [];
   const entries = (entry.packages ?? []).flatMap((name, index) => {
     const pkg = workspace.get(name);
-    const target = pkg === undefined ? undefined : entryOf(pkg, MOBILE_DEV_SETTINGS.nativeExport);
+    const target =
+      pkg === undefined ? undefined : exportSourceOf(pkg, MOBILE_DEV_SETTINGS.nativeExport);
     if (pkg === undefined || target === undefined) {
       issues.push({
         path: `${at}.packages.${index}`,

@@ -32,7 +32,7 @@ import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { runCommand } from "#node/functions/run-command.function";
 import { runMobileJob } from "#node/functions/run-mobile-job.function";
-import { entryOf } from "#node/functions/entry-of.function";
+import { exportSourceOf } from "#node/functions/export-source-of.function";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { BundleManifest } from "#node/types/bundle-manifest.type";
 import type { LineSource } from "#node/types/line-source.type";
@@ -91,7 +91,7 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
     const at = `surfaces.${surface}`;
     const entries = (entry.packages ?? []).flatMap((name, index) => {
       const pkg = workspace.get(name);
-      const file = pkg === undefined ? undefined : entryOf(pkg, `./${surface}`);
+      const file = pkg === undefined ? undefined : exportSourceOf(pkg, `./${surface}`);
       if (file === undefined)
         issues.push({
           path: `${at}.packages.${index}`,
@@ -200,11 +200,13 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
 
   const mobile: Mutable<ProductBuild["mobile"]> = {};
   const skipped = request.surfacesOnly === true ? Object.keys(root.mobile ?? {}) : [];
-  for (const [app, entry] of Object.entries(request.surfacesOnly === true ? {} : (root.mobile ?? {}))) {
+  for (const [app, entry] of Object.entries(
+    request.surfacesOnly === true ? {} : (root.mobile ?? {}),
+  )) {
     const packages: Record<string, string> = {};
     for (const [index, name] of (entry.packages ?? []).entries()) {
       const pkg = workspace.get(name);
-      if (pkg === undefined || entryOf(pkg, MOBILE_DEV_SETTINGS.nativeExport) === undefined)
+      if (pkg === undefined || exportSourceOf(pkg, MOBILE_DEV_SETTINGS.nativeExport) === undefined)
         issues.push({
           path: `mobile.${app}.packages.${index}`,
           message:

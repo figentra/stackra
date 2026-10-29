@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `entryOf(pkg, subpath)`, the source file a product package's export names: the `@stackra/source`
+ * Purpose: `exportSourceOf(pkg, subpath)`, the source file a product package's export names: the `@stackra/source`
  *          condition, else `default`, else a plain string target; `undefined` when the package has no such export.
  * Boundary: pure.
  * Runtime: node
@@ -22,9 +22,9 @@ function targetOf(target: unknown): string | undefined {
  * The source file of `pkg`'s `subpath` export, or `undefined` when it has none.
  *
  * @example
- * entryOf(pkg, "./console"); // "/repo/packages/application/example/src/console.tsx"
+ * exportSourceOf(pkg, "./console"); // "/repo/packages/application/example/src/console.tsx"
  */
-export function entryOf(pkg: WorkspacePackage, subpath: string): string | undefined {
+export function exportSourceOf(pkg: WorkspacePackage, subpath: string): string | undefined {
   const target = targetOf(pkg.exports[subpath]);
   return target === undefined ? undefined : resolve(pkg.dir, target);
 }

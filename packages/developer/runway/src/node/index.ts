@@ -44,7 +44,7 @@ export { checkShellCompatibility } from "#node/functions/check-shell-compatibili
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
-export { entryOf } from "#node/functions/entry-of.function";
+export { exportSourceOf } from "#node/functions/export-source-of.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { platformRows } from "#node/functions/platform-rows.function";
