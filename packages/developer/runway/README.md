@@ -121,6 +121,20 @@ const run = dryRunCommand();
 await runMobileJob({ …, templateDir: ".stackra/mobile/app", line: { scope: "@figentra", local: "../os/apps/mobile" }, run });
 ```
 
+## A product's build and deploy
+
+`buildProduct(request)` (`./node`) builds a product with no app members: per web surface it checks the shell line out
+(`.stackra/lines/<surface>`), writes a bundle entry that loads each package's `./<surface>` export (a preset surface,
+such as `portal`, loads `./portal`), has the given bundler (the CLI's Vite one) build it against the shell's import map
+into `dist/bundles/<surface>/<sha12>/` and writes `bundle.manifest.json`; per mobile app it runs the mobile job with
+`buildOnly` and `packages` (each product package at its version joins the template's dependencies and its product
+module), and it writes `dist/product/build.json`. A dry run records the EAS builds and plans the bundles; the template
+checkouts and the generated config are still written. `deployProduct(request)` reads that manifest and publishes it
+(`publishProduct`), lists each landing surface's seed documents (the import into experience is not wired yet), submits
+each EAS build after checking the app's store accounts, refuses an environment with a `deploy.approval` unless
+`approved`, and writes `dist/product/deploy-<env>.json`. The CLI's `stackra build --product` and `stackra deploy
+--product` are the commands a product's CI calls.
+
 ## The mobile job
 
 `runMobileJob` (`./node`) builds one app of the root runway's `mobile` from the OS mobile template (ADR 0439). A merge

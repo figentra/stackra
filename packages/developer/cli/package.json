@@ -67,6 +67,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/gen": "workspace:*",
     "@stackra/mcp": "workspace:*",
@@ -74,6 +75,7 @@
     "@stackra/runway": "workspace:*",
     "@stackra/skills": "workspace:*",
     "@stackra/support": "workspace:*",
+    "vite": "catalog:frontend",
     "yaml": "catalog:"
   },
   "devDependencies": {

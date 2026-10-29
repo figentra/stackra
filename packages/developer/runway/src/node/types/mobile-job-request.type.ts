@@ -32,6 +32,11 @@ export type MobileJobRequest = {
   readonly stores: readonly MobileStoreAccount[];
   /** The white-label variant, when a scope started the build. */
   readonly variant?: MobileVariant;
+  /** Build only: the store accounts are not checked (the submit step checks them), and `stores` may be empty. */
+  readonly buildOnly?: boolean;
+  /** The product packages to build in, by name, at the version each is published at: they join the template's
+   *  dependencies and its product module imports each one's `./native` entry (MOBILE_DEV_SETTINGS). */
+  readonly packages?: Readonly<Record<string, string>>;
   /** The command runner; `runCommand` when absent. */
   readonly run?: CommandRunner;
 };

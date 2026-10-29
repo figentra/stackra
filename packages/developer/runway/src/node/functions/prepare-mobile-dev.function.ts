@@ -10,7 +10,7 @@
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); ADR 0439 (decisions 2 and 3); ADR 0481.
  */
-import { existsSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -19,6 +19,8 @@ import { capabilityConfig } from "#node/functions/capability-config.function";
 import { checkoutLine } from "#node/functions/checkout-line.function";
 import { expoConfigOf } from "#node/functions/expo-config-of.function";
 import { readRunway } from "#node/functions/read-runway.function";
+import { entryOf } from "#node/functions/entry-of.function";
+import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
 import type { MobileDev } from "#node/types/mobile-dev.type";
 import type { MobileDevRequest } from "#node/types/mobile-dev-request.type";
@@ -27,32 +29,6 @@ type Block = Record<string, unknown>;
 
 /** The JSON object at `file`. */
 const readJson = (file: string): Block => JSON.parse(readFileSync(file, "utf8")) as Block;
-
-/** The package folders under `folder`, by package name, `depth` levels down (never node_modules). */
-function packagesUnder(
-  folder: string,
-  depth: number,
-  found = new Map<string, string>(),
-): Map<string, string> {
-  if (depth < 0 || !existsSync(folder)) return found;
-  const manifest = join(folder, "package.json");
-  if (existsSync(manifest)) {
-    const name = readJson(manifest)["name"];
-    if (typeof name === "string") found.set(name, folder);
-  }
-  for (const entry of readdirSync(folder, { withFileTypes: true }))
-    if (entry.isDirectory() && entry.name !== "node_modules" && !entry.name.startsWith("."))
-      packagesUnder(join(folder, entry.name), depth - 1, found);
-  return found;
-}
-
-/** The source file an export target names: the `@stackra/source` condition, else `default`. */
-function targetOf(target: unknown): string | undefined {
-  if (typeof target === "string") return target;
-  if (typeof target !== "object" || target === null) return undefined;
-  const conditions = target as Block;
-  return targetOf(conditions["@stackra/source"] ?? conditions["default"]);
-}
 
 /**
  * Prepares the app's checkout.
@@ -75,26 +51,22 @@ export async function prepareMobileDev(request: MobileDevRequest): Promise<Mobil
       { path: at, message: "No such mobile app in the root runway" },
     ]);
 
-  const workspace = packagesUnder(join(repository, "packages"), 3);
+  const workspace = workspacePackages(repository);
   const issues: { path: string; message: string }[] = [];
   const entries = (entry.packages ?? []).flatMap((name, index) => {
-    const folder = workspace.get(name);
-    const exports =
-      folder === undefined
-        ? undefined
-        : (readJson(join(folder, "package.json"))["exports"] as Block);
-    const target = targetOf(exports?.[MOBILE_DEV_SETTINGS.nativeExport]);
-    if (folder === undefined || target === undefined) {
+    const pkg = workspace.get(name);
+    const target = pkg === undefined ? undefined : entryOf(pkg, MOBILE_DEV_SETTINGS.nativeExport);
+    if (pkg === undefined || target === undefined) {
       issues.push({
         path: `${at}.packages.${index}`,
         message:
-          folder === undefined
+          pkg === undefined
             ? `${name} is not a package under packages/`
             : `${name} has no ${MOBILE_DEV_SETTINGS.nativeExport} export`,
       });
       return [];
     }
-    return [resolve(folder, target)];
+    return [target];
   });
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
@@ -153,7 +125,7 @@ export async function prepareMobileDev(request: MobileDevRequest): Promise<Mobil
       "",
     ].join("\n"),
   );
-  const roots = (entry.packages ?? []).map((name) => workspace.get(name) as string);
+  const roots = (entry.packages ?? []).map((name) => workspace.get(name)?.dir as string);
   writeFileSync(
     join(dir, MOBILE_DEV_SETTINGS.productRoots),
     `${JSON.stringify({ roots }, null, 2)}\n`,

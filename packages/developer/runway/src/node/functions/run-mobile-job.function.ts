@@ -9,10 +9,11 @@
  *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
  *          so EAS builds exactly that commit.
  * Boundary: reads the root runway, the record file and the template's `app.json`, `capabilities.json` and
- *           `package.json`; writes only `app.json` and `package.json` in the template checkout (and, with `line`,
- *           the checkout itself); runs `npm`, `tar`, `git` and `eas` through the command runner, so `dryRunCommand`
- *           makes the whole job a dry run that still writes the generated config. Store submission, the scope theme's icon and splash (stackra-13) and
- *           installing the app's `packages` are not this job's. Store accounts arrive resolved (`storeAccountsOf`).
+ *           `package.json`; writes only `app.json`, `package.json` and, with `packages`, the product module in the
+ *           template checkout (and, with `line`, the checkout itself); runs `npm`, `tar`, `git` and `eas` through the
+ *           command runner, so `dryRunCommand` makes the whole job a dry run that still writes the generated config.
+ *           Store submission and the scope theme's icon and splash (stackra-13) are not this job's; `buildOnly` skips
+ *           the store account check for a build that submits later. Store accounts arrive resolved (`storeAccountsOf`).
  * Runtime: node
  * Governing contract: ADR 0439 (decisions 2, 3, 7 and 8, and enforcement); ADR 0352 (decision 3); ADR 0180 and ADR
  *                     0344 (EAS builds); app-shells D3, D13, D14.
@@ -31,6 +32,7 @@ import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { APPLE_GUIDELINE_CHECKS } from "#node/constants/apple-guideline-checks.constant";
 import { APPLE_GUIDELINE_RECORD } from "#node/constants/apple-guideline-record.constant";
 import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
+import { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
 import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 import { capabilityConfig } from "#node/functions/capability-config.function";
 import { checkoutLine } from "#node/functions/checkout-line.function";
@@ -106,7 +108,7 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
   if (needs.length === 0) {
     issues.push({ path: `${at}.identity`, message: "The app targets neither ios nor android" });
   }
-  for (const store of needs) {
+  for (const store of request.buildOnly === true ? [] : needs) {
     if (!stores.some((account) => account.store === store)) {
       issues.push({ path: `${at}.stores`, message: `No account publishes to ${store}` });
     }
@@ -185,6 +187,25 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
 
   const packageFile = join(templateDir, "package.json");
   const manifest = readJson(packageFile);
+  const packages = request.packages ?? {};
+  const names = Object.keys(packages);
+  if (names.length > 0) {
+    // The product packages build into the app from the registry; the template's product module imports them.
+    manifest["dependencies"] = { ...blockOf(manifest, "dependencies"), ...packages };
+    writeFileSync(
+      join(templateDir, MOBILE_DEV_SETTINGS.productModules),
+      [
+        "// Written by Runway's mobile job from the root runway's packages; never committed to the template line.",
+        ...names.map(
+          (name, index) =>
+            `import * as p${index} from ${JSON.stringify(`${name}/${MOBILE_DEV_SETTINGS.nativeExport.slice(2)}`)};`,
+        ),
+        "",
+        `export const PRODUCT_MODULES: readonly { readonly register?: unknown; readonly default?: unknown }[] = [${names.map((_, index) => `p${index}`).join(", ")}];`,
+        "",
+      ].join("\n"),
+    );
+  }
   const expo = blockOf(manifest, "expo");
   const autolinking = blockOf(expo, "autolinking");
   const exclude = Array.isArray(autolinking["exclude"]) ? (autolinking["exclude"] as string[]) : [];

@@ -1,0 +1,150 @@
+/**
+ * Stackra file contract:
+ * Purpose: `deployProduct(request)`, the deploy of a built product to one environment (`stackra deploy --product`):
+ *          refuses an environment whose approval the root runway names (`deploy.approval`) unless it was given;
+ *          publishes the web surfaces (`publishProduct`: bundles to the asset store, the platform `host:` and
+ *          `wellknown:` rows, the release pointer or the canary); lists each landing surface's seed documents; submits
+ *          each mobile app's EAS builds to its stores; and writes the deploy manifest.
+ *          A dry run records every upload, KV write and submission instead of making it.
+ * Boundary: reads `dist/product/build.json` (from `buildProduct`), so a deploy ships exactly what was built. Writes
+ *           through the KV writer and runs `wrangler` and `eas` only. Importing the landing seeds into experience is
+ *           not wired yet (no import endpoint): the documents are listed for that step. Store accounts are checked
+ *           before anything is submitted.
+ * Runtime: node
+ * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decisions 2 and 7); ADR 0440 (decision 2);
+ *                     ADR 0170 (approvals).
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+
+import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import type { DeployStep } from "#core/types/deploy-step.type";
+import type { RunwayIssue } from "#core/types/runway-issue.type";
+import { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
+import { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
+import { publishProduct } from "#node/functions/publish-product.function";
+import { readRunway } from "#node/functions/read-runway.function";
+import { runCommand } from "#node/functions/run-command.function";
+import type { ProductBuild } from "#node/types/product-build.type";
+import type { ProductDeploy } from "#node/types/product-deploy.type";
+import type { ProductDeployRequest } from "#node/types/product-deploy-request.type";
+
+/** The platform of an EAS build, from `eas build:view <id> --json`. */
+function platformOf(out: string): string {
+  try {
+    const value = JSON.parse(out) as { platform?: unknown } | readonly { platform?: unknown }[];
+    const platform = Array.isArray(value)
+      ? value[0]?.platform
+      : (value as { platform?: unknown }).platform;
+    return typeof platform === "string" ? platform.toLowerCase() : "all";
+  } catch {
+    return "all";
+  }
+}
+
+/**
+ * Deploys the built product.
+ *
+ * @throws RunwayUnresolvedError when there is no build manifest, or the environment's approval was not given.
+ * @throws RunwayInvalidError naming every mobile app without the store accounts its platforms need, and every publish
+ *         problem (`publishProduct`'s), before anything is uploaded or written.
+ * @example
+ * await deployProduct({ repository: ".", environment: "staging", kv, assets, served: ["console@3"], canaryScopes });
+ */
+export async function deployProduct(request: ProductDeployRequest): Promise<ProductDeploy> {
+  const repository = resolve(request.repository);
+  const file = join(repository, PRODUCT_BUILD_SETTINGS.manifest);
+  if (!existsSync(file))
+    throw new RunwayUnresolvedError(
+      `No build to deploy: run stackra build --product first (${PRODUCT_BUILD_SETTINGS.manifest})`,
+    );
+  const build = JSON.parse(readFileSync(file, "utf8")) as ProductBuild;
+  const root = readRunway(join(repository, "runway.yaml"), "root");
+  const approval = root.environments[request.environment]?.deploy?.approval;
+  if (approval !== undefined && request.approved !== true && request.dryRun !== true)
+    throw new RunwayUnresolvedError(
+      `${request.environment} deploys only after its approval (${approval}): run the deploy in the job behind it and pass --approved`,
+    );
+
+  const real = request.run ?? runCommand;
+  const run = request.dryRun === true ? dryRunCommand({ head: build.sha }) : real;
+
+  const issues: RunwayIssue[] = [];
+  for (const app of Object.keys(build.mobile)) {
+    const identity = root.mobile?.[app]?.identity;
+    const stores = request.stores?.[app] ?? [];
+    const needs = [
+      ...(identity?.ios === undefined ? [] : ["app_store"]),
+      ...(identity?.android === undefined ? [] : ["google_play"]),
+    ];
+    for (const store of needs)
+      if (!stores.some((account) => account.store === store))
+        issues.push({ path: `mobile.${app}.stores`, message: `No account publishes to ${store}` });
+  }
+  if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
+
+  const kv = request.dryRun === true ? new DryRunEdgeKvDriver() : request.kv;
+  if (kv === undefined)
+    throw new RunwayUnresolvedError("Name the edge KV namespace the deploy writes to");
+  const surfaces = await publishProduct({
+    repository,
+    environment: request.environment,
+    kv,
+    assets: request.assets,
+    served: request.served,
+    ...(request.canaryScopes === undefined ? {} : { canaryScopes: request.canaryScopes }),
+    ...(request.firstRelease === undefined ? {} : { firstRelease: request.firstRelease }),
+    ...(request.region === undefined ? {} : { region: request.region }),
+    ...(request.appLinks === undefined ? {} : { appLinks: request.appLinks }),
+    ...(request.review === undefined ? {} : { review: request.review }),
+    run,
+  });
+
+  const seeds = Object.fromEntries(
+    Object.entries(build.surfaces)
+      .filter(([, surface]) => surface.content.length > 0)
+      .map(([key, surface]) => [key, surface.content]),
+  );
+
+  const submitted: Record<string, string[]> = {};
+  for (const [app, built] of Object.entries(build.mobile)) {
+    const cwd = join(repository, built.dir);
+    submitted[app] = [];
+    for (const id of built.buildIds) {
+      const platform = platformOf(await run("eas", ["build:view", id, "--json"], { cwd }));
+      await run(
+        "eas",
+        [
+          "submit",
+          "--platform",
+          platform,
+          "--id",
+          id,
+          "--profile",
+          "production",
+          "--non-interactive",
+          "--json",
+        ],
+        { cwd },
+      );
+      submitted[app].push(id);
+    }
+  }
+
+  const deploy: ProductDeploy = {
+    product: build.product,
+    environment: request.environment,
+    sha: build.sha,
+    dryRun: request.dryRun === true,
+    surfaces,
+    seeds,
+    submitted,
+    planned: "calls" in run ? (run.calls as DeployStep[]) : [],
+  };
+  const out = join(repository, PRODUCT_BUILD_SETTINGS.deployManifest(request.environment));
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(deploy, null, 2)}\n`);
+  return deploy;
+}

@@ -45,8 +45,10 @@ describe("@stackra/runway/node", () => {
       "MOBILE_DEV_SETTINGS",
       "MintlifyProviderDriver",
       "NeonPreviewDatabaseDriver",
+      "PRODUCT_BUILD_SETTINGS",
       "SCREENSHOT_CAPTURE_DEFAULTS",
       "WranglerEdgeKvDriver",
+      "buildProduct",
       "bundleSurfaces",
       "canaryVerdict",
       "capabilityConfig",
@@ -55,8 +57,10 @@ describe("@stackra/runway/node", () => {
       "checkoutLine",
       "committedBrandOutputs",
       "definesFor",
+      "deployProduct",
       "devServer",
       "dryRunCommand",
+      "entryOf",
       "platformRows",
       "prepareMobileDev",
       "promoteCanary",
@@ -71,6 +75,7 @@ describe("@stackra/runway/node", () => {
       "screenshotCaptureJob",
       "shellReleaseOf",
       "uploadBundle",
+      "workspacePackages",
     ]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
   });

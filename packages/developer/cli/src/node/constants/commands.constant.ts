@@ -29,6 +29,8 @@ import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
+import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
+import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -40,7 +42,7 @@ export const COMMANDS: readonly CliCommand[] = [
   NEW_COMMAND,
   GEN_COMMAND,
   DEV_COMMAND,
-  toolCommand("build", "Generate, then build the member"),
+  BUILD_COMMAND,
   toolCommand("start", "Generate, then preview an app's web build"),
   toolCommand("typecheck", "Generate, then type-check the member"),
   toolCommand("test", "Generate, then run the member's tests (--tier unit|e2e)"),
@@ -78,6 +80,7 @@ export const COMMANDS: readonly CliCommand[] = [
   SEARCH_REINDEX_COMMAND,
   SEARCH_STATUS_COMMAND,
   AUDIT_VERIFY_COMMAND,
+  DEPLOY_COMMAND,
   LS_COMMAND,
   MCP_COMMAND,
   MCP_SYNC_COMMAND,
