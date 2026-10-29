@@ -1,8 +1,8 @@
 # @stackra/infra-observability
 
 Telemetry infrastructure (ADR 0171, ADR 0184): where every service's OpenTelemetry goes and how long its logs are
-kept, a heartbeat for every cron, outbox relay and queue worker, the Sentry projects and alerts of the app members,
-and the service-level indicators of every service, read from the runways and declared by the slice of the generated
+kept, a heartbeat for every cron, outbox relay and queue worker, an uptime monitor for every public URL the runway
+lists, the Sentry projects and alerts of the app members, and the service-level indicators of every service, read from the runways and declared by the slice of the generated
 Pulumi program for the core stack.
 
 **Tier:** `tier:lib` (`packages/infrastructure/infra-observability`). Entries `.` (isomorphic, no Pulumi) and
@@ -20,8 +20,9 @@ Pulumi program for the core stack.
 | `.`      | `ObservabilityPlan`, `HeartbeatSource`, …                        | types                                                                                                    |
 | `./node` | `observabilityStack(plan)`                                       | inside the Pulumi program: every resource of the plan, and its outputs                                   |
 | `./node` | `logPipeline`, `sentryProjects`, `heartbeatMonitors`             | the parts, for a stack that composes its own                                                             |
+| `./node` | `uptimeMonitors`, `statusPage`                                   | the uptime monitors of public URLs and the status page, for a stack that composes its own                |
 
-`heartbeatMonitors`, `logPipeline`, `statusPage` and `observabilityStack` declare their return types, so the
+`heartbeatMonitors`, `uptimeMonitors`, `logPipeline`, `statusPage` and `observabilityStack` declare their return types, so the
 declarations name the Better Stack classes through `pulumi-better-uptime` and `pulumi-logtail`, not their `bin/` files
 (STA-1220).
 
@@ -34,6 +35,7 @@ declarations name the Better Stack classes through `pulumi-better-uptime` and `p
 | Log retention                              | root `observability.logs.{hotDays,coldMonths,coldStore}` (30, 13, `s3`)     |
 | Which jobs send heartbeats                 | root `observability.heartbeats.{crons,relays,workers}` (all on)             |
 | When objectives start                      | root `observability.slos.startAt` (`first-paying-tenant`)                   |
+| Public URLs probed from outside            | root `observability.uptime` (none)                                          |
 | The OTLP destination                       | root `providers.betterstack` (named: a Better Stack source is declared)     |
 | Sentry organization                        | root `providers.sentry.org` (a slug, never a `ref:`)                        |
 | Sentry project of an app                   | app runway `telemetry.sentryProject`                                        |
@@ -71,14 +73,33 @@ export const observability = observabilityStack(plan).outputs;
 | `logPipeline`       | a Better Stack source (`open_telemetry`, logs searchable `hotDays`) and, with `coldMonths` above 0, a private S3 archive the source writes and keeps, expiring after the full calendar months |
 | `sentryProjects`    | a team named after the project, a project and DSN key per app, and per deployed environment an alert that mails the issue's owners when an issue is first seen or regresses                   |
 | `heartbeatMonitors` | a Better Stack heartbeat per deployed environment and job: period from the job, grace a fifth of it, a miss mails and pushes whoever is on call                                               |
+| `uptimeMonitors`    | a Better Stack uptime monitor per `observability.uptime` entry: the URL every `checkFrequencySeconds`, up on 2xx or on `expectedStatusCodes`, a miss mails and pushes whoever is on call      |
 
 The archive user may only list, read, write and delete in its bucket: Better Stack writes a custom bucket with an
 access key only, so its secret stays in the encrypted Pulumi state and in Better Stack.
 
+## Uptime
+
+`observability.uptime` lists the public URLs Better Stack probes from outside, the guard for a host that is down while
+nothing inside it can report. Each entry is a kebab-case `name` (unique), an `https://` `url`, the `environment` it
+belongs to (default `production`, a monitored one), `checkFrequencySeconds` (at least 30, default 60) and
+`expectedStatusCodes` (default: any 2xx; a token-guarded route that answers 401 when healthy names `[401]`).
+
+```yaml
+observability:
+  uptime:
+    - name: registry
+      url: https://npm.stackra.figentra.com/-/ping
+      checkFrequencySeconds: 30
+    - name: turbo-cache
+      url: https://turbo.stackra.figentra.com/v8/artifacts/status
+      expectedStatusCodes: [401]
+```
+
 ## Status page
 
 `observability.statusPage` (ADR 0185 decision 3, ADR 0402) declares a Better Stack status page with one section per
-listed environment and an entry per heartbeat of it; `published` says whether the public sees it yet.
+listed environment and an entry per heartbeat and uptime monitor of it; `published` says whether the public sees it yet.
 
 ```yaml
 observability:
@@ -114,11 +135,21 @@ latency at the 95th and 99th percentiles. They are measurements, backend-neutral
 Stack or the on-premises LGTM stack. Objectives start at the first paying tenant (`slos.startAt`); none is declared
 before then.
 
+## Core's own stack
+
+`pulumi/` holds the Pulumi project that applies core's stack (STA-1573): `main.mjs` reads the root `runway.yaml` and
+declares `observabilityStack` over the built package, today the uptime monitors of the registry, static and
+turbo-cache Workers, the OTLP source and the unpublished status page. `.github/workflows/apply-observability.yml` runs
+it behind the `observability` environment's reviewer once the repository variable `OBSERVABILITY_ENABLED` is `true`;
+the runbook is `apps/docs/src/docs/runbooks/monitoring.mdx`. It stands in for the program `stackra infra gen` will
+compose.
+
 ## Provider tokens
 
 The owner sets each provider's token in the stack config of the private stacks repository: `sentry:token` (org and
 project write), `logtail:apiToken` and `better-uptime:apiToken` (Better Stack), and the AWS credentials of the core
-stack's account. The release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
+stack's account. Core's own stack reads its tokens from Infisical `prod` `/ci/observability` instead (see above). The
+release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
 
 ## Not here
 
@@ -126,4 +157,4 @@ stack's account. The release job's `SENTRY_AUTH_TOKEN` uploads source maps and i
 - The services' OTLP exporter and the redaction of personal data: `@stackra/logger` and `@stackra/errors`.
 - Objectives (SLOs) and their alerts: from the first paying tenant (ADR 0184 decision 3).
 - The on-call rotation and severities (ADR 0185): the rotation names people.
-- Agents run `pulumi preview` at most; `pulumi up` is the owner's.
+- Agents run `pulumi preview` at most; `pulumi up` is the owner's (for core, the reviewer of `apply-observability.yml`).

@@ -24,6 +24,8 @@ entry is `src/main.ts`, built by tsdown into `dist/main.mjs`, which wrangler dep
 - A team or hash reaches an R2 key only after `TEAM_PATTERN` / `ARTIFACT_HASH_PATTERN`.
 - Name new declarations by scope or team, never tenant (R-59).
 - Tests run in Node against `memoryBucket()`; the repo has no Workers test pool.
+- Keep the `observability` block in `wrangler.jsonc` (Workers Logs, STA-1573): change the sampling there, and the
+  uptime probe in the root `runway.yaml` `observability.uptime`, never in code.
 
 ## Tasks
 

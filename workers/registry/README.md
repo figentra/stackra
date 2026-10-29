@@ -310,6 +310,13 @@ Every package installs at `0.1.0-next.<n>`, `latest` is absent (no 0.1.0 yet), a
 folder verifies the registry signatures against `/-/npm/v1/keys`. Then the products move to `@stackra/*-config@next`
 and drop their `packages/tooling` copies, one follow-up batch per product.
 
+## Monitoring
+
+Workers Logs are on for every request (`observability` in `wrangler.jsonc`, `head_sampling_rate` 1). Better Stack
+probes `GET /-/ping` every 30 seconds from outside and pages whoever is on call on a miss; the monitor is the root
+`runway.yaml` `observability.uptime` entry `registry`, applied by `apply-observability.yml`
+([Monitoring runbook](../../apps/docs/src/docs/runbooks/monitoring.mdx), STA-1573).
+
 ## Not here yet
 
 - A signed offline licence file for on-prem from the registry (ADR 0453 decision 15, `LICENCE_SIGNING_KEY`): the

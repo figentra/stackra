@@ -1,0 +1,140 @@
+# Stackra file contract:
+# Purpose: apply core's telemetry stack (STA-1573) with Pulumi from CI only: test and build @stackra/infra-observability,
+#          then `pulumi preview` or `pulumi up` of packages/infrastructure/infra-observability/pulumi, which reads the
+#          root runway.yaml and declares the Better Stack uptime monitors of the registry, static and turbo-cache
+#          Workers, the OTLP source and the status page. Runs on main pushes that touch the package, runway.yaml or this
+#          file (`up`), and by hand (a preview unless `apply` is ticked).
+# Boundary: switched off until the owner's accounts exist (STA-1574 Better Stack, STA-28 Sentry): while the repository
+#           variable OBSERVABILITY_ENABLED is not `true` the job tests, builds, prints a notice and applies nothing, so
+#           main stays green. Once it is `true`, a missing identity, backend or token fails the run with an error that
+#           names it. The job runs in the `observability` environment, whose required reviewer approves every run.
+# Runtime: GitHub Actions
+# Governing contract: ADR 0171 (decisions 4, 6 and 8), ADR 0184, ADR 0185, ADR 0173, ADR 0019.
+# Owner: release-operations
+# Secrets: none in the repository. Infisical `prod` `/ci/observability` holds BETTERSTACK_UPTIME_API_TOKEN,
+#          BETTERSTACK_TELEMETRY_API_TOKEN, PULUMI_CONFIG_PASSPHRASE and the credentials of the state backend (for an
+#          S3-compatible bucket, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY), read through GitHub OIDC with the
+#          identity INFISICAL_OBSERVABILITY_IDENTITY_ID (an `observability` environment variable, not a secret). The
+#          tokens reach Pulumi as secret stack config through stdin on the runner, never a file in git or an argument.
+name: Apply observability
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/infrastructure/infra-observability/**"
+      - "runway.yaml"
+      - ".github/workflows/apply-observability.yml"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Run pulumi up (unticked: pulumi preview only)"
+        type: boolean
+        default: false
+
+# One run at a time, in order: a newer run waits instead of cancelling one mid-update.
+concurrency:
+  group: apply-observability
+  cancel-in-progress: false
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs.
+permissions: {}
+
+jobs:
+  apply:
+    name: Apply infra-observability (production)
+    # workflow_dispatch can name any branch; only main applies (ADR 0170 decision 6).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The owner restricts this environment to main with a required reviewer; its name is in the OIDC subject.
+    environment:
+      name: observability
+    permissions:
+      contents: read # checkout
+      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci/observability
+    env:
+      ENABLED: ${{ vars.OBSERVABILITY_ENABLED }}
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_OBSERVABILITY_IDENTITY_ID }}
+      INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      INFISICAL_DOMAIN: https://eu.infisical.com
+      # The state backend URL (s3://…, or https://api.pulumi.com): an identifier, not a credential.
+      PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
+      # The CLI, pinned to the SDK version of the infra catalog and installed by mise (checksum-verified).
+      PULUMI_TOOL: pulumi@3.268.0
+      PULUMI_SKIP_UPDATE_CHECK: "true"
+      STACK: production
+      # A main push applies; a dispatch applies only when ticked.
+      COMMAND: ${{ (github.event_name == 'push' || inputs.apply) && 'up' || 'preview' }}
+
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # ADR 0027 D2: node and pnpm come from mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
+      # in are not installed (as deploy-registry.yml).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+
+      # The program imports the built package, and a failing test never reaches Better Stack.
+      - name: Test and build
+        run: pnpm turbo run test build --filter=@stackra/infra-observability
+
+      - name: Switched off
+        if: env.ENABLED != 'true'
+        run: >-
+          echo "::notice title=Observability not applied::OBSERVABILITY_ENABLED is not true. Tested and built, nothing
+          applied (runbook: apps/docs/src/docs/runbooks/monitoring.mdx; owner issues STA-1574 and STA-28)."
+
+      - name: Prerequisites
+        if: env.ENABLED == 'true'
+        run: |
+          [ -n "$INFISICAL_IDENTITY_ID" ] || {
+            echo "::error title=INFISICAL_OBSERVABILITY_IDENTITY_ID::missing in the observability environment"; exit 1; }
+          [ -n "$PULUMI_BACKEND_URL" ] || {
+            echo "::error title=PULUMI_BACKEND_URL::missing in the observability environment"; exit 1; }
+          mise install "$PULUMI_TOOL"
+
+      # Only this stack's dedicated path, so no other /ci value enters the job.
+      - name: Stack secrets (Infisical OIDC)
+        if: env.ENABLED == 'true'
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_DOMAIN }}
+          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/observability
+          export-type: env
+
+      # The tokens go to `pulumi config set` through stdin; Pulumi encrypts them with the passphrase in the state.
+      - name: Pulumi ${{ env.COMMAND }}
+        if: env.ENABLED == 'true'
+        working-directory: packages/infrastructure/infra-observability/pulumi
+        run: |
+          set -euo pipefail
+          for name in BETTERSTACK_UPTIME_API_TOKEN BETTERSTACK_TELEMETRY_API_TOKEN PULUMI_CONFIG_PASSPHRASE; do
+            [ -n "${!name:-}" ] || {
+              echo "::error title=$name::missing in Infisical prod /ci/observability"; exit 1; }
+          done
+          pulumi() { mise exec "$PULUMI_TOOL" -- pulumi --non-interactive "$@"; }
+          pulumi login "$PULUMI_BACKEND_URL"
+          pulumi stack select --create "$STACK"
+          printf '%s' "$BETTERSTACK_UPTIME_API_TOKEN" | pulumi config set --secret better-uptime:apiToken
+          printf '%s' "$BETTERSTACK_TELEMETRY_API_TOKEN" | pulumi config set --secret logtail:apiToken
+          if [ "$COMMAND" = up ]; then
+            pulumi up --yes --diff --stack "$STACK"
+          else
+            pulumi preview --diff --stack "$STACK"
+          fi

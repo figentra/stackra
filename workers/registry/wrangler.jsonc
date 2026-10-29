@@ -55,6 +55,9 @@
     "REGISTRY_SIGNING_KEY_EXPIRES": "",
     "REGISTRY_RETIRED_KEYS": "[]",
   },
+  // Workers Logs (STA-1573): every request of the registry every buyer installs from is kept, so an install failure can
+  // be traced. Billed per log line above the plan's included volume; lower head_sampling_rate before dropping logs.
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   // A Custom Domain, as stackra-static. The npflared `npm-registry` Worker gives the name up first (ADR 0453 decision 17).
   "routes": [{ "pattern": "npm.stackra.figentra.com", "custom_domain": true }],
   "workers_dev": false,

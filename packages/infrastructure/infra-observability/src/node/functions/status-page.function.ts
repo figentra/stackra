@@ -3,7 +3,7 @@
  * Purpose: `statusPage(args)`, the public status page on Better Stack (ADR 0185 decision 3): the page itself (company,
  *          subdomain, optional custom domain, time zone, published or not), one section per environment it shows, and
  *          one entry per heartbeat of those environments, named `<service> <job>` so a customer reads which part of
- *          the product is late.
+ *          the product is late, and one entry per uptime monitor of those environments, named after it.
  * Boundary: declares Pulumi resources only. Every value is the runway's `observability.statusPage`; nothing is typed
  *           here. The provider's API token is the owner's stack config. Incidents and their wording are the on-call's,
  *           not this program's.
@@ -21,14 +21,19 @@ import type { ObservabilityPlan } from "#core/types/observability-plan.type";
  *
  * @param args.page - the plan's status page.
  * @param args.heartbeats - the plan's heartbeats and, in the same order, the monitors `heartbeatMonitors` declared.
+ * @param args.uptime - the plan's uptime targets and, in the same order, the monitors `uptimeMonitors` declared.
  * @example
- * const page = statusPage({ project, page: plan.statusPage, heartbeats: plan.heartbeats, monitors });
+ * const page = statusPage({ project, page: plan.statusPage, heartbeats: plan.heartbeats, monitors, uptime });
  */
 export function statusPage(args: {
   readonly project: string;
   readonly page: NonNullable<ObservabilityPlan["statusPage"]>;
   readonly heartbeats: ObservabilityPlan["heartbeats"];
   readonly monitors: readonly betterstack.Heartbeat[];
+  readonly uptime?: {
+    readonly targets: ObservabilityPlan["uptime"];
+    readonly monitors: readonly betterstack.Monitor[];
+  };
 }): {
   readonly statusPage: betterstack.StatusPage;
   readonly sections: {
@@ -67,7 +72,21 @@ export function statusPage(args: {
         ),
       ];
     });
-    return { section, resources };
+    const uptime = args.uptime;
+    const probes = (uptime?.targets ?? []).flatMap((target, index) => {
+      const monitor = uptime?.monitors[index];
+      if (target.environment !== environment || monitor === undefined) return [];
+      return [
+        new betterstack.StatusPageResource(`status-${target.environment}.uptime.${target.name}`, {
+          statusPageId: created.id,
+          statusPageSectionId: section.id.apply(Number),
+          resourceType: "Monitor",
+          resourceId: monitor.id.apply(Number),
+          publicName: target.name,
+        }),
+      ];
+    });
+    return { section, resources: [...resources, ...probes] };
   });
   return { statusPage: created, sections };
 }

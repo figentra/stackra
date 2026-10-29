@@ -11,3 +11,5 @@ export { heartbeatMonitors } from "#node/functions/heartbeat-monitors.function";
 export { logPipeline } from "#node/functions/log-pipeline.function";
 export { observabilityStack } from "#node/functions/observability-stack.function";
 export { sentryProjects } from "#node/functions/sentry-projects.function";
+export { statusPage } from "#node/functions/status-page.function";
+export { uptimeMonitors } from "#node/functions/uptime-monitors.function";

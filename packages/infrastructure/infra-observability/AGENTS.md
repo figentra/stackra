@@ -14,13 +14,17 @@ Telemetry infrastructure (ADR 0171 decision 2, ADR 0184). Member at `packages/in
 | A shared type                            | `src/core/types/<name>.type.ts`             |
 | Code that runs inside the Pulumi program | `src/node/functions/<name>.function.ts`     |
 | A test                                   | `__tests__/<name>.<kind>.test.ts` beside it |
+| Core's own Pulumi project                | `pulumi/` (`Pulumi.yaml`, `main.mjs`)       |
 
 ## Rules
 
 - `.` never imports `@pulumi/*`, a provider SDK or `node:*`: `stackra infra gen` builds the plan outside a Pulumi
   program.
+- What is monitored is configuration: a new uptime target is an `observability.uptime` entry in the runway, never a
+  URL in a function.
 - Read runway documents through `@stackra/runway` (`parseRunway`, `readRunway`); never parse YAML here.
-- Never run `pulumi up`, `pulumi destroy` or anything that calls Sentry, Better Stack or AWS. Tests use
+- Never run `pulumi up`, `pulumi destroy` or anything that calls Sentry, Better Stack or AWS. Core's stack is applied
+  only by `.github/workflows/apply-observability.yml`, behind the `observability` environment's reviewer. Tests use
   `runtime.setMocks` from `@pulumi/pulumi` (`src/node/functions/__tests__/fixtures/pulumi-mocks.fixture.ts`).
 - A secret is an output wrapped in `pulumi.secret` (the OTLP token, the heartbeat URLs) or one the provider marks
   (the archive key); never a literal, a file or a log line (ADR 0173).

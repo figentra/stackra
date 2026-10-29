@@ -28,6 +28,9 @@
     // Most hashes one `POST /v8/artifacts` query may ask about (each is one R2 head call).
     "TURBO_CACHE_MAX_QUERY_HASHES": "100",
   },
+  // Workers Logs (STA-1573). CI makes many artifact calls per run, so one request in ten keeps the billed log volume
+  // low while 401s and 503s still show; raise it to 1 while debugging.
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
   // The public host, a Workers Custom Domain (as stackra-static and stackra-registry), attached by `wrangler deploy` in
   // .github/workflows/deploy-turbo-cache.yml. CI's TURBO_API points here. No *.workers.dev address.
   "routes": [{ "pattern": "turbo.stackra.figentra.com", "custom_domain": true }],
