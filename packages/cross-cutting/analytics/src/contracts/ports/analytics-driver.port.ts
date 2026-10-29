@@ -8,10 +8,14 @@
  *           `AnalyticsClient` owns batching and retries (stackra-406): a driver sends once and rejects on failure, and
  *           the client retries the batch with bounded backoff, so a driver never retries itself. `beacon` is the
  *           page-closing path: a driver that can hand a batch to `navigator.sendBeacon` overrides it; the default
- *           answers `false` and the client falls back to `send`.
+ *           answers `false` and the client falls back to `send`. `erasePerson` is the server side of an erasure
+ *           (STA-1582): it deletes the subject's person, and the events captured for it, at the vendor; a driver
+ *           with nothing at a vendor (`none`) resolves, and the default rejects, so a vendor driver that cannot erase
+ *           never reports a silent success.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0294 (decisions 4, 15, 16 and 17); ADR 0305 (rule 8);
- *                     ADR 0266 (one option, one driver, memory first); analytics gap 6 (the delivery engine, stackra-406).
+ *                     ADR 0266 (one option, one driver, memory first); analytics gap 6 (the delivery engine, stackra-406);
+ *                     ADR 0189 (decision 2: erasure reaches every copy, STA-1582).
  */
 import { Port } from "@stackra/contracts";
 
@@ -37,5 +41,17 @@ export abstract class AnalyticsDriver extends Port {
    */
   beacon(_deliveries: readonly AnalyticsDelivery[]): boolean {
     return false;
+  }
+
+  /**
+   * Deletes the person whose distinct id is `subject` (the subject's public id), with its events, at the vendor; the
+   * number of persons deleted, 0 when the vendor knows none. Server only.
+   *
+   * @throws Error by default: this driver cannot erase at its vendor, so the erasure listener's event dead-letters.
+   */
+  erasePerson(_subject: string): Promise<number> {
+    return Promise.reject(
+      new Error(`${this.constructor.name} cannot erase a person at its analytics vendor`),
+    );
   }
 }

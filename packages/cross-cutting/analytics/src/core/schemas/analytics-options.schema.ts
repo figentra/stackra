@@ -13,10 +13,12 @@
  *           The capture switches are read by the auto-capture hooks; the ingest origin and the PostHog key and host by
  *           vendor drivers only; web vitals and replay are `TelemetryConfig`'s (@stackra/logger), never here. The
  *           PostHog key is public; the host feeds it from its env configuration (`analyticsPosthogKey`), so this
- *           shape has no env map.
+ *           shape has no env map. The PostHog personal API key, which only a server erasure uses (STA-1582), is the
+ *           `ANALYTICS_POSTHOG_PERSONAL_API_KEY` secret, never a value.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0294 (decisions 4, 19 and 26).
  */
+import { Secret } from "@stackra/config";
 import { ConsentCategory } from "@stackra/consent";
 import type { DriverName } from "@stackra/container";
 import { Field, Int, Num, registerSchemas, Schema } from "@stackra/validation";
@@ -39,6 +41,13 @@ import type { AnalyticsDestination } from "#core/types/analytics-destination.typ
  * }
  */
 export class AnalyticsOptions extends Schema {
+  /**
+   * The PostHog personal API key (`phx_...`, scope `person:write`) a server erasure deletes a person with; empty when
+   * PostHog is not used. A secret, resolved from the secret store, never a value.
+   */
+  @Secret("ANALYTICS_POSTHOG_PERSONAL_API_KEY")
+  posthogPersonalApiKey = "";
+
   /** Events that may wait for a decision (0 to 1,000); later ones are dropped so the earliest, the first view, stay. */
   @Int({
     min: 0,
@@ -168,6 +177,12 @@ export class AnalyticsOptions extends Schema {
 
   /** The PostHog host the `posthog` driver sends to when `ingestOrigin` is empty. */
   posthogHost = "https://eu.i.posthog.com";
+
+  /** The PostHog private API host a server erasure deletes a person through (`https://us.posthog.com`, a self-host). */
+  posthogApiHost = "https://eu.posthog.com";
+
+  /** The PostHog project id a server erasure deletes a person in; empty when PostHog is not used (owner value). */
+  posthogProjectId = "";
 
   /**
    * The registered `AnalyticsIdentity` that keeps the visitor's identity after consent: `memory` (nothing outlives the

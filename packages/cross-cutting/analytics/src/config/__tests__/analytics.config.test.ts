@@ -62,7 +62,10 @@ describe("AnalyticsConfig", () => {
     expectTypeOf(config.consentCategory).toEqualTypeOf<ConsentCategory>();
     expectTypeOf(config.identityDriver).toEqualTypeOf<DriverName<AnalyticsIdentity>>();
     expect(config.identityDriver).toBe("memory");
-    expect({ ...config }).toEqual(ANALYTICS_CONFIG_SCHEMA.parse({}));
+    // The PostHog personal key is a secret: a hidden getter, empty until the secret store fills it.
+    expect(Object.keys(config)).not.toContain("posthogPersonalApiKey");
+    expect(config.posthogPersonalApiKey).toBe("");
+    expect({ ...config, posthogPersonalApiKey: "" }).toEqual(ANALYTICS_CONFIG_SCHEMA.parse({}));
     expect(config.driver).toBe("none");
     expect(Object.isFrozen(config)).toBe(true);
   });

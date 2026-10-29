@@ -34,6 +34,9 @@ describe("AnalyticsOptions", () => {
     expectTypeOf<AnalyticsOptions["ingestOrigin"]>().toEqualTypeOf<string>();
     expectTypeOf<AnalyticsOptions["posthogKey"]>().toEqualTypeOf<string | null>();
     expectTypeOf<AnalyticsOptions["posthogHost"]>().toEqualTypeOf<string>();
+    expectTypeOf<AnalyticsOptions["posthogApiHost"]>().toEqualTypeOf<string>();
+    expectTypeOf<AnalyticsOptions["posthogProjectId"]>().toEqualTypeOf<string>();
+    expectTypeOf<AnalyticsOptions["posthogPersonalApiKey"]>().toEqualTypeOf<string>();
     expectTypeOf<AnalyticsOptions["drivers"]>().toEqualTypeOf<
       Record<string, DriverName<AnalyticsDriver>>
     >();

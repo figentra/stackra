@@ -5,12 +5,14 @@
  *          the user, groups, `$identify` and `$groupidentify` of identity stitching, the
  *          `sendBeacon` path for a closing page, the ingest
  *          origin preferred over the host, no request for an empty list, and the errors for a missing key and an
- *          error status.
+ *          error status; `erasePerson` finds the subject's persons by distinct id and deletes each with its events and
+ *          recordings through the private API host, counts an already-deleted person, and rejects without the personal
+ *          API key or project id and on an error status.
  * Boundary: test only; `fetch` is stubbed, no network.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0298; ADR 0071.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0298; ADR 0071; ADR 0189 (decision 2); STA-1582.
  */
-import { buildConfig } from "@stackra/config";
+import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -46,6 +48,31 @@ function answer(status = 200) {
 function request(fetch: ReturnType<typeof answer>, index = 0) {
   const [url, init] = fetch.mock.calls[index] as unknown as [string, RequestInit];
   return { url, init, body: JSON.parse(String(init.body)) };
+}
+
+/** A config with the private API set up, the personal key from the secret store. */
+const eraseConfig = buildConfig(AnalyticsConfig, {
+  values: {
+    driver: "posthog",
+    posthogApiHost: "https://posthog.acme.example/",
+    posthogProjectId: "42",
+  },
+  secrets: new MemorySecretStoreDriver().set("ANALYTICS_POSTHOG_PERSONAL_API_KEY", "phx_test"),
+});
+
+/** Stubs `fetch`: the lookup finds `ids`, each delete answers `deleteStatus`. */
+function persons(ids: string[], deleteStatus = 202, lookupStatus = 200) {
+  const fetch = vi.fn((_url: string, init?: RequestInit) =>
+    Promise.resolve(
+      init?.method === "DELETE"
+        ? new Response(null, { status: deleteStatus })
+        : new Response(JSON.stringify({ results: ids.map((id) => ({ id })) }), {
+            status: lookupStatus,
+          }),
+    ),
+  );
+  vi.stubGlobal("fetch", fetch);
+  return fetch;
 }
 
 afterEach(() => {
@@ -185,5 +212,46 @@ describe("PosthogAnalyticsDriver", () => {
     await expect(
       new PosthogAnalyticsDriver(config).send([delivery("lead.submitted")]),
     ).rejects.toThrow(/HTTP 503/);
+  });
+
+  describe("erasePerson", () => {
+    it("finds the subject's persons by distinct id and deletes each with its events", async () => {
+      const fetch = persons(["p-1", "p-2"]);
+      await expect(new PosthogAnalyticsDriver(eraseConfig).erasePerson("usr_1")).resolves.toBe(2);
+      const base = "https://posthog.acme.example/api/projects/42/persons/";
+      expect(fetch.mock.calls.map(([url, init]) => [init?.method ?? "GET", url])).toEqual([
+        ["GET", `${base}?distinct_id=usr_1`],
+        ["DELETE", `${base}p-1/?delete_events=true&delete_recordings=true`],
+        ["DELETE", `${base}p-2/?delete_events=true&delete_recordings=true`],
+      ]);
+      for (const [, init] of fetch.mock.calls)
+        expect(init?.headers).toEqual({ authorization: "Bearer phx_test" });
+    });
+
+    it("answers 0 when PostHog knows no person, and counts one already deleted", async () => {
+      persons([]);
+      await expect(new PosthogAnalyticsDriver(eraseConfig).erasePerson("usr_1")).resolves.toBe(0);
+      persons(["p-1"], 404);
+      await expect(new PosthogAnalyticsDriver(eraseConfig).erasePerson("usr_1")).resolves.toBe(1);
+    });
+
+    it("rejects without the personal API key or the project id, before any request", async () => {
+      const fetch = persons(["p-1"]);
+      await expect(new PosthogAnalyticsDriver(config).erasePerson("usr_1")).rejects.toThrow(
+        /ANALYTICS_POSTHOG_PERSONAL_API_KEY/,
+      );
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("rejects on an error status", async () => {
+      persons([], 202, 401);
+      await expect(new PosthogAnalyticsDriver(eraseConfig).erasePerson("usr_1")).rejects.toThrow(
+        "HTTP 401",
+      );
+      persons(["p-1"], 500);
+      await expect(new PosthogAnalyticsDriver(eraseConfig).erasePerson("usr_1")).rejects.toThrow(
+        "HTTP 500",
+      );
+    });
   });
 });

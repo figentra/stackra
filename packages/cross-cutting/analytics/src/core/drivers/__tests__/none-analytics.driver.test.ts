@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `NoneAnalyticsDriver`: a driver of `AnalyticsDriver`, recorded with its port, that resolves
- *          and sends nothing.
+ *          and sends nothing, and erases 0 persons without a request.
  * Boundary: test only; the global `fetch` is a spy, so any network attempt would show.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0266; ADR 0298 (decision 1).
@@ -43,6 +43,14 @@ describe("NoneAnalyticsDriver", () => {
         },
       ]),
     ).resolves.toBeUndefined();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("erases 0 persons without a request", async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const driver: AnalyticsDriver = new NoneAnalyticsDriver();
+    await expect(driver.erasePerson("usr_1")).resolves.toBe(0);
     expect(fetch).not.toHaveBeenCalled();
   });
 });

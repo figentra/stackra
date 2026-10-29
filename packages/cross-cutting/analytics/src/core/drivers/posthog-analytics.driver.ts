@@ -10,10 +10,16 @@
  *           delivery its `$groupidentify`. Only an identified visitor's events build a person profile
  *           (`$process_person_profile`). Each delivery's capture time is its `timestamp`. A missing
  *           key or an error status rejects, and the client's delivery engine retries the batch (the driver never
- *           does). `beacon` sends the same body through `navigator.sendBeacon` when the page closes.
+ *           does). `beacon` sends the same body through `navigator.sendBeacon` when the page closes. `erasePerson`
+ *           (server, STA-1582) finds the persons whose distinct id is the subject through the private API
+ *           (`GET <posthogApiHost>/api/projects/<posthogProjectId>/persons/?distinct_id=`) and deletes each with its
+ *           events and recordings (`DELETE .../persons/<id>/?delete_events=true&delete_recordings=true`), authorised
+ *           by the personal API key secret; a missing key or project id rejects as a configuration error, never a
+ *           silent success, and a person already gone (404) counts as deleted, so a redelivery completes.
  * Runtime: isomorphic
  * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0071 (no identifier before consent); ADR 0294 (decisions 16
- *                     and 17); ADR 0266 (one option, one driver).
+ *                     and 17); ADR 0266 (one option, one driver); ADR 0189 (decision 2:
+ *                     erasure reaches every copy).
  */
 import { Driver } from "@stackra/container";
 
@@ -109,6 +115,35 @@ export class PosthogAnalyticsDriver extends Driver(AnalyticsDriver) {
     if (typeof send !== "function" || posthogKey === null || posthogKey === "") return false;
     const { url, body } = this.requestOf(deliveries);
     return send.call(scope.navigator, url, new Blob([body], { type: "application/json" }));
+  }
+
+  /**
+   * Deletes every PostHog person whose distinct id is `subject`, with its events and recordings; the number found.
+   *
+   * @throws Error when the personal API key or the project id is not configured, or PostHog answers with an error.
+   */
+  override async erasePerson(subject: string): Promise<number> {
+    const { posthogPersonalApiKey, posthogProjectId, posthogApiHost } = this.config;
+    if (posthogPersonalApiKey === "" || posthogProjectId === "")
+      throw new Error(
+        "AnalyticsConfig.posthogPersonalApiKey (secret ANALYTICS_POSTHOG_PERSONAL_API_KEY) and posthogProjectId " +
+          "are not set, so the erased subject's PostHog person cannot be deleted",
+      );
+    const persons = `${posthogApiHost.replace(/\/+$/, "")}/api/projects/${encodeURIComponent(posthogProjectId)}/persons/`;
+    const headers = { authorization: `Bearer ${posthogPersonalApiKey}` };
+    const found = await fetch(`${persons}?distinct_id=${encodeURIComponent(subject)}`, { headers });
+    if (!found.ok) throw new Error(`PostHog answered the person lookup with HTTP ${found.status}`);
+    const { results = [] } = (await found.json()) as { results?: { id: string }[] };
+    for (const { id } of results) {
+      const removed = await fetch(
+        `${persons}${encodeURIComponent(id)}/?delete_events=true&delete_recordings=true`,
+        { method: "DELETE", headers },
+      );
+      // 404: a redelivery after a partial run already deleted this one.
+      if (!removed.ok && removed.status !== 404)
+        throw new Error(`PostHog answered the person delete with HTTP ${removed.status}`);
+    }
+    return results.length;
   }
 
   /**

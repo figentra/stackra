@@ -11,34 +11,35 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 
 ## What is here
 
-| Entry         | Symbol                                                                                             | Use                                                                                    |
-| ------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `.`           | `AnalyticsConfig`                                                                                  | the configuration (key `analytics`): driver, gating category, queue bound, deny list   |
-| `.`           | `AnalyticsConfig$`                                                                                 | the shipped schema a member's generated override extends                               |
-| `.`           | `AnalyticsOptions`                                                                                 | the configuration's shape                                                              |
-| `.`           | `AnalyticsClient`                                                                                  | the service that delivers: `track(event)`, `identify`, `group`, `reset`, `state`       |
-| `.`           | `AnalyticsState`                                                                                   | `opted_in`, `opted_out`, `pending`                                                     |
-| `.`           | `NoneAnalyticsDriver`                                                                              | the default driver: sends nothing                                                      |
-| `.`           | `MemoryAnalyticsDriver`                                                                            | the `memory` driver: keeps what it is sent                                             |
-| `.`           | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver: one batch capture request per send, plain `fetch`                |
-| `./contracts` | `AnalyticsDriver`                                                                                  | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type   |
-| `./contracts` | `AnalyticsDriverLookup`                                                                            | the port that finds a named driver instance a destination sends to                     |
-| `.`           | `AnalyticsDestination`, `NoneAnalyticsDriverLookupDriver`                                          | one entry of `destinations`; the default lookup, which knows no named instance         |
-| `./contracts` | `AnalyticsContext`                                                                                 | where a delivery was captured: library, page path or screen, locale, version, region   |
-| `./contracts` | `AnalyticsDeliveryKind`                                                                            | `track`, `identify`, `group`: what a delivery asks the destination to do               |
-| `./contracts` | `AnalyticsIdentity`                                                                                | the port that keeps the visitor's identity after consent (`AnalyticsIdentityRecord`)   |
-| `.`           | `MemoryAnalyticsIdentityDriver`, `CookieAnalyticsIdentityDriver`, `StorageAnalyticsIdentityDriver` | identity drivers `memory` (default, one launch), `cookie` (web), `storage` (device)    |
-| `.`           | `PageViewed`, `ScreenViewed`, `ElementClicked`                                                     | the built-in auto-capture events `page.viewed`, `screen.viewed`, `element.clicked`     |
-| `./react`     | `useAutocapture`                                                                                   | page views per path and `data-track` clicks, as the capture switches allow             |
-| `./native`    | `useScreenViews`                                                                                   | screen views per focused route, while `autocapturePageviews` is on                     |
-| `.`           | `AdPixelAnalyticsDriver`, `NoneAdPixelDriver`, `AnalyticsConversion`                               | the `ad-pixel` driver, the default `AdPixel` and one entry of `conversions`            |
-| `.`           | `adClickIdOf`, `AD_CLICK_ID_PARAMS`                                                                | the ad click id of a landing URL                                                       |
-| `./contracts` | `AdPixel`, `AdPixelEvent`                                                                          | the port a vendor browser pixel implements, and what it fires                          |
-| `./node`      | `RelayTrackedAnalyticsListener`                                                                    | sends the pipeline's server-side `analytics.tracked.v1` events to the bound driver     |
-| `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                    |
-| `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
-| `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event    |
-| `./testing`   | `AnalyticsFake`                                                                                    | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`       |
+| Entry         | Symbol                                                                                             | Use                                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `.`           | `AnalyticsConfig`                                                                                  | the configuration (key `analytics`): driver, gating category, queue bound, deny list    |
+| `.`           | `AnalyticsConfig$`                                                                                 | the shipped schema a member's generated override extends                                |
+| `.`           | `AnalyticsOptions`                                                                                 | the configuration's shape                                                               |
+| `.`           | `AnalyticsClient`                                                                                  | the service that delivers: `track(event)`, `identify`, `group`, `reset`, `state`        |
+| `.`           | `AnalyticsState`                                                                                   | `opted_in`, `opted_out`, `pending`                                                      |
+| `.`           | `NoneAnalyticsDriver`                                                                              | the default driver: sends nothing                                                       |
+| `.`           | `MemoryAnalyticsDriver`                                                                            | the `memory` driver: keeps what it is sent                                              |
+| `.`           | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver: one batch capture request per send, plain `fetch`                 |
+| `./contracts` | `AnalyticsDriver`                                                                                  | the port a driver implements (`send`, `erasePerson`), with the `AnalyticsDelivery` type |
+| `./contracts` | `AnalyticsDriverLookup`                                                                            | the port that finds a named driver instance a destination sends to                      |
+| `.`           | `AnalyticsDestination`, `NoneAnalyticsDriverLookupDriver`                                          | one entry of `destinations`; the default lookup, which knows no named instance          |
+| `./contracts` | `AnalyticsContext`                                                                                 | where a delivery was captured: library, page path or screen, locale, version, region    |
+| `./contracts` | `AnalyticsDeliveryKind`                                                                            | `track`, `identify`, `group`: what a delivery asks the destination to do                |
+| `./contracts` | `AnalyticsIdentity`                                                                                | the port that keeps the visitor's identity after consent (`AnalyticsIdentityRecord`)    |
+| `.`           | `MemoryAnalyticsIdentityDriver`, `CookieAnalyticsIdentityDriver`, `StorageAnalyticsIdentityDriver` | identity drivers `memory` (default, one launch), `cookie` (web), `storage` (device)     |
+| `.`           | `PageViewed`, `ScreenViewed`, `ElementClicked`                                                     | the built-in auto-capture events `page.viewed`, `screen.viewed`, `element.clicked`      |
+| `./react`     | `useAutocapture`                                                                                   | page views per path and `data-track` clicks, as the capture switches allow              |
+| `./native`    | `useScreenViews`                                                                                   | screen views per focused route, while `autocapturePageviews` is on                      |
+| `.`           | `AdPixelAnalyticsDriver`, `NoneAdPixelDriver`, `AnalyticsConversion`                               | the `ad-pixel` driver, the default `AdPixel` and one entry of `conversions`             |
+| `.`           | `adClickIdOf`, `AD_CLICK_ID_PARAMS`                                                                | the ad click id of a landing URL                                                        |
+| `./contracts` | `AdPixel`, `AdPixelEvent`                                                                          | the port a vendor browser pixel implements, and what it fires                           |
+| `./node`      | `RelayTrackedAnalyticsListener`                                                                    | sends the pipeline's server-side `analytics.tracked.v1` events to the bound driver      |
+| `./node`      | `EraseAnalyticsPersonListener`                                                                     | after `SubjectErased`, deletes the subject's person and events at the vendor            |
+| `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                     |
+| `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds  |
+| `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event     |
+| `./testing`   | `AnalyticsFake`                                                                                    | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`        |
 
 ## The rules, in order
 
@@ -213,6 +214,24 @@ An action or query that declares `analytics` (`Action({ analytics: true })` or `
 bound `AnalyticsDriver` as a track delivery: the event's id, name and properties minus `denyProperties`, the consent
 subject as `anonymousId`, the user id for a user actor, the call id as `sessionId` (a server call has no visit) and the
 locale in the context. A rejection from the driver is retried by the outbox relay. Sampling does not apply here.
+
+## Erasure
+
+`sign-out` only forgets the visitor on the device (`reset`). A subject's erasure (@stackra/privacy's `SubjectErased`,
+ADR 0189 decision 2) reaches the vendor through `EraseAnalyticsPersonListener` (`./node`): it calls the bound driver's
+`erasePerson(subject)` and logs `analytics.erasure.erased` with the erasure id and the number of persons deleted.
+
+- `posthog` looks the person up by distinct id (the subject's public `usr_` id, which an identified visitor's events
+  carry; `$identify` merged its anonymous ids into it) with `GET <posthogApiHost>/api/projects/<posthogProjectId>/persons/?distinct_id=`,
+  then deletes each with `DELETE .../persons/<id>/?delete_events=true&delete_recordings=true`. PostHog deletes the
+  events asynchronously.
+- It needs `posthogProjectId`, `posthogApiHost` (`https://eu.posthog.com` by default; `https://us.posthog.com` or a
+  self-host) and the `ANALYTICS_POSTHOG_PERSONAL_API_KEY` secret (a personal API key with `person:write`). Without the
+  key or the project id the listener rejects, so the outbox retries and then dead-letters the erasure: never a silent
+  success. A person already deleted (404) counts as deleted, so a redelivery completes.
+- `none` deletes nothing (0 persons); `memory` records the subject (`erased()`) and drops its deliveries. Any other
+  driver rejects by default.
+- A visitor who never signed in is only an anonymous id PostHog cannot tie to the subject, so nothing finds it.
 
 ## Not here yet
 
