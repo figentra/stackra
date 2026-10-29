@@ -1014,12 +1014,13 @@ describe("CrudService metadata (stackra-294)", () => {
     connect();
     const service = new CustomerService();
     const bad = { metadata: { count: 3 } } as never;
-    for (const call of [
+    const writes: Array<() => unknown> = [
       () => service.create(bad),
       () => service.insert(bad),
       () => service.update({ id: "cus_1" }, bad),
       () => service.updateWhere({}, bad),
-    ])
+    ];
+    for (const call of writes)
       await expect(Promise.resolve().then(() => call())).rejects.toSatisfy((error: unknown) =>
         isRefusal(error, MetadataInvalidError),
       );
