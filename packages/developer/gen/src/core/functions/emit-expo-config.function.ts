@@ -178,7 +178,9 @@ export function emitExpoConfig(ir: MemberIR): {
   // The icons the build carries: the brand kit's sets, and the same names in the host's AppIconConfig.
   const listed = configured("AppIconConfig", "@stackra/platform", "icons");
   const listedIcons = Array.isArray(listed) ? listed.map(String) : [];
-  if (listedIcons.join(",") !== [...icons].join(","))
+  // Order does not matter: the icon sets come sorted, an override may list them in any order.
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy made here; toSorted is ES2023 and the base lib is ES2022
+  if ([...listedIcons].sort().join(",") !== icons.join(","))
     errors.push(
       refusal(
         "app_icon_drift",

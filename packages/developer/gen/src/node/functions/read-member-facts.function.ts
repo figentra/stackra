@@ -4,7 +4,8 @@
  *          the package name, version and dependencies (and the runtime ones alone, STA-1309) from package.json, the layout from the `define*` call of
  *          `stackra.config.ts` (or the folder the member sits in), and an app's `area` and `targets`.
  * Boundary: reads two files; never runs `stackra.config.ts`. The `define*` call holds static data, so its call name and
- *           the enum cases of `area` and `targets` are read from the text.
+ *           the enum cases of its top-level `area` and `targets` come from `defineCall`, the one reader of that call
+ *           (`readAppDefinition` reads the rest). An argument that is not static data yields no `area` or `targets`.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 20, 2026-10-23 item 14: the member key is the folder name); ADR 0295
  *                     (decision 1: one static `define*` call).
@@ -14,6 +15,7 @@ import { basename, join, resolve, sep } from "node:path";
 
 import { ApiArea, Target } from "@stackra/contracts";
 
+import { defineCall } from "#core/functions/define-call.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { MemberFacts } from "#node/types/member-facts.type";
@@ -53,13 +55,14 @@ export function readMemberFacts(root: string): MemberFacts {
   if (typeof manifest.name !== "string") throw new Error(`${manifestPath} has no name`);
 
   const configPath = join(absolute, "stackra.config.ts");
-  // shortcut: the static `define*` argument is read by pattern, not parsed; upgrade to the host's syntax tree when a
-  // tool section (STA-339) needs more than the call name, `area` and `targets`.
-  const config = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
-  const call = /\b(define(?:App|Package|Service|Worker))\s*\(/.exec(config)?.[1];
+  const call = existsSync(configPath) ? defineCall(readFileSync(configPath, "utf8")) : undefined;
+  const argument =
+    typeof call?.argument === "object" && call.argument !== null && !Array.isArray(call.argument)
+      ? (call.argument as Record<string, unknown>)
+      : {};
   const segments = absolute.split(sep);
   const layout: MemberIR["layout"] =
-    (call === undefined ? undefined : LAYOUTS[call]) ??
+    (call === undefined ? undefined : LAYOUTS[call.name]) ??
     (segments.includes("services")
       ? "service"
       : segments.includes("apps")
@@ -68,12 +71,17 @@ export function readMemberFacts(root: string): MemberFacts {
           ? "worker"
           : "package");
 
-  const area = /\barea\s*:\s*ApiArea\.(\w+)/.exec(config)?.[1];
-  const targetList = /\btargets\s*:\s*\[([^\]]*)\]/.exec(config)?.[1];
-  const targets =
-    targetList === undefined
-      ? undefined
-      : [...targetList.matchAll(/Target\.(\w+)/g)].map((match) => codeOf(Target, match[1] ?? ""));
+  // `staticLiteral` keeps a reference as its source text: `ApiArea.App`, `Target.Ios`.
+  const area =
+    typeof argument["area"] === "string"
+      ? /^ApiArea\.(\w+)$/.exec(argument["area"])?.[1]
+      : undefined;
+  const targets = Array.isArray(argument["targets"])
+    ? argument["targets"].flatMap((target) => {
+        const name = typeof target === "string" ? /^Target\.(\w+)$/.exec(target)?.[1] : undefined;
+        return name === undefined ? [] : [codeOf(Target, name)];
+      })
+    : undefined;
 
   return {
     root: absolute,

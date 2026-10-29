@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `readAppDefinition`: an app's `defineApp` data and its PascalCase icon sets read, nothing for
- *          a package, and a non-static argument refused as `app_definition_not_static`.
+ *          a package, a `defineApp(` in a comment ignored, and a non-static argument refused as `app_definition_not_static`.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 1 and 2).
@@ -40,6 +40,23 @@ describe("readAppDefinition", () => {
         },
         icons: ["Ramadan", "Winter"],
       },
+      errors: [],
+    });
+  });
+
+  it("reads the real call, not a defineApp quoted in a comment above it", () => {
+    const root = writeFixtureMember("mobile", {
+      "stackra.config.ts": [
+        "/**",
+        " * The `defineApp(...)` argument is static data.",
+        " */",
+        "// shortcut: then `export default defineApp({ targets: [Target.Web], … })`.",
+        'export default defineApp({ scheme: "acme" });',
+        "",
+      ].join("\n"),
+    });
+    expect(readAppDefinition(root)).toEqual({
+      app: { definition: { scheme: "acme" }, icons: [] },
       errors: [],
     });
   });

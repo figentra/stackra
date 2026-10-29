@@ -31,11 +31,11 @@ describe("readMemberFacts", () => {
     });
   });
 
-  it("reads an app's area and targets", () => {
+  it("reads an app's top-level area and targets, not a tool section's", () => {
     const root = writeFixtureMember("web", {
       "stackra.config.ts": [
         'import { ApiArea, defineApp, Target } from "@stackra/contracts";',
-        "export default defineApp({ targets: [Target.Web, Target.Ios], area: ApiArea.App });",
+        "export default defineApp({ vite: { targets: [Target.Desktop] }, targets: [Target.Web, Target.Ios], area: ApiArea.App });",
         "",
       ].join("\n"),
     });

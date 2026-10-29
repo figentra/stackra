@@ -269,7 +269,7 @@ export async function generate(
           "shim_authored",
           "app.config.ts",
           "an authored app.config.ts sits at the member root, where gen writes the Expo config shim",
-          "move its settings into the `expo` section of defineApp, or an add-only expo.extend.ts, and delete the file",
+          "move its settings into the `expo` section of defineApp and delete the file",
         ),
       );
   }

@@ -9,7 +9,8 @@
  *          out, and reports a missing manifest as stale (STA-1308); an authored root tsdown.config.ts that does not
  *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
  *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the member root is
- *          `encore_app_stray` (STA-1322).
+ *          `encore_app_stray` (STA-1322); an authored `app.json` or root `app.config.ts` beside an iOS app's Expo
+ *          config is `shim_authored`, and the shim gen wrote is not (STA-768).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -182,6 +183,49 @@ describe("generate's tool configs and code hatches (STA-1306)", () => {
       "encore_app_stray encore.app",
     ]);
     expect(existsSync(join(root, ".stackra/encore/encore.app"))).toBe(false);
+  });
+});
+
+/** An iOS app member: `defineApp` with a bundle id, so gen writes the Expo config and its root shim. */
+const IOS_APP: Readonly<Record<string, string>> = {
+  "stackra.config.ts": [
+    'import { ApiArea, defineApp, Target } from "@stackra/contracts";',
+    "",
+    "export default defineApp({",
+    "  targets: [Target.Ios],",
+    "  area: ApiArea.App,",
+    '  name: "Acme",',
+    '  scheme: "acme",',
+    '  ios: { bundleId: "com.acme.app" },',
+    "});",
+    "",
+  ].join("\n"),
+  "src/types/acme.type.ts": "export type Acme = string;\n",
+};
+
+describe("generate's Expo config shim (STA-768)", () => {
+  it("refuses an authored app.json and an authored root app.config.ts", async () => {
+    const root = writeFixtureMember("mobile", {
+      ...IOS_APP,
+      "app.json": '{ "expo": { "name": "Acme" } }\n',
+      "app.config.ts": 'export default { name: "Acme" };\n',
+    });
+    const result = await generate(root);
+    expect(
+      result.errors.filter((error) => error.code === "shim_authored").map((error) => error.subject),
+    ).toEqual(["app.json", "app.config.ts"]);
+    expect(readFileSync(join(root, "app.config.ts"), "utf8")).toBe(
+      'export default { name: "Acme" };\n',
+    );
+  });
+
+  it("does not refuse the shim gen wrote on a second run", async () => {
+    const root = writeFixtureMember("mobile", IOS_APP);
+    expect((await generate(root)).errors).toEqual([]);
+    expect(readFileSync(join(root, "app.config.ts"), "utf8")).toContain(
+      'export { default } from "./.stackra/app.config";',
+    );
+    expect((await generate(root)).errors).toEqual([]);
   });
 });
 

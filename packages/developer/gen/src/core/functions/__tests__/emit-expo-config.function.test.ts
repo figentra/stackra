@@ -185,6 +185,19 @@ describe("emitExpoConfig", () => {
     expect((config["ios"] as Record<string, unknown>)["associatedDomains"]).toBeUndefined();
   });
 
+  it("accepts AppIconConfig.icons listing the icon sets in another order", () => {
+    const ir: MemberIR = {
+      ...MOBILE,
+      shapes: MOBILE.shapes.map((shape) =>
+        shape.name === "AppIconConfig"
+          ? override("AppIconConfig", "@stackra/platform", "icons", ["Winter", "Ramadan"])
+          : shape,
+      ),
+      ...(MOBILE.app === undefined ? {} : { app: { ...MOBILE.app, icons: ["Ramadan", "Winter"] } }),
+    };
+    expect(emitExpoConfig(ir).errors.map((error) => error.code)).not.toContain("app_icon_drift");
+  });
+
   it("refuses an owned key, a missing identity, missing permission text and icon drift", () => {
     const { files, errors } = emitExpoConfig({
       ...MOBILE,
