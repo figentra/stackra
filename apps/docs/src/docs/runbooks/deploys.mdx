@@ -61,9 +61,37 @@ icon: "rocket"
 - **Choose the target from the release records** (the last release that succeeded before the current one), never from memory.
 - **Redeploy that release's commit to the same environment** through the same approval as a deploy. Dry-run first where the tooling allows it.
 - **The bad release keeps its record.** Write a new record for the rollback that names the one it repairs, so the bad release counts as a failure and the rollback as its repair.
+- **`pnpm runway promote <sha>` writes the rollback's record.** It prints `record: rollback to <sha>` and passes that as the deployment message to every caller that takes one, so Cloudflare's deployment list (`wrangler deployments list`) and the GitHub deployment both show it. Add the SHA it repairs to the release record by hand.
 - **A rollback never goes further back than one good release.** If there is none, roll forward.
 - **Data is not rolled back.** Migrations, secrets, bindings and store listings are separate. The redeployed code runs against the current schema, so migrations are expand-then-contract: the previous release must always run against the expanded schema. A release whose migration contracted the schema is rolled **forward**, never back.
 - **A hand-run provider rollback is break-glass.** Record it within the hour with the reason.
+
+## Retire a service worker
+
+A broken service worker keeps serving the old app from its caches after a rollback, because browsers only replace it
+when a new `sw.js` arrives ([0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) rule 18).
+The kill switch is a `sw.js` that removes itself.
+
+<Steps>
+  <Step title="Write the kill switch (agent)">
+    Build the app's static output as usual, then overwrite its `sw.js` with the source of
+    `killSwitchServiceWorker()` from `@stackra/platform/sw`, at the **same URL and scope** as the
+    installed worker (a different URL registers a second worker and leaves the first in place):
+    `node -e 'import("@stackra/platform/sw").then(m => process.stdout.write(m.killSwitchServiceWorker()))' > dist/sw.js`.
+    Keep the response header `Cache-Control: no-cache` on `sw.js`.
+  </Step>
+  <Step title="Deploy it (owner)">
+    Deploy that output like any release, with the same approval. On each browser's next update check
+    (a navigation, or at most 24 hours) the kill switch installs, skips waiting, deletes every Cache
+    Storage cache, unregisters itself and reloads the open tabs from the network. Record it as a
+    break-glass deploy with the reason.
+  </Step>
+  <Step title="Retire the kill switch">
+    Leave it live until the fixed worker ships, for at least one update cycle (a week covers clients
+    that were offline). Then deploy the fixed release normally: the app registers its generated `sw.js`
+    again, and the kill switch is gone because the URL now serves the real worker.
+  </Step>
+</Steps>
 
 ## Checks that back this page
 

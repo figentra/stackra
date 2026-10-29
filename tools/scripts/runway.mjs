@@ -11,7 +11,9 @@
  *                         caller workflow of <target>, with the SHA when the workflow takes a `sha` input
  *     promote <sha>       needs <sha> on origin/main; prints it and dispatches every caller workflow of the
  *                         `production` destinations that takes a `sha` input (a promote, or a rollback to a recorded
- *                         release); a caller that only builds the head of main is listed as skipped
+ *                         release); a caller that only builds the head of main is listed as skipped. A caller with a
+ *                         `message` input gets `rollback to <sha>`, the provider's deployment message, so the
+ *                         rollback has its own record (runbooks/deploys)
  *   `--dry-run` prints the `gh` commands instead of running them.
  * Boundary: reads runway.yaml, the member runways and the caller workflows; runs git and gh. Whether a runway file is
  *   valid is `pnpm validate`'s check (checkRunwayFiles). Never reads a secret value.
@@ -111,10 +113,14 @@ export function preflight({ command, sha, git }) {
   return full;
 }
 
+/** The deployment message a promote records: the provider keeps it beside its own record of the deploy. */
+export const rollbackMessage = (sha) => `rollback to ${sha}`;
+
 /**
  * The `gh` argument lists that dispatch each caller workflow of `targets` on main, with `sha=<sha>` when the workflow
  * has a `workflow_dispatch` input `sha`. With `promote`, a workflow without that input cannot deploy a given commit
- * and is returned in `skipped` instead. `readWorkflow(file)` returns the parsed workflow.
+ * and is returned in `skipped` instead, and one with a `message` input gets `message=rollback to <sha>`.
+ * `readWorkflow(file)` returns the parsed workflow.
  */
 export function dispatches({ root, targets, sha, promote = false, readWorkflow }) {
   const repo = `${root.providers.github.org}/${root.providers.github.repo}`;
@@ -122,7 +128,8 @@ export function dispatches({ root, targets, sha, promote = false, readWorkflow }
   const skipped = [];
   for (const target of targets)
     for (const file of Object.values(root.targets?.[target]?.workflows ?? {})) {
-      const takesSha = Boolean(readWorkflow(file)?.on?.workflow_dispatch?.inputs?.sha);
+      const inputs = readWorkflow(file)?.on?.workflow_dispatch?.inputs ?? {};
+      const takesSha = Boolean(inputs.sha);
       if (promote && !takesSha) skipped.push({ target, file });
       else
         runs.push([
@@ -134,6 +141,7 @@ export function dispatches({ root, targets, sha, promote = false, readWorkflow }
           "--ref",
           "main",
           ...(takesSha ? ["-f", `sha=${sha}`] : []),
+          ...(promote && inputs.message ? ["-f", `message=${rollbackMessage(sha)}`] : []),
         ]);
     }
   return { runs, skipped };
@@ -167,6 +175,7 @@ function main(argv) {
     );
   const sha = preflight({ command, sha: arg, git: runGit });
   console.log(`commit ${sha}`);
+  if (command === "promote") console.log(`record: ${rollbackMessage(sha)}`);
   const { runs, skipped } = dispatches({
     root,
     targets:

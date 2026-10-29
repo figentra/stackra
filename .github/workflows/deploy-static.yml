@@ -2,7 +2,7 @@
 # Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com) through Runway's
 #          `cloudflare-workers` provider, runway-cloudflare-workers.yml (ADR 0284, ADR 0289 decision 1). Runs on main
 #          and on schema release tags only, never on a pull request; by hand (or `pnpm runway promote <sha>`) it
-#          redeploys a given commit of main.
+#          redeploys a given commit of main, recording `message` with the deployment (the rollback record).
 # Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider. No
 #          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the provider builds,
 #          tests, prints a notice and deploys nothing, so main stays green.
@@ -25,6 +25,10 @@ on:
     inputs:
       sha:
         description: A commit of main to deploy (promote or roll back); empty deploys the branch head
+        type: string
+        default: ""
+      message:
+        description: The deployment message Cloudflare records (`pnpm runway promote` sends `rollback to <sha>`)
         type: string
         default: ""
 
@@ -53,6 +57,7 @@ jobs:
       # subject, so the Infisical identity can trust this job and nothing else.
       environment: static
       sha: ${{ inputs.sha }}
+      message: ${{ inputs.message }}
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
       # in are not installed; neither is deployed here.
       install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground

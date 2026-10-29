@@ -78,7 +78,7 @@ pnpm runway promote <sha>
 
 - `plan [env]` prints, as JSON, each target in build order with its caller workflows, the CI secret names the jobs read and the member secret and var names a deploy syncs. Names only.
 - `deploy <target>` needs a clean checkout at the head of `origin/main`; it prints that SHA and dispatches each caller workflow of the target.
-- `promote <sha>` needs a commit on `origin/main`; it dispatches every production caller that takes a `sha` input. That is also the rollback: promote the last good release's SHA. A caller that only builds the head of main (Mintlify) is listed as skipped.
+- `promote <sha>` needs a commit on `origin/main`; it dispatches every production caller that takes a `sha` input. That is also the rollback: promote the last good release's SHA. A caller with a `message` input (`deploy-static.yml`) gets `rollback to <sha>`, which `wrangler deploy --message` records on Cloudflare beside GitHub's deployment record; the script prints it as `record: rollback to <sha>`. A caller that only builds the head of main (Mintlify) is listed as skipped.
 - `--dry-run` prints the `gh` commands instead of running them. An agent's `deploy` or `promote` without it asks the owner (the guard's `runway-deploy` rule).
 
 ## Secrets and vars sync
@@ -116,7 +116,7 @@ The sync is designed here and built in STA-606, once its targets exist.
 
 Agents cannot do these (STA-605):
 
-1. Restrict the `static` environment to `main` and `schemas@*` tags.
+1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`figentra-usr` until a second maintainer joins).
 2. Create the `docs` environment (main only), and add Infisical OIDC trusts for the `docs` and `release` environments.
 3. Put `MINTLIFY_ADMIN_KEY` into Infisical `/ci` through the [secrets inbox](/runbooks/secrets#the-secrets-inbox), set the repository variable `MINTLIFY_PROJECT_ID`, and switch off the Mintlify GitHub-app deploy after the first CI deploy.
 4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.

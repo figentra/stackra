@@ -16,6 +16,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 | A target driver                      | `src/{browser,desktop,native,worker}/drivers/`                                 |
 | A bridge (Electron main)             | `src/desktop/bridges/<name>.bridge.ts`, extends `Bridge({ key })`              |
 | A service-worker handler             | `src/sw/functions/handle-<event>.function.ts`, events typed in `src/sw/types/` |
+| A whole worker script (kill switch)  | `src/sw/functions/<name>-service-worker.function.ts`, returns the source text  |
 | React code                           | `src/react/<name>/`                                                            |
 | A test helper                        | `src/testing/functions/`                                                       |
 | A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it                                 |
