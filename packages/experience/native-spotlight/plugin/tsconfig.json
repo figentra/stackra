@@ -1,0 +1,4 @@
+// TypeScript project of the config plugin (ADR 0478 decision 2): `plugin/src`, which Expo CLI loads in Node at
+// prebuild through `app.plugin.js`. `library` resolves `${configDir}/src` to `plugin/src`.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/library" }

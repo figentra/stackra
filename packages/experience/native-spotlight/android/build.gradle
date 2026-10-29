@@ -1,0 +1,25 @@
+// Stackra file contract:
+// Purpose: the Gradle build of the StackraSpotlight Expo module on Android (launcher search through dynamic
+//          shortcuts), read by autolinking at prebuild.
+// Boundary: build metadata only; androidx.core is the one library, already in every React Native app.
+// Runtime: build (Gradle)
+// Governing contract: ADR 0478 (decisions 2 and 4).
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.figentra.stackra'
+version = '0.1.0'
+
+android {
+  namespace "com.figentra.stackra.spotlight"
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}
+
+dependencies {
+  implementation 'androidx.core:core-ktx:1.16.0'
+}
