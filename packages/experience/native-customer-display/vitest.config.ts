@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: test config of @stackra/native-customer-display: the decorators vitest preset (for @stackra/validation's
- *          legacy decorators) plus the shared coverage gate. `test` runs the unit tier (`<subject>.test.ts` in `__tests__/`)
- *          of `src/` and of the config plugin in `plugin/src/`, in node, against a stand-in Expo module.
+ *          legacy decorators) plus the shared coverage gate. `test` runs the unit tier (`<subject>.test.ts` in
+ *          `__tests__/`) of `src/` and of the config plugin in `plugin/src/`, in node, against a stand-in Expo module.
  * Boundary: test configuration only; merges gen's `./.stackra/vitest.config` (the decorators preset, the
- *           coverage gate, the generated setup) under this package's own include, so gen keeps this file and writes no
- *           root shim (ADR 0295 decision 5; STA-1296).
+ *           coverage gate, the generated setup) under this package's own include, so gen keeps this file and writes
+ *           no root shim (ADR 0295 decision 5; STA-1296).
  * Runtime: node
  * Governing contract: ADR 0182 (test tiers and coverage); ADR 0022 (test placement); ADR 0478 (decision 5).
  */

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CustomerDisplayNativeModule`, the native module the `external` customer display driver calls: this
- *          package's `StackraCustomerDisplay` Expo module, an Android `Presentation` on the connected display or an iPad
- *          external-display scene, each drawing the view natively.
+ *          package's `StackraCustomerDisplay` Expo module, an Android `Presentation` on the connected display or an
+ *          iPad external-display scene, each drawing the view natively.
  * Boundary: a type only, internal to the package. The Swift and Kotlin sources live in this package's `ios/` and
  *           `android/` (ADR 0478 decision 2); the view crosses as JSON.
  * Runtime: isomorphic

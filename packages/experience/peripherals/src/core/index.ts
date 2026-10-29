@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/peripherals (the configuration with its shipped schema, the
  *          memory drivers gen's wiring imports, the `channel` customer display driver (the `external` one is
- *          @stackra/native-customer-display's, ADR 0478 decision 5) and the display-side listener, the in-store and GS1 barcode parsers, the scale preset fit, the receipt-token
- *          signing and checking with the exit gate, and the bridges' refusals) until `stackra gen` writes the entry
- *          barrels (STA-339).
+ *          @stackra/native-customer-display's, ADR 0478 decision 5) and the display-side listener, the in-store and
+ *          GS1 barcode parsers, the scale preset fit, the receipt-token signing and checking with the exit gate, and
+ *          the bridges' refusals) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports are exported from `./contracts` only (ADR 0294
  *           decision 15). The option shape, the driver names, the ESC/POS and ZPL encoders, the GS1 check digit, the
  *           GS1 identifier table, the implied decimal and the refusal builder stay internal.
