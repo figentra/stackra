@@ -31,14 +31,22 @@ describe("emitToolConfigs", () => {
   it("writes tsdown, vitest and the setup", () => {
     expect(files.map((file) => file.path)).toEqual([
       ".stackra/tsdown.config.ts",
+      ".stackra/tsconfig.build.json",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
       'export default {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
-        '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n};',
+        '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n' +
+        '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },\n};',
     );
+  });
+
+  it("builds declarations from the member's tsconfig plus the entries", () => {
+    const tsconfig = JSON.parse(content(".stackra/tsconfig.build.json")) as Record<string, unknown>;
+    expect(tsconfig["extends"]).toBe("../tsconfig.json");
+    expect(tsconfig["include"]).toEqual(["../src", "entry"]);
   });
 
   it("runs the unit tier on the decorators preset with the coverage gate", () => {

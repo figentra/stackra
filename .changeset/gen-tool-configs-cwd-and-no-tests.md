@@ -9,3 +9,6 @@ fresh from `stackra new` passes `stackra test`.
 
 A package's entry barrels skip files directly in `src/`: those are hand-written entries a package.json export names (an
 OS shell's `register`), and two of them re-exported from `.` collided.
+
+The declaration build reads a generated `.stackra/tsconfig.build.json` (the member's tsconfig plus `.stackra/entry`),
+so tsgo emits the entries' declarations without widening the member presets.

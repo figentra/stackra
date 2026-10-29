@@ -17,6 +17,7 @@
  *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
  *                     `@stackra/container/testing`).
  */
+import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
@@ -31,7 +32,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * @param generated - the entry files and whether `#stackra/registrations` was written.
  * @example
  * emitToolConfigs(ir, { entries, registrations: true }).map((file) => file.path);
- * // [".stackra/tsdown.config.ts", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts", "vitest.config.ts"]
+ * // [".stackra/tsdown.config.ts", ".stackra/tsconfig.build.json", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts", "vitest.config.ts"]
  */
 export function emitToolConfigs(
   ir: MemberIR,
@@ -61,6 +62,7 @@ export function emitToolConfigs(
     ),
     "  }),",
     '  cwd: fileURLToPath(new URL("..", import.meta.url)),',
+    '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },',
     "};",
     "",
   ].join("\n");
@@ -174,8 +176,25 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
+  // tsgo emits declarations for the files its tsconfig includes, and the member presets leave `.stackra/` out (its
+  // generated sources are not typechecked yet), so the build has its own program: the member's plus the entries.
+  const dtsTsconfig = `${JSON.stringify(
+    {
+      $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus the entries gen writes.`,
+      extends: "../tsconfig.json",
+      include: ["../src", "entry"],
+    },
+    null,
+    2,
+  )}\n`;
+
   return [
-    ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
+    ...(entries.length > 0
+      ? [
+          { path: ".stackra/tsdown.config.ts", content: tsdown },
+          { path: ".stackra/tsconfig.build.json", content: dtsTsconfig },
+        ]
+      : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
     { path: ".stackra/vitest.setup.ts", content: setup },
     { path: ROOT_VITEST_SHIM, content: shim },
