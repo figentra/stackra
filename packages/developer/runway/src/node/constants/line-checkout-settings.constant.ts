@@ -12,7 +12,10 @@
 export const LINE_CHECKOUT_SETTINGS = Object.freeze({
   /** The top folder of every tarball `npm pack` writes. */
   tarballRoot: "package",
-  /** Folders a local checkout leaves out: installs, caches and native projects that prebuild writes. */
+  /**
+   * Folders a local checkout leaves out and a git checkout excludes from its commits: installs, caches, the native
+   * projects prebuild writes, and `.stackra/`, where the store workflow writes key files for one run (ADR 0480).
+   */
   localIgnore: Object.freeze([
     "node_modules",
     ".turbo",

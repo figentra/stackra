@@ -8,7 +8,8 @@
  * Boundary: runs `npm`, `tar` and `git` through the command runner and writes only the target folder (and a temporary
  *           folder for the tarball). `dryRun` resolves the version (one `npm view`, a read) and plans the rest without
  *           running or writing anything. The registry is the scope's `.npmrc` mapping in `cwd`; no credential is an
- *           argument. A local checkout must be the line's own package at the line's major.
+ *           argument. A local checkout must be the line's own package at the line's major. A git checkout excludes
+ *           `LINE_CHECKOUT_SETTINGS.localIgnore` (installs, native projects, `.stackra/` secrets) from its commits.
  * Runtime: node
  * Governing contract: ADR 0481 (template lines release as registry packages); ADR 0439 (decision 1); ADR 0436
  *                     (decisions 4 and 6); ADR 0441 (decision 5: Runway names no owner's scope).
@@ -21,6 +22,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
@@ -197,6 +199,15 @@ export async function checkoutLine(request: LineCheckoutRequest): Promise<LineCh
   if (request.git === true) {
     const identity = LINE_CHECKOUT_SETTINGS.gitIdentity;
     await step("git", ["init", "--quiet"], request.into);
+    // An npm tarball carries no .gitignore: keep installs, native projects and the store workflow's key files
+    // (`.stackra/`) out of the commit EAS builds from.
+    if (existsSync(join(request.into, ".git"))) {
+      mkdirSync(join(request.into, ".git", "info"), { recursive: true });
+      writeFileSync(
+        join(request.into, ".git", "info", "exclude"),
+        `${LINE_CHECKOUT_SETTINGS.localIgnore.map((folder) => `/${folder}/`).join("\n")}\n`,
+      );
+    }
     await step("git", ["add", "--all"], request.into);
     await step(
       "git",

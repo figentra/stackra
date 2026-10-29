@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `checkoutLine`: a registry line resolves to the highest release of its major, is packed and
- *          unpacked into the folder and becomes a git checkout; a dry run reads the version and plans the rest; a
+ *          unpacked into the folder and becomes a git checkout that excludes installs, native projects and `.stackra/`; a dry run reads the version and plans the rest; a
  *          local checkout is copied without its installs and native projects; a line without a release, another
  *          package or major locally, a malformed line or scope and a folder that is not empty are refused.
  * Boundary: test only; temporary folders and a fake command runner, so nothing reaches npm, tar or git.
@@ -81,6 +81,30 @@ describe("checkoutLine", () => {
     ]);
     expect(run.calls.slice(0, 2).map((call) => call.cwd)).toEqual([root, root]);
     expect(run.calls[3]?.cwd).toBe(into);
+  });
+
+  it("excludes installs, native projects and .stackra/ from a git checkout's commits", async () => {
+    const local = join(root, "os-mobile");
+    mkdirSync(local);
+    writeFileSync(
+      join(local, "package.json"),
+      JSON.stringify({ name: "@figentra/os-mobile", version: "3.0.0" }),
+    );
+    const into = join(root, "checkout");
+    // A runner whose `git init` makes the folder a repository, as the real one does.
+    const run = dryRunCommand({
+      head: SHA,
+      answer: (command, args, cwd) => {
+        if (command === "git" && args[0] === "init" && cwd !== undefined)
+          mkdirSync(join(cwd, ".git"), { recursive: true });
+        return undefined;
+      },
+    });
+    await checkoutLine({ line: "os/mobile@3", scope: "@figentra", into, local, git: true, run });
+    const exclude = readFileSync(join(into, ".git/info/exclude"), "utf8").split("\n");
+    expect(exclude).toEqual(
+      expect.arrayContaining(["/node_modules/", "/ios/", "/android/", "/.stackra/"]),
+    );
   });
 
   it("plans a dry run after reading the version, and writes nothing", async () => {
