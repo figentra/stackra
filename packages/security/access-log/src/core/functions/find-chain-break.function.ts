@@ -10,6 +10,7 @@
  *                     detectable).
  */
 import type { AccessLink } from "#contracts/types/access-link.type";
+import { firstBrokenLink } from "#core/functions/first-broken-link.function";
 import { hashAccessLink } from "#core/functions/hash-access-link.function";
 
 /**
@@ -20,17 +21,6 @@ import { hashAccessLink } from "#core/functions/hash-access-link.function";
  * @example
  * const broken = await findChainBreak(await entries.find({}, { orderBy: { sequence: "asc" } }));
  */
-export async function findChainBreak(links: readonly AccessLink[]): Promise<number | undefined> {
-  const hashes = await Promise.all(
-    links.map((link) => hashAccessLink(link, link.sequence, link.previousHash)),
-  );
-  const broken = links.find((link, index) => {
-    const before = links[index - 1];
-    return (
-      link.hash !== hashes[index] ||
-      (before !== undefined &&
-        (link.sequence !== before.sequence + 1 || link.previousHash !== before.hash))
-    );
-  });
-  return broken?.sequence;
+export function findChainBreak(links: readonly AccessLink[]): Promise<number | undefined> {
+  return firstBrokenLink(links, (link) => hashAccessLink(link, link.sequence, link.previousHash));
 }
