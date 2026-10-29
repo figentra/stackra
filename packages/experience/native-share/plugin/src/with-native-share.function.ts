@@ -8,8 +8,9 @@
  * Runtime: node
  * Governing contract: ADR 0478 (decisions 2, 3 and 9).
  */
-import configPlugins from "expo/config-plugins";
-import type { ConfigPlugin } from "expo/config-plugins";
+// The extension is required: Expo CLI loads the built plugin as Node ESM, and `expo` has no exports map.
+import configPlugins from "expo/config-plugins.js";
+import type { ConfigPlugin } from "expo/config-plugins.js";
 
 import { sharingPluginProps } from "./functions/sharing-plugin-props.function";
 import type { NativeSharePluginProps } from "./types/native-share-plugin-props.type";

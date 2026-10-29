@@ -28,7 +28,7 @@ const { results, recorder } = vi.hoisted(() => {
   };
 });
 
-vi.mock("expo/config-plugins", () => ({
+vi.mock("expo/config-plugins.js", () => ({
   withInfoPlist: recorder("infoPlist", () => ({})),
   withEntitlementsPlist: recorder("entitlements", () => ({})),
   withAndroidManifest: recorder("manifest", () => ({ manifest: {} })),

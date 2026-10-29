@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0478 (decisions 2 and 3).
  */
-import type { ConfigPlugin } from "expo/config-plugins";
+import type { ConfigPlugin } from "expo/config-plugins.js";
 
 /**
  * The config plugin; returns the app config unchanged.

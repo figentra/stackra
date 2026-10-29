@@ -10,14 +10,15 @@
  * Runtime: node
  * Governing contract: ADR 0478 (decisions 2 to 4); ADR 0442 (decision 3); ADR 0458 (decision 2).
  */
-import type { ConfigPlugin } from "expo/config-plugins";
+import type { ConfigPlugin } from "expo/config-plugins.js";
+// The extension is required: Expo CLI loads the built plugin as Node ESM, and `expo` has no exports map.
 import {
   withAndroidManifest,
   withGradleProperties,
   withInfoPlist,
   withPodfileProperties,
   withProjectBuildGradle,
-} from "expo/config-plugins";
+} from "expo/config-plugins.js";
 
 import { RECEIPT_PRINTER_PLUGIN } from "#plugin/constants/receipt-printer-plugin.constant";
 import { addMavenRepositories } from "#plugin/functions/add-maven-repositories.function";

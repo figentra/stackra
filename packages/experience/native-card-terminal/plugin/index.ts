@@ -9,8 +9,9 @@
  * Runtime: node
  * Governing contract: ADR 0479 (decision 6); ADR 0478 (decisions 2 and 3).
  */
-import type { ConfigPlugin } from "expo/config-plugins";
-import { withAndroidManifest, withEntitlementsPlist, withInfoPlist } from "expo/config-plugins";
+import type { ConfigPlugin } from "expo/config-plugins.js";
+// The extension is required: Expo CLI loads the built plugin as Node ESM, and `expo` has no exports map.
+import { withAndroidManifest, withEntitlementsPlist, withInfoPlist } from "expo/config-plugins.js";
 
 import { applyAndroidManifest } from "#plugin/functions/apply-android-manifest.function";
 import { applyIosEntitlements } from "#plugin/functions/apply-ios-entitlements.function";
