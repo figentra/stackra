@@ -21,7 +21,9 @@ import { z } from "zod";
 import { MessageKind, OutboxDriver } from "#contracts/index";
 import type { OutboxError, OutboxMessage } from "#contracts/index";
 import { holdsValue } from "#core/functions/holds-value.function";
+import { STORED_MESSAGE_COLUMNS } from "#node/constants/stored-message-columns.constant";
 import { insertMessages } from "#node/functions/insert-messages.function";
+import { scopeOfRow } from "#node/functions/scope-of-row.function";
 
 /** The message table, in the package's schema. */
 const TABLE = '"outbox"."messages"';
@@ -37,10 +39,7 @@ const ROW = z.object({
   kind: z.enum(Enum.values(MessageKind) as [MessageKind, ...MessageKind[]]),
   type: z.string(),
   data: z.unknown(),
-  meta: z.record(z.string(), z.unknown()),
-  occurred_at: z.coerce.date(),
-  scope_id: z.string().nullable(),
-  scope_path: z.string().nullable(),
+  ...STORED_MESSAGE_COLUMNS,
   attempts: z.number().int(),
   available_at: z.coerce.date(),
   last_error: z.object({ code: z.string(), message: z.string() }).nullable(),
@@ -59,9 +58,7 @@ function messageOf(row: z.infer<typeof ROW>): OutboxMessage {
     data: row.data,
     meta: row.meta as OutboxMessage["meta"],
     occurredAt: row.occurred_at,
-    ...(row.scope_id === null || row.scope_path === null
-      ? {}
-      : { scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path } }),
+    ...scopeOfRow(row),
     attempts: row.attempts,
     availableAt: row.available_at,
     ...(row.last_error === null ? {} : { lastError: row.last_error }),

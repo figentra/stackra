@@ -16,13 +16,14 @@
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import type { PublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { ChangeFeed } from "#contracts/index";
 import type { ChangeCursor, ChangeLogReport, ChangeRecord, RowChange } from "#contracts/index";
+import { STORED_MESSAGE_COLUMNS } from "#node/constants/stored-message-columns.constant";
 import { insertChanges } from "#node/functions/insert-changes.function";
+import { scopeOfRow } from "#node/functions/scope-of-row.function";
 
 /** The change log and the cursors, in the package's schema. */
 const TABLE = "outbox.changes";
@@ -48,10 +49,7 @@ const ROW = z.object({
   tx: z.string(),
   seq: BIGINT,
   data: z.record(z.string(), z.unknown()),
-  meta: z.record(z.string(), z.unknown()),
-  occurred_at: z.coerce.date(),
-  scope_id: z.string().nullable(),
-  scope_path: z.string().nullable(),
+  ...STORED_MESSAGE_COLUMNS,
 });
 
 /** A position row. */
@@ -81,9 +79,7 @@ function recordOf(row: z.infer<typeof ROW>): ChangeRecord {
     change: row.data as unknown as RowChange,
     meta: row.meta as ChangeRecord["meta"],
     occurredAt: row.occurred_at,
-    ...(row.scope_id === null || row.scope_path === null
-      ? {}
-      : { scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path } }),
+    ...scopeOfRow(row),
   });
 }
 
