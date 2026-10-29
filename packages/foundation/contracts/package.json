@@ -1,6 +1,6 @@
 {
   "name": "@stackra/contracts",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "The leaf vocabulary of Stackra: the Port and Enum bases, actor and id types, Duration, platform enums, the core ports and the stackra.config.ts helpers, the Tracer port, and the AES-GCM FieldCipher, memory KeyProvider and no-op Tracer drivers",
   "keywords": [

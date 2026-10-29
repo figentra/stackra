@@ -1,6 +1,6 @@
 {
   "name": "@stackra/assets",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra module assets: the assets() builder of the generated `#stackra/assets` keys (`<module>::<kind>/<path>`), the AssetLibrary that resolves a URL and reads bytes over a filesystem disk, and useAsset",
   "keywords": [

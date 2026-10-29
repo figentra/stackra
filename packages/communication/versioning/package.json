@@ -1,6 +1,6 @@
 {
   "name": "@stackra/versioning",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra versioning: the Change kind base for integration event versions and dated response changes, the transforms that serve an older version (downgrade, upgrade), and the Stackra-Version resolution with its Deprecation and Sunset headers",
   "keywords": [

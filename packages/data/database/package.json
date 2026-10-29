@@ -1,6 +1,6 @@
 {
   "name": "@stackra/database",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra database: the MikroORM layer on Postgres. CrudService<M> with table and metrics reads, repositories, the graph reader, the Migration, Macro and Seeder kinds with the migration compiler, the idx_/fk_/ck_ naming strategy, the unit of work and scope sessions, gapless Sequence numbers, the record-visibility filter seam, and the Factory, usePostgres and PGlite memory-driver test helpers",
   "keywords": [

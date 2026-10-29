@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-cash-drawer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra native cash drawer: the Expo module that opens a cash drawer from an Expo app behind the CashDrawer port of @stackra/peripherals, through the receipt printer it is wired to or the Sunmi and PAX terminals' built-in drawer port, with its config plugin that links only the vendor families an app lists",
   "keywords": [

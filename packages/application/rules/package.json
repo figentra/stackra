@@ -1,6 +1,6 @@
 {
   "name": "@stackra/rules",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra rules: one condition engine for every rule consumer. A condition tree of all, any and not over field, operator and value leaves; fixed operator sets per field type (FieldType, Operator); fact sources and outcome kinds a consumer registers (FactSource, OutcomeKind); Rules, which checks tenant-written conditions and outcomes against them; evaluate, deterministic with the time as a fact and explained by tree path; decide, which guards every outcome against the market-pack floors; OutcomeDispatcher, which routes outcomes to the consumer's handlers; versioned RuleSet records on HasRevisions with RuleSetService, seeded from versioned rule-set packs; the cross-service condition-field registry (ConditionFieldService) with one camelCase key casing (FIELD_KEY); the AI action permission matrix and pack approval-floor readers for resolveApproval; and the RuleBuilder component",
   "keywords": [

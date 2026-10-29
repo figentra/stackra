@@ -1,6 +1,6 @@
 {
   "name": "@stackra/market-packs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Market-pack loader: verifies signed, content-hashed market packs, resolves overlays and product sections under a tenant's pins and accepted statuses, answers the value of a key for a market on a date, picks the market of a record's subject per rule kind, stores and fetches signed packs by content hash, and exposes legal floors to settings, facts to rules and the review and launch gate of each pack",
   "keywords": [

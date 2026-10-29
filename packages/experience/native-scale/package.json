@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-scale",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra native scale: the Expo module behind the Scale port of @stackra/peripherals, with one driver per scale protocol (Mettler Toledo MT-SICS and the continuous ASCII stream of A&D-style indicators) over Bluetooth LE, Bluetooth serial (SPP) and USB serial, and its config plugin",
   "keywords": [

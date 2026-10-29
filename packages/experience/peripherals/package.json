@@ -1,6 +1,6 @@
 {
   "name": "@stackra/peripherals",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra peripherals: the ReceiptPrinter, LabelPrinter, CashDrawer, BarcodeScanner, Scale, CustomerDisplay and CardTerminal ports with their typed refusals, PeripheralsConfig, memory drivers, the channel customer display, in-store and GS1 weight and price barcode parsing, the ScannerScale, BaggingScale, LabelScale and DriveThroughLane ports with memory drivers, ESC/POS receipts with the drawer kick through the printer, ZPL labels, the Electron main-process drivers and print bridges, and the Sunmi, PAX and iMin printer, drawer and scanner drivers of the native Android till",
   "keywords": [

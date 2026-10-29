@@ -1,6 +1,6 @@
 {
   "name": "@stackra/tsdown-config",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Shared tsdown build preset for libraries: ESM, dts, sourcemaps, tree-shaking, optional legacy-decorator transform.",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/gen",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "The Stackra compiler: discovery on the TypeScript 7 API with a TypeScript 6 fallback, derived identities and the committed manifest, the shape compiler, wiring, the member module and entries, the openapi projection, the class-component compiler and the manifest contract helpers",
   "keywords": [
