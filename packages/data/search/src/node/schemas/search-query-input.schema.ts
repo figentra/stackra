@@ -9,10 +9,10 @@
  * Governing contract: ADR 0221 (decisions 4 and 6, settled 2026-10-29); ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one
  *                     declaration per file).
  */
-import { Field, Int, registerSchemas, Schema, Str } from "@stackra/validation";
+import { Int, registerSchemas, Schema, Str } from "@stackra/validation";
 import { z } from "zod";
 
-/** The rules of the input, which the `arabizi` field takes its validator from. */
+/** The rules of the input. */
 const SEARCH_QUERY_INPUT_SCHEMA = z.object({
   q: z.string().min(1).max(200),
   limit: z.number().int().min(1).max(50).optional(),
@@ -41,7 +41,6 @@ export class SearchQueryInput extends Schema {
   limit?: number;
 
   /** Whether an Arabizi word also matches its Arabic spelling; on when absent. */
-  @Field(SEARCH_QUERY_INPUT_SCHEMA.shape.arabizi.unwrap())
   arabizi?: boolean;
 }
 

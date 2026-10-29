@@ -8,20 +8,9 @@
  *                     declaration per file).
  */
 import { Field, registerSchemas, Schema } from "@stackra/validation";
-import { z } from "zod";
 
+import { SEARCH_QUERY_OUTPUT_SCHEMA } from "#node/constants/search-query-output-schema.constant";
 import type { SearchQueryHit } from "#node/types/search-query-hit.type";
-
-/** The rules of the output: hits of a key, a title and an optional snippet. */
-const SEARCH_QUERY_OUTPUT_SCHEMA = z.object({
-  hits: z.array(
-    z.object({
-      id: z.string().min(1),
-      title: z.string(),
-      snippet: z.string().optional(),
-    }),
-  ),
-});
 
 /**
  * The hits of one search.
@@ -31,6 +20,7 @@ const SEARCH_QUERY_OUTPUT_SCHEMA = z.object({
  */
 export class SearchQueryOutput extends Schema {
   /** The hits, best first, at most the input's `limit`. */
+  // reason: a list of plain `SearchQueryHit` objects, a type alias rather than a schema class
   @Field(SEARCH_QUERY_OUTPUT_SCHEMA.shape.hits)
   hits!: SearchQueryHit[];
 }
