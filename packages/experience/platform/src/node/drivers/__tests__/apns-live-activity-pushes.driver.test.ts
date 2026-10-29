@@ -49,7 +49,9 @@ const ORDER: ActivityProgress = {
 const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
 
 /** A driver over the sandbox configuration and a full set of secrets. */
-function driver(config = buildConfig(LiveActivityConfig)): ApnsLiveActivityPushesDriver {
+function driver(
+  config: BaseLiveActivityConfig = buildConfig(LiveActivityConfig),
+): ApnsLiveActivityPushesDriver {
   const secrets = new MemorySecretStoreDriver();
   secrets.set("APNS_KEY_ID", "KEY123");
   secrets.set("APNS_TEAM_ID", "TEAM123");

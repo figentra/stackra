@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => {
   const instance = {
     getId: vi.fn(() => "activity_1"),
     update: vi.fn(async () => undefined),
-    end: vi.fn(async () => undefined),
+    end: vi.fn(async (_dismissal: unknown, _props?: unknown, _at?: Date) => undefined),
     getPushToken: vi.fn(async (): Promise<string | null> => "apns_token"),
   };
   const instances: (typeof instance)[] = [];
