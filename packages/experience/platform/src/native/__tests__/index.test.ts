@@ -51,6 +51,7 @@ describe("@stackra/platform/native", () => {
       "ExpoAppIconDriver",
       "ExpoAppLockDriver",
       "ExpoDevicePermissionsDriver",
+      "ExpoHomeWidgetsDriver",
       "ExpoLiveActivitiesDriver",
       "ExpoPlatformDriver",
       "ExpoPushTransportDriver",

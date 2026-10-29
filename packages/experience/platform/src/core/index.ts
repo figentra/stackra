@@ -24,8 +24,10 @@ export { PUSH_CONFIG_SCHEMA as PushConfig$ } from "#core/constants/push-config-s
 export { PWA_CONFIG_SCHEMA as PwaConfig$ } from "#core/constants/pwa-config-schema.constant";
 export { MemoryAppIconDriver } from "#core/drivers/memory-app-icon.driver";
 export { MemoryAppLockDriver } from "#core/drivers/memory-app-lock.driver";
+export { MemoryAppShortcutsDriver } from "#core/drivers/memory-app-shortcuts.driver";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
 export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";
+export { MemoryHomeWidgetsDriver } from "#core/drivers/memory-home-widgets.driver";
 export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryLiveActivitiesDriver } from "#core/drivers/memory-live-activities.driver";
 export { MemoryLiveActivityPushesDriver } from "#core/drivers/memory-live-activity-pushes.driver";

@@ -9,8 +9,10 @@
  */
 export { AppIcon } from "#contracts/ports/app-icon.port";
 export { AppLock } from "#contracts/ports/app-lock.port";
+export { AppShortcuts } from "#contracts/ports/app-shortcuts.port";
 export { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
 export { DevicePermissions } from "#contracts/ports/device-permissions.port";
+export { HomeWidgets } from "#contracts/ports/home-widgets.port";
 export { KioskMode } from "#contracts/ports/kiosk-mode.port";
 export { LiveActivities } from "#contracts/ports/live-activities.port";
 export { LiveActivityPushes } from "#contracts/ports/live-activity-pushes.port";
@@ -39,3 +41,5 @@ export type { ShareCapability } from "#contracts/types/share-capability.type";
 export type { ShareData } from "#contracts/types/share-data.type";
 export type { SharedPayload } from "#contracts/types/shared-payload.type";
 export type { ShareTargetCapability } from "#contracts/types/share-target-capability.type";
+export type { ShortcutInvocation } from "#contracts/types/shortcut-invocation.type";
+export type { WidgetGlance } from "#contracts/types/widget-glance.type";

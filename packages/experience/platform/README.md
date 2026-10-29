@@ -232,6 +232,33 @@ if (outcome === "gone") await devices.forgetLiveActivityToken(device.id);
   push-to-start token and carries the deep link and an alert; an `end` is dismissed after `endedDismissal`.
 - `MemoryLiveActivityPushesDriver` (`.`) records each push in `sent`; a token in `goneTokens` answers `gone`.
 
+### Widgets and App Shortcuts (STA-1539)
+
+`HomeWidgets` (`./contracts`) feeds the app's one `Glance` widget on the home screen and the Lock Screen: the app
+publishes a translated title, a formatted value and an optional caption, and expo-widgets keeps it in the shared app
+group, so the widget shows it while the app is closed. The last publish wins.
+
+```ts
+await widgets.publish({
+  title: t("orders::widget.title"),
+  value: String(count),
+  caption: t("orders::widget.today"),
+});
+```
+
+- `ExpoHomeWidgetsDriver` (`./native`) writes the `Glance` snapshot through expo-widgets (title, value and caption on
+  the home screen, title and value on the Lock Screen, one line inline). Android resolves `unavailable` until
+  expo-widgets' Android support leaves its opt-in. The app config's expo-widgets entry names `Glance` and its families.
+- `MemoryHomeWidgetsDriver` (`.`) keeps the last glance in `published`; `isAvailable = false` makes it refuse.
+
+`AppShortcuts` (`./contracts`) is App Shortcuts and Siri intents: `onInvoke(listener)` hands over each run of a
+registered intent, the ones queued while the app was closed first, and `donate(intent, params)` tells the OS what the
+person just did so it can suggest it.
+
+- `MemoryAppShortcutsDriver` (`.`) is the only driver for now: a test runs an intent with `invoke` and reads `donated`.
+- The Expo driver waits for expo-app-intents, Expo's official App Intents library (it needs SDK 58; the repo is on 57),
+  to be catalogued.
+
 ### Alternate app icons (STA-1541)
 
 `AppIcon` (`./contracts`) switches the home-screen icon per brand, season or tenant; `useAppIcon()` (`./react`) is the

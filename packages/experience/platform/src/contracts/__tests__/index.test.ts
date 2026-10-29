@@ -23,8 +23,10 @@ describe("@stackra/platform/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AppIcon",
       "AppLock",
+      "AppShortcuts",
       "CaptchaVerifier",
       "DevicePermissions",
+      "HomeWidgets",
       "KioskMode",
       "LiveActivities",
       "LiveActivityPushes",

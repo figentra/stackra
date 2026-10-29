@@ -57,6 +57,11 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 - `AppIcon` is a port of its own (not a `Platform` facet) over expo-alternate-app-icons; `app_icon` is its refusal
   code only. Never add or hand-place an icon image: the set comes from the brand kit through gen, which writes the
   config plugin entry and `AppIconConfig.icons` with the same names.
+- `LiveActivities`, `HomeWidgets` and `AppShortcuts` are ports of their own over Expo's libraries (ADR 0478 decision 9):
+  expo-widgets and Expo UI for the activity and the `Glance` widget, expo-notifications for the Android ongoing
+  notification. A `'widget'` function reads only its props and environment. `AppShortcuts` has only its memory driver
+  until expo-app-intents (an official Expo library, SDK 58) is catalogued; never hand-write Swift for it here.
+- `LiveActivityPushes` is the server half; its APNs driver is Node only (`node:http2`) and sits in `src/node/drivers/`.
 - A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
   options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error
@@ -78,3 +83,5 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 | Shared payloads        | IndexedDB `share_inbox`            | On the device only; read once by the share page                  |
 | Picked folder paths    | the app disk (`platform/folders/`) | On the user's machine only                                       |
 | `TURNSTILE_SECRET_KEY` | `SecretStore`                      | Read by name, sent only to Cloudflare, never logged              |
+| Live Activity tokens   | `LiveActivities.pushToken()`       | Per-device addresses; sent to the product's server, never logged |
+| `APNS_PRIVATE_KEY`     | `SecretStore`                      | Read by name, signs the APNs provider token, never logged        |
