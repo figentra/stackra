@@ -10,7 +10,7 @@
  * Governing contract: ADR 0359 (decisions 4 and 14); ADR 0307 (rule 13 as reopened, rules 6 and 9); ADR 0271
  *                     (decisions 2, 3 and 8); ADR 0470 (decision 4).
  */
-import { Field, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import type { Aggregate } from "#core/enums/aggregate.enum";
@@ -48,6 +48,10 @@ export class SavedView extends Schema {
   @Field(SAVED_VIEW_SCHEMA.shape.totals.unwrap())
   totals: { key: string; aggregate: Aggregate }[] = [];
 
+  /** The version the store last wrote; a save sends it back and is refused when someone changed the view since. */
+  @Int({ min: 1 })
+  version = 1;
+
   /** The view's id. */
   id!: string;
 
@@ -65,9 +69,6 @@ export class SavedView extends Schema {
 
   /** The role key a role copy is shared with; set only when `sharing` is `role`. */
   role?: string;
-
-  /** The version the store last wrote; a save sends it back and is refused when someone changed the view since. */
-  version = 1;
 
   /** How the rows are drawn. */
   layout: ViewLayout = ViewLayout.Table;

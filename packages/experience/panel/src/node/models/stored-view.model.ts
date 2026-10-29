@@ -19,6 +19,7 @@ import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field, Str } from "@stackra/validation";
 import { z } from "zod";
 
+import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import { ViewLayout } from "#core/enums/view-layout.enum";
 import { ViewSharing } from "#core/enums/view-sharing.enum";
 import type { SavedView } from "#core/schemas/saved-view.schema";
@@ -63,20 +64,26 @@ export class StoredView extends Model.with(
   @Str({ max: 200 })
   layoutBy!: string | null;
 
-  /** The filter values by row path. */
-  filter!: Record<string, Json>;
-
   /** The sort, when it differs from the table's default. */
+  // reason: a nested object with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.sort.unwrap())
   sort!: SavedView["sort"] | null;
 
-  /** The row paths shown, in order. */
-  columns!: string[] | null;
-
   /** The group key and its sub-group key. */
+  // reason: a nested object with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.group.unwrap())
   group!: SavedView["group"] | null;
 
   /** The totals per group. */
+  // reason: a list of nested objects with no shape class; the package's own shipped schema says it
+  @Field(SAVED_VIEW_SCHEMA.shape.totals.unwrap())
   totals!: SavedView["totals"];
+
+  /** The filter values by row path. */
+  filter!: Record<string, Json>;
+
+  /** The row paths shown, in order. */
+  columns!: string[] | null;
 }
 
 /** The insert-optional fields of `StoredView`, merged into the model class (MikroORM `[OptionalProps]`). */
