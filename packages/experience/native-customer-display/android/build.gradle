@@ -1,0 +1,22 @@
+// Stackra file contract:
+// Purpose: the Gradle build of the `StackraCustomerDisplay` Expo module (an Android `Presentation` on the connected
+//          display), read by autolinking at prebuild.
+// Boundary: build metadata only; `Presentation`, `DisplayManager` and the views are Android framework classes, so no
+//           library is declared.
+// Runtime: android
+// Governing contract: ADR 0478 (decisions 2 and 4); ADR 0430 (decision 1).
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.figentra.stackra'
+version = '0.0.0'
+
+android {
+  namespace 'com.figentra.stackra.customerdisplay'
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.0'
+  }
+}

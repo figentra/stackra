@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["StackraCustomerDisplayModule"]
+  },
+  "android": {
+    "modules": ["com.figentra.stackra.customerdisplay.StackraCustomerDisplayModule"]
+  }
+}

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/peripherals (the configuration with its shipped schema, the
- *          memory drivers gen's wiring imports, the `channel` and `external` customer display drivers and the
- *          display-side listener, the in-store and GS1 barcode parsers, the scale preset fit, the receipt-token
+ *          memory drivers gen's wiring imports, the `channel` customer display driver (the `external` one is
+ *          @stackra/native-customer-display's, ADR 0478 decision 5) and the display-side listener, the in-store and GS1 barcode parsers, the scale preset fit, the receipt-token
  *          signing and checking with the exit gate, and the bridges' refusals) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports are exported from `./contracts` only (ADR 0294
@@ -15,7 +15,6 @@ export { PeripheralsConfig } from "#config/peripherals.config";
 export { CUSTOMER_DISPLAY_CHANNEL } from "#core/constants/customer-display-channel.constant";
 export { PERIPHERALS_CONFIG_SCHEMA as PeripheralsConfig$ } from "#core/constants/peripherals-config-schema.constant";
 export { ChannelCustomerDisplayDriver } from "#core/drivers/channel-customer-display.driver";
-export { ExternalCustomerDisplayDriver } from "#core/drivers/external-customer-display.driver";
 export { MemoryAccessControllerDriver } from "#core/drivers/memory-access-controller.driver";
 export { MemoryBaggingScaleDriver } from "#core/drivers/memory-bagging-scale.driver";
 export { MemoryBarcodeScannerDriver } from "#core/drivers/memory-barcode-scanner.driver";

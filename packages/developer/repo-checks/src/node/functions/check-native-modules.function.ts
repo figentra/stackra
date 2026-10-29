@@ -11,9 +11,6 @@
 /** Native source a hand writes. */
 const NATIVE_SOURCE = /\.(?:swift|kt|java|m|mm)$/;
 
-/** shortcut: the mobile app's customer display predates ADR 0478; drop this when STA-1533 moves it to a package. */
-const NATIVE_SOURCES_PENDING = /^apps\/mobile\/src\/native-sources\/customer-display\//;
-
 /** A module package: `packages/<category>/<name>/expo-module.config.json`. */
 const MODULE_CONFIG = /^(packages\/[^/]+\/[^/]+)\/expo-module\.config\.json$/;
 
@@ -32,12 +29,7 @@ export function checkNativeModules(
   const out: string[] = [];
   for (const file of files) {
     const app = /^apps\/[^/]+\/(.+)$/.exec(file)?.[1];
-    if (
-      app !== undefined &&
-      NATIVE_SOURCE.test(file) &&
-      !/^(?:ios|android)\//.test(app) &&
-      !NATIVE_SOURCES_PENDING.test(file)
-    )
+    if (app !== undefined && NATIVE_SOURCE.test(file) && !/^(?:ios|android)\//.test(app))
       out.push(`${file}: hand-written native code belongs in an Expo module package (ADR 0478)`);
   }
   for (const file of files) {

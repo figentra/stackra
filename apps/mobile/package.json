@@ -65,6 +65,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
+    "@stackra/native-customer-display": "workspace:*",
     "@stackra/native-share": "workspace:*",
     "@stackra/platform": "workspace:*",
     "@stackra/settings": "workspace:*",

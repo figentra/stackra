@@ -223,8 +223,9 @@ export class PeripheralsConfig extends BasePeripheralsConfig {
 - The printer checks it is ready before every print and kick. Lines go over as text with control characters dropped;
   other Unicode is kept, because the SDK draws the text (Arabic shaping is the SDK font's, and is checked at
   certification).
-- The second screen stays the `external` customer display. Card terminals and label printers on these terminals are
-  not built: an acquirer SDK is its own ADR (ADR 0442 decision 6).
+- The second screen stays the `external` customer display, now `ExternalCustomerDisplayDriver` of
+  `@stackra/native-customer-display` with its Swift and Kotlin (ADR 0478 decision 5). Card terminals and label
+  printers on these terminals are not built: an acquirer SDK is its own ADR (ADR 0442 decision 6).
 - **Certification pending.** Built from the vendors' public SDK documents with tests that replay transcribed SDK
   answers (`src/native/__tests__/pos-device-sdk.fixture.ts`). Recordings from certified models (STA-739) replace
   them before a family ships.

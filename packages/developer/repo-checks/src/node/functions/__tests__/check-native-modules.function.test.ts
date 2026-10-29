@@ -40,10 +40,10 @@ describe("checkNativeModules", () => {
     expect(checkNativeModules(["apps/m/src/native-sources/x/X.kt"], () => undefined)).toHaveLength(
       1,
     );
-    // STA-1533 moves the one app surface that predates ADR 0478.
+    // No app surface is exempt (STA-1533 moved the last one, the mobile app's customer display).
     expect(
       checkNativeModules(["apps/mobile/src/native-sources/customer-display/X.kt"], () => undefined),
-    ).toEqual([]);
+    ).toHaveLength(1);
   });
 
   it("refuses a module package without its folders or its files entries", () => {

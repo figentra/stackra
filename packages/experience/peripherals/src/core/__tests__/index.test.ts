@@ -20,7 +20,6 @@ describe("@stackra/peripherals", () => {
       "ChannelCustomerDisplayDriver",
       "EmbeddedValue",
       "ExitGateService",
-      "ExternalCustomerDisplayDriver",
       "LabelPrinterUnavailableError",
       "MemoryAccessControllerDriver",
       "MemoryBaggingScaleDriver",

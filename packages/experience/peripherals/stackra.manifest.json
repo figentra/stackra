@@ -35,14 +35,10 @@
     {
       "port": "CustomerDisplay",
       "key": "peripherals.CustomerDisplay",
-      "candidates": ["channel", "external", "memory"],
+      "candidates": ["channel", "memory"],
       "classes": {
         "channel": {
           "class": "ChannelCustomerDisplayDriver",
-          "from": "@stackra/peripherals"
-        },
-        "external": {
-          "class": "ExternalCustomerDisplayDriver",
           "from": "@stackra/peripherals"
         },
         "memory": {

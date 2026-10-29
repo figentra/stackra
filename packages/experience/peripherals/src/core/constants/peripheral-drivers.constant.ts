@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `PERIPHERAL_DRIVERS`, the driver names of the selectable ports, each a driver file prefix of this
- *          package: `memory` (`.`) for each, `channel` and `external` (`.`), and `escpos`, `printer_kick`, `hid`, `zpl`
+ *          package: `memory` (`.`) for each, `channel` (`.`), and `escpos`, `printer_kick`, `hid`, `zpl`
  *          and `ecr` (`./desktop`, the semi-integrated card terminal link of ADR 0377), `imin` for the printer, drawer
  *          and scanner and `sunmi` and `pax` for the scanner (`./native`, the Android till of ADR 0442, ADR 0458 to
  *          0460). The printer's `epson`, `star`, `sunmi` and `pax` are @stackra/native-receipt-printer's drivers and the
- *          drawer's `sunmi` and `pax` @stackra/native-cash-drawer's, and the card terminal's `stripe_terminal`
- *          @stackra/native-card-terminal's (ADR 0478 decision 5, ADR 0479): their names stay here
- *          because both augment this package's `DriverRegistry` key. A further card terminal link
+ *          drawer's `sunmi` and `pax` @stackra/native-cash-drawer's, the card terminal's `stripe_terminal`
+ *          @stackra/native-card-terminal's and the customer display's `external` @stackra/native-customer-display's
+ *          (ADR 0478 decision 5, ADR 0479): their names stay here because both augment this package's `DriverRegistry` key. A further card terminal link
  *          (serial, USB, Bluetooth) joins `cardTerminal` with its native transport; a shared
  *          used-receipt store joins `usedReceiptStore` with the venue that needs it; a scanner-scale, bagging-scale,
  *          label-scale or drive-through lane vendor's driver joins its field with its own ADR (STA-965).

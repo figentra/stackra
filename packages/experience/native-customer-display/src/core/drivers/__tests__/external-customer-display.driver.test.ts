@@ -5,7 +5,7 @@
  *          connected.
  * Boundary: test only; the Expo modules registry is a stand-in on `globalThis.expo`, removed after each test.
  * Runtime: node
- * Governing contract: ADR 0430 (decision 1); ADR 0022 (test placement).
+ * Governing contract: ADR 0430 (decision 1); ADR 0478 (decision 5); ADR 0022 (test placement).
  */
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";

@@ -1,11 +1,12 @@
 // Stackra file contract:
 // Purpose: the Android half of the `StackraCustomerDisplay` Expo module: draws the till's customer display view (basket
 //          lines, total, message) on the display plugged into the tablet, as an Android `Presentation`.
-// Boundary: native drawing only, from the view JSON `ExternalCustomerDisplayDriver` (@stackra/peripherals) sends. It
-//           decides nothing; colours follow the system dark mode. Gen wires the module around this file (ADR 0345
-//           decisions 6 and 7).
+// Boundary: native drawing only, from the view JSON `ExternalCustomerDisplayDriver` (@stackra/native-customer-display)
+//           sends. It decides nothing; colours follow the system dark mode. Autolinking registers it from
+//           `expo-module.config.json`. Moved from the mobile app's `src/native-sources/customer-display/` unchanged
+//           (ADR 0478, STA-1533).
 // Runtime: android
-// Governing contract: ADR 0430 (decision 1); ADR 0339 (open question 3); ADR 0345 (decision 6).
+// Governing contract: ADR 0430 (decision 1); ADR 0339 (open question 3); ADR 0478 (decision 2).
 package com.figentra.stackra.customerdisplay
 
 import android.app.Presentation
