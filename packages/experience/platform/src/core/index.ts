@@ -1,21 +1,24 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/platform (the capability codes and the config vocabulary, the
- *          desktop, PWA and push configurations with their shipped schemas, and the memory drivers) until
+ *          app lock, desktop, PWA and push configurations with their shipped schemas, and the memory drivers) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `Platform` is exported from `./contracts` only (registry A3,
  *           ADR 0294 decision 15). The option shapes, the share inbox and the refusal builder stay internal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { AppLockConfig } from "#config/app-lock.config";
 export { DesktopConfig } from "#config/desktop.config";
 export { KioskConfig } from "#config/kiosk.config";
 export { PushConfig } from "#config/push.config";
 export { PwaConfig } from "#config/pwa.config";
+export { APP_LOCK_CONFIG_SCHEMA as AppLockConfig$ } from "#core/constants/app-lock-config-schema.constant";
 export { DESKTOP_CONFIG_SCHEMA as DesktopConfig$ } from "#core/constants/desktop-config-schema.constant";
 export { KIOSK_CONFIG_SCHEMA as KioskConfig$ } from "#core/constants/kiosk-config-schema.constant";
 export { PUSH_CONFIG_SCHEMA as PushConfig$ } from "#core/constants/push-config-schema.constant";
 export { PWA_CONFIG_SCHEMA as PwaConfig$ } from "#core/constants/pwa-config-schema.constant";
+export { MemoryAppLockDriver } from "#core/drivers/memory-app-lock.driver";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
 export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";
 export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
@@ -37,5 +40,7 @@ export { PromptMoment } from "#core/enums/prompt-moment.enum";
 export { TrayClickAction } from "#core/enums/tray-click-action.enum";
 export { UpdateStrategy } from "#core/enums/update-strategy.enum";
 export { WindowKind } from "#core/enums/window-kind.enum";
+export { appLockPolicy } from "#core/functions/app-lock-policy.function";
 export { enterKioskOnLaunch } from "#core/functions/enter-kiosk-on-launch.function";
+export type { AppLockPolicy } from "#core/types/app-lock-policy.type";
 export type { MemoryPlatformOptions } from "#core/types/memory-platform-options.type";

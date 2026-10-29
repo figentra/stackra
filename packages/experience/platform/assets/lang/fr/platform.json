@@ -21,5 +21,9 @@
       "why": "Le micro enregistre les notes vocales et le son des vidéos.",
       "blocked": "L'accès au micro est désactivé. Activez-le dans les Réglages pour enregistrer du son."
     }
+  },
+  "app_lock": {
+    "reason": "Déverrouillez pour continuer",
+    "unlock": "Déverrouiller"
   }
 }

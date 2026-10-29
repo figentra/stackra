@@ -3,10 +3,10 @@
  * Purpose: the root component: it boots the app's container behind the splash, then mounts it, the i18n provider (the
  *          phone's language for this app and its region formats), gesture handling, safe-area insets, the Stackra
  *          design system provider (HeroUI Native, colour scheme, direction and the text-size cap) and the navigation
- *          container, with the theme bridged from the Stackra brand colours. At launch and on each return to the
- *          foreground it re-reads the phone: notification channels, App Tracking Transparency into consent, the region
- *          and, while the phone owns the language, the language. The review area's icon registry is its own
- *          (`components/ui/review-icons.tsx`), so a release build drops it.
+ *          container, with the theme bridged from the Stackra brand colours, around the app lock (off by default).
+ *          At launch and on each return to the foreground it re-reads the phone: notification channels, App Tracking
+ *          Transparency into consent, the region and, while the phone owns the language, the language. The review
+ *          area's icon registry is its own (`components/ui/review-icons.tsx`), so a release build drops it.
  * Boundary: composes the providers and the navigator; owns no screen. The language choice is saved to the account's
  *           settings (`account.locale`) through `setLocale`; the container is `boot/create-app-container.function`.
  * Runtime: react-native
@@ -27,6 +27,7 @@ import {
 import type { Locale, Messages } from "@stackra/i18n";
 import { deviceLanguageTags, deviceRegion } from "@stackra/i18n/native";
 import { I18nProvider } from "@stackra/i18n/react";
+import { AppLockGate } from "@stackra/platform/native";
 import { SettingValueStore } from "@stackra/settings/contracts";
 import { ThemingConfig } from "@stackra/theming";
 import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
@@ -77,7 +78,16 @@ function Navigation() {
     >
       {/* Follows the in-app scheme, not only the device's, so the switcher keeps the status bar readable. */}
       <StatusBar style={dark ? "light" : "dark"} />
-      <RootNavigator />
+      {/* shortcut: no session or catalogues yet, so no role and the English of `platform::app_lock.*`. */}
+      <AppLockGate
+        roleName={null}
+        reason="Unlock to continue"
+        unlockLabel="Unlock"
+        coverColor={background}
+        textColor={foreground}
+      >
+        <RootNavigator />
+      </AppLockGate>
     </NavigationContainer>
   );
 }

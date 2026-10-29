@@ -21,5 +21,9 @@
       "why": "Il microfono registra note vocali e audio dei video.",
       "blocked": "L'accesso al microfono è disattivato. Attivalo nelle Impostazioni per registrare l'audio."
     }
+  },
+  "app_lock": {
+    "reason": "Sblocca per continuare",
+    "unlock": "Sblocca"
   }
 }

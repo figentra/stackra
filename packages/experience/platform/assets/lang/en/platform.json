@@ -21,5 +21,9 @@
       "why": "The microphone records voice notes and video sound.",
       "blocked": "Microphone access is off. Turn it on in Settings to record sound."
     }
+  },
+  "app_lock": {
+    "reason": "Unlock to continue",
+    "unlock": "Unlock"
   }
 }

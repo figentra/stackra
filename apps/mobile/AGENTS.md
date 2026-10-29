@@ -25,6 +25,9 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 - Native permission strings and the Expo libraries' native settings go in `app.json` through each library's config
   plugin (`NSUserTrackingUsageDescription` through expo-tracking-transparency, the camera through expo-camera, the
   per-app languages through expo-localization); never hand-edit `ios/` or `android/` (ADR 0478).
+- The app lock (`AppLockGate` from `@stackra/platform/native`, around the navigator) is off by default; turn it on
+  with an `AppLockConfig` subclass in the container, never a flag in a screen. Face ID's usage text is the
+  expo-local-authentication plugin entry in `app.json`.
 - The app root is `DesignSystemProvider` from `@stackra/ui/native` (it renders `HeroUINativeProvider`), inside `GestureHandlerRootView` and `SafeAreaProvider`; read the scheme and direction with `useDesignSystem()`.
 
 ## Tasks

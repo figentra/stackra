@@ -21,5 +21,9 @@
       "why": "El micrófono graba notas de voz y el sonido de los vídeos.",
       "blocked": "El acceso al micrófono está desactivado. Actívalo en Ajustes para grabar sonido."
     }
+  },
+  "app_lock": {
+    "reason": "Desbloquea para continuar",
+    "unlock": "Desbloquear"
   }
 }

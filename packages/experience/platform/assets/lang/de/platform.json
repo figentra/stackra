@@ -21,5 +21,9 @@
       "why": "Das Mikrofon nimmt Sprachnotizen und Videoton auf.",
       "blocked": "Der Mikrofonzugriff ist aus. Schalte ihn in den Einstellungen ein, um Ton aufzunehmen."
     }
+  },
+  "app_lock": {
+    "reason": "Zum Fortfahren entsperren",
+    "unlock": "Entsperren"
   }
 }

@@ -50,6 +50,9 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
   expo-location and expo-media-library (optional peers, catalog:mobile); `modules` stays protected only so tests hand
   fakes in. Its explanations live in
   `assets/lang/*/platform.json` (`platform::permissions.*`); add a permission to all seven locales at once.
+- `AppLock` is a port of its own: the device check behind the opt-in app lock. When to lock is `AppLockConfig`
+  (off by default, per-role overrides) and `AppLockGate` (`./native`); a phone that cannot authenticate is never
+  locked. Its Expo driver imports expo-local-authentication (optional peer, catalog:mobile).
 - A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
   options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error

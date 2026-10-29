@@ -29,6 +29,9 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 | `./desktop`   | `ElectronKioskModeDriver`, `ElectronSecondScreenDriver`, `SetKioskModeBridge`, `ShowSecondScreenBridge`                                                                                                                         | the main-process drivers and `platform.kiosk.set`, `platform.screen.second` |
 | `./desktop`   | `browserWindowOptions`                                                                                                                                                                                                          | the `BrowserWindow` options of a configured window, the kiosk kind included |
 | `./native`    | `ExpoPlatformDriver`, `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`                                                                                                                                                | the phone platform; push on a device (`platform.push.provider`)             |
+| `./native`    | `ExpoAppLockDriver`, `AppLockGate`                                                                                                                                                                                              | the opt-in app lock on a phone                                              |
+| `.`           | `AppLockConfig` (+ `AppLockConfig$`), `MemoryAppLockDriver`, `appLockPolicy`                                                                                                                                                    | the app lock configuration, memory driver and per-role merge                |
+| `./contracts` | `AppLock`                                                                                                                                                                                                                       | the device check behind the app lock                                        |
 | `./worker`    | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | Turnstile siteverify from a Cloudflare Worker                               |
 | `./node`      | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | the same verifier for a Node service (Encore)                               |
 | `./sw`        | `handleBackgroundSync`, `handlePush`, `handlePushSubscriptionChange`, `handleNotificationClick`, `handleShareTarget`, `handleSkipWaiting`                                                                                       | registered by the generated `sw.ts`                                         |
@@ -141,6 +144,36 @@ if ((await permissions.request("bluetooth")) === "blocked")
   Bluetooth asks through React Native's `PermissionsAndroid` on Android 12 and later; elsewhere it reads `granted`, since
   iOS asks on first use and older Android grants it at install.
 - `MemoryDevicePermissionsDriver` (`.`) is the web, desktop and test driver: every permission starts `prompt`.
+
+### App lock (STA-1537)
+
+An opt-in lock (off by default): biometrics on launch and after `lockAfter` in the background, the device passcode as
+the fallback, and the app covered in the app switcher whenever it leaves the foreground.
+
+```tsx
+export class AppLockConfig extends BaseAppLockConfig {
+  override isEnabled = true;
+  override roles = { manager: { lockAfter: Duration.minutes(1) } }; // per role, over the app-wide values
+}
+
+<AppLockGate
+  roleName={session.role}
+  reason={t("platform::app_lock.reason")}
+  unlockLabel={t("platform::app_lock.unlock")}
+  coverColor={background}
+  textColor={foreground}
+>
+  <Navigation />
+</AppLockGate>;
+```
+
+- `AppLock` (`./contracts`) asks the phone; `ExpoAppLockDriver` (`./native`) is concrete over expo-local-authentication
+  (an optional peer: the app adds it and its config plugin, which writes the Face ID usage text);
+  `MemoryAppLockDriver` (`.`) serves tests, the web and the desktop.
+- `AppLockGate` (`./native`) reads `AppLockConfig` (`platform.app_lock`) and `AppLock` from the container;
+  `appLockPolicy(config, role)` (`.`) is the merge it uses. A phone with no biometric and no passcode is never locked.
+- The cover is a React view drawn when the app turns inactive; iOS snapshots after it. Android may snapshot first; a
+  hard guarantee there needs `FLAG_SECURE`, which also blocks screenshots, so it is not set.
 
 ## Testing
 

@@ -15,6 +15,8 @@ describe("@stackra/platform", () => {
   it("exports the registry row's symbols, the shipped schemas and the memory drivers", () => {
     expect(Object.keys(core).sort()).toEqual(
       [
+        "AppLockConfig",
+        "AppLockConfig$",
         "CachePreset",
         "CacheStrategy",
         "DesktopConfig",
@@ -25,6 +27,7 @@ describe("@stackra/platform", () => {
         "InstallPrompt",
         "KioskConfig",
         "KioskConfig$",
+        "MemoryAppLockDriver",
         "MemoryCaptchaVerifierDriver",
         "MemoryDevicePermissionsDriver",
         "MemoryKioskModeDriver",
@@ -44,6 +47,7 @@ describe("@stackra/platform", () => {
         "TrayClickAction",
         "UpdateStrategy",
         "WindowKind",
+        "appLockPolicy",
         "enterKioskOnLaunch",
       ].sort(),
     );

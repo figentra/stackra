@@ -13,7 +13,18 @@ import * as native from "#native/index";
 
 vi.mock("expo-notifications", () => ({ AndroidImportance: {} }));
 vi.mock("expo-constants", () => ({ default: {} }));
-vi.mock("react-native", () => ({ Linking: {}, PermissionsAndroid: {}, Platform: {}, Share: {} }));
+vi.mock("react-native", () => ({
+  AppState: {},
+  Linking: {},
+  PermissionsAndroid: {},
+  Platform: {},
+  Pressable: {},
+  Share: {},
+  StyleSheet: { create: (styles: object) => styles },
+  Text: {},
+  View: {},
+}));
+vi.mock("expo-local-authentication", () => ({ SecurityLevel: {} }));
 vi.mock("@react-native-community/netinfo", () => ({ addEventListener: () => () => undefined }));
 vi.mock("expo-tracking-transparency", () => ({}));
 vi.mock("expo-battery", () => ({}));
@@ -26,8 +37,10 @@ vi.mock("expo-haptics", () => ({
 }));
 
 describe("@stackra/platform/native", () => {
-  it("exports exactly the Expo drivers, the self-hosted push transport and the channel creator", () => {
+  it("exports exactly the Expo drivers, the app lock gate, the self-hosted push transport and the channel creator", () => {
     expect(Object.keys(native).sort()).toEqual([
+      "AppLockGate",
+      "ExpoAppLockDriver",
       "ExpoDevicePermissionsDriver",
       "ExpoPlatformDriver",
       "ExpoPushTransportDriver",

@@ -21,5 +21,9 @@
       "why": "De microfoon neemt spraaknotities en videogeluid op.",
       "blocked": "Microfoontoegang staat uit. Zet het aan in Instellingen om geluid op te nemen."
     }
+  },
+  "app_lock": {
+    "reason": "Ontgrendel om verder te gaan",
+    "unlock": "Ontgrendelen"
   }
 }

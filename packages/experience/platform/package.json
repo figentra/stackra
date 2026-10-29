@@ -2,7 +2,7 @@
   "name": "@stackra/platform",
   "version": "0.0.0",
   "private": false,
-  "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
+  "description": "Stackra platform: the Platform capability port with its typed refusal, the app lock, push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform, push and app lock) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "keywords": [
     "electron",
     "experience",
@@ -195,6 +195,7 @@
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
+    "expo-local-authentication": "catalog:mobile",
     "expo-location": "catalog:mobile",
     "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
@@ -218,6 +219,7 @@
     "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
+    "expo-local-authentication": "catalog:mobile",
     "expo-location": "catalog:mobile",
     "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
@@ -245,6 +247,9 @@
       "optional": true
     },
     "expo-haptics": {
+      "optional": true
+    },
+    "expo-local-authentication": {
       "optional": true
     },
     "expo-location": {

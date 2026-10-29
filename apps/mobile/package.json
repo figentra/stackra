@@ -80,6 +80,7 @@
     "expo-glass-effect": "catalog:mobile",
     "expo-haptics": "catalog:mobile",
     "expo-linking": "catalog:mobile",
+    "expo-local-authentication": "catalog:mobile",
     "expo-localization": "catalog:mobile",
     "expo-location": "catalog:mobile",
     "expo-media-library": "catalog:mobile",
