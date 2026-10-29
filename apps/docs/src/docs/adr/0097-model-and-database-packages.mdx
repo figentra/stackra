@@ -26,12 +26,13 @@ description: "Accepted, amended by 0133, 0159, 0161, 0162, 0328 and on 2026-10-2
 </Note>
 
 <Note>
-  Amended 2026-10-29 (stackra-288, owner decision 10 of the data-layer questionnaire of 2026-10-28): decision 1
-  allows `@stackra/model` to import `Collection`, `Ref` and `Reference` from `@mikro-orm/core`, the relation types a
-  model declares; every other ORM import in the model lives in its ORM adapters (`src/core/orm`: the custom types, the
-  embeddable schema and the encrypted-fields subscriber, plus `whereEncrypted` and the re-seal job, which take an
-  entity manager). Decision 2 otherwise stands: no other package imports `@mikro-orm/*`. The Enforcement below is now
-  the `boundaries.jsonc` ORM ban, with its fixtures in `@stackra/oxlint-config`.
+  Amended 2026-10-29 (stackra-288, owner decision 10 of the data-layer questionnaire of 2026-10-28):
+  decision 1 allows `@stackra/model` to import `Collection`, `Ref` and `Reference` from
+  `@mikro-orm/core`, the relation types a model declares; every other ORM import in the model lives
+  in its ORM adapters (`src/core/orm`: the custom types, the embeddable schema and the
+  encrypted-fields subscriber, plus `whereEncrypted` and the re-seal job, which take an entity
+  manager). Decision 2 otherwise stands: no other package imports `@mikro-orm/*`. The Enforcement
+  below is now the `boundaries.jsonc` ORM ban, with its fixtures in `@stackra/oxlint-config`.
 </Note>
 
 ## Context

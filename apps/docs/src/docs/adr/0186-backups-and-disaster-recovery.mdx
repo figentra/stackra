@@ -7,10 +7,10 @@ description: "Accepted, amended by 0272, 0353, OS 0001, OS 0062 · 2026-10-20 ·
   Amended 2026-10-28 (stackra-310, STA-1473; owner decision 8 of the data-layer questionnaire): the
   "data plus a picker" of decision 6 is now in place for cells inside a region. Every tenant carries
   a `cell` beside its `region` (`primary` until cells exist), read through `@stackra/tenancy`'s
-  `TenantPlacement` port, and `@stackra/database`'s `ConnectionResolver` names the connection set of a
-  scope (the free driver answers `primary`; the tenancy driver answers the tenant's cell). The routing
-  `Database` driver, the per-cell fan-out and move-tenant remain later work (stackra-322); sharding
-  stays deferred and Citus stays out. Decision 6 otherwise stands.
+  `TenantPlacement` port, and `@stackra/database`'s `ConnectionResolver` names the connection set of
+  a scope (the free driver answers `primary`; the tenancy driver answers the tenant's cell). The
+  routing `Database` driver, the per-cell fan-out and move-tenant remain later work (stackra-322);
+  sharding stays deferred and Citus stays out. Decision 6 otherwise stands.
 </Note>
 
 <Note>
