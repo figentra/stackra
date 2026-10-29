@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-share",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": false,
   "description": "Stackra native share: receive photos, PDFs, links and text from other apps through an iOS share extension and an Android share target (expo-sharing), behind the IncomingShare port with memory and Expo drivers, a React hook, the FileSystem and media upload helpers and the config plugin",
   "keywords": [
