@@ -32,9 +32,9 @@ secret value.
 2. **Store presence is data in the product repository** ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)
    decisions 1 to 3). The app's identity (bundle id, package, name per locale) and capabilities come from the root
    `runway.yaml` `mobile.<app>` entry; its listing from the `assets/store/<app>/<locale>/` folder that entry names
-   (`name.txt`, `subtitle.txt`, `description.md`, `keywords.txt`, `privacy.json`, and optional `shortDescription.txt`,
+   (`name.txt`, `subtitle.txt`, `description.md`, `keywords.txt`, `privacy.yaml`, and optional `shortDescription.txt`,
    `promotionalText.txt`, `whatsNew.txt`); app-level facts from `assets/store/<app>/store.yaml` (the App Store Connect app id once the record exists, urls, review contact
-   and notes, the demo account, seed and probe as secret NAMES, TestFlight groups, app groups). `privacy.json` holds
+   and notes, the demo account, seed and probe as secret NAMES, TestFlight groups, app groups). `privacy.yaml` holds
    one row per data type and source, naming a `@stackra/consent` category, and is the same in every locale. Screenshots
    are captured in CI from the app built from its template line (0441 decision 7) and never committed. `pnpm store
 build --root <product> --app <key>` checks all of it and generates every store screenshot size, the App Store App

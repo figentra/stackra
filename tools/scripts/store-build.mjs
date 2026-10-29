@@ -3,7 +3,7 @@
  * Purpose: a product's store presence is data (ADR 0480, ADR 0441 decision 1). This file reads one mobile app of a
  *   product repository, from two places:
  *     the root runway.yaml `mobile.<app>`   identity (bundle id, package, name per locale), capabilities, `store` path
- *     <store>/<locale>/                     name.txt, subtitle.txt, description.md, keywords.txt, privacy.json, and
+ *     <store>/<locale>/                     name.txt, subtitle.txt, description.md, keywords.txt, privacy.yaml, and
  *                                           optional shortDescription.txt, promotionalText.txt, whatsNew.txt
  *     <store>/store.yaml                    app-level facts: ascAppId, urls, review contact and notes, the demo account, seed and
  *                                           probe as secret NAMES, TestFlight groups, app groups, frame background
@@ -11,7 +11,7 @@
  *     screenshots/<target>/<locale>/NN.png  every store size from the CI captures (`--captures`, default
  *                                           `.stackra/captures/<app>/<locale>/<phone|tablet>/`), never committed
  *     apple-privacy.json, play-data-safety.json, privacy-answers.md
- *                                           from privacy.json, checked against the @stackra/consent categories and the
+ *                                           from privacy.yaml, checked against the @stackra/consent categories and the
  *                                           SDKs of the root and the template checkout
  *     checklist.md                          what is automated, what is a browser step, what waits for approval
  * Boundary: reads the product repository and, when given, the runway template checkout (`--template`); writes only
@@ -232,18 +232,18 @@ export function loadStore(root, app, { core = CORE, template } = {}) {
     config.locales[locale] = l;
 
     // One privacy answer set per app; every locale carries the same file (assets/store README).
-    const raw = f("privacy.json");
-    if (!raw) problems.push(`${entry.store}/${locale}/privacy.json is missing`);
+    const raw = f("privacy.yaml");
+    if (!raw) problems.push(`${entry.store}/${locale}/privacy.yaml is missing`);
     else {
       let parsed;
       try {
-        parsed = JSON.parse(raw);
+        parsed = parse(raw) ?? {};
       } catch {
-        problems.push(`${entry.store}/${locale}/privacy.json is not valid JSON`);
+        problems.push(`${entry.store}/${locale}/privacy.yaml is not valid YAML`);
         continue;
       }
       if (collection && JSON.stringify(parsed) !== JSON.stringify(collection))
-        problems.push(`${entry.store}/${locale}/privacy.json differs from the other locales`);
+        problems.push(`${entry.store}/${locale}/privacy.yaml differs from the other locales`);
       collection ??= parsed;
     }
   }
@@ -281,7 +281,7 @@ export function loadStore(root, app, { core = CORE, template } = {}) {
   for (const dep of new Set(deps))
     if (SDK_SOURCES[dep] && !sources.has(SDK_SOURCES[dep]))
       problems.push(
-        `${dep} is a dependency but privacy.json has no row with source "${SDK_SOURCES[dep]}"`,
+        `${dep} is a dependency but privacy.yaml has no row with source "${SDK_SOURCES[dep]}"`,
       );
 
   return { config, collection, problems, dir };

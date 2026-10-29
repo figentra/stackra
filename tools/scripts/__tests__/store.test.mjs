@@ -100,7 +100,7 @@ function product({
     const all = {
       "description.md": "An example app.",
       "whatsNew.txt": "Fixes.",
-      "privacy.json": JSON.stringify({ collects }),
+      "privacy.yaml": stringify({ collects }),
       ...files,
     };
     for (const [name, text] of Object.entries(all)) writeFileSync(join(store, locale, name), text);
@@ -478,7 +478,7 @@ test("runway entry and assets/store: store locale codes, capability mapping, one
   const repo = product({
     locales: {
       en: {},
-      ar: { "name.txt": "مثال", "privacy.json": JSON.stringify({ collects: [{ type: "name" }] }) },
+      ar: { "name.txt": "مثال", "privacy.yaml": stringify({ collects: [{ type: "name" }] }) },
     },
   });
   const { config, problems } = loadStore(repo.dir, "app", { core: ROOT, template: repo.tpl });
@@ -486,7 +486,7 @@ test("runway entry and assets/store: store locale codes, capability mapping, one
   assert.equal(config.locales.en.name, "Example"); // from runway identity.name when name.txt is absent
   assert.deepEqual(config.ios.capabilities, ["PUSH_NOTIFICATIONS", "IN_APP_PURCHASE"]); // camera needs none
   assert.ok(
-    problems.some((x) => /privacy\.json differs from the other locales/.test(x)),
+    problems.some((x) => /privacy\.yaml differs from the other locales/.test(x)),
     problems.join("; "),
   );
   assert.deepEqual(loadStore(repo.dir, "shop", { core: ROOT }).problems, [
