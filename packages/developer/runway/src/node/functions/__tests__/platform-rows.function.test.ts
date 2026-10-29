@@ -73,6 +73,20 @@ describe("platformRows", () => {
     });
   });
 
+  it("gives a preset surface its preset and the preset's realm", () => {
+    const root = parseRunway("root", {
+      ...PRODUCT_ROOT,
+      surfaces: { portal: { shell: "os/console@3", preset: "portal", host: "family.mezzora" } },
+      mobile: {},
+    });
+    const rows = platformRows(root, "production", {});
+    expect(JSON.parse(rows["host:family.mezzora.figentra.com"] ?? "")).toEqual({
+      ...row("portal", "family.mezzora.figentra.com"),
+      realm: "portal",
+      preset: "portal",
+    });
+  });
+
   it("takes the region it is given", () => {
     const rows = platformRows(parseRunway("root", PRODUCT_ROOT), "production", {
       region: "eu-west",

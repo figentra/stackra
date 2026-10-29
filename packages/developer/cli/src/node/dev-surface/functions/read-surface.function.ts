@@ -23,7 +23,7 @@ type RootRunway = {
   readonly product?: { key?: unknown };
   readonly surfaces?: Record<
     string,
-    { shell?: unknown; packages?: unknown; content?: unknown } | null
+    { shell?: unknown; packages?: unknown; content?: unknown; preset?: unknown } | null
   >;
   readonly environments?: { dev?: { infra?: { gateway?: { port?: unknown } } } };
 };
@@ -75,5 +75,6 @@ export function readSurface(root: string, surface: string): RootSurface {
     gatewayPort: typeof port === "number" ? port : undefined,
     product: typeof runway.product?.key === "string" ? runway.product.key : undefined,
     content,
+    ...(typeof entry.preset === "string" ? { preset: entry.preset } : {}),
   };
 }

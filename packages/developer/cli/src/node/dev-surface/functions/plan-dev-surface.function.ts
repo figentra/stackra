@@ -119,6 +119,7 @@ export function planDevSurface(
         root,
         entries: surfaceEntries(root, entry.packages, surface),
         ...(document === undefined ? {} : { document }),
+        ...(entry.preset === undefined ? {} : { preset: entry.preset }),
       },
       // The shell's own dev server serves the packages from source (figentra/os `shellDev`); no product Vite runs.
       runs: [

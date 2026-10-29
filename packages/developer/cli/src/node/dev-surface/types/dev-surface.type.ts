@@ -48,4 +48,7 @@ export type DevSurface = {
 
   /** A landing site's seed page document (absolute JSON file), from `content`; set for a local shell. */
   readonly document?: string;
+
+  /** The shell preset the surface runs (`portal`); set for a local shell when the runway names one. */
+  readonly preset?: string;
 };

@@ -84,7 +84,7 @@ describe("planDevSurface", () => {
     const plan = planDevSurface(
       root,
       "console",
-      { ...ENTRY, product: "acme" },
+      { ...ENTRY, product: "acme", preset: "portal" },
       {
         os: "os",
         api: "http://127.0.0.1:9000",
@@ -98,6 +98,7 @@ describe("planDevSurface", () => {
       product: "acme",
       root,
       entries: [join(pkg, "src/console.tsx")],
+      preset: "portal",
     });
     expect(plan.runs).toEqual([
       {

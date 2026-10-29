@@ -25,4 +25,7 @@ export type RootSurface = {
 
   /** A landing surface's seed documents (`content`, a folder under `assets/`). */
   readonly content?: string | undefined;
+
+  /** The shell preset (`portal`, ADR 0436 decision 10). */
+  readonly preset?: string | undefined;
 };

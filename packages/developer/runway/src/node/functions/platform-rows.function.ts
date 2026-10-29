@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `platformRows(root, environment, options)`, the platform rows a product's root runway puts in the edge KV
  *          copy for one environment: a `host:<hostname>` row for every host of every web surface (product, surface,
- *          home region, status, realm and the surface's canonical host, D2), and the app-link files of every mobile
+ *          home region, status, realm, the surface's canonical host (D2) and its shell preset, whose realm a preset
+ *          surface takes (ADR 0436 decision 10)), and the app-link files of every mobile
  *          app on its linked hosts (`wellknown:<host>:apple-app-site-association` and `wellknown:<host>:assetlinks.json`).
  * Boundary: pure; answers rows as KV key → JSON text and writes nothing. A host name is relative to the environment's
  *           `domains.zone` (`console.mezzora` → `console.mezzora.figentra.com`, D9) unless it already ends in that
@@ -101,8 +102,10 @@ export function platformRows(
         surface,
         region: region ?? "",
         status: hostStatus,
-        realm: realms[surface] ?? defaultRealm,
+        // A preset is a console with its own sign-in realm (ADR 0436 decision 10): the realm is the preset's.
+        realm: realms[surface] ?? entry.preset ?? defaultRealm,
         canonical: canonical ?? item.host,
+        ...(entry.preset === undefined ? {} : { preset: entry.preset }),
       };
       rows[`${EdgeKvPrefix.Host}:${item.host}`] = JSON.stringify(row);
     }
