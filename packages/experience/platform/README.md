@@ -194,7 +194,7 @@ await activities.show({
   steps: 4,
   url: `app://orders/${order.id}`,
 });
-await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.liveActivity.endedDismissal` (15 minutes)
+await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.live_activity.endedDismissal` (15 minutes)
 ```
 
 - `ExpoLiveActivitiesDriver` (`./native`) renders the one `OrderProgress` layout with expo-widgets and Expo UI's SwiftUI
@@ -209,7 +209,7 @@ await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.li
   push-to-start token; the app sends both to its server for `LiveActivityPushes`. Android has neither (`null`).
 - `MemoryLiveActivitiesDriver` (`.`) is the web, desktop and test driver; `isAvailable = false` makes it refuse, a test
   sets `pushTokens` and calls `issuePushToStartToken`.
-- `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`, `androidChannelId` and, for the
+- `LiveActivityConfig` (`.`, key `platform.live_activity`) holds `endedDismissal`, `androidChannelId` and, for the
   server, `apnsBundleId` and `apnsEnvironment`.
 
 `LiveActivityPushes` (`./contracts`) is the server half: it moves a running activity on, ends it, or starts one

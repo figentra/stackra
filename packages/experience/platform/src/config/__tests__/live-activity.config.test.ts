@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `LiveActivityConfig`: keyed `platform.liveActivity`, built with its 15-minute dismissal, and
+ * Purpose: unit tests of `LiveActivityConfig`: keyed `platform.live_activity`, built with its 15-minute dismissal, and
  *          overridden by a host.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -18,8 +18,8 @@ class LiveActivityConfig extends BaseLiveActivityConfig {
 }
 
 describe("LiveActivityConfig", () => {
-  it("is keyed platform.liveActivity", () => {
-    expect(configKey(BaseLiveActivityConfig, "platform")).toBe("platform.liveActivity");
+  it("is keyed platform.live_activity", () => {
+    expect(configKey(BaseLiveActivityConfig, "platform")).toBe("platform.live_activity");
   });
 
   it("builds with a 15-minute dismissal and takes a host's override", () => {

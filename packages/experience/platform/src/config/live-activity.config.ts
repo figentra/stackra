@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `LiveActivityConfig`, the Live Activity configuration (key `platform.liveActivity`): how long an ended
+ * Purpose: `LiveActivityConfig`, the Live Activity configuration (key `platform.live_activity`): how long an ended
  *          order or booking stays on the Lock Screen, the Android channel of its ongoing notification, and where the
  *          server's APNs Live Activity pushes go.
  * Boundary: a configuration class over `LiveActivityOptions` with no env map. A host overrides it as

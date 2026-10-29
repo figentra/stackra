@@ -68,7 +68,7 @@ export class ApnsLiveActivityPushesDriver extends Driver(LiveActivityPushes) {
   ): Promise<"sent" | "gone"> {
     if (!/^[0-9a-f]+$/i.test(token)) throw new TypeError("An APNs token is hexadecimal");
     const bundleId = this.config.apnsBundleId;
-    if (bundleId === null) throw new TypeError("platform.liveActivity.apnsBundleId is not set");
+    if (bundleId === null) throw new TypeError("platform.live_activity.apnsBundleId is not set");
     const now = new Date();
     const dismissAt = new Date(now.getTime() + Duration.toMilliseconds(this.config.endedDismissal));
     const body = JSON.stringify(liveActivityPushPayload(event, progress, now, dismissAt));
@@ -83,7 +83,7 @@ export class ApnsLiveActivityPushesDriver extends Driver(LiveActivityPushes) {
     if (status === 410) return "gone";
     if (reason === "BadDeviceToken")
       throw new Error(
-        `APNs refused the token as BadDeviceToken; check platform.liveActivity.apnsEnvironment ` +
+        `APNs refused the token as BadDeviceToken; check platform.live_activity.apnsEnvironment ` +
           `(now ${this.config.apnsEnvironment})`,
       );
     throw new Error(`APNs refused the Live Activity push: ${status} ${reason ?? ""}`.trim());
