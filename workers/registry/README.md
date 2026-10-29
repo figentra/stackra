@@ -29,27 +29,49 @@ any other licence 403. Its licence rule is `commercial`, and the catalogue never
 
 ## Routes
 
-| Method and path                                              | Does                                                            | Auth                       |
-| ------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------- |
-| `GET /`                                                      | a branded HTML page with the `.npmrc` line; people only         | none                       |
-| `GET /-/ping`                                                | health                                                          | none                       |
-| `GET /-/whoami`                                              | `ci:<repository>` for a publish token, the holder for a licence | any token                  |
-| `GET /@scope/name`                                           | packument; the install media type gets the abbreviated form     | scope read rule            |
-| `GET /@scope/name/<version-or-tag>`                          | one version manifest                                            | scope read rule            |
-| `GET /@scope/name/-/name-<version>.tgz`                      | tarball from R2                                                 | scope read rule            |
-| `PUT /@scope%2fname`                                         | publish one version, or deprecate (no attachment)               | publish token for the name |
-| `GET /-/package/@scope%2fname/dist-tags`                     | dist-tags                                                       | scope read rule            |
-| `PUT`, `DELETE /-/package/@scope%2fname/dist-tags/<tag>`     | move or drop a tag (`latest` cannot be dropped)                 | publish token for the name |
-| `POST /-/npm/v1/oidc/token/exchange/package/@scope%2fname`   | GitHub ID token for a publish token                             | GitHub OIDC                |
-| `GET /-/npm/v1/keys`                                         | the signing keys in npm's shape                                 | none                       |
-| `GET /-/npm/v1/attestations/@scope%2fname@<version>`         | the provenance bundle                                           | scope read rule            |
-| `GET /-/stackra/v1/catalogue?kind=&scope=&q=&cursor=&limit=` | `CataloguePage`, newest publish first                           | none                       |
-| `GET /-/stackra/v1/catalogue/@scope/name`                    | one `CatalogueItem` with its versions                           | none                       |
-| `GET /-/stackra/v1/entitlements`                             | `{ holder, grants, expiresAt, status }`                         | licence token              |
-| `/-/stackra/v1/licences…`                                    | the licence API (below)                                         | issuer token               |
-| `PUT /-/user/*`                                              | 403: there is no login, see the licence docs                    | —                          |
-| `DELETE` of a package or version                             | 405: versions are immutable                                     | —                          |
-| anything else (search, audit, unknown or unscoped names)     | 404                                                             | —                          |
+| Method and path                                              | Does                                                             | Auth                        |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------- |
+| `GET /`, `GET /ar/` (`?q=`)                                  | the browser: every listed package by category, searchable        | none                        |
+| `GET /package/@scope/name`, `GET /ar/package/@scope/name`    | the browser: one package (README, versions, install, provenance) | scope read rule (see below) |
+| `GET /-/ping`                                                | health                                                           | none                        |
+| `GET /-/whoami`                                              | `ci:<repository>` for a publish token, the holder for a licence  | any token                   |
+| `GET /@scope/name`                                           | packument; the install media type gets the abbreviated form      | scope read rule             |
+| `GET /@scope/name/<version-or-tag>`                          | one version manifest                                             | scope read rule             |
+| `GET /@scope/name/-/name-<version>.tgz`                      | tarball from R2                                                  | scope read rule             |
+| `PUT /@scope%2fname`                                         | publish one version, or deprecate (no attachment)                | publish token for the name  |
+| `GET /-/package/@scope%2fname/dist-tags`                     | dist-tags                                                        | scope read rule             |
+| `PUT`, `DELETE /-/package/@scope%2fname/dist-tags/<tag>`     | move or drop a tag (`latest` cannot be dropped)                  | publish token for the name  |
+| `POST /-/npm/v1/oidc/token/exchange/package/@scope%2fname`   | GitHub ID token for a publish token                              | GitHub OIDC                 |
+| `GET /-/npm/v1/keys`                                         | the signing keys in npm's shape                                  | none                        |
+| `GET /-/npm/v1/attestations/@scope%2fname@<version>`         | the provenance bundle                                            | scope read rule             |
+| `GET /-/stackra/v1/catalogue?kind=&scope=&q=&cursor=&limit=` | `CataloguePage`, newest publish first                            | none                        |
+| `GET /-/stackra/v1/catalogue/@scope/name`                    | one `CatalogueItem` with its versions                            | none                        |
+| `GET /-/stackra/v1/entitlements`                             | `{ holder, grants, expiresAt, status }`                          | licence token               |
+| `/-/stackra/v1/licences…`                                    | the licence API (below)                                          | issuer token                |
+| `PUT /-/user/*`                                              | 403: there is no login, see the licence docs                     | —                           |
+| `DELETE` of a package or version                             | 405: versions are immutable                                      | —                           |
+| anything else (search, audit, unknown or unscoped names)     | 404                                                              | —                           |
+
+## Browser
+
+The Worker also serves a read-only browser for people, in English (no prefix) and Arabic (`/ar/`, right to left), on
+paths npm never asks for: `/`, `/ar…` and `/package/…`. Every npm route parses and answers as before.
+
+- **List** (`/`, `/?q=`): exactly what the catalogue lists (no `internal` scope, no `name_rules` name), grouped by the
+  `stackra.category` of each latest package.json (or its kind), searched on the name and description. Public cache.
+- **Package** (`/package/@scope/name`): description, the install command (the `.npmrc` scope line, plus the
+  `_authToken` line for a licensed scope, and `pnpm add`), licence (the `license` field, or "Stackra Pro: a licence is
+  needed"), versions and dist-tags. The README (from the latest tarball, rendered once and kept in KV), dependencies
+  and provenance (repository, source commit, workflow and run from the stored SLSA statement) show only when
+  `readAccess` lets the request read the name: always for `open`, with a licence token that may read it for
+  `licensed` (otherwise metadata only), and an `internal` name is a 404 unless the token may read it. Gated pages are
+  `private, no-store` with `Vary: authorization`. A browser sends no token on navigation, so the full Pro page is for
+  clients that send `Authorization`; there are no accounts.
+- **Rendering**: server-rendered HTML in `src/browse/`, no client framework and no dependency. The stackra theme of
+  `@stackra/tokens` (colours, radius, Latin and Arabic type scales, motion) is copied into
+  `src/constants/browse-style.constant.ts`. One inline script (`browse-script.constant.ts`, allowed by its CSP hash)
+  adds in-place page swaps with a progress bar and view transitions, back and forward, and search as you type; every
+  page works without it. The CSP allows no external request; README images become links.
 
 ## Licences
 
@@ -96,8 +118,7 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
-`figentra/brand` for `@figentra`, same workflow and ref, environment `brand-registry`; `figentra/commerce` for
-`@figentra` (migration `0004`), same workflow and ref, environment `release`; matched on the numeric
+`figentra/brand` for `@figentra`, same workflow and ref, environment `brand-registry`; matched on the numeric
 repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
@@ -136,25 +157,26 @@ secret.
 
 ## Layout
 
-| Path                      | Holds                                                                                                                                     |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                    |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` the commerce publisher |
-| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                  |
-| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                |
-| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                            |
-| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                                                        |
-| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                                                             |
-| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                                                     |
-| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                                                           |
-| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                                                            |
-| `src/catalogue/`          | the catalogue API and entitlements                                                                                                        |
-| `src/store/`              | `RegistryStore`, every D1 query                                                                                                           |
-| `src/settings/`           | the vars parsed into settings                                                                                                             |
-| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                                                |
-| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                                                            |
-| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                                                 |
-| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                                                  |
+| Path                      | Holds                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                     |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra` |
+| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                   |
+| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                 |
+| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                             |
+| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                         |
+| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                              |
+| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                      |
+| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                            |
+| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                             |
+| `src/catalogue/`          | the catalogue API and entitlements                                                                         |
+| `src/browse/`             | the browser: list and package pages, the page shell, Markdown, README and provenance readers               |
+| `src/store/`              | `RegistryStore`, every D1 query                                                                            |
+| `src/settings/`           | the vars parsed into settings                                                                              |
+| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                 |
+| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                             |
+| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                  |
+| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                   |
 
 One exported declaration per file, named after it (ADR 0305 rules 10 to 13).
 
@@ -311,15 +333,11 @@ Every package installs at `0.1.0-next.<n>`, `latest` is absent (no 0.1.0 yet), a
 folder verifies the registry signatures against `/-/npm/v1/keys`. Then the products move to `@stackra/*-config@next`
 and drop their `packages/tooling` copies, one follow-up batch per product.
 
-## Monitoring
-
-Workers Logs are on for every request (`observability` in `wrangler.jsonc`, `head_sampling_rate` 1). Better Stack
-probes `GET /-/ping` every 30 seconds from outside and pages whoever is on call on a miss; the monitor is the root
-`runway.yaml` `observability.uptime` entry `registry`, applied by `apply-observability.yml`
-([Monitoring runbook](../../apps/docs/src/docs/runbooks/monitoring.mdx), STA-1573).
-
 ## Not here yet
 
+- A link from each package's docs page to its browser page and back: the docs site generates no per-package page yet,
+  so there is nowhere to put it (STA-1608 follow-up). The browser's fonts are named, not loaded (Geist and IBM Plex
+  Sans Arabic show where installed), because the CSP allows no font request.
 - A signed offline licence file for on-prem from the registry (ADR 0453 decision 15, `LICENCE_SIGNING_KEY`): the
   `keygen` driver of `@stackra/licensing` covers on-prem until it is built.
 - Pruning old `licence_requests` receipts (they are small and kept).

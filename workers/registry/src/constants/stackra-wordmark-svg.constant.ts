@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `STACKRA_WORDMARK_SVG`: the Stackra wordmark (Beam-S) as inline SVG, for the registry's landing page.
- * Boundary: a constant only; handle-landing.ts inlines it, so the page makes no request for its logo.
+ * Purpose: `STACKRA_WORDMARK_SVG`: the Stackra wordmark (Beam-S) as inline SVG, for the registry browser pages.
+ * Boundary: a constant only; browse-page.ts inlines it, so the page makes no request for its logo.
  * Runtime: worker
  * Governing contract: ADR 0453; the stackra brand (apps/docs/src/assets/brand/logos); ADR 0463 decision 4.
  */

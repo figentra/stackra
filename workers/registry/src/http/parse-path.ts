@@ -62,11 +62,24 @@ function parseDash(path: string): RegistryRoute {
   return UNKNOWN;
 }
 
+/** The browser routes: `/` and `/package/@scope/name`, unprefixed (English) or under `/ar` (Arabic); else null. */
+function parseBrowse(path: string): RegistryRoute | null {
+  const arabic = path === "/ar" || path.startsWith("/ar/");
+  const rest = arabic ? path.slice("/ar".length) || "/" : path;
+  const locale = arabic ? "ar" : "en";
+  if (rest === "/") return { kind: "browseList", locale };
+  if (!rest.startsWith("/package/")) return arabic ? UNKNOWN : null;
+  const name = scoped(rest.slice("/package/".length));
+  return name === null ? UNKNOWN : { kind: "browsePackage", locale, name };
+}
+
 /**
- * The route of a request path.
+ * The route of a request path. The browser takes only `/`, `/ar…` and `/package/…`: npm never asks for them (its
+ * paths are `/-/…` and scoped `/@scope/…`), so every npm route parses as before.
  *
  * @example
- * parsePath("/"); // { kind: "landing" }
+ * parsePath("/"); // { kind: "browseList", locale: "en" }
+ * parsePath("/ar/package/@stackra/core"); // { kind: "browsePackage", locale: "ar", name: "@stackra/core" }
  * parsePath("/@stackra%2fcore"); // { kind: "package", name: "@stackra/core" }
  * parsePath("/@stackra/core/-/core-1.0.0.tgz"); // { kind: "tarball", name: "@stackra/core", file: "core-1.0.0.tgz" }
  */
@@ -77,8 +90,9 @@ export function parsePath(pathname: string): RegistryRoute {
   } catch {
     return UNKNOWN;
   }
-  if (path === "/") return { kind: "landing" };
   if (path.startsWith("/-/")) return parseDash(path);
+  const browse = parseBrowse(path);
+  if (browse !== null) return browse;
   const [scope, bare, ...rest] = path.slice(1).split("/");
   const name = scope?.startsWith("@") === true ? scoped(`${scope}/${bare ?? ""}`) : null;
   if (name === null) return UNKNOWN;
