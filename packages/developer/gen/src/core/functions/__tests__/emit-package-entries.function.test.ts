@@ -15,6 +15,14 @@ import { emitPackageEntries } from "#core/functions/emit-package-entries.functio
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
+/** A hand-written OS shell entry directly in `src/`, exporting `register`. */
+const shell = (file: string): (typeof LOYALTY_KIT_IR.files)[number] => ({
+  file,
+  importPath: `#src/${file.slice(4, file.lastIndexOf("."))}`,
+  folder: "",
+  names: [{ name: "register", typeOnly: false }],
+});
+
 describe("emitPackageEntries", () => {
   const files = new Map(
     emitPackageEntries(LOYALTY_KIT_IR).map((file) => [file.path, file.content]),
@@ -124,12 +132,6 @@ describe("emitPackageEntries", () => {
   });
 
   it("puts no file directly in src/ in a barrel: those are hand-written shell entries", () => {
-    const shell = (file: string): (typeof LOYALTY_KIT_IR.files)[number] => ({
-      file,
-      importPath: `#src/${file.slice(4, file.lastIndexOf("."))}`,
-      folder: "",
-      names: [{ name: "register", typeOnly: false }],
-    });
     const barrels = emitPackageEntries({
       ...LOYALTY_KIT_IR,
       files: [...LOYALTY_KIT_IR.files, shell("src/console.tsx"), shell("src/native.tsx")],

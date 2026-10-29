@@ -268,6 +268,10 @@ test("sideEffects and exports rules apply to tier:lib only", () => {
   assert.deepEqual(checkMemberFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
 });
 
+/** The package-name findings among `findings`. */
+const packageNameFindings = (findings: string[]): string[] =>
+  findings.filter((finding) => finding.startsWith("package name"));
+
 test("a product repository keeps its own names, licence and publish settings (ADR 0349, ADR 0453)", () => {
   const pkg = {
     name: "@figentra/acme-example",
@@ -280,9 +284,8 @@ test("a product repository keeps its own names, licence and publish settings (AD
     [],
   );
   const member = { dir: "packages/application/example", pkg: { name: pkg.name } };
-  const named = (f: string[]): string[] => f.filter((m) => m.startsWith("package name"));
-  assert.equal(named(checkMember(member)).length, 1);
-  assert.deepEqual(named(checkMember({ ...member, stackra: false })), []);
+  assert.equal(packageNameFindings(checkMember(member)).length, 1);
+  assert.deepEqual(packageNameFindings(checkMember({ ...member, stackra: false })), []);
 });
 
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
