@@ -8,7 +8,7 @@
  * Governing contract: ADR 0298 (2026-10-29 note); ADR 0255 (2026-10-29 note); ADR 0022 (test placement).
  */
 import { ConsentLedger } from "@stackra/consent";
-import { Container } from "@stackra/container";
+import { Container, type Token } from "@stackra/container";
 import { PushConfig } from "@stackra/platform";
 import { SystemSettings } from "@stackra/platform/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +24,7 @@ vi.mock("@stackra/platform/native", () => ({ createNotificationChannels }));
 async function containerWith(tracking: string | null) {
   const ledger = { setAppTrackingDenied: vi.fn() };
   const container = await Container.create([], {
-    overrides: new Map<object, object>([
+    overrides: new Map<Token, object>([
       [PushConfig, new PushConfig()],
       [SystemSettings, { tracking: async () => tracking }],
       [ConsentLedger, ledger],
