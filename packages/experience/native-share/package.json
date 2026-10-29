@@ -131,6 +131,7 @@
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
     "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",

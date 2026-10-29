@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0478 (decision 2).
  */
-import { Field, registerSchemas, Schema } from "@stackra/validation";
+import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { NATIVE_SHARE_CONFIG_SCHEMA } from "#core/constants/native-share-config-schema.constant";
 
@@ -27,20 +27,26 @@ export class NativeShareOptions extends Schema {
   @Field(NATIVE_SHARE_CONFIG_SCHEMA.shape.fileTypes.unwrap())
   fileTypes: string[] = ["image/*", "application/pdf"];
 
+  /** The most items taken from one share; the rest are dropped. */
+  @Int({
+    min: 1,
+    max: 100,
+  })
+  maxItems = 10;
+
+  /** The largest file read, in bytes; a larger one reads as `null`. */
+  @Int({ min: 1 })
+  maxBytes = 25_000_000;
+
+  /** The longest text taken, in characters; a longer one is dropped. */
+  @Int({ min: 1 })
+  maxTextLength = 10_000;
+
   /** Whether shared text is taken. */
   text = true;
 
   /** Whether a shared web link is taken. */
   links = true;
-
-  /** The most items taken from one share; the rest are dropped. */
-  maxItems = 10;
-
-  /** The largest file read, in bytes; a larger one reads as `null`. */
-  maxBytes = 25_000_000;
-
-  /** The longest text taken, in characters; a longer one is dropped. */
-  maxTextLength = 10_000;
 }
 
 registerSchemas([[NativeShareOptions, NATIVE_SHARE_CONFIG_SCHEMA]]);

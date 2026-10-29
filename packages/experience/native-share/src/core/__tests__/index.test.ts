@@ -11,9 +11,9 @@ import { describe, expect, it } from "@stackra/testing";
 import * as core from "#core/index";
 
 describe("@stackra/native-share", () => {
-  // A module namespace lists its names sorted, so the order here is fixed.
+  // Vitest's module runner lists the names in source order, so they are sorted here.
   it("exports exactly its public names", () => {
-    expect(Object.keys(core)).toEqual([
+    expect(Object.keys(core).sort()).toEqual([
       "IncomingShareDriver",
       "MemoryIncomingShareDriver",
       "NATIVE_SHARE_CONFIG_SCHEMA",
