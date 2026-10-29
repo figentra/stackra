@@ -24,6 +24,7 @@ import { VisibilityFilter } from "@stackra/database/contracts";
 import { isRefusal } from "@stackra/errors";
 import { Classify, Model, PrivilegedDataClass, Searchable } from "@stackra/model";
 import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
+import type { SettingValue } from "@stackra/settings/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -580,13 +581,14 @@ describe("SearchIndex field kinds", () => {
     }
     const { database } = databaseOver(lamps as unknown as readonly Product[]);
     const index = new SearchIndex(new PlainDriver(), database, Lamp);
+    await index.index(lamps);
     await expect(index.find("orbit", { sort: { path: "price" } })).rejects.toThrow(TypeError);
     await expect(index.find("orbit", { filters: { color: ["red"] } })).resolves.toHaveLength(1);
   });
 });
 
 /** An index over the three products with these search settings and a memory query log. */
-async function ruled(values: Readonly<Record<string, unknown>>) {
+async function ruled(values: Readonly<Record<string, SettingValue>>) {
   const driver = new MemorySearchDriver();
   const { database } = databaseOver(ROWS);
   const settings = new SettingsReader(new MemorySettingValueStoreDriver().seed("search", values));

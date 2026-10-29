@@ -21,10 +21,11 @@ class ListSearchQueryLog extends Driver(SearchQueryLog) {
     this.entries.push(entry);
   }
 
-  async popular(model: string, prefix: string): Promise<readonly string[]> {
+  async popular(model: string, prefix: string, limit: number): Promise<readonly string[]> {
     return this.entries
       .filter((entry) => entry.model === model && entry.phrase?.startsWith(prefix) === true)
-      .map((entry) => entry.phrase ?? "");
+      .map((entry) => entry.phrase ?? "")
+      .slice(0, limit);
   }
 }
 

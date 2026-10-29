@@ -32,7 +32,16 @@ const SECRETS = storeOf({ SEARCH_EMBEDDER_TOKEN: "test-only-token" });
 function embedder(tokenSecret: string | null = null, dimensions = 2): HttpEmbedderDriver {
   return new HttpEmbedderDriver(
     buildConfig(SearchConfig, {
-      values: { embedder: { url: "https://embed.test/v1/", model: "e5", dimensions, tokenSecret } },
+      values: {
+        embedder: {
+          url: "https://embed.test/v1/",
+          model: "e5",
+          dimensions,
+          tokenSecret,
+          passageCharacters: 2000,
+          passageOverlap: 200,
+        },
+      },
     }),
     SECRETS,
   );
