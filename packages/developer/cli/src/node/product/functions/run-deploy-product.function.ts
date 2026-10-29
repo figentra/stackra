@@ -28,22 +28,18 @@ import {
 import type { MobileStoreAccount, ProductBuild } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
+import { deployFact } from "#node/product/functions/deploy-fact.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
-/** The value of `--<flag>`, else the environment variable `name`. */
-function fact(values: CliContext["values"], flag: string, name: string): string | undefined {
-  const value = values[flag];
-  return typeof value === "string" ? value : process.env[name];
+/** A comma list; a list with no item counts as missing. */
+function list(value: string | undefined): string[] | undefined {
+  const items =
+    value
+      ?.split(",")
+      .map((item) => item.trim())
+      .filter((item) => item !== "") ?? [];
+  return items.length === 0 ? undefined : items;
 }
-
-/** A comma list. */
-const list = (value: string | undefined): string[] | undefined =>
-  value === undefined
-    ? undefined
-    : value
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => item !== "");
 
 /**
  * Deploys the built product and resolves with the exit code.
@@ -70,17 +66,18 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     : undefined;
 
   const bucket =
-    fact(values, "assets-bucket", "STACKRA_ASSETS_BUCKET") ?? (dryRun ? "dry-run" : undefined);
+    deployFact(values, "assets-bucket", "STACKRA_ASSETS_BUCKET") ??
+    (dryRun ? "dry-run" : undefined);
   const origin =
-    fact(values, "assets-origin", "STACKRA_ASSETS_ORIGIN") ??
+    deployFact(values, "assets-origin", "STACKRA_ASSETS_ORIGIN") ??
     (dryRun ? "https://assets.example.invalid" : undefined);
-  const namespace = fact(values, "kv-namespace", "STACKRA_EDGE_KV_NAMESPACE");
+  const namespace = deployFact(values, "kv-namespace", "STACKRA_EDGE_KV_NAMESPACE");
   const served =
-    list(fact(values, "served", "STACKRA_SERVED_SHELLS")) ??
+    list(deployFact(values, "served", "STACKRA_SERVED_SHELLS")) ??
     (dryRun && build !== undefined
       ? Object.values(build.surfaces).map((surface) => surface.shell.line.split("/")[1] ?? "")
       : undefined);
-  const canaryScopes = list(fact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
+  const canaryScopes = list(deployFact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
   const missing = [
     ...(bucket === undefined ? ["--assets-bucket"] : []),
     ...(origin === undefined ? ["--assets-origin"] : []),
@@ -115,7 +112,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       return [app, accounts];
     }),
   );
-  const region = fact(values, "region", "STACKRA_REGION");
+  const region = deployFact(values, "region", "STACKRA_REGION");
   const deploy = await deployProduct({
     repository: cwd,
     environment: environment as RunwayEnvironment,

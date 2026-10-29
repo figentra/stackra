@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `BUILD_COMMAND`, `stackra build`: the member tool command (`toolCommand("build")`, unchanged) plus the
  *          product mode `stackra build --product [--dry-run] [--os <checkout>] [--scope <@scope>] [--env <environment>]`,
- *          which builds every surface bundle and mobile app a product's root runway names (`runBuildProduct`).
+ *          which runs `stackra gen`, then builds every surface bundle and mobile app a product's root runway names
+ *          (`runBuildProduct`).
  * Boundary: data plus dispatch; a product flag without `--product` is a usage error, never ignored.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 4); ADR 0439; ADR 0441 (decision 3); ADR 0282 (decision 3).
@@ -33,7 +34,16 @@ export const BUILD_COMMAND: CliCommand = {
     env: { type: "string" },
   },
   async run(context) {
-    if (context.values["product"] === true) return runBuildProduct(context);
+    if (context.values["product"] === true) {
+      // The product's packages may read gen's output (`#stackra/*`), and a deploy job does not run gen first.
+      if ((await context.cli(["gen"], context.io)) !== 0) {
+        context.io.err(
+          "stackra build --product: stackra gen failed; fix it, then build the product\n",
+        );
+        return 1;
+      }
+      return runBuildProduct(context);
+    }
     const stray = PRODUCT_FLAGS.find((flag) => context.values[flag] !== undefined);
     if (stray !== undefined) throw new CliUsageError(`--${stray} needs --product`);
     return MEMBER_BUILD.run(context);
