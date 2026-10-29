@@ -6,18 +6,21 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0250 (2026-10-29 note).
  */
+import { buildConfig } from "@stackra/config";
 import { Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { AppLockConfig as BaseAppLockConfig } from "#config/app-lock.config";
 import { appLockPolicy } from "#core/functions/app-lock-policy.function";
-import type { AppLockOptions } from "#core/schemas/app-lock-options.schema";
 
-const CONFIG = {
-  isEnabled: true,
-  lockAfter: Duration.minutes(5),
-  allowPasscode: true,
-  roles: { manager: { lockAfter: Duration.minutes(1) }, kiosk: { isEnabled: false } },
-} as AppLockOptions;
+/** A host's override: on for five minutes, managers lock after a minute and kiosks never lock. */
+class AppLockConfig extends BaseAppLockConfig {
+  override isEnabled = true;
+
+  override roles = { manager: { lockAfter: Duration.minutes(1) }, kiosk: { isEnabled: false } };
+}
+
+const CONFIG = buildConfig(AppLockConfig);
 
 describe("appLockPolicy", () => {
   it("gives no role and an unknown role the app-wide values", () => {
