@@ -91,7 +91,8 @@
         {
           "faceIDPermission": "Stackra uses Face ID to unlock the app when the app lock is on."
         }
-      ]
+      ],
+      "@stackra/native-share"
     ]
   }
 }

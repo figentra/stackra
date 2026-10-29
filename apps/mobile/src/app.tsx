@@ -41,6 +41,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { createAppContainer } from "./boot/create-app-container.function";
 import { followSystem } from "./boot/follow-system.function";
+import { IncomingShareAlert } from "./boot/incoming-share-alert";
 import { linking } from "./navigation/linking";
 import { RootNavigator } from "./navigation/root-navigator";
 
@@ -159,6 +160,7 @@ function Localized({ container }: { container: Container }) {
             maxFontScale={maxFontScale}
           >
             <Navigation />
+            <IncomingShareAlert />
           </DesignSystemProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
