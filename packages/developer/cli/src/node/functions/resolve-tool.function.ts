@@ -140,7 +140,9 @@ export function resolveTool(
       );
     }
     case "build": {
-      if (layout === "package") return at("tsdown", [...config("tsdown.config.ts")]);
+      // From the member root, with no --config: tsdown would take `.stackra/` as its cwd, where the generated
+      // `.stackra/entry/*` paths do not resolve. The root config is gen's shim or an authored one importing it.
+      if (layout === "package") return at("tsdown", []);
       if (layout === "worker") {
         return at("wrangler", [
           "deploy",

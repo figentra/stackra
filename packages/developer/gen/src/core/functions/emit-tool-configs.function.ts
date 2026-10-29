@@ -17,8 +17,8 @@
  *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
  *                     `@stackra/container/testing`).
  */
-import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { ROOT_TSDOWN_SHIM } from "#core/constants/root-tsdown-shim.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -32,7 +32,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * @param generated - the entry files and whether `#stackra/registrations` was written.
  * @example
  * emitToolConfigs(ir, { entries, registrations: true }).map((file) => file.path);
- * // [".stackra/tsdown.config.ts", ".stackra/tsconfig.build.json", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts", "vitest.config.ts"]
+ * // [".stackra/tsdown.config.ts", ".stackra/vitest.config.ts", ".stackra/vitest.setup.ts", "vitest.config.ts"]
  */
 export function emitToolConfigs(
   ir: MemberIR,
@@ -46,31 +46,14 @@ export function emitToolConfigs(
     generatedHeader({
       from: "the generated entry files",
       purpose: `the build of ${ir.package}: one tsdown entry per entry file gen writes.`,
-      boundary: "run from the member root: `tsdown --config .stackra/tsdown.config.ts`.",
+      boundary: "run from the member root as plain `tsdown`, which loads it through the root shim.",
       runtime: "node",
     }),
-    'import { fileURLToPath } from "node:url";',
-    "",
     'import { library } from "@stackra/tsdown-config";',
     "",
-    "// tsdown takes the config file's folder as cwd and does not resolve a relative entry under `.stackra/`.",
-    "// Typed, so declaration emit can name the export (TS2883).",
-    "const config: ReturnType<typeof library> = {",
-    "  ...library({",
-    ...entries.map(
-      (name) =>
-        `    ${JSON.stringify(name)}: fileURLToPath(new URL("entry/${name}.ts", import.meta.url)),`,
-    ),
-    "  }),",
-    '  cwd: fileURLToPath(new URL("..", import.meta.url)),',
-    "  dts: {",
-    '    tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)),',
-    "    // rolldown-plugin-dts otherwise roots declarations at the entries' folder, `.stackra/`.",
-    '    compilerOptions: { rootDir: fileURLToPath(new URL("..", import.meta.url)) },',
-    "  },",
-    "};",
-    "",
-    "export default config;",
+    "export default library({",
+    ...entries.map((name) => `  ${JSON.stringify(name)}: ".stackra/entry/${name}.ts",`),
+    "});",
     "",
   ].join("\n");
 
@@ -183,31 +166,29 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
-  // tsgo emits declarations for the files its tsconfig includes, and the member presets leave `.stackra/` out (its
-  // generated sources are not typechecked yet), so the build has its own program: the member's plus the entries.
-  const dtsTsconfig = `${JSON.stringify(
-    {
-      $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus the entries gen writes.`,
-      extends: "../tsconfig.json",
-      // The presets' `${configDir}` is `.stackra/` here, so the root is named. Tests and the
-      // hand-written entries directly in `src/` (no barrel re-exports them) ship no declarations.
-      compilerOptions: { rootDir: ".." },
-      include: ["../src", "entry"],
-      exclude: ["../src/**/__tests__/**", "../src/*.ts", "../src/*.tsx"],
-    },
-    null,
-    2,
-  )}\n`;
+  // tsdown takes a `--config` file's folder as its cwd, where `.stackra/entry/*` does not resolve; run from the
+  // member root, it finds this shim and keeps the root as cwd, as a package with an authored root config does.
+  const tsdownShim = [
+    generatedHeader({
+      from: ".stackra/tsdown.config.ts",
+      purpose: `the root shim of ${ir.package}'s tsdown config: \`tsdown\` runs from the member root.`,
+      boundary:
+        "a re-export only, gitignored; written only when no root config exists. An authored one that imports " +
+        "./.stackra/tsdown.config is kept; any other is refused.",
+      runtime: "node",
+    }),
+    'export { default } from "./.stackra/tsdown.config";',
+    "",
+  ].join("\n");
 
   return [
-    ...(entries.length > 0
-      ? [
-          { path: ".stackra/tsdown.config.ts", content: tsdown },
-          { path: ".stackra/tsconfig.build.json", content: dtsTsconfig },
-        ]
-      : []),
+    ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
     { path: ".stackra/vitest.setup.ts", content: setup },
     { path: ROOT_VITEST_SHIM, content: shim },
+    // A service builds nothing with tsdown (Encore builds it at deploy), so only a package gets the shim.
+    ...(entries.length > 0 && ir.layout === "package"
+      ? [{ path: ROOT_TSDOWN_SHIM, content: tsdownShim }]
+      : []),
   ];
 }

@@ -32,29 +32,24 @@ describe("emitToolConfigs", () => {
   it("writes tsdown, vitest and the setup", () => {
     expect(files.map((file) => file.path)).toEqual([
       ".stackra/tsdown.config.ts",
-      ".stackra/tsconfig.build.json",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
-      'const config: ReturnType<typeof library> = {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
-        '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n' +
-        "  dts: {\n" +
-        '    tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)),\n' +
-        "    // rolldown-plugin-dts otherwise roots declarations at the entries' folder, `.stackra/`.\n" +
-        '    compilerOptions: { rootDir: fileURLToPath(new URL("..", import.meta.url)) },\n' +
-        "  },\n};\n\n" +
-        "export default config;",
+      'export default library({\n  "server": ".stackra/entry/server.ts",\n});',
     );
   });
 
-  it("builds declarations from the member's tsconfig plus the entries", () => {
-    const tsconfig = JSON.parse(content(".stackra/tsconfig.build.json")) as Record<string, unknown>;
-    expect(tsconfig["extends"]).toBe("../tsconfig.json");
-    expect(tsconfig["include"]).toEqual(["../src", "entry"]);
-    expect(tsconfig["compilerOptions"]).toEqual({ rootDir: ".." });
-    expect(tsconfig["exclude"]).toEqual(["../src/**/__tests__/**", "../src/*.ts", "../src/*.tsx"]);
+  it("gives a package, not a service, the root tsdown shim", () => {
+    expect(content("tsdown.config.ts")).toBe("");
+    const pkg = emitToolConfigs(LOYALTY_KIT_IR, {
+      entries: [{ path: ".stackra/entry/index.ts", content: "" }],
+      registrations: false,
+    });
+    expect(pkg.find((file) => file.path === "tsdown.config.ts")?.content).toContain(
+      'export { default } from "./.stackra/tsdown.config";',
+    );
   });
 
   it("runs the unit tier on the decorators preset with the coverage gate", () => {
