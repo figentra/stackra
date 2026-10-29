@@ -212,6 +212,26 @@ await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.li
 - `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`, `androidChannelId` and, for the
   server, `apnsBundleId` and `apnsEnvironment`.
 
+`LiveActivityPushes` (`./contracts`) is the server half: it moves a running activity on, ends it, or starts one
+remotely, by pushing to the token the device handed over. A token the push service reports gone resolves `gone`:
+
+```ts
+const outcome = await pushes.send(device.liveActivityToken, "update", {
+  reference: order.id,
+  title,
+  status,
+  step: 3,
+  steps: 4,
+});
+if (outcome === "gone") await devices.forgetLiveActivityToken(device.id);
+```
+
+- `ApnsLiveActivityPushesDriver` (`./node`) sends an APNs `liveactivity` push over HTTP/2 to
+  `<apnsBundleId>.push-type.liveactivity` on `apnsEnvironment`, signed with the platform secrets `APNS_KEY_ID`,
+  `APNS_TEAM_ID` and `APNS_PRIVATE_KEY` (the `.p8` key); the JWT is reused for 50 minutes. A `start` goes to a
+  push-to-start token and carries the deep link and an alert; an `end` is dismissed after `endedDismissal`.
+- `MemoryLiveActivityPushesDriver` (`.`) records each push in `sent`; a token in `goneTokens` answers `gone`.
+
 ### Alternate app icons (STA-1541)
 
 `AppIcon` (`./contracts`) switches the home-screen icon per brand, season or tenant; `useAppIcon()` (`./react`) is the

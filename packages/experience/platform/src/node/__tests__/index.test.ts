@@ -12,8 +12,11 @@ import * as node from "#node/index";
 import * as worker from "#worker/index";
 
 describe("@stackra/platform/node", () => {
-  it("exports exactly the Turnstile verifier", () => {
-    expect(Object.keys(node)).toEqual(["TurnstileCaptchaVerifierDriver"]);
+  it("exports exactly the Turnstile verifier and the APNs Live Activity pushes", () => {
+    expect(Object.keys(node).sort()).toEqual([
+      "ApnsLiveActivityPushesDriver",
+      "TurnstileCaptchaVerifierDriver",
+    ]);
   });
 
   it("exports the same class as ./worker, so one binding serves both runtimes", () => {

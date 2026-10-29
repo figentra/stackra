@@ -19,7 +19,7 @@ import type {
 } from "#contracts/index";
 
 describe("@stackra/platform/contracts", () => {
-  it("exports exactly the eight ports at run time", () => {
+  it("exports exactly the ports at run time", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AppIcon",
       "AppLock",
@@ -27,6 +27,7 @@ describe("@stackra/platform/contracts", () => {
       "DevicePermissions",
       "KioskMode",
       "LiveActivities",
+      "LiveActivityPushes",
       "Platform",
       "PlatformPushTransport",
       "SecondScreen",

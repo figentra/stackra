@@ -13,6 +13,7 @@ export { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
 export { DevicePermissions } from "#contracts/ports/device-permissions.port";
 export { KioskMode } from "#contracts/ports/kiosk-mode.port";
 export { LiveActivities } from "#contracts/ports/live-activities.port";
+export { LiveActivityPushes } from "#contracts/ports/live-activity-pushes.port";
 export { Platform } from "#contracts/ports/platform.port";
 export { PlatformPushTransport } from "#contracts/ports/platform-push-transport.port";
 export { SecondScreen } from "#contracts/ports/second-screen.port";

@@ -28,6 +28,7 @@ export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifi
 export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";
 export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryLiveActivitiesDriver } from "#core/drivers/memory-live-activities.driver";
+export { MemoryLiveActivityPushesDriver } from "#core/drivers/memory-live-activity-pushes.driver";
 export { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
 export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";
 export { MemorySecondScreenDriver } from "#core/drivers/memory-second-screen.driver";

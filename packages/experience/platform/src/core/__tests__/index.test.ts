@@ -37,6 +37,7 @@ describe("@stackra/platform", () => {
         "MemoryDevicePermissionsDriver",
         "MemoryKioskModeDriver",
         "MemoryLiveActivitiesDriver",
+        "MemoryLiveActivityPushesDriver",
         "MemoryPlatformDriver",
         "MemoryPushTransportDriver",
         "MemorySecondScreenDriver",
