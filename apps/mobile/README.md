@@ -24,14 +24,15 @@ src/
 │                              NavigationContainer (theme, linking, direction); re-reads the phone on each
 │                              return to the foreground
 ├── boot/                      the container (overrides until gen's wiring), the app's SystemSettings driver,
-│                              followSystem (Android channels, ATT into consent), the phone's region
+│                              followSystem (Android channels, ATT into consent), the phone's region, the
+│                              catalogues (appMessages) and the share redirect that opens the share inbox
 ├── global.css                 Tailwind + Uniwind + HeroUI Native styles
 ├── navigation/
 │   ├── types.ts               every route + params (RootStackParamList, TabParamList, SettingsStackParamList, …)
 │   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/free/<name>],
-│   │                          stackra://search (development builds)
+│   │                          stackra://search (development builds), stackra://expo-sharing → ShareInbox
 │   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
-│   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
+│   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic), ShareInbox
 │   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Home stack
 │                              also holds the design-system review pages; the bar minimizes on scroll (iOS 26) and
 │                              development builds add a Search tab in the search role
@@ -40,6 +41,7 @@ src/
 │   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, list by category
 │   ├── design-system-components.ts     the one list (category, title, route, screen) the index and stack read
 │   ├── search-screen.tsx               the Search tab: the review area's search, opening pages in the Home tab
+│   ├── share-inbox-screen.tsx          what other apps shared: keep a file on the phone or upload it, then Done
 │   └── free/<name>-screen.tsx          one review page per @stackra/ui/native component
 └── components/ui/             Screen (scroll container), Section, Sample, ChoiceGroup, ReviewIcons (the review area's icons),
                                useInsetSheet (HeroUI inset bottom-sheet props)

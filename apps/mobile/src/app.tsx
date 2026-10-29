@@ -5,7 +5,8 @@
  *          design system provider (HeroUI Native, colour scheme, direction and the text-size cap) and the navigation
  *          container, with the theme bridged from the Stackra brand colours, around the app lock (off by default).
  *          At launch and on each return to the foreground it re-reads the phone: notification channels, App Tracking
- *          Transparency into consent, the region and, while the phone owns the language, the language. The review
+ *          Transparency into consent, the region and, while the phone owns the language, the language. A share from
+ *          another app opens the share inbox, whose strings are the packages' catalogues (`boot/app-messages`). The review
  *          area's icon registry is its own (`components/ui/review-icons.tsx`), so a release build drops it.
  * Boundary: composes the providers and the navigator; owns no screen. The language choice is saved to the account's
  *           settings (`account.locale`) through `setLocale`; the container is `boot/create-app-container.function`.
@@ -24,7 +25,7 @@ import {
   regionFormat,
   startingLocale,
 } from "@stackra/i18n";
-import type { Locale, Messages } from "@stackra/i18n";
+import type { Locale } from "@stackra/i18n";
 import { deviceLanguageTags, deviceRegion } from "@stackra/i18n/native";
 import { I18nProvider } from "@stackra/i18n/react";
 import { AppLockGate } from "@stackra/platform/native";
@@ -41,7 +42,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { createAppContainer } from "./boot/create-app-container.function";
 import { followSystem } from "./boot/follow-system.function";
-import { IncomingShareAlert } from "./boot/incoming-share-alert";
+import { appMessages } from "./boot/app-messages.function";
+import { IncomingShareRedirect } from "./boot/incoming-share-redirect";
 import { linking } from "./navigation/linking";
 import { RootNavigator } from "./navigation/root-navigator";
 
@@ -59,12 +61,16 @@ function Navigation() {
     "border",
   ]);
   const base = dark ? DarkTheme : DefaultTheme;
+  const [isReady, setIsReady] = useState(false);
   return (
     <NavigationContainer
       // React Navigation mirrors its headers, back buttons and gestures from this, not from I18nManager alone.
       direction={direction}
       linking={linking}
-      onReady={() => void SplashScreen.hideAsync()}
+      onReady={() => {
+        setIsReady(true);
+        void SplashScreen.hideAsync();
+      }}
       theme={{
         ...base,
         colors: {
@@ -89,12 +95,11 @@ function Navigation() {
       >
         <RootNavigator />
       </AppLockGate>
+      {/* Mounted once the navigator is ready, so a share that is already waiting opens the inbox. */}
+      {isReady ? <IncomingShareRedirect /> : null}
     </NavigationContainer>
   );
 }
-
-// shortcut: the screens' strings are inline until the app ships catalogues; then gen's `loadMessages(locale)`.
-const NO_MESSAGES: Messages = {};
 
 // shortcut: the app signs no one in yet, so no account holds the choice; return identity's `useSession()` user here
 // once the app mounts the session, and the write reaches the server's store.
@@ -151,7 +156,12 @@ function Localized({ container }: { container: Container }) {
   );
 
   return (
-    <I18nProvider locale={locale} messages={NO_MESSAGES} setLocale={setLocale} region={region}>
+    <I18nProvider
+      locale={locale}
+      messages={appMessages(locale)}
+      setLocale={setLocale}
+      region={region}
+    >
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <DesignSystemProvider
@@ -160,7 +170,6 @@ function Localized({ container }: { container: Container }) {
             maxFontScale={maxFontScale}
           >
             <Navigation />
-            <IncomingShareAlert />
           </DesignSystemProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

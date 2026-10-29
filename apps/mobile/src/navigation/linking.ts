@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the deep-link map from URLs to screens.
+ * Purpose: the deep-link map from URLs to screens, including `stackra://expo-sharing`, where expo-sharing's share
+ *          extension opens the app, to the share inbox.
  * Boundary: the linking config only; it does not register navigators or screens.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).
@@ -105,6 +106,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
         },
       },
       Item: "items/:id",
+      // expo-sharing's iOS share extension opens `<scheme>://expo-sharing` after a share.
+      ShareInbox: "expo-sharing",
     },
   },
 };
