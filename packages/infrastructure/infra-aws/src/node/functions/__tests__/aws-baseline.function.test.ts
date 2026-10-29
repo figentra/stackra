@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `awsBaseline` under Pulumi's mocks: the provider is pinned to the environment's account with
  *          the cost tags; the data key rotates and lets the backup account use it; the files bucket gets the media CORS
- *          rule, the upload expiry and replication to the backup account; Postgres gets point-in-time recovery and
- *          snapshot copies; the infra role trusts only the environment's GitHub deploy job; the Encore Cloud role
+ *          rule, the upload expiry and replication to the backup account; Postgres gets point-in-time recovery,
+ *          snapshot copies and failure alerts; the infra role trusts only the environment's GitHub deploy job; the Encore Cloud role
  *          needs the external id; the budget alerts and stops non-production spend; an environment that shares an
  *          account creates no account-wide resource and selects its database by tag; the static egress addresses are
  *          held and exported only when asked for; a bad account id fails.
@@ -183,6 +183,25 @@ describe("awsBaseline", () => {
     expect(selection.inputs["conditions"]).toBeUndefined();
   });
 
+  it("alerts the environment vault's failed jobs on a topic only its account's AWS Backup publishes to", async () => {
+    const engine = await mockPulumi(STACK);
+    const foundation = awsBaseline(STAGING);
+
+    expect(
+      statementsOf(await engine.find("TopicPolicy", "acme-staging-backup-alerts"))[0]?.[
+        "Condition"
+      ],
+    ).toEqual({ StringEquals: { "aws:SourceAccount": "111111111111" } });
+    expect(
+      (await engine.find("VaultNotifications", "acme-staging-backup-alerts")).inputs[
+        "backupVaultEvents"
+      ],
+    ).toContain("COPY_JOB_FAILED");
+    expect(await outputOf(present(foundation.backupAlertTopicArn))).toBe(
+      "arn:aws:mock:::acme-staging-backup-alerts",
+    );
+  });
+
   it("lets only the environment's GitHub deploy job assume the infra role", async () => {
     const engine = await mockPulumi(STACK);
     const foundation = awsBaseline(STAGING);
@@ -275,7 +294,7 @@ describe("awsBaseline", () => {
     const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
     expect(types).not.toContain("BucketReplicationConfig");
     expect(types).not.toContain("Plan");
-    expect(foundation.backupVaultArn).toBeNull();
+    expect([foundation.backupVaultArn, foundation.backupAlertTopicArn]).toEqual([null, null]);
     expect(statementsOf(await engine.find("Key", "acme-staging"))).toHaveLength(1);
   });
 

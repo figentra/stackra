@@ -44,6 +44,7 @@ describe("awsAccounts", () => {
       region: "me-central-1",
       shared: "111111111111",
       backup: "ref:aws.accounts.backup",
+      backupLock: { minRetentionDays: 35, maxRetentionDays: 35, changeableForDays: null },
       requiredTags: [],
       environments: [
         { environment: "staging", name: "nonprod", account: "222222222222" },

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `parseInfraRunway`: a root runway narrows to the AWS foundation's view with its defaults;
  *          an unquoted account id, a malformed region, an over-long project name, backups kept past 35 days without
- *          `cryptoShredded` and a missing `providers.aws` are refused with their paths.
+ *          `cryptoShredded`, a half-set compliance lock and a missing `providers.aws` are refused with their paths.
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decision 4: the root runway is the one source).
@@ -30,6 +30,11 @@ function rootKeeping(backups: Record<string, unknown>) {
     providers: { aws: { region: "me-central-1" } },
     environments: { production: { shared: { database: { backups } } } },
   });
+}
+
+/** The narrowed root runway with the given backup vault lock. */
+function lock(backupLock: Record<string, unknown>) {
+  return parseInfraRunway(rootWith({ region: "me-central-1", backupLock }));
 }
 
 describe("parseInfraRunway", () => {
@@ -71,6 +76,16 @@ describe("parseInfraRunway", () => {
     expect(() =>
       parseInfraRunway(rootKeeping({ retentionDays: 90, cryptoShredded: true })),
     ).not.toThrow();
+  });
+
+  it("refuses a compliance lock without both compliance: true and changeableForDays", () => {
+    expect(() => lock({ compliance: true })).toThrow(
+      /providers\.aws\.backupLock\.changeableForDays/,
+    );
+    expect(() => lock({ changeableForDays: 3 })).toThrow(/compliance: true/);
+    expect(() => lock({ compliance: true, changeableForDays: 2 })).toThrow(/changeableForDays/);
+    expect(() => lock({ compliance: true, changeableForDays: 3 })).not.toThrow();
+    expect(() => lock({ minRetentionDays: 7 })).not.toThrow();
   });
 
   it("refuses a root without providers.aws", () => {

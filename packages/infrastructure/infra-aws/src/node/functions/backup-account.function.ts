@@ -2,15 +2,18 @@
  * Stackra file contract:
  * Purpose: `backupAccount(accounts, opts?)`, the Pulumi program of the backup account: a KMS key, the vault every
  *          environment copies its daily Postgres snapshot into (copies allowed from the environment accounts, early
- *          deletion and lifecycle changes denied to everyone), and the versioned replica bucket the files buckets
- *          replicate into, all in the one region, so a backup outlives the account it was taken in.
+ *          deletion and lifecycle changes denied to everyone, a vault lock on the retention, failures alerted on a
+ *          topic), and the versioned replica bucket the files buckets replicate into, all in the one region, so a
+ *          backup outlives the account it was taken in.
  * Boundary: run by the owner in its own stack with the backup account's credentials. Names are fixed
  *           (`backupTargets`), so environment stacks copy into them without reading this stack. The environment
  *           replication roles are trusted by their fixed ARNs through a condition. Never another region: the data
- *           stays in the region it was created in.
+ *           stays in the region it was created in. The lock is governance mode unless the runway asks for compliance,
+ *           which becomes irreversible after its cooling-off days; who hears the alert topic is the observability
+ *           stack's subscription.
  * Runtime: node
  * Governing contract: ADR 0186 (decisions 2 and 3 as amended 2026-10-24, consequence: a backup outlives its
- *                     production account), ADR 0172.
+ *                     production account), ADR 0188 (decision 3: the lock's ceiling), ADR 0172.
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as aws from "@pulumi/aws";
@@ -21,6 +24,7 @@ import { costTags } from "#core/functions/cost-tags.function";
 import type { AwsAccounts } from "#core/types/aws-accounts.type";
 import { accountId } from "#node/functions/account-id.function";
 import { accountProvider } from "#node/functions/account-provider.function";
+import { backupAlerts } from "#node/functions/backup-alerts.function";
 import { backupTargets } from "#node/functions/backup-targets.function";
 import { crossAccount } from "#node/functions/cross-account.function";
 import { dataKey } from "#node/functions/data-key.function";
@@ -93,6 +97,18 @@ export function backupAccount(
     },
     options,
   );
+  const { minRetentionDays, maxRetentionDays, changeableForDays } = accounts.backupLock;
+  new aws.backup.VaultLockConfiguration(
+    name,
+    {
+      backupVaultName: vault.name,
+      minRetentionDays,
+      maxRetentionDays,
+      ...(changeableForDays === null ? {} : { changeableForDays }),
+    },
+    options,
+  );
+  const alerts = backupAlerts(name, { account, vaultName: vault.name }, options);
   const { bucket } = privateBucket(
     name,
     {
@@ -131,5 +147,10 @@ export function backupAccount(
     },
     options,
   );
-  return { vaultArn: vault.arn, replicaBucket: bucket.bucket, kmsKeyArn: key.arn };
+  return {
+    vaultArn: vault.arn,
+    replicaBucket: bucket.bucket,
+    kmsKeyArn: key.arn,
+    alertTopicArn: alerts.arn,
+  };
 }

@@ -30,8 +30,11 @@ Entries `.` (isomorphic config readers), `./node` (the Pulumi programs) and `./t
   the runway's `config.infra_aws` sets it. Never a constructor options object (gen's `token_not_a_class`).
 - Backups are kept 35 days or less, or the runway states `cryptoShredded: true` (ADR 0188 decision 3); the runway
   schema refuses anything else. Never raise the ceiling in code.
+- Each backup vault notifies a topic of its own account of failed jobs only (`backupAlerts`); AWS Backup cannot notify
+  across accounts. The backup vault is locked in governance mode; never turn on compliance mode (`changeableForDays`)
+  in code or a fixture runway: it is the owner's irreversible decision, set only in the root runway.
 
 ## PII
 
 None. The programs hold account ids, resource names and policy documents; no person's data, and no address for
-alerts (the budget topic is subscribed elsewhere).
+alerts (the budget and backup alert topics are subscribed elsewhere).

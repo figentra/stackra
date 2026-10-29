@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `INFRA_RUNWAY_SCHEMA`, the parts of an already parsed root runway that the AWS foundation reads, checked
- *          strictly: the project, `providers.aws` (region, accounts, required tags, budgets), the GitHub repository,
+ *          strictly: the project, `providers.aws` (region, accounts, required tags, budgets, the backup vault lock),
+ *          the GitHub repository,
  *          the Encore Cloud account link, the regions, and per environment its regions, services destination, Encore
  *          account, database backups, static egress addresses, bucket defaults and the file disk (`filesystem.disk`; media stores through it since ADR 0465). Every other key passes through untouched.
  * Boundary: internal; `parseInfraRunway` is its only reader. `@stackra/runway` owns the root schema, whose provider
@@ -14,6 +15,8 @@
  *                     ADR 0188 (decision 3: backups kept 35 days or less, or crypto-shredded).
  */
 import { z } from "zod";
+
+import { BACKUP_DAYS_CEILING } from "#core/constants/backup-days-ceiling.constant";
 
 /** An AWS account: a quoted 12-digit id, or `ref:<path>` resolved from the stack config at infra time. */
 const ACCOUNT = z
@@ -31,9 +34,6 @@ const AMOUNT = z.union([
   z.number().positive(),
   z.string().regex(/^(\d+(\.\d+)?|ref:[A-Za-z0-9_.-]+)$/, "Expected an amount or ref:<path>"),
 ]);
-
-/** Days a backup may outlive an erasure unless its data is crypto-shredded (ADR 0188 decision 3). */
-const BACKUP_DAYS_CEILING = 35;
 
 /**
  * The Postgres backups: snapshot copies kept `retentionDays`, and point-in-time recovery when `pitr`. Past 35 days the
@@ -54,6 +54,24 @@ const BACKUPS = z
       message: `Keep backups ${BACKUP_DAYS_CEILING} days or less, or state cryptoShredded: true (ADR 0188 decision 3)`,
     },
   );
+
+/**
+ * The backup account vault's lock: retention bounds (defaulted from the environments' backups by `backupLockFrom`),
+ * governance mode unless both `compliance: true` and `changeableForDays` are set. Compliance mode is permanent once
+ * `changeableForDays` have passed: not even the root user can remove the lock or shorten a recovery point.
+ */
+const BACKUP_LOCK = z
+  .looseObject({
+    minRetentionDays: z.int().min(1).optional(),
+    maxRetentionDays: z.int().min(1).optional(),
+    compliance: z.boolean().optional(),
+    changeableForDays: z.int().min(3).optional(),
+  })
+  .refine((lock) => (lock.compliance === true) === (lock.changeableForDays !== undefined), {
+    path: ["changeableForDays"],
+    message:
+      "Compliance mode needs both compliance: true and changeableForDays (3 or more); after those days the lock can never be removed",
+  });
 
 /** A config section that selects a disk (`filesystem.disk`; a `media.disk` passes through unread, ADR 0465). */
 const DISK = z.looseObject({ disk: z.string().optional() }).optional();
@@ -120,6 +138,7 @@ export const INFRA_RUNWAY_SCHEMA = z.looseObject({
           monthlyUsd: z.record(z.string(), AMOUNT).default({}),
         })
         .optional(),
+      backupLock: BACKUP_LOCK.optional(),
     }),
     github: z.looseObject({ org: GITHUB_NAME.optional(), repo: GITHUB_NAME.optional() }).optional(),
     encore: z

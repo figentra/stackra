@@ -49,6 +49,7 @@ describe("accountsFrom", () => {
       region: "me-central-1",
       shared: "111111111111",
       backup: "222222222222",
+      backupLock: { minRetentionDays: 35, maxRetentionDays: 35, changeableForDays: null },
       requiredTags: ["env"],
       environments: [
         { environment: "staging", name: "np", account: "444444444444" },
