@@ -11,6 +11,8 @@
  * Governing contract: ADR 0457 (session and identity on RouteServices); ADR 0294 (decisions 17 and 23); ADR 0206.
  */
 import type { SessionStore, SessionUser } from "@stackra/identity/contracts";
+// oxlint-disable-next-line eslint/no-restricted-imports, unicorn/require-module-specifiers, import/no-empty-named-blocks -- reason: tsc adds an augmented module to a consumer's program only through an import, so a member compiling this source without one hit TS2664
+import type {} from "@stackra/navigation";
 
 /** The session members of every route context. */
 export interface RouteSession {

@@ -51,7 +51,6 @@
   "devDependencies": {
     "@stackra/app": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/navigation": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
