@@ -3,8 +3,9 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/identity (the passkey actions a BFF serves with their
  *          permissions and schemas, the account deletion actions, query, job, permissions and schemas with its
  *          Postgres store and migration, the listener that ends an erased subject's provider sessions, and the BFF's
- *          login, callback, session and logout routes (`BffService`) with their configuration) until
- *          `stackra gen` writes the entry barrels (STA-339).
+ *          login, callback, session and logout routes (`BffService`) with their configuration, and the receiver of
+ *          ZITADEL's auth events into the audit chain (`ZitadelAuthEventsService`) until `stackra gen` writes the
+ *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `contracts` and `core`, never `testing`.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
@@ -25,6 +26,7 @@ export { CreateAccountDeletionsMigration } from "#node/database/migrations/0001-
 export { PostgresAccountDeletionsDriver } from "#node/drivers/postgres-account-deletions.driver";
 export { EndErasedSubjectSessionsListener } from "#node/listeners/end-erased-subject-sessions.listener";
 export { BffService } from "#node/services/bff.service";
+export { ZitadelAuthEventsService } from "#node/services/zitadel-auth-events.service";
 export { ShowAccountDeletionQuery } from "#node/queries/show-account-deletion.query";
 export { AccountDeletionInput } from "#node/schemas/account-deletion-input.schema";
 export { AccountDeletionOutput } from "#node/schemas/account-deletion-output.schema";

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/access-log (the facet, the service, the configuration with its
  *          shape and shipped schema, the memory and outbox sinks, the `AccessRecorded` event, the access and audit chain
- *          functions, the refusal and the log events) until `stackra gen` writes the entry barrels (STA-339).
+ *          functions, the refusals and the log events) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `AccessLogConfig` lives in the `src/config/` entry folder; the
  *           driver-name list and the link hashes stay internal. Isomorphic: nothing here touches a database or a Node
  *           API, and the hashing is Web Crypto.
@@ -17,6 +17,7 @@ export { AccessLogged } from "#core/decorators/access-logged.decorator";
 export { MemoryAccessLogSinkDriver } from "#core/drivers/memory-access-log-sink.driver";
 export { OutboxAccessLogSinkDriver } from "#core/drivers/outbox-access-log-sink.driver";
 export { AccessLogWriteFailedError } from "#core/errors/access-log-write-failed.error";
+export { AuditExportFailedError } from "#core/errors/audit-export-failed.error";
 export { AccessRecorded } from "#core/events/access-recorded.event";
 export { findAuditChainBreak } from "#core/functions/find-audit-chain-break.function";
 export { findChainBreak } from "#core/functions/find-chain-break.function";

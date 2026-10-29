@@ -4,7 +4,7 @@ description: "How Stackra isolates tenants, authorises calls, keeps audit eviden
 icon: "shield-check"
 ---
 
-{/* Stackra file contract: Purpose: the buyer-facing security overview: each control, the decision behind it and whether it is built, designed or planned. Boundary: customer-facing documentation only; the laws are constitution/security and constitution/tenancy, the decisions are the linked ADRs; no control is described as built unless the code is in this repository. Runtime: docs. Governing contract: ADR 0212; ADR 0188; ADR 0415; ADR 0173; ADR 0174; ADR 0206; ADR 0437; ADR 0453 (decisions 7 to 9); ADR 0462; SECURITY.md; STA-1575, STA-1566. */}
+{/* Stackra file contract: Purpose: the buyer-facing security overview: each control, the decision behind it and whether it is built, designed or planned. Boundary: customer-facing documentation only; the laws are constitution/security and constitution/tenancy, the decisions are the linked ADRs; no control is described as built unless the code is in this repository. Runtime: docs. Governing contract: ADR 0212; ADR 0188; ADR 0415; ADR 0173; ADR 0174; ADR 0206; ADR 0437; ADR 0453 (decisions 7 to 9); ADR 0462; SECURITY.md; STA-1575, STA-1566, STA-1579. */}
 
 Stackra is a framework: your deployment runs its packages. This page says what the packages do for you, and for each
 control whether it is **built** (the code ships in the packages), **designed** (decided in an ADR, not complete in code)
@@ -17,7 +17,7 @@ or **planned**. The rules contributors follow are in [Security](/constitution/se
 | --------------------------------------------- | ----------------------------------------------------------------------- |
 | Tenant isolation by forced row-level security | built (schema builder); catalogue-wide audit check planned              |
 | Authorization denies by default               | built (`@stackra/iam`)                                                  |
-| Per-tenant audit hash chain                   | built (`@stackra/access-log`); signed checkpoints designed              |
+| Per-tenant audit hash chain                   | built (`@stackra/access-log`, with NDJSON export); checkpoints designed |
 | Tenant data keys wrapped by a KMS             | built (`@stackra/contracts` drivers)                                    |
 | Secrets only from a secret store              | built (secret references); designed for runway sync                     |
 | Signed packages, provenance, SBOM, scanning   | built (release workflow and registry)                                   |
@@ -73,6 +73,13 @@ The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks),
 - Every action and data change is audited, and the evidence enters the outbox in the same transaction as the change.
 - `@stackra/access-log` keeps each tenant's records in a SHA-256 hash chain: a changed, removed or reordered record
   breaks verification. `stackra audit:verify` checks an exported proof bundle offline (the chain and its checkpoints).
+- Built (STA-1579): `ExportAuditAction` streams a tenant's write audit as NDJSON (chain fields included, so the
+  receiver can verify it) to a SIEM's HTTPS collector, under the L2 permission `access_log.audit_log_entry.export`.
+  Sign-in, failed sign-in, second-factor, lockout and sign-out events from ZITADEL enter the same per-tenant chain
+  through a signed webhook (`ZitadelAuthEventsService`).
+- Audit retention: access records are kept 400 days by default (`AccessLogConfig.retentionDays`, at least 90). The
+  write audit's retention is the setting `AccessLogConfig.auditRetentionDays`; until the operator states it, the
+  write audit is kept without limit, and no job deletes from it yet.
 - Designed ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)): a KMS-signed checkpoint daily,
   append-only storage under S3 Object Lock, 13 months hot, then cold storage; money events kept seven years. A tenant
   can view and export its own audit log.

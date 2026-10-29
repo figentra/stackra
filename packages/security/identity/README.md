@@ -40,6 +40,8 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./node`      | `BffService`, `BffConfig`, `BffOptions`, `BffConfig$`                                                                 | the BFF's login, callback, session and logout routes with server-side sign-out                 |
 | `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
 | `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
+| `./node`      | `ZitadelAuthEventsService`                                                                                            | ZITADEL's signed auth events (sign-in, MFA, lockout, sign-out) into the audit hash chain       |
+| `./contracts` | `IdpAuthEvent`                                                                                                        | the auth events the audit chain keeps                                                          |
 | `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`          | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
 | `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                   | the durable store, `identity.account_deletions`, per tenant partition                          |
 | `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`      | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
@@ -371,6 +373,41 @@ The host's listeners on its own identity events call `LoginDirectoryWriterServic
 an identifier verified, `forget` of the old and `record` of the new on a change, `forget` of all on delete. Configure
 `LoginDirectoryConfig` per region (`region`, `keyId`; the key is the `IDENTITY_LOGIN_DIRECTORY_KEY` secret) and bind a
 `LoginDirectoryStore` driver that sends `loginDirectoryKvRequest` calls. Tenant handles are tenancy's, not here.
+
+## Auth events in the audit chain (STA-1579)
+
+Sign-in, failed sign-in, second-factor, lockout and sign-out happen inside ZITADEL. `ZitadelAuthEventsService` is the
+receiving end of a ZITADEL Actions v2 **event** target: it verifies the `ZITADEL-Signature` header (HMAC-SHA256 of
+`<t>.<raw body>`, five minutes' tolerance, Web Crypto) with `IdpAdminConfig.eventsSigningKey` (the
+`IDENTITY_IDP_EVENTS_SIGNING_KEY` secret) before parsing, maps the event type to an `IdpAuthEvent`, and writes one
+`AuditEntry` through `@stackra/actions`' `AuditTrail` port, so `@stackra/access-log`'s `postgres` driver chains it in
+the scope's write audit. The key is `identity.idp_auth_event.<event>@1`; failures and lockouts are `refused` with the
+event as the code; the actor is the webhook source `whk_zitadel`, and `fields` hold the provider's user, organisation,
+event type and sequence (ids only; the event payload, with IP and user agent, is never stored). Other event types are
+acknowledged and ignored. The host passes the organisation-to-scope mapping, and serves it from a raw endpoint:
+
+```ts
+export class IdpEventsController extends Controller({ path: "/webhooks/zitadel/auth-events" }) {
+  constructor(
+    private readonly events: ZitadelAuthEventsService,
+    private readonly orgs: OrgScopes,
+  ) {
+    super();
+  }
+  handle(request: Request): Promise<Response> {
+    return this.events.handle(request, (org) => this.orgs.scopeOf(org));
+  }
+}
+```
+
+**Owner step:** the ZITADEL target and execution are not in `@stackra/infra-identity`'s Pulumi slice, because the
+pinned provider (`@pulumiverse/zitadel` 0.2.0) has no Actions v2 `Target`/`Execution` resource. Create them once per
+instance through the ZITADEL console or the v2 Actions API: a `restWebhook` target to the endpoint above (copy its
+signing key into the `IDENTITY_IDP_EVENTS_SIGNING_KEY` secret), and an event execution on the event types listed in
+`ZITADEL_AUTH_EVENTS` (`user.human.password.check.succeeded`/`failed`, `user.human.passwordless.token.check.*`,
+`user.human.externallogin.check.succeeded`, `user.human.mfa.otp.check.*`, `user.human.u2f.token.check.*`,
+`user.human.otp.sms.check.*`, `user.human.otp.email.check.*`, `user.locked`, `user.human.signed.out`,
+`session.terminated`).
 
 ## The claims
 
