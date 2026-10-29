@@ -138,6 +138,9 @@ subject's public id, every record whose subject links (`registerHoldLinks`) name
 `PostgresHoldRegistryDriver` answers `heldAmong` from the live holds and logs each refused disposal to
 `privacy.legal_hold_refusals`.
 
+The Postgres subject-salt store has an integration test (`.int.test.ts`, Testcontainers): `pnpm turbo run test:int
+--filter=@stackra/privacy` runs it through `vitest.int.config.ts` and needs Docker.
+
 ## Not here yet
 
 - `Retention({ model, keep, basis })` and the shared prune job (the P1 row of the gap analysis).

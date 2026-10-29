@@ -82,6 +82,16 @@
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"],
     },
+    // ADR 0182 d1, STA-1570: the integration tier. Never cached: the result depends on a live Docker daemon and the
+    // Postgres image it builds, which no input hash sees. Docker and Testcontainers settings pass through without
+    // entering a key; STACKRA_FISCAL_SANDBOX opts @stackra/fiscal's certification run in (skipped when unset).
+    "test:int": {
+      "description": "Run a member's `.int.test.ts` files (and gen's .stackra/tests) on a Testcontainers Postgres: `vitest run --config vitest.int.config.ts`. Needs Docker. Defined only by members that have int tests. After //#gen, as test.",
+      "dependsOn": ["^build", "//#gen"],
+      "cache": false,
+      "passThroughEnv": ["DOCKER_*", "TESTCONTAINERS_*", "STACKRA_FISCAL_SANDBOX"],
+      "outputs": [],
+    },
     // `stackra gen` once at the root over every member with a stackra.config.ts (a member without one has nothing
     // to generate and is skipped). One root task, not one per member: gen is not a member script, and the root run's
     // two passes resolve the services' clients against each other's manifests. It runs the built CLI, so it waits

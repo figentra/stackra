@@ -57,6 +57,11 @@
       "@stackra/source": "./src/coverage.ts",
       "types": "./dist/coverage.d.ts",
       "default": "./dist/coverage.js"
+    },
+    "./int": {
+      "@stackra/source": "./src/int.ts",
+      "types": "./dist/int.d.ts",
+      "default": "./dist/int.js"
     }
   },
   "publishConfig": {

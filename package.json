@@ -17,6 +17,7 @@
     "format:check": "oxfmt --check . && git ls-files -z '*.sh' ':!.specify/**' | xargs -0 shfmt -d",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage --filter='./packages/**'",
+    "test:int": "turbo run test:int",
     "check": "pnpm format:check && turbo run lint typecheck && pnpm lint:root",
     "verify": "pnpm format:check && turbo run lint typecheck test build && pnpm lint:root && pnpm validate && pnpm boundaries && pnpm knip",
     "verify:affected": "pnpm format:check && turbo run lint typecheck test build --affected",

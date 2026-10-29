@@ -22,6 +22,12 @@ A test for a subject is `<subject>` + the tier infix + `.ts`. The subject keeps 
 | load     | `.load.test`     | throughput and latency                                                     |
 | e2e      | `.e2e.test`      | runs a whole app; lives in the app, not in a package or service (ADR 0022) |
 
+`pnpm test` runs the unit tier only. `pnpm test:int` (turbo task `test:int`, never cached) runs the int tier in every
+member that has `.int.test.ts` files: the member's `vitest.int.config.ts` wraps its own config in `intTier` from
+`@stackra/vitest-config/int`, whose include is `src/**/__tests__/**/*.int.test.{ts,tsx}` plus gen's
+`.stackra/tests/**/*.int.test.ts` (the tenant-isolation test). Those tests start a Testcontainers Postgres through
+`usePostgres()`, so they need Docker; the Quality Gate runs `pnpm test:int` on every pull request (STA-1570).
+
 ## File kind to test
 
 | Kind folder    | File suffix  | Required test | Test file for `<subject>`                                                                          |

@@ -185,5 +185,5 @@ the issue date), which BR-KSA-15 requires. The AEAT fingerprint examples and ZAT
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/fiscal` — `build`, `typecheck`, `lint`, `test`, `test:coverage`, `format`,
-`format:check`, `clean`.
+`pnpm turbo run <task> --filter=@stackra/fiscal` — `build`, `typecheck`, `lint`, `test`, `test:coverage`, `test:int`
+(Docker; `vitest.int.config.ts`), `format`, `format:check`, `clean`.

@@ -56,9 +56,9 @@
       // member whose src/ never imports @stackra/contracts still uses it. .stackra/: gen's output (wiring, registrations,
       // module, entries, test setup) imports packages src/ never does, which the member declares for it
       // (generated_dependency_missing); knip reads it when gen has run. vitest.config.ts: the authored test config
-      // that merges gen's (stackra-163); named so its @stackra/vitest-config import is always seen (stackra-247).
-      // plugin/: an Expo module package's config plugin (ADR 0478 decision 2), which app.plugin.js loads from dist/,
-      // so knip starts at its source index.
+      // that merges gen's (stackra-163); named so its @stackra/vitest-config import is always seen (stackra-247);
+      // knip's vitest plugin already finds vitest.int.config.ts, the int tier (STA-1570). plugin/: an Expo module package's config plugin
+      // (ADR 0478 decision 2), which app.plugin.js loads from dist/, so knip starts at its source index.
       "entry": [
         "stackra.config.ts",
         "vitest.config.ts",

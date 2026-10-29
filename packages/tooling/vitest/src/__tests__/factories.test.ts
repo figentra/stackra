@@ -33,10 +33,13 @@ describe("servicePreset", () => {
     expect(legacyOf(config)).toBe(true);
     expect(unit?.test.name).toBe("unit");
     expect(unit?.test.include).toEqual(["src/**/__tests__/**/*.test.ts"]);
-    expect(unit?.test.exclude).toContain("src/**/__tests__/**/*.int.test.ts");
+    expect(unit?.test.exclude).toContain("src/**/__tests__/**/*.int.test.{ts,tsx}");
     expect(unit?.test.exclude).toContain("src/skip/**");
     expect(int?.test.name).toBe("int");
-    expect(int?.test.include).toEqual(["src/**/__tests__/**/*.int.test.ts"]);
+    expect(int?.test.include).toEqual([
+      "src/**/__tests__/**/*.int.test.{ts,tsx}",
+      ".stackra/tests/**/*.int.test.ts",
+    ]);
   });
 });
 
