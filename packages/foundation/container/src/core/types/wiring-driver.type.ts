@@ -29,8 +29,9 @@ export interface WiringDriver {
 
   /**
    * The candidate the port takes when no test picks one, ahead of config (whose value there is the schema's production
-   * default). Gen sets it only in a package's own wiring (its `memory` driver, else its one `./testing` driver), which
-   * only that package's own tests register.
+   * default). Gen sets it in a package's own wiring (its `memory` driver, else its one `./testing` driver), which only
+   * that package's own tests register, and in a host's wiring for the follow-the-system ports, as the driver of the
+   * host's runtime (`systemDriverDefaults`, STA-1535 and STA-1536).
    */
   readonly default?: string;
 
