@@ -3,20 +3,23 @@
  * Purpose: `SavedView`, a person's saved view of a resource's table, Linear-style: its filter, sort and columns, its
  *          grouping and sub-grouping, the totals per group, its layout, its version, and whether it is shared with a
  *          role or the whole of the owner's scope.
- * Boundary: a shape class; it registers this package's own schema for itself when the module loads. A view stores
+ * Boundary: a shape class whose sort, grouping and totals are the shape classes `SavedViewSort`, `SavedViewGroup` and
+ *           `SavedViewTotal`, so gen compiles every field without a hatch; it registers this package's own schema for itself when the module loads. A view stores
  *           declared keys only, never a query or code; the resource's list query still gates every row. Saved views
  *           are operational records, edited in live (ADR 0359 decision 4).
  * Runtime: isomorphic
  * Governing contract: ADR 0359 (decisions 4 and 14); ADR 0307 (rule 13 as reopened, rules 6 and 9); ADR 0271
  *                     (decisions 2, 3 and 8); ADR 0470 (decision 4).
  */
-import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
+import type { Json } from "@stackra/contracts";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
-import type { Aggregate } from "#core/enums/aggregate.enum";
 import { ViewLayout } from "#core/enums/view-layout.enum";
 import { ViewSharing } from "#core/enums/view-sharing.enum";
-import type { SortNode } from "#core/types/sort-node.type";
+import type { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
+import type { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
+import type { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 
 /**
  * One saved view.
@@ -28,29 +31,21 @@ import type { SortNode } from "#core/types/sort-node.type";
  * });
  */
 export class SavedView extends Schema {
-  /** The filter values by row path. */
-  // reason: free filter values keyed by row path; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.filter.unwrap())
-  filter: Record<string, unknown> = {};
-
-  /** The sort, when it differs from the table's default. */
-  // reason: a nested object with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.sort.unwrap())
-  sort?: SortNode;
-
-  /** The row path rows are grouped by, and the one each group is sub-grouped by. */
-  // reason: a nested object with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.group.unwrap())
-  group?: { by: string; then?: string };
-
-  /** The totals computed per group. */
-  // reason: a nested object with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.totals.unwrap())
-  totals: { key: string; aggregate: Aggregate }[] = [];
-
   /** The version the store last wrote; a save sends it back and is refused when someone changed the view since. */
   @Int({ min: 1 })
   version = 1;
+
+  /** The filter values by row path. */
+  filter: Record<string, Json> = {};
+
+  /** The sort, when it differs from the table's default. */
+  sort?: SavedViewSort;
+
+  /** The row path rows are grouped by, and the one each group is sub-grouped by. */
+  group?: SavedViewGroup;
+
+  /** The totals computed per group. */
+  totals: SavedViewTotal[] = [];
 
   /** The view's id. */
   id!: string;

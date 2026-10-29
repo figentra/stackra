@@ -39,6 +39,7 @@ route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tena
 | `.`        | `defineSlot`, `fillSlot`, `Slot` (t), `SlotFill` (t), `SlotOptions` (t), `SlotCardinality` (t), `SlotComponent` (t)                                                             | shell slots a product fills (ADR 0438)                         |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                       | what gen records; the placement layer rule                     |
 | `.`        | `SavedView` (`SavedView$`), `ViewStore` (port), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`, `ViewLayout`                                                          | saved views with grouping, totals, layout and sharing          |
+| `.`        | `SavedViewSort` (`SavedViewSort$`), `SavedViewGroup` (`SavedViewGroup$`), `SavedViewTotal` (`SavedViewTotal$`)                                                                  | a saved view's sort, grouping and totals, as shape classes     |
 | `.`        | `unknownViewKeys`, `ViewKeyUnknownError`                                                                                                                                        | the server validator of a saved view (`view_key_unknown`)      |
 | `.`        | `fieldsForMode`                                                                                                                                                                 | the form fields a display mode shows                           |
 | `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                                | the one line editor of a `LineEntry` slot; inert contributions |
@@ -119,7 +120,8 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
 ## Saved views
 
 A saved view (ADR 0359 decision 14, reopening rule 13) is a person's filter, sort and columns for a resource, plus a
-grouping (`group: { by, then? }`), totals per group (`count`, `sum`, `avg`, `min`, `max`, `distinct` of a row path; `Aggregate` is `@stackra/database`'s) and its
+grouping (`group: { by, then? }`, a `SavedViewGroup`; the sort is a `SavedViewSort`, each total a `SavedViewTotal`, so gen
+compiles every field of `SavedView` without a hatch), totals per group (`count`, `sum`, `avg`, `min`, `max`, `distinct` of a row path; `Aggregate` is `@stackra/database`'s) and its
 sharing (`private`; `role`, a role copy for the holders of `role`; or everyone in the owner's `scope` who may read the
 resource). It has a `layout` (`table`, `board`, `gallery`, `calendar`, `chart`; a board or calendar names its `layoutBy`
 path) and a `version` for optimistic concurrency (ADR 0271 decisions 2, 3 and 8). It stores declared keys only, and the

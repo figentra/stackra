@@ -41,7 +41,7 @@ const columnsOf = (view: SavedView) => ({
   role: view.sharing === ViewSharing.Role ? (view.role ?? null) : null,
   layout: view.layout,
   layoutBy: view.layoutBy ?? null,
-  filter: view.filter as StoredView["filter"],
+  filter: view.filter,
   sort: view.sort ?? null,
   columns: view.columns ?? null,
   group: view.group ?? null,

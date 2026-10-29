@@ -65,6 +65,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - A display mode is display only: `fieldsForMode` hides, never denies. A saved view stores declared keys only: a
   `ViewStore` driver checks `unknownViewKeys` on every save, `panel.view.share` before sharing, ownership before a
   change, and passes the view's `version` as `expectedVersion`. Never draw `groupRows` totals on a paged list.
+  `SavedView`'s sort, grouping and totals are the shape classes `SavedViewSort`, `SavedViewGroup` and `SavedViewTotal`;
+  never put a `@Field(zod)` hatch back on them.
 - An export reads rows only through the resource's list query run as the reader (`ExportRunner`), never a table or a
   service directly, so per-row permissions hold. `@Classified` columns are dropped unless opted in under an L2
   permission; the link lives 24 hours and its issue is access-logged. Caps and folders are `ExportConfig`, never code.

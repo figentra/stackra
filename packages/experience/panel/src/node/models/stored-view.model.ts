@@ -19,10 +19,11 @@ import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field, Str } from "@stackra/validation";
 import { z } from "zod";
 
-import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import { ViewLayout } from "#core/enums/view-layout.enum";
 import { ViewSharing } from "#core/enums/view-sharing.enum";
-import type { SavedView } from "#core/schemas/saved-view.schema";
+import type { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
+import type { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
+import type { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 
 /** One stored saved view. */
 @Index(["tenantId", "resource", "owner"])
@@ -65,19 +66,13 @@ export class StoredView extends Model.with(
   layoutBy!: string | null;
 
   /** The sort, when it differs from the table's default. */
-  // reason: a nested object with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.sort.unwrap())
-  sort!: SavedView["sort"] | null;
+  sort!: SavedViewSort | null;
 
   /** The group key and its sub-group key. */
-  // reason: a nested object with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.group.unwrap())
-  group!: SavedView["group"] | null;
+  group!: SavedViewGroup | null;
 
   /** The totals per group. */
-  // reason: a list of nested objects with no shape class; the package's own shipped schema says it
-  @Field(SAVED_VIEW_SCHEMA.shape.totals.unwrap())
-  totals!: SavedView["totals"];
+  totals!: SavedViewTotal[];
 
   /** The filter values by row path. */
   filter!: Record<string, Json>;

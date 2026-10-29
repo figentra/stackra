@@ -6,7 +6,8 @@
  *          views with their store port, layouts, key validator and grouping, the display-mode field filter, the line-editor and inert
  *          contribution rules, `registerResources` for the generic resource pages, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
- *           (`CountMetric$`, `MoneyMetric$`, `SavedView$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
+ *           (`CountMetric$`, `MoneyMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
+ *           `SavedViewTotal$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
  *           symbol is exported from two entries. The builder records, the widget and resource registries, the panel's own i18n keys
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
@@ -35,7 +36,10 @@ export { FormStep } from "#core/constants/form-step.constant";
 export { MONEY_METRIC_SCHEMA as MoneyMetric$ } from "#core/constants/money-metric-schema.constant";
 export { Placement } from "#core/constants/placement.constant";
 export { Relation } from "#core/constants/relation.constant";
+export { SAVED_VIEW_GROUP_SCHEMA as SavedViewGroup$ } from "#core/constants/saved-view-group-schema.constant";
 export { SAVED_VIEW_SCHEMA as SavedView$ } from "#core/constants/saved-view-schema.constant";
+export { SAVED_VIEW_SORT_SCHEMA as SavedViewSort$ } from "#core/constants/saved-view-sort-schema.constant";
+export { SAVED_VIEW_TOTAL_SCHEMA as SavedViewTotal$ } from "#core/constants/saved-view-total-schema.constant";
 export { Section } from "#core/constants/section.constant";
 export { TIME_RANGE_INPUT_SCHEMA as TimeRangeInput$ } from "#core/constants/time-range-input-schema.constant";
 export { View } from "#core/constants/view.constant";
@@ -76,6 +80,9 @@ export { widget } from "#core/functions/widget.function";
 export { ViewStore } from "#core/ports/view-store.port";
 export { CountMetric } from "#core/schemas/count-metric.schema";
 export { MoneyMetric } from "#core/schemas/money-metric.schema";
+export { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
+export { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
+export { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 export { SavedView } from "#core/schemas/saved-view.schema";
 export { TimeRangeInput } from "#core/schemas/time-range-input.schema";
 export type { Actions } from "#core/types/actions.type";

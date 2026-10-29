@@ -11,7 +11,10 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
 import { MONEY_METRIC_SCHEMA } from "#core/constants/money-metric-schema.constant";
+import { SAVED_VIEW_GROUP_SCHEMA } from "#core/constants/saved-view-group-schema.constant";
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
+import { SAVED_VIEW_SORT_SCHEMA } from "#core/constants/saved-view-sort-schema.constant";
+import { SAVED_VIEW_TOTAL_SCHEMA } from "#core/constants/saved-view-total-schema.constant";
 import { TIME_RANGE_INPUT_SCHEMA } from "#core/constants/time-range-input-schema.constant";
 import * as panel from "#core/index";
 import type {
@@ -59,6 +62,12 @@ describe("@stackra/panel", () => {
       "ResourcePage",
       "SavedView",
       "SavedView$",
+      "SavedViewGroup",
+      "SavedViewGroup$",
+      "SavedViewSort",
+      "SavedViewSort$",
+      "SavedViewTotal",
+      "SavedViewTotal$",
       "Section",
       "TimeRange",
       "TimeRangeInput",
@@ -95,6 +104,9 @@ describe("@stackra/panel", () => {
     expect(panel.CountMetric$).toBe(COUNT_METRIC_SCHEMA);
     expect(panel.MoneyMetric$).toBe(MONEY_METRIC_SCHEMA);
     expect(panel.SavedView$).toBe(SAVED_VIEW_SCHEMA);
+    expect(panel.SavedViewGroup$).toBe(SAVED_VIEW_GROUP_SCHEMA);
+    expect(panel.SavedViewSort$).toBe(SAVED_VIEW_SORT_SCHEMA);
+    expect(panel.SavedViewTotal$).toBe(SAVED_VIEW_TOTAL_SCHEMA);
     expect(panel.TimeRangeInput$).toBe(TIME_RANGE_INPUT_SCHEMA);
   });
 
