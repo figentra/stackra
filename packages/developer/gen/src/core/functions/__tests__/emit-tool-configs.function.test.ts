@@ -38,9 +38,10 @@ describe("emitToolConfigs", () => {
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
-      'export default {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
+      'const config: ReturnType<typeof library> = {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
         '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n' +
-        '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },\n};',
+        '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },\n};\n\n' +
+        "export default config;",
     );
   });
 
@@ -48,6 +49,8 @@ describe("emitToolConfigs", () => {
     const tsconfig = JSON.parse(content(".stackra/tsconfig.build.json")) as Record<string, unknown>;
     expect(tsconfig["extends"]).toBe("../tsconfig.json");
     expect(tsconfig["include"]).toEqual(["../src", "entry"]);
+    expect(tsconfig["compilerOptions"]).toEqual({ rootDir: ".." });
+    expect(tsconfig["exclude"]).toEqual(["../src/**/__tests__/**"]);
   });
 
   it("runs the unit tier on the decorators preset with the coverage gate", () => {

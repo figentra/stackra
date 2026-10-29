@@ -54,7 +54,8 @@ export function emitToolConfigs(
     'import { library } from "@stackra/tsdown-config";',
     "",
     "// tsdown takes the config file's folder as cwd and does not resolve a relative entry under `.stackra/`.",
-    "export default {",
+    "// Typed, so declaration emit can name the export (TS2883).",
+    "const config: ReturnType<typeof library> = {",
     "  ...library({",
     ...entries.map(
       (name) =>
@@ -64,6 +65,8 @@ export function emitToolConfigs(
     '  cwd: fileURLToPath(new URL("..", import.meta.url)),',
     '  dts: { tsconfig: fileURLToPath(new URL("tsconfig.build.json", import.meta.url)) },',
     "};",
+    "",
+    "export default config;",
     "",
   ].join("\n");
 
@@ -182,7 +185,10 @@ export function emitToolConfigs(
     {
       $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus the entries gen writes.`,
       extends: "../tsconfig.json",
+      // The presets' `${configDir}` is `.stackra/` here, so the root is named; tests ship no declarations.
+      compilerOptions: { rootDir: ".." },
       include: ["../src", "entry"],
+      exclude: ["../src/**/__tests__/**"],
     },
     null,
     2,
