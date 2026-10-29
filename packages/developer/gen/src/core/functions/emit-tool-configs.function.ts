@@ -52,10 +52,13 @@ export function emitToolConfigs(
     "",
     'import { library } from "@stackra/tsdown-config";',
     "",
-    "// tsdown takes the config file's folder as cwd; entries and dist are relative to the member root.",
+    "// tsdown takes the config file's folder as cwd and does not resolve a relative entry under `.stackra/`.",
     "export default {",
     "  ...library({",
-    ...entries.map((name) => `    ${JSON.stringify(name)}: ".stackra/entry/${name}.ts",`),
+    ...entries.map(
+      (name) =>
+        `    ${JSON.stringify(name)}: fileURLToPath(new URL("entry/${name}.ts", import.meta.url)),`,
+    ),
     "  }),",
     '  cwd: fileURLToPath(new URL("..", import.meta.url)),',
     "};",

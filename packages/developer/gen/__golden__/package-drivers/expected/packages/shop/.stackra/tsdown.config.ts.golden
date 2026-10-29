@@ -8,12 +8,12 @@ import { fileURLToPath } from "node:url";
 
 import { library } from "@stackra/tsdown-config";
 
-// tsdown takes the config file's folder as cwd; entries and dist are relative to the member root.
+// tsdown takes the config file's folder as cwd and does not resolve a relative entry under `.stackra/`.
 export default {
   ...library({
-    "index": ".stackra/entry/index.ts",
-    "contracts": ".stackra/entry/contracts.ts",
-    "node": ".stackra/entry/node.ts",
+    "index": fileURLToPath(new URL("entry/index.ts", import.meta.url)),
+    "contracts": fileURLToPath(new URL("entry/contracts.ts", import.meta.url)),
+    "node": fileURLToPath(new URL("entry/node.ts", import.meta.url)),
   }),
   cwd: fileURLToPath(new URL("..", import.meta.url)),
 };

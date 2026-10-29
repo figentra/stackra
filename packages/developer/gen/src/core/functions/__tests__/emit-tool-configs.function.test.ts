@@ -36,7 +36,7 @@ describe("emitToolConfigs", () => {
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
-      'export default {\n  ...library({\n    "server": ".stackra/entry/server.ts",\n  }),\n' +
+      'export default {\n  ...library({\n    "server": fileURLToPath(new URL("entry/server.ts", import.meta.url)),\n  }),\n' +
         '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n};',
     );
   });
