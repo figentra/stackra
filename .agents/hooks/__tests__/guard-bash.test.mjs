@@ -1299,6 +1299,42 @@ for (const c of [
 ])
   test(`deny: ${c}`, () => assert.equal(decision(c), "deny"));
 
+// STA-303: a process listing beside a wrapper that injects secrets printed TURBO_TOKEN into a transcript.
+for (const c of [
+  "pnpm linear get STA-1; ps aux",
+  "pnpm linear get STA-1 & ps -o pid,args",
+  "pnpm -C . run linear mine && ps",
+  "pnpm bot:gh -- pr view 1 & pgrep -af node",
+  "pnpm bot:git -- fetch origin; pgrep -l node",
+  "pnpm bot:gh -- pr view 1 & pgrep --list-full node",
+  "pnpm secrets:import --list; cat /proc/self/cmdline",
+  "pnpm spec:linear sync & procs",
+  "pnpm pr:merge 1 & top -l 1",
+  "pnpm linear mine & lsof -p 123",
+  "bash -c 'pnpm linear mine & ps aux'",
+  "pnpm linear mine & echo $(ps aux)",
+  // environment listings, with or without a wrapper
+  "cat /proc/1/environ",
+  "cat '/proc/1/environ'",
+  "strings /proc/*/environ",
+  "xargs -0 -n1 < /proc/self/environ",
+  "ps -p 1 eww",
+  "ps -ww -o pid,user e",
+])
+  test(`deny (STA-303): ${c}`, () => assert.equal(decision(c), "deny"));
+
+for (const c of [
+  "ps aux",
+  "ps -o user -p 1",
+  "ps -U me",
+  "pgrep -l node",
+  "pnpm linear get STA-1; pgrep -f node",
+  "pnpm lint; ps aux",
+  'pnpm linear comment STA-303 "ran ps aux and read /proc/1/environ"',
+  'git commit -m "block /proc/*/environ reads"',
+])
+  test(`allow (STA-303): ${c}`, () => assert.equal(decision(c), "allow"));
+
 for (const c of [
   "infisical secrets delete FOO",
   "wrangler deploy",

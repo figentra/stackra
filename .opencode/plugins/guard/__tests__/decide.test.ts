@@ -940,6 +940,21 @@ test("rules OpenCode was missing come from the shared module", () => {
   assert.equal(decidePath("certs/server.pem").kind, "deny");
 });
 
+// STA-303: the shared process-listing rules hold for OpenCode too.
+test("process listings beside a secrets wrapper and /proc environ reads are denied", () => {
+  for (const c of [
+    "pnpm linear get STA-1; ps aux",
+    "pnpm bot:gh -- pr view 1 & pgrep -af node",
+    "pnpm secrets:import --list; cat /proc/self/cmdline",
+    "pnpm linear mine & lsof -p 123",
+    "cat /proc/1/environ",
+    "ps -p 1 eww",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of ["ps aux", "pgrep -l node", "pnpm lint; ps aux"])
+    assert.equal(kind(c), "allow", c);
+});
+
 test("executors commit locally and push only their own HEAD through bot:git (phase 2)", () => {
   const { main, worktree, done } = repoWithWorktree();
   const shell = (c: string) => decideShell(c, worktree).kind;
