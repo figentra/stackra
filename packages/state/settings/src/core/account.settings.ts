@@ -14,7 +14,7 @@
  */
 import { Enum } from "@stackra/contracts";
 import { Locale } from "@stackra/i18n";
-import { registerSchemas, Str } from "@stackra/validation";
+import { registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import { Settings } from "#core/bases/settings.base";
@@ -32,7 +32,6 @@ export class AccountSettings extends Settings({
   scopes: [SettingScope.Platform, SettingScope.User],
 }) {
   /** The language the person chose, a locale code (`ar`); `null` follows the phone or the browser. */
-  @Str
   @Setting({
     client: true,
     live: true,
