@@ -57,7 +57,9 @@ describe(Link, () => {
     );
     Link.useBatchResolver(batch);
     const other = "var_01jab3k4m5n6p7q8r9s0t1v2w4";
-    const links = [ID, other, ID].map((id) => new Link<Variant>("catalogue.variant", id));
+    const links = ([ID, other, ID] as const).map(
+      (id) => new Link<Variant>("catalogue.variant", id),
+    );
     await Link.loadMany(links);
     expect(batch).toHaveBeenCalledTimes(1);
     expect(batch).toHaveBeenCalledWith("catalogue.variant", [ID, other]);
@@ -68,7 +70,9 @@ describe(Link, () => {
   it("falls back to one load per distinct id and refuses a missing row", async () => {
     const resolve = vi.fn(async (_model: string, id: string) => ({ id, sku: "S" }));
     Link.useResolver(resolve);
-    await Link.loadMany([ID, ID].map((id) => new Link<Variant>("catalogue.variant", id)));
+    await Link.loadMany(
+      ([ID, ID] as const).map((id) => new Link<Variant>("catalogue.variant", id)),
+    );
     expect(resolve).toHaveBeenCalledTimes(1);
     Link.useBatchResolver(async () => []);
     await expect(Link.loadMany([new Link<Variant>("catalogue.variant", ID)])).rejects.toThrow(
