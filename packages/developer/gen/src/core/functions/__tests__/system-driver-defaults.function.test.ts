@@ -204,7 +204,8 @@ describe("emitWiring with a follow-the-system port", () => {
       'import type { Wiring, WiringDriver } from "@stackra/container";',
       '  "platform.AppLock": "expo",',
       "export const nativeWiring = {",
-      '    default: NATIVE_DEFAULTS[table.key ?? ""] ?? table.default,',
+      '    const picked = NATIVE_DEFAULTS[table.key ?? ""];',
+      "    return picked === undefined ? table : { ...table, default: picked };",
     ])
       expect(content).toContain(line);
   });

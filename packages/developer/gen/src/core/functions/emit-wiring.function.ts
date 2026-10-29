@@ -715,10 +715,10 @@ export function emitWiring(ir: MemberIR): string {
       "/** The wiring of the native entry: `wiring` with the native drivers as the follow-the-system defaults. */",
       "export const nativeWiring = {",
       "  ...wiring,",
-      "  drivers: wiring.drivers.map((table: WiringDriver) => ({",
-      "    ...table,",
-      '    default: NATIVE_DEFAULTS[table.key ?? ""] ?? table.default,',
-      "  })),",
+      "  drivers: wiring.drivers.map((table: WiringDriver) => {",
+      '    const picked = NATIVE_DEFAULTS[table.key ?? ""];',
+      "    return picked === undefined ? table : { ...table, default: picked };",
+      "  }),",
       "} satisfies Wiring;",
     );
   }

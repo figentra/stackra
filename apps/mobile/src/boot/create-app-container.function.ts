@@ -6,11 +6,12 @@
  *          uploader it uploads them with, the consent ledger, and the settings store the language choice is saved to.
  * Boundary: builds instances only. The app has no generated wiring yet (its manifest says `kind: package`, so gen
  *           writes no `#stackra/wiring` or native entry for it), so each binding is an override of the empty container.
- *           When the app adopts @stackra/app (ADR 0295) gen covers the system accessibility, system settings, device
- *           permissions, app lock (with `AppLockConfig`), app icon and share inbox (with `NativeShareConfig`) drivers
- *           and the package config rows; what stays here is `MobileI18nConfig` (or a host config override), the phone
- *           disk and uploader the share inbox uses, and the memory consent ledger and settings store until the app
- *           signs people in.
+ *           When the app adopts @stackra/app (ADR 0295) and the platform and native-share manifests are regenerated
+ *           with their driver tables and config rows (they do not carry the app lock, app icon or share inbox yet), gen
+ *           covers the system accessibility, system settings, device permissions, app lock (with `AppLockConfig`), app
+ *           icon and share inbox (with `NativeShareConfig`) drivers and the package config rows; what stays here is
+ *           `MobileI18nConfig` (or a host config override), the phone disk and uploader the share inbox uses, and the
+ *           memory consent ledger and settings store until the app signs people in.
  * Runtime: react-native
  * Governing contract: ADR 0263 (the container); ADR 0302 (2026-10-29 note); ADR 0298; ADR 0007 (documentation).
  */
