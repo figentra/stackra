@@ -6,7 +6,7 @@
  *          their verification by hash, automation principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
- *          configuration and memory driver, and the refusals) until `stackra gen` writes the
+ *          configuration and memory driver, the passkeys memory driver, and the refusals) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
  *           from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its generated name
@@ -30,6 +30,7 @@ export { MemoryGuardianshipDriver } from "#core/drivers/memory-guardianship.driv
 export { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-resolver.driver";
 export { MemoryLoginDirectoryStoreDriver } from "#core/drivers/memory-login-directory-store.driver";
+export { MemoryPasskeysDriver } from "#core/drivers/memory-passkeys.driver";
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
 export { MemoryStaffPinStoreDriver } from "#core/drivers/memory-staff-pin-store.driver";
 export { MemoryVerificationDriver } from "#core/drivers/memory-verification.driver";

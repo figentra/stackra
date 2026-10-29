@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `SessionStore`, `SignInBrowser`,
  *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals` and
- *          `AppApprovalChallenges` ports, the `LoginDirectoryStore` port
+ *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
  *          and enums their signatures name)
  *          until `stackra gen` writes the entry barrels (STA-339).
@@ -16,6 +16,7 @@ export { AppApprovalStatus } from "#contracts/enums/app-approval-status.enum";
 export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
 export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { LoginIdentifierKind } from "#contracts/enums/login-identifier-kind.enum";
+export { PasskeyRefusal } from "#contracts/enums/passkey-refusal.enum";
 export { VerificationKind } from "#contracts/enums/verification-kind.enum";
 export { VerificationStatus } from "#contracts/enums/verification-status.enum";
 export { VerificationUse } from "#contracts/enums/verification-use.enum";
@@ -26,6 +27,7 @@ export { AutomationPrincipals } from "#contracts/ports/automation-principals.por
 export { Guardianship } from "#contracts/ports/guardianship.port";
 export { IdpAdmin } from "#contracts/ports/idp-admin.port";
 export { LoginDirectoryStore } from "#contracts/ports/login-directory-store.port";
+export { Passkeys } from "#contracts/ports/passkeys.port";
 export { SessionStore } from "#contracts/ports/session-store.port";
 export { SignInBrowser } from "#contracts/ports/sign-in-browser.port";
 export { StaffPinStore } from "#contracts/ports/staff-pin-store.port";
@@ -43,6 +45,10 @@ export type { IdpUserInput } from "#contracts/types/idp-user-input.type";
 export type { LoginDirectoryKey } from "#contracts/types/login-directory-key.type";
 export type { LoginIdentifier } from "#contracts/types/login-identifier.type";
 export type { LoginPolicy } from "#contracts/types/login-policy.type";
+export type { PasskeyCreationOptions } from "#contracts/types/passkey-creation-options.type";
+export type { PasskeyCredential } from "#contracts/types/passkey-credential.type";
+export type { PasskeyRequestOptions } from "#contracts/types/passkey-request-options.type";
+export type { PasskeyResult } from "#contracts/types/passkey-result.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";

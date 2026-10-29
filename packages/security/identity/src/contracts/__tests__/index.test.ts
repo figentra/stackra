@@ -28,6 +28,8 @@ describe("@stackra/identity/contracts", () => {
       "IdpSecondFactor",
       "LoginDirectoryStore",
       "LoginIdentifierKind",
+      "PasskeyRefusal",
+      "Passkeys",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",

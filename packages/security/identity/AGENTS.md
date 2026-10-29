@@ -27,11 +27,14 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   every new public file to its barrel and to that entry's `index.test.ts`.
 - The session-user schema and the PKCE helpers (`randomToken`, `codeChallengeOf`, `jwtClaimsOf`, `base64UrlOf`) stay
   internal.
-- Platform drivers live in their own entries: `./native` (Expo, `expo-web-browser` and `expo-linking`) and `./desktop`
+- Platform drivers live in their own entries: `./native` (Expo, `expo-web-browser`, `expo-linking` and
+  `react-native-passkey`) and `./desktop`
   (Electron main, `electron` and `node:http`), each an optional peer; never import them from `.`.
 
 ## This package
 
+- `Passkeys` is the device step only: options in, credential JSON out. Never make or check a WebAuthn challenge here;
+  the server side asks the provider and verifies. Library errors become `PasskeyRefusal` values, never throws.
 - No secret, ever: a browser has no client credential (the BFF holds it, by name), and a device is a public client.
 - Every BFF call carries `IdentityConfig.csrfHeader` (equal to the API's `CsrfConfig.headerName`). Never import
   @stackra/app for it: app depends on identity, so that would close a cycle.

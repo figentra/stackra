@@ -49,6 +49,7 @@ describe("@stackra/identity", () => {
       "MemoryIdentityResolverDriver",
       "MemoryIdpAdminDriver",
       "MemoryLoginDirectoryStoreDriver",
+      "MemoryPasskeysDriver",
       "MemorySessionStoreDriver",
       "MemoryStaffPinStoreDriver",
       "MemoryVerificationDriver",
@@ -87,6 +88,7 @@ describe("@stackra/identity", () => {
     for (const name of [
       "SessionStore",
       "SignInBrowser",
+      "Passkeys",
       "IDENTITY_CONFIG_SCHEMA",
       "SESSION_USER_SCHEMA",
       "randomToken",
