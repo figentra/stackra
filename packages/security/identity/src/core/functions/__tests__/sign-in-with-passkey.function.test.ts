@@ -9,7 +9,7 @@
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { PasskeyRefusal } from "#contracts/index";
+import { type PasskeyCredential, PasskeyRefusal } from "#contracts/index";
 import { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 import { MemoryPasskeysDriver } from "#core/drivers/memory-passkeys.driver";
 import { signInWithPasskey } from "#core/functions/sign-in-with-passkey.function";
@@ -27,8 +27,8 @@ async function setup() {
   });
   const { options } = await idp.startPasskeyRegistration(userId);
   await passkeys.register(options);
-  const verify = vi.fn((input: { sessionId: string; credential: unknown }) =>
-    idp.finishPasskeySignIn(input.sessionId),
+  const verify = vi.fn((input: { sessionId: string; credential: PasskeyCredential }) =>
+    idp.finishPasskeySignIn(input.sessionId, input.credential),
   );
   const calls = {
     challenge: (input: { loginName: string }) => idp.startPasskeySignIn(input.loginName),

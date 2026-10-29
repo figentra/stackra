@@ -179,8 +179,11 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     };
   }
 
-  /** See `IdpAdmin.finishPasskeySignIn`; an unknown session is refused. */
-  async finishPasskeySignIn(sessionId: string): Promise<IdpSessionGrant> {
+  /** See `IdpAdmin.finishPasskeySignIn`; an unknown session is refused, and the credential is not checked. */
+  async finishPasskeySignIn(
+    sessionId: string,
+    _credential: PasskeyCredential,
+  ): Promise<IdpSessionGrant> {
     if (!this.sessions.has(sessionId)) throw UnauthenticatedError.create();
     return { sessionId, sessionToken: randomToken() };
   }
