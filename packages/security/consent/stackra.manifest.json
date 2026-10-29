@@ -11,9 +11,40 @@
       "dependsOn": []
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "key": "consent.consent_snapshot.issue@1",
+      "kind": "action",
+      "module": "consent",
+      "class": "IssueConsentSnapshotAction",
+      "file": "src/node/actions/issue-consent-snapshot.action.ts",
+      "permission": "consent.consent_snapshot.issue",
+      "risk": "L0",
+      "actors": ["anonymous", "user"],
+      "idempotency": "optional",
+      "area": "public",
+      "endpoint": {
+        "method": "POST",
+        "path": "/consent/snapshots",
+        "derived": false
+      },
+      "toolOff": "an agent acts under its principal's consent, never a visitor's browser decision",
+      "input": {
+        "$ref": "#/schemas/consent.IssueConsentSnapshotInput"
+      },
+      "output": {
+        "$ref": "#/schemas/consent.IssueConsentSnapshotOutput"
+      }
+    }
+  ],
   "events": [],
-  "permissions": [],
+  "permissions": [
+    {
+      "key": "consent.consent_snapshot.issue",
+      "risk": "L0",
+      "class": "ConsentSnapshotPermissions"
+    }
+  ],
   "errors": [
     {
       "code": "consent_authority_missing",
@@ -178,6 +209,51 @@
     "consent.ConsentStatus": {
       "type": "string",
       "enum": ["granted", "denied", "undecided"]
+    },
+    "consent.IssueConsentSnapshotInput": {
+      "type": "object",
+      "required": ["record", "region", "globalPrivacyControl"],
+      "properties": {
+        "record": {
+          "anyOf": [
+            {
+              "description": "@Field(zod): described by its zod schema"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "region": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "globalPrivacyControl": {
+          "type": "boolean"
+        },
+        "appTrackingDenied": {
+          "type": "boolean"
+        }
+      }
+    },
+    "consent.IssueConsentSnapshotOutput": {
+      "type": "object",
+      "required": ["token", "expiresAt"],
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expiresAt": {
+          "type": "string"
+        }
+      }
     }
   }
 }

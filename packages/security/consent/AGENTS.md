@@ -10,7 +10,7 @@ Governing contract: ADR 0298; ADR 0454; ADR 0472; OS-284; STA-1323.
 
 Visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version
 (ADR 0298). Member at `packages/security/consent` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305).
-Entries `.`, `./contracts`, `./react`, `./testing`.
+Entries `.`, `./contracts`, `./node`, `./react`, `./testing`, `./ui`.
 
 ## Where code goes
 
