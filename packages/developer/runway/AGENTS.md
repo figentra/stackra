@@ -50,7 +50,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 - The repository index table lives only in the root runway's `environments.dev.lanes.repos`; do not copy it into
   code or another file. A new dev port field must be added to `checkPorts` so duplicates keep failing.
 - The mobile job (`runMobileJob`) strips capabilities at build time from the template line's `capabilities.json`;
-  never hard-code a capability, module, plugin or permission here, and never hide a feature at run time instead. It
+  never hard-code a capability, module, plugin or permission here (the one exception is `AD_ID_PERMISSION`, blocked
+  unless an enabled flag lists it), and never hide a feature at run time instead. It
   never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
   store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
 - The brand step (`runBrandStep`) runs the @stackra/brand-kit binary and never imports the kit; output codes and

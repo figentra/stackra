@@ -12,7 +12,7 @@ import { STACKRA_THEME } from "@stackra/tokens";
 import { DEVICE_FRAMES } from "#core/constants/device-frames.constant";
 import { storeFrameSvg } from "#core/functions/store-frame-svg.function";
 
-const frame = DEVICE_FRAMES[0] ?? { id: "ios_phone", width: 1320, height: 2868, radius: 96 };
+const frame = DEVICE_FRAMES[0] ?? { id: "ios_phone", width: 1290, height: 2796, radius: 96 };
 
 describe("storeFrameSvg", () => {
   it("draws the escaped caption on the frame's canvas", () => {

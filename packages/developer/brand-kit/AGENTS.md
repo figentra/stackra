@@ -38,7 +38,8 @@ shape (ADR 0294, 0305). Entries `./contracts`, `.` and the `stackra-brand-kit` b
 - Output is deterministic: the same kit gives the same bytes. Sort every list; never read the clock, the locale or
   system fonts.
 - Sizes, paths and device frames are data in `src/core/constants/`; a store or platform change edits a table, not a
-  generator.
+  generator. Android frames stay inside Google Play's limits (320 to 3840 px a side, ratio at most 2:1) and match the
+  release store check's targets (`tools/scripts/store-build.mjs`); `device-frames.constant.test.ts` pins both.
 - Generated files are never committed; the asset manifest lists them for that check (stackra-13).
 - New third-party dependencies (font measuring, image encoding) are catalog entries, handed to the integration batch.
 - `escapeXml` is `@stackra/support`'s (stackra-224): it refuses a character XML 1.0 cannot carry (a control character in

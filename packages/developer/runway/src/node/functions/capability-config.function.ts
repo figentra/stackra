@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: `capabilityConfig(catalogue, flags)`, what a build of a template line keeps and strips for a product's
  *          capability flags: the config plugins of the enabled flags, and the native modules, Info.plist keys,
- *          entitlements and Android permissions of every other flag, so the binary declares only what it uses.
+ *          entitlements and Android permissions of every other flag, so the binary declares only what it uses. The
+ *          advertising id (`AD_ID_PERMISSION`) is always blocked unless an enabled flag lists it.
  * Boundary: pure: the template's catalogue and the runway flags in, a `MobileCapabilityConfig` out. A declaration an
  *           enabled flag also lists is kept. Refuses a flag the template line does not offer.
  * Runtime: node
  * Governing contract: ADR 0439 (decision 3 and enforcement: a flag the template does not offer is refused);
- *                     app-shells section 15 point 3.
+ *                     app-shells section 15 point 3; STA-1577 (AD_ID).
  */
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { AD_ID_PERMISSION } from "#node/constants/ad-id-permission.constant";
 import type { ExpoPluginEntry } from "#node/types/expo-plugin-entry.type";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
 import type { MobileCapabilityConfig } from "#node/types/mobile-capability-config.type";
@@ -38,7 +40,7 @@ function collect(
  * capabilityConfig(
  *   { scanner: { modules: ["expo-camera"], android: { permissions: ["android.permission.CAMERA"] } }, push: {} },
  *   ["push"],
- * ).blockedPermissions; // ["android.permission.CAMERA"]
+ * ).blockedPermissions; // ["android.permission.CAMERA", "com.google.android.gms.permission.AD_ID"]
  */
 export function capabilityConfig(
   catalogue: Readonly<Record<string, MobileCapability>>,
@@ -80,6 +82,13 @@ export function capabilityConfig(
     excludedModules: strip((capability) => capability.modules),
     removedInfoPlist: strip((capability) => capability.ios?.infoPlist),
     removedEntitlements: strip((capability) => capability.ios?.entitlements),
-    blockedPermissions: strip((capability) => capability.android?.permissions),
+    blockedPermissions: [
+      ...new Set([
+        ...strip((capability) => capability.android?.permissions),
+        ...(collect(on, (capability) => capability.android?.permissions).has(AD_ID_PERMISSION)
+          ? []
+          : [AD_ID_PERMISSION]),
+      ]),
+    ],
   };
 }
