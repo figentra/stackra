@@ -1,0 +1,65 @@
+# Stackra file contract:
+# Purpose: the SPDX licence of every skill folder under .agents/skills and .agents/reference (keyed by its path
+#          under .agents) and of every plugin enabled in .claude/settings.json. House skills carry the repository
+#          licence, MIT. tools/scripts/skill-licences.mjs fails pnpm validate on a missing or non-allowed licence.
+# Owner: dependency-steward · Secrets: forbidden
+skills:
+  skills/accessibility: MIT
+  skills/ai-mcp-tools: MIT
+  skills/archify: Apache-2.0
+  skills/backend-assets-and-storage: MIT
+  skills/backend-author-an-action: MIT
+  skills/backend-decorator-package-with-explorer: MIT
+  skills/backend-errors: MIT
+  skills/backend-gen-and-encore-target: MIT
+  skills/backend-module-and-root-module: MIT
+  skills/changesets: MIT
+  skills/code-naming-and-casing: MIT
+  skills/db-models-and-migrations: MIT
+  skills/docs-adr: MIT
+  skills/docs-spec-flow: MIT
+  skills/eas-app-stores: MIT
+  skills/eas-update: MIT
+  skills/eas-workflows: MIT
+  skills/expo-animation: MIT
+  skills/expo-data-fetching: MIT
+  skills/expo-design-system: MIT
+  skills/expo-dev-client: MIT
+  skills/expo-upgrade: MIT
+  skills/frontend-design: Apache-2.0
+  skills/frontend-resource-console: MIT
+  skills/heroui-native: Apache-2.0
+  skills/heroui-react: MIT
+  skills/mobile-eas-setup: MIT
+  skills/mobile-release: MIT
+  skills/mobile-store-listing: MIT
+  skills/playwright-best-practices: MIT
+  skills/pnpm: MIT
+  skills/react-native-best-practices: MIT
+  skills/resend: MIT
+  skills/stripe-best-practices: MIT
+  skills/tdd: MIT
+  skills/turborepo: MIT
+  skills/vitest: MIT
+  reference/encore/encore-api: Apache-2.0
+  reference/encore/encore-architecture: Apache-2.0
+  reference/encore/encore-auth: Apache-2.0
+  reference/encore/encore-bucket: Apache-2.0
+  reference/encore/encore-cache: Apache-2.0
+  reference/encore/encore-code-review: Apache-2.0
+  reference/encore/encore-cron: Apache-2.0
+  reference/encore/encore-database: Apache-2.0
+  reference/encore/encore-logging: Apache-2.0
+  reference/encore/encore-pubsub: Apache-2.0
+  reference/encore/encore-secret: Apache-2.0
+  reference/encore/encore-service: Apache-2.0
+  reference/encore/encore-testing: Apache-2.0
+  reference/encore/encore-webhook: Apache-2.0
+plugins:
+  "frontend-design@claude-plugins-official": Apache-2.0
+  "encore-skills@encore-skills": Apache-2.0
+  "cloudflare@cloudflare": Apache-2.0
+  "engineering@knowledge-work-plugins": Apache-2.0
+  "product-management@knowledge-work-plugins": Apache-2.0
+  "marketing@knowledge-work-plugins": Apache-2.0
+  "finance@knowledge-work-plugins": Apache-2.0

@@ -18,6 +18,9 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
 
 - Upstream skills are vendored content: do not edit one in place. Re-vendor it deliberately from its source, or write
   a house skill beside it. Upstream licence files stay in the skill folder.
+- Every skill folder and every enabled plugin records its licence in [`.licences.yaml`](./.licences.yaml); a missing or
+  non-allowed licence (anything but MIT, Apache-2.0, BSD or ISC) fails `pnpm validate`
+  (`tools/scripts/skill-licences.mjs`, STA-272).
 - The Encore skills are not here. They teach hand-written Encore.ts, which this repository rejects for authors (Encore
   is only the generated target in `.stackra/encore/`, [ADR 0124](../../apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)),
   so they are fenced in [`../reference/encore`](../reference/encore), read only by `compiler-engineer` (ADR 0258).
