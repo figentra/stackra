@@ -17,11 +17,12 @@ export const DEPLOY_COMMAND: CliCommand = {
   summary:
     "Deploy a built product to an environment: its surfaces to the edge, its mobile builds to the stores",
   usage:
-    "stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
+    "stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
   options: {
     product: { type: "boolean" },
     env: { type: "string" },
     "dry-run": { type: "boolean" },
+    "surfaces-only": { type: "boolean" },
     approved: { type: "boolean" },
     "first-release": { type: "boolean" },
     "assets-bucket": { type: "string" },

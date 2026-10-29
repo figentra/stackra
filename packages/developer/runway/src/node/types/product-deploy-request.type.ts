@@ -43,6 +43,8 @@ export type ProductDeployRequest = {
   readonly review?: OpsReview;
   /** The store accounts each mobile app submits under (`storeAccountsOf`), by app key. */
   readonly stores?: Readonly<Record<string, readonly MobileStoreAccount[]>>;
+  /** Publish the web surfaces only: no store check and no submission (a dev or preview deploy). */
+  readonly surfacesOnly?: boolean;
   /** Record every upload, KV write and submission instead of making it. */
   readonly dryRun?: boolean;
   /** The command runner; `runCommand` when absent. */

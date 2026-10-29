@@ -7,6 +7,7 @@
  *          - per mobile app: runs the mobile job (the template line checked out, the app's config and capability flags
  *            written, the product packages built in), with the EAS build;
  *          - writes the build manifest (`dist/product/build.json`).
+ *          `surfacesOnly` builds the web surfaces and lists the mobile apps as skipped (dev and preview).
  *          A dry run plans the bundles and records the EAS builds instead of starting them; the checkouts, the
  *          generated config and the manifest are still written, so the outputs can be checked.
  * Boundary: writes under the product root only (`.stackra/`, `dist/`); builds through the given bundler, so Runway
@@ -198,7 +199,8 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const mobile: Mutable<ProductBuild["mobile"]> = {};
-  for (const [app, entry] of Object.entries(root.mobile ?? {})) {
+  const skipped = request.surfacesOnly === true ? Object.keys(root.mobile ?? {}) : [];
+  for (const [app, entry] of Object.entries(request.surfacesOnly === true ? {} : (root.mobile ?? {}))) {
     const packages: Record<string, string> = {};
     for (const [index, name] of (entry.packages ?? []).entries()) {
       const pkg = workspace.get(name);
@@ -249,6 +251,7 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
     dryRun: request.dryRun === true,
     surfaces,
     mobile,
+    skipped: { mobile: skipped },
     planned,
   };
   const manifest = join(repository, PRODUCT_BUILD_SETTINGS.manifest);

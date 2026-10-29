@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `runDeployProduct(context)`, the run of `stackra deploy --product --env <environment> [--dry-run]
+ *          [--surfaces-only]
  *          [--approved] [--first-release]` at a product root: publishes the built web surfaces to the edge, lists the
  *          landing seeds and submits the mobile builds (Runway's `deployProduct`). The OS facts come from flags or the
  *          deploy job's environment: `--assets-bucket`/`STACKRA_ASSETS_BUCKET`, `--assets-origin`/`STACKRA_ASSETS_ORIGIN`,
@@ -130,6 +131,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     firstRelease: values["first-release"] === true || (dryRun && canaryScopes === undefined),
     ...(region === undefined ? {} : { region }),
     stores,
+    surfacesOnly: values["surfaces-only"] === true,
     dryRun,
   });
   io.out(

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `BUILD_COMMAND`, `stackra build`: the member tool command (`toolCommand("build")`, unchanged) plus the
- *          product mode `stackra build --product [--dry-run] [--os <checkout>] [--scope <@scope>] [--env <environment>]`,
+ *          product mode `stackra build --product [--dry-run] [--surfaces-only] [--os <checkout>] [--scope <@scope>] [--env <environment>]`,
  *          which runs `stackra gen`, then builds every surface bundle and mobile app a product's root runway names
  *          (`runBuildProduct`).
  * Boundary: data plus dispatch; a product flag without `--product` is a usage error, never ignored.
@@ -17,7 +17,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 const MEMBER_BUILD = toolCommand("build", "Generate, then build the member");
 
 /** The flags only the product mode takes. */
-const PRODUCT_FLAGS = ["dry-run", "os", "scope", "env"] as const;
+const PRODUCT_FLAGS = ["dry-run", "surfaces-only", "os", "scope", "env"] as const;
 
 /** The `stackra build` command definition. */
 export const BUILD_COMMAND: CliCommand = {
@@ -29,6 +29,7 @@ export const BUILD_COMMAND: CliCommand = {
     ...MEMBER_BUILD.options,
     product: { type: "boolean" },
     "dry-run": { type: "boolean" },
+    "surfaces-only": { type: "boolean" },
     os: { type: "string" },
     scope: { type: "string" },
     env: { type: "string" },

@@ -5,6 +5,7 @@
  *          publishes the web surfaces (`publishProduct`: bundles to the asset store, the platform `host:` and
  *          `wellknown:` rows, the release pointer or the canary); lists each landing surface's seed documents; submits
  *          each mobile app's EAS builds to its stores; and writes the deploy manifest.
+ *          `surfacesOnly` publishes the web surfaces only, with no store check and no submission (dev and preview).
  *          A dry run records every upload, KV write and submission instead of making it.
  * Boundary: reads `dist/product/build.json` (from `buildProduct`), so a deploy ships exactly what was built. Writes
  *           through the KV writer and runs `wrangler` and `eas` only. Importing the landing seeds into experience is
@@ -72,7 +73,8 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
   const run = request.dryRun === true ? dryRunCommand({ head: build.sha }) : real;
 
   const issues: RunwayIssue[] = [];
-  for (const app of Object.keys(build.mobile)) {
+  const apps = request.surfacesOnly === true ? [] : Object.keys(build.mobile);
+  for (const app of apps) {
     const identity = root.mobile?.[app]?.identity;
     const stores = request.stores?.[app] ?? [];
     const needs = [
@@ -109,7 +111,7 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
   );
 
   const submitted: Record<string, string[]> = {};
-  for (const [app, built] of Object.entries(build.mobile)) {
+  for (const [app, built] of Object.entries(build.mobile).filter(([key]) => apps.includes(key))) {
     const cwd = join(repository, built.dir);
     submitted[app] = [];
     for (const id of built.buildIds) {

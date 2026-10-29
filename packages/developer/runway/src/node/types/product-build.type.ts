@@ -51,6 +51,8 @@ export type ProductBuild = {
       }
     >
   >;
+  /** The mobile apps a surfaces-only build left out. */
+  readonly skipped: { readonly mobile: readonly string[] };
   /** The external commands a dry run recorded (EAS), in order. */
   readonly planned: readonly DeployStep[];
 };

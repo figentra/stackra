@@ -81,7 +81,8 @@ A product with no app members (ADR 0441 decision 2) builds and deploys with two 
   surface's shell line and every app's template line out (from the registry, or `--os`), builds each surface's
   extension bundle with Vite against the shell's import map into `dist/bundles/<surface>/<sha12>/`, writes each app's
   config with only its capability flags and its packages built in and starts its EAS build, and writes
-  `dist/product/build.json`. `--dry-run` plans the bundles and records the EAS builds. The lines' scope is `--scope`,
+  `dist/product/build.json`. `--dry-run` plans the bundles and records the EAS builds; `--surfaces-only` builds the
+  surfaces for real and lists the mobile apps as skipped (dev and preview). The lines' scope is `--scope`,
   else `STACKRA_LINE_SCOPE`, else the scope of the product's own packages.
 - `stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--approved] [--first-release]`
   publishes what was built: the bundles to the asset store and the `host:`, `wellknown:` and `release:` or `canary:`
@@ -89,7 +90,7 @@ A product with no app members (ADR 0441 decision 2) builds and deploys with two 
   OS facts come from the deploy job: `--assets-bucket`, `--assets-origin`, `--kv-namespace`, `--served`,
   `--canary-scopes`, `--region` or their `STACKRA_*` variables. An environment whose runway names an approval
   (`deploy.approval: github-environment`) deploys only with `--approved`, which the job behind that GitHub environment
-  passes. `dist/product/deploy-<env>.json` records what was done (or, in a dry run, planned).
+  passes. `--surfaces-only` publishes the surfaces with no store check or submission. `dist/product/deploy-<env>.json` records what was done (or, in a dry run, planned).
 
 Each tool gets `--config .stackra/<tool>.config.ts` when gen wrote it (ADR 0295 decision 5), and finds its own
 member-root config otherwise. A task that no tool serves for the member (a desktop target, a service build before the

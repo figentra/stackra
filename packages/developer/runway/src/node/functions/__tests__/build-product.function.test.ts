@@ -145,6 +145,24 @@ describe("buildProduct", () => {
     expect(build.mobile["app"]?.buildIds).toEqual(["build-ios", "build-android"]);
   });
 
+  it("builds the surfaces only for dev and preview, and lists the mobile apps as skipped", async () => {
+    writeProduct(product, TEMPLATE_RUNWAY, {
+      "@figentra/acme-example": ["console", "landing", "native"],
+    });
+    const build = await buildProduct({
+      repository: product,
+      scope: "@example",
+      os,
+      sha: SHA,
+      bundle: bundler,
+      surfacesOnly: true,
+    });
+    expect(build.surfaces["console"]?.bundle?.entry).toBe("console.js");
+    expect(build.mobile).toEqual({});
+    expect(build.skipped).toEqual({ mobile: ["app"] });
+    expect(existsSync(join(product, ".stackra/mobile"))).toBe(false);
+  });
+
   it("refuses academorix's wallet flag, which the line does not offer", async () => {
     writeProduct(
       product,
@@ -253,6 +271,22 @@ describe("deployProduct", () => {
       expect.arrayContaining(["wrangler r2", "eas build:view", "eas submit"]),
     );
     expect(read("dist/product/deploy-production.json").sha).toBe(SHA);
+  });
+
+  it("publishes the surfaces only, with no store check and no submission", async () => {
+    await built();
+    const deploy = await deployProduct({
+      repository: product,
+      environment: "production",
+      assets: { bucket: "assets", origin: "https://assets.example.test" },
+      served: ["console@3", "landing@1"],
+      firstRelease: true,
+      surfacesOnly: true,
+      dryRun: true,
+    });
+    expect(deploy.surfaces.written).toContain("release:acme:console");
+    expect(deploy.submitted).toEqual({});
+    expect(deploy.planned.some((step) => step.command === "eas")).toBe(false);
   });
 
   it("refuses production without its approval, an app without store accounts, and a deploy before a build", async () => {

@@ -25,6 +25,8 @@ export type ProductBuildRequest = {
   readonly sha?: string;
   /** Builds each surface bundle; required unless `dryRun`. */
   readonly bundle?: SurfaceBundler;
+  /** Build the web surfaces only: the mobile apps are listed as skipped (a dev or preview build). */
+  readonly surfacesOnly?: boolean;
   /** Plan the bundles and record the EAS builds instead of starting them; local outputs are still written. */
   readonly dryRun?: boolean;
   /** The command runner; `runCommand` when absent. */

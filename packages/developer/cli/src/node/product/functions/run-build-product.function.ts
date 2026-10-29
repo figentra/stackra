@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `runBuildProduct(context)`, the run of `stackra build --product [--dry-run] [--os <checkout>]
+ * Purpose: `runBuildProduct(context)`, the run of `stackra build --product [--dry-run] [--surfaces-only] [--os <checkout>]
  *          [--scope <@scope>] [--env <environment>]` at a product root: every web surface's extension bundle and every
  *          mobile app's EAS build (Runway's `buildProduct`, bundled with Vite), and the build manifest
  *          `dist/product/build.json`. `--dry-run` plans the bundles and records the EAS builds instead.
@@ -46,6 +46,7 @@ export async function runBuildProduct(context: CliContext): Promise<number> {
     ...(os === undefined ? {} : { os }),
     environment: environment as RunwayEnvironment,
     dryRun,
+    surfacesOnly: values["surfaces-only"] === true,
     bundle: viteBundler,
   });
   for (const [surface, built] of Object.entries(build.surfaces))
@@ -56,6 +57,7 @@ export async function runBuildProduct(context: CliContext): Promise<number> {
     io.out(
       `mobile ${app}: ${built.template.package}@${built.template.version}, capabilities [${built.capabilities.join(", ")}], ${dryRun ? "EAS build recorded" : `EAS builds ${built.buildIds.join(", ") || "none"}`}\n`,
     );
+  for (const app of build.skipped.mobile) io.out(`mobile ${app}: skipped (--surfaces-only)\n`);
   io.out(`wrote ${PRODUCT_BUILD_SETTINGS.manifest}${dryRun ? " (dry run)" : ""}\n`);
   return 0;
 }
