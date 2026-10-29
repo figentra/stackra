@@ -19,6 +19,7 @@ import { heartbeatMonitors } from "#node/functions/heartbeat-monitors.function";
 import { logPipeline } from "#node/functions/log-pipeline.function";
 import { sentryProjects } from "#node/functions/sentry-projects.function";
 import { statusPage } from "#node/functions/status-page.function";
+import { uptimeMonitors } from "#node/functions/uptime-monitors.function";
 
 /**
  * Every telemetry resource of the plan, and the values the program exports.
@@ -32,6 +33,7 @@ export function observabilityStack(plan: ObservabilityPlan): {
   readonly logs: ReturnType<typeof logPipeline> | undefined;
   readonly sentry: ReturnType<typeof sentryProjects> | undefined;
   readonly heartbeats: ReturnType<typeof heartbeatMonitors>["heartbeats"];
+  readonly uptime: ReturnType<typeof uptimeMonitors>["monitors"];
   readonly status: ReturnType<typeof statusPage> | undefined;
   readonly outputs: {
     readonly otlp?: {
@@ -56,6 +58,7 @@ export function observabilityStack(plan: ObservabilityPlan): {
           environments: plan.environments,
         });
   const heartbeats = heartbeatMonitors({ project: plan.project, heartbeats: plan.heartbeats });
+  const uptime = uptimeMonitors({ project: plan.project, uptime: plan.uptime });
   const status =
     plan.statusPage === null
       ? undefined
@@ -64,11 +67,13 @@ export function observabilityStack(plan: ObservabilityPlan): {
           page: plan.statusPage,
           heartbeats: plan.heartbeats,
           monitors: heartbeats.heartbeats,
+          uptime: { targets: plan.uptime, monitors: uptime.monitors },
         });
   return {
     logs,
     sentry,
     heartbeats: heartbeats.heartbeats,
+    uptime: uptime.monitors,
     status,
     outputs: {
       ...(logs === undefined

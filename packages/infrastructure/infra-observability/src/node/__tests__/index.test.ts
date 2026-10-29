@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the whole telemetry stack and its three parts are exported,
+ * Purpose: the consumer contract of the `./node` entry: the whole telemetry stack and its five parts are exported,
  *          nothing else is (`logArchive` stays internal), and none of `.`'s symbols is re-exported.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -17,6 +17,8 @@ describe("@stackra/infra-observability/node", () => {
       "logPipeline",
       "observabilityStack",
       "sentryProjects",
+      "statusPage",
+      "uptimeMonitors",
     ]);
   });
 });

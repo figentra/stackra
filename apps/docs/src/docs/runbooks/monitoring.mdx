@@ -1,0 +1,88 @@
+---
+title: "Monitoring our Workers and the registry"
+description: "How npm.stackra.figentra.com, static.stackra.figentra.com and turbo.stackra.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI."
+icon: "activity"
+---
+
+<Note>
+  Status: written, not applied (STA-1573). Workers Logs switch on with the next deploy of each
+  Worker. The uptime monitors, the OTLP source and the status page are declared in
+  `@stackra/infra-observability` and applied by `apply-observability.yml`, which applies nothing
+  until the owner finishes the steps below (STA-1574 for Better Stack, STA-28 for Sentry).
+</Note>
+
+Every buyer installs from the registry Worker, so an outage there stops every install. Two layers watch it and the
+other Workers: logs from inside, uptime monitors from outside.
+
+## What watches what
+
+| Host                          | Workers Logs (sampling) | Uptime monitor (Better Stack)                                                    |
+| ----------------------------- | ----------------------- | -------------------------------------------------------------------------------- |
+| `npm.stackra.figentra.com`    | on, every request (1.0) | `GET /-/ping` every 30 seconds, up on 2xx                                        |
+| `static.stackra.figentra.com` | on, one in ten (0.1)    | `GET /` every 60 seconds, up on 2xx                                              |
+| `turbo.stackra.figentra.com`  | on, one in ten (0.1)    | `GET /v8/artifacts/status` every 60 seconds, up on 401 (the route needs a token) |
+
+- **Workers Logs** are the `observability` block of each `workers/*/wrangler.jsonc`. Read them in the Cloudflare
+  dashboard (Workers, the Worker, Logs). Lines above the plan's included volume are billed, so lower
+  `head_sampling_rate` before switching logs off.
+- **Uptime monitors** are the `observability.uptime` list of the root `runway.yaml`: a name, a URL, optionally the
+  environment, `checkFrequencySeconds` (at least 30, default 60) and `expectedStatusCodes` (default: any 2xx). A miss
+  opens a Better Stack incident that mails and pushes whoever is on call. To watch another host, add an entry; no code
+  changes.
+- **The status page** is `observability.statusPage`, one section per environment, listing each uptime monitor (and
+  each heartbeat) by name. It stays `published: false` until the owner picks its host.
+
+## What the owner sets up first
+
+<Steps>
+  <Step title="Better Stack account and on-call (STA-1574)">
+    Create the Better Stack team, the on-call people and their phones for push. Create an Uptime API
+    token and a Telemetry API token for this stack.
+  </Step>
+  <Step title="Sentry (STA-28)">
+    Not needed for this stack yet: core has no app that names a Sentry project. When one does, add
+    `providers.sentry.org` to `runway.yaml` and a Sentry token to the same Infisical path.
+  </Step>
+  <Step title="Pulumi state">
+    Pick the state backend (an S3-compatible bucket such as R2, or Pulumi Cloud) and a passphrase
+    for the stack's secrets.
+  </Step>
+  <Step title="Infisical">
+    In `prod` `/ci/observability`, set `BETTERSTACK_UPTIME_API_TOKEN`,
+    `BETTERSTACK_TELEMETRY_API_TOKEN`, `PULUMI_CONFIG_PASSPHRASE` and the backend's credentials (for
+    a bucket, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`; for Pulumi Cloud,
+    `PULUMI_ACCESS_TOKEN`). Create a machine identity that trusts the GitHub OIDC subject of the
+    `observability` environment and may read only that path.
+  </Step>
+  <Step title="GitHub">
+    Create the `observability` environment, limited to `main`, with the owner as required reviewer.
+    Set its variables `INFISICAL_OBSERVABILITY_IDENTITY_ID` and `PULUMI_BACKEND_URL`, then the
+    repository variable `OBSERVABILITY_ENABLED` to `true`.
+  </Step>
+  <Step title="Status page host">
+    Choose the subdomain or custom domain, set `customDomain` and `published: true` under
+    `observability.statusPage`, and point the DNS record at Better Stack.
+  </Step>
+</Steps>
+
+## Applying
+
+`apply-observability.yml` runs on a push to `main` that touches the package, `runway.yaml` or the workflow, and by
+hand from the Actions tab. It tests and builds `@stackra/infra-observability`, then runs the Pulumi project in
+`packages/infrastructure/infra-observability/pulumi` (stack `production`):
+
+- **A push** runs `pulumi up` once the reviewer approves the `observability` environment.
+- **By hand** it runs `pulumi preview`; tick `apply` to run `pulumi up`.
+- **While `OBSERVABILITY_ENABLED` is not `true`** it prints a notice and applies nothing. Once it is `true`, a missing
+  identity, backend URL or token fails the run and names what is missing.
+
+Agents never run `pulumi up`; the owner's approval of the environment is the yes.
+
+## When a monitor fires
+
+1. Open the incident in Better Stack and check the Worker's Logs in Cloudflare for the same minutes.
+2. A registry outage: check the last `deploy-registry.yml` run and `GET /-/npm/v1/keys`; roll back by redeploying the
+   last good commit ([Deploys](/runbooks/deploys)).
+3. The turbo cache answering 503 means a setting or `TURBO_CACHE_TOKEN` is missing; rerun `deploy-turbo-cache.yml`.
+
+See also [Runway](/runbooks/runway), [Deploys](/runbooks/deploys) and [Secrets](/runbooks/secrets).

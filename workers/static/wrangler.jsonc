@@ -19,6 +19,9 @@
     // The default, stated: `/` serves index.html, and /index.html redirects to `/`.
     "html_handling": "auto-trailing-slash",
   },
+  // Workers Logs (STA-1573). Assets-only: Cloudflare serves files without running a script, so few lines are written;
+  // one request in ten keeps the billed log volume low. Uptime is Better Stack's (infra-observability).
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
   // A Custom Domain: Cloudflare creates the DNS record and issues the certificate for the two-level hostname itself,
   // so no Advanced Certificate Manager is needed. The zone figentra.com is on the same account.
   "routes": [{ "pattern": "static.stackra.figentra.com", "custom_domain": true }],

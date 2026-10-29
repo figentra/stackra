@@ -65,6 +65,12 @@ stays green.
 To publish a schema release: tag a commit on `main` `schemas@1.0.0` and push the tag. Never move or delete a
 `schemas@*` tag: the exact-version paths are rebuilt from tags on every deploy.
 
+## Monitoring
+
+Workers Logs are on at one request in ten (`observability` in `wrangler.jsonc`). Better Stack probes `GET /` from
+outside (root `runway.yaml` `observability.uptime` entry `static`, applied by `apply-observability.yml`;
+[Monitoring runbook](../../apps/docs/src/docs/runbooks/monitoring.mdx), STA-1573).
+
 ## Owner prerequisites (once)
 
 1. An account-owned Cloudflare API token `stackra-static-deploy` (account Figentra Technologies L.L.C.) with exactly:

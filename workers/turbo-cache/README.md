@@ -126,6 +126,13 @@ With those set, turbo uses the remote cache on its own (`remoteCache.enabled: tr
 needed. `--remote-only` skips the local cache; `--cache=local:rw,remote:r` keeps a job read-only (for pull requests from
 forks). `ci.yml` reads them; this member's deploy job does not change it.
 
+## Monitoring
+
+Workers Logs are on at one request in ten (`observability` in `wrangler.jsonc`). Better Stack probes
+`GET /v8/artifacts/status` without a token and counts 401 as up, since 503 means a missing setting (root `runway.yaml`
+`observability.uptime` entry `turbo-cache`, applied by `apply-observability.yml`;
+[Monitoring runbook](../../apps/docs/src/docs/runbooks/monitoring.mdx), STA-1573).
+
 ## Not built
 
 - The ci.yml env: built on branch `turbo-remote-cache` (STA-1393), not landed yet.

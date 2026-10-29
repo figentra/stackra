@@ -1,0 +1,17 @@
+# Stackra file contract:
+# Purpose: the Pulumi project that applies core's telemetry stack (STA-1573): `main.mjs` reads the root runway.yaml and
+#          declares `observabilityStack(observabilityPlan(...))`, today the Better Stack uptime monitors of the
+#          registry, static and turbo-cache Workers, the OTLP source and the status page.
+# Boundary: stack `production` only. State lives at the owner's PULUMI_BACKEND_URL; the provider tokens are set as
+#           secret stack config by .github/workflows/apply-observability.yml on the runner, never committed. No
+#           Pulumi.<stack>.yaml is committed. Stands in for the program `stackra infra gen` will compose.
+# Runtime: Pulumi CLI (nodejs), run from CI only
+# Governing contract: ADR 0171 (decisions 4 and 6), ADR 0184, ADR 0185, ADR 0173.
+name: stackra-observability
+description: Core's telemetry stack, read from runway.yaml (uptime monitors, OTLP source, status page)
+runtime:
+  name: nodejs
+  options:
+    # Plain ESM over the built package (the job runs `turbo build` first), so no ts-node.
+    typescript: false
+main: main.mjs

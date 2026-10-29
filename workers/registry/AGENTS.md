@@ -39,6 +39,8 @@ The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.f
 - Responses use `json`/`failure` (npm's `{ error }` shape); Cache-Control follows ADR 0453 decision 5.
 - Tests sit in `__tests__/` beside the code and use the fixtures in `src/__tests__/fixtures/`; the D1 fake runs the
   real migrations, so a schema change is tested by the existing suites.
+- Keep the `observability` block in `wrangler.jsonc` (Workers Logs, STA-1573): change the sampling there, and the
+  uptime probe in the root `runway.yaml` `observability.uptime`, never in code.
 
 ## Tasks
 

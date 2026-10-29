@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `observabilityPlan`: the template's runways give staging and production heartbeats, the
  *          30-day and 13-month retention, one Sentry project per app that names one and two indicators per service;
- *          the section's defaults and switches apply; no provider means no telemetry or Sentry block; and every
- *          failure is reported at once.
+ *          the section's defaults and switches apply; no provider means no telemetry or Sentry block; the uptime
+ *          list becomes one monitor per URL of a monitored environment; and every failure is reported at once.
  * Boundary: test only; pure function, no Pulumi.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 1 to 6); ADR 0296 (enforcement).
@@ -94,8 +94,80 @@ describe("observabilityPlan", () => {
       },
       slis: [...indicators("commerce"), ...indicators("notifications")],
       slos: { startAt: "first-paying-tenant" },
+      uptime: [],
       statusPage: null,
     });
+  });
+
+  it("plans one uptime monitor per listed URL, defaults applied", () => {
+    const plan = observabilityPlan(
+      rootRunway({
+        providers: { betterstack: {} },
+        environments: { dev: {}, production: {} },
+        observability: {
+          uptime: [
+            { name: "registry", url: "https://npm.acme.example/-/ping" },
+            {
+              name: "cache",
+              url: "https://cache.acme.example/status",
+              checkFrequencySeconds: 180,
+              expectedStatusCodes: [401],
+            },
+          ],
+        },
+      }),
+      { apps: {}, services: [] },
+    );
+
+    expect(plan.uptime).toEqual([
+      {
+        environment: "production",
+        name: "registry",
+        url: "https://npm.acme.example/-/ping",
+        checkFrequencySeconds: 60,
+        expectedStatusCodes: null,
+      },
+      {
+        environment: "production",
+        name: "cache",
+        url: "https://cache.acme.example/status",
+        checkFrequencySeconds: 180,
+        expectedStatusCodes: [401],
+      },
+    ]);
+  });
+
+  it("refuses an uptime name listed twice, an unmonitored environment and a bad URL", () => {
+    expect(
+      issuesOf(() =>
+        observabilityPlan(
+          rootRunway({
+            providers: { betterstack: {} },
+            environments: { dev: {}, production: {} },
+            observability: {
+              uptime: [
+                { name: "registry", url: "https://npm.acme.example/-/ping" },
+                { name: "registry", url: "https://npm.acme.example/", environment: "dev" },
+              ],
+            },
+          }),
+          { apps: {}, services: [] },
+        ),
+      ).map((issue) => issue.path),
+    ).toEqual(["root.observability.uptime.1.name", "root.observability.uptime.1.environment"]);
+
+    expect(
+      issuesOf(() =>
+        observabilityPlan(
+          rootRunway({
+            providers: { betterstack: {} },
+            environments: { production: {} },
+            observability: { uptime: [{ name: "registry", url: "http://npm.acme.example/" }] },
+          }),
+          { apps: {}, services: [] },
+        ),
+      ).map((issue) => issue.path),
+    ).toEqual(["root.observability.uptime.0.url"]);
   });
 
   it("plans the status page the runway declares, for monitored environments only", () => {

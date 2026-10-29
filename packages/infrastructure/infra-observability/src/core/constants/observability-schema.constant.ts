@@ -6,10 +6,11 @@
  *          and the public status page (`statusPage`: its Better Stack subdomain, company, time zone, optional custom
  *          domain, whether it is published, and the environments whose heartbeats it shows). An omitted key takes the
  *          ADR 0184 value: 30 days hot, 13 months in S3, every heartbeat on, objectives from the first paying tenant,
- *          no status page.
+ *          no status page. `uptime` lists the public URLs Better Stack probes from outside (a host's health path, the
+ *          environment it belongs to, how often, and the status codes that mean up when not 2xx); none by default.
  * Boundary: internal; `observabilityPlan` reads it. Strict at every level, so a misspelt key fails.
  * Runtime: isomorphic
- * Governing contract: ADR 0184 (decisions 3 to 5), ADR 0185 (decision 3: the status page), ADR 0296 (decision 2:
+ * Governing contract: ADR 0184 (decisions 3 to 5), ADR 0185 (decisions 1 and 3: on-call and the status page), ADR 0296 (decision 2:
  *                     root facts), ADR 0168 (decision 4: one schema-validated runway), ADR 0402.
  */
 import { Enum } from "@stackra/contracts";
@@ -53,4 +54,19 @@ export const OBSERVABILITY_SCHEMA = z.strictObject({
         .min(1),
     })
     .optional(),
+  uptime: z
+    .array(
+      z.strictObject({
+        name: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, "Expected a kebab-case name"),
+        url: z.string().regex(/^https:\/\/\S+$/, "Expected an https:// URL"),
+        environment: z
+          .enum(Enum.values(RunwayEnvironment) as [RunwayEnvironment, ...RunwayEnvironment[]])
+          .default(RunwayEnvironment.Production),
+        // Better Stack's shortest check interval is 30 seconds.
+        checkFrequencySeconds: z.int().min(30).default(60),
+        // A host whose healthy answer is not 2xx (a token-guarded route answers 401) names the codes that mean up.
+        expectedStatusCodes: z.array(z.int().min(100).max(599)).min(1).optional(),
+      }),
+    )
+    .default([]),
 });

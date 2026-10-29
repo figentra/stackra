@@ -3,7 +3,7 @@
  * Purpose: unit tests of `observabilityStack`: a full plan declares the log pipeline, the Sentry projects and the
  *          heartbeats and exports values under the `ref:` paths the runways name; a plan without the telemetry and
  *          Sentry blocks declares only its heartbeats and still exports the indicators; a status page shows each
- *          heartbeat of its environments in that environment's section and exports its id.
+ *          heartbeat and uptime monitor of its environments in that environment's section and exports its id.
  * Boundary: test only; Pulumi under mocks, so no provider or cloud call.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184; ADR 0171 (decisions 4 and 6).
@@ -51,6 +51,15 @@ const PLAN: ObservabilityPlan = {
     },
   ],
   slos: { startAt: "first-paying-tenant" },
+  uptime: [
+    {
+      environment: "production",
+      name: "registry",
+      url: "https://npm.acme.example/-/ping",
+      checkFrequencySeconds: 60,
+      expectedStatusCodes: null,
+    },
+  ],
   statusPage: null,
 };
 
@@ -77,7 +86,13 @@ describe("observabilityStack", () => {
   });
 
   it("declares only what the plan holds", async () => {
-    const stack = observabilityStack({ ...PLAN, telemetry: null, sentry: null, heartbeats: [] });
+    const stack = observabilityStack({
+      ...PLAN,
+      telemetry: null,
+      sentry: null,
+      heartbeats: [],
+      uptime: [],
+    });
     await settled(stack);
 
     expect(stack.logs).toBeUndefined();
@@ -112,11 +127,14 @@ describe("observabilityStack", () => {
     });
     const section = declared.find((resource) => resource.type.endsWith("StatusPageSection"));
     expect(section?.inputs).toMatchObject({ name: "production", position: 0 });
-    const entry = declared.find((resource) => resource.type.endsWith("StatusPageResource"));
-    expect(entry?.inputs).toMatchObject({
-      resourceType: "Heartbeat",
-      publicName: "commerce outbox",
-    });
+    const entries = declared.filter((resource) => resource.type.endsWith("StatusPageResource"));
+    expect(entries).toHaveLength(2);
+    expect(entries.map((resource) => resource.inputs)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ resourceType: "Heartbeat", publicName: "commerce outbox" }),
+        expect.objectContaining({ resourceType: "Monitor", publicName: "registry" }),
+      ]),
+    );
     const { statusPage } = stack.outputs;
     if (!statusPage) throw new Error("the status page was not exported");
     expect(await valueOf(statusPage.id)).toBe("status-acme-platform-id");

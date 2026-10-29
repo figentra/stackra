@@ -11,7 +11,7 @@
 #           here identify, they do not grant. `ref:<path>` resolves from the private stacks repository (ADR 0289
 #           decision 9) once it exists. `workers/static` gets its member runway with gen (ADR 0284 decision 8).
 # Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by `tools/scripts/runway.mjs`
-# Governing contract: ADR 0002, 0026, 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299, 0453
+# Governing contract: ADR 0002, 0026, 0168, 0170, 0173, 0177, 0184, 0185, 0284, 0289, 0296, 0299, 0453
 $schema: "@stackra/runway/schema/root.json"
 version: 3
 project: stackra
@@ -40,6 +40,10 @@ providers:
       # deploy-registry.yml; its variables hold the D1 and KV ids and the Infisical identity (ADR 0453).
       registry:
         branches: [main]
+      # apply-observability.yml (STA-1573): `pulumi up` of infra-observability waits for the reviewer.
+      observability:
+        branches: [main]
+        reviewers: [figentra-usr]
   infisical:
     # Infisical Cloud EU; the workspace id of .infisical.yaml, not a secret.
     domain: https://eu.infisical.com
@@ -53,10 +57,41 @@ providers:
   # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
   mintlify:
     project: ref:mintlify.project
+  # Better Stack runs uptime, on-call and the status page (ADR 0185). The account and its API tokens are the owner's
+  # (STA-1574); the tokens live in Infisical `prod` `/ci/observability`, read by apply-observability.yml. Named, so
+  # the plan declares Better Stack resources; it has no public id to state here.
+  betterstack: {}
   # The Stackra registry every package publishes to (ADR 0453 decision 6); release.yml passes it to runway-npm.yml.
   npm:
     registry: https://npm.stackra.figentra.com/
     scope: "@stackra"
+
+# ── Observability: @stackra/infra-observability, applied by apply-observability.yml (ADR 0184) ──
+observability:
+  # Core has no AWS account, so its logs keep no S3 cold archive; Workers Logs stay in Cloudflare.
+  logs:
+    coldMonths: 0
+  # Probed from outside by Better Stack; a miss pages whoever is on call. Paths are each Worker's health route.
+  uptime:
+    # GET /-/ping, npm's health check (workers/registry/src/npm/handle-ping.ts).
+    - name: registry
+      url: https://npm.stackra.figentra.com/-/ping
+      checkFrequencySeconds: 30
+    - name: static
+      url: https://static.stackra.figentra.com/
+    # Every cache route needs the CI token; an unauthenticated status call answers 401 when the Worker is up and 503
+    # when its settings are missing (workers/turbo-cache/src/cache/handle-request.ts).
+    - name: turbo-cache
+      url: https://turbo.stackra.figentra.com/v8/artifacts/status
+      expectedStatusCodes: [401]
+  # Unpublished until the owner picks the host (STA-1574); publishing is flipping `published` and adding customDomain.
+  statusPage:
+    subdomain: stackra
+    companyName: Stackra
+    companyUrl: https://docs.stackra.figentra.com
+    timezone: Asia/Dubai
+    published: false
+    environments: [production]
 
 # ── Environments ─────────────────────────────────────────────────────────────────────────────────────
 environments:

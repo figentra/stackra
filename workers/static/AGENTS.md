@@ -22,6 +22,8 @@ entry is `src/main.ts`, which writes the assets to `dist/site`. Read `README.md`
 - The HTML page (`src/site/render-page.ts`) stays self-contained: no script, no external request, no schema listing.
 - A new kind of hosted file gets its own first path segment (like `/schemas/`), not a new member or Worker.
 - `wrangler.jsonc` is hand-written under ADR 0284's carve-out until `stackra gen` emits Workers config (ADR 0168).
+- Keep the `observability` block in `wrangler.jsonc` (Workers Logs, STA-1573): change the sampling there, and the
+  uptime probe in the root `runway.yaml` `observability.uptime`, never in code.
 
 ## Tasks
 

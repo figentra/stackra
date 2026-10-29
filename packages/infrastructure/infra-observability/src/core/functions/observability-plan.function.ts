@@ -4,8 +4,8 @@
  *          `providers.sentry`, `providers.betterstack` and the `observability` section) and the members (each app's
  *          `telemetry.sentryProject`, the service keys and the jobs that send heartbeats): the OTLP destination and its
  *          log retention, one heartbeat per deployed environment and job, one Sentry project per app that names one,
- *          availability and latency indicators for every service, and the public status page when the runway
- *          declares one.
+ *          availability and latency indicators for every service, one uptime monitor per public URL the runway lists,
+ *          and the public status page when the runway declares one.
  * Boundary: pure: parsed runways in, a plan out. Reports every failure at once. Reads no file, resolves no `ref:` and
  *           calls no cloud; `observabilityStack` (`./node`) declares the plan's resources.
  * Runtime: isomorphic
@@ -58,7 +58,8 @@ const SWITCH = {
  * @throws ObservabilityConfigInvalidError naming every invalid path, prefixed `root.`, `apps.` or `heartbeats.`: a
  *         misspelt or out-of-range `observability` key, retention or heartbeats without `providers.betterstack`, a
  *         Sentry project without `providers.sentry.org` or claimed by two apps, or a heartbeat job of an unknown
- *         service, with a bad name, a period under 30 seconds, or listed twice.
+ *         service, with a bad name, a period under 30 seconds, or listed twice, or an uptime entry named twice or of an
+ *         environment that is not monitored.
  * @example
  * const plan = observabilityPlan(readRunway("runway.yaml", "root"), {
  *   apps: { web: readRunway("apps/web/runway.yaml", "app") },
@@ -152,6 +153,19 @@ export function observabilityPlan(
         message: `${environment} is not a monitored environment of this runway`,
       });
 
+  const uptimeNames = new Set<string>();
+  policy.uptime.forEach((target, index) => {
+    const at = `root.observability.uptime.${index}`;
+    if (uptimeNames.has(target.name))
+      issues.push({ path: `${at}.name`, message: `${target.name} is listed twice` });
+    uptimeNames.add(target.name);
+    if (!environments.includes(target.environment))
+      issues.push({
+        path: `${at}.environment`,
+        message: `${target.environment} is not a monitored environment of this runway`,
+      });
+  });
+
   if (issues.length > 0) throw new ObservabilityConfigInvalidError("the telemetry runways", issues);
 
   const slis: ServiceSli[] = members.services.flatMap((service): ServiceSli[] => [
@@ -183,6 +197,13 @@ export function observabilityPlan(
     sentry: projects.length === 0 ? null : { org: String(org), projects },
     slis,
     slos: { startAt: policy.slos.startAt },
+    uptime: policy.uptime.map((target) => ({
+      environment: target.environment,
+      name: target.name,
+      url: target.url,
+      checkFrequencySeconds: target.checkFrequencySeconds,
+      expectedStatusCodes: target.expectedStatusCodes ?? null,
+    })),
     statusPage:
       page === undefined
         ? null
