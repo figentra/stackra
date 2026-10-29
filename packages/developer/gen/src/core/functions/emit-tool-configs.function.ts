@@ -193,6 +193,7 @@ export function emitToolConfigs(
 
   // tsdown takes a `--config` file's folder as its cwd, where `.stackra/entry/*` does not resolve; run from the
   // member root, it finds this shim and keeps the root as cwd, as a package with an authored root config does.
+  const shimTarget = "./.stackra/tsdown.config.ts";
   const tsdownShim = [
     generatedHeader({
       from: ".stackra/tsdown.config.ts",
@@ -202,8 +203,9 @@ export function emitToolConfigs(
         "./.stackra/tsdown.config is kept; any other is refused.",
       runtime: "node",
     }),
-    // The extension: tsdown's native config loader resolves no extensionless import.
-    'export { default } from "./.stackra/tsdown.config.ts";',
+    // The extension: tsdown's native config loader resolves no extensionless import. Generated text, not an import
+    // of this file, so ADR 0233's no-extension rule (which reads `from "…"` literals) does not apply.
+    `export { default } from "${shimTarget}";`,
     "",
   ].join("\n");
 

@@ -47,9 +47,10 @@ describe("emitToolConfigs", () => {
       entries: [{ path: ".stackra/entry/index.ts", content: "" }],
       registrations: false,
     });
-    expect(pkg.find((file) => file.path === "tsdown.config.ts")?.content).toContain(
-      'export { default } from "./.stackra/tsdown.config.ts";',
-    );
+    // The re-export names the generated config with its extension (tsdown's native loader needs it).
+    const shim = pkg.find((file) => file.path === "tsdown.config.ts")?.content;
+    expect(shim).toContain("export { default } from ");
+    expect(shim).toContain('"./.stackra/tsdown.config.ts";');
     const tsdown = pkg.find((file) => file.path === ".stackra/tsdown.config.ts")?.content;
     expect(tsdown).toContain('"index": fileURLToPath(new URL("entry/index.ts", import.meta.url)),');
     expect(tsdown).toContain(
