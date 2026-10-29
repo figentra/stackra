@@ -78,7 +78,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   bindings reach (the `used` worklist: bindings, platform bindings and driver constructors, transitively), merged
   under the member's own candidates (own name wins). A package candidate with a token from a library the member does
   not declare (`PostgreSqlMikroORM` of the database's `postgres` driver) is listed without tokens, so a wiring never
-  imports an undeclared library; such a driver is started by its package, never built by the container.
+  imports an undeclared library; such a driver is started by its package, never built by the container. In a
+  package's own wiring so is one with a token from a `@stackra/*` package the package does not declare (the outbox's
+  `postgres` `ChangeFeed` in `@stackra/data-transfer`, the cache's `storage` driver in `@stackra/database`): its tests
+  take the port's default driver; a service, app or worker keeps the token and is refused until it declares the package.
   A package's own wiring is registered only by its own tests (the generated setup): there a port with several
   candidates gets `default`, its `memory` driver, else its one `./testing` driver, else its one
   `Driver(Port, { testDefault: true })` driver (ADR 0266), so the container boots; the container takes it ahead

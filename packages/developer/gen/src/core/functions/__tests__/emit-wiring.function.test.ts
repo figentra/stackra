@@ -7,7 +7,8 @@
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
  *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
  *          their selecting config and package config rows, no registry entry; STA-1297; a candidate without the
- *          tokens of a library the member does not declare; no abstract driver), MediaLibrary over the media
+ *          tokens of a library the member does not declare, nor in a package's own wiring of an undeclared `@stackra/*`
+ *          package; no abstract driver), MediaLibrary over the media
  *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
@@ -364,6 +365,52 @@ describe("emitWiring", () => {
     });
     expect(declared).toContain('import { PostgreSqlMikroORM } from "@mikro-orm/postgresql";');
     expect(declared).toContain('      deps: { "postgres": [PostgreSqlMikroORM] },');
+  });
+
+  it("lists a package candidate without the tokens of a @stackra package the package does not declare, a host's with them", () => {
+    const outbox: MemberIR["dependencies"][number] = {
+      package: "@stackra/outbox",
+      manifest: {
+        member: "outbox",
+        package: "@stackra/outbox",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "ChangeFeed",
+            key: "outbox.ChangeFeed",
+            candidates: ["memory", "postgres"],
+            classes: {
+              memory: { class: "MemoryChangeFeedDriver", from: "@stackra/outbox" },
+              postgres: {
+                class: "PostgresChangeFeedDriver",
+                from: "@stackra/outbox/node",
+                deps: [{ class: { name: "Database", from: "@stackra/database" } }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      member: "data_transfer",
+      package: "@stackra/data-transfer",
+      layout: "package",
+      packages: ["@stackra/outbox"],
+      dependencies: [outbox],
+      classes: [service([{ name: "ChangeFeed", from: "@stackra/outbox/contracts" }])],
+    };
+    const own = emitWiring(ir);
+    expect(own).toContain(
+      '        "postgres": () => import("@stackra/outbox/node").then((m) => m.PostgresChangeFeedDriver),',
+    );
+    expect(table(own, "outbox.ChangeFeed")).toContain('default: "memory",');
+    expect(own).not.toContain("@stackra/database");
+    expect(own).not.toContain('"postgres": [');
+    // A service builds the candidate it selects, so it keeps the token and gen refuses it until it declares the package.
+    expect(emitWiring({ ...ir, layout: "service" })).toContain(
+      '      deps: { "postgres": [Database] },',
+    );
   });
 
   it("binds MediaLibrary over the filesystem disk table and a media config row (STA-1297, ADR 0465)", () => {

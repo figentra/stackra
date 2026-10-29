@@ -23,7 +23,9 @@
  *           own tests register, a port with several candidates (selected or not) defaults to its `memory` driver, else
  *           to its one `./testing` driver, else to the one driver declared `Driver(Port, { testDefault: true })`; a
  *           service's or app's wiring never gets a default. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
- *           library the member does not declare are left out, so the wiring never imports an undeclared library. The
+ *           library the member does not declare are left out, so the wiring never imports an undeclared library, and
+ *           in a package's own wiring so are those from an undeclared `@stackra/*` package (its tests never build that
+ *           candidate). The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
@@ -170,14 +172,18 @@ function packageOf(specifier: string): string {
 }
 
 /**
- * Whether the member's wiring may import a token from `from`: a `@stackra/*` package (an undeclared one is refused as
- * `generated_dependency_missing`), a subpath import, or a library the member declares. An IR without `packages`
- * (built by hand) imports anything.
+ * Whether the member's wiring may import a package candidate's token from `from`: a subpath import, a package the
+ * member declares, or, in a service's or an app's wiring, any `@stackra/*` package (an undeclared one is refused as
+ * `generated_dependency_missing`, since that host builds the candidate it selects). A package's own wiring builds only
+ * its tests' default driver, so a candidate that reaches a package it does not declare (the outbox's `postgres`
+ * `ChangeFeed` and its `Database` in `@stackra/data-transfer`) never makes it import that package. An IR without
+ * `packages` (built by hand) imports anything.
  */
 function importable(ir: MemberIR, from: string): boolean {
-  if (ir.packages === undefined || from.startsWith("@stackra/") || /^[#.]/.test(from)) return true;
+  if (ir.packages === undefined || /^[#.]/.test(from)) return true;
   const name = packageOf(from);
-  return name === ir.package || ir.packages.includes(name);
+  if (name === ir.package || ir.packages.includes(name)) return true;
+  return from.startsWith("@stackra/") && ir.layout !== "package";
 }
 
 /**
@@ -186,7 +192,9 @@ function importable(ir: MemberIR, from: string): boolean {
  * manifest predates `classes` contributes nothing. A candidate with a token from a library the member does not
  * declare (`PostgreSqlMikroORM` of the database's `postgres` driver) is listed without tokens: the member cannot
  * import that library, and such a driver is started by its own package (`PostgresDatabaseDriver.connect`), never
- * built by the container.
+ * built by the container. So is, in a package's own wiring, one with a token from a `@stackra/*` package the
+ * package does not declare (`Storage` of the cache's `storage` driver in `@stackra/database`): its tests take the
+ * port's default driver, never that one.
  */
 function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
   const tables = new Map<string, PackageTable>();
