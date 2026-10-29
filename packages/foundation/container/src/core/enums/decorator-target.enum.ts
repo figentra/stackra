@@ -10,8 +10,11 @@ import { Enum } from "@stackra/contracts";
 
 /** What a decorator decorates. */
 export const DecoratorTarget = Enum.of({
+  /** A class decorator. */
   Class: "class",
+  /** A field decorator. */
   Field: "field",
+  /** A method decorator. */
   Method: "method",
 });
 
