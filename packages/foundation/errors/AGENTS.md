@@ -33,6 +33,8 @@ shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
 - `RateLimitedError` carries the refusing bucket's `retryAfterMs`, `limit` and `remaining` (all optional, never the
   bucket key); `rateLimitHeaders` is the one place they become HTTP headers (ADR 0217, STA-1477).
 - A reporter never throws and never awaits in `report`; it sends no request context, input or user (ADR 0184).
+- An error message leaves for Sentry only through `@stackra/logger`'s `redact` (STA-1588). `@stackra/logger` depends
+  on no package that depends on this one; keep it so (rule 6c), and never import `@stackra/errors` from the logger.
 - A new `ErrorKind` is an ADR change (0140). A new core refusal needs a platform step that raises it.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - `memory` ErrorReporter (STA-1308): `MemoryErrorReporterDriver` keeps reported errors in `errors` for a test.

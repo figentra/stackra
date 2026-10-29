@@ -28,7 +28,7 @@ configuration and the action testing helpers.
 | `.`           | `Interceptor`                                                                                      | `extends Interceptor`, `intercept(ctx, next)`; listed in `interceptors` |
 | `.`           | `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`             | the enums of the `idempotency` and `offline` options                    |
 | `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                                | the runtime: the fixed steps, their names, the running call's context   |
-| `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                              | the per-area token buckets (key `actions.rate_limit`)                   |
+| `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                              | the area and default action buckets (key `actions.rate_limit`)          |
 | `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                                       | the in-process stores                                                   |
 | `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                                       | what gen's entry and the runtime call at boot                           |
 | `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                                   | `offline.cap`, `accepts` (client rule code)                             |
@@ -102,6 +102,13 @@ bucket sizes the area bucket (sized by the plan); `@stackra/entitlements` binds 
 over the value entitlements `rate_limit.<area>_per_minute` and `rate_limit.<area>_burst` (ADR 0408). When it answers
 `undefined`, or none is bound, the area's `RateLimitConfig` entry applies. The key does not change with the plan, so a
 plan change resizes the same bucket.
+
+An action (or query) that declares no `rateLimit` takes from `RateLimitConfig.actionDefault` instead (STA-1588): one
+bucket per action and scope (`action:<key>:scope:<scope or actor>`, `perScope` calls a minute, default 1200) and, when
+the transport passed `CallOptions.client`, one per action and client address (`perAddress`, default 300). The store
+keys the address by its SHA-256, never the address itself. An action's own `rateLimit` replaces both; there is no
+per-action opt-out, so an action that needs more declares a larger `rateLimit`. Like the area buckets, the defaults
+apply only while a `RateLimitStore` and `RateLimitConfig` are bound.
 
 A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
 `remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`

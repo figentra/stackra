@@ -62,7 +62,8 @@ Governing ADRs: 0140 (envelope and kinds), 0232 (this package), 0294 (decisions 
 - `SentryErrorReporterDriver` (driver name `sentry`) is an `ErrorReporter` with no vendor SDK: each error becomes one
   Sentry envelope POSTed with `fetch` to the project of the DSN secret (`SentryConfig.dsnSecret`, `SENTRY_DSN` by
   default), tagged with the environment, the release and a refusal's code, sampled by `sampleRate`. It sends no
-  request, user or input. Call `flush()` before a process ends.
+  request, user or input, and the error's message passes `@stackra/logger`'s `redact` first, so a secret shape in it
+  (bearer token, JWT, API key, URL credentials) is masked (STA-1588). Call `flush()` before a process ends.
 - `SentryConfig` is the one Sentry source (ADR 0465): the DSN (by secret name) and the share of errors reported live
   here only. `@stackra/logger`'s `TelemetryConfig` keeps the client switches Sentry's config has no field for
   (`errors.enabled`, `errors.nativeCrashes`, trace and replay sampling, vitals) and a client reporter reads the DSN and

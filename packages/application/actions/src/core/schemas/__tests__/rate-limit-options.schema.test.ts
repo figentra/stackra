@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `RateLimitOptions`: a shape with one default bucket per API area, typed with a
- *          `Duration` refill period, whose shipped schema is registered for `validate`.
+ *          `Duration` refill period, the default action buckets (STA-1588), whose shipped schema is registered for
+ *          `validate`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0217 (decision 2); ADR 0294 (decision 26).
@@ -20,6 +21,17 @@ describe("RateLimitOptions", () => {
       per: "PT1M",
       burst: 20,
     });
+  });
+
+  it("has generous default action buckets per scope and per address", () => {
+    expect(new RateLimitOptions().actionDefault).toEqual({ perScope: 1200, perAddress: 300 });
+    expectTypeOf<RateLimitOptions["actionDefault"]>().toEqualTypeOf<{
+      perScope: number;
+      perAddress: number;
+    }>();
+    expect(
+      validate(RateLimitOptions, { actionDefault: { perScope: 0, perAddress: 1 } }).success,
+    ).toBe(false);
   });
 
   it("validates through its registered schema", () => {

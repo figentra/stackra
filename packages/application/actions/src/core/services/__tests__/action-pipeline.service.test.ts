@@ -3,7 +3,8 @@
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
  *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
- *          with its back-off details and a `rate_limited` usage event); the unit of work with `afterCommit`; the audit entry; the call
+ *          with its back-off details and a `rate_limited` usage event, the default per-scope and per-hashed-address
+ *          buckets of an action with no `rateLimit`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
  *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
  *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
@@ -101,6 +102,7 @@ import type {
   CallConsent,
   CallDescriptor,
   CallOrigin,
+  RateLimitBucket,
 } from "#contracts/index";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
@@ -795,6 +797,57 @@ describe(ActionPipeline, () => {
     const outsider: Actor = { ...customer, id: "usr_9", scopeId: "ten_9" };
     await read(outsider);
     await expect(read(outsider)).rejects.toBeInstanceOf(RateLimitedError);
+  });
+
+  it("gives an action with no rateLimit the configured per-scope and per-address buckets (STA-1588)", async () => {
+    const scoped = Object.assign(new RateLimitConfig(), {
+      areas: {},
+      actionDefault: { perScope: 1, perAddress: 100 },
+    });
+    const first = setup([[RateLimitConfig, scoped]]).pipeline;
+    const read = (actor: Actor) => first.execute(GetOrderQuery, { orderId: "ord_1" }, { actor });
+    await read(customer);
+    await expect(read(customer)).rejects.toMatchObject({ code: "rate_limited", limit: 1 });
+    // Another scope has its own bucket.
+    await read({ ...customer, id: "usr_9", scopeId: "ten_9" });
+
+    const perAddress = Object.assign(new RateLimitConfig(), {
+      areas: {},
+      actionDefault: { perScope: 100, perAddress: 1 },
+    });
+    const second = setup([[RateLimitConfig, perAddress]]).pipeline;
+    const from = (actor: Actor, address: string) =>
+      second.execute(GetOrderQuery, { orderId: "ord_1" }, { actor, client: { address } });
+    await from(customer, "203.0.113.7");
+    // One address shares its bucket across scopes; another address has its own.
+    await expect(
+      from({ ...customer, id: "usr_9", scopeId: "ten_9" }, "203.0.113.7"),
+    ).rejects.toBeInstanceOf(RateLimitedError);
+    await from(customer, "203.0.113.8");
+  });
+
+  it("lets an action's own rateLimit replace the default buckets, and hands the store no address", async () => {
+    const keys: string[] = [];
+    class Keys extends MemoryRateLimitStoreDriver {
+      override async take(key: string, bucket: RateLimitBucket, now: Date) {
+        keys.push(key);
+        return super.take(key, bucket, now);
+      }
+    }
+    const config = Object.assign(new RateLimitConfig(), { areas: {} });
+    const { pipeline } = setup([
+      [RateLimitConfig, config],
+      [RateLimitStore, new Keys()],
+    ]);
+    const client = { address: "203.0.113.7" };
+    await pipeline.execute(SendMessageAction, { text: "hi" }, { actor: customer, client });
+    expect(keys).toEqual(["action:message.send:principal:usr_1"]);
+    keys.length = 0;
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer, client });
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBe("action:order.get:scope:ten_1");
+    expect(keys[1]).toMatch(/^action:order\.get:address:[0-9a-f]{64}$/);
+    expect(keys.join()).not.toContain("203.0.113.7");
   });
 
   it("keys the area bucket by (app, scope) and refuses with the bucket's back-off details", async () => {
