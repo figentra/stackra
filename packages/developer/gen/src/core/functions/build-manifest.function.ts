@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action, the module graph, the facets, and the JSON
+ *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
  *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338); a service or app also lists what its hosted packages contribute, marked
  *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
  *          each sequence's key; an app's block and route
@@ -391,7 +391,7 @@ export function buildManifest(ir: MemberIR): {
     if (actors !== undefined) entry["actors"] = actors;
     if (effects.length > 0) entry["effects"] = effects;
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
-    for (const option of ["idempotency", "rateLimit", "cache", "area", "job"])
+    for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     if (declared.options["auth"] === false) entry["auth"] = false;
     // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.

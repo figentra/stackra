@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: unit tests of `replicaReadsPorts`: a service with a `reads: "replica"` query reaches `ReplicaReads`, and its
  *          wiring then writes the port's driver table from `@stackra/database`'s manifest with the `DatabaseConfig`
- *          row; a service without one, and a package, reach nothing.
+ *          row; a hosted package whose manifest records a `reads: "replica"` query reaches it too, and `buildManifest`
+ *          records `reads`; a service without one, and a package, reach nothing.
  * Boundary: test only; runs on the commerce IR fixture with a hand-built database manifest.
  * Runtime: node
  * Governing contract: ADR 0022 (test placement); ADR 0057 (decision 6); STA-1504.
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
@@ -51,6 +53,22 @@ const DATABASE: MemberIR["dependencies"][number] = {
 describe("replicaReadsPorts", () => {
   it("reaches ReplicaReads for a service with a replica query", () => {
     expect(replicaReadsPorts(REPLICA)).toEqual([
+      { class: { name: "ReplicaReads", from: "@stackra/actions/contracts" } },
+    ]);
+  });
+
+  it("reaches ReplicaReads for a hosted package's replica query, from its manifest", () => {
+    const hosted: MemberIR["dependencies"][number] = {
+      package: "@stackra/loyalty-kit",
+      manifest: {
+        member: "loyalty_kit",
+        package: "@stackra/loyalty-kit",
+        version: "0.1.0",
+        actions: buildManifest({ ...REPLICA, layout: "package" }).manifest.actions,
+      } as never,
+    };
+    expect(hosted.manifest.actions?.some((action) => action["reads"] === "replica")).toBe(true);
+    expect(replicaReadsPorts({ ...COMMERCE_IR, dependencies: [hosted] })).toEqual([
       { class: { name: "ReplicaReads", from: "@stackra/actions/contracts" } },
     ]);
   });

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `replicaReadsPorts`, the `ReplicaReads` port (`@stackra/actions/contracts`) as a token the service's wiring
- *          reaches when one of its queries declares `reads: "replica"`, so the wiring writes the port's driver table
+ *          reaches when one of its queries, or one a hosted package's manifest records, declares `reads: "replica"`, so the wiring writes the port's driver table
  *          from the declared packages' manifests: `@stackra/database`'s `DatabaseReplicaReadsDriver` (driver
  *          `database`) with the `DatabaseConfig` row whose `readYourWrites` is the window (STA-1504).
  * Boundary: pure; reads the IR only. The action pipeline resolves the port optionally (no constructor names it), so
@@ -26,10 +26,16 @@ const REPLICA_READS: TokenRef = {
  * replicaReadsPorts(reportsServiceIr); // [{ class: { name: "ReplicaReads", from: "@stackra/actions/contracts" } }]
  */
 export function replicaReadsPorts(ir: MemberIR): TokenRef[] {
-  // shortcut: reads only the service's own queries (manifests do not record `reads`), record it there when a package
-  // ships a replica query.
-  const replica = ir.classes.some(
-    (declared) => declared.kind === "query" && declared.options["reads"] === "replica",
-  );
+  const replica =
+    ir.classes.some(
+      (declared) => declared.kind === "query" && declared.options["reads"] === "replica",
+    ) ||
+    ir.dependencies.some(
+      ({ manifest }) =>
+        manifest.kind !== "app" &&
+        (manifest.actions ?? []).some(
+          (action) => action.kind === "query" && action["reads"] === "replica",
+        ),
+    );
   return ir.layout === "service" && replica ? [REPLICA_READS] : [];
 }
