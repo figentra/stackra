@@ -12,6 +12,10 @@ import * as node from "#node/index";
 describe("@stackra/identity/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "BffConfig",
+      "BffConfig$",
+      "BffOptions",
+      "BffService",
       "ChallengePasskeyAction",
       "ChallengePasskeyInput",
       "ChallengePasskeyOutput",

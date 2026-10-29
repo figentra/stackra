@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `BffSessionStoreDriver`, the `SessionStore` of the web and the PWA: the BFF holds the tokens and the browser
  *          an HttpOnly cookie, so this driver asks the BFF who is signed in (`GET <bff>/session`), leaves for its
- *          login (`<bff>/login?returnTo=…`) and ends the session there (`POST <bff>/logout`).
+ *          login (`<bff>/login?returnTo=…`) and ends the session there (`POST <bff>/logout`, served by `./node`'s
+ *          `BffService`), then leaves for the `redirectTo` it answers, the provider's end-session URL.
  * Boundary: no token ever reaches JavaScript: `accessToken()` is `undefined` and every request carries the cookie
  *           (`credentials: "include"`) and the CSRF header `IdentityConfig.csrfHeader` (`x-stackra-csrf`, equal to the
  *           API's `CsrfConfig.headerName`), which @stackra/app's `CsrfGuard` requires on a cookie-bearing POST
@@ -29,6 +30,9 @@ import type { SessionUser } from "#contracts/types/session-user.type";
 import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 import { SESSION_USER_SCHEMA } from "#core/constants/session-user-schema.constant";
 import { signInParams } from "#core/functions/sign-in-params.function";
+
+/** The logout answer: where the browser goes next, an `http(s)` URL; anything else is ignored. */
+const BFF_LOGOUT = z.object({ redirectTo: z.url({ protocol: /^https?$/ }).optional() });
 
 /** The session endpoint's answer: the user, or `null` when signed out. */
 const BFF_SESSION = z.object({ user: SESSION_USER_SCHEMA }).nullable();
@@ -103,7 +107,8 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
   }
 
   /**
-   * Ends the session at the BFF; a 401 means it had already ended.
+   * Ends the session at the BFF; a 401 means it had already ended. When the BFF answers a `redirectTo` (the provider's
+   * end-session URL), the browser leaves for it, so the provider's own browser session ends too.
    *
    * @throws TransportError when the BFF fails.
    */
@@ -111,6 +116,10 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
     const response = await this.send(this.request("logout", "POST"));
     if (!response.ok && response.status !== 401)
       throw TransportError.create({ reason: TransportFailure.Response, status: response.status });
+    if (!response.ok) return;
+    const redirectTo = BFF_LOGOUT.safeParse(await response.json().catch(() => undefined)).data
+      ?.redirectTo;
+    if (redirectTo !== undefined && typeof location !== "undefined") location.assign(redirectTo);
   }
 
   /** The cookie is the credential, so no token is sent. */

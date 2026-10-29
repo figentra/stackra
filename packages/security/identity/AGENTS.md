@@ -87,6 +87,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 - The login directory (ADR 0451): `loginDirectoryPrefix` in `./contracts` is the only code that spells a `dir:` key;
   the writer writes only keys ending in its own region, never the identifier in clear, never a read. It declares no
   event: the host's listeners call it. Never log an identifier or the `IDENTITY_LOGIN_DIRECTORY_KEY` secret.
+- `BffService` (`./node`) is the server half of `BffSessionStoreDriver`: keep its routes (`login`, `callback`,
+  `session`, `logout`) and answers equal to what the driver calls. Sign-out is server-side: `logout` ends the provider
+  session through `IdpAdmin.endSession` before it clears the cookie. A return URL passes `isOriginAllowed` against
+  `BffConfig.returnOrigins` or is refused, never followed. It is a service, not a `Controller`: the host wraps it.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -105,3 +109,5 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 | Principal address | `MemoryIdentityResolverDriver`         | resolved at the moment of use, never stored by a caller (ADR 0134)       |
 | Email, phone      | `loginDirectoryPrefix`, the writer     | HMAC-hashed before it leaves the region; never stored, logged or sent    |
 | Directory key     | `LoginDirectoryConfig.secret`          | a secret by name (`IDENTITY_LOGIN_DIRECTORY_KEY`); never logged          |
+| BFF secrets       | `BffConfig.clientSecret`, `.cookieKey` | secrets by name (`IDENTITY_BFF_*`); never logged                         |
+| BFF session       | the sealed `__Host-` session cookie    | the user and the provider `sid` only, AES-GCM sealed; no token is kept   |

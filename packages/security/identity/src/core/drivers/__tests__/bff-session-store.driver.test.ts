@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `BffSessionStoreDriver`: the session is read from `<origin><bff>/session` with the cookie, a
  *          401 or a `null` answer is signed out, a failure or a body that is not a session is a `TransportError`, the
- *          login URL carries `returnTo`, sign-in leaves for it, sign-out posts to `/logout`, every call carries the
+ *          login URL carries `returnTo`, sign-in leaves for it, sign-out posts to `/logout` and leaves for an
+ *          `http(s)` `redirectTo` it answers (and nothing else), every call carries the
  *          `x-stackra-csrf` header (STA-1385), and no token is ever sent.
  * Boundary: test only; `fetch` and `location` are stubbed, so nothing reaches a network or navigates.
  * Runtime: node (vitest)
@@ -118,6 +119,20 @@ describe("BffSessionStoreDriver", () => {
     await expect(driver().signOut()).resolves.toBeUndefined();
     stubFetch(undefined, 500);
     await expect(driver().signOut()).rejects.toBeInstanceOf(TransportError);
+  });
+
+  it("leaves for the provider's end-session URL the logout answers", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { assign });
+    stubFetch({ redirectTo: "https://id.acme.example/oidc/v1/end_session?client_id=1" });
+    await driver().signOut();
+    expect(assign).toHaveBeenCalledWith("https://id.acme.example/oidc/v1/end_session?client_id=1");
+    assign.mockClear();
+    stubFetch({ redirectTo: "javascript:alert(1)" });
+    await driver().signOut();
+    stubFetch(undefined, 204);
+    await driver().signOut();
+    expect(assign).not.toHaveBeenCalled();
   });
 
   it("sends no token", async () => {
