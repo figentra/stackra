@@ -494,7 +494,8 @@ bound `DatabaseConfig`'s session `timeouts` and `pool` (with `DATABASE_POOL_MAX`
 `poolBudget`, over its `max`, ADR 0473), and the hold, `StampSubscriber`, `AppendOnlySubscriber`, encrypted-fields and outbox writer
 subscribers.
 A model with a subscriber trait, own or a declared package's, adds its subscriber after `AppendOnlySubscriber`
-(`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419).
+(`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419), then
+`ValidateOnFlushSubscriber` for `ValidateOnFlush` (STA-1410), so a row is checked in clear before it is sealed.
 
 ## HTTP adapter, guards and health (STA-1385)
 

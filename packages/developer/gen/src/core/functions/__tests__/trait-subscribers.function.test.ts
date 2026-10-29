@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `traitSubscribers`: `TreeSubscriber` when an own model or a declared package's model has
- *          `HasTree`, nothing otherwise.
+ *          `HasTree`, `ValidateOnFlushSubscriber` for `ValidateOnFlush` (after the tree one),
+ *          nothing otherwise.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node
  * Governing contract: ADR 0022 (test placement); ADR 0096 (decision 4); ADR 0321.
@@ -40,5 +41,20 @@ describe("traitSubscribers", () => {
       dependencies: [{ package: "@acme/catalog", manifest }],
     };
     expect(traitSubscribers(ir)).toEqual(["TreeSubscriber"]);
+  });
+
+  it("adds the ValidateOnFlushSubscriber after the TreeSubscriber (STA-1410)", () => {
+    expect(traitSubscribers(withTrait("ValidateOnFlush"))).toEqual(["ValidateOnFlushSubscriber"]);
+    const both = withTrait("HasTree");
+    expect(
+      traitSubscribers({
+        ...both,
+        classes: both.classes.map((declared) =>
+          declared.kind === "model"
+            ? { ...declared, traits: [...declared.traits, { name: "ValidateOnFlush", args: [] }] }
+            : declared,
+        ),
+      }),
+    ).toEqual(["TreeSubscriber", "ValidateOnFlushSubscriber"]);
   });
 });
