@@ -119,10 +119,10 @@ describe("emitBoot", () => {
             : declared,
         ),
       }) ?? "";
-    expect(boot).toContain('import { FieldCipher } from "@stackra/contracts";');
+    expect(boot).toContain('import { FieldCipher, KeyProvider } from "@stackra/contracts";');
     expect(boot).toContain('import { EncryptedFieldsSubscriber } from "@stackra/model";');
     expect(boot).toContain(
-      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher))],",
+      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, container.has(KeyProvider) ? container.get(KeyProvider) : undefined)],",
     );
   });
 

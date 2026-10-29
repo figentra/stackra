@@ -42,6 +42,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
+import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
@@ -148,6 +149,7 @@ export function generateMember(
     ...checkSemanticSearch(ir),
     ...checkSearchableDrift(ir),
     ...checkEncryptedFields(ir),
+    ...checkBlindIndexes(ir),
     ...checkModelScope(ir),
     ...checkQueryCache(ir),
     ...checkSlotFills(ir),

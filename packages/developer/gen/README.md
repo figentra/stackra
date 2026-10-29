@@ -119,7 +119,11 @@ The model encryption path (`checkEncryptedFields`, full pass only, stackra-262):
 `@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
 insert or update, or raw `insert into`/`update` statement on an encrypted model, own or a declared package's, found by
 `readNativeWrites` outside `__tests__` and `database/`). A service with an encrypted model gets
-`new EncryptedFieldsSubscriber(container.get(FieldCipher))` among its boot subscribers, so a cipher must be bound.
+`new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, <the bound KeyProvider>)` among its boot
+subscribers, so a cipher must be bound, and a key provider too for a `lookup` field. `checkBlindIndexes` (full pass
+only, STA-1482) refuses a `lookup` field the trait does not encrypt (`encrypted_lookup_unknown`), `lookup` with
+`subject` (`encrypted_lookup_subject`), a model without the `<field>Bidx: string | null` property
+(`encrypted_lookup_undeclared`) and one whose `@Index` does not lead with it (`encrypted_lookup_not_indexed`).
 
 `searchable_semantic_ai_never` (`checkSemanticSearch`, full pass only, STA-1251) refuses a model whose
 `@Searchable({ semantic: true })` lists a text field (its own, an own base model's, or a dotted path through a relation

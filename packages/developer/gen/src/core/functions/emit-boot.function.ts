@@ -6,7 +6,7 @@
  *          (`emitEncoreDatabase`), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
- *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` (when a model, own or a declared package's, has
+ *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
  *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
  *          `segments.connect(container)`, `EventBus#connect` and `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
@@ -136,7 +136,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     );
     if (encrypted)
       imports.push(
-        'import { FieldCipher } from "@stackra/contracts";',
+        'import { FieldCipher, KeyProvider } from "@stackra/contracts";',
         'import { EncryptedFieldsSubscriber } from "@stackra/model";',
       );
     steps.push(
@@ -153,7 +153,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "    replicas,",
       "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
       "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
-      `    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()${traits.map((name) => `, new ${name}()`).join("")}${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher))" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
+      `    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()${traits.map((name) => `, new ${name}()`).join("")}${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, container.has(KeyProvider) ? container.get(KeyProvider) : undefined)" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
       "  });",
     );
   }
