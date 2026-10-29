@@ -11,10 +11,8 @@
 import { Tabs } from "@stackra/ui/native";
 import type { ReactElement } from "react";
 
+import { savedViewTabsOf } from "#core/functions/saved-view-tabs-of.function";
 import type { SavedViewTabsProps } from "#native/saved-view-tabs/saved-view-tabs.props";
-
-/** The id of the all-rows tab; a saved view's public id never takes it. */
-const ALL = "all";
 
 /**
  * Tabs over a resource's saved views.
@@ -22,20 +20,6 @@ const ALL = "all";
  * @example
  * <SavedViewTabs label="Saved views" allLabel="All" views={views} render={(view) => <List view={view} />} />
  */
-export function SavedViewTabs({
-  label,
-  allLabel,
-  views,
-  render,
-}: SavedViewTabsProps): ReactElement {
-  return (
-    <Tabs
-      label={label}
-      defaultSelectedKeys={[ALL]}
-      items={[
-        { id: ALL, label: allLabel, content: render(undefined) },
-        ...views.map((view) => ({ id: view.id, label: view.name, content: render(view) })),
-      ]}
-    />
-  );
+export function SavedViewTabs(props: SavedViewTabsProps): ReactElement {
+  return <Tabs {...savedViewTabsOf(props)} />;
 }
