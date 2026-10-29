@@ -139,6 +139,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/mobile-release",
             "runbooks/renovate",
             "runbooks/deploys",
+            "runbooks/monitoring",
             "runbooks/runway",
             "runbooks/upgrade",
             "runbooks/fresh-machine",
