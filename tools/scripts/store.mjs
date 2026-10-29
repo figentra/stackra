@@ -244,7 +244,8 @@ export async function main(
     const built = await buildStore(at(o.root ?? "."), o.app, {
       template: at(o.template),
       captures: at(o.captures),
-      renderImages: cmd === "build" || mode !== "replay",
+      // A dry run or replay uploads nothing, so it plans with the captures as they are.
+      renderImages: cmd === "build" || mode === "live" || mode === "record",
     });
     if (cmd === "build" || built.problems.length) {
       for (const p of built.problems) say(`problem: ${p}`);
