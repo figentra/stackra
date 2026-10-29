@@ -28,7 +28,7 @@ import { parse } from "yaml";
 const CORE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const CONSENT_ENUM = "packages/security/consent/src/core/enums/consent-category.enum.ts";
 // shortcut: the codes as of ADR 0298, used when this script runs outside a core checkout; read the enum when it is there.
-const CONSENT_FALLBACK = ["necessary", "analytics", "crash_replay"];
+const CONSENT_FALLBACK = ["necessary", "analytics", "crash_replay", "marketing"];
 const NAME_RX = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 
 /** Every generated size: which capture class feeds it, and the store's count limits. */

@@ -57,9 +57,9 @@ const RUNWAY_ENV = { dev: "dev", staging: "staging", prod: "production" };
  * publish credentials sit in its `release` environment instead.
  */
 export const PLACEMENT = {
-  dev: "repository-wide or a dev environment",
-  staging: "repository-wide or a staging environment",
-  prod: "only the GitHub environment `production`",
+  dev: "repository-wide or in a dev environment",
+  staging: "repository-wide or in a staging environment",
+  prod: "only in the GitHub environment `production`",
 };
 
 /** `{ name, path, why }` for every secret `env` needs: runway CI and member secrets, and the mobile apps' store secrets. */

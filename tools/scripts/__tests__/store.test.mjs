@@ -176,7 +176,7 @@ test("replay throws on a call with no fixture", async () => {
 });
 
 test("live and record run only inside GitHub Actions", () => {
-  assert.throws(() => assertLiveAllowed("live", {}), /store-release workflow/);
+  assert.throws(() => assertLiveAllowed("live", {}), /runway-store workflow/);
   assert.throws(() => assertLiveAllowed("record", { GITHUB_ACTIONS: "false" }));
   assertLiveAllowed("live", { GITHUB_ACTIONS: "true" });
   assertLiveAllowed("dry-run", {});
@@ -378,7 +378,12 @@ test("an SDK the mobile job strips for an unlisted capability needs no privacy r
 });
 
 test("loadStore checks text limits, consent categories, purposes and undeclared SDKs", () => {
-  assert.deepEqual(consentCategories(ROOT), ["necessary", "analytics", "crash_replay"]);
+  assert.deepEqual(consentCategories(ROOT), [
+    "necessary",
+    "analytics",
+    "crash_replay",
+    "marketing",
+  ]);
   const repo = product({
     deps: { "@sentry/react-native": "x", "posthog-react-native": "y" },
     collects: [
@@ -388,7 +393,7 @@ test("loadStore checks text limits, consent categories, purposes and undeclared 
         consent: "crash_replay",
         purposes: ["app_functionality"],
       },
-      { type: "spaceship", source: "x", consent: "marketing", purposes: ["fun"] },
+      { type: "spaceship", source: "x", consent: "telepathy", purposes: ["fun"] },
     ],
     locales: { en: { "name.txt": "N".repeat(31) } },
   });
@@ -396,7 +401,7 @@ test("loadStore checks text limits, consent categories, purposes and undeclared 
   for (const rx of [
     /name is longer than 30/,
     /"spaceship" is not a known data type/,
-    /"marketing" is not a consent category/,
+    /"telepathy" is not a consent category/,
     /purpose "fun"/,
     /posthog-react-native is a dependency/,
   ])
