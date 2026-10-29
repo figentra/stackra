@@ -287,14 +287,16 @@ describe("identityStack", () => {
     });
     const stack = identityStack({ ...PLAN, appleSignIn: APPLE });
     await settle(stack);
+    // the dynamic provider is serialised before it registers, so wait for its id, not only the rest of the stack
+    const id = stack.appleIdp === null ? null : await valueOf(stack.appleIdp);
 
+    expect(id).toBe("apple-idp-id");
     expect(inputsOf("Resource", "apple-idp")).toMatchObject({
       domain: "id.staging.acme.example",
       clientId: "example.acme.signin",
       teamId: "TEAM000001",
       keyId: "KEY0000001",
     });
-    expect(stack.appleIdp === null ? null : await valueOf(stack.appleIdp)).toBe("apple-idp-id");
   });
 
   it("fails when the Apple key's secret is not in the stack config, naming it", () => {

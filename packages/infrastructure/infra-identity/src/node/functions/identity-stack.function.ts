@@ -200,7 +200,8 @@ export function identityStack(plan: IdentityPlan): IdentityStack {
   const appleIdp =
     plan.appleSignIn === null
       ? null
-      : new dynamic.Resource(
+      : // dynamic.Resource is abstract, so the provider gets an empty subclass of its own
+        new (class AppleIdentityProvider extends dynamic.Resource {})(
           APPLE_IDP_PROVIDER,
           "apple-idp",
           {
