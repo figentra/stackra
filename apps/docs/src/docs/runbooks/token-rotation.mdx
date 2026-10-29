@@ -30,7 +30,7 @@ A value belongs in a child's environment or stdin, never on its argv, where any 
 (`bot-gh.mjs`, `pr-merge.mjs`) pass the token as `GH_TOKEN` in the child's environment, `linear.mjs` reads its
 token from the environment, and `secrets-import.mjs` writes through `NAME=@file`. The exception today is `mcp.sh`:
 it expands `$NAME` references from `.mcp.yaml` into the MCP server's arguments (`--api-key`, header values), so
-those servers carry a token on argv for as long as they run (STA-303 audit; a follow-up moves them to environment
+those servers carry a token on argv for as long as they run (STA-303 audit; STA-1617 moves them to environment
 variables).
 
 ## When a token was printed
