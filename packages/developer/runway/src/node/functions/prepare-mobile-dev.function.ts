@@ -149,7 +149,7 @@ export async function prepareMobileDev(request: MobileDevRequest): Promise<Mobil
       "// Written by Runway's local mobile run (prepareMobileDev) from the root runway's packages; never committed.",
       ...imports,
       "",
-      `export const PRODUCT_MODULES: readonly { readonly default?: unknown }[] = [${entries.map((_, index) => `p${index}`).join(", ")}];`,
+      `export const PRODUCT_MODULES: readonly { readonly register?: unknown; readonly default?: unknown }[] = [${entries.map((_, index) => `p${index}`).join(", ")}];`,
       "",
     ].join("\n"),
   );
