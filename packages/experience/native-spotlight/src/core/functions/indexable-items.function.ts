@@ -31,23 +31,26 @@ export function indexableItems(
   if (!rules.isEnabled || userId === null) return [];
   const kinds = new Set(rules.kinds);
   const oldest = now.getTime() - rules.maxAgeDays * DAY;
-  return records
-    .map((record) => ({ record, at: Date.parse(record.updatedAt) }))
-    .filter(
-      ({ record, at }) =>
-        record.ownerId === userId &&
-        !record.isSensitive &&
-        kinds.has(record.kind) &&
-        record.url !== "" &&
-        at >= oldest,
-    )
-    .toSorted((a, b) => b.at - a.at)
-    .slice(0, rules.maxItems)
-    .map(({ record: { url, kind, title, description, keywords } }) => ({
-      url,
-      kind,
-      title,
-      description,
-      keywords,
-    }));
+  return (
+    records
+      .map((record) => ({ record, at: Date.parse(record.updatedAt) }))
+      .filter(
+        ({ record, at }) =>
+          record.ownerId === userId &&
+          !record.isSensitive &&
+          kinds.has(record.kind) &&
+          record.url !== "" &&
+          at >= oldest,
+      )
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((a, b) => b.at - a.at)
+      .slice(0, rules.maxItems)
+      .map(({ record: { url, kind, title, description, keywords } }) => ({
+        url,
+        kind,
+        title,
+        description,
+        keywords,
+      }))
+  );
 }
