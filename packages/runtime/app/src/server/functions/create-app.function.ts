@@ -6,7 +6,10 @@
  *          fails, after reporting it). Once the container is ready it awaits the member's `#stackra/boot` (when given)
  *          with a shutdown signal that `close()` aborts after the drain; the boot takes its database url from the
  *          service's Encore database, so no url passes here (STA-1401).
- *          `handlers.guard` runs the contributed `RequestGuard`s on an inbound request. `/readyz` runs the given
+ *          `handlers.guard` runs the contributed `RequestGuard`s on an inbound request. When a `Tracer` is bound, each
+ *          call runs inside `Tracer.continueTrace` with a carrier `handlers.guard` fills once the guards pass (the
+ *          request's W3C `traceparent` and the edge's request id), so the call's spans join the caller's trace and
+ *          carry `requestId` (ADR 0184 decision 1, STA-1572). `/readyz` runs the given
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
  *          resolved once after boot.
  * Boundary: no HTTP server of its own: Encore (generated into `.stackra/encore`) serves, and reaches the member only
@@ -19,8 +22,10 @@
  *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here).
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
-import { HealthIndicator } from "@stackra/contracts";
+import { HealthIndicator, Tracer } from "@stackra/contracts";
+import type { TraceCarrier } from "@stackra/contracts";
 
+import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { answerProbe } from "#server/functions/answer-probe.function";
@@ -52,6 +57,10 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     if (binding.kind !== undefined)
       byKind.set(binding.kind, [...(byKind.get(binding.kind) ?? []), binding.provide]);
 
+  const tracer = container.has(Tracer) ? container.get(Tracer) : undefined;
+  // The trace carrier of each call, by its request container, which `guard` receives.
+  const carriers = new WeakMap<object, TraceCarrier>();
+
   const inFlight = new Set<Promise<void>>();
   let draining: Promise<void> | undefined;
   let closing: Promise<void> | undefined;
@@ -60,7 +69,13 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     byKind,
     run(call) {
       if (draining !== undefined) return Promise.reject(AppDrainingError.create());
-      const result = Promise.resolve().then(() => call(container.forRequest()));
+      const result = Promise.resolve().then(() => {
+        const scoped = container.forRequest();
+        if (tracer === undefined) return call(scoped);
+        const carrier: TraceCarrier = {};
+        carriers.set(scoped, carrier);
+        return tracer.continueTrace(carrier, () => Promise.resolve().then(() => call(scoped)));
+      });
       // A settled marker, so drain waits for the call without seeing its rejection.
       const settled = result.then(
         () => undefined,
@@ -75,6 +90,12 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       const guards = scoped.getAll(RequestGuard).sort((a, b) => a.order - b.order);
       for (const guard of guards) await guard.check(request);
+      const carrier = carriers.get(scoped);
+      if (carrier === undefined) return;
+      const traceparent = request.headers.get("traceparent");
+      const requestId = request.headers.get(EdgeHeader.RequestId);
+      if (traceparent !== null) carrier.traceparent = traceparent;
+      if (requestId !== null) carrier.requestId = requestId;
     },
   };
 

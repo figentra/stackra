@@ -17,6 +17,7 @@ export { readServerSentEvents } from "#core/functions/read-server-sent-events.fu
 export { retry } from "#core/functions/retry.function";
 export { stackraVersion } from "#core/functions/stackra-version.function";
 export { timeout } from "#core/functions/timeout.function";
+export { traceContext } from "#core/functions/trace-context.function";
 export type { Middleware } from "#core/types/middleware.type";
 export type { RetryOptions } from "#core/types/retry-options.type";
 export type { ServerSentEvent } from "#core/types/server-sent-event.type";

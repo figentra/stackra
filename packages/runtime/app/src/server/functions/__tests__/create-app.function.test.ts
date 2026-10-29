@@ -5,19 +5,22 @@
  *          drains and shuts the container down once, the generated boot gets the ready container and a
  *          signal that only `close` aborts (no url: the boot uses its Encore database's), SIGTERM closes and exits 0 (1 after reporting a failed
  *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
- *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named.
+ *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named; with
+ *          a bound `Tracer`, each call runs in `continueTrace` with a carrier `guard` fills (once the guards pass) from
+ *          the request's `traceparent` and edge request id.
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457.
  */
-import { Module, Service } from "@stackra/container";
+import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
-import { HealthIndicator, HealthStatus } from "@stackra/contracts";
-import type { HealthReport } from "@stackra/contracts";
+import { HealthIndicator, HealthStatus, Tracer } from "@stackra/contracts";
+import type { HealthReport, TraceAttributes, TraceCarrier, TraceSpan } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import { createApp } from "#server/functions/create-app.function";
@@ -261,6 +264,54 @@ describe("createApp (server)", () => {
           app.handlers.guard(new Request("https://api.example/"), container),
         ),
       ).resolves.toBeUndefined();
+      await app.close();
+    });
+  });
+
+  describe("trace", () => {
+    /** Records the carrier each call ran with, as it stood when the call settled. */
+    class CarrierTracer extends Driver(Tracer) {
+      static carriers: TraceCarrier[] = [];
+
+      span<T>(
+        _name: string,
+        _attributes: TraceAttributes,
+        work: (span: TraceSpan) => Promise<T>,
+      ): Promise<T> {
+        return work({ set: () => undefined, fail: () => undefined });
+      }
+
+      async continueTrace<T>(carrier: TraceCarrier, work: () => Promise<T>): Promise<T> {
+        try {
+          return await work();
+        } finally {
+          CarrierTracer.carriers.push({ ...carrier });
+        }
+      }
+
+      traceparent(): string | undefined {
+        return undefined;
+      }
+    }
+
+    const traced: Wiring = {
+      ...wiring,
+      drivers: [{ port: Tracer, candidates: { carrier: () => Promise.resolve(CarrierTracer) } }],
+    };
+
+    afterEach(() => {
+      CarrierTracer.carriers = [];
+    });
+
+    it("continues the request's trace with its traceparent and request id once the guards pass", async () => {
+      const app = await createApp(OrdersModule, { wiring: traced });
+      const traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+      const request = new Request("https://api.example/orders", {
+        headers: { traceparent, [EdgeHeader.RequestId]: "req-1" },
+      });
+      await app.handlers.run((container) => app.handlers.guard(request, container));
+      await app.handlers.run(() => "no guard");
+      expect(CarrierTracer.carriers).toEqual([{ traceparent, requestId: "req-1" }, {}]);
       await app.close();
     });
   });

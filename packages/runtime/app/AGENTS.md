@@ -83,6 +83,8 @@ note).
   must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 - `/readyz` runs the given `health` plus `container.getAll(HealthIndicator)`, resolved once after boot (`create-app.function.ts`); `answerProbe` owns the timeout and the body (a status per name, never a detail).
+- Trace continuation is `createApp`'s: `run` wraps each call in `Tracer.continueTrace` when a tracer is bound, and
+  `guard` fills the carrier only after every guard passed. Never read `traceparent` anywhere else in this package.
 
 ## Rules that fail the build
 

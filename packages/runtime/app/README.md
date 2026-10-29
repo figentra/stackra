@@ -146,6 +146,10 @@ subclass with `check(request)`, which throws a refusal to stop the request, and 
 default 0, wiring order within an order). The generated adapter calls `handlers.guard(request, container)` inside
 `handlers.run`; it rejects with the first refusal and runs no later guard.
 
+When a `Tracer` is bound, `handlers.run` runs each call inside `Tracer.continueTrace` with an empty carrier, and
+`handlers.guard` fills it once every guard passed: the request's `traceparent` and its `x-figentra-request-id`
+(`EdgeHeader.RequestId`). The call's spans then join the caller's trace and carry `requestId` (ADR 0184, STA-1572).
+
 ```ts
 export class EdgeSignatureGuard extends RequestGuard {
   override get order() { return -100; }

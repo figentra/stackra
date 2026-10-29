@@ -15,6 +15,7 @@ describe("TRANSPORT_HEADERS", () => {
       authorization: "Authorization",
       idempotencyKey: "Idempotency-Key",
       stackraVersion: "Stackra-Version",
+      traceparent: "traceparent",
       retryAfter: "Retry-After",
     });
   });

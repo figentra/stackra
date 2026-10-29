@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the registry row's pipeline, header middleware, retry, timeout,
+ * Purpose: the consumer contract of the `.` entry: the registry row's pipeline, header middleware (with `traceContext`), retry, timeout,
  *          stream readers, refusal and header names are exported, nothing else is (the internals and `nativeFetch`
  *          are not), and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -32,6 +32,7 @@ describe("@stackra/transport", () => {
       "retry",
       "stackraVersion",
       "timeout",
+      "traceContext",
     ]);
     expect("nativeFetch" in transport).toBe(false);
     expect("withHeader" in transport).toBe(false);

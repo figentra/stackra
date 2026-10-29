@@ -11,6 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { Port } from "#core/bases/port.base";
 import { Tracer } from "#core/ports/tracer.port";
 import type { TraceAttributes } from "#core/types/trace-attributes.type";
+import type { TraceCarrier } from "#core/types/trace-carrier.type";
 import type { TraceSpan } from "#core/types/trace-span.type";
 
 class RecordingTracer extends Tracer {
@@ -34,6 +35,14 @@ class RecordingTracer extends Tracer {
       span.failed = true;
       throw error;
     }
+  }
+
+  async continueTrace<T>(_carrier: TraceCarrier, work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
+  traceparent(): string | undefined {
+    return undefined;
   }
 }
 

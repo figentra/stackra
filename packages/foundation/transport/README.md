@@ -22,6 +22,7 @@ and `@stackra/errors`; `expo` is an optional peer of `./native`. Members rarely 
 | ---------- | ---------------------------------------------- | ---------------------------------------------------------------- |
 | `.`        | `createTransport`                              | folds the middleware, outermost first, over the terminal fetch   |
 | `.`        | `stackraVersion`                               | pins `Stackra-Version` to a date                                 |
+| `.`        | `traceContext`                                 | sends the current span's W3C `traceparent` (a `Tracer`)          |
 | `.`        | `bearerToken`                                  | `Authorization: Bearer <token>` from a source asked per request  |
 | `.`        | `idempotencyKey`                               | one `Idempotency-Key` per write, kept across retries             |
 | `.`        | `retry`                                        | repeats what is safe to repeat after a failure, a 429 or a 503   |
