@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: type and shape tests of the `AnalyticsDriver` port: an abstract port class with one asynchronous `send` of
- *          an ordered list of deliveries and a `beacon` that answers `false` by default, and a driver of it is an
- *          instance of it.
+ *          an ordered list of deliveries, a `beacon` that answers `false` by default and an `erasePerson` that rejects
+ *          by default (a driver that cannot erase never reports success), and a driver of it is an instance of it.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 16 and 17).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 16 and 17); STA-1582.
  */
 import { Driver } from "@stackra/container";
 import { Port } from "@stackra/contracts";
@@ -53,5 +53,13 @@ describe("AnalyticsDriver", () => {
   it("answers false to a beacon unless a driver can send one", () => {
     expect(new CountingAnalyticsDriver().beacon([])).toBe(false);
     expectTypeOf<AnalyticsDriver["beacon"]>().returns.toEqualTypeOf<boolean>();
+  });
+
+  it("rejects an erasure unless a driver can erase at its vendor", async () => {
+    await expect(new CountingAnalyticsDriver().erasePerson("usr_1")).rejects.toThrow(
+      "CountingAnalyticsDriver cannot erase a person at its analytics vendor",
+    );
+    expectTypeOf<AnalyticsDriver["erasePerson"]>().parameters.toEqualTypeOf<[string]>();
+    expectTypeOf<AnalyticsDriver["erasePerson"]>().returns.toEqualTypeOf<Promise<number>>();
   });
 });

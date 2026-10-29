@@ -73,6 +73,10 @@ export class PrivacyConfig extends BasePrivacyConfig {
 - After `SubjectErased`, `UnindexErasedSubjectListener` removes the subject's remaining rows (shredded or held) from
   the search index and, for a semantic model, the vector index (`SearchForgetService` of `@stackra/search/node`).
   Deleted and anonymised rows leave or are re-indexed through the search change consumers already.
+- Other packages listen for `SubjectErased` too: @stackra/identity ends the subject's provider sessions and removes
+  its provider user (`EndErasedSubjectSessionsListener`), and @stackra/analytics deletes its person and events at the
+  analytics vendor, PostHog (`EraseAnalyticsPersonListener`, STA-1582), logging `analytics.erasure.erased` as its
+  receipt.
 - The key is shredded only when no held row carries a `shred` field: shredding would destroy what the hold keeps.
   The receipt's `shredded` says which.
 - The last step records `SubjectErased` (`privacy.subject.erased.v1`) and, with `ackAs`, the workflow's

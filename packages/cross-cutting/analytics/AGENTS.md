@@ -69,7 +69,12 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 - Server analytics (`./node`): `RelayTrackedAnalyticsListener` sends `@stackra/actions`' `AnalyticsTracked` as it is,
   minus `denyProperties`. Consent was decided by the pipeline when the event was written (a verified snapshot granting
   `analytics`); the relay never sends anything the event does not hold and never retries itself (the outbox does).
-  Only `./node` imports `@stackra/actions`.
+  Only `./node` imports `@stackra/actions` and `@stackra/privacy`.
+- Erasure (`./node`, STA-1582): `EraseAnalyticsPersonListener` calls `AnalyticsDriver.erasePerson(subject)` after
+  `SubjectErased` and logs the receipt by erasure id and count, never the subject. The port's default rejects: a
+  vendor driver either erases or fails loudly, never resolves without erasing. A missing personal API key or project
+  id rejects too (a dead-lettered erasure, not a silent success). The listener lives here, not in privacy, because
+  privacy does not depend on analytics.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -80,9 +85,9 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 
 ## PII and secrets
 
-| Data           | Where                    | Handling                                                                                      |
-| -------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
-| Event payloads | the queue, then a driver | schema-declared fields only, deny list removed, held in memory until sent                     |
-| Kept batches   | the offline queue driver | only after consent; bounded by `offlineLimit`; cleared on refusal; checked by schema on load  |
-| Visitor ids    | the identity driver      | anonymous id, user public id, group ids; kept only after consent, cleared on refusal or reset |
-| Secrets        | none                     | `posthogKey` is a public project key, fed from the host's env config                          |
+| Data           | Where                    | Handling                                                                                                                   |
+| -------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Event payloads | the queue, then a driver | schema-declared fields only, deny list removed, held in memory until sent                                                  |
+| Kept batches   | the offline queue driver | only after consent; bounded by `offlineLimit`; cleared on refusal; checked by schema on load                               |
+| Visitor ids    | the identity driver      | anonymous id, user public id, group ids; kept only after consent, cleared on refusal or reset                              |
+| Secrets        | the secret store         | `posthogKey` is a public project key from env config; `ANALYTICS_POSTHOG_PERSONAL_API_KEY` (server erasure) is a `@Secret` |

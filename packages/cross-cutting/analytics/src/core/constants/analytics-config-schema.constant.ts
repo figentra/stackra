@@ -4,7 +4,8 @@
  *          `AnalyticsConfig$`): the driver, the consent category that gates delivery, the bound of the pre-consent
  *          queue, the auto-capture switches (page or screen views and `data-track` clicks; web vitals
  *          and replay are `TelemetryConfig`'s only, stackra-409), the ingest origin, the deny list, the PostHog key
- *          and host, the identity driver, cookie name and
+ *          and host, the PostHog private API host, project id and personal API key a server erasure deletes a person
+ *          with (STA-1582), the identity driver, cookie name and
  *          lifetime (identity stitching), and the delivery engine: flush size and window, bounded retry, buffer bound,
  *          sampling (global and per event) and the offline queue; and the destinations (stackra-407): named driver
  *          instances (`drivers`) and the destination list, each with its own gating category and event routing; and
@@ -13,7 +14,7 @@
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `AnalyticsConfig$` extends it
  *           (`AnalyticsConfig$.shape.driver.unwrap().default(...)`). The rules sit on the fields: the gating category
  *           is never `necessary` (that would send without asking), the queue holds 0 to 1,000 events, the ingest
- *           origin is empty or an http(s) URL, and the PostHog host is an http(s) URL. The driver names are the shipped drivers;
+ *           origin is empty or an http(s) URL, and both PostHog hosts are http(s) URLs. The driver names are the shipped drivers;
  *           the identity cookie name is a cookie token and the identity lives 1 to 400 days; sample rates are
  *           between 0 and 1; `default` is not a `drivers` key (it names the `driver` instance) and a destination's
  *           category is never `necessary`, each driver instance listed once; each conversion event is listed once. The defaults equal
@@ -85,6 +86,9 @@ export const ANALYTICS_CONFIG_SCHEMA = z.object({
   denyProperties: z.array(z.string().min(1)).default(() => []),
   posthogKey: z.string().nullable().default(null),
   posthogHost: z.url({ protocol: /^https?$/ }).default("https://eu.i.posthog.com"),
+  posthogApiHost: z.url({ protocol: /^https?$/ }).default("https://eu.posthog.com"),
+  posthogProjectId: z.string().default(""),
+  posthogPersonalApiKey: z.string().default(""),
   identityDriver: z.enum(["memory", "cookie", "storage"]).default("memory"),
   identityCookieName: z.string().regex(COOKIE_NAME).default("stk_aid"),
   identityExpiryDays: z.number().int().min(1).max(400).default(365),
