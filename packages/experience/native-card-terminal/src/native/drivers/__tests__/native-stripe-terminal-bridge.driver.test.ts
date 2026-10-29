@@ -17,6 +17,14 @@ import { StandInServer } from "#native/__tests__/stand-in-server.fixture";
 
 const UNAVAILABLE = { error: { code: "module_unavailable" } };
 
+/** A permissions driver whose prompt rejects, as the Expo one does with no attached Activity. */
+class RejectingPermissions extends MemoryDevicePermissionsDriver {
+  /** Rejects like a failed OS prompt. */
+  override async request(): Promise<never> {
+    throw new Error("no attached Activity");
+  }
+}
+
 describe("NativeStripeTerminalBridgeDriver", () => {
   afterEach(CARD_TERMINAL_SDK.uninstall);
 
@@ -121,5 +129,15 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     await bridge.supportsTapToPay();
     await bridge.supportsTapToPay();
     expect(module.addListener).toHaveBeenCalledTimes(1);
+  });
+  it("reads a rejected location prompt as location_permission_denied", async () => {
+    const module = CARD_TERMINAL_SDK.install();
+    expect(
+      await new NativeStripeTerminalBridgeDriver(
+        new StandInServer(),
+        new RejectingPermissions(),
+      ).connectTapToPay("tml_1"),
+    ).toEqual({ error: { code: "location_permission_denied" } });
+    expect(module.connectTapToPay).not.toHaveBeenCalled();
   });
 });

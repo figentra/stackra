@@ -67,8 +67,10 @@ export class NativeStripeTerminalBridgeDriver extends Driver(StripeTerminalBridg
   async connectTapToPay(locationId: string): Promise<{ readonly error?: StripeBridgeError }> {
     const module = await prepareCardTerminal(this.server);
     if (module === undefined) return UNAVAILABLE;
-    if ((await this.permissions.request(STRIPE_TERMINAL.tapToPayPermission)) !== "granted")
-      return { error: { code: STRIPE_TERMINAL.tapToPayDenied } };
+    const answer = await this.permissions
+      .request(STRIPE_TERMINAL.tapToPayPermission)
+      .catch(() => "denied" as const);
+    if (answer !== "granted") return { error: { code: STRIPE_TERMINAL.tapToPayDenied } };
     const { error } = await module.connectTapToPay(locationId);
     return error === undefined ? {} : { error };
   }

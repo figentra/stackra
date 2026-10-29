@@ -63,7 +63,7 @@ export class StripeTerminalCardTerminalDriver extends Driver(CardTerminal) {
     const module = await prepareCardTerminal(this.server);
     if (module === undefined) return refuse(PlatformCapability.CardTerminal, "unavailable");
     for (const permission of STRIPE_TERMINAL.readerPermissions)
-      if ((await this.permissions.request(permission)) !== "granted")
+      if ((await this.permissions.request(permission).catch(() => "denied" as const)) !== "granted")
         return refuse(PlatformCapability.Bluetooth, "permission_denied");
     let locationId: string;
     try {

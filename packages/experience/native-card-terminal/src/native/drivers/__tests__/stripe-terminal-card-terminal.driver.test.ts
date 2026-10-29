@@ -20,6 +20,14 @@ const PAIRING = { terminalId: M2.serialNumber, provider: "stripe", address: null
 const UNAVAILABLE = { ok: false, error: { code: "unavailable", capability: "card_terminal" } };
 const DENIED = { ok: false, error: { code: "permission_denied", capability: "bluetooth" } };
 
+/** A permissions driver whose prompt rejects, as the Expo one does with no attached Activity. */
+class RejectingPermissions extends MemoryDevicePermissionsDriver {
+  /** Rejects like a failed OS prompt. */
+  override async request(): Promise<never> {
+    throw new Error("no attached Activity");
+  }
+}
+
 describe("StripeTerminalCardTerminalDriver", () => {
   afterEach(CARD_TERMINAL_SDK.uninstall);
 
@@ -191,5 +199,15 @@ describe("StripeTerminalCardTerminalDriver", () => {
     expect(await terminal.unpair()).toEqual({ ok: true, data: undefined });
     expect(module.disconnectReader).toHaveBeenCalledTimes(2);
     expect(await terminal.status()).toEqual(UNAVAILABLE);
+  });
+  it("reads a rejected permission prompt as permission_denied", async () => {
+    const module = CARD_TERMINAL_SDK.install();
+    expect(
+      await new StripeTerminalCardTerminalDriver(
+        new StandInServer(),
+        new RejectingPermissions(),
+      ).pair(PAIRING),
+    ).toEqual(DENIED);
+    expect(module.discoverBluetoothReaders).not.toHaveBeenCalled();
   });
 });

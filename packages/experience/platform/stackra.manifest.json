@@ -149,6 +149,21 @@
           "from": "@stackra/platform/desktop"
         }
       }
+    },
+    {
+      "port": "DevicePermissions",
+      "key": "platform.DevicePermissions",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryDevicePermissionsDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoDevicePermissionsDriver",
+          "from": "@stackra/platform/native"
+        }
+      }
     }
   ],
   "integrations": [],
