@@ -37,6 +37,10 @@ React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./des
 | `./sw`        | `handleBackgroundSync`, `handlePush`, `handlePushSubscriptionChange`, `handleNotificationClick`, `handleShareTarget`, `handleSkipWaiting`                                                                                       | registered by the generated `sw.ts`                                         |
 | `./react`     | `usePlatform`, `useCapability`, `useLaunchedFiles`, `usePushPermission`, `ScannerView`                                                                                                                                          | hooks and the scanner's camera view                                         |
 | `./testing`   | `fakePlatform`                                                                                                                                                                                                                  | a fresh memory platform for one test                                        |
+| `./contracts` | `AppIcon`                                                                                                                                                                                                                       | the alternate app icon port (STA-1541)                                      |
+| `.`           | `AppIconConfig`, `AppIconConfig$`, `MemoryAppIconDriver`                                                                                                                                                                        | the icon names the build carries; the `memory` candidate                    |
+| `./native`    | `ExpoAppIconDriver`                                                                                                                                                                                                             | alternate icons on a phone (expo-alternate-app-icons)                       |
+| `./react`     | `useAppIcon`                                                                                                                                                                                                                    | the icon showing, the build's icons and the switch                          |
 
 ## Using it
 
@@ -199,6 +203,27 @@ await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.li
 - `MemoryLiveActivitiesDriver` (`.`) is the web, desktop and test driver; `isAvailable = false` makes it refuse.
 - `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`.
 - Not yet: home-screen widgets, remote (push) updates and push-to-start, App Shortcuts and Siri intents.
+
+### Alternate app icons (STA-1541)
+
+`AppIcon` (`./contracts`) switches the home-screen icon per brand, season or tenant; `useAppIcon()` (`./react`) is the
+hook. A switch the device cannot make resolves `unavailable` on `app_icon`, never an exception.
+
+```ts
+const appIcon = useAppIcon(); // null on a target that binds no AppIcon
+if (appIcon?.isSupported) {
+  const shown = await appIcon.set(tenant.appIcon ?? null); // null is the default icon
+  if (!shown.ok) log.warn("app icon not in this build", { icon: tenant.appIcon });
+}
+```
+
+- The icons come from the brand kit, never placed by hand: gen writes the images into the expo-alternate-app-icons
+  config plugin entry and the same PascalCase names into the host's `AppIconConfig.icons` (`platform.app_icon`).
+  `useAppIcon().set` refuses a name the configuration does not list before it reaches the device.
+- `ExpoAppIconDriver` (`./native`) is concrete: it imports expo-alternate-app-icons (an optional peer the app adds to
+  its own dependencies). iOS confirms a switch with its own alert; Android swaps the launcher alias, which may close
+  the app, so switch on a person's choice or at launch, not in the middle of a task.
+- `MemoryAppIconDriver` (`.`) is the web, desktop and test driver; `isSupported = false` makes it refuse.
 
 ## Testing
 

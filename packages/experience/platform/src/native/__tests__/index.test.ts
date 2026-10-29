@@ -27,6 +27,7 @@ vi.mock("react-native", () => ({
 vi.mock("expo-local-authentication", () => ({ SecurityLevel: {} }));
 vi.mock("@react-native-community/netinfo", () => ({ addEventListener: () => () => undefined }));
 vi.mock("expo-tracking-transparency", () => ({}));
+vi.mock("expo-alternate-app-icons", () => ({}));
 vi.mock("expo-battery", () => ({}));
 vi.mock("expo-background-task", () => ({ BackgroundTaskStatus: { Available: 2 } }));
 vi.mock("expo-camera", () => ({ Camera: {}, CameraView: {} }));
@@ -42,6 +43,7 @@ describe("@stackra/platform/native", () => {
   it("exports exactly the Expo drivers, the app lock gate, the self-hosted push transport and the channel creator", () => {
     expect(Object.keys(native).sort()).toEqual([
       "AppLockGate",
+      "ExpoAppIconDriver",
       "ExpoAppLockDriver",
       "ExpoDevicePermissionsDriver",
       "ExpoLiveActivitiesDriver",

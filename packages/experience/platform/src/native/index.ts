@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./native` entry of @stackra/platform (`ExpoPlatformDriver`,
  *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`, `ExpoSystemSettingsDriver`,
  *          `ExpoDevicePermissionsDriver`, `ExpoAppLockDriver` and the `AppLockGate` the app mounts,
- *          `ExpoLiveActivitiesDriver`, and `createNotificationChannels` for the push context),
+ *          `ExpoLiveActivitiesDriver`, `ExpoAppIconDriver`, and `createNotificationChannels` for the push context),
  *          what gen lists as candidates for the Expo target, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Loaded on a device only; the permission helpers stay internal.
  * Runtime: react-native
@@ -11,6 +11,7 @@
  *                     decision.
  */
 export { AppLockGate } from "#native/components/app-lock-gate";
+export { ExpoAppIconDriver } from "#native/drivers/expo-app-icon.driver";
 export { ExpoAppLockDriver } from "#native/drivers/expo-app-lock.driver";
 export { ExpoPlatformDriver } from "#native/drivers/expo-platform.driver";
 export { ExpoPushTransportDriver } from "#native/drivers/expo-push-transport.driver";
@@ -20,5 +21,6 @@ export { ExpoLiveActivitiesDriver } from "#native/drivers/expo-live-activities.d
 export { ExpoSystemSettingsDriver } from "#native/drivers/expo-system-settings.driver";
 export { createNotificationChannels } from "#native/functions/create-notification-channels.function";
 export type { AppLockGateProps } from "#native/types/app-lock-gate-props.type";
+export type { ExpoAppIconModule } from "#native/types/expo-app-icon-module.type";
 export type { ExpoPermissionModules } from "#native/types/expo-permission-modules.type";
 export type { ExpoSystemModules } from "#native/types/expo-system-modules.type";

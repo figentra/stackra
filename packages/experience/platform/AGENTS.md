@@ -53,6 +53,10 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
 - `AppLock` is a port of its own: the device check behind the opt-in app lock. When to lock is `AppLockConfig`
   (off by default, per-role overrides) and `AppLockGate` (`./native`); a phone that cannot authenticate is never
   locked. Its Expo driver imports expo-local-authentication (optional peer, catalog:mobile).
+
+- `AppIcon` is a port of its own (not a `Platform` facet) over expo-alternate-app-icons; `app_icon` is its refusal
+  code only. Never add or hand-place an icon image: the set comes from the brand kit through gen, which writes the
+  config plugin entry and `AppIconConfig.icons` with the same names.
 - A window kind (`WindowKind`) means only what `browserWindowOptions` maps it to; a new kind adds a case and its
   options there, never in the shell. `createApp` (`@stackra/app`) is the shell that spreads it.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error

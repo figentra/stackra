@@ -18,6 +18,7 @@ describe("PlatformCapability", () => {
       "local_notifications",
       "push",
       "badge",
+      "app_icon",
       "clipboard",
       "files_save",
       "print",
@@ -49,6 +50,7 @@ describe("PlatformCapability", () => {
       | "local_notifications"
       | "push"
       | "badge"
+      | "app_icon"
       | "clipboard"
       | "files_save"
       | "print"

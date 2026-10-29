@@ -21,6 +21,7 @@ import type {
 describe("@stackra/platform/contracts", () => {
   it("exports exactly the eight ports at run time", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "AppIcon",
       "AppLock",
       "CaptchaVerifier",
       "DevicePermissions",

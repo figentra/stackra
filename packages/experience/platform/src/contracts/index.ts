@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { AppIcon } from "#contracts/ports/app-icon.port";
 export { AppLock } from "#contracts/ports/app-lock.port";
 export { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
 export { DevicePermissions } from "#contracts/ports/device-permissions.port";

@@ -8,18 +8,21 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { AppIconConfig } from "#config/app-icon.config";
 export { AppLockConfig } from "#config/app-lock.config";
 export { DesktopConfig } from "#config/desktop.config";
 export { KioskConfig } from "#config/kiosk.config";
 export { LiveActivityConfig } from "#config/live-activity.config";
 export { PushConfig } from "#config/push.config";
 export { PwaConfig } from "#config/pwa.config";
+export { APP_ICON_CONFIG_SCHEMA as AppIconConfig$ } from "#core/constants/app-icon-config-schema.constant";
 export { APP_LOCK_CONFIG_SCHEMA as AppLockConfig$ } from "#core/constants/app-lock-config-schema.constant";
 export { DESKTOP_CONFIG_SCHEMA as DesktopConfig$ } from "#core/constants/desktop-config-schema.constant";
 export { KIOSK_CONFIG_SCHEMA as KioskConfig$ } from "#core/constants/kiosk-config-schema.constant";
 export { LIVE_ACTIVITY_CONFIG_SCHEMA as LiveActivityConfig$ } from "#core/constants/live-activity-config-schema.constant";
 export { PUSH_CONFIG_SCHEMA as PushConfig$ } from "#core/constants/push-config-schema.constant";
 export { PWA_CONFIG_SCHEMA as PwaConfig$ } from "#core/constants/pwa-config-schema.constant";
+export { MemoryAppIconDriver } from "#core/drivers/memory-app-icon.driver";
 export { MemoryAppLockDriver } from "#core/drivers/memory-app-lock.driver";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
 export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";

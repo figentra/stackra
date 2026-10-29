@@ -15,6 +15,8 @@ describe("@stackra/platform", () => {
   it("exports the registry row's symbols, the shipped schemas and the memory drivers", () => {
     expect(Object.keys(core).sort()).toEqual(
       [
+        "AppIconConfig",
+        "AppIconConfig$",
         "AppLockConfig",
         "AppLockConfig$",
         "CachePreset",
@@ -29,6 +31,7 @@ describe("@stackra/platform", () => {
         "KioskConfig$",
         "LiveActivityConfig",
         "LiveActivityConfig$",
+        "MemoryAppIconDriver",
         "MemoryAppLockDriver",
         "MemoryCaptchaVerifierDriver",
         "MemoryDevicePermissionsDriver",

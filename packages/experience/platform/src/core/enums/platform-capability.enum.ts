@@ -23,6 +23,8 @@ export const PlatformCapability = Enum.of({
   Push: "push",
   /** The app icon badge. */
   Badge: "badge",
+  /** Alternate home-screen icons. */
+  AppIcon: "app_icon",
   /** The clipboard. */
   Clipboard: "clipboard",
   /** Saving files to a place the user picks. */

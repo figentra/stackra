@@ -71,6 +71,7 @@
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
     "expo": "catalog:mobile",
+    "expo-alternate-app-icons": "catalog:mobile",
     "expo-background-task": "catalog:mobile",
     "expo-battery": "catalog:mobile",
     "expo-build-properties": "catalog:mobile",

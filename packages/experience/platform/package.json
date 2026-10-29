@@ -4,6 +4,7 @@
   "private": false,
   "description": "Stackra platform: the Platform capability port with its typed refusal, the app lock, push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform, push and app lock) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "keywords": [
+    "app-icon",
     "electron",
     "experience",
     "expo",
@@ -191,6 +192,7 @@
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
     "electron": "catalog:desktop",
+    "expo-alternate-app-icons": "catalog:mobile",
     "expo-background-task": "catalog:mobile",
     "expo-battery": "catalog:mobile",
     "expo-camera": "catalog:mobile",
@@ -217,6 +219,7 @@
     "@expo/ui": "catalog:mobile",
     "@react-native-community/netinfo": "catalog:mobile",
     "electron": "catalog:desktop",
+    "expo-alternate-app-icons": "catalog:mobile",
     "expo-background-task": "catalog:mobile",
     "expo-battery": "catalog:mobile",
     "expo-camera": "catalog:mobile",
@@ -239,6 +242,9 @@
       "optional": true
     },
     "electron": {
+      "optional": true
+    },
+    "expo-alternate-app-icons": {
       "optional": true
     },
     "expo-background-task": {
