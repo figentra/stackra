@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the shared boot (`bootApp`), the `AppWiring` token and
- *          `signEdgeRequest` are exported, nothing else is (no `createApp`, no `Module`, `Service` or `define*`), its types resolve, and
+ *          `signEdgeRequest`, `verifyBearerToken` and `jwksKeySource` are exported, nothing else is (no `createApp`, no `Module`, `Service` or `define*`), its types resolve, and
  *          `RouteSession` adds `session` and `identity` to navigation's `RouteServices`.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -16,7 +16,13 @@ import type { AppSections, BootedApp, BootOptions, RouteSession } from "#core/in
 
 describe("@stackra/app", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(app).sort()).toEqual(["AppWiring", "bootApp", "signEdgeRequest"]);
+    expect(Object.keys(app).sort()).toEqual([
+      "AppWiring",
+      "bootApp",
+      "jwksKeySource",
+      "signEdgeRequest",
+      "verifyBearerToken",
+    ]);
   });
 
   it("exports its types", () => {
