@@ -13,7 +13,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { NativeScaleConfig } from "#config/native-scale.config";
 import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
-import type { ScaleTransport } from "#core/types/scale-transport.type";
+import { ScaleTransport } from "#core/enums/scale-transport.enum";
 
 /** A till's override, under the plain name with the package class aliased. */
 const BaseNativeScaleConfig = NativeScaleConfig;
@@ -21,7 +21,7 @@ const BaseNativeScaleConfig = NativeScaleConfig;
 class TillNativeScaleConfig extends BaseNativeScaleConfig {
   override protocol: ScaleProtocolName = ScaleProtocolName.ContinuousAscii;
 
-  override transport: ScaleTransport = "usb";
+  override transport: ScaleTransport = ScaleTransport.Usb;
 }
 
 describe("NativeScaleConfig", () => {

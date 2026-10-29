@@ -19,7 +19,7 @@ import { NativeScaleOptions } from "#core/schemas/native-scale-options.schema";
  * import { NativeScaleConfig as BaseNativeScaleConfig } from "@stackra/native-scale";
  *
  * export class NativeScaleConfig extends BaseNativeScaleConfig {
- *   override transport: ScaleTransport = "spp";
+ *   override transport: ScaleTransport = ScaleTransport.Spp;
  *   override address = "00:11:22:33:44:55";
  * }
  */

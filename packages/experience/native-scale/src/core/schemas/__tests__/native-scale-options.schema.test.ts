@@ -14,7 +14,7 @@ import { NATIVE_SCALE_CONFIG_SCHEMA } from "#core/constants/native-scale-config-
 import { NativeScaleOptions } from "#core/schemas/native-scale-options.schema";
 import type { ScaleProtocol } from "#core/types/scale-protocol.type";
 import type { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
-import type { ScaleTransport } from "#core/types/scale-transport.type";
+import type { ScaleTransport } from "#core/enums/scale-transport.enum";
 
 describe("NativeScaleOptions", () => {
   it("is a shape whose defaults equal the shipped schema's", () => {

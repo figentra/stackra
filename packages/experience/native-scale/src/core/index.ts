@@ -16,7 +16,7 @@ export { SCALE_PROTOCOLS } from "#core/constants/scale-protocols.constant";
 export { ContinuousAsciiScaleDriver } from "#core/drivers/continuous-ascii-scale.driver";
 export { MtSicsScaleDriver } from "#core/drivers/mt-sics-scale.driver";
 export { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
+export { ScaleTransport } from "#core/enums/scale-transport.enum";
 export { NativeScaleOptions } from "#core/schemas/native-scale-options.schema";
 export type { ScaleFrame } from "#core/types/scale-frame.type";
 export type { ScaleProtocol } from "#core/types/scale-protocol.type";
-export type { ScaleTransport } from "#core/types/scale-transport.type";

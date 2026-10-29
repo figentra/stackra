@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decision 5: the module is a pass-through).
  */
-import type { ScaleTransport } from "#core/types/scale-transport.type";
+import type { ScaleTransport } from "#core/enums/scale-transport.enum";
 
 /** The link the module opens. */
 export interface ScaleLink {

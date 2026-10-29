@@ -23,6 +23,7 @@ describe("@stackra/native-scale", () => {
       "NativeScaleOptions",
       "SCALE_PROTOCOLS",
       "ScaleProtocolName",
+      "ScaleTransport",
     ]);
   });
 

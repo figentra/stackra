@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decision 5); ADR 0253 (decision 4: presets are profiles).
  */
-import type { ScaleTransport } from "#core/types/scale-transport.type";
+import type { ScaleTransport } from "#core/enums/scale-transport.enum";
 
 /** A scale protocol's settings. */
 export interface ScaleProtocol {

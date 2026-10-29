@@ -53,19 +53,19 @@ allow-list of ADR 0174 decision 3 on 2026-10-29; a version bump keeps the approv
 | `frame()` on both drivers                                                  | the full `ScaleFrame`: grams, value and unit as displayed, stable, net or gross, tare                          |
 | `NativeScaleConfig` (+ `NativeScaleOptions`, `NATIVE_SCALE_CONFIG_SCHEMA`) | the configuration (key `native_scale`): protocol, transport, address, baud rate, BLE UUIDs, read timeout, pack |
 | `SCALE_PROTOCOLS`                                                          | the shipped protocol pack                                                                                      |
-| `ScaleProtocolName`                                                        | the enum of shipped protocols, each a driver gen selects                                                       |
-| `ScaleFrame`, `ScaleProtocol`, `ScaleTransport`                            | the types a caller names                                                                                       |
+| `ScaleProtocolName`, `ScaleTransport`                                      | the enums of shipped protocols (each a driver gen selects) and transports                                      |
+| `ScaleFrame`, `ScaleProtocol`                                              | the types a caller names                                                                                       |
 
 ## Use
 
 ```ts
 // src/config/native-scale.config.ts of a till app
 import { NativeScaleConfig as BaseNativeScaleConfig, ScaleProtocolName } from "@stackra/native-scale";
-import type { ScaleTransport } from "@stackra/native-scale";
+import { ScaleTransport } from "@stackra/native-scale";
 
 export class NativeScaleConfig extends BaseNativeScaleConfig {
   override protocol: ScaleProtocolName = ScaleProtocolName.ContinuousAscii;
-  override transport: ScaleTransport = "usb";
+  override transport: ScaleTransport = ScaleTransport.Usb;
 }
 // runway sets native_scale.address per device, e.g. "0403:6001".
 

@@ -10,11 +10,12 @@
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0266 (decision 5: config picks the
  *                     driver); ADR 0478 (decision 5).
  */
-import { Duration } from "@stackra/contracts";
+import { Duration, Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { SCALE_PROTOCOLS } from "#core/constants/scale-protocols.constant";
 import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
+import { ScaleTransport } from "#core/enums/scale-transport.enum";
 
 /** A 128-bit or 16-bit Bluetooth UUID. */
 const BLE_UUID = z
@@ -22,7 +23,7 @@ const BLE_UUID = z
   .regex(/^(?:[0-9a-f]{4}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
 
 /** The transports. */
-const TRANSPORT = z.enum(["ble", "spp", "usb"]);
+const TRANSPORT = z.enum(Enum.values(ScaleTransport));
 
 /** One protocol pack entry. */
 const PROTOCOL = z.object({
@@ -57,7 +58,7 @@ export const NATIVE_SCALE_CONFIG_SCHEMA = z.object({
   protocol: z
     .enum([ScaleProtocolName.MtSics, ScaleProtocolName.ContinuousAscii])
     .default(ScaleProtocolName.MtSics),
-  transport: TRANSPORT.default("ble"),
+  transport: TRANSPORT.default(ScaleTransport.Ble),
   address: z.string().max(64).default(""),
   baudRate: z.int().min(300).max(921_600).default(9600),
   bleService: BLE_UUID.default("6e400001-b5a3-f393-e0a9-e50e24dcca9e"),
