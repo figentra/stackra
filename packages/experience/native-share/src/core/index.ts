@@ -16,5 +16,6 @@ export {
 export { IncomingShareDriver } from "#core/drivers/incoming-share.driver";
 export { MemoryIncomingShareDriver } from "#core/drivers/memory-incoming-share.driver";
 export { keepSharedItem } from "#core/functions/keep-shared-item.function";
+export { sharedItemPath } from "#core/functions/shared-item-path.function";
 export { uploadSharedItem } from "#core/functions/upload-shared-item.function";
 export { NativeShareOptions } from "#core/schemas/native-share-options.schema";

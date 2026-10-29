@@ -1,0 +1,15 @@
+{
+  "inbox": {
+    "title": "Mit Stackra geteilt",
+    "empty": "Es wartet nichts.",
+    "text": "Text",
+    "link": "Link",
+    "file": "Geteilte Datei",
+    "keep": "Auf diesem Telefon behalten",
+    "upload": "Hochladen",
+    "kept": "Auf diesem Telefon gespeichert",
+    "uploaded": "Hochgeladen",
+    "failed": "Das hat nicht geklappt. Versuche es noch einmal.",
+    "done": "Fertig"
+  }
+}

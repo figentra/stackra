@@ -26,6 +26,7 @@
     "src",
     "plugin/src",
     "app.plugin.js",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -86,6 +87,7 @@
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
     },
+    "./assets/*": "./assets/*",
     "./app.plugin.js": {
       "default": "./app.plugin.js"
     },

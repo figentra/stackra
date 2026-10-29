@@ -8,9 +8,10 @@ ships both native sides, and this package's config plugin applies it with what t
 and 9). Anything the configuration refuses is dropped or read as `null`, never thrown.
 
 **Tier:** `tier:lib` (`packages/experience/native-share`). Entries `.`, `./contracts`, `./native` and `./react`, plus
-`app.plugin.js` for Expo CLI. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`,
-`@stackra/validation`, `@stackra/filesystem`, `@stackra/media` and zod; `expo`, `expo-sharing` (MIT), React and React
-Native are optional peers of `./native`, `./react` and the plugin.
+`app.plugin.js` for Expo CLI and the `native_share` catalogues under `./assets/lang/<locale>/`. Depends on
+`@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/filesystem`,
+`@stackra/media` and zod; `expo`, `expo-sharing` (MIT), React and React Native are optional peers of `./native`,
+`./react` and the plugin.
 
 ## What is here
 
@@ -20,6 +21,8 @@ Native are optional peers of `./native`, `./react` and the plugin.
 | `.`           | `NativeShareConfig` (+ `NativeShareOptions`, `NativeShareConfig$`) | key `native_share`: `text`, `links`, `fileTypes`, `maxItems`, `maxBytes`, `maxTextLength` |
 | `.`           | `IncomingShareDriver`, `MemoryIncomingShareDriver`                 | the base with the configuration's checks; the `memory` driver (tests, web)                |
 | `.`           | `keepSharedItem`, `uploadSharedItem`                               | a shared file onto the `FileSystem` disk, or into a media bucket                          |
+| `.`           | `sharedItemPath`                                                   | the safe disk key a shared file is kept under (`inbox/<name>`)                            |
+| assets        | `native_share::inbox.*`                                            | the inbox screen's strings in en, ar, de, es, fr, it and nl                               |
 | `./native`    | `ExpoIncomingShareDriver`                                          | the phone, over expo-sharing                                                              |
 | `./react`     | `useIncomingShare`, `IncomingShareState`                           | the waiting items, the port and `clear`                                                   |
 | plugin        | `"@stackra/native-share"`                                          | the share extension and intent filters, through expo-sharing's plugin                     |
@@ -38,8 +41,9 @@ Native are optional peers of `./native`, `./react` and the plugin.
 // a screen
 const { items, share, clear } = useIncomingShare();
 for (const item of items) {
-  if (item.kind === "file") await uploadSharedItem(share, item, uploader, "documents.receipts");
-  else note.append(item.value);
+  if (item.kind !== "file") note.append(item.value);
+  else if (toUpload) await uploadSharedItem(share, item, uploader, "documents.receipts");
+  else await keepSharedItem(share, item, files, sharedItemPath(item)); // on the phone: `disk: expo`
 }
 await clear();
 ```
@@ -53,7 +57,8 @@ await clear();
   person acted on it. Files sit in the iOS app group or are granted by the sharing app on Android, so no permission
   prompt is involved; uploading or keeping them goes through the app's own `Uploader` and `FileSystem` bindings.
 - iOS needs the app group (`group.<bundle identifier>` by default) registered for the app; EAS Build registers it.
-- The share extension opens the app at `<scheme>://expo-sharing`; the app's navigation leaves that link alone.
+- The share extension opens the app at `<scheme>://expo-sharing`; the app maps that path to its share inbox screen.
+  A shared file's name comes from another app, so keep it under `sharedItemPath(item)`, never under the raw name.
 
 ## Testing
 

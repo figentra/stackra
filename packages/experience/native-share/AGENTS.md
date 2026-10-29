@@ -15,6 +15,7 @@ for Expo CLI.
 | A driver                              | `src/core/drivers/` (memory), `src/native/drivers/` (Expo)            |
 | The configuration                     | `src/config/native-share.config.ts`, its shape in `src/core/schemas/` |
 | The share extension or intent filters | the config plugin, `plugin/src/` (it applies expo-sharing's)          |
+| A string an app shows for a share     | `assets/lang/<locale>/native_share.json`, every locale                |
 | A test                                | `__tests__/<name>.test.ts` beside it                                  |
 
 ## This package

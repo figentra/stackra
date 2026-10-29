@@ -1,0 +1,15 @@
+{
+  "inbox": {
+    "title": "Gedeeld met Stackra",
+    "empty": "Er wacht niets.",
+    "text": "Tekst",
+    "link": "Link",
+    "file": "Gedeeld bestand",
+    "keep": "Op deze telefoon bewaren",
+    "upload": "Uploaden",
+    "kept": "Op deze telefoon bewaard",
+    "uploaded": "Geüpload",
+    "failed": "Dat is niet gelukt. Probeer het opnieuw.",
+    "done": "Klaar"
+  }
+}

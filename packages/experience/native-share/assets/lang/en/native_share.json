@@ -1,0 +1,15 @@
+{
+  "inbox": {
+    "title": "Shared with Stackra",
+    "empty": "Nothing is waiting.",
+    "text": "Text",
+    "link": "Link",
+    "file": "Shared file",
+    "keep": "Keep on this phone",
+    "upload": "Upload",
+    "kept": "Kept on this phone",
+    "uploaded": "Uploaded",
+    "failed": "That did not work. Try again.",
+    "done": "Done"
+  }
+}
