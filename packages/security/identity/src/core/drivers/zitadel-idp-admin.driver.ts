@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ZitadelIdpAdminDriver`, the ZITADEL driver of `IdpAdmin`: human users through the v2 user service, machine
- *          users and their client secret through the management API, sessions through the v2 session service, the
+ *          users and their client secret through the management API, sessions (listed and ended) through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
  *          management API (added the first time, updated after, then its external providers and second factors brought
  *          to exactly the listed ones); a user's enrolled authentication methods through the
@@ -17,7 +17,7 @@
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
- *                     STA-1538 (passkeys); STA-1543 (erasure).
+ *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list).
  */
 import { Driver } from "@stackra/container";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -29,6 +29,7 @@ import type {
   DeviceTokenResult,
   IdpMachineCredential,
   IdpMachineUserInput,
+  IdpSession,
   IdpSessionGrant,
   IdpUserInput,
   LoginPolicy,
@@ -92,6 +93,14 @@ interface Call {
   readonly json?: object;
   readonly form?: Readonly<Record<string, string>>;
   readonly organizationId?: string;
+}
+
+/** The fields of a v2 session search result the driver reads; the rest (factors, IP, headers) stay unread. */
+interface ZitadelSession {
+  readonly id?: unknown;
+  readonly creationDate?: unknown;
+  readonly changeDate?: unknown;
+  readonly userAgent?: { readonly description?: unknown };
 }
 
 /**
@@ -188,6 +197,33 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
   /** Implements `IdpAdmin.removeUser`, documented there. */
   async removeUser(userId: string): Promise<void> {
     await this.call({ method: "DELETE", path: `/v2/users/${encodeURIComponent(userId)}` });
+  }
+
+  /** See `IdpAdmin.listSessions`: the v2 session search on the user id, a page at a time. */
+  async listSessions(userId: string): Promise<readonly IdpSession[]> {
+    const listed: IdpSession[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const { body } = await this.call({
+        method: "POST",
+        path: "/v2/sessions/search",
+        json: { query: { offset, limit: PAGE }, queries: [{ userIdQuery: { id: userId } }] },
+      });
+      const sessions = (body as { sessions?: readonly ZitadelSession[] }).sessions ?? [];
+      for (const session of sessions) {
+        if (typeof session.id !== "string" || session.id === "") continue;
+        const createdAt = typeof session.creationDate === "string" ? session.creationDate : "";
+        const description = session.userAgent?.description;
+        listed.push({
+          sessionId: session.id,
+          createdAt,
+          lastActiveAt: typeof session.changeDate === "string" ? session.changeDate : createdAt,
+          ...(typeof description === "string" && description !== ""
+            ? { userAgent: description }
+            : {}),
+        });
+      }
+      if (sessions.length < PAGE) return listed;
+    }
   }
 
   /** Implements `IdpAdmin.endSession`, documented there. */

@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
- *          taken login name refused per organisation; deactivation, removal and ending sessions; the device flow stays
+ *          taken login name refused per organisation; deactivation, removal, listing a user's own sessions and ending them; the device flow stays
  *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last; enrolled methods are listed once
  *          each and dropped with the user; a user is found by its Stackra id; a passkey sign-in needs a known login and
  *          a live session; a passkey registration finishes once and enrols `swk`.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543.
+ * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543; STA-1580.
  */
 import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -66,6 +66,19 @@ describe(MemoryIdpAdminDriver, () => {
     await idp.removeUser(userId);
     expect(idp.users.has(userId)).toBe(false);
     expect(idp.sessions.size).toBe(0);
+  });
+
+  it("lists only the user's own sessions with the device's description", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const userId = await idp.createUser(RANA);
+    const mine = idp.openSession(userId, "Safari on iOS");
+    idp.openSession("idp_other");
+    const sessions = await idp.listSessions(userId);
+    expect(sessions).toEqual([
+      expect.objectContaining({ sessionId: mine, userAgent: "Safari on iOS" }),
+    ]);
+    expect(sessions[0]?.lastActiveAt).toBe(sessions[0]?.createdAt);
+    expect(await idp.listSessions("idp_unknown")).toEqual([]);
   });
 
   it("runs the device flow and keeps login policies per organisation", async () => {

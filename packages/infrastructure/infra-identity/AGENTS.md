@@ -25,6 +25,8 @@ ZITADEL per environment (ADR 0171, ADR 0206). Member at `packages/infrastructure
 - Sign in with Apple (STA-1578) is off unless the seed has `appleSignIn`. The seed holds Apple's public ids and the
   NAME of the `.p8` key's stack config secret, never the key (ADR 0173). `@pulumiverse/zitadel` has no Apple
   resource, so `APPLE_IDP_PROVIDER` calls ZITADEL's admin API; its state keeps no Apple key.
+- The instance lockout (STA-1580) locks after five failed password checks. `@pulumiverse/zitadel` 0.2.0 has no
+  `maxOtpAttempts`; add it to `DefaultLockoutPolicy` when the catalog moves past 0.2, never through a dynamic resource.
 - Tenant organisations, their grants and branding, and the claims action are the identity service's, not this stack's.
 - The health driver's target is `InfraIdentityConfig` (`src/config/infra-identity.config.ts`, key `infra_identity`), injected by type:
   the runway's `config.infra_identity` sets it. Never a constructor options object (gen's `token_not_a_class`).

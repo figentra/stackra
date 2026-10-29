@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `IdpAdmin` port: run-time administration of the identity provider: create human and machine users,
- *          deactivate and remove a user, end one session or every session of a user, run the OAuth device flow, and set
+ *          deactivate and remove a user, list a user's live sessions, end one session or every session of a user, run the OAuth device flow, and set
  *          an organisation's login policy; read which authentication methods a user has enrolled (as RFC 8176 `amr`
  *          codes, so `assuranceOf` turns them into the MFA level the security page's enrolment list needs); find the
  *          provider's user of a Stackra user id; and the server half of passkeys (the sign-in challenge and its check
@@ -14,7 +14,8 @@
  *           the options go to the `Passkeys` port and its credential comes back here unread.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0410 (STA-834); RFC 8176; STA-1264 (MFA
- *                     enrolment); STA-1538 (passkeys); STA-1543 (erasure).
+ *                     enrolment); STA-1538 (passkeys); STA-1543 (erasure); STA-1580
+ *                     (session list).
  */
 import { Port } from "@stackra/contracts";
 
@@ -23,6 +24,7 @@ import type { DeviceTokenResult } from "#contracts/types/device-token-result.typ
 import type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
 import type { IdpMachineUserInput } from "#contracts/types/idp-machine-user-input.type";
 import type { IdpUserInput } from "#contracts/types/idp-user-input.type";
+import type { IdpSession } from "#contracts/types/idp-session.type";
 import type { IdpSessionGrant } from "#contracts/types/idp-session-grant.type";
 import type { LoginPolicy } from "#contracts/types/login-policy.type";
 import type { PasskeyCredential } from "#contracts/types/passkey-credential.type";
@@ -57,6 +59,13 @@ export abstract class IdpAdmin extends Port {
 
   /** Removes `userId` from the provider. */
   abstract removeUser(userId: string): Promise<void>;
+
+  /**
+   * The live sessions of `userId`, every page of them; an unknown user has none.
+   *
+   * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
+   */
+  abstract listSessions(userId: string): Promise<readonly IdpSession[]>;
 
   /** Ends one session; a session already gone is not an error. */
   abstract endSession(sessionId: string): Promise<void>;

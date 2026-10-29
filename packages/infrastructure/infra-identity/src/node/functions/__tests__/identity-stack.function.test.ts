@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `identityStack` under Pulumi mocks: the provider points at the plan's domain, the instance
- *          gets the ten-minute token lifetimes, the 12-character password rule and the branding, the staff
+ *          gets the ten-minute token lifetimes, the 12-character password rule, the five-attempt lockout and the branding, the staff
  *          organisation gets its MFA sign-in policy, the project its roles, each app one PKCE client with no secret
  *          and its extra grants, each machine user its instance and project roles; the outputs carry the client and
  *          user ids; an unset provisioner key fails naming it; Apple is off by default, and on it is one Apple identity
@@ -11,7 +11,7 @@
  *           serialisation.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 2 to 4); ADR 0206 (decision 8); ADR 0207
- *                     (decision 3); ADR 0274 (decision 5); ADR 0277 (decisions 2 and 4); STA-1578.
+ *                     (decision 3); ADR 0274 (decision 5); ADR 0277 (decisions 2 and 4); STA-1578; STA-1580.
  */
 import { all, runtime } from "@pulumi/pulumi";
 import type * as Pulumi from "@pulumi/pulumi";
@@ -180,6 +180,7 @@ describe("identityStack", () => {
       hasUppercase: false,
       hasSymbol: false,
     });
+    expect(inputsOf("DefaultLockoutPolicy", "lockout")).toEqual({ maxPasswordAttempts: 5 });
     expect(inputsOf("DefaultLabelPolicy", "branding")).toMatchObject({
       primaryColor: "#1f6feb",
       backgroundColorDark: "#0d1117",

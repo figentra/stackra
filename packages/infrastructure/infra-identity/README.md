@@ -130,6 +130,7 @@ export const identity = identityStack(plan);
 | ----------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------- |
 | Instance OIDC settings  | access and id tokens 10 minutes; refresh tokens 30 days                                                | ADR 0206 d8, ADR 0277 d4   |
 | Instance password rule  | at least 12 characters, no composition rules                                                           | ADR 0207 d3 (ASVS level 1) |
+| Instance lockout policy | locked after 5 failed password checks; OTP keeps ZITADEL's default (provider 0.2.0 has no OTP limit)   | STA-1580 (ASVS 2.2.1)      |
 | Instance label policy   | the seed's colours, when it has them                                                                   | ADR 0268 R3                |
 | Staff organisation      | second factor forced, no self-registration, no external provider, checks every 12 hours                | ADR 0206 d5, ADR 0207 d3   |
 | Project and roles       | roles asserted in tokens; a user's own organisation brands the sign-in pages                           | ADR 0208, ADR 0268 R3      |

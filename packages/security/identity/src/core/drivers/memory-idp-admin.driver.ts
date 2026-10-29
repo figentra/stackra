@@ -4,12 +4,12 @@
  *          sessions, device flows, login policies (with their providers and second factors), enrolled authentication
  *          methods and passkeys live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
- *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end;
+ *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to list and end;
  *           `enrolAuthMethod` adds an `amr` code to a user. A user created with a `stackraUserId` is found by it. A
  *           passkey sign-in needs a known login name; any credential passes its check (no signature is verified), and
  *           a finished registration adds the `swk` method.
  * Runtime: isomorphic
- * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263; STA-1538; STA-1543.
+ * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263; STA-1538; STA-1543; STA-1580.
  */
 import { Driver } from "@stackra/container";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -20,6 +20,7 @@ import type {
   DeviceTokenResult,
   IdpMachineCredential,
   IdpMachineUserInput,
+  IdpSession,
   IdpSessionGrant,
   IdpUserInput,
   LoginPolicy,
@@ -50,8 +51,8 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
   /** User id to user. */
   readonly users = new Map<string, HeldUser>();
 
-  /** Session id to its user id. */
-  readonly sessions = new Map<string, string>();
+  /** Session id to its user id and what `listSessions` answers for it. */
+  readonly sessions = new Map<string, { readonly userId: string; readonly session: IdpSession }>();
 
   /** Organisation id to its login policy. */
   readonly policies = new Map<string, LoginPolicy>();
@@ -89,11 +90,27 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     await this.endSessions(userId);
   }
 
-  /** Opens a session for `userId`, resolving to its id, so a test has one to end. */
-  openSession(userId: string): string {
+  /** Opens a session for `userId` from the device `userAgent`, resolving to its id, so a test has one to list and end. */
+  openSession(userId: string, userAgent?: string): string {
     const sessionId = `ses_${randomToken()}`;
-    this.sessions.set(sessionId, userId);
+    const at = new Date().toISOString();
+    this.sessions.set(sessionId, {
+      userId,
+      session: {
+        sessionId,
+        createdAt: at,
+        lastActiveAt: at,
+        ...(userAgent === undefined ? {} : { userAgent }),
+      },
+    });
     return sessionId;
+  }
+
+  /** Implements `IdpAdmin.listSessions`, documented there. */
+  async listSessions(userId: string): Promise<readonly IdpSession[]> {
+    return [...this.sessions.values()]
+      .filter((held) => held.userId === userId)
+      .map((held) => held.session);
   }
 
   /** Implements `IdpAdmin.endSession`, documented there. */
@@ -103,7 +120,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
 
   /** Implements `IdpAdmin.endSessions`, documented there. */
   async endSessions(userId: string): Promise<number> {
-    const ended = [...this.sessions].filter(([, owner]) => owner === userId);
+    const ended = [...this.sessions].filter(([, held]) => held.userId === userId);
     for (const [sessionId] of ended) this.sessions.delete(sessionId);
     return ended.length;
   }

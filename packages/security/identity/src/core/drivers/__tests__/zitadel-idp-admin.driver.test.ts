@@ -4,14 +4,15 @@
  *          right method, path, organisation header, bearer token and body (v2 users and sessions, management machine
  *          users, secrets and login policy, the OAuth device endpoints); a 409 is `IdpUserExistsError`, a 5xx, a 429 or a
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
- *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
+ *          succeeds; ending a user's sessions searches and deletes each; listing them pages the search and keeps
+ *          id, times and the device's description only; a device poll maps the RFC 8628 errors; a
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
  *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata;
  *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey`, and turn a
  *          refusal or an unknown login or user into `UnauthenticatedError`, while a 403 stays an `Error`.
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543.
+ * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543; STA-1580.
  */
 import { buildConfig } from "@stackra/config";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -159,6 +160,51 @@ describe(ZitadelIdpAdminDriver, () => {
       ["DELETE", "https://id.acme.example/v2/sessions/s_1"],
       ["DELETE", "https://id.acme.example/v2/sessions/s_2"],
     ]);
+  });
+
+  it("lists a user's sessions page by page with their times and device", async () => {
+    const full = Array.from({ length: 100 }, (_, index) => ({
+      id: `s_${index}`,
+      creationDate: "2026-10-29T08:00:00Z",
+      changeDate: "2026-10-29T09:00:00Z",
+    }));
+    const { idp, sent } = driverWith([
+      [200, { sessions: full }],
+      [
+        200,
+        {
+          sessions: [
+            {
+              id: "s_last",
+              creationDate: "2026-10-28T08:00:00Z",
+              userAgent: { description: "Safari on iOS", ip: "203.0.113.9" },
+            },
+            { creationDate: "2026-10-28T08:00:00Z" },
+          ],
+        },
+      ],
+    ]);
+    const sessions = await idp.listSessions("u_1");
+    expect(sessions).toHaveLength(101);
+    expect(sessions[0]).toEqual({
+      sessionId: "s_0",
+      createdAt: "2026-10-29T08:00:00Z",
+      lastActiveAt: "2026-10-29T09:00:00Z",
+    });
+    expect(sessions[100]).toEqual({
+      sessionId: "s_last",
+      createdAt: "2026-10-28T08:00:00Z",
+      lastActiveAt: "2026-10-28T08:00:00Z",
+      userAgent: "Safari on iOS",
+    });
+    expect(sent.map((request) => [request.method, request.url])).toEqual([
+      ["POST", "https://id.acme.example/v2/sessions/search"],
+      ["POST", "https://id.acme.example/v2/sessions/search"],
+    ]);
+    expect(JSON.parse(sent[1]?.body ?? "")).toEqual({
+      query: { offset: 100, limit: 100 },
+      queries: [{ userIdQuery: { id: "u_1" } }],
+    });
   });
 
   it("runs the device flow over the OAuth endpoints", async () => {
