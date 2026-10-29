@@ -184,6 +184,8 @@ catalogs:
     # The permission helper's location and photos (owner 2026-10-29, STA-1536), at the SDK 57 bundled versions. MIT.
     expo-location: 57.0.22
     expo-media-library: 57.0.5
+    # The phone disk driver of @stackra/filesystem (owner 2026-10-29, STA-1547), at the SDK 57 version. MIT.
+    expo-file-system: 57.0.7
     # The native backlog features (owner 2026-10-29, STA-1537 to 1542), at the SDK 57 versions. MIT.
     # expo-local-authentication: the app lock; expo-sharing: receiving shares; expo-widgets and @expo/ui: Live Activities.
     expo-local-authentication: 57.0.3
