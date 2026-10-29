@@ -220,7 +220,11 @@ export async function generate(
   // code hatch outside the closed set or without its `Reason:` header is refused too.
   // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app outside
   // `.stackra/encore` is refused (STA-1322).
-  const encore = encoreApp(root, ir.layout === "service" && options.pass === undefined);
+  // A v2 service (authored src/main.ts, STA-344) is not an Encore app yet, so it gets no encore.app.
+  const encore = encoreApp(
+    root,
+    ir.layout === "service" && ir.authoredMain !== true && options.pass === undefined,
+  );
   // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248).
   const migrations =
     ir.layout === "service" && options.pass === undefined

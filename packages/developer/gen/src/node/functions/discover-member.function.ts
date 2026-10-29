@@ -202,6 +202,10 @@ export async function discoverMember(
       ...(facts.area !== undefined ? { area: facts.area } : {}),
       ...(facts.targets !== undefined ? { targets: facts.targets } : {}),
       ...(appDefinition.app !== undefined ? { app: appDefinition.app } : {}),
+      // A v2 service keeps its authored entry until STA-344 converts it (`isV2Service` in repo-checks).
+      ...(facts.layout === "service" && existsSync(join(facts.root, "src/main.ts"))
+        ? { authoredMain: true as const }
+        : {}),
       ...(authored !== undefined
         ? { rootModule: { name: authored.name, from: authored.importPath } }
         : {}),

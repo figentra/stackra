@@ -54,6 +54,12 @@ export interface MemberIR {
     readonly icons: readonly string[];
   };
 
+  /**
+   * True for a v2 service, one with an authored `src/main.ts` (the shape `checkService` accepts until STA-344): gen
+   * writes it no runtime entry, tool config or Encore app, since its own entry and configs run it.
+   */
+  readonly authoredMain?: true;
+
   /** The authored root module, when the member writes one (ADR 0305 rule 15). */
   readonly rootModule?: ClassRef;
 

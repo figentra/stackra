@@ -10,7 +10,9 @@
  *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
  *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the member root is
  *          `encore_app_stray` (STA-1322); an authored `app.json` or root `app.config.ts` beside an iOS app's Expo
- *          config is `shim_authored`, and the shim gen wrote is not (STA-768).
+ *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
+ *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
+ *          `generated_dependency_missing` (STA-344).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -183,6 +185,59 @@ describe("generate's tool configs and code hatches (STA-1306)", () => {
       "encore_app_stray encore.app",
     ]);
     expect(existsSync(join(root, ".stackra/encore/encore.app"))).toBe(false);
+  });
+});
+
+/**
+ * A service shaped like services/example: a root module, an authored tsdown.config.ts and only its dependencies (no
+ * `@stackra/app` or `@stackra/vitest-config`); with `main`, the authored `src/main.ts` of the v2 shape (STA-344).
+ */
+function exampleService(main: boolean): string {
+  const root = writeFixtureMember("example", {
+    "stackra.config.ts":
+      'import { defineService } from "@stackra/contracts";\n\nexport default defineService({});\n',
+    "src/example.module.ts":
+      'import { Module } from "@stackra/container";\n\nexport class ExampleModule extends Module({ imports: [] }) {}\n',
+    "tsdown.config.ts": 'export default { entry: ["src/main.ts"] };\n',
+    ...(main ? { "src/main.ts": 'process.stdout.write("hello\\n");\n' } : {}),
+  });
+  const path = join(root, "package.json");
+  // services/example's own dependencies, so nothing else the fixture declares changes what gen writes.
+  const pkg = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  pkg["dependencies"] = {
+    "@stackra/container": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+  };
+  writeFileSync(path, JSON.stringify(pkg));
+  return root;
+}
+
+describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
+  it("writes no entry, tool config or encore.app for a v2 service and refuses nothing", async () => {
+    const root = exampleService(true);
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toContain("stackra.manifest.json");
+    for (const path of [
+      ".stackra/entry/server.ts",
+      ".stackra/vitest.config.ts",
+      ".stackra/tsdown.config.ts",
+      ".stackra/encore/encore.app",
+      "vitest.config.ts",
+    ])
+      expect(existsSync(join(root, path))).toBe(false);
+  });
+
+  it("still refuses a v3 service that does not declare what its generated files import", async () => {
+    const result = await generate(exampleService(false));
+    expect(result.errors.map((error) => error.code)).not.toEqual([]);
+    expect(result.errors.every((error) => error.code === "generated_dependency_missing")).toBe(
+      true,
+    );
+    expect(result.errors.map((error) => error.subject)).toEqual(
+      expect.arrayContaining(["@stackra/app", "@stackra/vitest-config"]),
+    );
+    expect(result.changed).not.toContain(".stackra/entry/server.ts");
   });
 });
 

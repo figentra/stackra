@@ -223,20 +223,23 @@ export function generateMember(
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
   files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
-  const entries = [
-    ...emitPackageEntries(ir),
-    ...emitRuntimeEntries(
-      ir,
-      files.map((file) => file.path),
-    ),
-  ];
-  files.push(
-    ...entries,
-    ...emitToolConfigs(ir, {
-      entries,
-      registrations: files.some((file) => file.path === ".stackra/gen/registrations.ts"),
-    }),
-  );
+  // A v2 service runs from its authored src/main.ts and configs, so it gets no entry or tool config (STA-344).
+  if (ir.authoredMain !== true) {
+    const entries = [
+      ...emitPackageEntries(ir),
+      ...emitRuntimeEntries(
+        ir,
+        files.map((file) => file.path),
+      ),
+    ];
+    files.push(
+      ...entries,
+      ...emitToolConfigs(ir, {
+        entries,
+        registrations: files.some((file) => file.path === ".stackra/gen/registrations.ts"),
+      }),
+    );
+  }
   // Every other generated file is held to the same rule: the wiring's driver entries (`@stackra/content/node`), the
   // test setup's testing subpaths, the tool configs (STA-1296).
   const elsewhere = undeclaredPackages(
