@@ -317,6 +317,11 @@ describe("reportQueriesOf", () => {
       endpoint: { method: "GET", path: "/reports/order-sales", derived: true },
     });
     expect(entry?.["tool"]).toBeDefined();
+    expect(entry?.["input"]).toEqual({ $ref: "#/schemas/orders.ReportRequest" });
+    expect(entry?.["output"]).toEqual({ $ref: "#/schemas/orders.ReportResult" });
+    expect((manifest.schemas as Record<string, unknown>)["orders.ReportRequest"]).toMatchObject({
+      required: ["dimensions", "measures"],
+    });
   });
 
   it("declares nothing without @stackra/reports or without a keyed report", () => {

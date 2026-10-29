@@ -206,7 +206,8 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `#stackra/reports`. `reportQueriesOf` and `searchQueriesOf` are the one place that picks the reports and searchable
   models and declares their generated queries; `generateMember` adds those to the IR it builds the manifest and wiring
   from, and hands the emitters the authored IR (STA-1459). Keep their key, actors and tokens in step with `SearchQuery`
-  and the emitted `Query({...})`. Keep the `base-matches-suffix` lint table of `@stackra/coding-standard` in step.
+  and the emitted `Query({...})`, and `GENERATED_QUERY_SCHEMAS` in step with `SearchQueryInput`, `SearchQueryOutput`,
+  `ReportRequest` and `ReportResult`. Keep the `base-matches-suffix` lint table of `@stackra/coding-standard` in step.
 - Model additions (ADR 0336, stackra-64): `ModelAddition` is a `KIND_BASES` row (`model_addition`, a shape kind, file
   `model-addition`, suffix `Addition`); its partner is the base (the call's value argument, as `Driver(Port)`).
   `additionsOf` is the one place that matches the base in the dependencies' `models` and names the side table

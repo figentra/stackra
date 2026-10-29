@@ -5,7 +5,8 @@
  *          convention, the MCP tool and the wiring treat it like an authored query (ADR 0470 decision 1, STA-1459).
  * Boundary: pure; reads `ir.classes`. Empty when the member does not declare `@stackra/reports` or has no report with
  *           a written key. The query injects `ReportRunner` and reads the report's own `Permissions` static when it
- *           names one; without one it reads the query default, `<module>.report.read`.
+ *           names one; without one it reads the query default, `<module>.report.read`. Its input and output are
+ *           `ReportRequest` and `ReportResult` of `@stackra/reports`, written from `GENERATED_QUERY_SCHEMAS`.
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decision 1); ADR 0294 (decisions 16, 20 and 21); ADR 0155 (queries are MCP tools).
  */
@@ -49,6 +50,7 @@ export function reportQueriesOf(
           deps: [{ class: { name: "ReportRunner", from: "@stackra/reports" } }],
           facets: [],
           methods: ["handle"],
+          handle: { input: "ReportRequest", output: "ReportResult" },
           refusals: [],
           statics: {},
           traits: [],

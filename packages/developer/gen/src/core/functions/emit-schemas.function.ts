@@ -352,7 +352,9 @@ export function emitSchemas(ir: MemberIR, module: string): string {
   for (const declaration of ir.classes) {
     if (
       (declaration.kind !== "action" && declaration.kind !== "query") ||
-      declaration.module !== module
+      declaration.module !== module ||
+      // A query gen writes itself (search, report) answers a package shape, not a member one.
+      declaration.file.startsWith(".stackra/")
     )
       continue;
     const find = (name: string | undefined): ShapeIR | undefined =>

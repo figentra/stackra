@@ -300,6 +300,37 @@
       "output": {
         "$ref": "#/schemas/loyalty_kit.PointsIssuedView"
       }
+    },
+    {
+      "key": "loyalty_kit.loyalty_account.search@1",
+      "kind": "query",
+      "module": "loyalty_kit",
+      "class": "SearchLoyaltyAccountQuery",
+      "file": ".stackra/gen/search.ts",
+      "permission": "loyalty_kit.loyalty_account.read",
+      "risk": "L0",
+      "actors": ["user", "agent", "service"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/loyalty-accounts/search",
+        "derived": true
+      },
+      "tool": {
+        "name": "loyalty_kit_loyalty_account_search",
+        "default": true,
+        "hints": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      "input": {
+        "$ref": "#/schemas/loyalty_kit.SearchQueryInput"
+      },
+      "output": {
+        "$ref": "#/schemas/loyalty_kit.SearchQueryOutput"
+      }
     }
   ],
   "events": [
@@ -1136,6 +1167,50 @@
         },
         "reference": {
           "type": "string"
+        }
+      }
+    },
+    "loyalty_kit.SearchQueryInput": {
+      "type": "object",
+      "required": ["q"],
+      "properties": {
+        "q": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "arabizi": {
+          "type": "boolean"
+        }
+      }
+    },
+    "loyalty_kit.SearchQueryOutput": {
+      "type": "object",
+      "required": ["hits"],
+      "properties": {
+        "hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     }

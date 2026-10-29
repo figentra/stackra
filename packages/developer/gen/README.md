@@ -215,7 +215,9 @@ key: "report.<key>", permission })`, whose `handle` calls the injected `ReportRu
 (`#stackra/search`): `Search<Model>Query extends SearchQuery(<Model>)` per own `@Searchable` model (key `<model>.search`).
 Both generated kinds are declared beside the authored queries (`reportQueriesOf`, `searchQueriesOf`), so
 `generateMember` gives each its manifest entry, derived endpoint, MCP tool and wiring binding like an authored query
-(STA-1459); the runner's driver is stackra-390.
+(STA-1459); its input and output are the package shapes (`SearchQueryInput`/`SearchQueryOutput`,
+`ReportRequest`/`ReportResult`), written under the module's `schemas` from `GENERATED_QUERY_SCHEMAS`, and it gets
+no `X$` in `#stackra/schemas`. The runner's driver is stackra-390.
 
 ## Model additions (ADR 0336)
 

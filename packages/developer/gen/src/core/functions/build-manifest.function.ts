@@ -3,7 +3,8 @@
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
  *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
- *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338); a service or app also lists what its hosted packages contribute, marked
+ *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338, and the package
+ *          input and output of a generated search or report query, STA-1459); a service or app also lists what its hosted packages contribute, marked
  *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
  *          each sequence's key; an app's block and route
  *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
@@ -48,6 +49,7 @@ import { ErrorKind, refusalCode } from "@stackra/errors";
 import { camelCase, snakeCase } from "@stackra/support";
 
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
+import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
@@ -421,11 +423,16 @@ export function buildManifest(ir: MemberIR): {
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;
-    const inputRef = ref(declared.handle?.input);
+    // A query gen writes itself answers a package shape, described under the module (STA-1459).
+    const packageRef = (name: string | undefined): Entry | undefined =>
+      name !== undefined && declared.file.startsWith(".stackra/") && name in GENERATED_QUERY_SCHEMAS
+        ? { $ref: `#/schemas/${declared.module}.${name}` }
+        : undefined;
+    const inputRef = packageRef(declared.handle?.input) ?? ref(declared.handle?.input);
     const outputRef =
       declared.handle?.replica === true
         ? { $ref: `#/schemas/${declared.module}.ReplicaPage` }
-        : ref(declared.handle?.output);
+        : (packageRef(declared.handle?.output) ?? ref(declared.handle?.output));
     if (inputRef !== undefined) entry["input"] = inputRef;
     if (outputRef !== undefined) entry["output"] = outputRef;
     if (refusals.length > 0) entry["refusals"] = [...new Set(refusals)];
@@ -951,9 +958,16 @@ export function buildManifest(ir: MemberIR): {
   ))
     schemas[`${shape.module}.${shape.name}`] = jsonSchemaOf(shape, ir.shapes);
   // A replica query answers `ReplicaPage` (ADR 0338), described once per module that has one.
-  for (const declared of ir.classes)
+  for (const declared of ir.classes) {
     if (declared.handle?.replica === true)
       schemas[`${declared.module}.ReplicaPage`] = REPLICA_PAGE_SCHEMA;
+    // The package shapes a generated search or report query answers, described once per module that has one.
+    if (declared.file.startsWith(".stackra/"))
+      for (const name of [declared.handle?.input, declared.handle?.output]) {
+        const schema = name === undefined ? undefined : GENERATED_QUERY_SCHEMAS[name];
+        if (schema !== undefined) schemas[`${declared.module}.${name}`] = schema;
+      }
+  }
 
   const sections: Record<(typeof MERGED_SECTIONS)[number], Entry[]> = {
     actions,

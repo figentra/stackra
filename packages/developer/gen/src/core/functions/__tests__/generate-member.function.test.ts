@@ -5,8 +5,9 @@
  *          HTTP adapter of a service that runs @stackra/app,
  *          prefixes, server entry, tool configs), of an app (route tables and blocks per runtime, client entries) and
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
- *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry, endpoint,
- *          tool and wiring binding like an authored query (STA-1459). Every full run ends with the member graph (ADR 0452).
+ *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry (with the
+ *          package input and output schemas), endpoint, tool and wiring binding like an authored query, and no
+ *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -98,6 +99,17 @@ describe("generateMember", () => {
       endpoint: { method: "GET", path: "/invoices/search", derived: true },
     });
     expect(entry?.["tool"]).toBeDefined();
+    // Its input and output are the package shapes, described under the module, so the tool and clients see `q`.
+    expect(entry?.["input"]).toEqual({ $ref: "#/schemas/billing.SearchQueryInput" });
+    expect(entry?.["output"]).toEqual({ $ref: "#/schemas/billing.SearchQueryOutput" });
+    expect((manifest.schemas as Record<string, unknown>)["billing.SearchQueryInput"]).toMatchObject(
+      {
+        required: ["q"],
+        properties: { q: { type: "string" } },
+      },
+    );
+    const schemas = files.find((file) => file.path === ".stackra/gen/schemas/billing.ts")?.content;
+    expect(schemas).not.toContain("SearchInvoiceQuery$");
     const wiring = files.find((file) => file.path === ".stackra/gen/wiring.ts")?.content;
     expect(wiring).toContain('import { SearchInvoiceQuery } from "#stackra/search";');
     expect(wiring).toContain("provide: SearchInvoiceQuery");

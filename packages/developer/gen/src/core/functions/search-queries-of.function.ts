@@ -6,7 +6,8 @@
  * Boundary: pure; reads `ir.classes`. Empty when the member does not declare `@stackra/search`. A member class already
  *           named `Search<Model>Query` (a hand-written public search) takes the generated one's place, so that model
  *           is skipped. The key, actors and constructor tokens mirror `SearchQuery(Model)` of `@stackra/search/node`;
- *           its input and output are that package's schemas, so the manifest entry names no member shape for them.
+ *           its input and output are that package's `SearchQueryInput` and `SearchQueryOutput`, whose JSON Schemas the
+ *           manifest writes from `GENERATED_QUERY_SCHEMAS`.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 4 and 6); ADR 0294 (decisions 16, 20 and 21); ADR 0155 (queries are MCP tools).
  */
@@ -55,6 +56,7 @@ export function searchQueriesOf(
         ],
         facets: [],
         methods: ["handle"],
+        handle: { input: "SearchQueryInput", output: "SearchQueryOutput" },
         refusals: [],
         statics: {},
         traits: [],

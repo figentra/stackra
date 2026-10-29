@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `schemaModules`, the module keys that get a schemas file (`#stackra/schemas/<module>`): every module with a
  *          shape, an enum, an action, a query or a config, sorted, when the member has something to
- *          register; none when it has not.
+ *          register; none when it has not. A query gen writes itself (in `.stackra/`) answers a package shape, so it
+ *          adds no module.
  * Boundary: pure. `generateMember` writes one file per key, and the registrations, the test setup and the entry
  *           barrels load the same files, so all read the one list. A member has something to register when one of its
  *           shapes does not already ship its own `X$` (a file of the member exports that name) or it declares a change
@@ -33,7 +34,10 @@ export function schemaModules(ir: MemberIR): string[] {
       ...ir.classes
         .filter(
           (declared) =>
-            declared.kind === "action" || declared.kind === "query" || declared.kind === "config",
+            (declared.kind === "action" ||
+              declared.kind === "query" ||
+              declared.kind === "config") &&
+            !declared.file.startsWith(".stackra/"),
         )
         .map((declared) => declared.module),
     ]),
