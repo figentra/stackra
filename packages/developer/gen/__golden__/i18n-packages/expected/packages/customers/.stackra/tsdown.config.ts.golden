@@ -4,8 +4,14 @@
  * Boundary: run from the member root: `tsdown --config .stackra/tsdown.config.ts`.
  * Runtime: node
  */
+import { fileURLToPath } from "node:url";
+
 import { library } from "@stackra/tsdown-config";
 
-export default library({
-  "index": ".stackra/entry/index.ts",
-});
+// tsdown takes the config file's folder as cwd; entries and dist are relative to the member root.
+export default {
+  ...library({
+    "index": ".stackra/entry/index.ts",
+  }),
+  cwd: fileURLToPath(new URL("..", import.meta.url)),
+};

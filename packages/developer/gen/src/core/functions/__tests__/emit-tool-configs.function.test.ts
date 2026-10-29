@@ -36,7 +36,8 @@ describe("emitToolConfigs", () => {
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
-      'export default library({\n  "server": ".stackra/entry/server.ts",\n});',
+      'export default {\n  ...library({\n    "server": ".stackra/entry/server.ts",\n  }),\n' +
+        '  cwd: fileURLToPath(new URL("..", import.meta.url)),\n};',
     );
   });
 
@@ -48,6 +49,7 @@ describe("emitToolConfigs", () => {
     expect(vitest).toContain("    withCoverage({");
     expect(vitest).toContain('        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
     expect(vitest).toContain('        setupFiles: [".stackra/vitest.setup.ts"],');
+    expect(vitest).toContain("        passWithNoTests: true,");
   });
 
   it("loads the registrations, the wiring and the factory partners in the setup", () => {
