@@ -113,7 +113,7 @@ describe(GraphQuery, () => {
   it("loads the links of every row in one batch read (STA-1400)", async () => {
     const database = new LinesDatabase();
     database.find.mockResolvedValueOnce(
-      ["var_1", "var_2", "var_1"].map((id) =>
+      (["var_1", "var_2", "var_1"] as const).map((id) =>
         Object.assign(new OrderLine(), { variant: new Link<Variant>("catalogue.variant", id) }),
       ),
     );

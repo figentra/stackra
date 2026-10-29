@@ -1020,7 +1020,7 @@ describe("CrudService metadata (stackra-294)", () => {
       () => service.update({ id: "cus_1" }, bad),
       () => service.updateWhere({}, bad),
     ])
-      await expect(Promise.resolve().then(call)).rejects.toSatisfy((error: unknown) =>
+      await expect(Promise.resolve().then(() => call())).rejects.toSatisfy((error: unknown) =>
         isRefusal(error, MetadataInvalidError),
       );
   });

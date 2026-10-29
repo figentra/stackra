@@ -21,7 +21,7 @@ describe("PrimaryConnectionResolverDriver", () => {
   });
 
   it("serves every scope and platform work from the primary", async () => {
-    const resolver = new PrimaryConnectionResolverDriver();
+    const resolver: ConnectionResolver = new PrimaryConnectionResolverDriver();
     expect(PRIMARY_CONNECTION).toBe("primary");
     await expect(
       resolver.connectionOf({ id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme" }),
