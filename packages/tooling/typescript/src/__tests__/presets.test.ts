@@ -17,7 +17,11 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
 };
 
 /** Strip `//` line comments so JSONC presets parse with JSON.parse. */
-function readJsonc(path: string): { extends?: string; compilerOptions?: Record<string, unknown> } {
+function readJsonc(path: string): {
+  extends?: string;
+  compilerOptions?: Record<string, unknown>;
+  include?: string[];
+} {
   const text = readFileSync(path, "utf8")
     .split("\n")
     .filter((line) => !line.trimStart().startsWith("//"))
@@ -62,6 +66,13 @@ describe("@stackra/typescript-config presets", () => {
     const library = readJsonc(join(root, "src", "library.json")).compilerOptions ?? {};
     expect(library["jsx"]).toBe("react-jsx");
     expect(library["lib"]).toEqual(expect.arrayContaining(["DOM", "DOM.Iterable"]));
+  });
+
+  it("the package presets put gen's entries in the program, so tsdown emits their declarations", () => {
+    for (const preset of ["library", "react"])
+      expect(readJsonc(join(root, "src", `${preset}.json`)).include, preset).toContain(
+        `\${configDir}/.stackra/entry`,
+      );
   });
 
   it("base keeps the non-negotiable strictness flags", () => {

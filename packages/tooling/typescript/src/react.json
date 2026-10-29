@@ -9,5 +9,11 @@
     "jsx": "react-jsx",
     "types": ["vitest/globals"]
   },
-  "include": ["${configDir}/src", "${configDir}/tsdown.config.ts", "${configDir}/vitest.config.ts"]
+  // `.stackra/entry`: the entries gen writes, so tsdown's dts step emits their declarations.
+  "include": [
+    "${configDir}/src",
+    "${configDir}/.stackra/entry",
+    "${configDir}/tsdown.config.ts",
+    "${configDir}/vitest.config.ts"
+  ]
 }

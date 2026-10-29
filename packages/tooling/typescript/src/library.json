@@ -4,7 +4,8 @@
 //          `src/`. The DOM library and the automatic JSX runtime are on because a package's `src/react/` and
 //          `src/native/` entries render JSX (ADR 0294 decision 15); without them those entries fail with "Cannot use
 //          JSX unless --jsx". The declaration flags in base feed tsdown's dts step; a library therefore declares
-//          `@types/node` and `vitest` as devDependencies.
+//          `@types/node` and `vitest` as devDependencies. The entries gen writes (`.stackra/entry`) are in the
+//          program, so tsdown's dts step emits their declarations.
 // Owner: release-operations · Secrets: forbidden
 {
   "display": "@stackra/typescript-config — library",
@@ -18,6 +19,7 @@
     "${configDir}/src",
     "${configDir}/config",
     "${configDir}/plugin",
+    "${configDir}/.stackra/entry",
     "${configDir}/tsdown.config.ts",
     "${configDir}/vitest.config.ts"
   ]
