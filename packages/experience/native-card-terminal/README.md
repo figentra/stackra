@@ -42,8 +42,12 @@ await terminal.pair({ terminalId: "STRM26138003393", provider: "stripe", address
 - A payment is always a server-created intent; the device retrieves, collects and confirms it, and the server
   captures, cancels and reconciles over the Connection. Nothing completes offline (ADR 0479 decision 5).
 - The app holds no Stripe key. Tokens come from `StripeTerminalServer` on every SDK request.
-- A refused Bluetooth or location permission resolves `permission_denied` on `bluetooth`; anything else that stops a
-  pairing resolves `unavailable` on `card_terminal` (ADR 0253).
+- The drivers ask through `@stackra/platform`'s `DevicePermissions` (injected, bound by the app) and the module never
+  asks on its own: `pair` asks Bluetooth, then location, before discovery; Tap to Pay's `connectTapToPay` asks
+  location. The app shows `platform::permissions.<permission>.why` before and `.blocked` with `openSettings` after.
+- A Bluetooth or location permission denied or blocked there, or refused to the SDK, resolves `permission_denied` on
+  `bluetooth` (Tap to Pay answers `location_permission_denied`); anything else that stops a pairing resolves
+  `unavailable` on `card_terminal` (ADR 0253).
 - Mock: `MemoryCardTerminalDriver` of `@stackra/peripherals`. Tests run the drivers against a stand-in module.
 
 Certification pending (STA-739): the Swift and Kotlin follow Stripe's public SDK documents and are built and checked

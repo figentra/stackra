@@ -7,13 +7,16 @@
  *           connected reader, with `StripeTerminalCardTerminalDriver`. Normalises the SDK's intent status to Stripe's
  *           API name (`requires_capture`) so the SoftPos driver's status table reads it. Creates no intent, never runs
  *           offline, holds no key (ADR 0479 decisions 4 and 5). Without the module every call answers
- *           `module_unavailable`. Certification pending (STA-739).
+ *           `module_unavailable`. Asks @stackra/platform's `DevicePermissions` for location before Tap to Pay
+ *           connects, never on its own, and answers `location_permission_denied` when it is denied or blocked.
+ *           Certification pending (STA-739).
  * Runtime: isomorphic
  * Governing contract: ADR 0479 (decisions 3 to 5); ADR 0446 (decision 4, as ADR 0479 amends it); ADR 0478 (decision 5).
  */
 import { Driver } from "@stackra/container";
 import { StripeTerminalBridge } from "@stackra/payments/contracts";
 import type { StripeBridgeError, StripeBridgeIntent } from "@stackra/payments/contracts";
+import type { DevicePermissions } from "@stackra/platform/contracts";
 
 import type { StripeTerminalServer } from "#contracts/ports/stripe-terminal-server.port";
 import { STRIPE_TERMINAL } from "#native/constants/stripe-terminal.constant";
@@ -38,12 +41,17 @@ export class NativeStripeTerminalBridgeDriver extends Driver(StripeTerminalBridg
   /** The server that mints connection tokens. */
   private readonly server: StripeTerminalServer;
 
+  /** The app's permission helper, asked for location before Tap to Pay connects. */
+  private readonly permissions: DevicePermissions;
+
   /**
    * @param server - the host's binding over its Stripe Terminal server actions.
+   * @param permissions - the app's `DevicePermissions`, asked for location before Tap to Pay connects.
    */
-  constructor(server: StripeTerminalServer) {
+  constructor(server: StripeTerminalServer, permissions: DevicePermissions) {
     super();
     this.server = server;
+    this.permissions = permissions;
   }
 
   /** Whether this phone supports Tap to Pay. */
@@ -59,6 +67,8 @@ export class NativeStripeTerminalBridgeDriver extends Driver(StripeTerminalBridg
   async connectTapToPay(locationId: string): Promise<{ readonly error?: StripeBridgeError }> {
     const module = await prepareCardTerminal(this.server);
     if (module === undefined) return UNAVAILABLE;
+    if ((await this.permissions.request(STRIPE_TERMINAL.tapToPayPermission)) !== "granted")
+      return { error: { code: STRIPE_TERMINAL.tapToPayDenied } };
     const { error } = await module.connectTapToPay(locationId);
     return error === undefined ? {} : { error };
   }

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `STRIPE_TERMINAL`, the fixed facts the Stripe Terminal drivers read: the Expo module's name and token
- *          event, the market pack's provider key, how long Bluetooth discovery runs, and the SDK names (normalised by
- *          `sdkName`) that mean a refused permission, a reader taking a payment, or this phone as the reader.
+ *          event, the market pack's provider key, how long Bluetooth discovery runs, the device permissions a Bluetooth
+ *          reader and Tap to Pay ask for, and the SDK names (normalised by `sdkName`) that mean a refused permission, a
+ *          reader taking a payment, or this phone as the reader.
  * Boundary: internal data, not exported from the entry. The names are the SDK's own enum cases (iOS case names,
  *           Android enum names), transcribed from Stripe's public SDK documents; certification pending (STA-739).
  * Runtime: isomorphic
@@ -21,6 +22,12 @@ export const STRIPE_TERMINAL = Object.freeze({
   discoveryTimeoutMs: 30_000,
   /** What the token relay tells the SDK when the server refused; never the server's own message. */
   tokenFailure: "connection_token_failed",
+  /** The `DevicePermissions` a Bluetooth reader needs, asked in this order before discovery. */
+  readerPermissions: Object.freeze(["bluetooth", "location"] as const),
+  /** The `DevicePermissions` Tap to Pay needs, asked before this phone connects as the reader. */
+  tapToPayPermission: "location",
+  /** The SDK error code the bridge answers when the Tap to Pay permission is denied or blocked. */
+  tapToPayDenied: "location_permission_denied",
   /** SDK error codes that mean a refused or disabled Bluetooth or location permission. */
   permissionCodes: Object.freeze([
     "bluetooth_access_denied",

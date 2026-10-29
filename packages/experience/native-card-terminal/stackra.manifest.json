@@ -31,6 +31,12 @@
                 "name": "StripeTerminalServer",
                 "from": "@stackra/native-card-terminal/contracts"
               }
+            },
+            {
+              "class": {
+                "name": "DevicePermissions",
+                "from": "@stackra/platform/contracts"
+              }
             }
           ]
         }
@@ -49,6 +55,12 @@
               "class": {
                 "name": "StripeTerminalServer",
                 "from": "@stackra/native-card-terminal/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "DevicePermissions",
+                "from": "@stackra/platform/contracts"
               }
             }
           ]

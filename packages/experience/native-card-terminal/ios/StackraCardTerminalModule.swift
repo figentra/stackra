@@ -1,10 +1,11 @@
 // Stackra file contract:
 // Purpose: StackraCardTerminalModule, the Expo module `StackraCardTerminal` on iOS: a pass-through over Stripe
-//          Terminal's iOS SDK. It initialises the SDK with the token relay, asks for permissions, discovers and
-//          connects Bluetooth readers and this iPhone as a Tap to Pay reader, reports the connected reader and the
-//          payment status, retrieves, collects and confirms a server-created intent, cancels a collect, disconnects.
-// Boundary: maps nothing but enum names (SdkNames): every SDK call resolves with the SDK's answer or `{ error }` and
-//           never rejects; the TypeScript drivers decide what an answer means. Never creates a payment intent, never
+//          Terminal's iOS SDK. It initialises the SDK with the token relay, discovers and connects Bluetooth readers
+//          and this iPhone as a Tap to Pay reader, reports the connected reader and the payment status, retrieves,
+//          collects and confirms a server-created intent, cancels a collect, disconnects.
+// Boundary: asks for no permission: the TypeScript drivers ask @stackra/platform's DevicePermissions first. Maps
+//           nothing but enum names (SdkNames): every SDK call resolves with the SDK's answer or `{ error }` and never
+//           rejects; the TypeScript drivers decide what an answer means. Never creates a payment intent, never
 //           enables offline mode, holds no key (ADR 0479 decisions 4 and 5). Card data never crosses to JavaScript.
 //           Certification pending (STA-739): written from Stripe's public SDK documents, not built on a developer Mac.
 // Runtime: ios
@@ -15,7 +16,6 @@ import StripeTerminal
 public class StackraCardTerminalModule: Module {
   private var relay: ConnectionTokenRelay?
   private let readerEvents = ReaderEvents()
-  private let location = LocationPermission()
   private var discovery: Cancelable?
   private var discovered: [Reader] = []
   private var collect: Cancelable?
@@ -40,16 +40,6 @@ public class StackraCardTerminalModule: Module {
 
     Function("rejectConnectionToken") { (requestId: String, message: String) in
       self.relay?.reject(requestId, message: message)
-    }
-
-    AsyncFunction("requestPermissions") { (promise: Promise) in
-      guard LocationPermission.isBluetoothAllowed else {
-        promise.resolve(["granted": false])
-        return
-      }
-      DispatchQueue.main.async {
-        self.location.request { granted in promise.resolve(["granted": granted]) }
-      }
     }
 
     AsyncFunction("discoverBluetoothReaders") { (timeoutMs: Int, serialNumber: String, promise: Promise) in

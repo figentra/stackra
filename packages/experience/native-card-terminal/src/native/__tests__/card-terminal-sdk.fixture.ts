@@ -70,7 +70,6 @@ export const CARD_TERMINAL_SDK: CardTerminalSdk = {
       vi.fn<CardTerminalNativeModule[K]>(answers[name] ?? fallback);
     const module: StandInModule = {
       initialize: fn("initialize", async () => undefined),
-      requestPermissions: fn("requestPermissions", async () => ({ granted: true })),
       discoverBluetoothReaders: fn("discoverBluetoothReaders", async () => ({
         readers: [READER.iosM2, READER.androidWisePad],
       })),

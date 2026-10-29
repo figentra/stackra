@@ -1,19 +1,17 @@
 // Stackra file contract:
 // Purpose: StackraCardTerminalModule, the Expo module `StackraCardTerminal` on Android: a pass-through over Stripe
-//          Terminal's Android SDK. It initialises the SDK with the token relay, asks for the Bluetooth and location
-//          permissions, discovers and connects Bluetooth readers and this phone as a Tap to Pay reader, reports the
-//          connected reader and the payment status, retrieves, collects and confirms a server-created intent, cancels a
-//          collect, disconnects.
-// Boundary: every SDK call resolves with the SDK's answer or `{ error }` and never rejects; enum names cross as the
-//           SDK names them and the TypeScript drivers decide what they mean. Never creates a payment intent, never
+//          Terminal's Android SDK. It initialises the SDK with the token relay, discovers and connects Bluetooth
+//          readers and this phone as a Tap to Pay reader, reports the connected reader and the payment status,
+//          retrieves, collects and confirms a server-created intent, cancels a collect, disconnects.
+// Boundary: asks for no permission: the TypeScript drivers ask @stackra/platform's DevicePermissions first. Every
+//           SDK call resolves with the SDK's answer or `{ error }` and never rejects; enum names cross as the SDK names
+//           them and the TypeScript drivers decide what they mean. Never creates a payment intent, never
 //           enables offline mode, holds no key (ADR 0479 decisions 4 and 5). Card data never crosses to JavaScript.
 //           Certification pending (STA-739): written from Stripe's public SDK documents, not built on a developer Mac.
 // Runtime: android
 // Governing contract: ADR 0479 (decisions 1, 4 and 5); ADR 0478 (decisions 2, 4 and 5).
 package com.figentra.stackra.cardterminal
 
-import android.Manifest
-import android.os.Build
 import com.stripe.stripeterminal.Terminal
 import com.stripe.stripeterminal.external.callable.Callback
 import com.stripe.stripeterminal.external.callable.Cancelable
@@ -29,8 +27,6 @@ import com.stripe.stripeterminal.external.models.ReaderSupportResult
 import com.stripe.stripeterminal.external.models.TerminalErrorCode
 import com.stripe.stripeterminal.external.models.TerminalException
 import com.stripe.stripeterminal.log.LogLevel
-import expo.modules.interfaces.permissions.PermissionsResponseListener
-import expo.modules.interfaces.permissions.PermissionsStatus
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -41,17 +37,6 @@ class StackraCardTerminalModule : Module() {
   private var discovery: Cancelable? = null
   private var discovered: List<Reader> = emptyList()
   private var collect: Cancelable? = null
-
-  private fun terminalPermissions(): Array<String> =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      arrayOf(
-        Manifest.permission.BLUETOOTH_SCAN,
-        Manifest.permission.BLUETOOTH_CONNECT,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-      )
-    } else {
-      arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
 
   private fun answer(promise: Promise, error: TerminalException) {
     promise.resolve(mapOf("error" to SdkNames.error(error)))
@@ -78,21 +63,6 @@ class StackraCardTerminalModule : Module() {
 
     Function("rejectConnectionToken") { requestId: String, message: String ->
       relay?.reject(requestId, message)
-    }
-
-    AsyncFunction("requestPermissions") { promise: Promise ->
-      val permissions = appContext.permissions
-      if (permissions == null) {
-        promise.resolve(mapOf("granted" to false))
-        return@AsyncFunction
-      }
-      permissions.askForPermissions(
-        PermissionsResponseListener { result ->
-          val granted = result.values.all { it.status == PermissionsStatus.GRANTED }
-          promise.resolve(mapOf("granted" to granted))
-        },
-        *terminalPermissions(),
-      )
     }
 
     AsyncFunction("discoverBluetoothReaders") { timeoutMs: Int, serialNumber: String, promise: Promise ->

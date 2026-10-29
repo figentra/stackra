@@ -31,6 +31,8 @@ The card terminal Expo module (ADR 0478): Stripe Terminal's iOS and Android SDKs
   stored; a failed fetch is answered as `connection_token_failed`. `no-secret-key.test.ts` guards the sources.
 - Drivers read the module from `globalThis.expo.modules` when they run; no file under `src/` imports a native package
   or `expo`. Only `plugin/` imports `expo/config-plugins`.
+- Ask for Bluetooth and location only through the injected `DevicePermissions` of `@stackra/platform`, before
+  discovery or Tap to Pay; never add a permission prompt to the module. Denied or blocked is `permission_denied`.
 - `CardTerminal` pairs and reports; the payment is the payments driver's (ADR 0339 decision 1). Refuse with
   `permission_denied` on `bluetooth` or `unavailable` on `card_terminal`, never throw (ADR 0253).
 - Vendor SDKs are declared only in `ios/StackraCardTerminal.podspec` and `android/build.gradle` (ADR 0478 decision 4).

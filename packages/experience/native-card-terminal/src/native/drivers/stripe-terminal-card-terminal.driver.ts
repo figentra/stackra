@@ -5,9 +5,11 @@
  *          its serial number at the Stripe location the server names, and reports ready, busy or offline.
  * Boundary: pairs and reports only; the payment is the payments driver's (ADR 0339 decision 1), through the native
  *           `StripeTerminalBridge` over the same module. Reads the `StackraCardTerminal` Expo module when it runs and
- *           imports no native package. A refused Bluetooth or location permission resolves `permission_denied` on
- *           `bluetooth`; no module, another provider, a LAN address, a location the server will not name, no reader
- *           of that serial, or an SDK error resolves `unavailable` on `card_terminal`. Certification pending (STA-739).
+ *           imports no native package. It asks through @stackra/platform's `DevicePermissions` for Bluetooth, then
+ *           location, before discovery, and never asks on its own; a permission denied or blocked there, or refused
+ *           to the SDK, resolves `permission_denied` on `bluetooth`; no module, another provider, a LAN address, a
+ *           location the server will not name, no reader of that serial, or an SDK error resolves `unavailable` on
+ *           `card_terminal`. Certification pending (STA-739).
  * Runtime: isomorphic
  * Governing contract: ADR 0479 (decisions 2 and 4); ADR 0478 (decision 5); ADR 0339 (decision 1); ADR 0253
  *                     (decision 4).
@@ -16,7 +18,7 @@ import { Driver } from "@stackra/container";
 import { CardTerminal, TerminalState } from "@stackra/peripherals/contracts";
 import type { PairedTerminal, TerminalPairing } from "@stackra/peripherals/contracts";
 import { PlatformCapability } from "@stackra/platform";
-import type { CapabilityResult } from "@stackra/platform/contracts";
+import type { CapabilityResult, DevicePermissions } from "@stackra/platform/contracts";
 
 import type { StripeTerminalServer } from "#contracts/ports/stripe-terminal-server.port";
 import { STRIPE_TERMINAL } from "#native/constants/stripe-terminal.constant";
@@ -38,15 +40,20 @@ export class StripeTerminalCardTerminalDriver extends Driver(CardTerminal) {
   /** The server that mints connection tokens and names the location. */
   private readonly server: StripeTerminalServer;
 
+  /** The app's permission helper, asked before Bluetooth and location are used. */
+  private readonly permissions: DevicePermissions;
+
   /** The paired reader; null when none is paired. */
   private paired: TerminalPairing | null = null;
 
   /**
    * @param server - the host's binding over its Stripe Terminal server actions.
+   * @param permissions - the app's `DevicePermissions`, asked for Bluetooth and location before discovery.
    */
-  constructor(server: StripeTerminalServer) {
+  constructor(server: StripeTerminalServer, permissions: DevicePermissions) {
     super();
     this.server = server;
+    this.permissions = permissions;
   }
 
   /** Discovers the reader of `pairing.terminalId` over Bluetooth and connects it, replacing any reader paired before. */
@@ -55,8 +62,9 @@ export class StripeTerminalCardTerminalDriver extends Driver(CardTerminal) {
       return refuse(PlatformCapability.CardTerminal, "unavailable");
     const module = await prepareCardTerminal(this.server);
     if (module === undefined) return refuse(PlatformCapability.CardTerminal, "unavailable");
-    if (!(await module.requestPermissions()).granted)
-      return refuse(PlatformCapability.Bluetooth, "permission_denied");
+    for (const permission of STRIPE_TERMINAL.readerPermissions)
+      if ((await this.permissions.request(permission)) !== "granted")
+        return refuse(PlatformCapability.Bluetooth, "permission_denied");
     let locationId: string;
     try {
       locationId = await this.server.locationId();

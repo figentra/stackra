@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `CardTerminalNativeModule`, the `StackraCardTerminal` Expo module: a pass-through over Stripe Terminal's
- *          iOS and Android SDKs (initialise with the token relay, permissions, Bluetooth discovery and connect, Tap to
- *          Pay, the reader's state, collect and confirm, cancel, disconnect).
- * Boundary: a type only. Every SDK call resolves with the SDK's answer or `{ error }` (its code and message, never card
- *           data) and never rejects. Codes and statuses are the SDK's enum names, unmapped; the drivers read them. The
+ *          iOS and Android SDKs (initialise with the token relay, Bluetooth discovery and connect, Tap to Pay, the
+ *          reader's state, collect and confirm, cancel, disconnect).
+ * Boundary: a type only. It asks for no permission: the drivers ask @stackra/platform's `DevicePermissions` first.
+ *           Every SDK call resolves with the SDK's answer or `{ error }` (its code and message, never card data) and
+ *           never rejects. Codes and statuses are the SDK's enum names, unmapped; the drivers read them. The
  *           module never creates a payment intent and never enables offline mode (ADR 0479 decision 5).
  * Runtime: isomorphic
  * Governing contract: ADR 0479 (decisions 1, 4 and 5); ADR 0478 (decisions 2 and 5).
@@ -18,9 +19,6 @@ import type { NativeReader } from "#contracts/types/native-reader.type";
 export interface CardTerminalNativeModule {
   /** Sets up the SDK with the token relay; a second call does nothing. */
   initialize: () => Promise<void>;
-
-  /** Asks for the Bluetooth and location permissions the SDK needs; `granted` is false when one is refused. */
-  requestPermissions: () => Promise<{ readonly granted: boolean }>;
 
   /**
    * Discovers Bluetooth readers and resolves with those seen so far once one has `serialNumber`, or with all of them
