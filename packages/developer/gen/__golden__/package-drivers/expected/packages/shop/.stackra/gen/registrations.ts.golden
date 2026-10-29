@@ -3,7 +3,7 @@
  * Purpose: the registrations of @golden/shop: loads the generated entity and schemas files, then names each class
  *          the platform packages look up by its locked identity (entities, model partners, event wire names,
  *          listeners, relays, change consumers, jobs, cached queries, connections, webhook events, outbound
- *          webhooks, sequences, entitlements and searchable models).
+ *          webhooks, sequences, entitlements, searchable models and report sources).
  * Boundary: imported by the server entry and the generated test setup before the container boots; every row comes
  *           from the committed identities, so a hand edit is overwritten.
  * Runtime: node

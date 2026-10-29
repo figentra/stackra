@@ -16,7 +16,7 @@ export interface PasskeyCredential {
   /** The same id, as WebAuthn's JSON carries it twice. */
   readonly rawId: string;
 
-  /** Always `public-key`. */
+  /** The credential type, always `public-key`. */
   readonly type: "public-key";
 
   /** `platform` (this device) or `cross-platform` (a security key or another phone), when the device says. */

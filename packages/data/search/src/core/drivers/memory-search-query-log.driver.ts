@@ -24,7 +24,7 @@ export class MemorySearchQueryLogDriver extends Driver(SearchQueryLog) {
   /** Every entry, in the order logged. */
   readonly entries: SearchQueryEntry[] = [];
 
-  /** Keeps `entry`. */
+  /** Keeps `entry` in `entries`. */
   async record(entry: SearchQueryEntry): Promise<void> {
     this.entries.push(entry);
   }

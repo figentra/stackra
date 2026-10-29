@@ -168,7 +168,7 @@ components:
     type: database
     label: experience
     sublabel: browser, isomorphic, node, react-native, worker
-    tag: 12 packages
+    tag: 15 packages
     row: 4
     col: 3
     size: *a1
@@ -283,7 +283,7 @@ cards:
       - "data: assets, content, data-maintenance, data-transfer, database, documents, filesystem, media, model, reports, search, state-machine, storage"
       - "design-system: icons, tokens, ui"
       - "developer: brand-kit, cli, coding-standard, devtools-kit, gen, mcp, renderers, repo-checks, runway, skills, testing, vite-plugin"
-      - "experience: builder, collaboration, experience, native-card-terminal, native-cash-drawer, native-customer-display, native-receipt-printer, native-scale, navigation, panel, peripherals, platform, shortcuts"
+      - "experience: builder, collaboration, experience, native-card-terminal, native-cash-drawer, native-customer-display, native-receipt-printer, native-scale, native-share, native-spotlight, navigation, panel, peripherals, platform, shortcuts"
       - "foundation: calendar, config, container, contracts, errors, events, i18n, logger, market-packs, support, transport, validation"
       - "infrastructure: infra-aws, infra-aws-runtime, infra-cloudflare, infra-gcp, infra-github, infra-identity, infra-mobile, infra-observability, infra-tools"
       - "runtime: app, cache, devices, locking, outbox, queue, realtime, sandbox, scheduler, workflow"

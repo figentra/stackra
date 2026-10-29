@@ -18,6 +18,25 @@
   "models": [],
   "drivers": [
     {
+      "port": "SystemAccessibility",
+      "key": "theming.SystemAccessibility",
+      "candidates": ["browser", "memory", "accessibility_info"],
+      "classes": {
+        "browser": {
+          "class": "BrowserSystemAccessibilityDriver",
+          "from": "@stackra/theming/browser"
+        },
+        "memory": {
+          "class": "MemorySystemAccessibilityDriver",
+          "from": "@stackra/theming"
+        },
+        "accessibility_info": {
+          "class": "AccessibilityInfoSystemAccessibilityDriver",
+          "from": "@stackra/theming/native"
+        }
+      }
+    },
+    {
       "port": "SystemColorScheme",
       "key": "theming.SystemColorScheme",
       "candidates": ["browser", "memory", "appearance"],

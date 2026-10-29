@@ -219,6 +219,29 @@
       "type": "string",
       "enum": ["developer", "normal"]
     },
+    "settings.AccountSettings": {
+      "type": "object",
+      "properties": {
+        "locale": {
+          "type": ["string", "null"],
+          "enum": [
+            "en",
+            "en-US",
+            "ar",
+            "ar-SA",
+            "ar-AE",
+            "ar-EG",
+            "fr",
+            "de",
+            "es",
+            "es-US",
+            "it",
+            "nl"
+          ],
+          "default": null
+        }
+      }
+    },
     "settings.StoredSettingRevision": {
       "type": "object",
       "required": [

@@ -4,8 +4,6 @@
   "package": "@figentra/playground",
   "version": "0.0.1",
   "kind": "app",
-  "area": "admin",
-  "targets": ["web"],
   "modules": [
     {
       "key": "playground",

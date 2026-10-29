@@ -53,7 +53,7 @@
     {
       "port": "FileSystem",
       "key": "filesystem.FileSystem",
-      "candidates": ["memory", "electron", "encore_bucket", "expo", "gcs", "local", "s3"],
+      "candidates": ["memory", "electron", "expo", "encore_bucket", "gcs", "local", "s3"],
       "classes": {
         "memory": {
           "class": "MemoryFileSystemDriver",
@@ -85,18 +85,6 @@
             }
           ]
         },
-        "encore_bucket": {
-          "class": "EncoreBucketFileSystemDriver",
-          "from": "@stackra/filesystem/node",
-          "deps": [
-            {
-              "class": {
-                "name": "EncoreBucket",
-                "from": "@stackra/filesystem/contracts"
-              }
-            }
-          ]
-        },
         "expo": {
           "class": "ExpoFileSystemDriver",
           "from": "@stackra/filesystem/native",
@@ -105,6 +93,18 @@
               "class": {
                 "name": "FilesystemConfig",
                 "from": "@stackra/filesystem"
+              }
+            }
+          ]
+        },
+        "encore_bucket": {
+          "class": "EncoreBucketFileSystemDriver",
+          "from": "@stackra/filesystem/node",
+          "deps": [
+            {
+              "class": {
+                "name": "EncoreBucket",
+                "from": "@stackra/filesystem/contracts"
               }
             }
           ]

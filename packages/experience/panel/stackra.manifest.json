@@ -209,28 +209,74 @@
         }
       }
     },
+    "panel.SavedViewGroup": {
+      "type": "object",
+      "required": ["by"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+        },
+        "then": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+        }
+      }
+    },
+    "panel.SavedViewSort": {
+      "type": "object",
+      "required": ["key", "direction"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["asc", "desc"]
+        }
+      }
+    },
+    "panel.SavedViewTotal": {
+      "type": "object",
+      "required": ["key", "aggregate"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+        },
+        "aggregate": {
+          "type": "string",
+          "enum": ["count", "sum", "avg", "min", "max", "distinct"]
+        }
+      }
+    },
     "panel.SavedView": {
       "type": "object",
       "required": ["id", "resource", "name", "owner"],
       "properties": {
-        "filter": {
-          "description": "@Field(zod): described by its zod schema",
-          "default": {}
-        },
-        "sort": {
-          "description": "@Field(zod): described by its zod schema"
-        },
-        "group": {
-          "description": "@Field(zod): described by its zod schema"
-        },
-        "totals": {
-          "description": "@Field(zod): described by its zod schema",
-          "default": []
-        },
         "version": {
           "type": "integer",
           "minimum": 1,
           "default": 1
+        },
+        "filter": {
+          "type": "object",
+          "additionalProperties": {},
+          "default": {}
+        },
+        "sort": {
+          "$ref": "#/schemas/panel.SavedViewSort"
+        },
+        "group": {
+          "$ref": "#/schemas/panel.SavedViewGroup"
+        },
+        "totals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/panel.SavedViewTotal"
+          },
+          "default": []
         },
         "id": {
           "type": "string"
@@ -302,11 +348,11 @@
         "totals",
         "filter",
         "columns",
-        "tenantId",
         "id",
         "createdAt",
         "updatedAt",
-        "version"
+        "version",
+        "tenantId"
       ],
       "properties": {
         "resource": {
@@ -338,7 +384,7 @@
         "sort": {
           "anyOf": [
             {
-              "description": "@Field(zod): described by its zod schema"
+              "$ref": "#/schemas/panel.SavedViewSort"
             },
             {
               "type": "null"
@@ -348,7 +394,7 @@
         "group": {
           "anyOf": [
             {
-              "description": "@Field(zod): described by its zod schema"
+              "$ref": "#/schemas/panel.SavedViewGroup"
             },
             {
               "type": "null"
@@ -356,7 +402,10 @@
           ]
         },
         "totals": {
-          "description": "@Field(zod): described by its zod schema"
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/panel.SavedViewTotal"
+          }
         },
         "filter": {
           "type": "object",
@@ -368,7 +417,6 @@
             "type": "string"
           }
         },
-        "tenantId": {},
         "id": {},
         "createdAt": {
           "type": "string",
@@ -380,7 +428,8 @@
         },
         "version": {
           "type": "number"
-        }
+        },
+        "tenantId": {}
       }
     },
     "panel.ExportInput": {

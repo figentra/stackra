@@ -9,5 +9,5 @@
  * Governing contract: data-layer gap scale-performance 7 (stackra-282, STA-1400).
  */
 
-/** One second. */
+/** The slow-query threshold: one second. */
 export const SLOW_QUERY_MS = 1000;

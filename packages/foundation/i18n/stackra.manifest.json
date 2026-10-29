@@ -64,6 +64,10 @@
         "nl"
       ]
     },
+    "i18n.NativeSwitcher": {
+      "type": "string",
+      "enum": ["system", "in_app"]
+    },
     "i18n.NumberingSystem": {
       "type": "string",
       "enum": ["latn", "arab", "user"]

@@ -12,13 +12,13 @@ import { AdPixel } from "#contracts/ports/ad-pixel.port";
 import type { AdPixelEvent } from "#contracts/types/ad-pixel-event.type";
 
 /**
- * Fires nothing.
+ * An ad pixel that fires nothing.
  *
  * @example
  * await new NoneAdPixelDriver().fire(event); // resolves, sends nothing
  */
 export class NoneAdPixelDriver extends Driver(AdPixel) {
-  /** Drops `event`. */
+  /** Drops `event` without sending it. */
   fire(_event: AdPixelEvent): Promise<void> {
     return Promise.resolve();
   }

@@ -16,7 +16,7 @@ export interface SearchRules {
   /** The row ids never ranked. */
   readonly hidden: readonly string[];
 
-  /** The boosts. */
+  /** The boosts applied when ranking. */
   readonly boosts: readonly SearchBoost[];
 
   /** The recency decay; absent when none is set. */

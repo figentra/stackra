@@ -29,7 +29,7 @@ export class MemoryAppLockDriver extends Driver(AppLock) {
   /** What the prompt answers; a test sets it. */
   answer = true;
 
-  /** Answers `isAvailable`. */
+  /** Answers with the `isAvailable` value. */
   async canAuthenticate(): Promise<boolean> {
     return this.isAvailable;
   }

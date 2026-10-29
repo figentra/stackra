@@ -19,7 +19,7 @@ import { ConnectionResolver } from "#contracts/ports/connection-resolver.port";
  * await new PrimaryConnectionResolverDriver().connectionOf(scope); // "primary"
  */
 export class PrimaryConnectionResolverDriver extends Driver(ConnectionResolver) {
-  /** Always `PRIMARY_CONNECTION`. */
+  /** Resolves every read to `PRIMARY_CONNECTION`. */
   async connectionOf(): Promise<string> {
     return PRIMARY_CONNECTION;
   }

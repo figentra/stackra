@@ -98,6 +98,47 @@
       }
     },
     {
+      "port": "AppIcon",
+      "key": "platform.AppIcon",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAppIconDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoAppIconDriver",
+          "from": "@stackra/platform/native"
+        }
+      }
+    },
+    {
+      "port": "AppLock",
+      "key": "platform.AppLock",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAppLockDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoAppLockDriver",
+          "from": "@stackra/platform/native"
+        }
+      }
+    },
+    {
+      "port": "AppShortcuts",
+      "key": "platform.AppShortcuts",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAppShortcutsDriver",
+          "from": "@stackra/platform"
+        }
+      }
+    },
+    {
       "port": "CaptchaVerifier",
       "key": "platform.CaptchaVerifier",
       "candidates": ["memory", "turnstile"],
@@ -121,6 +162,21 @@
       }
     },
     {
+      "port": "HomeWidgets",
+      "key": "platform.HomeWidgets",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryHomeWidgetsDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoHomeWidgetsDriver",
+          "from": "@stackra/platform/native"
+        }
+      }
+    },
+    {
       "port": "KioskMode",
       "key": "platform.KioskMode",
       "candidates": ["memory", "electron"],
@@ -132,6 +188,64 @@
         "electron": {
           "class": "ElectronKioskModeDriver",
           "from": "@stackra/platform/desktop"
+        }
+      }
+    },
+    {
+      "port": "LiveActivities",
+      "key": "platform.LiveActivities",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryLiveActivitiesDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoLiveActivitiesDriver",
+          "from": "@stackra/platform/native",
+          "deps": [
+            {
+              "class": {
+                "name": "LiveActivityConfig",
+                "from": "@stackra/platform"
+              }
+            },
+            {
+              "class": {
+                "name": "Storage",
+                "from": "@stackra/storage/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "LiveActivityPushes",
+      "key": "platform.LiveActivityPushes",
+      "candidates": ["memory", "apns"],
+      "classes": {
+        "memory": {
+          "class": "MemoryLiveActivityPushesDriver",
+          "from": "@stackra/platform"
+        },
+        "apns": {
+          "class": "ApnsLiveActivityPushesDriver",
+          "from": "@stackra/platform/node",
+          "deps": [
+            {
+              "class": {
+                "name": "LiveActivityConfig",
+                "from": "@stackra/platform"
+              }
+            },
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
         }
       }
     },
@@ -164,6 +278,21 @@
           "from": "@stackra/platform/native"
         }
       }
+    },
+    {
+      "port": "SystemSettings",
+      "key": "platform.SystemSettings",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemorySystemSettingsDriver",
+          "from": "@stackra/platform"
+        },
+        "expo": {
+          "class": "ExpoSystemSettingsDriver",
+          "from": "@stackra/platform/native"
+        }
+      }
     }
   ],
   "integrations": [],
@@ -174,6 +303,16 @@
   "entitlements": [],
   "config": [
     {
+      "key": "platform.app_icon",
+      "class": "AppIconConfig",
+      "from": "@stackra/platform"
+    },
+    {
+      "key": "platform.app_lock",
+      "class": "AppLockConfig",
+      "from": "@stackra/platform"
+    },
+    {
       "key": "platform.desktop",
       "class": "DesktopConfig",
       "from": "@stackra/platform"
@@ -181,6 +320,11 @@
     {
       "key": "platform.kiosk",
       "class": "KioskConfig",
+      "from": "@stackra/platform"
+    },
+    {
+      "key": "platform.live_activity",
+      "class": "LiveActivityConfig",
       "from": "@stackra/platform"
     },
     {
@@ -244,6 +388,7 @@
         "local_notifications",
         "push",
         "badge",
+        "app_icon",
         "clipboard",
         "files_save",
         "print",

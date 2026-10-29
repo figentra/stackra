@@ -11,7 +11,98 @@
       "dependsOn": []
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "key": "identity.passkey.challenge@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "ChallengePasskeyAction",
+      "file": "src/node/actions/challenge-passkey.action.ts",
+      "permission": "identity.passkey.challenge",
+      "risk": "L0",
+      "actors": ["anonymous"],
+      "rateLimit": {
+        "perMinute": 10
+      },
+      "area": "public",
+      "toolOff": "signing a person in is the device's, never an agent's",
+      "input": {
+        "$ref": "#/schemas/identity.ChallengePasskeyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.ChallengePasskeyOutput"
+      },
+      "refusals": ["rate_limited"]
+    },
+    {
+      "key": "identity.passkey.confirm@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "ConfirmPasskeyAction",
+      "file": "src/node/actions/confirm-passkey.action.ts",
+      "permission": "identity.passkey.confirm",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "PUT",
+        "path": "/passkeys/:passkeyId/confirm",
+        "derived": true
+      },
+      "toolOff": "a passkey is created on the person's own device, never by an agent",
+      "input": {
+        "$ref": "#/schemas/identity.ConfirmPasskeyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.ConfirmPasskeyOutput"
+      },
+      "refusals": ["unauthenticated"]
+    },
+    {
+      "key": "identity.passkey.register@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "RegisterPasskeyAction",
+      "file": "src/node/actions/register-passkey.action.ts",
+      "permission": "identity.passkey.register",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/passkeys/register",
+        "derived": true
+      },
+      "toolOff": "a passkey is created on the person's own device, never by an agent",
+      "input": {
+        "$ref": "#/schemas/identity.RegisterPasskeyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.RegisterPasskeyOutput"
+      },
+      "refusals": ["unauthenticated"]
+    },
+    {
+      "key": "identity.passkey.verify@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "VerifyPasskeyAction",
+      "file": "src/node/actions/verify-passkey.action.ts",
+      "permission": "identity.passkey.verify",
+      "risk": "L0",
+      "actors": ["anonymous"],
+      "rateLimit": {
+        "perMinute": 10
+      },
+      "area": "public",
+      "toolOff": "signing a person in is the device's, never an agent's",
+      "input": {
+        "$ref": "#/schemas/identity.VerifyPasskeyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.VerifyPasskeyOutput"
+      },
+      "refusals": ["rate_limited"]
+    }
+  ],
   "events": [
     {
       "name": "identity.app_approval.approved.v1",
@@ -47,7 +138,28 @@
       }
     }
   ],
-  "permissions": [],
+  "permissions": [
+    {
+      "key": "identity.passkey.challenge",
+      "risk": "L0",
+      "class": "PasskeyPermissions"
+    },
+    {
+      "key": "identity.passkey.verify",
+      "risk": "L0",
+      "class": "PasskeyPermissions"
+    },
+    {
+      "key": "identity.passkey.register",
+      "risk": "L2",
+      "class": "PasskeyPermissions"
+    },
+    {
+      "key": "identity.passkey.confirm",
+      "risk": "L2",
+      "class": "PasskeyPermissions"
+    }
+  ],
   "errors": [
     {
       "code": "api_key_rejected",
@@ -279,6 +391,21 @@
       }
     },
     {
+      "port": "Passkeys",
+      "key": "identity.Passkeys",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPasskeysDriver",
+          "from": "@stackra/identity"
+        },
+        "expo": {
+          "class": "ExpoPasskeysDriver",
+          "from": "@stackra/identity/native"
+        }
+      }
+    },
+    {
       "port": "StaffPinStore",
       "key": "identity.StaffPinStore",
       "candidates": ["memory", "storage"],
@@ -432,6 +559,10 @@
       "type": "string",
       "enum": ["email", "phone"]
     },
+    "identity.PasskeyRefusal": {
+      "type": "string",
+      "enum": ["unsupported", "cancelled", "no_credential", "already_registered", "failed"]
+    },
     "identity.VerificationKind": {
       "type": "string",
       "enum": ["identity", "company", "tax_number", "sanctions", "background"]
@@ -523,6 +654,109 @@
         },
         "expiresAt": {
           "type": "string"
+        }
+      }
+    },
+    "identity.ChallengePasskeyInput": {
+      "type": "object",
+      "required": ["loginName"],
+      "properties": {
+        "loginName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      }
+    },
+    "identity.ChallengePasskeyOutput": {
+      "type": "object",
+      "required": ["sessionId", "options"],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "options": {
+          "description": "@Field(zod): described by its zod schema"
+        }
+      }
+    },
+    "identity.ConfirmPasskeyInput": {
+      "type": "object",
+      "required": ["passkeyId", "name", "credential"],
+      "properties": {
+        "passkeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "credential": {
+          "description": "@Field(zod): described by its zod schema"
+        }
+      }
+    },
+    "identity.ConfirmPasskeyOutput": {
+      "type": "object",
+      "required": ["passkeyId"],
+      "properties": {
+        "passkeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      }
+    },
+    "identity.RegisterPasskeyInput": {
+      "type": "object",
+      "properties": {}
+    },
+    "identity.RegisterPasskeyOutput": {
+      "type": "object",
+      "required": ["passkeyId", "options"],
+      "properties": {
+        "passkeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "options": {
+          "description": "@Field(zod): described by its zod schema"
+        }
+      }
+    },
+    "identity.VerifyPasskeyInput": {
+      "type": "object",
+      "required": ["sessionId", "credential"],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "credential": {
+          "description": "@Field(zod): described by its zod schema"
+        }
+      }
+    },
+    "identity.VerifyPasskeyOutput": {
+      "type": "object",
+      "required": ["sessionId", "sessionToken"],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "sessionToken": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
         }
       }
     }

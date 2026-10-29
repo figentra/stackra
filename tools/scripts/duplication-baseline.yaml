@@ -18,23 +18,23 @@ members:
     src: 0
     tests: 0
   apps/mobile:
-    src: 2.16
+    src: 2.08
     tests: 0
   apps/playground:
     src: 2.95
-    tests: 14.04
+    tests: 14.03
   packages/application/achievements:
     src: 0.94
     tests: 0.71
   packages/application/actions:
-    src: 0.48
-    tests: 1.65
+    src: 0.42
+    tests: 1.45
   packages/application/ai:
     src: 0.93
-    tests: 0.34
+    tests: 0.33
   packages/application/clients:
     src: 0.51
-    tests: 4.12
+    tests: 4.11
   packages/application/registry:
     src: 0
     tests: 0
@@ -45,14 +45,14 @@ members:
     src: 0
     tests: 0
   packages/commerce/fiscal:
-    src: 6.82
+    src: 6.81
     tests: 1.04
   packages/commerce/ledger:
     src: 0
     tests: 0
   packages/commerce/loyalty-kit:
-    src: 1.23
-    tests: 1.64
+    src: 1.22
+    tests: 1.63
   packages/commerce/money:
     src: 0
     tests: 0.73
@@ -66,20 +66,20 @@ members:
     src: 0
     tests: 0
   packages/communication/integrations:
-    src: 0.4
-    tests: 0.77
+    src: 0.39
+    tests: 0.75
   packages/communication/notifications:
-    src: 2.96
+    src: 2.92
     tests: 0.48
   packages/communication/versioning:
     src: 0
-    tests: 5.16
+    tests: 4.76
   packages/communication/webhooks:
-    src: 0.66
+    src: 0.65
     tests: 0.7
   packages/cross-cutting/analytics:
     src: 0
-    tests: 0.98
+    tests: 1.19
   packages/cross-cutting/seo:
     src: 1.11
     tests: 1.56
@@ -87,29 +87,35 @@ members:
     src: 0
     tests: 0
   packages/data/content:
-    src: 0.57
+    src: 0.56
     tests: 0.75
+  packages/data/data-maintenance:
+    src: 0
+    tests: 0
   packages/data/data-transfer:
-    src: 0.82
+    src: 1.05
     tests: 0
   packages/data/database:
-    src: 1.31
-    tests: 3.13
+    src: 0.88
+    tests: 2.71
   packages/data/documents:
     src: 0
-    tests: 11.51
+    tests: 11.23
   packages/data/filesystem:
-    src: 4.73
-    tests: 0.58
+    src: 4.38
+    tests: 1.54
   packages/data/media:
     src: 0
     tests: 1.28
   packages/data/model:
-    src: 0
-    tests: 0.45
+    src: 0.57
+    tests: 0.81
+  packages/data/reports:
+    src: 1.33
+    tests: 0
   packages/data/search:
-    src: 0.51
-    tests: 0.95
+    src: 0.88
+    tests: 0.65
   packages/data/state-machine:
     src: 0
     tests: 3.99
@@ -123,14 +129,14 @@ members:
     src: 0.5
     tests: 0
   packages/design-system/ui:
-    src: 5.36
-    tests: 9.28
+    src: 5.29
+    tests: 9.27
   packages/developer/brand-kit:
-    src: 2.8
+    src: 2.78
     tests: 0
   packages/developer/cli:
-    src: 1.05
-    tests: 4.64
+    src: 1.02
+    tests: 4.89
   packages/developer/coding-standard:
     src: 0
     tests: 0.62
@@ -138,49 +144,70 @@ members:
     src: 0
     tests: 0
   packages/developer/gen:
-    src: 0.79
-    tests: 1.42
+    src: 1.06
+    tests: 1.63
   packages/developer/mcp:
     src: 0
     tests: 0.71
   packages/developer/renderers:
-    src: 4.84
+    src: 4.71
     tests: 5.84
   packages/developer/repo-checks:
     src: 0
     tests: 0
   packages/developer/runway:
-    src: 0.53
-    tests: 2.85
+    src: 0.5
+    tests: 2.59
   packages/developer/skills:
     src: 0
     tests: 0
   packages/developer/testing:
-    src: 2.15
-    tests: 0.7
+    src: 2.14
+    tests: 0.69
   packages/developer/vite-plugin:
     src: 0
     tests: 0
   packages/experience/builder:
-    src: 0.57
+    src: 0.56
     tests: 1.43
   packages/experience/collaboration:
     src: 0.23
-    tests: 2.87
+    tests: 2.86
   packages/experience/experience:
-    src: 5.51
+    src: 5.48
     tests: 3.73
+  packages/experience/native-card-terminal:
+    src: 0
+    tests: 0
+  packages/experience/native-cash-drawer:
+    src: 0
+    tests: 12.63
+  packages/experience/native-customer-display:
+    src: 0
+    tests: 0
+  packages/experience/native-receipt-printer:
+    src: 0
+    tests: 12.38
+  packages/experience/native-scale:
+    src: 0.8
+    tests: 0.93
+  packages/experience/native-share:
+    src: 0
+    tests: 0
+  packages/experience/native-spotlight:
+    src: 0
+    tests: 0
   packages/experience/navigation:
-    src: 0.55
+    src: 0.54
     tests: 1.34
   packages/experience/panel:
-    src: 2.22
-    tests: 10.71
+    src: 1.79
+    tests: 9.4
   packages/experience/peripherals:
-    src: 5.04
-    tests: 3.85
+    src: 4.42
+    tests: 3.16
   packages/experience/platform:
-    src: 3
+    src: 1.97
     tests: 0
   packages/experience/shortcuts:
     src: 0
@@ -192,8 +219,8 @@ members:
     src: 0
     tests: 0
   packages/foundation/container:
-    src: 0.91
-    tests: 0
+    src: 0.88
+    tests: 0.6
   packages/foundation/contracts:
     src: 0
     tests: 1.28
@@ -205,13 +232,13 @@ members:
     tests: 1.21
   packages/foundation/i18n:
     src: 0
-    tests: 5.03
+    tests: 3.5
   packages/foundation/logger:
     src: 0
     tests: 0.8
   packages/foundation/market-packs:
     src: 0
-    tests: 8.66
+    tests: 8.65
   packages/foundation/support:
     src: 0
     tests: 1.88
@@ -223,25 +250,25 @@ members:
     tests: 0
   packages/infrastructure/infra-aws:
     src: 0
-    tests: 1.19
+    tests: 1.17
   packages/infrastructure/infra-aws-runtime:
     src: 0
-    tests: 2.47
+    tests: 2.46
   packages/infrastructure/infra-cloudflare:
     src: 0
     tests: 0
   packages/infrastructure/infra-gcp:
     src: 0
-    tests: 0
+    tests: 0.57
   packages/infrastructure/infra-github:
     src: 0
     tests: 0
   packages/infrastructure/infra-identity:
     src: 0
-    tests: 2.52
+    tests: 2.51
   packages/infrastructure/infra-mobile:
     src: 0
-    tests: 2.32
+    tests: 2.31
   packages/infrastructure/infra-observability:
     src: 0
     tests: 0
@@ -250,10 +277,10 @@ members:
     tests: 0
   packages/runtime/app:
     src: 0
-    tests: 0.24
+    tests: 0.23
   packages/runtime/cache:
-    src: 6.93
-    tests: 14.61
+    src: 2.16
+    tests: 7.96
   packages/runtime/devices:
     src: 0.78
     tests: 2.86
@@ -262,69 +289,69 @@ members:
     tests: 0
   packages/runtime/outbox:
     src: 0
-    tests: 2.74
+    tests: 3.26
   packages/runtime/queue:
     src: 0
-    tests: 0.49
+    tests: 0.42
   packages/runtime/realtime:
     src: 1.33
-    tests: 2.16
+    tests: 2.25
   packages/runtime/sandbox:
     src: 0.5
     tests: 0
   packages/runtime/scheduler:
     src: 0
-    tests: 0
+    tests: 0.68
   packages/runtime/workflow:
     src: 0
-    tests: 3.19
+    tests: 3.18
   packages/security/access-log:
-    src: 0
-    tests: 0
+    src: 1.43
+    tests: 1.82
   packages/security/consent:
     src: 0
-    tests: 2.12
+    tests: 2.11
   packages/security/csp:
     src: 0
     tests: 3.46
   packages/security/entitlements:
     src: 0
-    tests: 2.28
+    tests: 2.37
   packages/security/iam:
     src: 0
-    tests: 3.66
+    tests: 3.56
   packages/security/identity:
-    src: 0.11
-    tests: 1.84
+    src: 0.36
+    tests: 1.61
   packages/security/licensing:
-    src: 0.91
-    tests: 2.03
+    src: 0.9
+    tests: 2.02
   packages/security/privacy:
-    src: 1.56
-    tests: 0
+    src: 1.19
+    tests: 0.35
   packages/security/scope:
     src: 0
-    tests: 1.62
+    tests: 1.56
   packages/security/tenancy:
     src: 0
-    tests: 1.79
+    tests: 1.55
   packages/state/coordinator:
     src: 0
-    tests: 1.14
+    tests: 1.12
   packages/state/feature-flags:
     src: 0
     tests: 0.83
   packages/state/query:
-    src: 0.94
-    tests: 1.72
+    src: 0.93
+    tests: 1.7
   packages/state/settings:
-    src: 1.35
+    src: 1.33
     tests: 0.22
   packages/state/state:
     src: 0
     tests: 0.82
   packages/state/theming:
-    src: 0
+    src: 2.52
     tests: 0
   packages/tooling/commitlint:
     src: 0

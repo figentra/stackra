@@ -9,7 +9,7 @@
 
 /** The outcome of one re-seal step. */
 export interface ResealStep {
-  /** Rows read. */
+  /** The rows this step read. */
   readonly scanned: number;
 
   /** Rows written again under the current key. */
