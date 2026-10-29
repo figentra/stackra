@@ -947,6 +947,9 @@ test("process listings beside a secrets wrapper and /proc environ reads are deni
     "pnpm bot:gh -- pr view 1 & pgrep -af node",
     "pnpm secrets:import --list; cat /proc/self/cmdline",
     "pnpm linear mine & lsof -p 123",
+    "infisical run --env=dev -- node x.js & ps aux",
+    "bash tools/mcp.sh linear & ps aux",
+    "pnpm linear mine & htop",
     "cat /proc/1/environ",
     "ps -p 1 eww",
   ])

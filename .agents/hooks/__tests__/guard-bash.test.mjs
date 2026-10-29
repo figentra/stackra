@@ -1313,6 +1313,11 @@ for (const c of [
   "pnpm linear mine & lsof -p 123",
   "bash -c 'pnpm linear mine & ps aux'",
   "pnpm linear mine & echo $(ps aux)",
+  "infisical run --env=dev -- node x.js & ps aux",
+  "bash tools/mcp.sh linear & ps aux",
+  "./mcp.sh foo; pgrep -af node",
+  "pnpm linear mine & htop",
+  "pnpm linear mine & btop",
   // environment listings, with or without a wrapper
   "cat /proc/1/environ",
   "cat '/proc/1/environ'",
