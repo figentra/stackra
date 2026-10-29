@@ -22,9 +22,9 @@ export const STRIPE_TERMINAL = Object.freeze({
   discoveryTimeoutMs: 30_000,
   /** What the token relay tells the SDK when the server refused; never the server's own message. */
   tokenFailure: "connection_token_failed",
-  /** The `DevicePermissions` a Bluetooth reader needs, asked in this order before discovery. */
+  /** The `SystemPermissions` a Bluetooth reader needs, asked in this order before discovery. */
   readerPermissions: Object.freeze(["bluetooth", "location"] as const),
-  /** The `DevicePermissions` Tap to Pay needs, asked before this phone connects as the reader. */
+  /** The `SystemPermissions` Tap to Pay needs, asked before this phone connects as the reader. */
   tapToPayPermission: "location",
   /** The SDK error code the bridge answers when the Tap to Pay permission is denied or blocked. */
   tapToPayDenied: "location_permission_denied",

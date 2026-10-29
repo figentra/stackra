@@ -27,11 +27,11 @@ import { NativeShareConfig } from "@stackra/native-share";
 import { IncomingShare } from "@stackra/native-share/contracts";
 import { ExpoIncomingShareDriver } from "@stackra/native-share/native";
 import { AppLockConfig, PushConfig } from "@stackra/platform";
-import { AppIcon, AppLock, DevicePermissions, SystemSettings } from "@stackra/platform/contracts";
+import { AppIcon, AppLock, SystemPermissions, SystemSettings } from "@stackra/platform/contracts";
 import {
   ExpoAppIconDriver,
   ExpoAppLockDriver,
-  ExpoDevicePermissionsDriver,
+  ExpoSystemPermissionsDriver,
   ExpoSystemSettingsDriver,
 } from "@stackra/platform/native";
 import { MemorySettingValueStoreDriver } from "@stackra/settings";
@@ -58,7 +58,7 @@ export function createAppContainer(): Promise<Container> {
       [PushConfig, new PushConfig()],
       [SystemAccessibility, new AccessibilityInfoSystemAccessibilityDriver()],
       [SystemSettings, new ExpoSystemSettingsDriver()],
-      [DevicePermissions, new ExpoDevicePermissionsDriver()],
+      [SystemPermissions, new ExpoSystemPermissionsDriver()],
       // Off by default: an app opts in with its own `AppLockConfig` subclass (`isEnabled`, per-role overrides).
       [AppLockConfig, new AppLockConfig()],
       [AppLock, new ExpoAppLockDriver()],

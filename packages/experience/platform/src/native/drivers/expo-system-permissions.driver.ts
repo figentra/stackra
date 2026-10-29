@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ExpoDevicePermissionsDriver`, the `DevicePermissions` driver of the Expo (phone) target: camera and
+ * Purpose: `ExpoSystemPermissionsDriver`, the `SystemPermissions` driver of the Expo (phone) target: camera and
  *          microphone through expo-camera, location through expo-location, photos through expo-media-library,
  *          Bluetooth through React Native's `PermissionsAndroid`, and the settings deep link from `Linking`.
  * Boundary: device only, and concrete: it imports expo-camera, expo-location and expo-media-library itself (optional
@@ -18,7 +18,7 @@ import * as Location from "expo-location";
 import * as MediaLibrary from "expo-media-library";
 import { Linking, PermissionsAndroid, Platform as Os } from "react-native";
 
-import { DevicePermissions } from "#contracts/ports/device-permissions.port";
+import { SystemPermissions } from "#contracts/ports/system-permissions.port";
 import type { DevicePermission } from "#contracts/types/device-permission.type";
 import type { DevicePermissionStatus } from "#contracts/types/device-permission-status.type";
 import { expoDevicePermission } from "#native/functions/expo-device-permission.function";
@@ -38,9 +38,9 @@ const BLUETOOTH_RUNTIME_API = 31;
  * Device permissions on a phone.
  *
  * @example
- * { provide: DevicePermissions, useClass: ExpoDevicePermissionsDriver }
+ * { provide: SystemPermissions, useClass: ExpoSystemPermissionsDriver }
  */
-export class ExpoDevicePermissionsDriver extends Driver(DevicePermissions) {
+export class ExpoSystemPermissionsDriver extends Driver(SystemPermissions) {
   /** The Expo libraries permissions are asked through; a test subclass replaces them. */
   protected readonly modules: ExpoPermissionModules = {
     camera: Camera,

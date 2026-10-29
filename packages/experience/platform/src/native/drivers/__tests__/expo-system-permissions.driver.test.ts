@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ExpoDevicePermissionsDriver`: camera, microphone, location and photos read and prompt
+ * Purpose: unit tests of `ExpoSystemPermissionsDriver`: camera, microphone, location and photos read and prompt
  *          through the Expo libraries, a refusal the OS will not ask about again reads `blocked` and is not asked
  *          again, a missing library reads `denied`, Bluetooth asks through `PermissionsAndroid` on Android 12 and
  *          later only, and the settings deep link opens; constructed bare, it asks through the Expo libraries it imports.
@@ -11,8 +11,8 @@
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { DevicePermissions } from "#contracts/ports/device-permissions.port";
-import { ExpoDevicePermissionsDriver } from "#native/drivers/expo-device-permissions.driver";
+import { SystemPermissions } from "#contracts/ports/system-permissions.port";
+import { ExpoSystemPermissionsDriver } from "#native/drivers/expo-system-permissions.driver";
 import type { ExpoPermissionModules } from "#native/types/expo-permission-modules.type";
 import type { ExpoPermissionResponse } from "#native/types/expo-permission-response.type";
 
@@ -81,14 +81,14 @@ const GRANTED: ExpoPermissionResponse = { granted: true, status: "granted", canA
 const BLOCKED: ExpoPermissionResponse = { granted: false, status: "denied", canAskAgain: false };
 
 /** A driver over fake `modules`, as a test subclass hands them in. */
-function driverWith(modules: Partial<ExpoPermissionModules> = {}): ExpoDevicePermissionsDriver {
+function driverWith(modules: Partial<ExpoPermissionModules> = {}): ExpoSystemPermissionsDriver {
   const all: ExpoPermissionModules = {
     camera: null,
     location: null,
     mediaLibrary: null,
     ...modules,
   };
-  return new (class extends ExpoDevicePermissionsDriver {
+  return new (class extends ExpoSystemPermissionsDriver {
     protected override readonly modules = all;
   })();
 }
@@ -100,13 +100,13 @@ beforeEach(() => {
   mocks.requestMultiple.mockClear();
 });
 
-describe("ExpoDevicePermissionsDriver", () => {
-  it("is a DevicePermissions driver", () => {
-    expect(driverWith()).toBeInstanceOf(DevicePermissions);
+describe("ExpoSystemPermissionsDriver", () => {
+  it("is a SystemPermissions driver", () => {
+    expect(driverWith()).toBeInstanceOf(SystemPermissions);
   });
 
   it("asks through the Expo libraries it imports when constructed bare", async () => {
-    const permissions = new ExpoDevicePermissionsDriver();
+    const permissions = new ExpoSystemPermissionsDriver();
     expect(await permissions.status("camera")).toBe("granted");
     expect(await permissions.request("location")).toBe("granted");
     expect(await permissions.status("photos")).toBe("blocked");

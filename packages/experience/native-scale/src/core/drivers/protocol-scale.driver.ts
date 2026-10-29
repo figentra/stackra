@@ -5,7 +5,7 @@
  *          answers `probe` and `read`, requests one weight line for its subclass, and shapes a `ScaleFrame`.
  * Boundary: the subclass names its protocol's configuration and grammar, and writes `frame` and `onWeight`. No module,
  *           no address, no weight line within `readTimeout` or a fault line resolve the `serial` refusal
- *           `unavailable`; Bluetooth is asked through the injected `DevicePermissions` before a `ble` or `spp` link
+ *           `unavailable`; Bluetooth is asked through the injected `SystemPermissions` before a `ble` or `spp` link
  *           opens, and a denied or blocked answer, or a refused Bluetooth or USB permission, resolves
  *           `permission_denied`. Internal: the barrel exports the subclasses only.
  * Runtime: isomorphic
@@ -15,7 +15,7 @@ import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { Scale } from "@stackra/peripherals/contracts";
 import type { ScaleReading } from "@stackra/peripherals/contracts";
-import type { CapabilityResult, DevicePermissions } from "@stackra/platform/contracts";
+import type { CapabilityResult, SystemPermissions } from "@stackra/platform/contracts";
 
 import type { NativeScaleConfig } from "#config/native-scale.config";
 import { connectScale } from "#core/functions/connect-scale.function";
@@ -44,13 +44,13 @@ export abstract class ProtocolScaleDriver extends Driver(Scale) {
   protected readonly config: NativeScaleConfig;
 
   /** The app's permission helper, asked for Bluetooth before a Bluetooth link opens. */
-  protected readonly permissions: DevicePermissions;
+  protected readonly permissions: SystemPermissions;
 
   /**
    * @param config - the native scale configuration.
-   * @param permissions - the app's `DevicePermissions`, asked for Bluetooth before a `ble` or `spp` link opens.
+   * @param permissions - the app's `SystemPermissions`, asked for Bluetooth before a `ble` or `spp` link opens.
    */
-  constructor(config: NativeScaleConfig, permissions: DevicePermissions) {
+  constructor(config: NativeScaleConfig, permissions: SystemPermissions) {
     super();
     this.config = config;
     this.permissions = permissions;

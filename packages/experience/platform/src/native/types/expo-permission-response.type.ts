@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ExpoPermissionResponse`, an Expo permission response as expo-camera, expo-location and expo-media-library
- *          return it, the slice `ExpoDevicePermissionsDriver` reads.
+ *          return it, the slice `ExpoSystemPermissionsDriver` reads.
  * Boundary: a type only, so this package needs none of those libraries installed.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0478.

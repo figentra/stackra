@@ -34,7 +34,7 @@
             },
             {
               "class": {
-                "name": "DevicePermissions",
+                "name": "SystemPermissions",
                 "from": "@stackra/platform/contracts"
               }
             }
@@ -59,7 +59,7 @@
             },
             {
               "class": {
-                "name": "DevicePermissions",
+                "name": "SystemPermissions",
                 "from": "@stackra/platform/contracts"
               }
             }

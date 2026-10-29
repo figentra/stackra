@@ -5,7 +5,7 @@
  *          its serial number at the Stripe location the server names, and reports ready, busy or offline.
  * Boundary: pairs and reports only; the payment is the payments driver's (ADR 0339 decision 1), through the native
  *           `StripeTerminalBridge` over the same module. Reads the `StackraCardTerminal` Expo module when it runs and
- *           imports no native package. It asks through @stackra/platform's `DevicePermissions` for Bluetooth, then
+ *           imports no native package. It asks through @stackra/platform's `SystemPermissions` for Bluetooth, then
  *           location, before discovery, and never asks on its own; a permission denied or blocked there, or refused
  *           to the SDK, resolves `permission_denied` on `bluetooth`; no module, another provider, a LAN address, a
  *           location the server will not name, no reader of that serial, or an SDK error resolves `unavailable` on
@@ -18,7 +18,7 @@ import { Driver } from "@stackra/container";
 import { CardTerminal, TerminalState } from "@stackra/peripherals/contracts";
 import type { PairedTerminal, TerminalPairing } from "@stackra/peripherals/contracts";
 import { PlatformCapability } from "@stackra/platform";
-import type { CapabilityResult, DevicePermissions } from "@stackra/platform/contracts";
+import type { CapabilityResult, SystemPermissions } from "@stackra/platform/contracts";
 
 import type { StripeTerminalServer } from "#contracts/ports/stripe-terminal-server.port";
 import { STRIPE_TERMINAL } from "#native/constants/stripe-terminal.constant";
@@ -41,16 +41,16 @@ export class StripeTerminalCardTerminalDriver extends Driver(CardTerminal) {
   private readonly server: StripeTerminalServer;
 
   /** The app's permission helper, asked before Bluetooth and location are used. */
-  private readonly permissions: DevicePermissions;
+  private readonly permissions: SystemPermissions;
 
   /** The paired reader; null when none is paired. */
   private paired: TerminalPairing | null = null;
 
   /**
    * @param server - the host's binding over its Stripe Terminal server actions.
-   * @param permissions - the app's `DevicePermissions`, asked for Bluetooth and location before discovery.
+   * @param permissions - the app's `SystemPermissions`, asked for Bluetooth and location before discovery.
    */
-  constructor(server: StripeTerminalServer, permissions: DevicePermissions) {
+  constructor(server: StripeTerminalServer, permissions: SystemPermissions) {
     super();
     this.server = server;
     this.permissions = permissions;

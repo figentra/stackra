@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: proves `StripeTerminalCardTerminalDriver` pairs a Stripe Bluetooth reader by serial at the server's
  *          location, reports ready, busy and offline, unpairs, and refuses with `unavailable` on `card_terminal` or
- *          `permission_denied` on `bluetooth` exactly where ADR 0479 decision 2 says, asking `DevicePermissions` for
+ *          `permission_denied` on `bluetooth` exactly where ADR 0479 decision 2 says, asking `SystemPermissions` for
  *          Bluetooth then location before discovery.
  * Boundary: test only; replays the recorded SDK answers through the stand-in `StackraCardTerminal` module.
  * Runtime: node (vitest)
  * Governing contract: ADR 0479 (decisions 2 and 4); ADR 0339 (decision 1); ADR 0022 (test placement).
  */
-import { MemoryDevicePermissionsDriver } from "@stackra/platform";
+import { MemorySystemPermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { StripeTerminalCardTerminalDriver } from "#native/drivers/stripe-terminal-card-terminal.driver";
@@ -21,7 +21,7 @@ const UNAVAILABLE = { ok: false, error: { code: "unavailable", capability: "card
 const DENIED = { ok: false, error: { code: "permission_denied", capability: "bluetooth" } };
 
 /** A permissions driver whose prompt rejects, as the Expo one does with no attached Activity. */
-class RejectingPermissions extends MemoryDevicePermissionsDriver {
+class RejectingPermissions extends MemorySystemPermissionsDriver {
   /** Rejects like a failed OS prompt. */
   override async request(): Promise<never> {
     throw new Error("no attached Activity");
@@ -34,7 +34,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
   it("refuses without the module", async () => {
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.pair(PAIRING)).toEqual(UNAVAILABLE);
     expect(await terminal.status()).toEqual(UNAVAILABLE);
@@ -44,7 +44,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.pair({ ...PAIRING, provider: "geidea" })).toEqual(UNAVAILABLE);
     expect(await terminal.pair({ ...PAIRING, address: "tcp://10.0.0.30:6000" })).toEqual(
@@ -57,7 +57,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.pair(PAIRING)).toEqual({
       ok: true,
@@ -72,7 +72,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     await terminal.pair(PAIRING);
     module.paymentStatus.mockResolvedValueOnce("waitingForInput");
@@ -85,7 +85,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     await terminal.pair(PAIRING);
     module.setConnected(null);
@@ -98,7 +98,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.pair({ ...PAIRING, terminalId: "STRM00000000000" })).toEqual(UNAVAILABLE);
   });
@@ -109,15 +109,15 @@ describe("StripeTerminalCardTerminalDriver", () => {
     server.location = null;
     const terminal = new StripeTerminalCardTerminalDriver(
       server,
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.pair(PAIRING)).toEqual(UNAVAILABLE);
     expect(module.discoverBluetoothReaders).not.toHaveBeenCalled();
   });
 
-  it("asks DevicePermissions for Bluetooth then location before discovery", async () => {
+  it("asks SystemPermissions for Bluetooth then location before discovery", async () => {
     const module = CARD_TERMINAL_SDK.install();
-    const permissions = new MemoryDevicePermissionsDriver();
+    const permissions = new MemorySystemPermissionsDriver();
     expect(
       await new StripeTerminalCardTerminalDriver(new StandInServer(), permissions).pair(PAIRING),
     ).toMatchObject({ ok: true });
@@ -133,7 +133,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
       ["bluetooth", "blocked"],
     ] as const) {
       const module = CARD_TERMINAL_SDK.install();
-      const permissions = new MemoryDevicePermissionsDriver();
+      const permissions = new MemorySystemPermissionsDriver();
       permissions.statuses[granted] = "granted";
       permissions.requestAnswer = status;
       expect(
@@ -153,7 +153,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
       expect(
         await new StripeTerminalCardTerminalDriver(
           new StandInServer(),
-          new MemoryDevicePermissionsDriver(),
+          new MemorySystemPermissionsDriver(),
         ).pair(PAIRING),
       ).toEqual(DENIED);
     }
@@ -163,7 +163,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     expect(
       await new StripeTerminalCardTerminalDriver(
         new StandInServer(),
-        new MemoryDevicePermissionsDriver(),
+        new MemorySystemPermissionsDriver(),
       ).pair(PAIRING),
     ).toEqual(UNAVAILABLE);
   });
@@ -177,7 +177,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     expect(
       await new StripeTerminalCardTerminalDriver(
         new StandInServer(),
-        new MemoryDevicePermissionsDriver(),
+        new MemorySystemPermissionsDriver(),
       ).pair(PAIRING),
     ).toEqual(UNAVAILABLE);
   });
@@ -186,7 +186,7 @@ describe("StripeTerminalCardTerminalDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const terminal = new StripeTerminalCardTerminalDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await terminal.unpair()).toEqual({ ok: true, data: undefined });
     expect(module.disconnectReader).not.toHaveBeenCalled();

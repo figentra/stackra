@@ -25,7 +25,6 @@ describe("@stackra/platform/contracts", () => {
       "AppLock",
       "AppShortcuts",
       "CaptchaVerifier",
-      "DevicePermissions",
       "HomeWidgets",
       "KioskMode",
       "LiveActivities",
@@ -33,6 +32,7 @@ describe("@stackra/platform/contracts", () => {
       "Platform",
       "PlatformPushTransport",
       "SecondScreen",
+      "SystemPermissions",
       "SystemSettings",
     ]);
   });

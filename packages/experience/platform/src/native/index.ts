@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./native` entry of @stackra/platform (`ExpoPlatformDriver`,
  *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`, `ExpoSystemSettingsDriver`,
- *          `ExpoDevicePermissionsDriver`, `ExpoAppLockDriver` and the `AppLockGate` the app mounts,
+ *          `ExpoSystemPermissionsDriver`, `ExpoAppLockDriver` and the `AppLockGate` the app mounts,
  *          `ExpoLiveActivitiesDriver`, `ExpoHomeWidgetsDriver`, `ExpoAppIconDriver`, and `createNotificationChannels`
  *          for the push context), what gen lists as candidates for the Expo target, until `stackra gen` writes the
  *          entry barrels (STA-339).
@@ -17,9 +17,9 @@ export { ExpoAppLockDriver } from "#native/drivers/expo-app-lock.driver";
 export { ExpoPlatformDriver } from "#native/drivers/expo-platform.driver";
 export { ExpoPushTransportDriver } from "#native/drivers/expo-push-transport.driver";
 export { SelfHostedPushTransportDriver } from "#native/drivers/self-hosted-push-transport.driver";
-export { ExpoDevicePermissionsDriver } from "#native/drivers/expo-device-permissions.driver";
 export { ExpoHomeWidgetsDriver } from "#native/drivers/expo-home-widgets.driver";
 export { ExpoLiveActivitiesDriver } from "#native/drivers/expo-live-activities.driver";
+export { ExpoSystemPermissionsDriver } from "#native/drivers/expo-system-permissions.driver";
 export { ExpoSystemSettingsDriver } from "#native/drivers/expo-system-settings.driver";
 export { createNotificationChannels } from "#native/functions/create-notification-channels.function";
 export type { AppLockGateProps } from "#native/types/app-lock-gate-props.type";

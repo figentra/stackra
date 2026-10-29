@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DevicePermission`, the device permissions `DevicePermissions` asks for: camera, location, photos,
+ * Purpose: `DevicePermission`, the device permissions `SystemPermissions` asks for: camera, location, photos,
  *          Bluetooth and microphone.
  * Boundary: a type only; each value is also the key segment of its explanation, `platform::permissions.<value>.why`.
  * Runtime: isomorphic

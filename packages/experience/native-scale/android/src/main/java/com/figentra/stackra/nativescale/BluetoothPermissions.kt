@@ -3,7 +3,7 @@
 //          permission a link needs (`BLUETOOTH_CONNECT` on Android 12 and later; before it, connecting to a known
 //          address needs only the install-time `BLUETOOTH` and `BLUETOOTH_ADMIN`, so nothing is checked), and
 //          `E_UNAVAILABLE` when the device has no Bluetooth or it is off.
-// Boundary: checks only, never asks: the TypeScript drivers ask @stackra/platform's DevicePermissions for
+// Boundary: checks only, never asks: the TypeScript drivers ask @stackra/platform's SystemPermissions for
 //           `bluetooth` (scan and connect on Android 12 and later) before a link opens. The permissions are declared by
 //           the config plugin.
 // Runtime: Android

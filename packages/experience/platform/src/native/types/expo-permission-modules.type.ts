@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ExpoPermissionModules`, the Expo libraries `ExpoDevicePermissionsDriver` asks through: expo-camera (camera
+ * Purpose: `ExpoPermissionModules`, the Expo libraries `ExpoSystemPermissionsDriver` asks through: expo-camera (camera
  *          and microphone), expo-location and expo-media-library, which the driver imports and a test subclass
  *          replaces with fakes.
  * Boundary: a type only, the slice of each library the driver calls. `null` reads that library as absent, and its
@@ -17,7 +17,7 @@ type Ask = () => Promise<ExpoPermissionResponse>;
  * The Expo libraries device permissions are asked through.
  *
  * @example
- * class FakeDevicePermissions extends ExpoDevicePermissionsDriver {
+ * class FakeSystemPermissions extends ExpoSystemPermissionsDriver {
  *   protected override readonly modules: ExpoPermissionModules = { camera: null, location: null, mediaLibrary: null };
  * }
  */

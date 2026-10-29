@@ -45,7 +45,7 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop
   Power Mode, an expensive connection, background refresh) and links to the OS settings; never add an in-app override
   of a system-owned setting. Its Expo driver imports expo-tracking-transparency, expo-battery,
   expo-background-task and NetInfo (optional peers, catalog:mobile); `modules` stays protected only so tests hand fakes in.
-- `DevicePermissions` is the one permission helper (camera, location, photos, Bluetooth, microphone); a package that
+- `SystemPermissions` is the one permission helper (camera, location, photos, Bluetooth, microphone); a package that
   needs one of them asks through it, never through its own library call. Its Expo driver imports expo-camera,
   expo-location and expo-media-library (optional peers, catalog:mobile); `modules` stays protected only so tests hand
   fakes in. Its explanations live in

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `systemDriverDefaults` and of the wiring it feeds: an Expo-only app takes
- *          `accessibility_info`, `expo` and its own `DevicePermissions` driver (else `memory`); a web app, a mixed app
+ *          `accessibility_info`, `expo` and its own `SystemPermissions` driver (else `memory`); a web app, a mixed app
  *          and a service take `memory`; the phone ports take `expo` with their config classes; a mixed app's native
  *          rows are the native drivers; a package and a host that does not declare the port's package take none; and
  *          `emitWiring` lists the port's table with that `default` and its config row although no constructor injects
@@ -22,15 +22,15 @@ import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 const DECLARED = ["@stackra/theming", "@stackra/platform"];
 
-/** The app's own `DevicePermissions` driver, a subclass of the abstract Expo one. */
+/** The app's own `SystemPermissions` driver, a subclass of the abstract Expo one. */
 const APP_PERMISSIONS: DeclaredClass = {
-  name: "AppDevicePermissionsDriver",
+  name: "AppSystemPermissionsDriver",
   kind: "driver",
   module: "web",
-  file: "src/drivers/app-device-permissions.driver.ts",
-  importPath: "#drivers/app-device-permissions.driver",
+  file: "src/drivers/app-system-permissions.driver.ts",
+  importPath: "#drivers/app-system-permissions.driver",
   options: {},
-  partner: { name: "DevicePermissions", kind: "port", from: "@stackra/platform/contracts" },
+  partner: { name: "SystemPermissions", kind: "port", from: "@stackra/platform/contracts" },
   deps: [],
   facets: [],
   methods: [],
@@ -49,7 +49,7 @@ describe("systemDriverDefaults", () => {
     expect(pairs(ir)).toEqual([
       ["SystemAccessibility", "accessibility_info"],
       ["SystemSettings", "expo"],
-      ["DevicePermissions", "memory"],
+      ["SystemPermissions", "memory"],
       ["AppLock", "expo"],
       ["LiveActivities", "expo"],
       ["AppIcon", "expo"],
@@ -103,14 +103,14 @@ describe("systemDriverDefaults", () => {
     ).toEqual(new Set(["memory"]));
   });
 
-  it("gives an Expo-only app its own DevicePermissions driver", () => {
+  it("gives an Expo-only app its own SystemPermissions driver", () => {
     const ir: MemberIR = {
       ...WEB_APP_IR,
       targets: ["ios"],
       packages: DECLARED,
       classes: [...WEB_APP_IR.classes, APP_PERMISSIONS],
     };
-    expect(pairs(ir)).toContainEqual(["DevicePermissions", "app"]);
+    expect(pairs(ir)).toContainEqual(["SystemPermissions", "app"]);
   });
 
   it("gives a web app, a mixed app and a service memory everywhere", () => {
@@ -128,7 +128,7 @@ describe("systemDriverDefaults", () => {
     expect(systemDriverDefaults({ ...LOYALTY_KIT_IR, packages: DECLARED })).toEqual([]);
     expect(pairs({ ...WEB_APP_IR, targets: ["ios"], packages: ["@stackra/platform"] })).toEqual([
       ["SystemSettings", "expo"],
-      ["DevicePermissions", "memory"],
+      ["SystemPermissions", "memory"],
       ["AppLock", "expo"],
       ["LiveActivities", "expo"],
       ["AppIcon", "expo"],

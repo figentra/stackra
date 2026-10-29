@@ -7,7 +7,7 @@
  *           connected reader, with `StripeTerminalCardTerminalDriver`. Normalises the SDK's intent status to Stripe's
  *           API name (`requires_capture`) so the SoftPos driver's status table reads it. Creates no intent, never runs
  *           offline, holds no key (ADR 0479 decisions 4 and 5). Without the module every call answers
- *           `module_unavailable`. Asks @stackra/platform's `DevicePermissions` for location before Tap to Pay
+ *           `module_unavailable`. Asks @stackra/platform's `SystemPermissions` for location before Tap to Pay
  *           connects, never on its own, and answers `location_permission_denied` when it is denied or blocked.
  *           Certification pending (STA-739).
  * Runtime: isomorphic
@@ -16,7 +16,7 @@
 import { Driver } from "@stackra/container";
 import { StripeTerminalBridge } from "@stackra/payments/contracts";
 import type { StripeBridgeError, StripeBridgeIntent } from "@stackra/payments/contracts";
-import type { DevicePermissions } from "@stackra/platform/contracts";
+import type { SystemPermissions } from "@stackra/platform/contracts";
 
 import type { StripeTerminalServer } from "#contracts/ports/stripe-terminal-server.port";
 import { STRIPE_TERMINAL } from "#native/constants/stripe-terminal.constant";
@@ -42,13 +42,13 @@ export class NativeStripeTerminalBridgeDriver extends Driver(StripeTerminalBridg
   private readonly server: StripeTerminalServer;
 
   /** The app's permission helper, asked for location before Tap to Pay connects. */
-  private readonly permissions: DevicePermissions;
+  private readonly permissions: SystemPermissions;
 
   /**
    * @param server - the host's binding over its Stripe Terminal server actions.
-   * @param permissions - the app's `DevicePermissions`, asked for location before Tap to Pay connects.
+   * @param permissions - the app's `SystemPermissions`, asked for location before Tap to Pay connects.
    */
-  constructor(server: StripeTerminalServer, permissions: DevicePermissions) {
+  constructor(server: StripeTerminalServer, permissions: SystemPermissions) {
     super();
     this.server = server;
     this.permissions = permissions;

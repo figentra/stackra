@@ -11,7 +11,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Duration } from "@stackra/contracts";
-import { MemoryDevicePermissionsDriver } from "@stackra/platform";
+import { MemorySystemPermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -30,7 +30,7 @@ function scale(): MtSicsScaleDriver {
         readTimeout: Duration.seconds(0.05),
       },
     }),
-    new MemoryDevicePermissionsDriver(),
+    new MemorySystemPermissionsDriver(),
   );
 }
 
@@ -45,7 +45,7 @@ describe("MtSicsScaleDriver", () => {
     expect(
       await new MtSicsScaleDriver(
         buildConfig(NativeScaleConfig),
-        new MemoryDevicePermissionsDriver(),
+        new MemorySystemPermissionsDriver(),
       ).probe(),
     ).toEqual(UNAVAILABLE);
   });

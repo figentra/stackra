@@ -3,7 +3,7 @@
 //          Terminal's iOS SDK. It initialises the SDK with the token relay, discovers and connects Bluetooth readers
 //          and this iPhone as a Tap to Pay reader, reports the connected reader and the payment status, retrieves,
 //          collects and confirms a server-created intent, cancels a collect, disconnects.
-// Boundary: asks for no permission: the TypeScript drivers ask @stackra/platform's DevicePermissions first. Maps
+// Boundary: asks for no permission: the TypeScript drivers ask @stackra/platform's SystemPermissions first. Maps
 //           nothing but enum names (SdkNames): every SDK call resolves with the SDK's answer or `{ error }` and never
 //           rejects; the TypeScript drivers decide what an answer means. Never creates a payment intent, never
 //           enables offline mode, holds no key (ADR 0479 decisions 4 and 5). Card data never crosses to JavaScript.

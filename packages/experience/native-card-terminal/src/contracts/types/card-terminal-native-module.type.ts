@@ -3,7 +3,7 @@
  * Purpose: `CardTerminalNativeModule`, the `StackraCardTerminal` Expo module: a pass-through over Stripe Terminal's
  *          iOS and Android SDKs (initialise with the token relay, Bluetooth discovery and connect, Tap to Pay, the
  *          reader's state, collect and confirm, cancel, disconnect).
- * Boundary: a type only. It asks for no permission: the drivers ask @stackra/platform's `DevicePermissions` first.
+ * Boundary: a type only. It asks for no permission: the drivers ask @stackra/platform's `SystemPermissions` first.
  *           Every SDK call resolves with the SDK's answer or `{ error }` (its code and message, never card data) and
  *           never rejects. Codes and statuses are the SDK's enum names, unmapped; the drivers read them. The
  *           module never creates a payment intent and never enables offline mode (ADR 0479 decision 5).

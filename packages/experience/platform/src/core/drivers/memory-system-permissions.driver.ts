@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `MemoryDevicePermissionsDriver`, the `DevicePermissions` driver of tests and of targets that ask for none
+ * Purpose: `MemorySystemPermissionsDriver`, the `SystemPermissions` driver of tests and of targets that ask for none
  *          of these permissions themselves (the web, the desktop): the `memory` candidate; a test sets each status.
  * Boundary: every permission starts `prompt`; `request` turns a `prompt` or `denied` into `requestAnswer`, a granted
  *           or blocked one stays; opening the settings only counts the call. The constructor takes nothing.
@@ -9,7 +9,7 @@
  */
 import { Driver } from "@stackra/container";
 
-import { DevicePermissions } from "#contracts/ports/device-permissions.port";
+import { SystemPermissions } from "#contracts/ports/system-permissions.port";
 import type { DevicePermission } from "#contracts/types/device-permission.type";
 import type { DevicePermissionStatus } from "#contracts/types/device-permission-status.type";
 
@@ -17,11 +17,11 @@ import type { DevicePermissionStatus } from "#contracts/types/device-permission-
  * Device permissions in memory.
  *
  * @example
- * const permissions = new MemoryDevicePermissionsDriver();
+ * const permissions = new MemorySystemPermissionsDriver();
  * permissions.statuses.camera = "blocked";
  * permissions.requestAnswer = "granted";
  */
-export class MemoryDevicePermissionsDriver extends Driver(DevicePermissions) {
+export class MemorySystemPermissionsDriver extends Driver(SystemPermissions) {
   /** Where each permission stands; a test sets it. */
   readonly statuses: Record<DevicePermission, DevicePermissionStatus> = {
     camera: "prompt",

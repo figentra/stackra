@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: proves `connectScale` refuses `unavailable` without the module or an address, opens the configured link
- *          once (all six link fields), reuses an open link, asks `DevicePermissions` for Bluetooth before a `ble` or
+ *          once (all six link fields), reuses an open link, asks `SystemPermissions` for Bluetooth before a `ble` or
  *          `spp` link (not `usb`, not an open link) and refuses `permission_denied` when it is denied or blocked, and
  *          maps a rejected connect to `permission_denied` or `unavailable` by its code.
  * Boundary: test only; drives the stand-in `StackraNativeScale` of `SCALE_SDK`.
@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0478 (decision 5); ADR 0250 (decision 3).
  */
 import { buildConfig } from "@stackra/config";
-import { MemoryDevicePermissionsDriver } from "@stackra/platform";
+import { MemorySystemPermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { NativeScaleConfig } from "#config/native-scale.config";
@@ -26,20 +26,20 @@ describe("connectScale", () => {
   });
 
   it("refuses without the module or an address", async () => {
-    expect(await connectScale(config, new MemoryDevicePermissionsDriver())).toEqual(UNAVAILABLE);
+    expect(await connectScale(config, new MemorySystemPermissionsDriver())).toEqual(UNAVAILABLE);
     SCALE_SDK.install();
     expect(
-      await connectScale(buildConfig(NativeScaleConfig), new MemoryDevicePermissionsDriver()),
+      await connectScale(buildConfig(NativeScaleConfig), new MemorySystemPermissionsDriver()),
     ).toEqual(UNAVAILABLE);
   });
 
   it("opens the configured link once", async () => {
     const device = SCALE_SDK.install();
-    expect(await connectScale(config, new MemoryDevicePermissionsDriver())).toEqual({
+    expect(await connectScale(config, new MemorySystemPermissionsDriver())).toEqual({
       ok: true,
       data: device,
     });
-    expect(await connectScale(config, new MemoryDevicePermissionsDriver())).toEqual({
+    expect(await connectScale(config, new MemorySystemPermissionsDriver())).toEqual({
       ok: true,
       data: device,
     });
@@ -59,18 +59,18 @@ describe("connectScale", () => {
 
   it("maps a rejected connect by its code", async () => {
     SCALE_SDK.install({ connectError: "E_PERMISSION" });
-    expect(await connectScale(config, new MemoryDevicePermissionsDriver())).toEqual({
+    expect(await connectScale(config, new MemorySystemPermissionsDriver())).toEqual({
       ok: false,
       error: { code: "permission_denied", capability: "serial" },
     });
     SCALE_SDK.install({ connectError: "E_UNAVAILABLE" });
-    expect(await connectScale(config, new MemoryDevicePermissionsDriver())).toEqual(UNAVAILABLE);
+    expect(await connectScale(config, new MemorySystemPermissionsDriver())).toEqual(UNAVAILABLE);
   });
 
-  it("asks DevicePermissions for Bluetooth before a Bluetooth link and refuses when denied or blocked", async () => {
+  it("asks SystemPermissions for Bluetooth before a Bluetooth link and refuses when denied or blocked", async () => {
     for (const status of ["denied", "blocked"] as const) {
       const device = SCALE_SDK.install();
-      const permissions = new MemoryDevicePermissionsDriver();
+      const permissions = new MemorySystemPermissionsDriver();
       permissions.requestAnswer = status;
       expect(await connectScale(config, permissions)).toEqual({
         ok: false,
@@ -82,7 +82,7 @@ describe("connectScale", () => {
   });
 
   it("asks nothing for a USB link or a link already open", async () => {
-    const permissions = new MemoryDevicePermissionsDriver();
+    const permissions = new MemorySystemPermissionsDriver();
     permissions.requestAnswer = "denied";
     const usb = buildConfig(NativeScaleConfig, {
       values: { transport: "usb", address: "0403:6001" },

@@ -26,7 +26,6 @@ export { MemoryAppIconDriver } from "#core/drivers/memory-app-icon.driver";
 export { MemoryAppLockDriver } from "#core/drivers/memory-app-lock.driver";
 export { MemoryAppShortcutsDriver } from "#core/drivers/memory-app-shortcuts.driver";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
-export { MemoryDevicePermissionsDriver } from "#core/drivers/memory-device-permissions.driver";
 export { MemoryHomeWidgetsDriver } from "#core/drivers/memory-home-widgets.driver";
 export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryLiveActivitiesDriver } from "#core/drivers/memory-live-activities.driver";
@@ -34,6 +33,7 @@ export { MemoryLiveActivityPushesDriver } from "#core/drivers/memory-live-activi
 export { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
 export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";
 export { MemorySecondScreenDriver } from "#core/drivers/memory-second-screen.driver";
+export { MemorySystemPermissionsDriver } from "#core/drivers/memory-system-permissions.driver";
 export { MemorySystemSettingsDriver } from "#core/drivers/memory-system-settings.driver";
 export { CachePreset } from "#core/enums/cache-preset.enum";
 export { CacheStrategy } from "#core/enums/cache-strategy.enum";

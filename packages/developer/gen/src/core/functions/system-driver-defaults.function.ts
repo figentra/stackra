@@ -3,8 +3,8 @@
  * Purpose: `systemDriverDefaults`, the follow-the-system ports a host's wiring binds whether or not a constructor
  *          injects them (a hook such as `useAccessibility()` resolves `SystemAccessibility` from the container), with the
  *          driver each one takes on the host's runtime: on an Expo app (iOS and Android only) `SystemAccessibility`
- *          takes `accessibility_info` and `SystemSettings` takes `expo`; `DevicePermissions` takes the app's own driver
- *          (the abstract `ExpoDevicePermissionsDriver` is never a candidate, so the app subclasses it) or `memory`; on
+ *          takes `accessibility_info` and `SystemSettings` takes `expo`; `SystemPermissions` takes the app's own driver
+ *          (the abstract `ExpoSystemPermissionsDriver` is never a candidate, so the app subclasses it) or `memory`; on
  *          the web, the desktop renderer and in a service or worker each takes `memory` (STA-1535, STA-1536). The
  *          phone ports `AppLock`, `Passkeys`, `LiveActivities`, `DeviceSearchIndex`, `IncomingShare` and `AppIcon` take
  *          `expo` on an Expo app, each with the config class its drivers read.
@@ -51,7 +51,7 @@ const SYSTEM_PORTS: readonly SystemPort[] = [
   },
   {
     package: "@stackra/platform",
-    port: { name: "DevicePermissions", from: "@stackra/platform/contracts" },
+    port: { name: "SystemPermissions", from: "@stackra/platform/contracts" },
   },
   phone("@stackra/platform", "AppLock", "AppLockConfig"),
   phone("@stackra/identity", "Passkeys"),

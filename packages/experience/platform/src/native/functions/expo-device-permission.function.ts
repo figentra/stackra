@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `expoDevicePermission`, an Expo permission response as `DevicePermissions` spells it: granted stays
+ * Purpose: `expoDevicePermission`, an Expo permission response as `SystemPermissions` spells it: granted stays
  *          `granted`, `undetermined` reads `prompt`, a refusal the OS will not ask about again reads `blocked`,
  *          anything else is `denied`.
  * Boundary: internal to `./native`; pure.

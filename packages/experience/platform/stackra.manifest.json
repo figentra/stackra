@@ -151,16 +151,16 @@
       }
     },
     {
-      "port": "DevicePermissions",
-      "key": "platform.DevicePermissions",
+      "port": "SystemPermissions",
+      "key": "platform.SystemPermissions",
       "candidates": ["memory", "expo"],
       "classes": {
         "memory": {
-          "class": "MemoryDevicePermissionsDriver",
+          "class": "MemorySystemPermissionsDriver",
           "from": "@stackra/platform"
         },
         "expo": {
-          "class": "ExpoDevicePermissionsDriver",
+          "class": "ExpoSystemPermissionsDriver",
           "from": "@stackra/platform/native"
         }
       }

@@ -3,12 +3,12 @@
  * Purpose: proves `NativeStripeTerminalBridgeDriver` answers @stackra/payments' `StripeTerminalBridge` like the SDK:
  *          Tap to Pay support and connect, `connected` only for this phone as the reader, collect and confirm with the
  *          intent status in Stripe's API spelling, cancel, errors passed through, `module_unavailable` without the
- *          module, and `location_permission_denied` when `DevicePermissions` denies or blocks location for Tap to Pay.
+ *          module, and `location_permission_denied` when `SystemPermissions` denies or blocks location for Tap to Pay.
  * Boundary: test only; replays the recorded SDK answers through the stand-in `StackraCardTerminal` module.
  * Runtime: node (vitest)
  * Governing contract: ADR 0479 (decisions 3 to 5); ADR 0446 (decision 4); ADR 0022 (test placement).
  */
-import { MemoryDevicePermissionsDriver } from "@stackra/platform";
+import { MemorySystemPermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { NativeStripeTerminalBridgeDriver } from "#native/drivers/native-stripe-terminal-bridge.driver";
@@ -18,7 +18,7 @@ import { StandInServer } from "#native/__tests__/stand-in-server.fixture";
 const UNAVAILABLE = { error: { code: "module_unavailable" } };
 
 /** A permissions driver whose prompt rejects, as the Expo one does with no attached Activity. */
-class RejectingPermissions extends MemoryDevicePermissionsDriver {
+class RejectingPermissions extends MemorySystemPermissionsDriver {
   /** Rejects like a failed OS prompt. */
   override async request(): Promise<never> {
     throw new Error("no attached Activity");
@@ -31,7 +31,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
   it("answers module_unavailable without the module", async () => {
     const bridge = new NativeStripeTerminalBridgeDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await bridge.supportsTapToPay()).toEqual(UNAVAILABLE);
     expect(await bridge.connectTapToPay("tml_1")).toEqual(UNAVAILABLE);
@@ -44,7 +44,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const bridge = new NativeStripeTerminalBridgeDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await bridge.supportsTapToPay()).toEqual({ supported: true });
     expect(await bridge.connected()).toBe(false);
@@ -57,10 +57,10 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     expect(await bridge.connected()).toBe(false);
   });
 
-  it("asks DevicePermissions for location before Tap to Pay and refuses when it is denied or blocked", async () => {
+  it("asks SystemPermissions for location before Tap to Pay and refuses when it is denied or blocked", async () => {
     for (const status of ["denied", "blocked"] as const) {
       const module = CARD_TERMINAL_SDK.install();
-      const permissions = new MemoryDevicePermissionsDriver();
+      const permissions = new MemorySystemPermissionsDriver();
       permissions.requestAnswer = status;
       expect(
         await new NativeStripeTerminalBridgeDriver(
@@ -80,7 +80,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     expect(
       await new NativeStripeTerminalBridgeDriver(
         new StandInServer(),
-        new MemoryDevicePermissionsDriver(),
+        new MemorySystemPermissionsDriver(),
       ).connectTapToPay("tml_1"),
     ).toEqual({ error: CARD_TERMINAL_SDK.error.androidLocationOff });
   });
@@ -89,7 +89,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const bridge = new NativeStripeTerminalBridgeDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     expect(await bridge.collectAndConfirm("pi_3QxTest_secret_abc")).toEqual({
       paymentIntent: { id: "pi_3QxTest", status: "requires_capture" },
@@ -107,7 +107,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const bridge = new NativeStripeTerminalBridgeDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     module.collectAndConfirm.mockResolvedValueOnce({ error: CARD_TERMINAL_SDK.error.iosDeclined });
     expect(await bridge.collectAndConfirm("pi_1_secret_2")).toEqual({
@@ -124,7 +124,7 @@ describe("NativeStripeTerminalBridgeDriver", () => {
     const module = CARD_TERMINAL_SDK.install();
     const bridge = new NativeStripeTerminalBridgeDriver(
       new StandInServer(),
-      new MemoryDevicePermissionsDriver(),
+      new MemorySystemPermissionsDriver(),
     );
     await bridge.supportsTapToPay();
     await bridge.supportsTapToPay();

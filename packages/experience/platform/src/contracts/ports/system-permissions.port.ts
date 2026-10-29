@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the `DevicePermissions` port, the one permission helper of a native app (owner decision 2026-10-29, follow
+ * Purpose: the `SystemPermissions` port, the one permission helper of a native app (owner decision 2026-10-29, follow
  *          the system): where camera, location, photos, Bluetooth and microphone stand, asking for one, and the deep
  *          link to this app's page in the OS settings when the OS will not ask again.
- * Boundary: an abstract class that is its own token, keyed `platform.DevicePermissions`; a driver per target implements
- *           it with `extends Driver(DevicePermissions)` (memory, Expo). It never explains: the app shows the translated
+ * Boundary: an abstract class that is its own token, keyed `platform.SystemPermissions`; a driver per target implements
+ *           it with `extends Driver(SystemPermissions)` (memory, Expo). It never explains: the app shows the translated
  *           reason, `platform::permissions.<permission>.why`, before `request` and `.blocked` with an
  *           `openSettings` button once the answer is `blocked`.
  * Runtime: isomorphic
@@ -19,13 +19,13 @@ import type { DevicePermissionStatus } from "#contracts/types/device-permission-
  * Asks for device permissions and reports where they stand.
  *
  * @example
- * const permissions = useContainer().get(DevicePermissions);
+ * const permissions = useContainer().get(SystemPermissions);
  * const answer = await permissions.request("bluetooth");
  * if (answer === "blocked") showHint(t("platform::permissions.bluetooth.blocked"), () => permissions.openSettings());
  */
-export abstract class DevicePermissions extends Port {
-  /** Type-only port key, so `DriverName<DevicePermissions>` narrows to this port's drivers. */
-  declare readonly "~key": "platform.DevicePermissions";
+export abstract class SystemPermissions extends Port {
+  /** Type-only port key, so `DriverName<SystemPermissions>` narrows to this port's drivers. */
+  declare readonly "~key": "platform.SystemPermissions";
 
   /** Where `permission` stands now, without prompting. */
   abstract status(permission: DevicePermission): Promise<DevicePermissionStatus>;

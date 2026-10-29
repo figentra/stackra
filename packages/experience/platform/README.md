@@ -125,13 +125,13 @@ if ((await settings.backgroundRefresh()) === "denied")
 
 ### Device permissions
 
-`DevicePermissions` (`./contracts`) is the one permission helper for camera, location, photos, Bluetooth and
+`SystemPermissions` (`./contracts`) is the one permission helper for camera, location, photos, Bluetooth and
 microphone: `status` reads without prompting, `request` asks and resolves `granted`, `denied` or `blocked` (the OS will
 not ask again), and `openSettings` opens the app's page in the OS settings. The app explains why before it asks, from
 `assets/lang/<locale>/platform.json` (seven locales):
 
 ```ts
-const permissions = useContainer().get(DevicePermissions);
+const permissions = useContainer().get(SystemPermissions);
 explain(t("platform::permissions.bluetooth.why"));
 if ((await permissions.request("bluetooth")) === "blocked")
   offer(
@@ -141,13 +141,13 @@ if ((await permissions.request("bluetooth")) === "blocked")
   );
 ```
 
-- `ExpoDevicePermissionsDriver` (`./native`) is concrete like the settings driver: it imports expo-camera's `Camera`,
+- `ExpoSystemPermissionsDriver` (`./native`) is concrete like the settings driver: it imports expo-camera's `Camera`,
   expo-location and expo-media-library itself. They are optional peers, so the app adds them to its own dependencies
   and declares their config plugins with the permission strings in `app.json`. A test subclass replaces `modules` with
   fakes; a `null` module reads `denied`.
   Bluetooth asks through React Native's `PermissionsAndroid` on Android 12 and later; elsewhere it reads `granted`, since
   iOS asks on first use and older Android grants it at install.
-- `MemoryDevicePermissionsDriver` (`.`) is the web, desktop and test driver: every permission starts `prompt`.
+- `MemorySystemPermissionsDriver` (`.`) is the web, desktop and test driver: every permission starts `prompt`.
 
 ### App lock (STA-1537)
 

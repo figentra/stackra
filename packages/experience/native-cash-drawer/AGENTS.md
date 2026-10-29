@@ -34,7 +34,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./plugin`.
 - `src/core/index.ts` and `plugin/index.ts` are stand-in barrels until gen writes them (STA-339); add every public file
   to its barrel and to `src/core/__tests__/index.test.ts`.
 - The terminal's own drawer port needs no Bluetooth or location, so nothing asks. A Bluetooth drawer, when built, asks
-  `@stackra/platform`'s injected `DevicePermissions` for `bluetooth` first and refuses `permission_denied` when it is
+  `@stackra/platform`'s injected `SystemPermissions` for `bluetooth` first and refuses `permission_denied` when it is
   denied or blocked; never add a permission prompt to the Kotlin (see `@stackra/native-scale`).
 - Nothing native runs on a developer Mac; the module is checked on the box and on certified models (STA-739).
 

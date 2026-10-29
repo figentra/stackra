@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decision 5); ADR 0250 (decision 3).
  */
-import type { DevicePermissions } from "@stackra/platform/contracts";
+import type { SystemPermissions } from "@stackra/platform/contracts";
 
 import type { NativeScaleConfig } from "#config/native-scale.config";
 import { connectScale } from "#core/functions/connect-scale.function";
@@ -21,7 +21,7 @@ import { connectScale } from "#core/functions/connect-scale.function";
  */
 export async function sendScaleCommand(
   config: NativeScaleConfig,
-  permissions: DevicePermissions,
+  permissions: SystemPermissions,
   command: string,
   terminator: string,
 ): Promise<void> {
