@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `createSourceReader`'s refusals on a fixture of banned forms: `shape_number_kind`,
  *          `shape_unknown_type` (a literal union, an interface, an inferred enum literal with the annotation fix),
- *          `shape_default_not_constant`, `shape_rule_not_constant`, `shape_hatch_reason_missing`,
+ *          `shape_default_not_constant`, `shape_rule_not_constant`, `shape_hatch_reason_missing`, `shape_hatch_local_binding`,
  *          `shape_decorator_type_mismatch`, `action_handle_signature`, `two_declarations_in_file`,
  *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class` (never for a `#stackra/clients/*`
  *          client, which is a class token before its file exists), each with a position and a fix; a
@@ -57,6 +57,7 @@ const SOURCES: Readonly<Record<string, string>> = {
     "interface Loose { a: string }",
     // A const with a constant initializer is a constant (gen AGENTS.md), so the rule reads one computed at run time.
     'const LIMIT: number = Number("5");',
+    "const LOCAL_HATCH = OrderStatus;",
     "",
     "export class Banned extends Schema {",
     "  count!: number;",
@@ -68,6 +69,9 @@ const SOURCES: Readonly<Record<string, string>> = {
     "  capped!: number;",
     "  @Field(OrderStatus)",
     "  hatched!: string;",
+    "  // reason: a binding beside the class, which the generated schema cannot import",
+    "  @Field(LOCAL_HATCH)",
+    "  local!: string;",
     "  @Str({ max: 3 })",
     "  misplaced!: boolean;",
     "}",
@@ -236,6 +240,8 @@ describe("createSourceReader", async () => {
     expect(codes).toContain("shape_default_not_constant Banned.createdAt");
     expect(codes).toContain("shape_rule_not_constant Banned.capped");
     expect(codes).toContain("shape_hatch_reason_missing Banned.hatched");
+    expect(codes).toContain("shape_hatch_local_binding Banned.local");
+    expect(codes).not.toContain("shape_hatch_local_binding Banned.hatched");
     expect(codes).toContain("shape_decorator_type_mismatch Banned.misplaced");
     const status = reader.errors.find((error) => error.subject === "Banned.status");
     expect(status?.fix).toBe("annotate the field: `status: OrderStatus = OrderStatus.Paid`");

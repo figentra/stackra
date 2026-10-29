@@ -412,6 +412,26 @@ export function createSourceReader(
     return found;
   };
 
+  /** The top-level constants and functions of `path` that `source` uses: a hatch cannot carry them (STA-1474). */
+  const localsUsedBy = (path: string, source: string): string[] => {
+    const used = new Set(
+      [...source.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)/g)].map((match) => match[1]),
+    );
+    const found: string[] = [];
+    for (const statement of byPath.get(path)?.statements ?? []) {
+      const names =
+        host.kind(statement) === "VariableStatement"
+          ? (statement.declarationList?.declarations ?? []).map((declaration) =>
+              nameOf(declaration.name),
+            )
+          : host.kind(statement) === "FunctionDeclaration"
+            ? [nameOf(statement.name)]
+            : [];
+      for (const name of names) if (used.has(name)) found.push(name);
+    }
+    return found;
+  };
+
   const classDeclarationOf = (symbol: TsSymbol | undefined): TsNode | undefined =>
     symbol === undefined
       ? undefined
@@ -1531,6 +1551,15 @@ export function createSourceReader(
         );
       const source = hatch.args[0] === undefined ? "z.unknown()" : host.text(hatch.args[0]);
       const imports = importsUsedBy(host.fileName(declaration), source);
+      const locals = localsUsedBy(host.fileName(declaration), source);
+      if (!quiet && locals.length > 0)
+        fail(
+          hatch.node,
+          subject,
+          "shape_hatch_local_binding",
+          `@Field(zod) uses ${locals.map((local) => `\`${local}\``).join(", ")}, declared in this file, which the generated schema cannot import`,
+          "write the zod inline in the hatch, or move the value to an exported constant imported with `#` or a package import",
+        );
       type = { kind: "hatch", source, ...(imports.length > 0 ? { imports } : {}) };
       nullable =
         declaration.type !== undefined &&
