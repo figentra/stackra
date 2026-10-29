@@ -35,6 +35,9 @@ The receipt printer Expo module (ADR 0478): `src/` (binding and drivers), `ios/`
 - No user-facing text here: the iOS local network string comes translated from the app's plugin options.
 - `src/core/index.ts` and `plugin/index.ts` are stand-in barrels until gen writes them (STA-339); add every public file
   to its barrel and to `src/core/__tests__/index.test.ts`.
+- Built-in and network printers need no Bluetooth or location, so nothing asks. A Bluetooth or USB target, when built,
+  asks `@stackra/platform`'s injected `DevicePermissions` for `bluetooth` first and refuses `permission_denied` when it
+  is denied or blocked; never add a permission prompt to the Swift or Kotlin (see `@stackra/native-scale`).
 - Nothing native runs on a developer Mac; the module is checked on the box and on certified models (STA-739).
 
 ## Rules that fail the build
