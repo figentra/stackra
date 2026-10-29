@@ -41,6 +41,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
 | `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
 | `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`          | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
+| `./node`      | `BootstrapOperatorAction`, `OperatorPermissions`, `BootstrapOperatorInput`, `BootstrapOperatorOutput`                 | an environment's first operator, by email, once (`stackra ops bootstrap-operator`); see below  |
 | `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                   | the durable store, `identity.account_deletions`, per tenant partition                          |
 | `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`      | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
 | `./contracts` | `AccountDeletions`, `AccountDeletion`, `AccountDeletionState`                                                         | the store of scheduled deletions; what the calls answer                                        |
@@ -359,6 +360,24 @@ return deletion.dueAt ? (
 The console (os/console) does the same with `useAccountDeletion` from `./react`, with no device check. Put the entry
 where App Review finds it (Settings, Account), not behind support, and keep the screen reachable while a deletion is
 scheduled so it can be cancelled.
+
+## Operator bootstrap (STA-1586)
+
+An environment's operator roster starts empty, and nobody can grant the first operator through the UI.
+`BootstrapOperatorAction` (`identity.operator.bootstrap@1`, `POST /platform/operators/bootstrap`, platform area) gives
+the user with an email a role at the platform node, the root of the scope tree: `SystemRole.Owner` unless `role`
+names another. It finds the provider's one human user with the email and its `stackra_user_id`
+(`IdpAdmin.findStackraUserId`; two users with the email is an error, never a guess), reads the roles the user holds
+there (`RolesAtNode`) and writes the grant through `@stackra/iam/contracts`' `RoleGrants`, which the IAM service binds.
+It answers `OperatorBootstrapOutcome`: `granted`, `already_granted` (nothing written), `would_grant` (`dryRun`,
+nothing written) or `not_found`. The pipeline audits every call; the action adds the user id, role and outcome, never
+the email.
+
+`OperatorPermissions.bootstrap` is L4 and system-held: only a service principal acting for no one passes the decision
+point, so no user, operator or agent can call it. The caller is the environment's bootstrap credential: a ZITADEL
+service account of that environment whose token the gateway verifies into a `service` actor. The owner runs it with
+`stackra ops bootstrap-operator --env <env> --email <email>` (the CLI README and the deploys runbook say where the
+token comes from).
 
 ## The login directory (ADR 0451)
 

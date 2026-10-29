@@ -4,7 +4,7 @@
  *          deactivate and remove a user, end one session or every session of a user, run the OAuth device flow, and set
  *          an organisation's login policy; read which authentication methods a user has enrolled (as RFC 8176 `amr`
  *          codes, so `assuranceOf` turns them into the MFA level the security page's enrolment list needs); find the
- *          provider's user of a Stackra user id; and the server half of passkeys (the sign-in challenge and its check
+ *          provider's user of a Stackra user id, and the Stackra user id of an email (the operator bootstrap); and the server half of passkeys (the sign-in challenge and its check
  *          on a provider session, the registration options and their check).
  * Boundary: an abstract class that is its own token. The ZITADEL driver calls the provider's APIs with the service
  *           account token `IdpAdminConfig` reads from the secret store (managed ZITADEL or the tenant's own instance,
@@ -14,7 +14,7 @@
  *           the options go to the `Passkeys` port and its credential comes back here unread.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0410 (STA-834); RFC 8176; STA-1264 (MFA
- *                     enrolment); STA-1538 (passkeys); STA-1543 (erasure).
+ *                     enrolment); STA-1538 (passkeys); STA-1543 (erasure); STA-1586 (operator bootstrap).
  */
 import { Port } from "@stackra/contracts";
 
@@ -93,6 +93,15 @@ export abstract class IdpAdmin extends Port {
    * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
    */
   abstract findUserId(stackraUserId: string): Promise<string | undefined>;
+
+  /**
+   * The Stackra user id (`usr_…`) of the provider's one human user with the email `email` (case ignored), or
+   * `undefined` when the provider has none or that user carries no Stackra id.
+   *
+   * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
+   * @throws Error when more than one user has the email, so a grant never lands on a guess.
+   */
+  abstract findStackraUserId(email: string): Promise<string | undefined>;
 
   /**
    * Opens a provider session for the login name `loginName` with a passkey challenge on it.

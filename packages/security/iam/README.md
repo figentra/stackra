@@ -37,6 +37,7 @@ rule ("VIP customers cannot cancel") is a `@stackra/rules` condition that the op
 | `.`           | `registerPermissions`, `registerRoles`, `registerPolicies`, `connectPolicies`           | what gen's entry tells the runtime                                            |
 | `.`           | `permissionKey`                                                                         | the locked key of a `Permission` static                                       |
 | `./contracts` | `PolicySource`                                                                          | the port snapshots come from                                                  |
+| `./contracts` | `RoleGrants`                                                                            | the operator bootstrap's grant write, once (the IAM service binds it)         |
 | `./contracts` | `RolesAtNode`                                                                           | the roles a principal holds at a scope node (approval role checks)            |
 | `./node`      | `IamVisibilityFilterDriver`                                                             | `@stackra/database`'s `VisibilityFilter`: visibility rules in reads           |
 | `./node`      | `PostgresPolicySnapshotStoreDriver`                                                     | the durable `PolicySnapshotStore`: one row per tenant and principal           |

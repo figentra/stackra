@@ -6,12 +6,13 @@
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
  *          succeeds; ending a user's sessions searches and deletes each; a device poll maps the RFC 8628 errors; a
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
- *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata;
+ *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
+ *          its one user's metadata (none on no user or no metadata, an error on two users);
  *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey`, and turn a
  *          refusal or an unknown login or user into `UnauthenticatedError`, while a 403 stays an `Error`.
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543.
+ * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543; STA-1586.
  */
 import { buildConfig } from "@stackra/config";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -335,6 +336,33 @@ describe(ZitadelIdpAdminDriver, () => {
       { metadataValueFilter: { value: btoa("usr_1"), method: "BYTE_FILTER_METHOD_EQUALS" } },
     ]);
     expect(await idp.findUserId("usr_2")).toBeUndefined();
+  });
+
+  it("finds an email's Stackra id through the v2 user search and the user's metadata", async () => {
+    const { idp, sent } = driverWith([
+      [200, { result: [{ userId: "u_1" }] }],
+      [200, { metadata: { key: "stackra_user_id", value: btoa("usr_1") } }],
+      [200, { result: [] }],
+      [200, { result: [{ userId: "u_2" }] }],
+      [404, { message: "not found" }],
+      [200, { result: [{ userId: "u_1" }, { userId: "u_2" }] }],
+    ]);
+    expect(await idp.findStackraUserId("rana@acme.example")).toBe("usr_1");
+    expect(JSON.parse(sent[0]?.body ?? "").queries).toEqual([
+      {
+        emailQuery: {
+          emailAddress: "rana@acme.example",
+          method: "TEXT_QUERY_METHOD_EQUALS_IGNORE_CASE",
+        },
+      },
+    ]);
+    expect(sent[1]?.method).toBe("GET");
+    expect(sent[1]?.url).toBe(
+      "https://id.acme.example/management/v1/users/u_1/metadata/stackra_user_id",
+    );
+    expect(await idp.findStackraUserId("nobody@acme.example")).toBeUndefined();
+    expect(await idp.findStackraUserId("sami@acme.example")).toBeUndefined();
+    await expect(idp.findStackraUserId("shared@acme.example")).rejects.toThrow(Error);
   });
 
   it("signs in with a passkey through a v2 session and its webAuthN check", async () => {

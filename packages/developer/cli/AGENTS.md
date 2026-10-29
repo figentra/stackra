@@ -53,6 +53,8 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 - Every command writes through its `CliIo`, never `console` or `process.stdout`: `stackra mcp` runs commands with a
   capturing io because standard output carries the protocol.
 - Tools start without a shell; a secret value never passes through this process (`mcp exec` names a location only).
+  The one exception is `ops bootstrap-operator`: it reads the environment's bootstrap token from `STACKRA_OPS_TOKEN`
+  and sends it only as the bearer token of its one call; never print it, log it or pass it as an argument.
 - A seed pack, a template or a command never holds a business value (a price, a rate, a country rule): those are rows
   in the product's seed pack, each citing its answer id. A seed run never writes a record a tenant changed.
 - `stackra new` names a member only through `memberNaming` (`--scope`, else the root runway's `product.key`, ADR
@@ -73,4 +75,6 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 
 ## PII
 
-None. The CLI runs developer tools over source code and manifests; it handles no personal data and no secret value.
+The CLI runs developer tools over source code and manifests. One exception: `ops bootstrap-operator` sends one email
+(an operator's, from `--email`) and the environment's bootstrap token (`STACKRA_OPS_TOKEN`) in a single call; it
+prints, logs and keeps neither.

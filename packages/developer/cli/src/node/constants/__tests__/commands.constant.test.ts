@@ -51,6 +51,7 @@ describe("COMMANDS", () => {
         "search:reindex",
         "search:status",
         "audit:verify",
+        "ops bootstrap-operator",
         "add",
         "publish",
       ]),

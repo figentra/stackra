@@ -5,7 +5,7 @@
  *          methods and passkeys live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
  *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to end;
- *           `enrolAuthMethod` adds an `amr` code to a user. A user created with a `stackraUserId` is found by it. A
+ *           `enrolAuthMethod` adds an `amr` code to a user. A user created with a `stackraUserId` is found by it, and by its email (case ignored). A
  *           passkey sign-in needs a known login name; any credential passes its check (no signature is verified), and
  *           a finished registration adds the `swk` method.
  * Runtime: isomorphic
@@ -36,6 +36,7 @@ interface HeldUser {
   readonly username: string;
   readonly machine: boolean;
   readonly stackraUserId?: string;
+  readonly email?: string;
   active: boolean;
 }
 
@@ -67,7 +68,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
 
   /** Implements `IdpAdmin.createUser`, documented there. */
   async createUser(input: IdpUserInput): Promise<string> {
-    return this.add(input.organizationId, input.username, false, input.stackraUserId);
+    return this.add(input.organizationId, input.username, false, input.stackraUserId, input.email);
   }
 
   /** Implements `IdpAdmin.createMachineUser`, documented there. */
@@ -169,6 +170,14 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return undefined;
   }
 
+  /** See `IdpAdmin.findStackraUserId`; a user without a Stackra id is never found. */
+  async findStackraUserId(email: string): Promise<string | undefined> {
+    const wanted = email.toLowerCase();
+    const found = [...this.users.values()].filter((user) => user.email?.toLowerCase() === wanted);
+    if (found.length > 1) throw new Error("more than one user has this email");
+    return found[0]?.stackraUserId;
+  }
+
   /** See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. */
   async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
     const userId = [...this.users].find(([, user]) => user.username === loginName)?.[0];
@@ -225,6 +234,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     username: string,
     machine: boolean,
     stackraUserId?: string,
+    email?: string,
   ): string {
     for (const user of this.users.values())
       if (user.organizationId === organizationId && user.username === username)
@@ -235,6 +245,7 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
       username,
       machine,
       ...(stackraUserId === undefined ? {} : { stackraUserId }),
+      ...(email === undefined ? {} : { email }),
       active: true,
     });
     return userId;

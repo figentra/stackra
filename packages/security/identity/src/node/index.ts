@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./node` entry of @stackra/identity (the passkey actions a BFF serves with their
+ * Purpose: Stand-in barrel: the `./node` entry of @stackra/identity (the operator bootstrap action with its
+ *          permission and schemas, the passkey actions a BFF serves with their
  *          permissions and schemas, the account deletion actions, query, job, permissions and schemas with its
  *          Postgres store and migration, the listener that ends an erased subject's provider sessions, and the BFF's
  *          login, callback, session and logout routes (`BffService`) with their configuration) until
@@ -13,7 +14,9 @@ export { BffConfig } from "#config/bff.config";
 export { BFF_CONFIG_SCHEMA as BffConfig$ } from "#core/constants/bff-config-schema.constant";
 export { BffOptions } from "#core/schemas/bff-options.schema";
 export { AccountDeletionPermissions } from "#node/access/account-deletion.permissions";
+export { OperatorPermissions } from "#node/access/operator.permissions";
 export { PasskeyPermissions } from "#node/access/passkey.permissions";
+export { BootstrapOperatorAction } from "#node/actions/bootstrap-operator.action";
 export { CancelAccountDeletionAction } from "#node/actions/cancel-account-deletion.action";
 export { DeleteMyAccountAction } from "#node/actions/delete-my-account.action";
 export { EraseDueAccountsAction } from "#node/actions/erase-due-accounts.action";
@@ -26,6 +29,8 @@ export { PostgresAccountDeletionsDriver } from "#node/drivers/postgres-account-d
 export { EndErasedSubjectSessionsListener } from "#node/listeners/end-erased-subject-sessions.listener";
 export { BffService } from "#node/services/bff.service";
 export { ShowAccountDeletionQuery } from "#node/queries/show-account-deletion.query";
+export { BootstrapOperatorInput } from "#node/schemas/bootstrap-operator-input.schema";
+export { BootstrapOperatorOutput } from "#node/schemas/bootstrap-operator-output.schema";
 export { AccountDeletionInput } from "#node/schemas/account-deletion-input.schema";
 export { AccountDeletionOutput } from "#node/schemas/account-deletion-output.schema";
 export { EraseDueAccountsOutput } from "#node/schemas/erase-due-accounts-output.schema";

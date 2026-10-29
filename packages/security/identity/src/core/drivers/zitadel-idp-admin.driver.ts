@@ -6,7 +6,8 @@
  *          management API (added the first time, updated after, then its external providers and second factors brought
  *          to exactly the listed ones); a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
- *          the `stackra_user_id` metadata `createUser` writes; and passkeys: sign-in as a v2 session with a `webAuthN`
+ *          the `stackra_user_id` metadata `createUser` writes, and an email's Stackra user through the v2 user search on
+ *          the email and that user's metadata; and passkeys: sign-in as a v2 session with a `webAuthN`
  *          challenge checked by a session update, registration through the v2 user passkey endpoints.
  * Boundary: one HTTPS call per step, with the service account token of `IdpAdminConfig` as a bearer token and the
  *           configured timeout, through the global fetch. Managed or bring-your-own is the configured URL: the
@@ -17,7 +18,7 @@
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
- *                     STA-1538 (passkeys); STA-1543 (erasure).
+ *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1586 (operator bootstrap).
  */
 import { Driver } from "@stackra/container";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -309,6 +310,35 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     });
     const id = (body as { result?: readonly { userId?: unknown }[] }).result?.[0]?.userId;
     return typeof id === "string" && id !== "" ? id : undefined;
+  }
+
+  /** See `IdpAdmin.findStackraUserId`: a v2 user search on the email, then the user's `stackra_user_id` metadata. */
+  async findStackraUserId(email: string): Promise<string | undefined> {
+    const { body } = await this.call({
+      method: "POST",
+      path: "/v2/users",
+      json: {
+        query: { offset: 0, limit: 2 },
+        queries: [
+          {
+            emailQuery: { emailAddress: email, method: "TEXT_QUERY_METHOD_EQUALS_IGNORE_CASE" },
+          },
+        ],
+      },
+    });
+    const found = (body as { result?: readonly { userId?: unknown }[] }).result ?? [];
+    if (found.length > 1) throw new Error("ZITADEL holds more than one user with this email");
+    const userId = found[0]?.userId;
+    if (typeof userId !== "string" || userId === "") return undefined;
+    const { status, body: held } = await this.call(
+      {
+        method: "GET",
+        path: `/management/v1/users/${encodeURIComponent(userId)}/metadata/${STACKRA_USER_ID}`,
+      },
+      UNKNOWN,
+    );
+    const value = (held as { metadata?: { value?: unknown } }).metadata?.value;
+    return status === 404 || typeof value !== "string" ? undefined : atob(value);
   }
 
   /** See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. */
