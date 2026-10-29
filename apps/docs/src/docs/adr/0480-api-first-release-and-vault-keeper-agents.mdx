@@ -88,8 +88,9 @@ store review probe` signs in with the demo account on production and must see da
   production token is bound to the operation.
 - `.github/workflows/store-release.yml`: environments `store` and `store-production`; protection is applied by the
   owner (runbook), not checked by CI.
-- Planned — the releaser and vault-keeper agent definitions in `.agents/agents/` and a `vault preflight` step in each
-  deploy workflow.
+- `.agents/agents/releaser.md` and `.agents/agents/vault-keeper.md`: each agent is allowed only its own commands
+  (`pnpm store`, the store-release dispatch; `pnpm vault`).
+- Planned — a `vault preflight` step in each deploy workflow (STA-1598).
 
 ## Supersedes and sources
 
