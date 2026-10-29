@@ -1,9 +1,10 @@
 # Stackra file contract:
 # Purpose: Runway's `npm` provider, a public reusable workflow (ADR 0168 decision 1): with pending changesets it opens
 #          or updates the "version packages" PR; on that PR's merge it publishes every workspace package with
-#          "private": false to the Stackra registry (the `registry` input, ADR 0453) with provenance, then signs the
-#          CycloneDX SBOM keylessly with cosign and attaches it to each GitHub release it created. A Trivy filesystem
-#          scan of the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
+#          "private": false to the Stackra registry (the `registry` input, ADR 0453) with provenance and an annotated
+#          tag per version, then signs the CycloneDX SBOM keylessly with cosign and attaches it, with a
+#          `sha256sums.txt` of the published tarballs, to each GitHub release it created. A Trivy filesystem scan of
+#          the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
 #          is made by `pnpm publish` (or `pnpm pack` for the dry run), so the workspace `.pnpmfile.mjs` beforePacking
 #          hook strips the repo-only `imports` map and `@stackra/source` condition first.
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
@@ -154,7 +155,8 @@ jobs:
               export NODE_AUTH_TOKEN
               (cd "$dir" && pnpm publish --no-git-checks --access public --provenance --registry "$REGISTRY")
               unset NODE_AUTH_TOKEN
-              git tag "${name}@${version}"
+              # Annotated, so the tag carries its tagger and date (changesets/action has set the git user).
+              git tag -a "${name}@${version}" -m "${name}@${version}"
               # changesets/action reads this line to push the tag and create the GitHub release.
               echo "New tag: ${name}@${version}"
             done
@@ -186,7 +188,8 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
 
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
-  # an artifact and attached to every release the publish created. No App token and no npm access here.
+  # an artifact and attached, with the tarballs' SHA-256 sums, to every release the publish created. No App token and
+  # no npm access here (the tarballs are public reads).
   sbom:
     name: SBOM
     runs-on: ubuntu-latest
@@ -194,7 +197,7 @@ jobs:
     needs: release
     if: needs.release.outputs.published == 'true'
     permissions:
-      contents: write # attach the SBOM and its signature to the new releases
+      contents: write # attach the SBOM, its signature and the checksums to the new releases
       id-token: write # cosign keyless signing (Sigstore Fulcio certificate for this workflow)
     steps:
       - name: Checkout
@@ -237,12 +240,32 @@ jobs:
             sbom.cdx.json.sigstore.json
           retention-days: 90
 
+      # The tarballs exactly as the registry serves them, each checked against the integrity (sha512) the registry
+      # computed at publish, then listed by SHA-256. A convenience: integrity rests on provenance and the SBOM.
+      - name: Checksums (sha256sums.txt)
+        env:
+          PACKAGES: ${{ needs.release.outputs.packages }}
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          set -euo pipefail
+          mkdir tarballs
+          jq -r '.[] | [.name, .version] | @tsv' <<< "$PACKAGES" | while IFS=$'\t' read -r name version; do
+            dist="$(curl -fsS "${REGISTRY}${name/\//%2f}/${version}" | jq -c '.dist')"
+            file="${name#@}"
+            file="tarballs/${file//\//-}-${version}.tgz"
+            curl -fsS -o "$file" "$(jq -r '.tarball' <<< "$dist")"
+            [ "sha512-$(openssl dgst -sha512 -binary "$file" | base64 -w0)" = "$(jq -r '.integrity' <<< "$dist")" ] || {
+              echo "::error title=Integrity::${name}@${version} differs from the registry's integrity"; exit 1; }
+          done
+          (cd tarballs && sha256sum -- *.tgz) > sha256sums.txt
+          cat sha256sums.txt
+
       # changesets names each release after its tag, `<name>@<version>`.
-      - name: Attach SBOM to the releases
+      - name: Attach SBOM and checksums to the releases
         env:
           GH_TOKEN: ${{ github.token }}
           PACKAGES: ${{ needs.release.outputs.packages }}
         run: |
           jq -r '.[] | "\(.name)@\(.version)"' <<< "$PACKAGES" | while read -r tag; do
-            gh release upload "$tag" sbom.cdx.json sbom.cdx.json.sigstore.json --clobber
+            gh release upload "$tag" sbom.cdx.json sbom.cdx.json.sigstore.json sha256sums.txt --clobber
           done

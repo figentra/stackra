@@ -1,8 +1,9 @@
 # Stackra file contract:
 # Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
 #          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
-#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys and smoke-tests
-#          it, printing readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
+#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys (with the
+#          `message` input as the deployment message, the rollback record of a promote) and smoke-tests it, printing
+#          readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
 #          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
 # Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
 #          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
@@ -29,6 +30,12 @@ on:
         required: true
       sha:
         description: The commit to deploy (a promote or a rollback). Empty deploys the triggering commit.
+        type: string
+        default: ""
+      message:
+        description: >-
+          The deployment message `wrangler deploy --message` records on Cloudflare (`rollback to <sha>` from a
+          promote, runbooks/deploys). Empty records none.
         type: string
         default: ""
       install-args:
@@ -153,11 +160,17 @@ jobs:
           export-type: env
 
       # wrangler reads CLOUDFLARE_API_TOKEN from the environment and everything else from the member's wrangler.jsonc.
+      # The message arrives through the environment, never spliced into the script (zizmor template-injection).
       - name: wrangler deploy
         id: deploy
         if: env.INFISICAL_IDENTITY_ID != ''
         working-directory: ${{ inputs.member }}
-        run: pnpm exec wrangler deploy
+        env:
+          DEPLOY_MESSAGE: ${{ inputs.message }}
+        run: |
+          args=()
+          [ -z "$DEPLOY_MESSAGE" ] || args=(--message "$DEPLOY_MESSAGE")
+          pnpm exec wrangler deploy "${args[@]}"
 
       # Readiness, not just liveness (STA-268): a fresh deploy can answer 5xx or nothing for a while, so each attempt
       # says "not serving yet" with the status, and only the end of the budget fails the job.

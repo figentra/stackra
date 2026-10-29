@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold `runway.mjs` to its contract: the deploy plan's targets, workflows and names, the deploy and promote
- *          preflights, and which caller workflows a deploy or promote dispatches.
+ *          preflights, which caller workflows a deploy or promote dispatches, and a promote's rollback message.
  * Boundary: fixture runways and stubbed git and gh; dispatches nothing.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0170 (deployment).
@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { dispatches, plan, preflight, readRunways } from "../runway.mjs";
+import { dispatches, plan, preflight, readRunways, rollbackMessage } from "../runway.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -159,6 +159,22 @@ test("dispatches: main, the SHA only where the caller takes one, and a promote s
     ],
   );
   assert.deepEqual(promote.skipped, [{ target: "mintlify", file: "deploy-docs.yml" }]);
+});
+
+const takesMessage = () => ({ on: { workflow_dispatch: { inputs: { sha: {}, message: {} } } } });
+
+test("dispatches: a promote passes the rollback message to a caller that takes one, a deploy never does", () => {
+  const args = (promote) =>
+    dispatches({
+      root: ROOT_RUNWAY,
+      targets: ["mintlify"],
+      sha: OLD,
+      promote,
+      readWorkflow: takesMessage,
+    }).runs[0];
+  assert.deepEqual(args(true).slice(-4), ["-f", `sha=${OLD}`, "-f", `message=rollback to ${OLD}`]);
+  assert.equal(rollbackMessage(OLD), `rollback to ${OLD}`);
+  assert.equal(args(false).at(-1), `sha=${OLD}`);
 });
 
 test("the repository's own runway: every caller workflow exists, and production deploys the static Worker and the docs", () => {

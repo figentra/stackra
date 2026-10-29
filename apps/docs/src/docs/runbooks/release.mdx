@@ -62,14 +62,19 @@ icon: "package-check"
     4. The registry matches the token's repository (by numeric id too), workflow `release.yml`, ref
        `refs/heads/main` and environment `release` against the scope's publisher row, then checks the
        publish (below), stores the tarball and its provenance bundle, and signs the version.
-    5. The job tags `<name>@<version>`; changesets pushes the tags and creates the GitHub releases.
+    5. The job tags `<name>@<version>` with an annotated tag; changesets pushes the tags and creates the
+       GitHub releases.
     6. The `sbom` job writes a CycloneDX SBOM, signs it keylessly with cosign and attaches it to every
-       new release.
+       new release, with a `sha256sums.txt` of the published tarballs as the registry serves them (each
+       checked against the registry's `dist.integrity` first).
   </Step>
   <Step title="Verify">
     `git ls-remote --tags origin` shows the new tags on the merge commit. In a clean folder with the
     `@stackra` scope mapped, `npm view @stackra/<name> versions --registry https://npm.stackra.figentra.com/`
-    lists the version and `npm audit signatures` passes.
+    lists the version and `npm audit signatures` passes. `git cat-file -t <name>@<version>` says `tag`
+    (annotated). To check a tarball by hand, download `sha256sums.txt` from the release and run
+    `sha256sum -c --ignore-missing sha256sums.txt` next to it; the integrity that matters is still
+    provenance and the signed SBOM ([Security policy](https://github.com/figentra/stackra/blob/main/SECURITY.md)).
   </Step>
 </Steps>
 
@@ -119,7 +124,7 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 | Publish refused (400 or 422)     | Earlier packages published | Read the registry's message (decision 7 above), fix on `main`, release again; published versions stay                 |
 | Run stopped half way             | Some packages published    | Re-run: versions already on the registry are skipped                                                                  |
 | Tagging                          | Published, not tagged      | Re-run the failed job; it tags over an existing release safely                                                        |
-| SBOM job                         | Published, no SBOM         | Re-run the `sbom` job                                                                                                 |
+| SBOM job                         | Published, no SBOM         | Re-run the `sbom` job (it also writes `sha256sums.txt`; an integrity mismatch there is an incident, not a re-run)     |
 | Wrong bump merged                | Tagged                     | Roll forward: add a changeset and release the correction                                                              |
 
 ## Revert

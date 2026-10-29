@@ -29,9 +29,12 @@ providers:
     org: figentra
     repo: stackra
     environments:
+      # Production Worker environments wait for a reviewer (STA-1585), as `release` does. TODO(owner): confirm the
+      # reviewer; reuses `release`'s. `static` also runs deploy-turbo-cache.yml and the schema-tag deploys.
       static:
         branches: [main]
         tags: ["schemas@*"]
+        reviewers: [figentra-usr]
       docs:
         branches: [main]
       release:
@@ -40,6 +43,7 @@ providers:
       # deploy-registry.yml; its variables hold the D1 and KV ids and the Infisical identity (ADR 0453).
       registry:
         branches: [main]
+        reviewers: [figentra-usr]
       # apply-observability.yml (STA-1573): `pulumi up` of infra-observability waits for the reviewer.
       observability:
         branches: [main]
