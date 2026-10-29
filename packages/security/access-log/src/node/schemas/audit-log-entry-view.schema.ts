@@ -57,7 +57,12 @@ export class AuditLogEntryView extends Schema {
 
   /** What the handler added with `ctx.audit`. */
   // reason: the handler's fields are any JSON, kept as written
-  @Field(z.record(z.string(), JSON_VALUE))
+  @Field(
+    z.record(
+      z.string(),
+      z.custom<Json>(() => true),
+    ),
+  )
   fields!: Record<string, Json>;
 
   /** The record's position in its tenant's audit chain. */
