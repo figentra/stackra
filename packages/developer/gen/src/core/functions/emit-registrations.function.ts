@@ -7,7 +7,7 @@
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
- *          and the `@Searchable` models.
+ *          the `@Searchable` models, and each report with its source model (`registerReportSources`, ADR 0470).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
  *           the entry that exports each file); a package registers its own. A call with no row is not written, and a
@@ -309,6 +309,19 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       .map((entry) => classOf(entry)),
   );
 
+  // Each report with its source model, the type argument run time has lost (`EngineReportRunnerDriver` reads it).
+  call(
+    "registerReportSources",
+    "@stackra/reports/node",
+    ir.classes
+      .filter((declared) => declared.kind === "report" && declared.partner !== undefined)
+      .map((declared) =>
+        declared.partner === undefined
+          ? undefined
+          : `[${ref({ name: declared.name, from: declared.importPath })}, ${ref({ name: declared.partner.name, from: declared.partner.from })}]`,
+      ),
+  );
+
   if (loads.length === 0 && calls.length === 0) return undefined;
   const header = generatedHeader({
     from: "stackra.manifest.json and the kind classes under src/",
@@ -316,7 +329,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
       "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, " +
       "change consumers, jobs, cached queries, " +
-      "connections, webhook events, outbound webhooks, sequences, entitlements and searchable models).",
+      "connections, webhook events, outbound webhooks, sequences, entitlements, searchable models and report sources).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +
       "the committed identities, so a hand edit is overwritten.",

@@ -110,6 +110,25 @@ describe("emitRegistrations", () => {
     );
   });
 
+  it("registers each report with its source model", () => {
+    const invoice = BILLING_IR.classes.find((declared) => declared.name === "Invoice");
+    if (invoice === undefined) throw new Error("the fixture has no Invoice");
+    const report: DeclaredClass = {
+      ...invoice,
+      name: "InvoiceTotalsReport",
+      kind: "report",
+      facets: [],
+      options: { key: "invoice_totals" },
+      file: "src/modules/billing/reports/invoice-totals.report.ts",
+      importPath: "#modules/billing/reports/invoice-totals.report",
+      partner: { name: "Invoice", from: invoice.importPath },
+    };
+    const text = registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, report] }) ?? "";
+    expect(text).toContain("registerReportSources([\n  [InvoiceTotalsReport, Invoice],\n]);");
+    expect(text).toContain('import { registerReportSources } from "@stackra/reports/node";');
+    expect(billing).not.toContain("registerReportSources");
+  });
+
   it("writes no file for an app or a member with nothing to register", () => {
     expect(registrationsOf(WEB_APP_IR)).toBeUndefined();
     expect(registrationsOf({ ...COMMERCE_IR, classes: [], shapes: [], enums: [] })).toBeUndefined();
