@@ -15,10 +15,7 @@
  * Governing contract: ADR 0342 (decisions 2 to 5); ADR 0159 (as amended); ADR 0160 (approved extensions); ADR 0327
  *                     (decisions 3 and 9); `.agents/rules/tenancy.md` (point 3).
  */
-import { Migration } from "#core/bases/migration.base";
-import { Extension } from "#core/enums/extension.enum";
-import type { Blueprint } from "#core/types/blueprint.type";
-import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { Extension, Migration, type Blueprint, type SchemaBuilder } from "@stackra/database";
 
 /** Creates the counter, block and void tables. */
 export class CreateSequenceTablesMigration extends Migration {
