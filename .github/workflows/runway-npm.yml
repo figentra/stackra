@@ -157,7 +157,8 @@ jobs:
               export NODE_AUTH_TOKEN
               (cd "$dir" && pnpm publish --no-git-checks --access public --provenance --registry "$REGISTRY")
               unset NODE_AUTH_TOKEN
-              git tag "${name}@${version}"
+              # A tag left by an earlier run that published nothing is kept; failing on it stopped run 40896627689.
+              git rev-parse -q --verify "refs/tags/${name}@${version}" >/dev/null || git tag "${name}@${version}"
               # changesets/action reads this line to push the tag and create the GitHub release.
               echo "New tag: ${name}@${version}"
             done
