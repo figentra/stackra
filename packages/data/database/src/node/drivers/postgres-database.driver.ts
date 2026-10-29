@@ -83,7 +83,8 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       subscribers: [...(options.subscribers ?? [])],
       resultCache: { adapter: EntityResultCacheAdapter },
       namingStrategy: StackraNamingStrategy,
-      discovery: { inferDefaultValues: false },
+      // a raw-SQL driver (idempotency, rate limits, holds) connects with no entities registered
+      discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,
       debug: options.debug ?? false,
       loggerFactory: (settings) => observedLogger(settings, options.observers ?? []),
