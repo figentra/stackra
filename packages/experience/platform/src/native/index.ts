@@ -4,7 +4,8 @@
  *          `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`, `ExpoSystemSettingsDriver`,
  *          `ExpoDevicePermissionsDriver`, `ExpoAppLockDriver` and the `AppLockGate` the app mounts,
  *          `ExpoLiveActivitiesDriver`, `ExpoHomeWidgetsDriver`, `ExpoAppIconDriver`, and `createNotificationChannels`
- *          for the push context), what gen lists as candidates for the Expo target, until `stackra gen` writes the entry barrels (STA-339).
+ *          for the push context), what gen lists as candidates for the Expo target, until `stackra gen` writes the
+ *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Loaded on a device only; the permission helpers stay internal.
  * Runtime: react-native
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (entries); the STA-347 stand-in barrel

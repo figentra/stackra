@@ -7,9 +7,10 @@
  * Boundary: each running activity's ActivityKit id is kept by reference in the `prefs` storage area, so an activity
  *           started before a relaunch is updated and ended, not started twice. iOS resolves `unavailable` when the OS
  *           refuses the start (Live Activities switched off, iOS before 16.2, an Expo Go session); Android resolves
- *           `permission_denied` without the notification permission and posts on `androidChannelId`, which the push
- *           context creates. An ended iOS activity stays for `endedDismissal`; an ended Android one shows `final` as an
- *           ordinary notification. Push tokens need expo-widgets' `enablePushNotifications`; Android has none.
+ *           `permission_denied` without the notification permission and `unavailable` when `androidChannelId` was not
+ *           created (the host lists it in `PushConfig.androidChannels`) or the OS refuses the post. An ended iOS
+ *           activity stays for `endedDismissal`; an ended Android one shows `final` as an ordinary notification. Push
+ *           tokens need expo-widgets' `enablePushNotifications`; Android has none.
  * Runtime: react-native
  * Governing contract: ADR 0250 (decision 3); ADR 0478 (decision 9); ADR 0256 (decision 2); ADR 0294 (decision 17:
  *                     dependencies by type); STA-1539.
@@ -76,7 +77,7 @@ export class ExpoLiveActivitiesDriver extends Driver(LiveActivities) {
   async end(reference: string, final?: ActivityProgress): Promise<void> {
     if (Os.OS === "android") {
       if (final) await this.notify(final, false);
-      else await Notifications.dismissNotificationAsync(reference);
+      else await Notifications.dismissNotificationAsync(reference).catch(() => undefined);
       return;
     }
     if (Os.OS !== "ios") return;
@@ -141,17 +142,24 @@ export class ExpoLiveActivitiesDriver extends Driver(LiveActivities) {
   private async notify(progress: ActivityProgress, ongoing: boolean): Promise<CapabilityResult> {
     if ((await readPushPermission()) !== "granted")
       return refuse(LIVE_ACTIVITY_CAPABILITY, "permission_denied");
-    await Notifications.scheduleNotificationAsync({
-      identifier: progress.reference,
-      content: {
-        title: progress.title,
-        body: `${progress.status} · ${progress.step}/${progress.steps}`,
-        data: progress.url === undefined ? {} : { url: progress.url },
-        sticky: ongoing,
-        autoDismiss: !ongoing,
-      },
-      trigger: { channelId: this.config.androidChannelId },
-    });
-    return { ok: true, data: undefined };
+    try {
+      // Android 8+ silently drops a post on a channel that does not exist.
+      if ((await Notifications.getNotificationChannelAsync(this.config.androidChannelId)) === null)
+        return refuse(LIVE_ACTIVITY_CAPABILITY, "unavailable");
+      await Notifications.scheduleNotificationAsync({
+        identifier: progress.reference,
+        content: {
+          title: progress.title,
+          body: `${progress.status} · ${progress.step}/${progress.steps}`,
+          data: progress.url === undefined ? {} : { url: progress.url },
+          sticky: ongoing,
+          autoDismiss: !ongoing,
+        },
+        trigger: { channelId: this.config.androidChannelId },
+      });
+      return { ok: true, data: undefined };
+    } catch {
+      return refuse(LIVE_ACTIVITY_CAPABILITY, "unavailable");
+    }
   }
 }

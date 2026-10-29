@@ -4,14 +4,16 @@
  *          HTTP/2 with a token-based (ES256 JWT) provider authorisation, to `<apnsBundleId>.push-type.liveactivity`.
  * Boundary: Node only (`node:http2`; APNs refuses HTTP/1.1). The signing key is the platform secrets `APNS_KEY_ID`,
  *           `APNS_TEAM_ID` and `APNS_PRIVATE_KEY` (the `.p8` PEM), read by name and never logged. The JWT is reused for
- *           50 minutes, since APNs refuses one renewed more often than every 20. HTTP 410 and `BadDeviceToken` resolve
- *           `gone`; any other refusal throws with APNs' reason. An end is dismissed after `endedDismissal`.
+ *           50 minutes, since APNs refuses one renewed more often than every 20. Only HTTP 410 resolves `gone`:
+ *           `BadDeviceToken` also means a token of the other `apnsEnvironment`, so it throws rather than make callers
+ *           forget good tokens; any other refusal throws with APNs' reason, and a push unanswered for 10 seconds
+ *           throws. An end is dismissed after `endedDismissal`.
  * Runtime: node
  * Governing contract: Apple, "Sending notification requests to APNs" and "Establishing a token-based connection to
  *                     APNs"; ADR 0173 (secrets); ADR 0294 (decision 17: dependencies by type); STA-1539.
  */
 import { sign } from "node:crypto";
-import { connect } from "node:http2";
+import { connect, constants } from "node:http2";
 
 import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
@@ -24,6 +26,9 @@ import { liveActivityPushPayload } from "#core/functions/live-activity-push-payl
 
 /** How long a provider JWT is reused: under APNs' one-hour expiry, over its 20-minute renewal floor. */
 const TOKEN_LIFETIME_MS = 50 * 60 * 1000;
+
+/** How long a push may wait for APNs before it is cancelled. */
+const REQUEST_TIMEOUT_MS = 10_000;
 
 /** `value` as JSON, base64url-encoded: one JWT segment. */
 const segment = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -75,7 +80,12 @@ export class ApnsLiveActivityPushesDriver extends Driver(LiveActivityPushes) {
       "content-type": "application/json",
     });
     if (status === 200) return "sent";
-    if (status === 410 || reason === "BadDeviceToken") return "gone";
+    if (status === 410) return "gone";
+    if (reason === "BadDeviceToken")
+      throw new Error(
+        `APNs refused the token as BadDeviceToken; check platform.liveActivity.apnsEnvironment ` +
+          `(now ${this.config.apnsEnvironment})`,
+      );
     throw new Error(`APNs refused the Live Activity push: ${status} ${reason ?? ""}`.trim());
   }
 
@@ -115,6 +125,11 @@ export class ApnsLiveActivityPushesDriver extends Driver(LiveActivityPushes) {
       });
       let status = 0;
       let answer = "";
+      request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        request.close(constants.NGHTTP2_CANCEL);
+        session.close();
+        reject(new Error(`APNs did not answer within ${REQUEST_TIMEOUT_MS} ms`));
+      });
       request.setEncoding("utf8");
       request.on("response", (response) => {
         status = Number(response[":status"]);

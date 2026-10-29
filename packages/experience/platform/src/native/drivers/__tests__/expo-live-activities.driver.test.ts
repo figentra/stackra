@@ -3,7 +3,8 @@
  * Purpose: unit tests of `ExpoLiveActivitiesDriver`: on iOS a show starts the `OrderProgress` activity with its deep
  *          link and then updates it, also after a relaunch through the id kept in storage; an end dismisses it after
  *          the configured delay; push tokens come from the running activity and the push-to-start listener; a refused
- *          start resolves `unavailable`; Android posts and replaces an ongoing notification per reference.
+ *          start resolves `unavailable`; Android posts and replaces an ongoing notification per reference, and refuses
+ *          when its channel is missing or the post fails.
  * Boundary: test only; react-native, expo-notifications, expo-widgets and Expo UI are mocked.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0250 (decision 3); STA-1539.
@@ -42,6 +43,7 @@ const mocks = vi.hoisted(() => {
     permission: { granted: true, status: "granted" },
     schedule: vi.fn(async () => "id"),
     dismiss: vi.fn(async () => undefined),
+    channel: vi.fn(async (): Promise<object | null> => ({ id: "live_activity" })),
   };
 });
 
@@ -57,6 +59,7 @@ vi.mock("expo-notifications", () => ({
   getPermissionsAsync: async () => mocks.permission,
   scheduleNotificationAsync: mocks.schedule,
   dismissNotificationAsync: mocks.dismiss,
+  getNotificationChannelAsync: mocks.channel,
 }));
 
 const ORDER: ActivityProgress = {
@@ -173,5 +176,16 @@ describe("ExpoLiveActivitiesDriver", () => {
       ok: false,
       error: { code: "permission_denied" },
     });
+  });
+
+  it("refuses on Android when the channel was never created or the post fails", async () => {
+    mocks.os.OS = "android";
+    mocks.channel.mockResolvedValueOnce(null);
+    expect(await driver().show(ORDER)).toMatchObject({ ok: false, error: { code: "unavailable" } });
+    expect(mocks.schedule).not.toHaveBeenCalled();
+    mocks.schedule.mockRejectedValueOnce(new Error("native failure"));
+    expect(await driver().show(ORDER)).toMatchObject({ ok: false, error: { code: "unavailable" } });
+    mocks.dismiss.mockRejectedValueOnce(new Error("native failure"));
+    await expect(driver().end("order_1042")).resolves.toBeUndefined();
   });
 });
