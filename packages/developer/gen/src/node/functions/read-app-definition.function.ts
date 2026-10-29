@@ -35,7 +35,13 @@ export function readAppDefinition(root: string): {
   const call = defineCall(readFileSync(path, "utf8"));
   if (call?.name !== "defineApp") return { errors: [] };
   const definition = call.argument;
-  if (typeof definition !== "object" || definition === null || Array.isArray(definition))
+  // defineCall hands back the Error staticLiteral threw, which is itself an object, so it is refused first.
+  if (
+    definition instanceof Error ||
+    typeof definition !== "object" ||
+    definition === null ||
+    Array.isArray(definition)
+  )
     return {
       errors: [
         {
