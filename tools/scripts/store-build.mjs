@@ -269,12 +269,15 @@ export function loadStore(root, app, { core = CORE, template } = {}) {
       if (!PURPOSES[p]) problems.push(`collects[${i}] purpose "${p}" is not known`);
     if (!row.purposes?.length) problems.push(`collects[${i}] has no purposes`);
   }
-  // The SDKs the built app carries: the product root's and the template checkout's dependencies.
+  // The SDKs the built app carries: the product root's and the template checkout's dependencies, less the native
+  // modules the mobile job strips for capabilities the app does not list (`expo.autolinking.exclude`, ADR 0439 d3).
   const deps = [root, template]
     .filter((d) => d && existsSync(join(d, "package.json")))
-    .flatMap((d) =>
-      Object.keys(JSON.parse(readFileSync(join(d, "package.json"), "utf8")).dependencies ?? {}),
-    );
+    .flatMap((d) => {
+      const pkg = JSON.parse(readFileSync(join(d, "package.json"), "utf8"));
+      const excluded = new Set(pkg.expo?.autolinking?.exclude ?? []);
+      return Object.keys(pkg.dependencies ?? {}).filter((dep) => !excluded.has(dep));
+    });
   for (const dep of new Set(deps))
     if (SDK_SOURCES[dep] && !sources.has(SDK_SOURCES[dep]))
       problems.push(

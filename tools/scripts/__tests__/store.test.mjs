@@ -35,6 +35,7 @@ const PNG = Buffer.from("89504e470d0a1a0a", "hex"); // replay never decodes it; 
 function product({
   collects = [],
   deps = {},
+  exclude = [],
   captures = 2,
   tablet = false,
   review = true,
@@ -48,7 +49,10 @@ function product({
     join(tpl, "app.json"),
     JSON.stringify({ expo: { ios: { supportsTablet: tablet } } }),
   );
-  writeFileSync(join(tpl, "package.json"), JSON.stringify({ dependencies: deps }));
+  writeFileSync(
+    join(tpl, "package.json"),
+    JSON.stringify({ dependencies: deps, expo: { autolinking: { exclude } } }),
+  );
   writeFileSync(
     join(dir, "runway.yaml"),
     stringify({
@@ -366,6 +370,12 @@ test("probe refuses when a named secret is not set", async () => {
 });
 
 // --- store/ source of truth ------------------------------------------------------------------------------
+
+test("an SDK the mobile job strips for an unlisted capability needs no privacy row", () => {
+  const repo = product({ deps: { "expo-location": "x" }, exclude: ["expo-location"] });
+  const { problems } = loadStore(repo.dir, "app", { core: ROOT, template: repo.tpl });
+  assert.ok(!problems.some((x) => x.includes("expo-location")), problems.join("; "));
+});
 
 test("loadStore checks text limits, consent categories, purposes and undeclared SDKs", () => {
   assert.deepEqual(consentCategories(ROOT), ["necessary", "analytics", "crash_replay"]);
