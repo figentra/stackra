@@ -532,6 +532,22 @@ On an app's browser with the panel, gen writes `registerResources({ "<module>.<m
 `resourceLabelKeys`, the `<module>::resources.<model>.<part>.<path>` keys the resource pages derive (title, columns,
 filters, entries, sections, fields, steps; not relations or actions), for the catalogues.
 
+## Call options from a request (design, ADR 0472)
+
+No generated endpoint calls the pipeline yet (the action endpoints come with the rest of the Encore app). When they
+do, each builds its `CallOptions` in two parts and nothing else: the verified facts from the credential (`actor`,
+`scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the header-borne values
+the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`: `Idempotency-Key` onto
+`idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot` (verified by
+`ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`.
+
+```ts
+await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });
+```
+
+The emitter calls the function instead of writing header reads into each endpoint, so a new header-borne option is one
+change in `@stackra/actions` and no gen change; adding it adds no pipeline step (ADR 0138).
+
 ## Public SDKs
 
 An action or query marked `public: true` (OS ADR 0039 d2; Stackra ADR 0217, 2026-10-26 note) is written to the

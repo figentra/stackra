@@ -23,6 +23,7 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 | A region source driver               | `src/core/drivers/<name>-region-source.driver.ts`         |
 | A snapshot keys driver               | `src/core/drivers/<name>-consent-snapshot-keys.driver.ts` |
 | A service (ledger, proofs, snapshot) | `src/core/services/`                                      |
+| The consent endpoint, its permission | `src/node/{actions,schemas,access}/`                      |
 | A pure read of the ledger            | `src/core/functions/`                                     |
 | React code                           | `src/react/consent/`                                      |
 | A test helper                        | `src/testing/functions/`                                  |
@@ -31,7 +32,7 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 
 ## Entries and barrels
 
-- `src/{core,contracts,react,testing,ui}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/{core,contracts,node,react,testing,ui}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel and to that entry's `index.test.ts`.
 - The record and snapshot schemas, `parseConsentRecord`, the snapshot codec, `hasGlobalPrivacyControl` and the
   storage key stay internal.
@@ -55,7 +56,11 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
   cookie on the server. The server sees it only as a signed snapshot (ADR 0472): `ConsentSnapshotIssuer` re-applies
   the ledger's rules to the client's record and never trusts a client grant; `ConsentSnapshotVerifier` reads anything
   it cannot verify as refused and never throws. A snapshot is never stored as evidence.
-- Only `./contracts` of `@stackra/actions` is imported (the `ConsentCheck` port); actions never imports consent.
+- Outside `./node`, only `./contracts` of `@stackra/actions` is imported (the `ConsentCheck` port and `CALL_HEADERS`);
+  actions never imports consent. `./node` alone imports `@stackra/iam` (the endpoint's `Permissions`), so browser
+  entries never pull it in (ADR 0462).
+- The endpoint's path is a literal in the action (gen reads it from source) and `CONSENT_SNAPSHOT_PATH` for the client;
+  a test keeps them equal. `consentSnapshotHeaders` never throws and never sends a token issued for another decision.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

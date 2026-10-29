@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the gen wiring imports `ConsentStore` from
- *          `@stackra/consent/contracts`; the five ports, the verification method enum and the snapshot header are its values, `ConsentRecord`
+ *          `@stackra/consent/contracts`; the five ports, the verification method enum and the snapshot header and path are its values, `ConsentRecord`
  *          resolves to the stored decision's shape and the verification and snapshot types keep theirs.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -16,6 +16,7 @@ describe("@stackra/consent/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "CONSENT_SNAPSHOT_HEADER",
+      "CONSENT_SNAPSHOT_PATH",
       "ConsentAuthority",
       "ConsentProofStore",
       "ConsentSnapshotKeys",
@@ -49,6 +50,7 @@ describe("@stackra/consent/contracts", () => {
 
   it("names the snapshot header and types the snapshot (ADR 0472)", () => {
     expect(contracts.CONSENT_SNAPSHOT_HEADER).toBe("Stackra-Consent");
+    expect(contracts.CONSENT_SNAPSHOT_PATH).toBe("/consent/snapshots");
     expectTypeOf<contracts.ConsentSnapshot["granted"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<contracts.ConsentSnapshot["region"]>().toEqualTypeOf<string | null>();
     expectTypeOf<

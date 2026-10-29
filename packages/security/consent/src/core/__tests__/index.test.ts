@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/consent`
  *          (`ConsentCategory`, `ConsentConfig`, `ConsentConfig$`, `ConsentRegime`, `ConsentStatus`, and
- *          `CookieConsentStoreDriver` from the gen wiring) is exported, with the ledger, the snapshot issuer and verifier (ADR 0472) and the other drivers; the port
+ *          `CookieConsentStoreDriver` from the gen wiring) is exported, with the ledger, the snapshot issuer and verifier and the client's `consentSnapshotHeaders` (ADR 0472) and the other drivers; the port
  *          and the internals are not.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -38,6 +38,7 @@ describe("@stackra/consent", () => {
       "StaticConsentSnapshotKeysDriver",
       "StorageConsentStoreDriver",
       "consentModeSignals",
+      "consentSnapshotHeaders",
       "needsGuardianConsent",
     ]);
   });

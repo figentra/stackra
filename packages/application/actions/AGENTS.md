@@ -64,6 +64,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `consentSnapshot` on `CallOptions` is the `Stackra-Consent` header as sent, never trusted: only `ctx.consent()`
   reads it, through `ConsentCheck`, once per call. Consent is never a pipeline step and never refuses a call; a missing
   snapshot or an unbound check reads as refused with nothing granted (ADR 0472). Never log the snapshot.
+- `requestCallOptions(request)` reads only the headers whose values the pipeline checks itself (`CALL_HEADERS`:
+  Idempotency-Key, Stackra-Consent). Never add the actor, scope, device or origin to it: those come from the verified
+  credential (ADR 0098).
 - `ctx.publish(event)` is only for an integration event no model owns; a model's event is recorded on the model. It
   writes through `EventOutbox` at once, so it belongs in `handle` (inside the unit of work), never in `afterCommit`.
 - A replica change reaches readers at its scope node or above it; only `cascade: true` also reaches the readers below

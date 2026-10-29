@@ -49,6 +49,7 @@ export { rawBody } from "#core/functions/raw-body.function";
 export { registerActions } from "#core/functions/register-actions.function";
 export { registerCachedQueries } from "#core/functions/register-cached-queries.function";
 export { registerExtensions } from "#core/functions/register-extensions.function";
+export { requestCallOptions } from "#core/functions/request-call-options.function";
 export { QueryCacheEvictorListener } from "#core/listeners/query-cache-evictor.listener";
 export { ActionPipeline } from "#core/services/action-pipeline.service";
 export { ReplicaFeed } from "#core/services/replica-feed.service";

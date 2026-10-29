@@ -91,6 +91,7 @@ describe("@stackra/actions", () => {
       "registerActions",
       "registerCachedQueries",
       "registerExtensions",
+      "requestCallOptions",
     ]);
     expect("IdempotencyStore" in actions).toBe(false);
     expect("AsyncContextStorageDriver" in actions).toBe(false);

@@ -26,6 +26,7 @@ export { ConsentStatus } from "#core/enums/consent-status.enum";
 export { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
 export { ConsentNotVerifiedError } from "#core/errors/consent-not-verified.error";
 export { consentModeSignals } from "#core/functions/consent-mode-signals.function";
+export { consentSnapshotHeaders } from "#core/functions/consent-snapshot-headers.function";
 export { needsGuardianConsent } from "#core/functions/needs-guardian-consent.function";
 export { ConsentOptions } from "#core/schemas/consent-options.schema";
 export { ConsentLedger } from "#core/services/consent-ledger.service";
@@ -34,5 +35,6 @@ export { ConsentSnapshotIssuer } from "#core/services/consent-snapshot-issuer.se
 export { ConsentSnapshotVerifier } from "#core/services/consent-snapshot-verifier.service";
 export type { ConsentCategoryEntry } from "#core/types/consent-category-entry.type";
 export type { ConsentModeSignals } from "#core/types/consent-mode-signals.type";
+export type { ConsentSnapshotHeadersOptions } from "#core/types/consent-snapshot-headers-options.type";
 export type { IssuedConsentSnapshot } from "#core/types/issued-consent-snapshot.type";
 export type { TermsDocument } from "#core/types/terms-document.type";

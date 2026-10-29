@@ -48,6 +48,10 @@ is an optional peer of `./react`.
 | `.`           | `SnapshotConsentCheckDriver`                                                                        | the `ConsentCheck` driver of `@stackra/actions`: `ctx.consent()` verifies the call's snapshot                |
 | `.`           | `SignerConsentSnapshotKeysDriver`, `StaticConsentSnapshotKeysDriver`                                | trusted keys: the bound `Signer`'s own, or a fixed list (a Worker, a key rotation)                           |
 | `./contracts` | `ConsentSnapshot`, `ConsentSnapshotRequest`, `ConsentSnapshotKeys`, `CONSENT_SNAPSHOT_HEADER`       | the signed payload, what the client sends to get one, the trusted-keys port, the `Stackra-Consent` header    |
+| `./contracts` | `CONSENT_SNAPSHOT_PATH`                                                                             | the consent endpoint's route, `/consent/snapshots`                                                           |
+| `.`           | `consentSnapshotHeaders`, `ConsentSnapshotHeadersOptions`                                           | the client half: fetches a snapshot and answers the `Stackra-Consent` header for a session's `headers()`     |
+| `./node`      | `IssueConsentSnapshotAction`, `IssueConsentSnapshotInput`, `IssueConsentSnapshotOutput`             | the consent endpoint, `POST /consent/snapshots` (`consent.consent_snapshot.issue@1`, public, L0)             |
+| `./node`      | `ConsentSnapshotPermissions`                                                                        | its permission, `consent.consent_snapshot.issue` (L0, open to every visitor)                                 |
 | `./ui`        | `ConsentBanner`, `ConsentPreferences`                                                               | the cookie banner (accept all, reject all, manage) and the category switches                                 |
 | `./ui`        | `LegalPage`, `TermsPrompt`                                                                          | one legal text (plain paragraphs); versioned terms acceptance                                                |
 
@@ -123,11 +127,22 @@ ingest Worker, audience sync) need it too. The client asks the consent endpoint 
 it with every API call in the `Stackra-Consent` header (`CONSENT_SNAPSHOT_HEADER`):
 
 ```ts
-// client: when the decision changes, and before the copy expires
-const request = ledger.snapshotRequest(anonymousId); // the stored record as kept, GPC, the region
-// server: the consent endpoint
-const { token, snapshot } = await issuer.issue(request, signedInUserId);
+// client: a ClientSession's headers() spreads the consent header on every call
+const consentHeaders = consentSnapshotHeaders({
+  baseUrl: apiOrigin,
+  snapshotRequest: () => ledger.snapshotRequest(anonymousId), // the stored record as kept, GPC, the region
+});
+const headers = async () => ({ ...(await authHeaders()), ...(await consentHeaders()) });
 ```
+
+The consent endpoint is `IssueConsentSnapshotAction` (`./node`): `POST /consent/snapshots`, public, for anonymous
+visitors and signed-in users, answering `{ token, expiresAt }` in the body and never a cookie. A host lists it with its
+other actions and binds `ConsentSnapshotIssuer` (with a `Signer`). `consentSnapshotHeaders` posts
+`ledger.snapshotRequest()` there with the platform's `fetch` (never through a client whose session asks these headers),
+holds the token in memory, fetches again at once when the decision changes (a withdrawal is never sent with the old
+grant) or a minute before expiry, shares one fetch between concurrent calls, and sends no header when the endpoint
+fails, which the server reads as refused. A native app passes its own ledger the same way. On the server a generated
+endpoint lifts the header with `requestCallOptions(request)` of `@stackra/actions` onto `CallOptions.consentSnapshot`.
 
 The issuer trusts nothing the client says: it parses the record, applies the rules below (an outdated or expired
 decision grants nothing optional, GPC refuses every optional category, an unlisted category is ignored), binds the

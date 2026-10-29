@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/actions (the ports of the pipeline's steps and stores,
- *          and the types they exchange) until `stackra gen` writes the entry barrels (STA-339).
+ *          the types they exchange, and the header names a transport lifts onto call options) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
  *           (ADR 0294 decision 15).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { CALL_HEADERS } from "#contracts/constants/call-headers.constant";
 export { ApproverRefusal } from "#contracts/enums/approver-refusal.enum";
 export { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 export { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";

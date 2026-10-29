@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/consent, the leaf entry of its ports (the verifier, the region
- *          source and the snapshot keys among them), the snapshot header and the enum and types the ports' signatures name, until `stackra gen` writes
+ *          source and the snapshot keys among them), the snapshot header and path, and the enum and types the ports' signatures name, until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. Each
  *           symbol here is exported from this entry only (ADR 0294 decision 15).
@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CONSENT_SNAPSHOT_HEADER } from "#contracts/constants/consent-snapshot-header.constant";
+export { CONSENT_SNAPSHOT_PATH } from "#contracts/constants/consent-snapshot-path.constant";
 export { ConsentVerificationMethod } from "#contracts/enums/consent-verification-method.enum";
 export { ConsentAuthority } from "#contracts/ports/consent-authority.port";
 export { ConsentProofStore } from "#contracts/ports/consent-proof-store.port";

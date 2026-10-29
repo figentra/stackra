@@ -38,6 +38,7 @@ configuration and the action testing helpers.
 | `.`           | `MemoryReplicaLogDriver`, `MemoryReviewItemSinkDriver`                                             | the in-process replica log and review sink                              |
 | `.`           | `rawBody`, `isRawBody`, `RawBody`                                                                  | a query output the transport sends as the body itself (iCal, CSV)       |
 | `.`           | `QueryCache`, `CacheScope`, `registerCachedQueries`, `QueryCacheEvictorListener`                   | a query's `cache` option, its sharing, and the evictor gen registers    |
+| `.`           | `requestCallOptions`                                                                               | the header-borne call options a generated endpoint lifts (ADR 0472)     |
 | `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                                   | the ports of the pipeline's checks                                      |
 | `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                                   | the ports of its stores and its transaction                             |
 | `./contracts` | `RateLimitBudget`                                                                                  | the plan-sized area bucket of a call's scope (a value entitlement)      |
@@ -47,6 +48,7 @@ configuration and the action testing helpers.
 | `./contracts` | `CallClient`                                                                                       | the network client on `ctx.client` (address, user agent)                |
 | `./contracts` | `CallOrigin`, `CallOriginKind`                                                                     | the request origin on `ctx.origin` and the descriptor (ADR 0456)        |
 | `./contracts` | `ConsentCheck`, `CallConsent`, `ConsentRefusal`                                                    | the consent snapshot check behind `ctx.consent()` (ADR 0472)            |
+| `./contracts` | `CALL_HEADERS`                                                                                     | the header names `requestCallOptions` reads (Idempotency-Key, consent)  |
 | `./node`      | `AsyncContextStorageDriver`                                                                        | `ContextStorage` over `AsyncLocalStorage`                               |
 | `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`, `grantedConsent` | call through the real pipeline; fake contexts; inline extensions        |
 | `./testing`   | `expectScopeCacheSafe`, `ScopeCacheSafeOptions`                                                    | a `per: CacheScope.Scope` query answers every caller the same           |
@@ -132,6 +134,14 @@ with the snapshot id, subject, granted categories and expiry, or refused with a 
 `policy_outdated`, `global_privacy_control`) and nothing granted. It adds no pipeline step and never refuses the call:
 a server-side send (analytics, a conversion, an audience push) runs only when `granted` includes its category. In a
 unit test, `fakeActionContext({ consent: grantedConsent("analytics") })`; the fake reads as refused otherwise.
+
+A generated endpoint lifts the header-borne options with `requestCallOptions(request)`: `idempotencyKey` from
+`Idempotency-Key` and `consentSnapshot` from `Stackra-Consent` (the names are `CALL_HEADERS`), as sent and only when
+not empty. It never sets the actor, scope, device or origin; the endpoint adds those from the verified credential:
+
+```ts
+await pipeline.execute(CancelOrderAction, input, { actor, ...requestCallOptions(request) });
+```
 
 When a `Tracer` (the `@stackra/contracts` port; the OTLP driver ships with the telemetry runtime) is bound, each
 call runs in one span named `action <key>`, `query <key>` or `propose <key>` (ADR 0147 decision 3). It carries the
