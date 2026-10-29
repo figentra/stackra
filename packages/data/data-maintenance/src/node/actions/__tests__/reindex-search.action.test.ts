@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ReindexSearchAction` and `ReindexSemanticAction`: system-only queued jobs, unique per scope,
  *          which hand the model, the parsed `since` and (for the full-text one) the job's scope to `reindexSearch` and
  *          `reindexSemantic` of @stackra/search and report the rows indexed.
- * Boundary: test only; the two functions are mocked, so no index or embedder runs; their own tests are
+ * Boundary: test only; the two functions are spied on, so no index or embedder runs; their own tests are
  *           @stackra/search's.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0404 (decision 3); ADR 0221 (decision 7); ADR 0462 (decision 1).
@@ -12,7 +12,8 @@ import type { ActionContext } from "@stackra/actions";
 import { kindOf } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
 import type { Search } from "@stackra/search";
-import { reindexSearch, reindexSemantic } from "@stackra/search/node";
+// oxlint-disable-next-line no-restricted-imports -- the namespace object is what vi.spyOn replaces a member of
+import * as searchNode from "@stackra/search/node";
 import type { SearchIndexRegistry, SemanticChangeService } from "@stackra/search/node";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -21,10 +22,10 @@ import { ReindexSearchAction } from "#node/actions/reindex-search.action";
 import { ReindexSemanticAction } from "#node/actions/reindex-semantic.action";
 import { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 
-vi.mock("@stackra/search/node", () => ({
-  reindexSearch: vi.fn(async () => 4),
-  reindexSemantic: vi.fn(async () => 2),
-}));
+// A spy on the namespace, not vi.mock: the generated setup's registrations load these jobs before the test file, so
+// each action already holds the real module and a vi.mock factory would never reach it.
+const reindexSearch = vi.spyOn(searchNode, "reindexSearch").mockResolvedValue(4);
+const reindexSemantic = vi.spyOn(searchNode, "reindexSemantic").mockResolvedValue(2);
 
 const scope = { id: "scp_1", path: "platform.acme" } as const;
 const search = {} as Search;
