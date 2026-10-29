@@ -97,7 +97,7 @@ describe("runDeployProduct", () => {
       product: true,
       env: "staging",
       "assets-origin": "https://assets.staging.figentra.com",
-      "kv-namespace": "kv-123",
+      "kv-namespace": "0123456789abcdef0123456789abcdef",
       served: "console, landing",
       approved: true,
     });
