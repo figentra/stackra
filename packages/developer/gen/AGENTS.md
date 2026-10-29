@@ -53,6 +53,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   binds it over `ClientTransport`. Keep the one spelling in `CLIENTS_SPECIFIER`. Any own file (tests included) that
   imports from it also consumes the service (`SourceReader#clientImports`, `MemberIR.clientImports`), which is how an
   app gets its clients; an app reads the producer from the repo's `services/` too (STA-1293).
+- The Expo config (ADR 0295): `emitExpoConfig` owns the keys and plugins in `EXPO_OWNED_KEYS` and
+  `EXPO_OWNED_PLUGINS`; add a new owned one to those lists so the `expo` section refuses it (`expo_owned_key`). It
+  reads `defineApp` through `staticLiteral`, never by running `stackra.config.ts`, and config values from the host
+  override's field defaults (`ir.shapes`), falling back to the base defaults it names.
 - Undeclared packages (STA-1293, STA-1296): `undeclaredPackages` refuses any generated file importing a `@stackra/*`
   package missing from `ir.packages` (clients and schemas first, then every other file as
   `generated_dependency_missing`); a schemas file is also held to `zod`. `schemaModules` writes no schemas file for a

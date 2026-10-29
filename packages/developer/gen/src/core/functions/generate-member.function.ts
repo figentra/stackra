@@ -11,7 +11,7 @@
  *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
  *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
  *          MCP tool and wiring, STA-1459), `#stackra/i18n` from
- *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs and the
+ *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs, an app's Expo config and the
  *          member's part of the system graph (`.stackra/graph.json`, ADR 0452), after the identity checks and,
  *          against the committed manifest, the `@Renamed` lock.
  * Boundary: pure: returns files, never writes them. Any error (discovery's, the manifest's or the lock's) means no
@@ -76,6 +76,7 @@ import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
+import { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
@@ -169,6 +170,9 @@ export function generateMember(
     ...checkSurfaces(ir),
     ...checkTableIndexes(ir, previous),
   );
+  // An app's Expo config, from `defineApp`, the config classes, the lang and the icon sets (ADR 0295 decision 5).
+  const expo = emitExpoConfig(ir);
+  all.push(...expo.errors);
   if (all.length > 0) return { files: [], errors: all, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];
@@ -218,7 +222,7 @@ export function generateMember(
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
-  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir));
+  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
   const entries = [
     ...emitPackageEntries(ir),
     ...emitRuntimeEntries(

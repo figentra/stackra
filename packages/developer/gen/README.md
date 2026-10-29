@@ -43,6 +43,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitPrefixes`, `PUBLIC_ID_PREFIXES`                                         | `#stackra/prefixes`; the shared prefix registry (ADR 0135)                                        |
 | `.`                   | `emitClients`, `CLIENTS_SPECIFIER`                                           | `#stackra/clients/<service>`: one injectable client per consumed service (ADR 0260)               |
 | `.`                   | `emitToolConfigs`                                                            | `.stackra/{tsdown,vitest}.config.ts`, `.stackra/vitest.setup.ts`                                  |
+| `.`                   | `emitExpoConfig`                                                             | an app's `.stackra/app.config.ts` and the root `app.config.ts` shim (see "The Expo config")       |
 | `.`                   | `emitI18n`                                                                   | `#stackra/i18n`: `I18n` (typed keys of `assets/lang`), `locales`, `catalogues` and `loadMessages` |
 | `.`                   | `emitSettings`                                                               | `#stackra/settings`: `Settings`, the typed setting keys of the member's settings classes          |
 | `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)        |
@@ -566,10 +567,55 @@ expected output. `src/node/__tests__/golden.test.ts` runs gen over them and diff
 `UPDATE_GOLDEN=1 pnpm --filter @stackra/gen exec vitest run src/node/__tests__/golden.test.ts`. Layout and fixtures:
 `__golden__/README.md`.
 
+## The Expo config (ADR 0295 decisions 2 to 5)
+
+An app whose `defineApp` lists `Target.Ios` or `Target.Android` gets `.stackra/app.config.ts` and a gitignored root
+`app.config.ts` that re-exports it, since the Expo CLI reads only the member root. `readAppDefinition` reads the
+`defineApp` argument as static data (`staticLiteral`, never by running it) and the brand kit's alternate icon sets,
+one PascalCase folder each under `assets/app-icons/<Name>/` holding `app-icon-ios-1024.png` and
+`app-icon-android-foreground-1024.png`.
+
+The smallest design of the sections, until `AppDefinition` types them (STA-339):
+
+```ts
+export default defineApp({
+  targets: [Target.Ios, Target.Android],
+  area: ApiArea.App,
+  name: "Acme",
+  scheme: "acme",
+  ios: { bundleId: "com.acme.app", supportsTablet: true },
+  android: { package: "com.acme.app" },
+  // The Expo config minus the owned keys: passed through as written.
+  expo: {
+    orientation: "default",
+    ios: { config: { usesNonExemptEncryption: false } },
+    plugins: ["react-native-bottom-tabs"],
+  },
+});
+```
+
+| Gen writes                                                                      | From                                                                                                       |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `name`, `slug` (the scheme), `scheme`, `version`                                | `defineApp` and the package version                                                                        |
+| `ios.bundleIdentifier`, `ios.supportsTablet`, `android.package`                 | `ios.bundleId`, `ios.supportsTablet`, `android.package`                                                    |
+| expo-localization `supportsRTL`, `supportedLocales`                             | `I18nConfig.locales` and `rtl` (the host override, else the base defaults)                                 |
+| `ios.associatedDomains: ["webcredentials:<host>"]`                              | an https `IdentityConfig.issuer`, when the app declares `@stackra/identity`                                |
+| expo-widgets `groupIdentifier: "group.<bundleId>"`, `NSSupportsLiveActivities`  | the app declaring `expo-widgets`                                                                           |
+| expo-alternate-app-icons, one entry per icon set                                | `assets/app-icons/`; the background is the section's `android.adaptiveIcon` colour                         |
+| `@stackra/native-share`, `@stackra/native-spotlight`                            | the app declaring the package                                                                              |
+| expo-location (when in use only), expo-media-library, expo-local-authentication | their text from the base locale's `permissions` namespace (`location`, `photos`, `save_photos`, `face_id`) |
+
+Owned plugins follow the section's own, in that order, and each is written only when the app declares its package.
+Refusals: `expo_owned_key` (the `expo` section sets an owned key or lists an owned plugin), `expo_identity_missing`,
+`expo_permission_text_missing`, `app_icon_drift` (the host's `AppIconConfig.icons` differ from the icon sets: gen
+checks the override rather than writing into `src/`), `app_definition_not_static`, and `shim_authored` for an authored
+`app.json` or `app.config.ts` at the root. Not yet: applying `expo.extend.ts`, a per-environment issuer from runway
+(the passkey domain comes from the override's literal), and the permission text of the other locales.
+
 ## Not here
 
 Per-target outputs land with the target that owns them: an app's browser clients, navigation trees and the `keys` `toRoot` takes,
 panels, resources and widgets, flags, settings pages, the typed `#stackra/migrations` ids, the rest of the Encore app (the server entry
-hands `boot` to `createApp`, whose `EventBus` and `InboxService` connects make the relays and typed subscribers receive), the Vite, Expo, Metro, Wrangler and electron-builder configs, and the worker and desktop main
+hands `boot` to `createApp`, whose `EventBus` and `InboxService` connects make the relays and typed subscribers receive), the Vite, Metro, Wrangler and electron-builder configs, and the worker and desktop main
 entries. The per-kind registrations of actions, permissions, roles, policies, listeners, extensions, workflows,
 buckets and segment subjects come with those targets too.

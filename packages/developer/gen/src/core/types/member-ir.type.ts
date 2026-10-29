@@ -44,6 +44,16 @@ export interface MemberIR {
   /** The `targets` of `defineApp`. */
   readonly targets?: readonly string[];
 
+  /**
+   * An app's `defineApp` argument as static data (a reference such as `Target.Ios` is its source text) and the
+   * PascalCase alternate icon sets under `assets/app-icons/`. Absent for a member that calls no `defineApp` and in an
+   * IR built by hand.
+   */
+  readonly app?: {
+    readonly definition: Readonly<Record<string, unknown>>;
+    readonly icons: readonly string[];
+  };
+
   /** The authored root module, when the member writes one (ADR 0305 rule 15). */
   readonly rootModule?: ClassRef;
 

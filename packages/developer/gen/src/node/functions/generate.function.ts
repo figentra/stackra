@@ -249,6 +249,30 @@ export async function generate(
     else if (config === ROOT_VITEST_SHIM)
       files = files.filter((file) => file.path !== ROOT_VITEST_SHIM);
   }
+  // The Expo config is gen's alone: an authored app.json or app.config.ts at the root would shadow or be overwritten.
+  if (files.some((file) => file.path === "app.config.ts")) {
+    if (existsSync(join(root, "app.json")))
+      errors.push(
+        refusal(
+          "shim_authored",
+          "app.json",
+          "an authored app.json sits beside the generated Expo config, so two files state the app's Expo settings",
+          "move its settings into the `expo` section of defineApp (gen writes the owned keys) and delete app.json",
+        ),
+      );
+    if (
+      existsSync(join(root, "app.config.ts")) &&
+      !readFileSync(join(root, "app.config.ts"), "utf8").includes(GENERATED_NOTICE)
+    )
+      errors.push(
+        refusal(
+          "shim_authored",
+          "app.config.ts",
+          "an authored app.config.ts sits at the member root, where gen writes the Expo config shim",
+          "move its settings into the `expo` section of defineApp, or an add-only expo.extend.ts, and delete the file",
+        ),
+      );
+  }
   if (errors.length > 0) return { errors, files: [], changed: partial };
   result = { ...result, files };
   return {

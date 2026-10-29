@@ -6,7 +6,8 @@
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port, the writes that skip the unit of work (`readNativeWrites`, stackra-262) and the
- *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10): the
+ *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10) and an app's static
+ *          `defineApp` data and icon sets (`readAppDefinition`): the
  *          `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
@@ -36,6 +37,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
+import { readAppDefinition } from "#node/functions/read-app-definition.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
 import { readNativeWrites } from "#node/functions/read-native-writes.function";
@@ -185,6 +187,8 @@ export async function discoverMember(
       ...folders.filter((key) => key !== facts.member),
     ];
 
+    // An app's static `defineApp` data and its brand-kit icon sets, for the Expo config (ADR 0295 decision 5).
+    const appDefinition = readAppDefinition(facts.root);
     const authored = classes.find(
       (declared) =>
         declared.kind === "module" && declared.file === rootModulePath(facts.layout, facts.member),
@@ -197,6 +201,7 @@ export async function discoverMember(
       ...(facts.kind !== undefined ? { kind: facts.kind } : {}),
       ...(facts.area !== undefined ? { area: facts.area } : {}),
       ...(facts.targets !== undefined ? { targets: facts.targets } : {}),
+      ...(appDefinition.app !== undefined ? { app: appDefinition.app } : {}),
       ...(authored !== undefined
         ? { rootModule: { name: authored.name, from: authored.importPath } }
         : {}),
@@ -225,7 +230,7 @@ export async function discoverMember(
       ...(i18nReferences.length > 0 ? { i18nReferences } : {}),
       ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
       ...(searchableColumns.length > 0 ? { searchableColumns } : {}),
-      errors: [...reader.errors],
+      errors: [...reader.errors, ...appDefinition.errors],
     };
   } finally {
     host.close();

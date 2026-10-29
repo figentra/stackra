@@ -54,6 +54,7 @@ export { emitEncoreDatabase } from "#core/functions/emit-encore-database.functio
 export { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";
+export { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 export { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 export { emitI18n } from "#core/functions/emit-i18n.function";
 export { emitMigrations } from "#core/functions/emit-migrations.function";

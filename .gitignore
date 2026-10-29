@@ -21,6 +21,8 @@ encore.gen/
 # merge ./.stackra/vitest.config are tracked and stay tracked; add a new authored one with `git add -f`.
 packages/*/*/vitest.config.ts
 services/*/vitest.config.ts
+# Gen's root Expo config shim of an app (ADR 0295 decision 5).
+apps/*/app.config.ts
 # A docs app's generated Mintlify root, in any member (ADR 0002, 2026-10-27 amendment).
 **/.stackra/site/
 

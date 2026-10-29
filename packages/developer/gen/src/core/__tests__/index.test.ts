@@ -63,6 +63,7 @@ describe("@stackra/gen", () => {
       "emitEncoreHttp",
       "emitEncoreQueues",
       "emitEntities",
+      "emitExpoConfig",
       "emitI18n",
       "emitIsolationTest",
       "emitMemberModule",
