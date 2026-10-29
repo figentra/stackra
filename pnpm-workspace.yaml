@@ -184,6 +184,15 @@ catalogs:
     # The permission helper's location and photos (owner 2026-10-29, STA-1536), at the SDK 57 bundled versions. MIT.
     expo-location: 57.0.22
     expo-media-library: 57.0.5
+    # The native backlog features (owner 2026-10-29, STA-1537 to 1542), at the SDK 57 versions. MIT.
+    # expo-local-authentication: the app lock; expo-sharing: receiving shares; expo-widgets and @expo/ui: Live Activities.
+    expo-local-authentication: 57.0.3
+    expo-sharing: 57.0.24
+    expo-widgets: 57.0.27
+    "@expo/ui": 57.0.26
+    # Community libraries, owner-approved 2026-10-29: passkeys (STA-1538) and alternate app icons (STA-1541). MIT.
+    react-native-passkey: 3.6.2
+    expo-alternate-app-icons: 8.0.0
     # Code-based navigation (no expo-router routes): React Navigation 7 + Callstack's native tab bar,
     # which drives UITabBarController so iOS 26 draws the Liquid Glass tab bar.
     "@react-navigation/native": 7.5.1
