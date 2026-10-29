@@ -10,6 +10,7 @@
  */
 import { registerSchemas, Schema, Str } from "@stackra/validation";
 
+import { ROW_PATH } from "#core/constants/row-path.constant";
 import { SAVED_VIEW_GROUP_SCHEMA } from "#core/constants/saved-view-group-schema.constant";
 
 /**
@@ -20,11 +21,11 @@ import { SAVED_VIEW_GROUP_SCHEMA } from "#core/constants/saved-view-group-schema
  */
 export class SavedViewGroup extends Schema {
   /** The row path rows are grouped by. */
-  @Str({ pattern: /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/ })
+  @Str({ pattern: ROW_PATH })
   by!: string;
 
   /** The row path each group is sub-grouped by. */
-  @Str({ pattern: /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/ })
+  @Str({ pattern: ROW_PATH })
   // oxlint-disable-next-line unicorn/no-thenable -- reason: `then` is the saved view's sub-group key, not a promise
   then?: string;
 }

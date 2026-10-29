@@ -9,7 +9,7 @@
  */
 import { z } from "zod";
 
+import { ROW_PATH } from "#core/constants/row-path.constant";
+
 /** A dotted row path. */
-export const ROW_PATH_SCHEMA = z
-  .string()
-  .regex(/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/, "must be a row path");
+export const ROW_PATH_SCHEMA = z.string().regex(ROW_PATH, "must be a row path");

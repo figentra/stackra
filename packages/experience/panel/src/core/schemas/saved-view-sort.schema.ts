@@ -9,6 +9,7 @@
 import type { SortDirection } from "@stackra/contracts";
 import { registerSchemas, Schema, Str } from "@stackra/validation";
 
+import { ROW_PATH } from "#core/constants/row-path.constant";
 import { SAVED_VIEW_SORT_SCHEMA } from "#core/constants/saved-view-sort-schema.constant";
 
 /**
@@ -19,7 +20,7 @@ import { SAVED_VIEW_SORT_SCHEMA } from "#core/constants/saved-view-sort-schema.c
  */
 export class SavedViewSort extends Schema {
   /** The row path rows are sorted by. */
-  @Str({ pattern: /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/ })
+  @Str({ pattern: ROW_PATH })
   key!: string;
 
   /** Ascending or descending. */

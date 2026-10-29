@@ -9,6 +9,7 @@
  */
 import { registerSchemas, Schema, Str } from "@stackra/validation";
 
+import { ROW_PATH } from "#core/constants/row-path.constant";
 import { SAVED_VIEW_TOTAL_SCHEMA } from "#core/constants/saved-view-total-schema.constant";
 import type { Aggregate } from "#core/enums/aggregate.enum";
 
@@ -20,7 +21,7 @@ import type { Aggregate } from "#core/enums/aggregate.enum";
  */
 export class SavedViewTotal extends Schema {
   /** The row path the aggregate runs over. */
-  @Str({ pattern: /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/ })
+  @Str({ pattern: ROW_PATH })
   key!: string;
 
   /** The aggregate computed per group. */
