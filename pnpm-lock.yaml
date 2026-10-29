@@ -5864,6 +5864,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@stackra/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@stackra/validation':
         specifier: workspace:*
         version: link:../validation

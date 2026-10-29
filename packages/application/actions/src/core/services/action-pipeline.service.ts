@@ -44,6 +44,7 @@
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
+ *                     STA-1588 (the default action buckets);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
@@ -567,8 +568,10 @@ export class ActionPipeline {
 
   /**
    * Takes a token from the area's bucket (plan-sized by `RateLimitBudget` when it answers, else `RateLimitConfig`)
-   * and from the action's own, refusing when either is empty. The area bucket is keyed by (app, scope) (ADR 0217
-   * decision 2): the app is the origin's id (storefront, API key, agent) or, without one, the actor. A refusal carries
+   * and from the action's own, refusing when either is empty. An action with no `rateLimit` takes from the
+   * configured `actionDefault` buckets instead: one per scope and, when the call has a client, one per hashed
+   * address. The area bucket is keyed by (app, scope) (ADR 0217 decision 2): the app is the origin's id
+   * (storefront, API key, agent) or, without one, the actor. A refusal carries
    * the refusing bucket's numbers and, when an `EventOutbox` is bound, writes one `count` usage event on
    * `RATE_LIMITED_METER` ("limits are metered").
    */
@@ -584,7 +587,8 @@ export class ActionPipeline {
     const app = descriptor.origin?.id ?? descriptor.actor.id;
     const areaKey = `area:${descriptor.area}:${app}${descriptor.scopeId === undefined ? "" : `:${descriptor.scopeId}`}`;
     const takes: [key: string, bucket: RateLimitBucket][] = [];
-    const area = this.optional(RateLimitConfig)?.areas[descriptor.area];
+    const config = this.optional(RateLimitConfig);
+    const area = config?.areas[descriptor.area];
     const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
     if (planned !== undefined) takes.push([areaKey, planned]);
     else if (area !== undefined)
@@ -596,12 +600,26 @@ export class ActionPipeline {
         },
       ]);
     const own = options.rateLimit;
+    const fallback = own === undefined ? config?.actionDefault : undefined;
     if (own !== undefined) {
       const by = own.by ?? "principal";
       takes.push([
         `action:${descriptor.key}:${by}:${by === "tenant" ? holder : descriptor.actor.id}`,
         { capacity: own.perMinute, tokensPerSecond: own.perMinute / 60 },
       ]);
+    } else if (fallback !== undefined) {
+      takes.push([
+        `action:${descriptor.key}:scope:${holder}`,
+        { capacity: fallback.perScope, tokensPerSecond: fallback.perScope / 60 },
+      ]);
+      const address = call.request.client?.address;
+      // The store sees a hash, never the address (CallClient goes to no port).
+      // shortcut: an unsalted SHA-256, which an IPv4 brute force reverses; key it with a secret if the store is shared.
+      if (address !== undefined)
+        takes.push([
+          `action:${descriptor.key}:address:${await fingerprintOf(address)}`,
+          { capacity: fallback.perAddress, tokensPerSecond: fallback.perAddress / 60 },
+        ]);
     }
     for (const [key, bucket] of takes) {
       const decision = await store.take(key, bucket, at);

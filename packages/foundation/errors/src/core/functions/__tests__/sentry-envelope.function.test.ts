@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `sentryEnvelope`: three newline-separated JSON lines (envelope header, item header, event);
  *          the event carries the error's name, message and frames innermost last, the tags, environment and release
- *          only when set, a refusal's code, and only the type of a thrown non-Error.
+ *          only when set, a refusal's code, only the type of a thrown non-Error, and a message with its secret shapes
+ *          masked (STA-1588).
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0184 (decisions 5 and 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0184 (decisions 5 and 6); ADR 0147 (decision 1).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -79,6 +80,20 @@ describe("sentryEnvelope", () => {
       environment: "production",
       release: "1.2.3",
       tags: { code: "forbidden" },
+    });
+  });
+
+  it("masks secret shapes in the message before it leaves", () => {
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c3JfMSJ9.c2lnbmF0dXJl";
+    const error = new Error(
+      `fetch https://admin:hunter2@db.example.test failed with Bearer ${token} and sk_live_abcdefgh1234`,
+    );
+    const [, , event] = lines(sentryEnvelope(error, REPORT));
+    const sent = JSON.stringify(event);
+    for (const secret of ["hunter2", token, "sk_live_abcdefgh1234"])
+      expect(sent).not.toContain(secret);
+    expect(event).toMatchObject({
+      exception: { values: [{ type: "Error", value: expect.stringContaining("[redacted]") }] },
     });
   });
 

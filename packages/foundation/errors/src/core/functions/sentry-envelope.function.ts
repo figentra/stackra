@@ -4,11 +4,16 @@
  *          header, the item header and the event with the error's type, message and stack frames, the refusal code as a
  *          tag, and the environment and release.
  * Boundary: pure. It sends no request context, user, input or breadcrumbs (ADR 0184: telemetry carries no personal
- *           data); a non-Error value is reported by its type only, never its contents. Frames are read from V8 and
+ *           data); a non-Error value is reported by its type only, never its contents. The message passes
+ *           `@stackra/logger`'s `redact` first, so a secret shape in it (bearer token, JWT, API key, URL credentials)
+ *           is masked like in a log line (STA-1588). Frames are read from V8 and
  *           Firefox stack lines, innermost last, as Sentry expects; an unparsable stack sends no frames.
  * Runtime: isomorphic
- * Governing contract: ADR 0184 (decisions 5 and 6); the Sentry envelope protocol.
+ * Governing contract: ADR 0184 (decisions 5 and 6); ADR 0147 (decision 1: secret detection); the Sentry envelope
+ *                     protocol.
  */
+import { redact } from "@stackra/logger";
+
 import { isRefusal } from "#core/functions/is-refusal.function";
 
 /** What one report carries besides the error. */
@@ -70,7 +75,7 @@ export function sentryEnvelope(error: unknown, report: Report): string {
       values: [
         {
           type: known ? error.name : typeof error,
-          value: known ? error.message : `a thrown ${typeof error}`,
+          value: known ? (redact(error.message) as string) : `a thrown ${typeof error}`,
           ...(frames.length === 0 ? {} : { stacktrace: { frames } }),
         },
       ],

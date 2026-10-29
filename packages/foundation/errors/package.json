@@ -107,6 +107,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/logger": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

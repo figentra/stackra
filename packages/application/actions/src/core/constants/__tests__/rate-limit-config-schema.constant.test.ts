@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `RATE_LIMIT_CONFIG_SCHEMA` (`RateLimitConfig$`): `.parse({})` gives the default buckets equal
- *          to `RateLimitOptions`' initializers, `per` is normalised to a canonical duration, bad buckets are refused,
- *          and a host's generated schema extends it the way the template's commerce schema does.
+ * Purpose: unit tests of `RATE_LIMIT_CONFIG_SCHEMA` (`RateLimitConfig$`): `.parse({})` gives the default buckets (and
+ *          the default action buckets, STA-1588) equal to `RateLimitOptions`' initializers, `per` is normalised to a
+ *          canonical duration, bad buckets are refused, and a host's generated schema extends it the way the
+ *          template's commerce schema does.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26).
@@ -16,7 +17,11 @@ import { RateLimitOptions } from "#core/schemas/rate-limit-options.schema";
 
 describe("RATE_LIMIT_CONFIG_SCHEMA", () => {
   it("defaults every area like RateLimitOptions", () => {
-    expect(RATE_LIMIT_CONFIG_SCHEMA.parse({})).toEqual({ areas: new RateLimitOptions().areas });
+    const options = new RateLimitOptions();
+    expect(RATE_LIMIT_CONFIG_SCHEMA.parse({})).toEqual({
+      areas: options.areas,
+      actionDefault: options.actionDefault,
+    });
     expect(RATE_LIMIT_CONFIG_SCHEMA.shape.areas.parse(undefined)).toEqual(
       new RateLimitOptions().areas,
     );

@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `RATE_LIMIT_CONFIG_SCHEMA`, the zod schema this package ships for `RateLimitConfig` (exported as
- *          `RateLimitConfig$`): one bucket per API area.
+ *          `RateLimitConfig$`): one bucket per API area, and the default buckets of an action that declares no
+ *          `rateLimit` (per scope and per client address, STA-1588).
  * Boundary: the stand-in for what gen writes for this package. `areas` has a default, so `.parse({})` gives the full
  *           defaults, `.shape.areas.parse(undefined)` gives the default buckets and a host's generated `RateLimitConfig$`
- *           extends it with `Base$.shape.areas.unwrap().default(...)`. The defaults equal `RateLimitOptions`'
- *           initializers (tested). `per` is a canonical ISO 8601 duration.
+ *           extends it with `Base$.shape.areas.unwrap().default(...)`; `actionDefault` has a default the same way.
+ *           The defaults equal `RateLimitOptions`' initializers (tested). `per` is a canonical ISO 8601 duration.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0217 (decision 2).
  */
@@ -37,4 +38,7 @@ export const RATE_LIMIT_CONFIG_SCHEMA = z.object({
     admin: { requests: 300, per: Duration.minutes(1), burst: 60 },
     platform: { requests: 120, per: Duration.minutes(1), burst: 30 },
   })),
+  actionDefault: z
+    .object({ perScope: z.number().int().positive(), perAddress: z.number().int().positive() })
+    .default(() => ({ perScope: 1200, perAddress: 300 })),
 });

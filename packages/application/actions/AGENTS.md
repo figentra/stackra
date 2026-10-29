@@ -50,6 +50,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   wins over `RateLimitConfig`, which stays the default when it answers `undefined` or none is bound.
 - The area bucket key is (app, scope), never the actor alone; a rate-limit refusal always carries the refusing
   bucket's numbers (never its key) and, with an outbox bound, one `actions.rate_limited` usage event (STA-1477).
+- An action with no `rateLimit` takes from `RateLimitConfig.actionDefault` (per scope, and per client address when
+  the call has a client); its own `rateLimit` replaces both. The store gets the address's SHA-256, never the address
+  (`CallClient` reaches no port) (STA-1588).
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
