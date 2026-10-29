@@ -35,11 +35,13 @@ describe("@stackra/runway/node", () => {
   it("exports exactly its values, none of them also exported by .", () => {
     expect(Object.keys(node).sort()).toEqual([
       "BRAND_STEP_SETTINGS",
+      "DryRunEdgeKvDriver",
       "EDGE_PUBLISH_SETTINGS",
       "EasProviderDriver",
       "EdgeKvConfig",
       "EdgeKvOptions",
       "EncoreCloudProviderDriver",
+      "LINE_CHECKOUT_SETTINGS",
       "MintlifyProviderDriver",
       "NeonPreviewDatabaseDriver",
       "SCREENSHOT_CAPTURE_DEFAULTS",
@@ -49,9 +51,11 @@ describe("@stackra/runway/node", () => {
       "capabilityConfig",
       "checkOpsReview",
       "checkShellCompatibility",
+      "checkoutLine",
       "committedBrandOutputs",
       "definesFor",
       "devServer",
+      "dryRunCommand",
       "platformRows",
       "promoteCanary",
       "publishProduct",
@@ -63,6 +67,7 @@ describe("@stackra/runway/node", () => {
       "runMobileJob",
       "runScreenshotCapture",
       "screenshotCaptureJob",
+      "shellReleaseOf",
       "uploadBundle",
     ]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
