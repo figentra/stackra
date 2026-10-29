@@ -45,7 +45,7 @@ async function setup(): Promise<{
   const config = buildConfig(ConsentConfig, { values: { policyVersion: "2026-10" } });
   const verifier = new ConsentSnapshotVerifier(
     config,
-    new StaticConsentSnapshotKeysDriver([await signer.publicKey()]),
+    new StaticConsentSnapshotKeysDriver().trust([await signer.publicKey()]),
   );
   return {
     verifier,

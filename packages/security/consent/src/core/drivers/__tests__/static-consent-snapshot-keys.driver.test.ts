@@ -15,10 +15,10 @@ describe("StaticConsentSnapshotKeysDriver", () => {
   it("trusts exactly the keys handed in", async () => {
     const current = await (await MemorySignerDriver.generate("consent-2")).publicKey();
     const previous = await (await MemorySignerDriver.generate("consent-1")).publicKey();
-    expect(await new StaticConsentSnapshotKeysDriver([current, previous]).trusted()).toEqual([
-      current,
-      previous,
-    ]);
-    expect(await new StaticConsentSnapshotKeysDriver([]).trusted()).toEqual([]);
+    expect(
+      await new StaticConsentSnapshotKeysDriver().trust([current, previous]).trusted(),
+    ).toEqual([current, previous]);
+    expect(await new StaticConsentSnapshotKeysDriver().trusted()).toEqual([]);
+    expect(await new StaticConsentSnapshotKeysDriver().trust([]).trusted()).toEqual([]);
   });
 });
