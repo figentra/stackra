@@ -20,7 +20,7 @@
     {
       "port": "AnalyticsDriver",
       "key": "analytics.AnalyticsDriver",
-      "candidates": ["memory", "none", "posthog"],
+      "candidates": ["memory", "none", "posthog", "posthog"],
       "classes": {
         "memory": {
           "class": "MemoryAnalyticsDriver",
@@ -32,7 +32,7 @@
         },
         "posthog": {
           "class": "PosthogAnalyticsDriver",
-          "from": "@stackra/analytics",
+          "from": "@stackra/analytics/native",
           "deps": [
             {
               "class": {

@@ -185,7 +185,7 @@
     {
       "port": "CashDrawer",
       "key": "peripherals.CashDrawer",
-      "candidates": ["memory", "printer_kick", "imin", "pax", "sunmi"],
+      "candidates": ["memory", "printer_kick", "imin"],
       "classes": {
         "memory": {
           "class": "MemoryCashDrawerDriver",
@@ -193,7 +193,7 @@
         },
         "printer_kick": {
           "class": "PrinterKickCashDrawerDriver",
-          "from": "@stackra/peripherals/desktop",
+          "from": "@stackra/peripherals",
           "deps": [
             {
               "class": {
@@ -211,14 +211,6 @@
         },
         "imin": {
           "class": "IminCashDrawerDriver",
-          "from": "@stackra/peripherals/native"
-        },
-        "pax": {
-          "class": "PaxCashDrawerDriver",
-          "from": "@stackra/peripherals/native"
-        },
-        "sunmi": {
-          "class": "SunmiCashDrawerDriver",
           "from": "@stackra/peripherals/native"
         }
       },
@@ -319,7 +311,7 @@
     {
       "port": "ReceiptPrinter",
       "key": "peripherals.ReceiptPrinter",
-      "candidates": ["memory", "escpos", "imin", "pax", "sunmi"],
+      "candidates": ["memory", "escpos", "imin"],
       "classes": {
         "memory": {
           "class": "MemoryReceiptPrinterDriver",
@@ -339,14 +331,6 @@
         },
         "imin": {
           "class": "IminReceiptPrinterDriver",
-          "from": "@stackra/peripherals/native"
-        },
-        "pax": {
-          "class": "PaxReceiptPrinterDriver",
-          "from": "@stackra/peripherals/native"
-        },
-        "sunmi": {
-          "class": "SunmiReceiptPrinterDriver",
           "from": "@stackra/peripherals/native"
         }
       },

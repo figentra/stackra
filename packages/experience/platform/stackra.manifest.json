@@ -20,7 +20,7 @@
     {
       "port": "Platform",
       "key": "platform.Platform",
-      "candidates": ["web", "memory", "expo"],
+      "candidates": ["web", "memory", "electron", "expo"],
       "classes": {
         "web": {
           "class": "WebPlatformDriver",
@@ -29,6 +29,10 @@
         "memory": {
           "class": "MemoryPlatformDriver",
           "from": "@stackra/platform"
+        },
+        "electron": {
+          "class": "ElectronPlatformDriver",
+          "from": "@stackra/platform/desktop"
         },
         "expo": {
           "class": "ExpoPlatformDriver",

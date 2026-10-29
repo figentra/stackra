@@ -18,6 +18,25 @@
   "models": [],
   "drivers": [
     {
+      "port": "Storage",
+      "key": "storage.Storage",
+      "candidates": ["web", "memory", "native"],
+      "classes": {
+        "web": {
+          "class": "WebStorageDriver",
+          "from": "@stackra/storage/browser"
+        },
+        "memory": {
+          "class": "MemoryStorageDriver",
+          "from": "@stackra/storage"
+        },
+        "native": {
+          "class": "NativeStorageDriver",
+          "from": "@stackra/storage/native"
+        }
+      }
+    },
+    {
       "port": "PayloadSeal",
       "key": "storage.PayloadSeal",
       "candidates": ["memory", "web_crypto", "safe_storage"],

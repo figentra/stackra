@@ -75,7 +75,7 @@
     {
       "port": "RealtimeDriver",
       "key": "realtime.RealtimeDriver",
-      "candidates": ["memory", "sse"],
+      "candidates": ["memory", "sse", "web_socket"],
       "classes": {
         "memory": {
           "class": "MemoryRealtimeDriver",
@@ -91,6 +91,18 @@
         },
         "sse": {
           "class": "SseRealtimeDriver",
+          "from": "@stackra/realtime",
+          "deps": [
+            {
+              "class": {
+                "name": "RealtimeHub",
+                "from": "@stackra/realtime"
+              }
+            }
+          ]
+        },
+        "web_socket": {
+          "class": "WebSocketRealtimeDriver",
           "from": "@stackra/realtime",
           "deps": [
             {
