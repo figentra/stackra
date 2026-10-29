@@ -198,11 +198,19 @@ await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.li
 ```
 
 - `ExpoLiveActivitiesDriver` (`./native`) renders the one `OrderProgress` layout with expo-widgets and Expo UI's SwiftUI
-  views (ADR 0478 decision 9: Expo's widget library, no hand-written Swift). Android, Expo Go, iOS before 16.2 and a
-  phone with Live Activities switched off resolve `unavailable`. The app needs expo-widgets' config plugin.
-- `MemoryLiveActivitiesDriver` (`.`) is the web, desktop and test driver; `isAvailable = false` makes it refuse.
-- `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`.
-- Not yet: home-screen widgets, remote (push) updates and push-to-start, App Shortcuts and Siri intents.
+  views (ADR 0478 decision 9: Expo's widget library, no hand-written Swift). It keeps each running activity's id in the
+  `prefs` storage area, so an activity started before a relaunch is updated and ended, not started twice. Expo Go, iOS
+  before 16.2 and a phone with Live Activities switched off resolve `unavailable`. The app needs expo-widgets' config
+  plugin (`enablePushNotifications: true` for push tokens).
+- On Android the same calls post an ongoing (sticky) notification per reference through expo-notifications on
+  `androidChannelId` (list it in `PushConfig.androidChannels`); an end shows `final` as an ordinary notification.
+  Without the notification permission a show resolves `permission_denied`.
+- `pushToken(reference)` is the running activity's APNs token and `onPushToStartToken(listener)` hands over each
+  push-to-start token; the app sends both to its server for `LiveActivityPushes`. Android has neither (`null`).
+- `MemoryLiveActivitiesDriver` (`.`) is the web, desktop and test driver; `isAvailable = false` makes it refuse, a test
+  sets `pushTokens` and calls `issuePushToStartToken`.
+- `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`, `androidChannelId` and, for the
+  server, `apnsBundleId` and `apnsEnvironment`.
 
 ### Alternate app icons (STA-1541)
 

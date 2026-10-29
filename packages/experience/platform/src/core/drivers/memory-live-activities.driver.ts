@@ -3,7 +3,7 @@
  * Purpose: `MemoryLiveActivitiesDriver`, the `LiveActivities` driver of tests, the web and the desktop: the `memory`
  *          candidate; it keeps what is shown so a test can read it.
  * Boundary: `isAvailable` false makes every `show` resolve the `unavailable` refusal, as a target without Live
- *           Activities does. The constructor takes nothing.
+ *           Activities does. A test sets `pushTokens` and calls `issuePushToStartToken`. The constructor takes nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0266 (memory drivers first); ADR 0269 (fakes are real drivers); STA-1539.
  */
@@ -30,8 +30,14 @@ export class MemoryLiveActivitiesDriver extends Driver(LiveActivities) {
   /** The references ended so far, in order. */
   readonly ended: string[] = [];
 
+  /** The push token of each running activity by reference; a test sets it. */
+  readonly pushTokens = new Map<string, string>();
+
   /** Whether this target offers Live Activities; a test sets it. */
   isAvailable = true;
+
+  /** The push-to-start listeners now listening. */
+  private readonly listeners = new Set<(token: string) => void>();
 
   /** Records `progress` under its reference, or refuses when unavailable. */
   async show(progress: ActivityProgress): Promise<CapabilityResult> {
@@ -43,5 +49,21 @@ export class MemoryLiveActivitiesDriver extends Driver(LiveActivities) {
   /** Drops the activity of `reference` and records the end. */
   async end(reference: string): Promise<void> {
     if (this.shown.delete(reference)) this.ended.push(reference);
+  }
+
+  /** The token a test set for `reference`, or `null`. */
+  async pushToken(reference: string): Promise<string | null> {
+    return this.pushTokens.get(reference) ?? null;
+  }
+
+  /** Adds `listener` until the returned function removes it. */
+  onPushToStartToken(listener: (token: string) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  /** Hands `token` to every push-to-start listener, as the OS does when it issues one. */
+  issuePushToStartToken(token: string): void {
+    for (const listener of this.listeners) listener(token);
   }
 }

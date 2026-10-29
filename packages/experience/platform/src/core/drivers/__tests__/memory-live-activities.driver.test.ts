@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryLiveActivitiesDriver`: a show starts or updates by reference, an end drops it once,
- *          and an unavailable target refuses.
+ *          an unavailable target refuses, and push tokens reach the test and the listeners.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; STA-1539.
@@ -39,5 +39,18 @@ describe("MemoryLiveActivitiesDriver", () => {
       error: { code: "unavailable", capability: "live_activity" },
     });
     expect(activities.shown.size).toBe(0);
+  });
+
+  it("answers the push token a test set and hands push-to-start tokens to listeners until they stop", async () => {
+    const activities = new MemoryLiveActivitiesDriver();
+    activities.pushTokens.set("order_1042", "a1b2");
+    expect(await activities.pushToken("order_1042")).toBe("a1b2");
+    expect(await activities.pushToken("order_9")).toBeNull();
+    const tokens: string[] = [];
+    const stop = activities.onPushToStartToken((token) => tokens.push(token));
+    activities.issuePushToStartToken("c3");
+    stop();
+    activities.issuePushToStartToken("d4");
+    expect(tokens).toEqual(["c3"]);
   });
 });

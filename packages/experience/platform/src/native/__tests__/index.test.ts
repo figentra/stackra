@@ -33,7 +33,12 @@ vi.mock("expo-background-task", () => ({ BackgroundTaskStatus: { Available: 2 } 
 vi.mock("expo-camera", () => ({ Camera: {}, CameraView: {} }));
 vi.mock("expo-location", () => ({}));
 vi.mock("expo-media-library", () => ({}));
-vi.mock("expo-widgets", () => ({ after: () => ({}), createLiveActivity: () => ({}) }));
+vi.mock("expo-widgets", () => ({
+  addPushToStartTokenListener: () => ({ remove: () => undefined }),
+  after: () => ({}),
+  createLiveActivity: () => ({}),
+  createWidget: () => ({}),
+}));
 vi.mock("@expo/ui/swift-ui", () => ({ HStack: () => null, Text: () => null, VStack: () => null }));
 vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },

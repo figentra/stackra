@@ -22,5 +22,6 @@ describe("LiveActivities", () => {
   it("is keyed platform.LiveActivities and answers show with a capability result", () => {
     expectTypeOf<LiveActivities["~key"]>().toEqualTypeOf<"platform.LiveActivities">();
     expectTypeOf<LiveActivities["show"]>().returns.toEqualTypeOf<Promise<CapabilityResult>>();
+    expectTypeOf<LiveActivities["pushToken"]>().returns.toEqualTypeOf<Promise<string | null>>();
   });
 });

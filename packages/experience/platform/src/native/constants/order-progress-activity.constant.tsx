@@ -3,12 +3,15 @@
  * Purpose: `ORDER_PROGRESS_ACTIVITY`, the one Live Activity layout of an order or booking in progress (Lock Screen
  *          banner, Dynamic Island compact, minimal and expanded), built with expo-widgets and Expo UI's SwiftUI views.
  * Boundary: the `'widget'` function runs in the iOS widget extension, so it reads only its props: no hooks, no
- *           imports' values, no outer constants. Its strings arrive translated. Registered under `OrderProgress`.
+ *           imports' values, no outer constants. Its strings arrive translated. Registered under `OrderProgress`
+ *           (`ORDER_PROGRESS_ACTIVITY_NAME`).
  * Runtime: react-native
  * Governing contract: ADR 0478 (decision 9: Expo's widget library, no hand-written Swift); STA-1539.
  */
 import { HStack, Text, VStack } from "@expo/ui/swift-ui";
 import { createLiveActivity } from "expo-widgets";
+
+import { ORDER_PROGRESS_ACTIVITY_NAME } from "#core/constants/order-progress-activity-name.constant";
 
 import type { OrderProgressProps } from "#native/types/order-progress-props.type";
 
@@ -36,4 +39,7 @@ function orderProgress(props: OrderProgressProps) {
 }
 
 /** The order-progress Live Activity factory: `start`, then `update` and `end` on what it returns. */
-export const ORDER_PROGRESS_ACTIVITY = createLiveActivity("OrderProgress", orderProgress);
+export const ORDER_PROGRESS_ACTIVITY = createLiveActivity(
+  ORDER_PROGRESS_ACTIVITY_NAME,
+  orderProgress,
+);

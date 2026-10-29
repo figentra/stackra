@@ -28,4 +28,11 @@ describe("LiveActivityConfig", () => {
     );
     expect(Duration.toMilliseconds(buildConfig(LiveActivityConfig).endedDismissal)).toBe(3_600_000);
   });
+
+  it("defaults the Android channel and leaves APNs unset on production", () => {
+    const config = buildConfig(BaseLiveActivityConfig);
+    expect(config.androidChannelId).toBe("live_activity");
+    expect(config.apnsBundleId).toBeNull();
+    expect(config.apnsEnvironment).toBe("production");
+  });
 });
