@@ -74,8 +74,8 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     left.importPath < right.importPath ? -1 : 1,
   )) {
     const entry = entryOf(file.file);
-    // A file directly in `src/` is a hand-written entry its package.json export names (a shell's `register`), and
-    // two of them export the same name, so no barrel re-exports it (STA-339).
+    // shortcut: a file directly in `src/` is a hand-written entry its package.json export names (an OS shell's
+    // `register`), so no barrel re-exports it; replace this once gen writes the shell entries itself (STA-339).
     if (
       entry === undefined ||
       file.names.length === 0 ||

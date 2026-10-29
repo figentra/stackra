@@ -135,6 +135,9 @@ describe("emitPackageEntries", () => {
       files: [...LOYALTY_KIT_IR.files, shell("src/console.tsx"), shell("src/native.tsx")],
     });
     for (const barrel of barrels) expect(barrel.content, barrel.path).not.toContain("#src/");
+    const index = barrels.find((barrel) => barrel.path === ".stackra/entry/index.ts")?.content ?? "";
+    expect(index.match(/\bregister\b/g)).toBeNull();
+    expect(index).toBe(entry("index"));
   });
 
   it("writes no entry for a service", () => {

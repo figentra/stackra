@@ -81,6 +81,14 @@ describe("toolCommand", () => {
     expect(output()).toContain("nothing to build");
   });
 
+  it("builds nothing in a service: Encore builds it at deploy", async () => {
+    writeFileSync(join(root, "stackra.config.ts"), "export default defineService({});\n");
+    const { io, output } = captureIo();
+    expect(await toolCommand("build", "Build").run({ ...context(), io })).toBe(0);
+    expect(spawn).not.toHaveBeenCalled();
+    expect(output()).toContain("Encore builds a service at deploy");
+  });
+
   it("stops before the tool when gen refuses", async () => {
     pkg();
     gen.mockResolvedValue(false);
