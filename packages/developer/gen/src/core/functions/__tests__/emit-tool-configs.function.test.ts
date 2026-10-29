@@ -50,6 +50,17 @@ describe("emitToolConfigs", () => {
     expect(pkg.find((file) => file.path === "tsdown.config.ts")?.content).toContain(
       'export { default } from "./.stackra/tsdown.config.ts";',
     );
+    const tsdown = pkg.find((file) => file.path === ".stackra/tsdown.config.ts")?.content;
+    expect(tsdown).toContain('"index": fileURLToPath(new URL("entry/index.ts", import.meta.url)),');
+    expect(tsdown).toContain(
+      'dts: { tsconfig: fileURLToPath(new URL("../tsconfig.build.json", import.meta.url)) },',
+    );
+    const tsconfig = JSON.parse(
+      pkg.find((file) => file.path === "tsconfig.build.json")?.content ?? "{}",
+    ) as Record<string, unknown>;
+    expect(tsconfig["extends"]).toBe("./tsconfig.json");
+    expect(tsconfig["include"]).toEqual(["src", ".stackra/entry"]);
+    expect(content("tsconfig.build.json")).toBe("");
   });
 
   it("runs the unit tier on the decorators preset with the coverage gate", () => {

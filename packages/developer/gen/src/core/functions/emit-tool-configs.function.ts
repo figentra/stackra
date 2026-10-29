@@ -18,6 +18,8 @@
  *                     `@stackra/container/testing`).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { ROOT_TSDOWN_SHIM } from "#core/constants/root-tsdown-shim.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
@@ -49,11 +51,34 @@ export function emitToolConfigs(
       boundary: "run from the member root as plain `tsdown`, which loads it through the root shim.",
       runtime: "node",
     }),
-    'import { library } from "@stackra/tsdown-config";',
-    "",
-    "export default library({",
-    ...entries.map((name) => `  ${JSON.stringify(name)}: ".stackra/entry/${name}.ts",`),
-    "});",
+    ...(ir.layout === "package"
+      ? [
+          'import { fileURLToPath } from "node:url";',
+          "",
+          'import { library } from "@stackra/tsdown-config";',
+          "",
+          "// Absolute entries: tsdown globs them, and a glob skips the dot-folder `.stackra/`. The declarations come from",
+          "// the root tsconfig.build.json, since tsgo roots them at the tsconfig's folder. Typed for declaration emit.",
+          "const config: ReturnType<typeof library> = {",
+          "  ...library({",
+          ...entries.map(
+            (name) =>
+              `    ${JSON.stringify(name)}: fileURLToPath(new URL("entry/${name}.ts", import.meta.url)),`,
+          ),
+          "  }),",
+          '  dts: { tsconfig: fileURLToPath(new URL("../tsconfig.build.json", import.meta.url)) },',
+          "};",
+          "",
+          "export default config;",
+        ]
+      : [
+          // A service builds nothing with tsdown (Encore builds it at deploy).
+          'import { library } from "@stackra/tsdown-config";',
+          "",
+          "export default library({",
+          ...entries.map((name) => `  ${JSON.stringify(name)}: ".stackra/entry/${name}.ts",`),
+          "});",
+        ]),
     "",
   ].join("\n");
 
@@ -182,6 +207,19 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
+  // The member's program plus the entries gen writes; tests and the hand-written entries directly in `src/` (which no
+  // barrel re-exports) ship no declarations.
+  const dtsTsconfig = `${JSON.stringify(
+    {
+      $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus .stackra/entry.`,
+      extends: "./tsconfig.json",
+      include: ["src", ".stackra/entry"],
+      exclude: ["src/**/__tests__/**", "src/*.ts", "src/*.tsx"],
+    },
+    null,
+    2,
+  )}\n`;
+
   return [
     ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
@@ -189,7 +227,10 @@ export function emitToolConfigs(
     { path: ROOT_VITEST_SHIM, content: shim },
     // A service builds nothing with tsdown (Encore builds it at deploy), so only a package gets the shim.
     ...(entries.length > 0 && ir.layout === "package"
-      ? [{ path: ROOT_TSDOWN_SHIM, content: tsdownShim }]
+      ? [
+          { path: ROOT_TSDOWN_SHIM, content: tsdownShim },
+          { path: ROOT_DTS_TSCONFIG, content: dtsTsconfig },
+        ]
       : []),
   ];
 }

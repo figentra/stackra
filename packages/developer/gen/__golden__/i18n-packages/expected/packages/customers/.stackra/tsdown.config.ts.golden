@@ -4,8 +4,17 @@
  * Boundary: run from the member root as plain `tsdown`, which loads it through the root shim.
  * Runtime: node
  */
+import { fileURLToPath } from "node:url";
+
 import { library } from "@stackra/tsdown-config";
 
-export default library({
-  "index": ".stackra/entry/index.ts",
-});
+// Absolute entries: tsdown globs them, and a glob skips the dot-folder `.stackra/`. The declarations come from
+// the root tsconfig.build.json, since tsgo roots them at the tsconfig's folder. Typed for declaration emit.
+const config: ReturnType<typeof library> = {
+  ...library({
+    "index": fileURLToPath(new URL("entry/index.ts", import.meta.url)),
+  }),
+  dts: { tsconfig: fileURLToPath(new URL("../tsconfig.build.json", import.meta.url)) },
+};
+
+export default config;

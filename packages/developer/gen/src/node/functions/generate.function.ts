@@ -39,6 +39,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
+import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -249,9 +250,26 @@ export async function generate(
           `import the generated config and merge it: \`import generated from "./.stackra/${tool}.config"\` and extend it, or delete the file so gen writes the shim`,
         ),
       );
-    // An authored root config that loads the generated one is kept, and the shim is not written over it.
-    else files = files.filter((file) => file.path !== config);
+    // An authored root config that loads the generated one is kept, and the shim is not written over it; an authored
+    // tsdown config sets its own `dts`, so the declaration tsconfig goes with the shim.
+    else
+      files = files.filter(
+        (file) => file.path !== config && !(tool === "tsdown" && file.path === ROOT_DTS_TSCONFIG),
+      );
   }
+  if (
+    files.some((file) => file.path === ROOT_DTS_TSCONFIG) &&
+    existsSync(join(root, ROOT_DTS_TSCONFIG)) &&
+    !readFileSync(join(root, ROOT_DTS_TSCONFIG), "utf8").includes(GENERATED_NOTICE)
+  )
+    errors.push(
+      refusal(
+        "shim_authored",
+        ROOT_DTS_TSCONFIG,
+        `an authored ${ROOT_DTS_TSCONFIG} sits at the member root, where gen writes the declaration build's tsconfig`,
+        "delete it so gen writes it, or author a root tsdown.config.ts that imports ./.stackra/tsdown.config.ts and sets its own `dts`",
+      ),
+    );
   // The Expo config is gen's alone: an authored app.json or app.config.ts at the root would shadow or be overwritten.
   if (files.some((file) => file.path === "app.config.ts")) {
     if (existsSync(join(root, "app.json")))
