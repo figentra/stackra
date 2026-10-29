@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `.` entry: the edge and stack checks, the tunnel and rate-limit planners, the
+ * Purpose: the consumer contract of the `.` entry: the edge and stack checks, the tunnel, rate-limit and Workers cache namespace planners, the
  *          dev-port reader, the login directory handler and KV calls, the enums and the error are exported, nothing else is (the zod schemas and ruleset ids
  *          stay internal, the Pulumi programs are `./node`'s), and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -48,6 +48,7 @@ describe("@stackra/infra-cloudflare", () => {
       "shopperLimitRules",
       "signingKeySlots",
       "tunnelIngress",
+      "workersCacheNamespaces",
     ]);
   });
 
