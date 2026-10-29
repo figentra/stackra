@@ -16,7 +16,7 @@
  */
 import { ConsentCategory } from "@stackra/consent";
 import type { DriverName } from "@stackra/container";
-import { Int, registerSchemas, Schema } from "@stackra/validation";
+import { Int, Num, registerSchemas, Schema } from "@stackra/validation";
 
 import type { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsIdentity } from "#contracts/ports/analytics-identity.port";
@@ -96,6 +96,21 @@ export class AnalyticsOptions extends Schema {
   })
   offlineLimit = 500;
 
+  /** The share of visitors whose events are sent, 0 to 1; the same visitor is always in or out. */
+  @Num({
+    min: 0,
+    max: 1,
+  })
+  sampleRate = 1;
+
+  /** Event name to its own sample rate, replacing `sampleRate` for that event (for example a noisy `page.scrolled`). */
+  @Num({
+    min: 0,
+    max: 1,
+    each: true,
+  })
+  sampleRates: Record<string, number> = {};
+
   /** The registered `AnalyticsDriver` that sends; `none` sends nothing, `memory` keeps events, `posthog` sends there. */
   driver: DriverName<AnalyticsDriver> = "none";
 
@@ -137,12 +152,6 @@ export class AnalyticsOptions extends Schema {
 
   /** The first-party cookie the `cookie` identity driver keeps the identity in. */
   identityCookieName = "stk_aid";
-
-  /** The share of visitors whose events are sent, 0 to 1; the same visitor is always in or out. */
-  sampleRate = 1;
-
-  /** Event name to its own sample rate, replacing `sampleRate` for that event (for example a noisy `page.scrolled`). */
-  sampleRates: Record<string, number> = {};
 
   /**
    * The registered `AnalyticsOfflineQueue` that keeps batches a send could not deliver for the next launch: `none`
