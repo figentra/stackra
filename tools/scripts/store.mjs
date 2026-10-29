@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: `pnpm store`, the releaser's one command (ADR 0480). Every step reads the app's `store/` source of truth:
- *     build                      check store/ and generate screenshots, privacy answers and the checklist
+ * Purpose: `pnpm store`, the releaser's one command (ADR 0480). Every step reads one mobile app of a product
+ *   repository: its root runway.yaml `mobile.<app>` entry and the `assets/store/<app>/` folder it names (ADR 0441):
+ *     build                      check the store data and generate screenshots, privacy answers and the checklist
  *     ios [--build N]            bundle id, capabilities, version, metadata, review details, screenshots; with
  *                                --build, TestFlight (export compliance, groups, beta review)
  *     android [--version-code N] listing, screenshots; with --version-code, a release on --track (default internal)
  *     review seed|probe          seed the review demo account, then sign in with it on production and see data
  *     submit                     iOS: attach --build to the version and submit for App Review   (owner approval)
  *     promote                    Android: move --version-code to the production track          (owner approval)
- *   Flags: --app <dir> (default apps/mobile), --version <x.y.z>, --dry-run (default) | --live | --record,
- *   --fixtures <dir> (dry-run reads answers from it; record writes them), --replay (tests).
+ *   Flags: --app <key> (default app), --root <product repo> (default the current folder), --template <runway's
+ *   template checkout of the app> (its app.json and dependencies), --captures <dir> (default .stackra/captures/<app>),
+ *   --version <x.y.z>, --dry-run (default) | --live | --record, --fixtures <dir> (dry-run reads answers from it;
+ *   record writes them), --replay (tests).
  * Boundary: the store APIs through store-http.mjs. --live and --record run only in GitHub Actions; `submit` and
  *   `promote` only in the `store-production` environment, whose required reviewer is the owner.
  * Runtime: node
@@ -18,7 +21,7 @@
  * Secrets: ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON and the secrets store.yaml names come from the environment
  *   (Infisical over OIDC in CI) and leave only inside a request. Output is step names, resource ids and counts.
  */
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { ascCredentials, createAsc } from "./store-asc.mjs";
@@ -26,9 +29,8 @@ import { TARGETS, buildStore } from "./store-build.mjs";
 import { assertLiveAllowed, createTransport } from "./store-http.mjs";
 import { createPlay, playCredentials } from "./store-play.mjs";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const USAGE =
-  "usage: pnpm store build|ios|android|review seed|review probe|submit|promote [--app dir] [--version v] [--build n] [--version-code n] [--dry-run|--live|--record] [--fixtures dir]";
+  "usage: pnpm store build|ios|android|review seed|review probe|submit|promote [--app key] [--root dir] [--template dir] [--captures dir] [--version v] [--build n] [--version-code n] [--dry-run|--live|--record] [--fixtures dir]";
 const APPROVED_ENV = "store-production";
 
 /** Fails unless this run may do an owner-approved step. */
@@ -62,9 +64,10 @@ async function ios({ asc, config, o, say, env, shots }) {
   if (!o.version) throw new Error("--version is required");
   const v = await asc.ensureVersion(app.id, o.version);
   say(`version ${o.version}: ${v.created ? "created" : "exists"}`);
+  // App Store Connect speaks its own locale codes (`l.asc`); captures and files are keyed by the folder.
   const locales = Object.fromEntries(
-    Object.entries(config.locales).map(([k, l]) => [
-      k,
+    Object.values(config.locales).map((l) => [
+      l.asc,
       {
         ...l,
         privacyPolicyUrl: config.urls.privacyPolicy,
@@ -88,10 +91,10 @@ async function ios({ asc, config, o, say, env, shots }) {
   });
   say("review details: set");
   for (const t of TARGETS.filter((x) => x.store === "ios"))
-    for (const [locale, id] of Object.entries(locIds)) {
+    for (const [locale, l] of Object.entries(config.locales)) {
       const files = shots[`${t.id}/${locale}`];
       if (!files) continue;
-      await asc.replaceScreenshots(id, t.id, files);
+      await asc.replaceScreenshots(locIds[l.asc], t.id, files);
       say(`screenshots ${t.id} ${locale}: ${files.length}`);
     }
   if (o.build) {
@@ -112,7 +115,7 @@ async function ios({ asc, config, o, say, env, shots }) {
 async function android({ play, config, o, say, shots }) {
   return play.withEdit(async (edit) => {
     for (const [locale, l] of Object.entries(config.locales)) {
-      await edit.setListing(locale, {
+      await edit.setListing(l.play, {
         title: l.playTitle ?? l.name,
         shortDescription: l.shortDescription ?? l.subtitle,
         fullDescription: l.description,
@@ -120,13 +123,13 @@ async function android({ play, config, o, say, shots }) {
       for (const t of TARGETS.filter((x) => x.store === "android")) {
         const files = shots[`${t.id}/${locale}`];
         if (files)
-          say(`screenshots ${t.id} ${locale}: ${await edit.replaceImages(locale, t.id, files)}`);
+          say(`screenshots ${t.id} ${locale}: ${await edit.replaceImages(l.play, t.id, files)}`);
       }
     }
     say(`listing: ${Object.keys(config.locales).length} locales`);
     if (o["version-code"]) {
       const notes = Object.fromEntries(
-        Object.entries(config.locales).flatMap(([k, l]) => (l.whatsNew ? [[k, l.whatsNew]] : [])),
+        Object.values(config.locales).flatMap((l) => (l.whatsNew ? [[l.play, l.whatsNew]] : [])),
       );
       await edit.setTrack(o.track, { versionCodes: [o["version-code"]], name: o.version, notes });
       say(`track ${o.track}: version code ${o["version-code"]}`);
@@ -196,7 +199,12 @@ export async function review(action, { config, transport, env, say }) {
 /** Runs the command; returns the exit code. Tests inject `transport`, `env` and `write`. */
 export async function main(
   argv,
-  { env = process.env, write = (s) => process.stdout.write(s), transport, root = ROOT } = {},
+  {
+    env = process.env,
+    write = (s) => process.stdout.write(s),
+    transport,
+    cwd = process.cwd(),
+  } = {},
 ) {
   const say = (s) => write(`${s}\n`);
   let args;
@@ -205,7 +213,10 @@ export async function main(
       args: argv,
       allowPositionals: true,
       options: {
-        app: { type: "string", default: "apps/mobile" },
+        app: { type: "string", default: "app" },
+        root: { type: "string" },
+        template: { type: "string" },
+        captures: { type: "string" },
         version: { type: "string" },
         build: { type: "string" },
         "version-code": { type: "string" },
@@ -229,9 +240,10 @@ export async function main(
   const mode = o.replay ? "replay" : o.record ? "record" : o.live ? "live" : "dry-run";
   try {
     assertLiveAllowed(mode, env);
-    const appDir = resolve(root, o.app);
-    const built = await buildStore(appDir, {
-      root,
+    const at = (p) => p && resolve(cwd, p);
+    const built = await buildStore(at(o.root ?? "."), o.app, {
+      template: at(o.template),
+      captures: at(o.captures),
       renderImages: cmd === "build" || mode !== "replay",
     });
     if (cmd === "build" || built.problems.length) {
@@ -244,10 +256,10 @@ export async function main(
       if (cmd === "build") return 0;
     }
     const { config, screenshots: shots } = built;
-    transport ??= createTransport({ mode, fixtures: o.fixtures && resolve(root, o.fixtures) });
+    transport ??= createTransport({ mode, fixtures: at(o.fixtures) });
     let code;
     if (cmd === "ios" || cmd === "submit") {
-      if (!config.ios) throw new Error("store.yaml has no ios section");
+      if (!config.ios) throw new Error(`runway mobile.${o.app} has no ios identity`);
       const asc = createAsc({
         transport,
         credentials: mode === "dry-run" ? null : ascCredentials(env),
@@ -266,7 +278,7 @@ export async function main(
         code = 0;
       }
     } else if (cmd === "android" || cmd === "promote") {
-      if (!config.android) throw new Error("store.yaml has no android section");
+      if (!config.android) throw new Error(`runway mobile.${o.app} has no android identity`);
       const play = createPlay({
         transport,
         credentials: mode === "dry-run" ? null : playCredentials(env),

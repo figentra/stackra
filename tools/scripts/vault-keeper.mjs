@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: `pnpm vault`, the vault-keeper's tool (ADR 0480, extending ADR 0257). Names in, names out:
- *     preflight --env e [--app dir]     every secret a deploy or a store release of `e` needs, by NAME and path:
+ *     preflight --env e [--root dir]    every secret a deploy or a store release of `e` needs, by NAME and path:
  *                                       present, missing or placeholder. Exit 1 when any is missing or a placeholder.
  *     generate NAME --env e --path p    a random machine secret (--bytes 32, --encoding base64url|hex), written blind
  *              [--rotate]               into Infisical through secrets-import's core; --rotate replaces an existing
@@ -36,8 +36,8 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const USAGE =
-  "usage: pnpm vault preflight --env e [--app dir] | generate NAME --env e --path p [--rotate] [--bytes n] [--encoding base64url|hex] [--dry-run] [--confirm t]";
-/** The store root kit (ADR 0480): one-time owner keys, read by store-release.yml from this path. */
+  "usage: pnpm vault preflight --env e [--root dir] | generate NAME --env e --path p [--rotate] [--bytes n] [--encoding base64url|hex] [--dry-run] [--confirm t]";
+/** The store root kit (ADR 0480): one-time owner keys, read by runway-store.yml from this path. */
 export const STORE_PATH = "/ci/store";
 export const STORE_KIT = [
   "ASC_API_KEY_ID",
@@ -50,8 +50,8 @@ const PLACEHOLDER =
   /^(?:placeholder|changeme|change-me|todo|tbd|xxx+|dummy|fake|test|none|null|-)$/i;
 const RUNWAY_ENV = { dev: "dev", staging: "staging", prod: "production" };
 
-/** `{ name, path, why }` for every secret `env` needs: runway CI and member secrets, and the app's store secrets. */
-export function declared(env, { root = ROOT, app } = {}) {
+/** `{ name, path, why }` for every secret `env` needs: runway CI and member secrets, and the mobile apps' store secrets. */
+export function declared(env, { root = ROOT } = {}) {
   const out = [];
   const runways = readRunways(root);
   if (runways.root.environments?.[RUNWAY_ENV[env]]) {
@@ -61,10 +61,13 @@ export function declared(env, { root = ROOT, app } = {}) {
     for (const s of p.sync.filter((x) => x.kind === "secret"))
       out.push({ name: s.name, path: s.path ?? ci, why: `runway ${s.member}` });
   }
-  const storeYaml = app && join(resolve(root, app), "store", "store.yaml");
-  if (env === "prod" && storeYaml && existsSync(storeYaml)) {
-    const r = parse(readFileSync(storeYaml, "utf8"))?.review ?? {};
+  // Every mobile app the runway declares (ADR 0441): the root kit once, and each app's review secret names.
+  const apps = Object.entries(runways.root.mobile ?? {});
+  if (env === "prod" && apps.length)
     for (const name of STORE_KIT) out.push({ name, path: STORE_PATH, why: "store root kit" });
+  for (const [app, entry] of env === "prod" ? apps : []) {
+    const file = entry.store && join(root, entry.store, "store.yaml");
+    const r = file && existsSync(file) ? (parse(readFileSync(file, "utf8"))?.review ?? {}) : {};
     for (const name of [
       r.demoAccount?.usernameSecret,
       r.demoAccount?.passwordSecret,
@@ -72,7 +75,7 @@ export function declared(env, { root = ROOT, app } = {}) {
       r.contact?.phoneSecret,
       r.seed?.tokenSecret,
     ])
-      if (name) out.push({ name, path: STORE_PATH, why: "store review" });
+      if (name) out.push({ name, path: STORE_PATH, why: `store review ${app}` });
   }
   return out.filter((d, i) => out.findIndex((x) => x.name === d.name && x.path === d.path) === i);
 }
@@ -119,7 +122,7 @@ export async function main(
       options: {
         env: { type: "string" },
         path: { type: "string" },
-        app: { type: "string", default: "apps/mobile" },
+        root: { type: "string" },
         bytes: { type: "string", default: "32" },
         encoding: { type: "string", default: "base64url" },
         rotate: { type: "boolean" },
@@ -141,7 +144,7 @@ export async function main(
   }
 
   if (cmd === "preflight") {
-    const need = declared(o.env, { root, app: o.app });
+    const need = declared(o.env, { root: o.root ? resolve(o.root) : root });
     const byPath = new Map();
     let bad = 0;
     for (const d of need) {

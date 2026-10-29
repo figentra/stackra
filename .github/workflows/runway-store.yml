@@ -1,37 +1,40 @@
 # Stackra file contract:
-# Purpose: the releaser's workflow (ADR 0480). One dispatch per launch step, always from main:
+# Purpose: Runway's `store` provider, a reusable workflow a product repository calls for one mobile app and one launch
+#          step (ADR 0480, ADR 0441, ADR 0439):
 #            build    EAS build of the production profile and EAS submit (TestFlight, Play internal)    env `store`
-#            prepare  `pnpm store ios|android`: metadata, screenshots, review details, TestFlight groups  env `store`
+#            prepare  `store ios|android`: metadata, screenshots, review details, TestFlight groups      env `store`
 #            probe    the review demo account signs in on production and sees data                       env `store`
 #            submit   iOS submit for App Review                                                 env `store-production`
 #            promote  Android production track (optionally staged)                              env `store-production`
 #            seed     seed the review demo account on production, then probe                    env `store-production`
-#          `live: false` (the default) runs every step as a dry run: nothing reaches Apple, Google or Expo.
-# Boundary: one app per run (`app`, default apps/mobile). Creating the first app record, app groups and the privacy
-#           forms stay browser steps (checklist.md from `pnpm store build`).
+#          The app is the caller's root runway.yaml `mobile.<app>`; its listing is the `assets/store/<app>/` folder it
+#          names. `live: false` (the default) runs every step as a dry run: nothing reaches Apple, Google or Expo.
+# Boundary: the build runs in Runway's checkout of the app's OS template line (`template-dir`, produced by Runway's
+#           mobile job before this workflow is called); captures come from the CI capture job (`captures-dir`). The
+#           store tooling is core's (`tools/scripts/store.mjs`), checked out beside the product at `core-ref`.
 # Runtime: GitHub Actions
 # Secrets: the store root kit (ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON, EXPO_TOKEN) and the review secrets come
 #          from Infisical prod:/ci/store over GitHub OIDC, only in a live run. Key files are written 0600 under
-#          RUNNER_TEMP or the gitignored `.stackra/`, and never printed. No repository secret.
+#          RUNNER_TEMP and removed at the end; never printed. No repository secret.
 # Governing contract: ADR 0480; ADR 0170 (deploy only commits of main); ADR 0019 (pinned actions, least permission).
 # Owner: release-operations
-name: Store release
+name: Runway store
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       action:
-        type: choice
-        options: [build, prepare, probe, submit, promote, seed]
-        required: true
-      platform:
-        type: choice
-        options: [all, ios, android]
-        default: all
-      app:
-        description: The app member whose store/ folder is the source of truth.
+        description: build | prepare | probe | submit | promote | seed
         type: string
-        default: apps/mobile
+        required: true
+      app:
+        description: The key of the app in the caller's root runway.yaml `mobile` map.
+        type: string
+        default: app
+      platform:
+        description: all | ios | android
+        type: string
+        default: all
       version:
         description: The marketing version (x.y.z).
         type: string
@@ -52,16 +55,32 @@ on:
         description: Send the requests. Off, every step is a dry run.
         type: boolean
         default: false
+      template-dir:
+        description: Runway's checkout of the app's template line, relative to the workspace.
+        type: string
+        default: ""
+      captures-dir:
+        description: The CI captures, `<locale>/<phone|tablet>/*.png`, relative to the workspace.
+        type: string
+        default: ""
+      core-ref:
+        description: The ref of figentra/stackra whose store tooling runs.
+        type: string
+        default: main
+      infisical-identity-id:
+        description: The Infisical machine identity that reads /ci/store (a repository variable, not a secret).
+        type: string
+        default: ""
+      infisical-project-id:
+        description: The Infisical project (workspace) id, not a secret.
+        type: string
+        default: ""
 
 permissions: {}
 
-concurrency:
-  group: store-release-${{ inputs.app }}
-  cancel-in-progress: false
-
 jobs:
-  release:
-    name: ${{ inputs.action }}
+  store:
+    name: ${{ inputs.action }} ${{ inputs.app }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     # Runbook (release): the owner keeps both environments restricted to main; `store-production` has the owner as its
@@ -80,12 +99,22 @@ jobs:
       VERSION_CODE: ${{ inputs.version-code }}
       FRACTION: ${{ inputs.fraction }}
       PLATFORM: ${{ inputs.platform }}
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_STORE_IDENTITY_ID }}
+      TEMPLATE_DIR: ${{ inputs.template-dir }}
+      CAPTURES_DIR: ${{ inputs.captures-dir }}
     steps:
-      - name: Checkout
+      - name: Checkout product
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: main
+          persist-credentials: false
+          submodules: false
+
+      - name: Checkout store tooling (core)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: figentra/stackra
+          ref: ${{ inputs.core-ref }}
+          path: .stackra/core
           persist-credentials: false
           submodules: false
 
@@ -93,34 +122,40 @@ jobs:
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           install_args: node pnpm
+          working_directory: .stackra/core
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # Only the root package's own dependencies (yaml, sharp): the store scripts need nothing else.
+      - name: Install store tooling
+        working-directory: .stackra/core
+        run: pnpm install --frozen-lockfile --filter stackra
 
-      # The source of truth must be complete before anything is sent; a dry run prints the plan.
       - name: Store build
-        run: pnpm store build --app "$APP"
+        run: |
+          set -eu
+          node .stackra/core/tools/scripts/store.mjs build --root . --app "$APP" \
+            ${TEMPLATE_DIR:+--template "$TEMPLATE_DIR"} ${CAPTURES_DIR:+--captures "$CAPTURES_DIR"}
 
       - name: Store keys (Infisical OIDC)
         if: inputs.live
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          identity-id: ${{ inputs.infisical-identity-id }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_PROJECT_ID }}
+          project-id: ${{ inputs.infisical-project-id }}
           env-slug: prod
           secret-path: /ci/store
           export-type: env
 
-      # eas-cli reads the iOS key from EXPO_ASC_* and the Play key from eas.json's serviceAccountKeyPath (gitignored).
+      # eas-cli reads the iOS key from EXPO_ASC_*, and the Play key from the template's eas.json, whose production submit
+      # profile names `./.stackra/play-service-account.json` (gitignored in the template).
       - name: Key files
         if: inputs.live && inputs.action == 'build'
         run: |
           umask 077
           printf '%s' "$ASC_API_PRIVATE_KEY" > "$RUNNER_TEMP/asc.p8"
-          mkdir -p "$APP/.stackra/store"
-          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > "$APP/.stackra/store/play-service-account.json"
+          mkdir -p "$TEMPLATE_DIR/.stackra"
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > "$TEMPLATE_DIR/.stackra/play-service-account.json"
           {
             echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/asc.p8"
             echo "EXPO_ASC_KEY_ID=$ASC_API_KEY_ID"
@@ -135,21 +170,30 @@ jobs:
           packager: pnpm
           token: ${{ env.EXPO_TOKEN }}
 
+      # The template checkout carries the app config Runway generated from the runway entry (ADR 0439 decision 2).
       - name: EAS build and submit
         if: inputs.action == 'build'
-        working-directory: ${{ inputs.app }}
         run: |
+          set -eu
           if [ "$MODE" = --dry-run ]; then
-            echo "dry run: eas build --platform $PLATFORM --profile production --non-interactive --auto-submit"
+            echo "dry run: eas build --platform $PLATFORM --profile production --non-interactive --auto-submit in ${TEMPLATE_DIR:-<template-dir>}"
             exit 0
           fi
+          if [ -z "$TEMPLATE_DIR" ] || [ ! -f "$TEMPLATE_DIR/app.json" ]; then
+            echo "::error title=No template checkout::template-dir must be Runway's checkout of the app's template line"
+            exit 1
+          fi
+          cd "$TEMPLATE_DIR"
           eas build --platform "$PLATFORM" --profile production --non-interactive --wait --auto-submit
 
       - name: Store step
         if: inputs.action != 'build'
         run: |
           set -eu
-          run() { pnpm store "$@" --app "$APP" "$MODE"; }
+          run() {
+            node .stackra/core/tools/scripts/store.mjs "$@" --root . --app "$APP" "$MODE" \
+              ${TEMPLATE_DIR:+--template "$TEMPLATE_DIR"} ${CAPTURES_DIR:+--captures "$CAPTURES_DIR"}
+          }
           case "$INPUT_ACTION" in
             prepare)
               if [ "$PLATFORM" != android ]; then run ios --version "$VERSION" ${BUILD:+--build "$BUILD"}; fi
@@ -159,10 +203,11 @@ jobs:
             seed) run review seed ;;
             submit) run submit --version "$VERSION" --build "$BUILD" ;;
             promote) run promote --version "$VERSION" --version-code "$VERSION_CODE" ${FRACTION:+--fraction "$FRACTION"} ;;
+            *) echo "::error::unknown action $INPUT_ACTION"; exit 2 ;;
           esac
         env:
           INPUT_ACTION: ${{ inputs.action }}
 
       - name: Remove key files
         if: always()
-        run: rm -f "$RUNNER_TEMP/asc.p8" "$APP/.stackra/store/play-service-account.json"
+        run: rm -f "$RUNNER_TEMP/asc.p8" "${TEMPLATE_DIR:-.}/.stackra/play-service-account.json"

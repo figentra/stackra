@@ -27,47 +27,82 @@ const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__/sto
 const canary = () => `fake-${randomBytes(12).toString("hex")}`;
 const PNG = Buffer.from("89504e470d0a1a0a", "hex"); // replay never decodes it; 8 bytes, as the upload fixture says
 
-function app({ collects = [], deps = {}, captures = 2, review = true, mutate = (c) => c } = {}) {
+/**
+ * A throwaway product repository (ADR 0441): root runway.yaml `mobile.app`, `assets/store/app/<locale>/` files and
+ * store.yaml, CI captures under `.stackra/captures/app/`, and a template checkout whose app.json and dependencies the
+ * build reads. Returns `{ dir, tpl, args }`, `args` being the CLI flags that point at it.
+ */
+function product({
+  collects = [],
+  deps = {},
+  captures = 2,
+  tablet = false,
+  review = true,
+  locales = { en: { "name.txt": "Example", "subtitle.txt": "An example" } },
+} = {}) {
   const dir = mkdtempSync(join(tmpdir(), "store-test-"));
-  const config = mutate({
-    ios: {
-      bundleId: "com.example.app",
-      capabilities: ["PUSH_NOTIFICATIONS", "IN_APP_PURCHASE"],
+  const tpl = join(dir, ".stackra", "mobile", "app");
+  mkdirSync(tpl, { recursive: true });
+  writeFileSync(
+    join(tpl, "app.json"),
+    JSON.stringify({ expo: { ios: { supportsTablet: tablet } } }),
+  );
+  writeFileSync(join(tpl, "package.json"), JSON.stringify({ dependencies: deps }));
+  writeFileSync(
+    join(dir, "runway.yaml"),
+    stringify({
+      mobile: {
+        app: {
+          template: "os/mobile@3",
+          store: "assets/store/app",
+          identity: {
+            name: { en: "Example" },
+            ios: { bundleId: "com.example.app" },
+            android: { package: "com.example.app" },
+          },
+          capabilities: ["push", "payments", "camera"],
+        },
+      },
+    }),
+  );
+  const store = join(dir, "assets", "store", "app");
+  mkdirSync(store, { recursive: true });
+  writeFileSync(
+    join(store, "store.yaml"),
+    stringify({
+      urls: { privacyPolicy: "https://example.com/privacy", support: "https://example.com/help" },
       testflight: { groups: ["Internal", "Public Beta"] },
-    },
-    android: { package: "com.example.app" },
-    urls: { privacyPolicy: "https://example.com/privacy", support: "https://example.com/help" },
-    locales: {
-      "en-US": {
-        name: "Example",
-        subtitle: "An example",
-        description: "An example app.",
-        whatsNew: "Fixes.",
+      review: review && {
+        contact: { firstName: "Ex", lastName: "Ample", emailSecret: "STORE_REVIEW_CONTACT_EMAIL" },
+        demoAccount: {
+          usernameSecret: "STORE_REVIEW_DEMO_USERNAME",
+          passwordSecret: "STORE_REVIEW_DEMO_PASSWORD",
+        },
+        seed: {
+          url: "https://api.example.com/ops/seed-demo",
+          tokenSecret: "STORE_REVIEW_SEED_TOKEN",
+        },
+        probe: {
+          signIn: { url: "https://api.example.com/auth/sign-in" },
+          data: { url: "https://api.example.com/me/dashboard" },
+        },
       },
-    },
-    review: review && {
-      contact: { firstName: "Ex", lastName: "Ample", emailSecret: "STORE_REVIEW_CONTACT_EMAIL" },
-      demoAccount: {
-        usernameSecret: "STORE_REVIEW_DEMO_USERNAME",
-        passwordSecret: "STORE_REVIEW_DEMO_PASSWORD",
-      },
-      seed: {
-        url: "https://api.example.com/ops/seed-demo",
-        tokenSecret: "STORE_REVIEW_SEED_TOKEN",
-      },
-      probe: {
-        signIn: { url: "https://api.example.com/auth/sign-in" },
-        data: { url: "https://api.example.com/me/dashboard" },
-      },
-    },
-  });
-  mkdirSync(join(dir, "store", "captures", "en-US", "phone"), { recursive: true });
-  writeFileSync(join(dir, "store", "store.yaml"), stringify(config));
-  writeFileSync(join(dir, "store", "data-collection.yaml"), stringify({ collects }));
-  writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: deps }));
-  for (let i = 1; i <= captures; i++)
-    writeFileSync(join(dir, "store", "captures", "en-US", "phone", `0${i}.png`), PNG);
-  return dir;
+    }),
+  );
+  for (const [locale, files] of Object.entries(locales)) {
+    mkdirSync(join(store, locale), { recursive: true });
+    const all = {
+      "description.md": "An example app.",
+      "whatsNew.txt": "Fixes.",
+      "privacy.json": JSON.stringify({ collects }),
+      ...files,
+    };
+    for (const [name, text] of Object.entries(all)) writeFileSync(join(store, locale, name), text);
+  }
+  const phone = join(dir, ".stackra", "captures", "app", "en", "phone");
+  mkdirSync(phone, { recursive: true });
+  for (let i = 1; i <= captures; i++) writeFileSync(join(phone, `0${i}.png`), PNG);
+  return { dir, tpl, args: ["--root", dir, "--template", tpl] };
 }
 
 function secrets() {
@@ -95,7 +130,7 @@ async function run(argv, { env = {}, fixtures } = {}) {
   const transport = fixtures
     ? createTransport({ mode: "replay", fixtures: join(FIXTURES, fixtures) })
     : undefined;
-  const code = await main(argv, { env, root: ROOT, transport, write: (s) => (out += s) });
+  const code = await main(argv, { env, transport, write: (s) => (out += s) });
   return { code, out, transport };
 }
 
@@ -214,14 +249,14 @@ test("Play assertion is an RS256 JWT for the androidpublisher scope", () => {
 test("ios: bundle id, capabilities, version, metadata, review, screenshots and TestFlight, from fixtures", async () => {
   const { env } = secrets();
   const { code, out, transport } = await run(
-    ["ios", "--app", app(), "--version", "1.0.0", "--build", "7", "--replay"],
+    ["ios", ...product().args, "--version", "1.0.0", "--build", "7", "--replay"],
     { env, fixtures: "asc" },
   );
   assert.equal(code, 0, out);
   assert.match(out, /bundle id com\.example\.app: created/); // the prefix match on com.example.app.widget is not it
   assert.match(out, /capabilities: added PUSH_NOTIFICATIONS\n/);
   assert.match(out, /version 1\.0\.0: created/);
-  assert.match(out, /screenshots APP_IPHONE_67 en-US: 2/);
+  assert.match(out, /screenshots APP_IPHONE_67 en: 2/);
   assert.match(out, /TestFlight build 7: Internal, Public Beta/);
   const paths = transport.calls.map((c) => `${c.method} ${c.path}`);
   assert.ok(paths.includes("DELETE api.appstoreconnect.apple.com/v1/appScreenshots/OLD1"));
@@ -233,9 +268,8 @@ test("ios: bundle id, capabilities, version, metadata, review, screenshots and T
 test("ios stops at a missing app record (a browser step)", async () => {
   const t = createTransport({ mode: "dry-run" });
   let out = "";
-  const code = await main(["ios", "--app", app(), "--version", "1.0.0"], {
+  const code = await main(["ios", ...product().args, "--version", "1.0.0"], {
     env: {},
-    root: ROOT,
     transport: t,
     write: (s) => (out += s),
   });
@@ -249,10 +283,9 @@ test("submit and promote run only in store-production", async () => {
   assertApproved("live", { STORE_ENVIRONMENT: "store-production" });
   const { env } = secrets();
   const refused = await main(
-    ["submit", "--app", app(), "--version", "1.0.0", "--build", "7", "--live"],
+    ["submit", ...product().args, "--version", "1.0.0", "--build", "7", "--live"],
     {
       env: { ...env, GITHUB_ACTIONS: "true", STORE_ENVIRONMENT: "store" },
-      root: ROOT,
       transport: createTransport({ mode: "replay", fetchImpl: () => assert.fail("sent") }),
       write: () => {},
     },
@@ -263,7 +296,7 @@ test("submit and promote run only in store-production", async () => {
 test("submit attaches the build and submits the version, from fixtures", async () => {
   const { env } = secrets();
   const { code, out, transport } = await run(
-    ["submit", "--app", app(), "--version", "1.0.0", "--build", "7", "--replay"],
+    ["submit", ...product().args, "--version", "1.0.0", "--build", "7", "--replay"],
     { env, fixtures: "asc" },
   );
   assert.equal(code, 0, out);
@@ -286,11 +319,11 @@ test("submit attaches the build and submits the version, from fixtures", async (
 test("android: one edit with listing, screenshots and the internal track, validated and committed", async () => {
   const { env } = secrets();
   const { code, out, transport } = await run(
-    ["android", "--app", app(), "--version", "1.0.0", "--version-code", "12", "--replay"],
+    ["android", ...product().args, "--version", "1.0.0", "--version-code", "12", "--replay"],
     { env, fixtures: "play" },
   );
   assert.equal(code, 0, out);
-  assert.match(out, /screenshots phoneScreenshots en-US: 2/);
+  assert.match(out, /screenshots phoneScreenshots en: 2/);
   assert.match(out, /track internal: version code 12/);
   const paths = transport.calls.map((c) => c.path);
   assert.equal(paths[0], "oauth2.googleapis.com/token");
@@ -301,7 +334,7 @@ test("android: one edit with listing, screenshots and the internal track, valida
 test("promote: staged production rollout, from fixtures", async () => {
   const { env } = secrets();
   const { code, out } = await run(
-    ["promote", "--app", app(), "--version-code", "12", "--fraction", "0.1", "--replay"],
+    ["promote", ...product().args, "--version-code", "12", "--fraction", "0.1", "--replay"],
     { env, fixtures: "play" },
   );
   assert.equal(code, 0, out);
@@ -312,7 +345,7 @@ test("promote: staged production rollout, from fixtures", async () => {
 
 test("review seed then probe signs in on production and sees data, without printing the credentials", async () => {
   const { env } = secrets();
-  const { code, out } = await run(["review", "seed", "--app", app(), "--replay"], {
+  const { code, out } = await run(["review", "seed", ...product().args, "--replay"], {
     env,
     fixtures: "review",
   });
@@ -322,7 +355,7 @@ test("review seed then probe signs in on production and sees data, without print
 });
 
 test("probe refuses when a named secret is not set", async () => {
-  const { code, out } = await run(["review", "probe", "--app", app(), "--replay"], {
+  const { code, out } = await run(["review", "probe", ...product().args, "--replay"], {
     env: {},
     fixtures: "review",
   });
@@ -334,7 +367,7 @@ test("probe refuses when a named secret is not set", async () => {
 
 test("loadStore checks text limits, consent categories, purposes and undeclared SDKs", () => {
   assert.deepEqual(consentCategories(ROOT), ["necessary", "analytics", "crash_replay"]);
-  const dir = app({
+  const repo = product({
     deps: { "@sentry/react-native": "x", "posthog-react-native": "y" },
     collects: [
       {
@@ -345,12 +378,9 @@ test("loadStore checks text limits, consent categories, purposes and undeclared 
       },
       { type: "spaceship", source: "x", consent: "marketing", purposes: ["fun"] },
     ],
-    mutate: (c) => ({
-      ...c,
-      locales: { "en-US": { ...c.locales["en-US"], name: "N".repeat(31) } },
-    }),
+    locales: { en: { "name.txt": "N".repeat(31) } },
   });
-  const { problems } = loadStore(dir, { root: ROOT });
+  const { problems } = loadStore(repo.dir, "app", { core: ROOT, template: repo.tpl });
   for (const rx of [
     /name is longer than 30/,
     /"spaceship" is not a known data type/,
@@ -410,17 +440,19 @@ test("privacy answers: Apple linked/tracking/purposes, Play optional exactly whe
 
 test("build fits each capture onto the exact store sizes and reports missing tablet sets", async () => {
   const { default: sharp } = await import("sharp");
-  const dir = app({ captures: 0 });
-  writeFileSync(join(dir, "app.json"), JSON.stringify({ expo: { ios: { supportsTablet: true } } }));
+  const repo = product({ captures: 0, tablet: true });
   for (const n of [1, 2])
     await sharp({ create: { width: 1179, height: 2556, channels: 4, background: "#336699" } })
       .png()
-      .toFile(join(dir, "store/captures/en-US/phone", `0${n}.png`));
-  const { problems, screenshots, out } = await buildStore(dir, { root: ROOT });
-  assert.ok(problems.some((p) => /APP_IPAD_PRO_3GEN_129 en-US: 0 tablet captures/.test(p)));
+      .toFile(join(repo.dir, ".stackra/captures/app/en/phone", `0${n}.png`));
+  const { problems, screenshots, out } = await buildStore(repo.dir, "app", {
+    core: ROOT,
+    template: repo.tpl,
+  });
+  assert.ok(problems.some((p) => /APP_IPAD_PRO_3GEN_129 en: 0 tablet captures/.test(p)));
   for (const [key, w, h] of [
-    ["APP_IPHONE_67/en-US", 1290, 2796],
-    ["phoneScreenshots/en-US", 1080, 1920],
+    ["APP_IPHONE_67/en", 1290, 2796],
+    ["phoneScreenshots/en", 1080, 1920],
   ]) {
     assert.equal(screenshots[key].length, 2);
     const meta = await sharp(screenshots[key][0]).metadata();
@@ -430,7 +462,22 @@ test("build fits each capture onto the exact store sizes and reports missing tab
   assert.match(readFileSync(join(out, "checklist.md"), "utf8"), /- \[ \] APP_IPAD_PRO_3GEN_129/);
 });
 
-test("the reference app's store/ parses; only its captures are missing", () => {
-  const { problems } = loadStore(join(ROOT, "apps/mobile"), { root: ROOT });
-  assert.deepEqual(problems, []);
+test("runway entry and assets/store: store locale codes, capability mapping, one privacy answer set", () => {
+  const repo = product({
+    locales: {
+      en: {},
+      ar: { "name.txt": "مثال", "privacy.json": JSON.stringify({ collects: [{ type: "name" }] }) },
+    },
+  });
+  const { config, problems } = loadStore(repo.dir, "app", { core: ROOT, template: repo.tpl });
+  assert.deepEqual([config.locales.ar.asc, config.locales.ar.play], ["ar-SA", "ar"]);
+  assert.equal(config.locales.en.name, "Example"); // from runway identity.name when name.txt is absent
+  assert.deepEqual(config.ios.capabilities, ["PUSH_NOTIFICATIONS", "IN_APP_PURCHASE"]); // camera needs none
+  assert.ok(
+    problems.some((x) => /privacy\.json differs from the other locales/.test(x)),
+    problems.join("; "),
+  );
+  assert.deepEqual(loadStore(repo.dir, "shop", { core: ROOT }).problems, [
+    "runway.yaml has no mobile.shop",
+  ]);
 });

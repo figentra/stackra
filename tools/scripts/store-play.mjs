@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the Google Play Developer API client the releaser drives (ADR 0480): one edit per run, store listing text,
  *   screenshot sets, and track releases (internal, closed, production) with release notes, validated and committed.
- *   The app bundle itself is uploaded by `eas submit` (store-release.yml).
+ *   The app bundle itself is uploaded by `eas submit` (runway-store.yml).
  * Boundary: androidpublisher.googleapis.com and oauth2.googleapis.com through `store-http.mjs`. Not here: creating
  *   the app, the first content-rating and target-audience forms (browser steps with the owner signed in).
  * Runtime: node

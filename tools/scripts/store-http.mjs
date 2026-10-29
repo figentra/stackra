@@ -47,7 +47,7 @@ export function scrub(value) {
 export function assertLiveAllowed(mode, env = process.env) {
   if ((mode === "live" || mode === "record") && env.GITHUB_ACTIONS !== "true")
     throw new Error(
-      `--${mode} runs only in the store-release workflow (a protected GitHub environment); use --dry-run here`,
+      `--${mode} runs only in the runway-store workflow (a protected GitHub environment); use --dry-run here`,
     );
 }
 

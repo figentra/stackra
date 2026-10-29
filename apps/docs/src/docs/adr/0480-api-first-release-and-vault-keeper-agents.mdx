@@ -27,15 +27,20 @@ secret value.
    secret): an App Store Connect API key with the Admin role (`ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`,
    `ASC_API_PRIVATE_KEY`); a Google Play Console organisation account with a service account granted API access
    (`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`); an EAS robot token (`EXPO_TOKEN`); and an Infisical machine identity that
-   trusts this repository's `store` and `store-production` environments over GitHub OIDC and reads `/ci/store`
-   (repository variable `INFISICAL_STORE_IDENTITY_ID`). Nothing else in a launch needs a new owner credential.
-2. **Store presence is code.** Each app keeps a `store/` folder: `store.yaml` (bundle id, package, capabilities, app
-   groups, listing text per locale, review contact and notes, the demo account, seed and probe as secret NAMES, the
-   screenshot source) and `data-collection.yaml` (one row per data type and source, naming a `@stackra/consent`
-   category). Simulator captures live in `store/captures/<locale>/<phone|tablet>/`. `pnpm store build` checks the
-   folder and generates every store screenshot size, the App Store App Privacy answers, the Play Data safety answers
-   and a checklist into the gitignored `.stackra/store/`. An analytics or crash SDK dependency with no row naming it
-   fails the build, so privacy answers travel with the feature.
+   trusts each product repository's `store` and `store-production` environments over GitHub OIDC and reads
+   `/ci/store` (its id is passed to the workflow as a repository variable). Nothing else in a launch needs a new owner credential.
+2. **Store presence is data in the product repository** ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)
+   decisions 1 to 3). The app's identity (bundle id, package, name per locale) and capabilities come from the root
+   `runway.yaml` `mobile.<app>` entry; its listing from the `assets/store/<app>/<locale>/` folder that entry names
+   (`name.txt`, `subtitle.txt`, `description.md`, `keywords.txt`, `privacy.json`, and optional `shortDescription.txt`,
+   `promotionalText.txt`, `whatsNew.txt`); app-level facts from `assets/store/<app>/store.yaml` (urls, review contact
+   and notes, the demo account, seed and probe as secret NAMES, TestFlight groups, app groups). `privacy.json` holds
+   one row per data type and source, naming a `@stackra/consent` category, and is the same in every locale. Screenshots
+   are captured in CI from the app built from its template line (0441 decision 7) and never committed. `pnpm store
+build --root <product> --app <key>` checks all of it and generates every store screenshot size, the App Store App
+   Privacy answers, the Play Data safety answers and a checklist into the gitignored `.stackra/store/<app>/`. An
+   analytics or crash SDK in the product's or the template checkout's dependencies with no row naming it fails the
+   build, so privacy answers travel with the feature. Core's `apps/mobile` is a reference app and has no store data.
 3. **API first.** The releaser drives the App Store Connect API (bundle ids, capabilities, versions, metadata, review
    details with the demo account, screenshots, TestFlight groups and beta review, submit for review), the Google Play
    Developer API (one edit per run: listings, screenshots, tracks, validate, commit) and EAS (build and submit). The
@@ -49,8 +54,8 @@ secret value.
    mode sends nothing and prints the planned calls; `--replay` serves recorded fixtures (the tests); `--live` and
    `--record` run only inside GitHub Actions. Nothing calls Apple, Google or Expo for real until the owner has created
    the root kit and approved the first live run.
-6. **One owner approval per irreversible step.** `.github/workflows/store-release.yml` runs each launch step from
-   main. `build`, `prepare` and `probe` run in the `store` environment. `submit` (App Review), `promote` (Play
+6. **One owner approval per irreversible step.** `.github/workflows/runway-store.yml`, Runway's reusable `store`
+   provider, runs each launch step from the product's main, building in Runway's checkout of the app's template line. `build`, `prepare` and `probe` run in the `store` environment. `submit` (App Review), `promote` (Play
    production) and `seed` (a production write) run in `store-production`, whose required reviewer is the owner, and
    the CLI refuses them outside it. Production deploys keep their own approval under
    [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted).
@@ -86,10 +91,10 @@ store review probe` signs in with the demo account on production and must see da
   screenshot counts, and renders the exact store sizes.
 - `tools/scripts/__tests__/vault-keeper.test.mjs`: preflight is names-only; generate and rotate write blind; the
   production token is bound to the operation.
-- `.github/workflows/store-release.yml`: environments `store` and `store-production`; protection is applied by the
+- `.github/workflows/runway-store.yml`: environments `store` and `store-production`; protection is applied by the
   owner (runbook), not checked by CI.
 - `.agents/agents/releaser.md` and `.agents/agents/vault-keeper.md`: each agent is allowed only its own commands
-  (`pnpm store`, the store-release dispatch; `pnpm vault`).
+  (`pnpm store`, the dispatch of the product's store workflow; `pnpm vault`).
 - Planned — a `vault preflight` step in each deploy workflow (STA-1598).
 
 ## Supersedes and sources

@@ -10,10 +10,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { stringify } from "yaml";
 import { STORE_KIT, declared, main } from "../vault-keeper.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -66,18 +67,41 @@ async function run(argv, fake, { home = mkdtempSync(join(tmpdir(), "vault-test-"
   return { code, out, home };
 }
 
-test("declared: runway CI names and, for prod with a store/, the root kit and the review secrets", () => {
-  const names = declared("prod", { root: ROOT, app: "apps/mobile" });
+/** A throwaway product repository: core's CI secret names plus one mobile app whose store.yaml names review secrets. */
+function productRoot() {
+  const dir = mkdtempSync(join(tmpdir(), "vault-product-"));
+  writeFileSync(
+    join(dir, "runway.yaml"),
+    stringify({
+      environments: { dev: { destinations: {} }, production: { destinations: {} } },
+      providers: { infisical: { paths: { ci: "/ci" } } },
+      secrets: { ci: ["CLOUDFLARE_API_TOKEN", "MINTLIFY_ADMIN_KEY"] },
+      mobile: { app: { template: "os/mobile@3", store: "assets/store/app" } },
+    }),
+  );
+  mkdirSync(join(dir, "assets/store/app"), { recursive: true });
+  writeFileSync(
+    join(dir, "assets/store/app/store.yaml"),
+    stringify({ review: { contact: { phoneSecret: "STORE_REVIEW_CONTACT_PHONE" } } }),
+  );
+  return dir;
+}
+
+test("declared: runway CI names and, for prod with mobile apps, the root kit and each app's review secrets", () => {
+  const root = productRoot();
+  const names = declared("prod", { root });
   assert.ok(names.some((d) => d.name === "CLOUDFLARE_API_TOKEN" && d.path === "/ci"));
   for (const n of STORE_KIT)
     assert.ok(
       names.some((d) => d.name === n && d.path === "/ci/store"),
       n,
     );
-  assert.ok(names.some((d) => d.name === "STORE_REVIEW_CONTACT_PHONE"));
   assert.ok(
-    !declared("dev", { root: ROOT, app: "apps/mobile" }).some((d) => d.path === "/ci/store"),
+    names.some((d) => d.name === "STORE_REVIEW_CONTACT_PHONE" && d.why === "store review app"),
   );
+  assert.ok(!declared("dev", { root }).some((d) => d.path === "/ci/store"));
+  // Core itself declares no mobile app (ADR 0441): no store kit.
+  assert.ok(!declared("prod", { root: ROOT }).some((d) => d.path === "/ci/store"));
 });
 
 test("preflight: present, missing and placeholder by name; values never printed", async () => {
@@ -87,7 +111,7 @@ test("preflight: present, missing and placeholder by name; values never printed"
     "prod:/ci:MINTLIFY_ADMIN_KEY": "placeholder",
     "prod:/ci/store:ASC_API_KEY_ID": values[1],
   });
-  const { code, out } = await run(["preflight", "--env", "prod"], fake);
+  const { code, out } = await run(["preflight", "--env", "prod", "--root", productRoot()], fake);
   assert.equal(code, 1);
   assert.match(out, /^present +CLOUDFLARE_API_TOKEN  prod:\/ci/m);
   assert.match(out, /^placeholder +MINTLIFY_ADMIN_KEY/m);
