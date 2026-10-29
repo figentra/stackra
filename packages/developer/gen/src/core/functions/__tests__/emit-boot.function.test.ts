@@ -126,6 +126,24 @@ describe("emitBoot", () => {
     );
   });
 
+  it("adds the TreeSubscriber after the always-on subscribers when a model has HasTree (STA-1419)", () => {
+    const boot =
+      emitBoot({
+        ...COMMERCE_IR,
+        classes: COMMERCE_IR.classes.map((declared) =>
+          declared.kind === "model"
+            ? { ...declared, traits: [...declared.traits, { name: "HasTree", args: [] }] }
+            : declared,
+        ),
+      }) ?? "";
+    expect(boot).toContain(
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber, TreeSubscriber } from "@stackra/database";',
+    );
+    expect(boot).toContain(
+      "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new TreeSubscriber()],",
+    );
+  });
+
   it("leaves the subscriber out when no model encrypts a field", () => {
     expect(emitBoot(COMMERCE_IR)).not.toContain("EncryptedFieldsSubscriber");
   });

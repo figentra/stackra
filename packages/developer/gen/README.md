@@ -493,6 +493,8 @@ replicas of `DATABASE_REPLICA_URLS` (comma-separated, set by runway where `readR
 bound `DatabaseConfig`'s session `timeouts` and `pool` (with `DATABASE_POOL_MAX`, the instance's share of the runway
 `poolBudget`, over its `max`, ADR 0473), and the hold, `StampSubscriber`, `AppendOnlySubscriber`, encrypted-fields and outbox writer
 subscribers.
+A model with a subscriber trait, own or a declared package's, adds its subscriber after `AppendOnlySubscriber`
+(`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419).
 
 ## HTTP adapter, guards and health (STA-1385)
 
