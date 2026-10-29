@@ -143,7 +143,7 @@ beforeEach(() => {
 
 describe("ExpoFileSystemDriver", () => {
   it("is a driver of FileSystem", () => {
-    expect(kindOf(ExpoFileSystemDriver)).toBe("driver");
+    expect(kindOf(ExpoFileSystemDriver)).toEqual({ kind: "driver", options: { port: FileSystem } });
     expect(driver()).toBeInstanceOf(FileSystem);
   });
 
