@@ -5,7 +5,8 @@
  *          calls `createApp` from the `@stackra/app` subpath of its runtime in the form that subpath takes, and
  *          exports the result. A service gets `server`; an app gets `browser` (web, PWA, the desktop renderer) and
  *          `native` (iOS and Android). A service's server entry hands `createApp` its `#stackra/boot` when gen writes
- *          one, so the bus, inbox and relay connect at service start.
+ *          one, so the bus, inbox and relay connect at service start. The native entry of an app with web and native
+ *          targets takes `nativeWiring`, whose follow-the-system ports default to the native drivers.
  * Boundary: pure; no logic in an entry (boot order, signals and readiness belong to `createApp`). A package gets no
  *           runtime entry; a host imports its module. A worker's and the desktop main process's entries need their
  *           tool facts (the React Router server build, the crash page, the renderer and preload paths), which come
@@ -72,7 +73,10 @@ export function emitRuntimeEntries(
         ...(boots ? ['import { boot } from "#stackra/boot";'] : []),
         `import { createApp } from "@stackra/app/${runtime}";`,
         ...(runtime === "browser" ? [] : [`import { ${root.name} } from "${root.from}";`]),
-        'import { wiring } from "#stackra/wiring";',
+        // A web-and-native app's shared wiring takes memory; its native entry takes the native drivers.
+        runtime === "native" && runtimes.length > 1
+          ? 'import { nativeWiring as wiring } from "#stackra/wiring";'
+          : 'import { wiring } from "#stackra/wiring";',
         "",
         `/** ${RETURNS[runtime] ?? "The app of this runtime."} */`,
         `export const app = ${call};`,

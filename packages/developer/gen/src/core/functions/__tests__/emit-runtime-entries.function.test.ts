@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRuntimeEntries`: a service gets `server`, which loads its registrations when they are
  *          written and hands `createApp` its boot when gen writes one; an app gets `browser` (web, PWA, desktop renderer) and `native` (iOS, Android), each in the form
- *          its `createApp` takes and loading the route table and blocks this run writes; a package and a worker get
- *          none.
+ *          its `createApp` takes and loading the route table and blocks this run writes, the native one of a
+ *          web-and-native app on `nativeWiring`; a package and a worker get none.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 7 to 9).
@@ -62,6 +62,15 @@ describe("emitRuntimeEntries", () => {
     expect(native?.path).toBe(".stackra/entry/native.ts");
     expect(native?.content).toContain('import "#stackra/blocks/native";');
     expect(native?.content).toContain("export const app = createApp(CommerceModule, { wiring });");
+    expect(native?.content).toContain('import { nativeWiring as wiring } from "#stackra/wiring";');
+    expect(browser?.content).toContain('import { wiring } from "#stackra/wiring";');
+  });
+
+  it("gives an Expo-only app's native entry the shared wiring", () => {
+    const app = { ...COMMERCE_IR, layout: "app" as const, kind: "app" as const, targets: ["ios"] };
+    expect(emitRuntimeEntries(app)[0]?.content).toContain(
+      'import { wiring } from "#stackra/wiring";',
+    );
   });
 
   it("writes none for a package or a worker", () => {

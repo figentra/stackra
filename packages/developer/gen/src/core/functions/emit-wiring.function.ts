@@ -18,8 +18,9 @@
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
  *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504). A host's
- *          follow-the-system ports (`systemDriverDefaults`) are listed and default to the driver of its runtime
- *          (STA-1535, STA-1536).
+ *          follow-the-system ports (`systemDriverDefaults`) are listed with their config rows and default to the
+ *          driver of its runtime (STA-1535, STA-1536); a web-and-native app also gets `nativeWiring`, whose defaults are
+ *          the native drivers, for its native entry.
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
@@ -43,6 +44,7 @@ import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
 import { SERVER_CONTRIBUTIONS } from "#core/constants/server-contributions.constant";
+import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -545,9 +547,10 @@ export function emitWiring(ir: MemberIR): string {
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();
-  for (const { port, driver } of systemDriverDefaults(ir)) {
+  for (const { port, driver, config } of systemDriverDefaults(ir)) {
     systemDefaults.set(port.name, driver);
     used.push({ module: ir.member, dep: { class: port } });
+    if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
   const added = new Set<string>();
   // The array iterator reads the live length, so the links pushed below are walked too.
@@ -693,6 +696,32 @@ export function emitWiring(ir: MemberIR): string {
     "  ],",
     "} satisfies Wiring;",
   );
+  // A web-and-native app's native entry takes the drivers of iOS and Android for its follow-the-system ports.
+  if (clientRuntimes(ir).length > 1) {
+    const natives = systemDriverDefaults(ir, "native").flatMap(({ port, driver }) => {
+      const table = [...ports.values()].find((entry) => entry.port.name === port.name);
+      return table?.candidates.some((candidate) => candidate.name === driver) === true
+        ? [`  ${JSON.stringify(table.key)}: ${JSON.stringify(driver)},`]
+        : [];
+    });
+    use("@stackra/container", "WiringDriver", true);
+    lines.push(
+      "",
+      "/** The follow-the-system drivers of iOS and Android, by port key, where the shared wiring takes memory. */",
+      "const NATIVE_DEFAULTS: Readonly<Record<string, string>> = {",
+      ...natives,
+      "};",
+      "",
+      "/** The wiring of the native entry: `wiring` with the native drivers as the follow-the-system defaults. */",
+      "export const nativeWiring = {",
+      "  ...wiring,",
+      "  drivers: wiring.drivers.map((table: WiringDriver) => ({",
+      "    ...table,",
+      '    default: NATIVE_DEFAULTS[table.key ?? ""] ?? table.default,',
+      "  })),",
+      "} satisfies Wiring;",
+    );
+  }
 
   const header = generatedHeader({
     from: "the kind classes under src/, their constructor parameter types and src/config/*.config.ts",

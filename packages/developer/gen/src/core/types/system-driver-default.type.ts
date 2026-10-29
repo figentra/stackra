@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SystemDriverDefault`, one row of `systemDriverDefaults`: a follow-the-system port of a host and the driver
- *          name its wiring sets as that port's `default`.
+ *          name its wiring sets as that port's `default`, with the config class its drivers read.
  * Boundary: a type only; internal to gen.
  * Runtime: isomorphic
  * Governing contract: ADR 0263 (gen writes the wiring); STA-1535; STA-1536.
@@ -15,4 +15,7 @@ export interface SystemDriverDefault {
 
   /** The driver name the port takes on this host. */
   readonly driver: string;
+
+  /** The config class the port's drivers read, which the wiring lists beside the port. */
+  readonly config?: ClassRef;
 }
