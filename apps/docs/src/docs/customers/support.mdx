@@ -1,0 +1,61 @@
+---
+title: "Support, versioning and end-of-life"
+description: "How Stackra versions its packages, what 0.x means, how deprecations run, and the support terms."
+icon: "life-buoy"
+---
+
+{/* Stackra file contract: Purpose: the customer page on versions, deprecation, dist-tags and support terms; the support terms are owner placeholders. Boundary: customer-facing documentation only; it records decided rules (ADR 0013, 0025, 0177, 0453) and invents no service level. Runtime: docs. Governing contract: ADR 0013; ADR 0025; ADR 0177 (decisions 5 to 7); ADR 0453 (decisions 7 and 18); SECURITY.md; STA-1575, STA-1576. */}
+
+## Versions
+
+- **One version for everything.** Every `@stackra/*` package releases at the same version (the changesets `fixed`
+  group), and `@stackra-pro/*` releases at that same version
+  ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decision
+  18). Install matching versions of all Stackra packages; mixing versions is not supported.
+- **Semantic versioning.** A patch fixes, a minor adds, a major breaks.
+- **0.x.** Before `1.0.0`, as semver allows, a minor release may break an API. Every breaking release carries a
+  written release note (what changes for you, the steps to take, how to verify and roll back;
+  [0013](/adr/0013-versioning-and-release) decision 5).
+- **A version is never replaced.** A published version is immutable, also after a deprecation, and the registry
+  refuses unpublishing. A fix is a new version.
+
+## Dist-tags
+
+| Tag      | Holds                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------ |
+| `latest` | the current release                                                                                    |
+| `next`   | a prerelease leading to the next release (`0.1.0-next.<n>`); never moves `latest`                      |
+| `canary` | snapshot builds for early testing ([0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 7) |
+
+## Deprecation
+
+A deprecated API keeps working for one minor release before `1.0.0`, and for one major release after
+([0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 6). A deprecated package version shows npm's
+deprecation warning with the version to move to.
+
+## Changes and upgrades
+
+What changed in each release is in each package's changelog: see [Changelog](/customers/changelog).
+
+## Security fixes
+
+Report a vulnerability privately, as [Security overview](/customers/security#reporting-a-vulnerability) says. Our
+policy acknowledges a report within three business days (`SECURITY.md`). A fix ships as a new version; there is no
+in-place patch of a published version.
+
+## Support terms
+
+<Warning>
+  **Owner to supply (STA-1576, STA-1574).** Nothing below is decided yet; until it is, there is no
+  service level.
+</Warning>
+
+| Term                                                  | Value                                                                                                                                                                                  |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Support channels (where to ask, by plan)              | _owner to supply_                                                                                                                                                                      |
+| Response times by severity                            | _owner to supply_                                                                                                                                                                      |
+| Which versions receive fixes (support window)         | _owner to supply_                                                                                                                                                                      |
+| End-of-life dates per release line                    | _owner to supply_                                                                                                                                                                      |
+| Long-term support                                     | starts at the first on-prem contract (0177 decision 6); terms _owner to supply_                                                                                                        |
+| Uptime of the registry and status page                | _owner to supply_ (status page: STA-1574)                                                                                                                                              |
+| Single-tenant restore as a support operation, by plan | _owner to supply_ ([0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction) decision 8 leaves it to the product) |

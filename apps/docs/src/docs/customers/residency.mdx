@@ -1,0 +1,90 @@
+---
+title: "Data residency"
+description: "How a Stackra deployment keeps each tenant's data in its region: what never crosses a region, where backups and logs go, and what is not finished."
+icon: "globe"
+---
+
+{/* Stackra file contract: Purpose: the buyer-facing residency page: region keys, the fixed tenant region, what never crosses a region, backups, logs, vendors without a region, the login directory, the registry, and the gaps (STA-1473). Boundary: customer-facing documentation only; the decisions are ADR 0353, 0354, 0186, 0402, 0451 and 0184; Figentra's own region list is an OS decision, not repeated here. Runtime: docs. Governing contract: ADR 0353; ADR 0354; ADR 0186; ADR 0402 (decision 1); ADR 0451; ADR 0184 (decision 5); ADR 0453 (decision 13); STA-1575, STA-1473. */}
+
+The rules come from [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction).
+Your deployment chooses its regions; Stackra keeps each tenant inside the one it picked.
+
+## Regions
+
+- A deployment declares its regions as short keys in its runway configuration, each with its cloud (AWS or GCP) and
+  cloud region ([0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region)). Each region of a
+  product gets its own cloud account.
+- A tenant picks its region at sign-up, and it never changes. Moving region is an export and an import into a new
+  tenant.
+- Each region runs its own stack with its own database, storage and identity provider instance. Regions are never
+  active-active.
+
+## What never crosses a region
+
+- **Tenant data.** No tenant row or file is replicated or copied to another region. The single exception is an item a
+  user explicitly shares with another tenant, which is audited and checked against the sending entity's transfer
+  rules.
+- **Backups.** Point-in-time recovery, snapshots and object replication stay in the tenant's jurisdiction: a second
+  account, zone or region of the same jurisdiction, never another
+  ([0186](/adr/0186-backups-and-disaster-recovery), as amended). `@stackra/infra-aws` refuses an environment whose
+  backups or replicated files would leave the foundation's region
+  ([0402](/adr/0402-infra-backups-in-jurisdiction-static-egress-status-page-runtime-stack-health-and-storefront-edge)
+  decision 1).
+- **Sign-in.** Authentication always runs in the tenant's region.
+- **Misrouted calls.** `RegionGuardDriver` (`@stackra/tenancy`) is the first step of every request and job: a call for
+  a tenant placed in another region than the deployment's fails loudly instead of reading or writing out of region.
+  It fails closed when a tenant has no placement.
+
+Cross-region operator views, such as audit, query each region and copy nothing centrally.
+
+## Backups and recovery
+
+| Item                             | Value (designed defaults, [0186](/adr/0186-backups-and-disaster-recovery)) |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| Point-in-time recovery           | 14 days                                                                    |
+| Snapshots                        | 35 days, in a separate backup account, inside the jurisdiction             |
+| Recovery point / time objectives | 15 minutes / 4 hours, per region                                           |
+| Restore drill                    | quarterly                                                                  |
+| One tenant's restore             | from an isolated point-in-time copy, then copied back                      |
+
+These are design targets your deployment configures and drills; they are not a service level. Whole-region loss is
+the deployment's choice, stated in its SLA.
+
+## Logs and telemetry
+
+Logs, traces and metrics leave every service as OpenTelemetry (OTLP) to the destination your deployment configures.
+They carry no personal data; the designed retention is 30 days hot and 13 months in object storage
+([0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention)). Put the destination and its
+storage in the same jurisdiction as the region if your contracts require it; Stackra does not pin it.
+
+## Vendors without a region
+
+A vendor that carries no tenant records of substance (email delivery, crash reports, product analytics without
+personal data) may serve every region from one jurisdiction and must appear on the sub-processor list. AI processing
+is routed per tenant region under the rule the product sets. Every new vendor is checked against these rules.
+
+## The login directory
+
+Before sign-in, one directory routes a person to their region. It holds only keyed hashes (HMAC-SHA-256 of the
+normalised email or phone) mapped to region keys, never a readable identifier, so it is replicated everywhere and
+survives the loss of any region ([0451](/adr/0451-the-login-directory-an-identity-format-and-writer-and-a-cloudflare-worker-of-its-own)).
+
+## The package registry
+
+The Stackra registry holds no tenant data. For a Pro licence it keeps an opaque reference to the customer account,
+token hashes and daily download counts per licence; it stores no IP address. It runs on Cloudflare and is not tied to
+any of your regions.
+
+## Not finished
+
+<Warning>
+  `TenantPlacement` (where each tenant lives) and `LoginDirectoryStore` (the directory writer's
+  store) ship with in-memory drivers only. They are fine for tests and a single process; a
+  production deployment with more than one instance needs persistent drivers, which are tracked in
+  STA-1473. Until they ship, the region guard is only as reliable as the placement driver your host
+  binds.
+</Warning>
+
+- Where the region keys are declared (runway or tenancy configuration) and the lint that checks a `region` value
+  against them are open (0353 open question 1).
+- Figentra's own regions and per-plan choices are Figentra OS decisions, not Stackra's.
