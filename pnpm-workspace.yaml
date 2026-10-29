@@ -303,6 +303,7 @@ overrides:
   "katex@<0.18.2": "0.18.2"
   "postcss-selector-parser@>=6.0.0 <6.1.5": "6.1.5"
   "qs@>=6.0.0 <6.16.1": "6.16.1"
+  "re2js@<2.8.7": "2.8.7"
   # 0.x: the fix ships only in 0.35; the parents (favicons, sharp-ico, Mintlify prebuild, miniflare) use resize/encode.
   "sharp@<0.35.5": "0.35.5"
   "tar@>=7.0.0 <7.5.21": "7.5.21"
