@@ -5,8 +5,9 @@
  *          answers `probe` and `read`, requests one weight line for its subclass, and shapes a `ScaleFrame`.
  * Boundary: the subclass names its protocol's configuration and grammar, and writes `frame` and `onWeight`. No module,
  *           no address, no weight line within `readTimeout` or a fault line resolve the `serial` refusal
- *           `unavailable`; a refused Bluetooth or USB permission resolves `permission_denied`. Internal: the barrel
- *           exports the subclasses only.
+ *           `unavailable`; Bluetooth is asked through the injected `DevicePermissions` before a `ble` or `spp` link
+ *           opens, and a denied or blocked answer, or a refused Bluetooth or USB permission, resolves
+ *           `permission_denied`. Internal: the barrel exports the subclasses only.
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decisions 2, 5 and 8); ADR 0253 (decisions 3 and 4); ADR 0250 (decision 3).
  */
@@ -14,7 +15,7 @@ import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { Scale } from "@stackra/peripherals/contracts";
 import type { ScaleReading } from "@stackra/peripherals/contracts";
-import type { CapabilityResult } from "@stackra/platform/contracts";
+import type { CapabilityResult, DevicePermissions } from "@stackra/platform/contracts";
 
 import type { NativeScaleConfig } from "#config/native-scale.config";
 import { connectScale } from "#core/functions/connect-scale.function";
@@ -42,17 +43,22 @@ export abstract class ProtocolScaleDriver extends Driver(Scale) {
   /** The native scale configuration. */
   protected readonly config: NativeScaleConfig;
 
+  /** The app's permission helper, asked for Bluetooth before a Bluetooth link opens. */
+  protected readonly permissions: DevicePermissions;
+
   /**
    * @param config - the native scale configuration.
+   * @param permissions - the app's `DevicePermissions`, asked for Bluetooth before a `ble` or `spp` link opens.
    */
-  constructor(config: NativeScaleConfig) {
+  constructor(config: NativeScaleConfig, permissions: DevicePermissions) {
     super();
     this.config = config;
+    this.permissions = permissions;
   }
 
   /** Answers when the link to the scale is open or opens now. */
   async probe(): Promise<CapabilityResult> {
-    const linked = await connectScale(this.config);
+    const linked = await connectScale(this.config, this.permissions);
     if (!linked.ok) return linked;
     return { ok: true, data: undefined };
   }
@@ -77,7 +83,7 @@ export abstract class ProtocolScaleDriver extends Driver(Scale) {
 
   /** One weight line, after `weighCommand` when it is not empty. */
   protected async weigh(): Promise<CapabilityResult<WeightLine>> {
-    const linked = await connectScale(this.config);
+    const linked = await connectScale(this.config, this.permissions);
     if (!linked.ok) return linked;
     const line = await requestScaleLine(linked.data, {
       command: this.weighCommand(),

@@ -31,6 +31,12 @@
                 "name": "NativeScaleConfig",
                 "from": "@stackra/native-scale"
               }
+            },
+            {
+              "class": {
+                "name": "DevicePermissions",
+                "from": "@stackra/platform/contracts"
+              }
             }
           ]
         },
@@ -42,6 +48,12 @@
               "class": {
                 "name": "NativeScaleConfig",
                 "from": "@stackra/native-scale"
+              }
+            },
+            {
+              "class": {
+                "name": "DevicePermissions",
+                "from": "@stackra/platform/contracts"
               }
             }
           ]

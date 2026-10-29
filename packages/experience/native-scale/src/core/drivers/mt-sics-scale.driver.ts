@@ -44,7 +44,7 @@ export class MtSicsScaleDriver extends ProtocolScaleDriver {
 
   /** The full reading: the net weight in grams and as displayed, the stable flag and the tare. */
   async frame(): Promise<CapabilityResult<ScaleFrame>> {
-    const linked = await connectScale(this.config);
+    const linked = await connectScale(this.config, this.permissions);
     if (!linked.ok) return linked;
     const protocol = this.protocol();
     let tareGrams: number | null = null;
@@ -59,7 +59,12 @@ export class MtSicsScaleDriver extends ProtocolScaleDriver {
       if (tare?.kind === "tare") tareGrams = tare.grams;
       // reason: on a scale that runs SIR, any other command ends the stream, so it is started again.
       if (this.streams > 0 && protocol.streamStart !== "")
-        await sendScaleCommand(this.config, protocol.streamStart, protocol.terminator);
+        await sendScaleCommand(
+          this.config,
+          this.permissions,
+          protocol.streamStart,
+          protocol.terminator,
+        );
     }
     const weight = await this.weigh();
     if (!weight.ok) return weight;
@@ -75,7 +80,12 @@ export class MtSicsScaleDriver extends ProtocolScaleDriver {
     });
     this.streams += 1;
     if (this.streams === 1)
-      void sendScaleCommand(this.config, protocol.streamStart, protocol.terminator);
+      void sendScaleCommand(
+        this.config,
+        this.permissions,
+        protocol.streamStart,
+        protocol.terminator,
+      );
     let isStopped = false;
     return () => {
       if (isStopped) return;
@@ -83,7 +93,12 @@ export class MtSicsScaleDriver extends ProtocolScaleDriver {
       stop();
       this.streams -= 1;
       if (this.streams === 0 && protocol.streamStop !== "")
-        void sendScaleCommand(this.config, protocol.streamStop, protocol.terminator);
+        void sendScaleCommand(
+          this.config,
+          this.permissions,
+          protocol.streamStop,
+          protocol.terminator,
+        );
     };
   }
 

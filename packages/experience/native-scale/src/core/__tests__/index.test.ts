@@ -9,6 +9,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Scale } from "@stackra/peripherals/contracts";
+import { MemoryDevicePermissionsDriver } from "@stackra/platform";
 import { describe, expect, it } from "@stackra/testing";
 
 import * as nativeScale from "#core/index";
@@ -29,7 +30,8 @@ describe("@stackra/native-scale", () => {
 
   it("implements the Scale port", () => {
     const config = buildConfig(nativeScale.NativeScaleConfig);
-    expect(new nativeScale.MtSicsScaleDriver(config)).toBeInstanceOf(Scale);
-    expect(new nativeScale.ContinuousAsciiScaleDriver(config)).toBeInstanceOf(Scale);
+    const permissions = new MemoryDevicePermissionsDriver();
+    expect(new nativeScale.MtSicsScaleDriver(config, permissions)).toBeInstanceOf(Scale);
+    expect(new nativeScale.ContinuousAsciiScaleDriver(config, permissions)).toBeInstanceOf(Scale);
   });
 });

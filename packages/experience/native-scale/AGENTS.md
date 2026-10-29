@@ -24,6 +24,8 @@ The Expo module behind `@stackra/peripherals`' `Scale` port (ADR 0478). Member a
   legal-for-trade reading is `frame()` on the drivers (`ScaleFrame`).
 - The native side is a byte pipe (ADR 0478 decision 5): `connect`, `disconnect`, `isConnected`, `write` and the
   `onData` event. Framing, parsing, unit conversion and refusals stay in TypeScript, where they are tested.
+- Ask for Bluetooth only through the injected `DevicePermissions` of `@stackra/platform` (`connectScale`, before a `ble`
+  or `spp` link opens); never add a permission prompt to the Swift or Kotlin. Denied or blocked is `permission_denied`.
 - Every refusal is on capability `serial` (`refuse` in `src/core/functions/`). `E_PERMISSION` from the module maps to
   `permission_denied`; anything else, an overload, an underload, a busy scale or no answer to `unavailable`.
 - Configuration, not code: a scale model's terminator or command set is a `protocols` entry. A new protocol is a driver,

@@ -8,6 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0478 (decision 5); ADR 0250 (decision 3).
  */
+import type { DevicePermissions } from "@stackra/platform/contracts";
+
 import type { NativeScaleConfig } from "#config/native-scale.config";
 import { connectScale } from "#core/functions/connect-scale.function";
 
@@ -15,14 +17,15 @@ import { connectScale } from "#core/functions/connect-scale.function";
  * Resolves when the command is written or dropped.
  *
  * @example
- * void sendScaleCommand(this.config, "SIR", "\r\n");
+ * void sendScaleCommand(this.config, this.permissions, "SIR", "\r\n");
  */
 export async function sendScaleCommand(
   config: NativeScaleConfig,
+  permissions: DevicePermissions,
   command: string,
   terminator: string,
 ): Promise<void> {
-  const linked = await connectScale(config);
+  const linked = await connectScale(config, permissions);
   if (!linked.ok || command === "") return;
   await linked.data.write(command + terminator).catch(() => undefined);
 }

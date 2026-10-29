@@ -53,7 +53,7 @@ export class ContinuousAsciiScaleDriver extends ProtocolScaleDriver {
       const line = this.parse(text);
       if (line?.kind === "weight") listener(weightToReading(line));
     });
-    void sendScaleCommand(this.config, protocol.streamStart, protocol.terminator);
+    void sendScaleCommand(this.config, this.permissions, protocol.streamStart, protocol.terminator);
     return stop;
   }
 

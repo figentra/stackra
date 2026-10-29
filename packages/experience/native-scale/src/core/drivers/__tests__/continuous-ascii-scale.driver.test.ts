@@ -11,6 +11,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Duration } from "@stackra/contracts";
+import { MemoryDevicePermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -35,6 +36,7 @@ function scale(request = ""): ContinuousAsciiScaleDriver {
         protocols: { ...protocols, continuous_ascii: { ...protocols.continuous_ascii, request } },
       },
     }),
+    new MemoryDevicePermissionsDriver(),
   );
 }
 

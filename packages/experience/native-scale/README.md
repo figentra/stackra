@@ -89,4 +89,6 @@ The plugin sets `NSBluetoothAlwaysUsageDescription` (iOS) for `ble`; adds the Bl
 
 Not certified: the parsers and drivers are built from the vendors' public manuals and tested against a stand-in module
 replaying transcribed lines. The Swift and Kotlin are checked on the box and on certified models (STA-739), never on a
-developer Mac. The app asks for the Bluetooth runtime permission itself; the module only reports `E_PERMISSION`.
+developer Mac. Before a `ble` or `spp` link opens, the drivers ask `@stackra/platform`'s `DevicePermissions` (injected,
+bound by the app) for `bluetooth`; denied or blocked resolves `permission_denied`, and the app shows
+`platform::permissions.bluetooth.blocked` with `openSettings`. The module never asks; it only reports `E_PERMISSION`.

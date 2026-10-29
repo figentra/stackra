@@ -11,6 +11,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Duration } from "@stackra/contracts";
+import { MemoryDevicePermissionsDriver } from "@stackra/platform";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -29,6 +30,7 @@ function scale(): MtSicsScaleDriver {
         readTimeout: Duration.seconds(0.05),
       },
     }),
+    new MemoryDevicePermissionsDriver(),
   );
 }
 
@@ -40,9 +42,12 @@ describe("MtSicsScaleDriver", () => {
     expect(await scale().read()).toEqual(UNAVAILABLE);
     expect(await scale().frame()).toEqual(UNAVAILABLE);
     SCALE_SDK.install();
-    expect(await new MtSicsScaleDriver(buildConfig(NativeScaleConfig)).probe()).toEqual(
-      UNAVAILABLE,
-    );
+    expect(
+      await new MtSicsScaleDriver(
+        buildConfig(NativeScaleConfig),
+        new MemoryDevicePermissionsDriver(),
+      ).probe(),
+    ).toEqual(UNAVAILABLE);
   });
 
   it("refuses with permission_denied when the module lacks the permission", async () => {
