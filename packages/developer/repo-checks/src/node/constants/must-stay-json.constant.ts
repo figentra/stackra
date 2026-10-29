@@ -72,4 +72,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
     "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
   ],
+  [
+    /(^|\/)assets\/landing\/[\w-]+\.json$/,
+    "landing page documents: stackra dev seeds the os/landing shell with the content folder's .json (ADR 0441)",
+  ],
 ];

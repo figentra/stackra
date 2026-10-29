@@ -365,6 +365,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       ".claude/settings.json",
       ".changeset/config.json",
       ".specify/integration.json",
+      "assets/landing/index.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
