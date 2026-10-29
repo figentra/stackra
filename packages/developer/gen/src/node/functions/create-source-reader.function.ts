@@ -2079,6 +2079,17 @@ export function createSourceReader(
     };
   };
 
+  /** The partner of the nearest base in `chain` whose own heritage names one (a driver's `Driver(Port)` base). */
+  const inheritedPartner = (chain: readonly TsNode[]): DeclaredClass["partner"] => {
+    for (const base of chain) {
+      const baseHeritage = heritageOf(base);
+      const partner =
+        baseHeritage === undefined ? undefined : partnerOf(base, "driver", baseHeritage);
+      if (partner !== undefined) return partner;
+    }
+    return undefined;
+  };
+
   /** The partner rules gen can check from the class alone (ADR 0305 rules 6 and 7, ADR 0308 rule 15). */
   const checkPartner = (
     node: TsNode,
@@ -2351,7 +2362,11 @@ export function createSourceReader(
           ? heritage.call.arguments?.[1]
           : heritage.call.arguments?.[0];
     const options = optionsOf(optionsArgument);
-    const partner = partnerOf(node, info.kind, heritage);
+    // A driver over the package's own base (`class EpsonReceiptPrinterDriver extends NetworkReceiptPrinterDriver`) takes
+    // its port from the nearest base whose heritage names one, so it stays a candidate in the manifest.
+    const partner =
+      partnerOf(node, info.kind, heritage) ??
+      (info.kind === "driver" ? inheritedPartner(info.chain.slice(1)) : undefined);
     checkPartner(node, info.kind, partner, options);
 
     const members = node.members ?? [];

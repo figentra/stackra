@@ -508,6 +508,51 @@ describe("createSourceReader on tool reasons", async () => {
   });
 });
 
+/** A driver over the package's own abstract base, which names the port (native-modules gate, 2026-10-29). */
+const BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
+  "src/contracts/ports/printer.port.ts": [
+    "export abstract class Printer {",
+    "  abstract print(text: string): Promise<void>;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/drivers/network-printer.driver.ts": [
+    'import { Driver } from "@stackra/container";',
+    'import { Printer } from "#contracts/ports/printer.port";',
+    "",
+    "export abstract class NetworkPrinterDriver extends Driver(Printer) {",
+    "  async print(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/drivers/epson-printer.driver.ts": [
+    'import { NetworkPrinterDriver } from "#core/drivers/network-printer.driver";',
+    "",
+    "export class EpsonPrinterDriver extends NetworkPrinterDriver {}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a driver over its package's own base", async () => {
+  const root = writeFixtureMember("base-driver", BASE_DRIVER_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const declared = (name: string) => classes.find((candidate) => candidate.name === name);
+
+  it("takes the port from the base's Driver(Port), so the subclass stays a candidate", () => {
+    expect(declared("EpsonPrinterDriver")).toMatchObject({
+      kind: "driver",
+      partner: { name: "Printer" },
+    });
+  });
+
+  it("still marks the base abstract, so it is never a candidate itself", () => {
+    expect(declared("NetworkPrinterDriver")).toMatchObject({ kind: "driver", abstract: true });
+  });
+});
+
 /** Per-locale and upload fields (STA-1218), with stand-ins for `@stackra/model` and `@stackra/media`. */
 const VOCABULARY_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/model/package.json": JSON.stringify({
