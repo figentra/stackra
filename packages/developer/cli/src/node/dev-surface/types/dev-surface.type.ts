@@ -5,7 +5,11 @@
  *          product packages, and the local API. The surface's Vite config (gen bundle mode, stackra-04) reads it to
  *          write the dev page's import map: the shell entry and shared dependencies from `shell.url`, the product
  *          bundle from Vite itself with hot reload.
- * Boundary: type only; JSON-safe values. It is the hand-off contract between the CLI and the bundle-mode Vite config.
+ *          With a local checkout (`--os`) the descriptor also names the product, its root, each package's entry file for
+ *          the surface, and a landing site's seed document: the shell's own dev server (`STACKRA_DEV_SURFACE`) then
+ *          serves the packages from source through its import map's single copies (figentra/os `shellDev`).
+ * Boundary: type only; JSON-safe values. It is the hand-off contract between the CLI and the bundle-mode Vite config,
+ *           or the local shell.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 4 and 6); app-shells section 15 point 2.
  */
@@ -32,4 +36,16 @@ export type DevSurface = {
 
   /** The API base URL the page calls (the local gateway unless `--api` says otherwise). */
   readonly api: string;
+
+  /** The product key; set for a local shell. */
+  readonly product?: string;
+
+  /** The product root (absolute); set for a local shell. */
+  readonly root?: string;
+
+  /** Each package's entry file for the surface (absolute), in runway order; set for a local shell. */
+  readonly entries?: readonly string[];
+
+  /** A landing site's seed page document (absolute JSON file), from `content`; set for a local shell. */
+  readonly document?: string;
 };

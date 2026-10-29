@@ -12,7 +12,7 @@
  *          `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`) with the
  *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07), and the
  *          template line step (`checkoutLine`, `shellReleaseOf`) with the dry-run runner and KV driver
- *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481).
+ *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), and a product mobile app's local run (`prepareMobileDev`).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
@@ -31,6 +31,7 @@ export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.con
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
 export { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
+export { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
 export { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 export { canaryVerdict } from "#node/functions/canary-verdict.function";
 export { capabilityConfig } from "#node/functions/capability-config.function";
@@ -42,6 +43,7 @@ export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { platformRows } from "#node/functions/platform-rows.function";
+export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
 export { publishShell } from "#node/functions/publish-shell.function";
@@ -82,6 +84,8 @@ export type { LineCheckout } from "#node/types/line-checkout.type";
 export type { LineCheckoutRequest } from "#node/types/line-checkout-request.type";
 export type { LineSource } from "#node/types/line-source.type";
 export type { ShellManifest } from "#node/types/shell-manifest.type";
+export type { MobileDev } from "#node/types/mobile-dev.type";
+export type { MobileDevRequest } from "#node/types/mobile-dev-request.type";
 export type { MobileApp } from "#node/types/mobile-app.type";
 export type { ExpoPluginEntry } from "#node/types/expo-plugin-entry.type";
 export type { MobileCapability } from "#node/types/mobile-capability.type";

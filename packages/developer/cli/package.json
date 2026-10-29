@@ -71,6 +71,7 @@
     "@stackra/gen": "workspace:*",
     "@stackra/mcp": "workspace:*",
     "@stackra/repo-checks": "workspace:*",
+    "@stackra/runway": "workspace:*",
     "@stackra/skills": "workspace:*",
     "@stackra/support": "workspace:*",
     "yaml": "catalog:"

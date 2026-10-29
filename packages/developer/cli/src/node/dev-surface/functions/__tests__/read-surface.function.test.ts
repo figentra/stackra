@@ -14,7 +14,9 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { readSurface } from "#node/dev-surface/functions/read-surface.function";
 
-const RUNWAY = `surfaces:
+const RUNWAY = `product:
+  key: acme
+surfaces:
   console:
     shell: os/console@3
     packages:
@@ -25,6 +27,9 @@ const RUNWAY = `surfaces:
     contributes: "@acme/ops-ui"
   bare:
     shell: os/console@3
+  site:
+    shell: os/landing@1
+    content: assets/landing
 environments:
   dev:
     infra:
@@ -49,6 +54,18 @@ describe("readSurface", () => {
       shell: { owner: "os", name: "console", line: 3 },
       packages: ["@acme/console-ui"],
       gatewayPort: 4000,
+      product: "acme",
+    });
+  });
+
+  it("reads a landing site of seed content only", () => {
+    writeFileSync(join(root, "runway.yaml"), RUNWAY);
+    expect(readSurface(root, "site")).toEqual({
+      shell: { owner: "os", name: "landing", line: 1 },
+      packages: [],
+      gatewayPort: 4000,
+      product: "acme",
+      content: "assets/landing",
     });
   });
 

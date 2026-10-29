@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `RootSurface`, what `stackra dev --surface` needs from the root runway: the surface's shell, the product
- *          packages its bundle holds, and the local API port (`environments.dev.infra.gateway.port`).
+ *          packages its bundle holds, the local API port (`environments.dev.infra.gateway.port`), the product key and a
+ *          landing surface's seed `content`.
  * Boundary: type only; `readSurface` builds it.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); app-shells sections 8.2 and 15 point 2; ADR 0170 (`local` is `dev`).
@@ -18,4 +19,10 @@ export type RootSurface = {
 
   /** The local API gateway's port, when the root runway declares one. */
   readonly gatewayPort: number | undefined;
+
+  /** The product key (`product.key`), when the root runway names one. */
+  readonly product?: string | undefined;
+
+  /** A landing surface's seed documents (`content`, a folder under `assets/`). */
+  readonly content?: string | undefined;
 };

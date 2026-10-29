@@ -18,6 +18,29 @@
   "models": [],
   "drivers": [
     {
+      "port": "EdgeKvWriter",
+      "key": "app.EdgeKvWriter",
+      "candidates": ["dry_run_edge_kv", "wrangler_edge_kv"],
+      "classes": {
+        "dry_run_edge_kv": {
+          "class": "DryRunEdgeKvDriver",
+          "from": "@stackra/runway/node"
+        },
+        "wrangler_edge_kv": {
+          "class": "WranglerEdgeKvDriver",
+          "from": "@stackra/runway/node",
+          "deps": [
+            {
+              "class": {
+                "name": "EdgeKvConfig",
+                "from": "@stackra/runway/node"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "RunwayProvider",
       "key": "runway.RunwayProvider",
       "candidates": ["eas_provider", "encore_cloud_provider", "mintlify_provider"],
@@ -68,29 +91,6 @@
         "neon_preview_database": {
           "class": "NeonPreviewDatabaseDriver",
           "from": "@stackra/runway/node"
-        }
-      }
-    },
-    {
-      "port": "EdgeKvWriter",
-      "key": "app.EdgeKvWriter",
-      "candidates": ["dry_run_edge_kv", "wrangler_edge_kv"],
-      "classes": {
-        "dry_run_edge_kv": {
-          "class": "DryRunEdgeKvDriver",
-          "from": "@stackra/runway/node"
-        },
-        "wrangler_edge_kv": {
-          "class": "WranglerEdgeKvDriver",
-          "from": "@stackra/runway/node",
-          "deps": [
-            {
-              "class": {
-                "name": "EdgeKvConfig",
-                "from": "@stackra/runway/node"
-              }
-            }
-          ]
         }
       }
     }

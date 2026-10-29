@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `runDevSurface(context)`, the run of `stackra dev --surface <surface>` at the product root: read the
  *          surface from the root runway, plan the shell and API, run `stackra gen` (which writes the surface's
- *          bundle-mode Vite config), write the `DevSurface` descriptor beside that config, then start Vite (and, with
- *          `--os`, the local shell's own `stackra dev`) and wait for them.
+ *          bundle-mode Vite config), write the `DevSurface` descriptor beside that config, then start Vite, or with
+ *          `--os` the local shell's own Vite, which serves the product packages from source, and wait for them.
  * Boundary: the CLI parses, plans and starts processes; the import map, hot reload and API proxy are the bundle-mode
  *           Vite config's work (gen and `@stackra/vite-plugin`, stackra-04). A gen refusal or a missing surface config
  *           stops before any process starts and exits 1.
@@ -34,13 +34,18 @@ function text(values: CliContext["values"], name: string): string | undefined {
  * Runs one product surface in its shell and resolves with the exit code.
  *
  * @param context - the parsed `stackra dev --surface` command line.
+ * @param surface - the surface key; `--surface` when absent.
+ * @param gen - run `stackra gen` first; `--product` runs it once for every surface.
  * @throws CliUsageError when the surface or a flag is wrong.
  * @example
  * await runDevSurface({ ...context, values: { surface: "console", os: "../os" } });
  */
-export async function runDevSurface(context: CliContext): Promise<number> {
+export async function runDevSurface(
+  context: CliContext,
+  surface = text(context.values, "surface") ?? "",
+  gen = true,
+): Promise<number> {
   const { cwd, io, values, cli } = context;
-  const surface = text(values, "surface") ?? "";
   if (!SURFACE_KEY.test(surface)) throw new CliUsageError(`bad surface key: ${surface}`);
   if (values["target"] !== undefined) {
     throw new CliUsageError("--target picks an app's target; --surface runs a product surface");
@@ -54,8 +59,9 @@ export async function runDevSurface(context: CliContext): Promise<number> {
     api: text(values, "api"),
   });
 
-  if ((await cli(["gen"], io)) !== 0) return 1;
-  if (!existsSync(join(cwd, DEV_SURFACE_FILES.viteConfig(surface)))) {
+  if (gen && (await cli(["gen"], io)) !== 0) return 1;
+  // A local shell serves the packages itself; only a published shell needs gen's bundle-mode Vite config.
+  if (!descriptor.shell.local && !existsSync(join(cwd, DEV_SURFACE_FILES.viteConfig(surface)))) {
     io.err(
       `stackra dev: gen wrote no ${DEV_SURFACE_FILES.viteConfig(surface)}; the surface bundle mode is not available yet\n`,
     );

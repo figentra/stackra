@@ -3809,6 +3809,9 @@ importers:
       '@stackra/repo-checks':
         specifier: workspace:*
         version: link:../repo-checks
+      '@stackra/runway':
+        specifier: workspace:*
+        version: link:../runway
       '@stackra/skills':
         specifier: workspace:*
         version: link:../skills

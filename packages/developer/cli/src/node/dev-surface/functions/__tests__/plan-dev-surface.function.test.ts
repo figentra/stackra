@@ -66,21 +66,69 @@ describe("planDevSurface", () => {
     ).toThrow(/outside the surface's line/);
   });
 
-  it("runs a local checkout's shell beside Vite", () => {
+  it("runs a local checkout's shell, which serves the packages' surface entries from source", () => {
     const app = join(root, "os", "apps", "console");
     mkdirSync(app, { recursive: true });
     writeFileSync(join(app, "runway.yaml"), "environments:\n  dev:\n    port: 5180\n");
-    const plan = planDevSurface(root, "console", ENTRY, { os: "os", api: "http://127.0.0.1:9000" });
-    expect(plan.descriptor.shell).toEqual({
-      ref: "os/console@3",
-      url: "http://localhost:5180/",
-      local: true,
+    const pkg = join(root, "packages", "application", "console-ui");
+    mkdirSync(pkg, { recursive: true });
+    writeFileSync(
+      join(pkg, "package.json"),
+      JSON.stringify({
+        name: "@acme/console-ui",
+        exports: {
+          "./console": { "@stackra/source": "./src/console.tsx", default: "./dist/console.mjs" },
+        },
+      }),
+    );
+    const plan = planDevSurface(
+      root,
+      "console",
+      { ...ENTRY, product: "acme" },
+      {
+        os: "os",
+        api: "http://127.0.0.1:9000",
+      },
+    );
+    expect(plan.descriptor).toEqual({
+      surface: "console",
+      shell: { ref: "os/console@3", url: "http://localhost:5180/", local: true },
+      packages: ["@acme/console-ui"],
+      api: "http://127.0.0.1:9000/",
+      product: "acme",
+      root,
+      entries: [join(pkg, "src/console.tsx")],
     });
-    expect(plan.descriptor.api).toBe("http://127.0.0.1:9000/");
     expect(plan.runs).toEqual([
-      { command: "stackra", args: ["dev"], cwd: app },
-      { ...VITE, cwd: root },
+      {
+        command: "vite",
+        args: ["--port", "5180", "--strictPort"],
+        cwd: app,
+        env: { STACKRA_DEV_SURFACE: join(root, ".stackra/surfaces/console/dev-surface.json") },
+      },
     ]);
+  });
+
+  it("serves a content-only landing site with its seed document", () => {
+    const app = join(root, "os", "apps", "landing");
+    mkdirSync(app, { recursive: true });
+    writeFileSync(join(app, "runway.yaml"), "environments:\n  dev:\n    port: 5181\n");
+    mkdirSync(join(root, "assets", "landing"), { recursive: true });
+    for (const file of ["about.json", "index.json"])
+      writeFileSync(join(root, "assets", "landing", file), "{}");
+    const plan = planDevSurface(
+      root,
+      "landing",
+      {
+        ...ENTRY,
+        shell: { owner: "os", name: "landing", line: 1 },
+        packages: [],
+        content: "assets/landing",
+      },
+      { os: "os" },
+    );
+    expect(plan.descriptor.entries).toEqual([]);
+    expect(plan.descriptor.document).toBe(join(root, "assets", "landing", "index.json"));
   });
 
   it("refuses conflicting or missing shell and API settings", () => {

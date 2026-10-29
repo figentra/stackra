@@ -37,7 +37,7 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
     // shortcut: no shell, so Windows `.cmd` shims do not start; add `shell: true` with quoting when Windows is supported.
     const child = spawn(run.command, [...run.args], {
       cwd: run.cwd,
-      env: { ...process.env, PATH: pathFrom(run.cwd) },
+      env: { ...process.env, ...run.env, PATH: pathFrom(run.cwd) },
       stdio: io.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     });
     child.stdout?.setEncoding("utf8").on("data", io.out);

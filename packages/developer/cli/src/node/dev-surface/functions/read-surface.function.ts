@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `readSurface(root, surface)`, one surface of the product's root `runway.yaml` (`surfaces.<surface>`: its
- *          `shell` and `packages`) with the local API gateway port (`environments.dev.infra.gateway.port`).
- * Boundary: reads `<root>/runway.yaml` only. Refuses a surface it cannot serve in a shell (no `shell`, no `packages`:
- *           an ops `contributes` entry or a landing's `content`), naming why; never guesses a shell.
+ *          `shell`, `packages` and seed `content`) with the local API gateway port (`environments.dev.infra.gateway.port`)
+ *          and the product key.
+ * Boundary: reads `<root>/runway.yaml` only. Refuses a surface it cannot serve in a shell (no `shell`: an ops
+ *           `contributes` entry; neither `packages` nor `content`), naming why; never guesses a shell.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); app-shells sections 8.2, 8.3 and 15 point 2; ADR 0441 (root runway
  *                     surfaces); the root runway schema (stackra-06).
@@ -19,7 +20,11 @@ import { CliUsageError } from "#node/errors/cli-usage.error";
 
 /** The root runway fields the dev command reads. */
 type RootRunway = {
-  readonly surfaces?: Record<string, { shell?: unknown; packages?: unknown } | null>;
+  readonly product?: { key?: unknown };
+  readonly surfaces?: Record<
+    string,
+    { shell?: unknown; packages?: unknown; content?: unknown } | null
+  >;
   readonly environments?: { dev?: { infra?: { gateway?: { port?: unknown } } } };
 };
 
@@ -59,11 +64,16 @@ export function readSurface(root: string, surface: string): RootSurface {
   const packages = Array.isArray(entry.packages)
     ? entry.packages.filter((name): name is string => typeof name === "string")
     : [];
-  if (packages.length === 0) throw new CliUsageError(`surface ${surface} lists no packages`);
+  const content = typeof entry.content === "string" ? entry.content : undefined;
+  // A landing site may be seed content only: the shell draws the documents with the OS blocks.
+  if (packages.length === 0 && content === undefined)
+    throw new CliUsageError(`surface ${surface} lists no packages and no content`);
   const port = runway.environments?.dev?.infra?.gateway?.port;
   return {
     shell: parseShellRef(entry.shell),
     packages,
     gatewayPort: typeof port === "number" ? port : undefined,
+    product: typeof runway.product?.key === "string" ? runway.product.key : undefined,
+    content,
   };
 }
