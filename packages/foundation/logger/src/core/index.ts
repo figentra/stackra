@@ -17,6 +17,10 @@ export { TELEMETRY_CONFIG_SCHEMA as TelemetryConfig$ } from "#core/constants/tel
 export { ChannelLoggerDriver } from "#core/drivers/channel-logger.driver";
 export { ConsoleLogReporterDriver } from "#core/drivers/console-log-reporter.driver";
 export { OtlpLogReporterDriver } from "#core/drivers/otlp-log-reporter.driver";
+export { OtlpMetricsDriver } from "#core/drivers/otlp-metrics.driver";
+export { OtlpTracerDriver } from "#core/drivers/otlp-tracer.driver";
+export { formatTraceparent } from "#core/functions/format-traceparent.function";
+export { parseTraceparent } from "#core/functions/parse-traceparent.function";
 export { redact } from "#core/functions/redact.function";
 export { LoggingOptions } from "#core/schemas/logging-options.schema";
 export { OtlpOptions } from "#core/schemas/otlp-options.schema";

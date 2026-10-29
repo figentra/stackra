@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `OtlpConfig`, `OtlpOptions` and `OTLP_CONFIG_SCHEMA`: keyed `logger.otlp`, built with the
- *          shipped defaults, registered with its schema, and refusing a non-URL endpoint, a bad secret name or a zero
- *          batch.
+ *          shipped defaults, registered with its schema, and refusing a non-URL endpoint, a bad secret name, a zero
+ *          batch, a sample ratio above 1 or a sub-second metric interval.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 19, 20 and 26).
@@ -28,7 +28,13 @@ describe("OtlpConfig", () => {
   });
 
   it("refuses bad values", () => {
-    for (const values of [{ endpoint: "nope" }, { headersSecret: "lower" }, { batchSize: 0 }])
+    for (const values of [
+      { endpoint: "nope" },
+      { headersSecret: "lower" },
+      { batchSize: 0 },
+      { traceSampleRatio: 1.5 },
+      { metricIntervalMs: 10 },
+    ])
       expect(() => buildConfig(OtlpConfig, { values })).toThrow(ConfigInvalidError);
   });
 });

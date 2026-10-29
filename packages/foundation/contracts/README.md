@@ -95,7 +95,13 @@ host's wiring like any driver:
   destroying the salt crypto-shreds that subject only.
 - `MemorySignerDriver`, `AwsKmsSignerDriver`: the `Signer` port (ES256); KMS signs digests so the private key never
   leaves it. `verifySignature` checks a signature offline against a `SignerPublicKey`.
-- `NoopTracerDriver`: the default `Tracer`; the OTLP tracer ships with the telemetry runtime.
+- `NoopTracerDriver`: the default `Tracer`; `continueTrace` only runs the work and `traceparent()` is `undefined`. The
+  OTLP tracer is `OtlpTracerDriver` in `@stackra/logger`. `Tracer.continueTrace(carrier, work)` joins an inbound W3C
+  trace (`TraceCarrier`: `traceparent` and the edge request id, read when the first span starts) and
+  `Tracer.traceparent()` names the current span for an outbound call (`traceContext` in `@stackra/transport`).
+- `NoopMetricsDriver`: the default `Metrics` (counter, histogram, gauge; synchronous, never throws, attributes are ids
+  and codes). The OTLP driver is `OtlpMetricsDriver` in `@stackra/logger`. Operations metrics only: usage metering
+  that bills is `MeterKind` (ADR 0216).
 
 ## Member definitions
 

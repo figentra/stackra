@@ -40,6 +40,7 @@ The HTTP client pipeline. Member at `packages/foundation/transport` (`tier:lib`)
 - No parameter properties, no `#private` fields, no decorators in its own source: it keeps to erasable syntax, though its
   `decorators-react` preset turns the check off so tsc can read the decorated sources of @stackra/config and
   @stackra/errors.
+- `traceContext` reads `tracer.traceparent()` per request; keep it outside `retry` so every attempt has one parent.
 
 ## Rules that fail the build
 

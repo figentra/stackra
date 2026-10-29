@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `OTLP_CONFIG_SCHEMA`, the zod schema this package ships for `OtlpConfig` (exported as `OtlpConfig$`): the
- *          collector endpoint, the service name, the headers secret's name and the batching bounds.
+ *          collector endpoint, the service name, the headers secret's name, the batching bounds, the trace sample ratio
+ *          and the metric export interval.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; the defaults equal `OtlpOptions`' initializers (tested). No secret value: only its name.
  * Runtime: isomorphic
@@ -20,4 +21,6 @@ export const OTLP_CONFIG_SCHEMA = z.object({
   batchSize: z.number().int().min(1).max(10_000).default(100),
   flushIntervalMs: z.number().int().min(100).max(60_000).default(2000),
   maxQueue: z.number().int().min(1).default(2000),
+  traceSampleRatio: z.number().min(0).max(1).default(1),
+  metricIntervalMs: z.number().int().min(1000).max(3_600_000).default(60_000),
 });

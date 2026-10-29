@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/logger`
  *          (`LoggingConfig`, `LoggingConfig$`, `TelemetryConfig`, `TelemetryConfig$`) and the registry row's channels,
- *          reporters and redaction are exported, nothing else is (the redaction lists stay internal), the `$` names
+ *          reporters, OTLP tracer and metrics drivers, traceparent helpers and redaction are exported, nothing else is (the redaction lists stay internal), the `$` names
  *          are the shipped schemas, and the public type resolves.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -26,10 +26,14 @@ describe("@stackra/logger", () => {
       "OtlpConfig",
       "OtlpConfig$",
       "OtlpLogReporterDriver",
+      "OtlpMetricsDriver",
       "OtlpOptions",
+      "OtlpTracerDriver",
       "TelemetryConfig",
       "TelemetryConfig$",
       "TelemetryOptions",
+      "formatTraceparent",
+      "parseTraceparent",
       "redact",
     ]);
   });

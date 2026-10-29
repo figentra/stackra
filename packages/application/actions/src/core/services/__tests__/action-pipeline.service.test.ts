@@ -50,6 +50,7 @@ import {
   Realm,
   type ScopeRef,
   type TraceAttributes,
+  type TraceCarrier,
   type TraceSpan,
   Tracer,
 } from "@stackra/contracts";
@@ -2066,6 +2067,14 @@ class RecordingTracer extends Driver(Tracer) {
         seen.failed = error;
       },
     });
+  }
+
+  continueTrace<T>(_carrier: TraceCarrier, work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
+  traceparent(): string | undefined {
+    return undefined;
   }
 }
 

@@ -82,4 +82,22 @@ Migrating: move a `logger.telemetry.dsn` value to the secret `SentryConfig.dsnSe
 them as OTLP/JSON to `<endpoint>/v1/logs`. `OtlpConfig` (key `logger.otlp`) sets the collector, the `service.name`, the
 batch size, the flush interval and the queue bound; the collector's headers are one secret in the OpenTelemetry form
 (`OTEL_EXPORTER_OTLP_HEADERS`, `k=v,k2=v2`). A failed send drops its batch and the oldest records go first past
-`maxQueue`. Call `flush()` before a process or a Worker request ends.
+`maxQueue`; both are counted in `dropped`. Call `flush()` before a process or a Worker request ends; shutdown flushes.
+
+The same `OtlpConfig` and collector take the other two signals (ADR 0184 decision 1), through one shared batching
+sender (`fetch` only, no OpenTelemetry SDK):
+
+- `OtlpTracerDriver` (the `Tracer` port of `@stackra/contracts`, driver name `otlp`) POSTs spans to
+  `<endpoint>/v1/traces`: resource `service.name`, hex trace and span ids, the parent, kind (`server` for the first
+  span of a continued inbound trace, else `internal`), nanosecond times, attributes, status, and an `exception` event
+  with the error's code or class name (never its message). Spans nest through `AsyncLocalStorage`, taken with
+  `process.getBuiltinModule` so `.` keeps no `node:` import; without it (a browser) every span is a root.
+  `continueTrace` joins an inbound `traceparent` and stamps every span with the edge's `requestId`; the server app of
+  `@stackra/app` calls it for each request. `traceSampleRatio` samples new traces; a continued trace follows its
+  caller's flag. `parseTraceparent` and `formatTraceparent` are the W3C helpers.
+- `OtlpMetricsDriver` (the `Metrics` port, driver name `otlp`) aggregates counters, gauges and explicit-bucket
+  histograms (the OpenTelemetry default bounds) per name and attribute set, and every `metricIntervalMs` POSTs their
+  cumulative values to `<endpoint>/v1/metrics`. A lost send loses no count; past `maxQueue` series a new one is
+  dropped.
+
+A failing collector never reaches the traced or measured code.

@@ -18,7 +18,11 @@ The driver behind the `Logger` port, its reporter and two configurations. Member
 - Code logs through the `Logger` port of `@stackra/contracts`; nothing outside the container imports this package's
   driver directly.
 - Every record passes `redact` before any reporter sees it. A new reporter reuses `redact`; never bypass it.
-- `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`, the OTLP reporter through `fetch`.
+- `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`, the OTLP drivers (logs, traces,
+  metrics) through `fetch` via the shared `otlpExporter`. The tracer reaches `AsyncLocalStorage` only through
+  `process.getBuiltinModule`, never an import.
+- Span and metric attributes are ids and codes (ADR 0147 decision 3); a failed span records the error's code or class
+  name, never its message.
 - `src/{core,contracts}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339).
 - `TelemetryConfig` holds no Sentry DSN and no error sampling: `SentryConfig` of `@stackra/errors` is the one Sentry
   source (ADR 0465). Never add them back; this package does not depend on `@stackra/errors`.

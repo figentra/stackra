@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `OtlpConfig`, the configuration of the OTLP log reporter (key `logger.otlp`): the collector, the service
- *          name, the headers secret's name and the batching bounds.
+ * Purpose: `OtlpConfig`, the configuration of the OTLP log reporter, tracer and metrics drivers (key `logger.otlp`):
+ *          the collector, the service name, the headers secret's name, the batching bounds, the trace sample ratio and
+ *          the metric export interval.
  * Boundary: a configuration class over `OtlpOptions` with no env map; runway's `config.logger.otlp` layer sets it per
  *           environment, and the headers secret comes from the secret store. A host overrides it as
  *           `class OtlpConfig extends BaseOtlpConfig` with `override` members only.
@@ -13,7 +14,7 @@ import { Config } from "@stackra/config";
 import { OtlpOptions } from "#core/schemas/otlp-options.schema";
 
 /**
- * The OTLP log reporter's configuration.
+ * The OTLP drivers' configuration.
  *
  * @example
  * import { OtlpConfig as BaseOtlpConfig } from "@stackra/logger";
