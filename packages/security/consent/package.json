@@ -1,6 +1,6 @@
 {
   "name": "@stackra/consent",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version (ADR 0298); the ConsentConfig configuration with its shipped schema, the ConsentLedger, the ConsentStore port with cookie, storage and memory drivers, the React useConsent hook and the fakeConsent test helper; the server's versioned terms acceptance and consent proofs (ConsentProofService over the ConsentProofStore and ConsentAuthority ports), consent on behalf of another, the signed consent snapshot with its issuer, verifier and the client's consentSnapshotHeaders, and the consent endpoint IssueConsentSnapshotAction (./node); and the cookie banner, consent preferences, legal page and terms prompt (./ui)",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-mobile",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Mobile release infrastructure: the release plan read from the root and mobile runways (EAS project and environments, store records, push credentials and EAS-managed signing) with the owner steps no API can take, and its Pulumi slice, which resolves and checks the stack config",
   "keywords": [

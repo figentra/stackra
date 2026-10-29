@@ -1,6 +1,6 @@
 {
   "name": "@stackra/privacy",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra data-subject rights for PDPL and GDPR: the PersonalData kind each module declares (which model fields hold a subject's personal data and how each is erased), the DSAR export job that writes a subject's data across the declared models to a zip behind a signed, expiring link, and the erasure saga over @stackra/workflow that crypto-shreds the subject key, deletes or anonymises the rest, keeps what a legal hold covers and issues a receipt",
   "keywords": [

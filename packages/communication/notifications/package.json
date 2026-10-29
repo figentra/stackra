@@ -1,6 +1,6 @@
 {
   "name": "@stackra/notifications",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
   "keywords": [

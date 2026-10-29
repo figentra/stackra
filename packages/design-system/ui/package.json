@@ -1,6 +1,6 @@
 {
   "name": "@stackra/ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra Design System components: one component API, contracts shared, HeroUI v3 on web, HeroUI Native and Uniwind on native.",
   "keywords": [

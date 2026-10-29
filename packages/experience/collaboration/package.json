@@ -1,6 +1,6 @@
 {
   "name": "@stackra/collaboration",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra collaboration: presence, cursors, the Yjs binding and snapshots over the PresenceChannel, SyncTransport and SnapshotStore ports, gated by LiveCollaborationEntitlement; the CollaborationSession and SnapshotService, CollaborationConfig with its shipped schema, usePresence, useCursors, useSharedDocument and the memory drivers for tests, the realtime PresenceChannel and SyncTransport drivers over @stackra/realtime rooms with the RoomTokens port, the Postgres SnapshotStore, and comments on any Commentable record: threads, comments with revisions and tombstones, mentions with the MentionDirectory port, the CommentService and the comment-created and mention-created events",
   "keywords": [

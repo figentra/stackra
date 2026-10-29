@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-github",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "GitHub as code: the repository plan read from the root runway (settings, deployment environments with their reviewers and deploy refs, Actions variables, the CI secret names) and the committed rulesets and branch protection, plus the Pulumi slice that applies them and pins the OIDC subject CI trusts",
   "keywords": [

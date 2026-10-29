@@ -1,6 +1,6 @@
 {
   "name": "@stackra/platform",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra platform: the Platform capability port with its typed refusal, the app lock, push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform, push and app lock) and Turnstile (Worker and Node) drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "keywords": [

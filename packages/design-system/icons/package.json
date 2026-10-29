@@ -1,6 +1,6 @@
 {
   "name": "@stackra/icons",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "IconName contract and per-platform icon registries for the Stackra Design System",
   "keywords": [

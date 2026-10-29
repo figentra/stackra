@@ -1,6 +1,6 @@
 {
   "name": "@stackra/clients",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra generated-client runtime: the ref factories gen writes into #stackra/clients (actions, queries, events, refusals, shapes, widgets, modules, permissions, intents), ServiceClient with call and queue, the HTTP ClientTransport and MutationSender drivers, the React query and action hooks, the Worker's public clients and forwarded facts, and fakeClient",
   "keywords": [

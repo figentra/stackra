@@ -1,6 +1,6 @@
 {
   "name": "@stackra/i18n",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra i18n: the Locale (seven languages and their overlays), NumberingSystem, HourCycle, LocaleUrlStrategy, LengthUnit and DisplayUnit enums, per-locale week start and clock (localeFormat), the I18nConfig configuration, the ICU message engine over namespaced catalogues with regional overlays, the typed key builder gen calls, the Arabic normaliser, digit switching, address, country, length and quantity formatting, the translation, geocoding and address-autocomplete ports (./contracts), the React provider and formatting hooks, and (./native) the native language switcher that follows the phone's per-app language or switches in place, with the phone's region formats and time zone",
   "keywords": [

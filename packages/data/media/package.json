@@ -1,6 +1,6 @@
 {
   "name": "@stackra/media",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra media: the Bucket kind (visibility, accepted media types, size limit, image variants), signed direct uploads that MediaLibrary claims into a bucket, stored on the FileSystem disk of @stackra/filesystem (any of its drivers), the sharp ImageTransformer with compositing, the in-region DOCX and PDF TextExtractor, the in-region PaddleOCR TextExtractor with Arabic, the c2pa ContentCredentials signer and reader, the Uploader port with its memory and HTTP drivers, MediaConfig with its shipped schema, the upload.create action, useUpload, useImageVariant and fakeUpload",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-spotlight",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra on-device search: the DeviceSearchIndex port, the SpotlightConfig visibility rules, the SpotlightIndexer that indexes the signed-in person's own recent records and clears them on sign-out, a memory driver, and the Expo driver over the StackraSpotlight module (iOS Core Spotlight, Android launcher shortcuts) with deep links back into the app",
   "keywords": [

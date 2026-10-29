@@ -1,6 +1,6 @@
 {
   "name": "@stackra/ai",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra AI kinds for a module's ai/ group: the Prompt, Skill and Facts<M> kind bases, the ToolSource and Approval vocabulary of the generated MCP tool table with approvalFor, retrieve(), the retrieval helper for Facts over the @stackra/search ports, and decide(), a typed choice, score or yes/no answer from a model on AI SDK core; plus the approval-mode resolver (resolveApproval, ApprovalMode) with the AI action permission matrix (ActionPermission, record scope, pack floor), the model router by task, region and data class (routeModel, resolveModel), the context field allow-list and redaction, token budgets, layered guardrails, eval runs and the intent router; the agent runtime (Agent, Promptable, AgentRuntime: prompt, stream, queue, resume) over the ConversationStore and RunStore ports, and in ./node the ADR 0100 tables (conversations, messages, runs, steps, tool calls, approvals, embeddings, A2A tasks) with the Postgres stores and the tenant-key encryption cast; and the PageReader port (readable text and schema.org product hints from one URL) with a memory driver and an egress-bounded HTTP driver",
   "keywords": [

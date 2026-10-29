@@ -1,6 +1,6 @@
 {
   "name": "@stackra/feature-flags",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags, and the feature-flags oxlint plugin with its no-plan-targeting rule",
   "keywords": [

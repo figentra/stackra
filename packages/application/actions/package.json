@@ -1,6 +1,6 @@
 {
   "name": "@stackra/actions",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra actions: the Action, Query, Precondition, ExtensionPoint, Extension and Interceptor kind bases, the fixed action pipeline (tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, handle), the idempotency and rate-limit stores behind ports, RequestContext, the RateLimitConfig configuration and the action testing helpers, the approval step (ApprovalGate), effect tags (bulk included), structural actions guarded by LiveConfigurationGuard, meters with the usage.recorded event, the outbox AuditTrail driver, and the Valkey idempotency and rate-limit stores with StoresConfig",
   "keywords": [

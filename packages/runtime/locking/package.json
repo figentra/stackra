@@ -1,6 +1,6 @@
 {
   "name": "@stackra/locking",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Stackra locking: the Locks service that runs work under named server-side locks (sorted keys, a TTL renewed while the work runs, a fencing token per lease, try-without-waiting for single-runner jobs), the LockDriver port, the memory driver, the Postgres advisory-lock driver with its WAL-position token, the Valkey driver, the locks driver of the cache fill lock, and LockingConfig with its shipped schema",
   "keywords": [
