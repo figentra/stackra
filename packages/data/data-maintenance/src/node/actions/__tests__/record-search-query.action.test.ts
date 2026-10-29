@@ -36,4 +36,14 @@ describe(RecordSearchQueryAction, () => {
     await action.handle(input, {} as unknown as ActionContext);
     expect(stores).toEqual([[SCOPE, { model: "Product", phrase: null, hits: 0, latencyMs: 3 }]]);
   });
+
+  it("stores a click with its phrase and clicked id, and no read counts", async () => {
+    const stores: unknown[][] = [];
+    const log = { store: async (...args: unknown[]) => void stores.push(args) };
+    await new RecordSearchQueryAction(log as unknown as PostgresSearchQueryLogDriver).handle(
+      RecordSearchQueryInput.create({ model: "Product", phrase: "linen", clicked: "prd_1" }),
+      { scope: SCOPE } as unknown as ActionContext,
+    );
+    expect(stores).toEqual([[SCOPE, { model: "Product", phrase: "linen", clicked: "prd_1" }]]);
+  });
 });

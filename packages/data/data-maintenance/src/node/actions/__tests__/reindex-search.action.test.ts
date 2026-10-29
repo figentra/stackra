@@ -64,6 +64,15 @@ describe(ReindexSearchAction, () => {
       version: 2,
     });
   });
+
+  it("reindexes every model when none is named, outside a scope", async () => {
+    const registry = {} as SearchIndexRegistry;
+    await new ReindexSearchAction(search, registry).handle(
+      ReindexSearchInput.create({}),
+      {} as unknown as ActionContext,
+    );
+    expect(reindexSearch).toHaveBeenLastCalledWith(search, registry, undefined, {});
+  });
 });
 
 describe(ReindexSemanticAction, () => {
@@ -82,5 +91,16 @@ describe(ReindexSemanticAction, () => {
     );
     expect(output.indexed).toBe(2);
     expect(reindexSemantic).toHaveBeenCalledWith(search, semantic, {});
+  });
+
+  it("backfills the named model from the parsed since", async () => {
+    const semantic = {} as SemanticChangeService;
+    await new ReindexSemanticAction(search, semantic).handle(
+      ReindexSearchInput.create({ model: "CaseNote", since: SINCE }),
+    );
+    expect(reindexSemantic).toHaveBeenLastCalledWith(search, semantic, {
+      model: "CaseNote",
+      since: new Date(SINCE),
+    });
   });
 });

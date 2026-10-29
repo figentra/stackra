@@ -30,4 +30,22 @@ describe(QueuedSearchQueryLogDriver, () => {
       [RecordSearchQueryAction, { model: "Product", hits: 0, latencyMs: 4 }, { scope: SCOPE }],
     ]);
   });
+
+  it("queues a click with its phrase and clicked id, and no read counts", async () => {
+    const pushes: unknown[][] = [];
+    const queue = { push: async (...args: unknown[]) => void pushes.push(args) };
+    await new QueuedSearchQueryLogDriver({} as Database, queue as unknown as QueueService).record({
+      model: "Product",
+      phrase: "linen",
+      clicked: "prd_1",
+      scope: SCOPE,
+    });
+    expect(pushes).toEqual([
+      [
+        RecordSearchQueryAction,
+        { model: "Product", phrase: "linen", clicked: "prd_1" },
+        { scope: SCOPE },
+      ],
+    ]);
+  });
 });
