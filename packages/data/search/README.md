@@ -225,13 +225,17 @@ semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.
 `SearchIndexRegistry` (`./node`) reads and writes it: `list()`, `invalidateChanged(models)` (call it at boot: an index
 whose facet changed turns `invalid`), and `begin`/`progress`/`finish` for a run.
 
-Rebuilds run as jobs (ADR 0404 d3), queued by `stackra search:reindex` (the `searchReindex` runner) or by code:
+Rebuilds run as jobs (ADR 0404 d3). The work is here (`./node`); the jobs that run it, and the `searchReindex` runner
+`stackra search:reindex` loads, live in the add-on `@stackra/data-maintenance` with their system-held permissions
+(ADR 0462 decision 1):
 
-- `ReindexSearchAction` rebuilds one model (every registered model when none is named) in the job's scope, in batches
-  of 500 through `SearchIndex.reindex({ after, onBatch })`, recording each batch's cursor; a stopped run resumes after
-  it when the facet is unchanged. `since` (ISO 8601) indexes only rows updated since then and leaves the registry alone.
-- `ReindexSemanticAction` backfills the vector passages of the semantic models through `SemanticChangeService.index`.
-  It is its own job so a service without an embedder never builds one for a plain reindex.
+- `reindexSearch(search, registry, scope, { model, since })` rebuilds one model (every registered model when none is
+  named) in the scope, in batches of 500 through `SearchIndex.reindex({ after, onBatch })`, recording each batch's
+  cursor; a stopped run resumes after it when the facet is unchanged. `since` indexes only rows updated since then and
+  leaves the registry alone. Its job is `data_maintenance.index.reindex`.
+- `reindexSemantic(search, semantic, { model, since })` backfills the vector passages of the semantic models through
+  `SemanticChangeService.index`. Its own job, `data_maintenance.index.reindex_semantic`, keeps a service without an
+  embedder from building one for a plain reindex.
 
 `stackra search:status` (the `searchStatus` runner) prints the registry.
 

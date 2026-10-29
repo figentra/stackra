@@ -68,9 +68,12 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `scope` (from `scopeId`/`scopePath`, never input) and `SearchIndex` passes the session's `app.scope_paths` as
   `SearchRequest.scopePaths`, which the driver must apply to matches and facet counts (ADR 0089 d6). Postgres sets
   `isolatesScopes` true and gets none.
-- A full rebuild runs only as `ReindexSearchAction` (a job), which records its cursor in `search.indexes` through
-  `SearchIndexRegistry`; never loop `SearchIndex.reindex` in a request. The registry holds counts and states only, no
-  row data, and has no RLS; only platform code reads it. The CLI reaches it through `searchReindex`/`searchStatus`.
+- A full rebuild runs only as a job: `reindexSearch`, called by `ReindexSearchAction` of @stackra/data-maintenance,
+  records its cursor in `search.indexes` through `SearchIndexRegistry`; never loop `SearchIndex.reindex` in a request.
+  The registry holds counts and states only, no row data, and has no RLS; only platform code reads it. The CLI reaches
+  it through `searchStatus` here and `searchReindex` of @stackra/data-maintenance.
+- Declare no action here. A job over this package's work goes in @stackra/data-maintenance, which holds its
+  system-held permission; search never depends on it (ADR 0462 decision 1).
 - Record visibility is the one narrowing a search adds, and it goes in before ranking and before facet counting: `SearchIndex` passes
   `visibleKeysQuery`'s subquery as `SearchRequest.visible`, and a driver applies it in every lane or refuses (ADR 0333).
 - Snippets read the field's data class: a `no_snippet` field is excerpted only when the caller says the user is on the

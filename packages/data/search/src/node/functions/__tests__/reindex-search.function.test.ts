@@ -1,15 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the reindex jobs: a full rebuild begins in the registry, resumes after a stopped run's cursor,
- *          records each batch and finishes with the total; `since` runs a partial reindex without touching the
- *          registry; no model name reindexes every registered one; an unknown name is `search_model_unknown`; the
- *          semantic job embeds each batch of semantic models only.
+ * Purpose: unit tests of `reindexSearch` and `reindexSemantic`: a full rebuild begins in the registry, resumes after a
+ *          stopped run's cursor, records each batch and finishes with the total; `since` runs a partial reindex without
+ *          touching the registry; no model name reindexes every registered one; an unknown name is
+ *          `search_model_unknown`; the semantic backfill embeds each batch of semantic models only.
  * Boundary: test only; a stand-in `Search` whose index calls `onBatch` with fixed batches, a recording registry and a
  *           recording semantic service, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0404 (decision 3); ADR 0221 (decision 7).
  */
-import type { ActionContext } from "@stackra/actions";
 import { isRefusal } from "@stackra/errors";
 import { Model, Searchable } from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -17,10 +16,9 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { SearchModelUnknownError } from "#core/errors/search-model-unknown.error";
 import type { Search } from "#core/services/search.service";
 import type { SearchReindexOptions } from "#core/types/search-reindex-options.type";
-import { ReindexSearchAction } from "#node/actions/reindex-search.action";
-import { ReindexSemanticAction } from "#node/actions/reindex-semantic.action";
 import { SEARCHABLE_MODELS } from "#node/constants/searchable-models.constant";
-import { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
+import { reindexSearch } from "#node/functions/reindex-search.function";
+import { reindexSemantic } from "#node/functions/reindex-semantic.function";
 import { searchFacetHashOf } from "#node/functions/search-facet-hash-of.function";
 import type { SearchIndexRegistry } from "#node/services/search-index-registry.service";
 import type { SemanticChangeService } from "#node/services/semantic-change.service";
@@ -35,8 +33,6 @@ class Product extends Model.with() {}
 class CaseNote extends Model.with() {}
 
 const scope = { id: "scp_1", path: "platform.acme" } as const;
-
-const ctx = { scope } as unknown as ActionContext;
 
 /** A search whose every index stores two batches of two rows, cursors `r2` and `r4`, recording its options. */
 function searchOf() {
@@ -72,7 +68,7 @@ function registryOf(begun: { readonly cursor?: string; readonly docCount: number
   return { registry, calls };
 }
 
-describe(ReindexSearchAction, () => {
+describe(reindexSearch, () => {
   afterEach(() => {
     SEARCHABLE_MODELS.clear();
   });
@@ -81,11 +77,7 @@ describe(ReindexSearchAction, () => {
     SEARCHABLE_MODELS.set("Product", Product);
     const { search, runs } = searchOf();
     const { registry, calls } = registryOf({ cursor: "r0", docCount: 10 });
-    const output = await new ReindexSearchAction(search, registry).handle(
-      ReindexSearchInput.create({ model: "Product" }),
-      ctx,
-    );
-    expect(output.indexed).toBe(4);
+    expect(await reindexSearch(search, registry, scope, { model: "Product" })).toBe(4);
     expect(runs[0]?.options.after).toBe("r0");
     expect(calls).toEqual([
       ["begin", "Product", scope, searchFacetHashOf({ text: ["title"] })],
@@ -99,10 +91,7 @@ describe(ReindexSearchAction, () => {
     SEARCHABLE_MODELS.set("Product", Product);
     const { search, runs } = searchOf();
     const { registry, calls } = registryOf({ docCount: 0 });
-    await new ReindexSearchAction(search, registry).handle(
-      ReindexSearchInput.create({ since: "2026-10-27T00:00:00.000Z" }),
-      ctx,
-    );
+    await reindexSearch(search, registry, scope, { since: new Date("2026-10-27T00:00:00.000Z") });
     expect(runs[0]?.options.since).toEqual(new Date("2026-10-27T00:00:00.000Z"));
     expect(calls).toEqual([]);
   });
@@ -112,17 +101,16 @@ describe(ReindexSearchAction, () => {
     SEARCHABLE_MODELS.set("CaseNote", CaseNote);
     const { search, runs } = searchOf();
     const { registry } = registryOf({ docCount: 0 });
-    const action = new ReindexSearchAction(search, registry);
-    expect((await action.handle(ReindexSearchInput.create({}), ctx)).indexed).toBe(8);
+    expect(await reindexSearch(search, registry, scope, {})).toBe(8);
     expect(runs.map((run) => run.model)).toEqual(["Product", "CaseNote"]);
-    const refused = await action
-      .handle(ReindexSearchInput.create({ model: "Prodct" }), ctx)
-      .catch((error: unknown) => error);
+    const refused = await reindexSearch(search, registry, scope, { model: "Prodct" }).catch(
+      (error: unknown) => error,
+    );
     expect(isRefusal(refused, SearchModelUnknownError)).toBe(true);
   });
 });
 
-describe(ReindexSemanticAction, () => {
+describe(reindexSemantic, () => {
   afterEach(() => {
     SEARCHABLE_MODELS.clear();
   });
@@ -137,10 +125,7 @@ describe(ReindexSemanticAction, () => {
         embedded.push([model, rows.length]);
       },
     } as unknown as SemanticChangeService;
-    const output = await new ReindexSemanticAction(search, semantic).handle(
-      ReindexSearchInput.create({}),
-    );
-    expect(output.indexed).toBe(4);
+    expect(await reindexSemantic(search, semantic, {})).toBe(4);
     expect(runs.map((run) => run.model)).toEqual(["CaseNote"]);
     expect(embedded).toEqual([
       [CaseNote, 2],
