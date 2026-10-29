@@ -9,7 +9,7 @@ deploys. Read `README.md` for the request steps and settings.
 ## Rules that fail the build
 
 - Versions are `catalog:<name>` or `workspace:*` only; `wrangler` comes from `catalog:deploy`.
-- `tsconfig.json` extends one `@stackra/typescript-config` preset and nothing else: `decorators`, because the type check reads `@stackra/app`'s decorated sources.
+- `tsconfig.json` extends one `@stackra/typescript-config` preset and nothing else: `decorators`, because the type check reads `@stackra/app`'s decorated sources. The same sources augment `@stackra/navigation`, so the Worker declares it as a devDependency (TS2664 otherwise).
 - `src/` imports no `node:*` module and only the runtime-neutral entries of `@stackra/app` (`.` and `./contracts`);
   tests may import `@stackra/app/server`.
 
