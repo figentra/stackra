@@ -17,12 +17,14 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds.
+ *          A host's follow-the-system ports (`systemDriverDefaults`) are listed and default to the driver of its runtime
+ *          (STA-1535, STA-1536).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
  *           own tests register, a port with several candidates (selected or not) defaults to its `memory` driver, else
  *           to its one `./testing` driver, else to the one driver declared `Driver(Port, { testDefault: true })`; a
- *           service's or app's wiring never gets a default. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
+ *           service's or app's wiring gets a default only for its follow-the-system ports. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
  *           library the member does not declare are left out, so the wiring never imports an undeclared library, and
  *           in a package's own wiring so are those from an undeclared `@stackra/*` package (its tests never build that
  *           candidate). The
@@ -48,6 +50,7 @@ import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -536,6 +539,12 @@ export function emitWiring(ir: MemberIR): string {
       for (const dep of tokens) used.push({ module: ir.member, dep });
     }
   }
+  // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
+  const systemDefaults = new Map<string, string>();
+  for (const { port, driver } of systemDriverDefaults(ir)) {
+    systemDefaults.set(port.name, driver);
+    used.push({ module: ir.member, dep: { class: port } });
+  }
   const added = new Set<string>();
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
@@ -581,16 +590,19 @@ export function emitWiring(ir: MemberIR): string {
       (candidate) =>
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
+    const system = systemDefaults.get(port.name);
     const fallback =
-      ir.layout !== "package" || candidates.length < 2
-        ? undefined
-        : candidates.some((candidate) => candidate.name === "memory")
-          ? "memory"
-          : testing.length === 1
-            ? testing[0]?.name
-            : candidates.filter((candidate) => candidate.testDefault === true).length === 1
-              ? candidates.find((candidate) => candidate.testDefault === true)?.name
-              : undefined;
+      system !== undefined && candidates.some((candidate) => candidate.name === system)
+        ? system
+        : ir.layout !== "package" || candidates.length < 2
+          ? undefined
+          : candidates.some((candidate) => candidate.name === "memory")
+            ? "memory"
+            : testing.length === 1
+              ? testing[0]?.name
+              : candidates.filter((candidate) => candidate.testDefault === true).length === 1
+                ? candidates.find((candidate) => candidate.testDefault === true)?.name
+                : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);
