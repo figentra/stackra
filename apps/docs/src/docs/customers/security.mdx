@@ -1,0 +1,136 @@
+---
+title: "Security overview"
+description: "How Stackra isolates tenants, authorises calls, keeps audit evidence, protects keys and secrets, and proves where each package came from."
+icon: "shield-check"
+---
+
+{/* Stackra file contract: Purpose: the buyer-facing security overview: each control, the decision behind it and whether it is built, designed or planned. Boundary: customer-facing documentation only; the laws are constitution/security and constitution/tenancy, the decisions are the linked ADRs; no control is described as built unless the code is in this repository. Runtime: docs. Governing contract: ADR 0212; ADR 0188; ADR 0415; ADR 0173; ADR 0174; ADR 0206; ADR 0437; ADR 0453 (decisions 7 to 9); ADR 0462; SECURITY.md; STA-1575, STA-1566. */}
+
+Stackra is a framework: your deployment runs its packages. This page says what the packages do for you, and for each
+control whether it is **built** (the code ships in the packages), **designed** (decided in an ADR, not complete in code)
+or **planned**. The rules contributors follow are in [Security](/constitution/security) and
+[Tenancy](/constitution/tenancy).
+
+## Summary
+
+| Control                                       | State                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------- |
+| Tenant isolation by forced row-level security | built (schema builder); catalogue-wide audit check planned              |
+| Authorization denies by default               | built (`@stackra/iam`)                                                  |
+| Per-tenant audit hash chain                   | built (`@stackra/access-log`); signed checkpoints designed              |
+| Tenant data keys wrapped by a KMS             | built (`@stackra/contracts` drivers)                                    |
+| Secrets only from a secret store              | built (secret references); designed for runway sync                     |
+| Signed packages, provenance, SBOM, scanning   | built (release workflow and registry)                                   |
+| Token verification and signed edge headers    | designed; being built for 0.1.0 (STA-1566)                              |
+| Out-of-region call refusal                    | built (`RegionGuardDriver`); see [Data residency](/customers/residency) |
+
+## Tenant isolation
+
+Every tenant-owned table carries `tenant_id` with `ENABLE` **and** `FORCE ROW LEVEL SECURITY` and a policy on the
+request's tenant, so the table owner cannot bypass it and a query that forgets its filter returns zero rows, never
+another tenant's data. Tables declare this through the scoped-table pattern (`belongsToTenant()`); hand-written RLS is
+not allowed. A cross-tenant miss answers "not found", never "permission denied", so a caller learns nothing about
+other tenants. The check that every tenant table in a database has both flags is planned.
+
+## Authorization
+
+- One authenticated principal per request, resolved once; handlers never read the caller from the body or client
+  headers.
+- `@stackra/iam` answers **deny** when nothing matches, and an explicit deny beats every grant. Every action has a
+  permission (code generation refuses one without), and every link of an actor chain (a service and the user it acts
+  for) must hold it ([0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table)).
+- The action pipeline order is fixed (tenancy, permission, precondition, entitlement, flag, idempotency); an app
+  configures the steps but cannot reorder or skip them.
+- Level L3 and L4 actions need a step-up of authentication.
+
+## Identity
+
+ZITADEL is the identity provider; `@stackra/identity` is a provider-neutral OIDC client
+([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)). Web sessions use a BFF
+with an HttpOnly cookie, code flow and PKCE; mobile uses PKCE with a rotated refresh token in secure storage; access
+tokens are short-lived JWTs.
+
+## Verification at the edge
+
+<Warning>
+  Designed, not built. The pieces below are being built for 0.1.0 under STA-1566. Until then, the
+  app's `EdgeHeaderGuard` (`@stackra/app`) reads edge headers that nothing signs yet: do not expose
+  an origin directly.
+</Warning>
+
+The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks), proposed):
+
+- Access tokens are verified against the identity provider's JWKS on every request.
+- The edge Worker forwards tenant and product headers with a timestamp, a key id and an HMAC over the headers, method,
+  path, body hash and request id. The API trusts them only when the signature is valid, younger than the validity
+  window (60 seconds by default) and its request id unseen; otherwise only public endpoints answer. Two keys are live
+  at once, so the secret rotates without a cut-over.
+- The origin accepts traffic only from the edge (Cloudflare Tunnel or authenticated origin pulls); the signature sits
+  on top of that lock, never in place of it.
+
+## Audit evidence
+
+- Every action and data change is audited, and the evidence enters the outbox in the same transaction as the change.
+- `@stackra/access-log` keeps each tenant's records in a SHA-256 hash chain: a changed, removed or reordered record
+  breaks verification. `stackra audit:verify` checks an exported proof bundle offline (the chain and its checkpoints).
+- Designed ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)): a KMS-signed checkpoint daily,
+  append-only storage under S3 Object Lock, 13 months hot, then cold storage; money events kept seven years. A tenant
+  can view and export its own audit log.
+
+## Encryption and keys
+
+- In transit everywhere; at rest through the cloud provider.
+- Tenant data keys are generated by AWS KMS and stored only wrapped, bound to the tenant by the encryption context, so a
+  wrapped key copied to another tenant does not unwrap. A tenant can bring its own KMS key
+  ([0415](/adr/0415-tenant-data-keys-wrapped-by-aws-kms-and-a-key-per-data-subject)).
+- A per-subject key is derived from the tenant key and a per-subject salt: destroying the salt makes that one person's
+  sealed fields unreadable. Deleting a tenant's wrapped keys crypto-shreds the tenant
+  ([0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)).
+- Operator access to production is break-glass only: MFA, one hour, alerted and audited (designed, 0188).
+
+## Secrets
+
+Code names a secret; it never holds a value. Production values live in Infisical and reach runtimes by sync on deploy;
+there are no `.env` files, and CI reads secrets through short-lived OIDC logins
+([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)). Every commit is scanned for secrets.
+
+## Supply chain
+
+What every package version has, from the release workflow and the registry
+([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine), [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)):
+
+| Step                     | What happens                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Before anything is built | Trivy scans the lockfile; a critical vulnerability with a released fix stops the release                                                        |
+| Publish                  | only the release workflow on `main`, in an environment that needs the owner's approval, through GitHub OIDC; no long-lived publish token exists |
+| Provenance               | each tarball carries a Sigstore provenance bundle naming the repository and workflow run; the registry refuses a version without one            |
+| Registry checks          | immutable versions; name, version and integrity must match; Pro tarballs must contain no source and no source maps                              |
+| Registry signature       | ECDSA P-256 over `<name>@<version>:<integrity>`, in npm's format: `npm audit signatures` verifies it                                            |
+| SBOM                     | a CycloneDX SBOM per release, signed keylessly with cosign and attached to the GitHub release                                                   |
+| No upstream proxy        | the registry never fetches from npmjs, so nobody can inject a package by name                                                                   |
+
+Verify the SBOM signature of a release:
+
+```bash
+cosign verify-blob --bundle sbom.cdx.json.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/figentra/stackra/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com sbom.cdx.json
+```
+
+## Data protection
+
+Personal data is classified per field and redacted from logs, events and errors; telemetry carries none. Exports,
+erasure and retention defaults follow [0189](/adr/0189-privacy-operations-and-data-retention). Where data lives is
+[Data residency](/customers/residency).
+
+<Warning>
+  **Owner to supply (STA-1576):** the data processing agreement, the sub-processor list and the
+  record of processing that 0189 decision 5 names. They are not published yet.
+</Warning>
+
+## Reporting a vulnerability
+
+Do not open a public issue. Use "Report a vulnerability" on the repository's Security tab, or email
+`security@figentra.com`, with the affected package and version, steps to reproduce and the impact. We acknowledge
+within three business days and credit you in the advisory if you want (`SECURITY.md`). Never put a secret value in a
+report.

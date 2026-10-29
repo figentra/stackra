@@ -7,7 +7,8 @@
  *           Logo and favicon are paths under `src/assets`; a page is its path under `src/docs` without the extension,
  *           and `{ folder }` lists every page of one folder (`adr` keeps every ADR at `/adr/<file>`).
  * Runtime: node
- * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decisions 3 and 4); stackra-177 (STA-1317).
+ * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decisions 3 and 4); stackra-177 (STA-1317); STA-1575
+ *                     (the customer tab and the /licensing redirect).
  */
 import { DocsConfig } from "@stackra/gen";
 
@@ -53,6 +54,24 @@ export class StackraDocsConfig extends DocsConfig {
           ],
         },
         { group: "Build", pages: [{ folder: "build" }] },
+      ],
+    },
+    {
+      tab: "For customers",
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      icon: "briefcase",
+      groups: [
+        {
+          group: "Use Stackra",
+          pages: [
+            "customers/install",
+            "customers/support",
+            "customers/security",
+            "customers/residency",
+            "customers/changelog",
+            "customers/packages",
+          ],
+        },
       ],
     },
     {
@@ -179,6 +198,8 @@ export class StackraDocsConfig extends DocsConfig {
     search: { prompt: "Search the Stackra docs" },
     seo: { indexing: "navigable", metatags: { "og:site_name": "Stackra" } },
     contextual: { options: ["copy", "view", "chatgpt", "claude"] },
+    // The registry points `npm login` at /licensing (workers/registry wrangler.jsonc REGISTRY_LICENCE_DOCS_URL).
+    redirects: [{ source: "/licensing", destination: "/customers/install" }],
     errors: {
       "404": {
         redirect: false,

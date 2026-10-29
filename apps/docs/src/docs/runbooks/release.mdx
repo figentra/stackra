@@ -1,19 +1,21 @@
 ---
 title: "Release"
-description: "Changesets per member, the version-packages pull request, tags and recovery."
+description: "Changesets, the version-packages pull request, publishing to the Stackra registry through GitHub OIDC, prereleases, failures and recovery."
 icon: "package-check"
 ---
 
+{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575. */}
+
 <Note>
-  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and
-  `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist.
-  `.github/workflows/release.yml` opens the version pull request and, on its merge, runs `changeset
-  publish` to npmjs with provenance (pnpm trusted publishing, no token). Not built: a
-  packed-artifact smoke test and signed artifacts. Today every package is still `"private": true`,
-  so nothing publishes yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry)
-  (supersedes 0013 decision 3), [0177](/adr/0177-package-distribution-npmjs-and-keygen) (npmjs,
-  provenance), [0024](/adr/0024-mit-license-with-exclusions) (MIT),
-  [0119](/adr/0119-merge-policy-and-release-authority) (the owner merges the version pull request).
+  Status 2026-10-29: live. `.github/workflows/release.yml` calls Runway's `npm` provider
+  (`runway-npm.yml`), which opens the version pull request and, on its merge, publishes to the
+  Stackra registry `https://npm.stackra.figentra.com/`
+  ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)).
+  Every package is `"private": false`. `0.1.0` is not released yet; prereleases go out under `next`.
+  Not built: the packed-tarball smoke test (`publint`, `attw`, Node, Vite and Metro,
+  [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4) and a workflow for
+  deprecations and dist-tag moves. npmjs is not a target: the optional mirror of 0453 decision 16 is
+  off and not built.
 </Note>
 
 ## The rules
@@ -21,10 +23,11 @@ icon: "package-check"
 - **Every change to a member ships with a changeset.** `pnpm changeset` records it; `pnpm changeset:status` fails when a changed member has none (target: chained into `pnpm verify`).
 - **`CHANGELOG.md` files are generated** by changesets and never hand-edited.
 - **Versions are bumped by the release job on `main`**, not on a feature branch. `guard-bash` denies `changeset version` locally for that reason.
-- **Merging the version pull request is the release decision.** Claude prepares it; the owner merges it ([0119](/adr/0119-merge-policy-and-release-authority) D7).
-- **Published or tagged versions are permanent.** A version is never republished or silently replaced; roll forward with a new patch.
-- **Only packages are versioned.** Apps and services deploy by commit SHA and get no version or tag (`privatePackages: { version: false, tag: false }`, [0025](/adr/0025-packages-publish-to-private-registry) decision 4).
-- **A package publishes when it flips to `"private": false`.** It then builds to `dist/*.mjs` + `.d.mts` and publishes to public npmjs (`@stackra` scope) with provenance.
+- **Merging the version pull request is the release decision.** Claude prepares it; the owner merges it ([0119](/adr/0119-merge-policy-and-release-authority) D7) and approves the `release` environment.
+- **One version for everything.** `@stackra/*` is one changesets `fixed` group, and `@stackra-pro/*` releases at the same version (0453 decision 18).
+- **Published versions are permanent.** The registry refuses a version that exists and refuses unpublishing; roll forward with a new patch.
+- **Only packages are versioned.** Apps and services deploy by commit SHA (`privatePackages: { version: false, tag: false }`, [0025](/adr/0025-packages-publish-to-private-registry) decision 4).
+- **Only CI publishes.** No person, laptop or long-lived token can publish; a fix is a new run of the workflow.
 
 ## A normal release
 
@@ -36,98 +39,110 @@ icon: "package-check"
   </Step>
   <Step title="Let CI open the version pull request">
     After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the
-    lockfile) and opens or updates one pull request titled `chore(release): version packages`.
+    lockfile) and opens or updates one pull request titled `chore(release): version packages`, pushed
+    as `stackra-bot` (repository secrets `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY`), so the
+    Quality Gate runs on it.
   </Step>
   <Step title="Review it">
-    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. The
-    release job pushes and opens it as `stackra-bot` (a GitHub App token from
-    `actions/create-github-app-token`, repo secrets `STACKRA_BOT_APP_ID` and
-    `STACKRA_BOT_PRIVATE_KEY`), so the Quality Gate runs on it without a close and reopen.
+    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. A major (or,
+    before 1.0, a breaking minor) needs its human release note first ([0013](/adr/0013-versioning-and-release)
+    decision 5).
   </Step>
-  <Step title="Merge it">
-    The merge to `main` is the release. The job builds, publishes every non-private package to
-    npmjs, tags it and creates the release notes.
+  <Step title="Merge it and approve the run">
+    The merge to `main` starts the release job, which waits in the `release` environment until the
+    owner approves it.
+  </Step>
+  <Step title="The job publishes">
+    1. Trivy scans the lockfile; a critical vulnerability with a released fix stops the run ([0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)).
+    2. It installs and builds what `build-args` selects.
+    3. For each package with `"private": false` whose version is not on the registry yet, it asks GitHub
+       for an ID token with audience `npm:npm.stackra.figentra.com`, exchanges it at
+       `/-/npm/v1/oidc/token/exchange/package/<name>` for a publish token bound to that one name
+       (15 minutes by default), and runs `pnpm publish --provenance` with it as `NODE_AUTH_TOKEN`.
+    4. The registry matches the token's repository (by numeric id too), workflow `release.yml`, ref
+       `refs/heads/main` and environment `release` against the scope's publisher row, then checks the
+       publish (below), stores the tarball and its provenance bundle, and signs the version.
+    5. The job tags `<name>@<version>`; changesets pushes the tags and creates the GitHub releases.
+    6. The `sbom` job writes a CycloneDX SBOM, signs it keylessly with cosign and attaches it to every
+       new release.
   </Step>
   <Step title="Verify">
-    `git ls-remote --tags origin` shows the new tags on the merge commit, and each member's
-    `CHANGELOG.md` contains the entry.
+    `git ls-remote --tags origin` shows the new tags on the merge commit. In a clean folder with the
+    `@stackra` scope mapped, `npm view @stackra/<name> versions --registry https://npm.stackra.figentra.com/`
+    lists the version and `npm audit signatures` passes.
   </Step>
 </Steps>
 
-## Before the first release (once, by a human)
+## What the registry refuses at publish
 
+From 0453 decision 7 and `workers/registry/README.md`: a version that already exists; a tarball over 50 MiB (the
+`registry.maxTarballBytes` default); a `package.json` name or version that differs from the request; an unknown
+`stackra.kind`; a licence that does not fit the scope (`@stackra-pro` must carry the commercial licence and no `src`
+or `.map`; `@stackra` must be MIT, or an open licence with a `NOTICE`); integrity or shasum that differs from what the
+registry computes; and a missing provenance bundle, or one for another digest or another workflow. Every publish,
+tag change, deprecation and token exchange is an audit row naming the workflow run.
+
+## Dispatch runs
+
+Actions → "Release" → Run workflow on `main`:
+
+| Input        | Does                                                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dry_run`    | packs every published package through the `.pnpmfile.mjs` hook and runs `pnpm -r publish --dry-run`; nothing leaves the runner                                                                                                        |
+| `prerelease` | publishes only `packages` (default: the five `*-config` presets) at `<base_version>-<dist_tag>.<run number>` under `dist_tag` (default `next`, never `latest`); the version is set on the runner only, nothing is committed or tagged |
+
+A prerelease waits for the same approval and publishes through the same OIDC exchange. A re-run skips versions that
+are already there.
+
+## Before the first release (once, by the owner)
+
+- The registry is deployed and its D1 migrations seeded the `publishers` rows (`workers/registry/README.md`, owner
+  runbook). Nothing is registered per package: the publisher row covers the whole scope.
+- The `release` GitHub environment exists, is restricted to `main` and has a required reviewer, so a branch that edits
+  the workflow cannot obtain a token.
 - Branch protection on `main` requires the `Quality Gate` check ([CI](/runbooks/ci)).
-- A tag ruleset on the version tag pattern blocks deletion and non-fast-forward updates for everyone. Version tags are immutable.
-- The host setting that lets the workflow token create pull requests is on.
-- The release job runs in a protected environment restricted to `main`, so a branch that edits the workflow cannot obtain a credential.
+- A tag ruleset on the version tag pattern blocks deletion and non-fast-forward updates.
+- The `stackra-bot` App secrets above exist.
 
-## Publishing to npmjs
-
-[0177](/adr/0177-package-distribution-npmjs-and-keygen) (amendment 2026-10-21) records the decision. The release job holds no npm token: changesets runs pnpm 12's native publish, which exchanges the job's GitHub OIDC token for a short-lived publish credential and signs a provenance statement. Each package needs a `repository` field matching `figentra/stackra` (the validator checks it).
-
-**One-time owner steps, per package** (the `@stackra` org is reserved, STA-154):
-
-<Steps>
-  <Step title="Flip the package">
-    In the package, set `"private": false` (its `publishConfig` is already there; `pnpm validate` requires it).
-  </Step>
-  <Step title="Register the trusted publisher">
-    Needs 2FA enabled on the owner's npm account for `npm trust` (and the web page). npmjs.com → the package → Settings →
-    Trusted publishing → GitHub Actions: organization or user `figentra`, repository `stackra`, workflow filename
-    `release.yml`, environment `release`. Or with the CLI (npm 11.5 or later; one configuration per package):
-    `npm trust github @stackra/<name> --repo figentra/stackra --file release.yml --env release --allow-publish`.
-  </Step>
-  <Step title="Optionally close the token path">
-    Same page, Publishing access → require two-factor authentication and disallow tokens.
-  </Step>
-</Steps>
-
-**First publish of a brand-new package.** A trusted publisher can only be registered for a package that already exists on
-the registry (`npm trust` says so too), so the job cannot create one. Publish the first version once by hand as an owner,
-from the package directory after `pnpm build`:
-`pnpm publish --no-git-checks --provenance=false --access public`. Use pnpm, not plain `npm publish`: npm would publish literal
-`workspace:` and `catalog:` versions, and it fails on provenance outside CI. Then register the trusted publisher above. The
-first version is not provenance-attested; ship a `0.0.x` placeholder.
-
-**Rehearse before any real release.** After registering `@stackra/tokens`: run the `Release` workflow with `dry_run` ticked
-(`pnpm -r publish --dry-run`, same job and environment). Then publish a throwaway `0.0.x` of `@stackra/tokens` from CI through a
-merged version pull request, and check `npm view @stackra/tokens dist.attestations` shows a provenance entry. Only then release
-anything real.
-
-The procedure the job follows:
-
-- **No token anywhere.** No `.npmrc` auth line, repository secret or Infisical entry for npm.
-- Build and publish with `id-token: write` only on the release job, in the protected `release` environment restricted to `main`.
-- Publish is idempotent: a version already on the registry is skipped, so re-running failed jobs is safe.
-- Consumers need no account or token to read `@stackra/*`.
-- A prerelease publishes under a `next` dist-tag and moves no floating tag.
-- `npm.figentra.com` still serves `@figentra/cli` and vellum; it is not the `@stackra` registry any more.
+There is no npm account, no `npm trust`, no npm token and no manual first publish: a new package publishes on its
+first release run like any other.
 
 ## When something fails
 
 Re-run only the failed jobs of the same run unless a row says otherwise.
 
-| Failed step                          | State              | Do                                                                                                |
-| ------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------- |
-| Version pull request not opened      | Nothing released   | Check the host setting for pull requests from workflows, then push any commit to `main` or re-run |
-| `verify` on the version pull request | Nothing released   | Close and reopen the pull request; if it is red, fix on `main` and let the job update it          |
-| Tagging                              | Merged, not tagged | Re-run the failed job; it tags over an existing release safely                                    |
-| Wrong bump merged                    | Tagged             | Roll forward: add a changeset and release the correction                                          |
+| Failed step                      | State                      | Do                                                                                                                    |
+| -------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Version pull request not opened  | Nothing released           | Check the App secrets and the host setting for pull requests from workflows, then push any commit to `main` or re-run |
+| Trivy                            | Nothing released           | Update the vulnerable dependency on `main`; the next run retries                                                      |
+| OIDC exchange answers 401 or 403 | Nothing for that package   | The publisher row does not match: check the run is `release.yml` on `refs/heads/main` in the `release` environment    |
+| Publish refused (400 or 422)     | Earlier packages published | Read the registry's message (decision 7 above), fix on `main`, release again; published versions stay                 |
+| Run stopped half way             | Some packages published    | Re-run: versions already on the registry are skipped                                                                  |
+| Tagging                          | Published, not tagged      | Re-run the failed job; it tags over an existing release safely                                                        |
+| SBOM job                         | Published, no SBOM         | Re-run the `sbom` job                                                                                                 |
+| Wrong bump merged                | Tagged                     | Roll forward: add a changeset and release the correction                                                              |
 
 ## Revert
 
 - **Before merging:** close the version pull request. The next push recreates it from the remaining changesets.
-- **After merging:** roll forward. For a bad release that was published, deprecate it (`npm deprecate <pkg>@<bad> "<reason; use <good>>"`), move the `latest` dist-tag back to the last good version with `npm dist-tag add` if needed, and ship a fixed patch. Prefer deprecate over unpublish.
-- **A bad release record on the host:** mark it a prerelease or delete the release page; leave the tag.
+- **After publishing:** roll forward with a fixed patch. Deprecating a version or moving `latest` back needs a
+  publish token, which only the release workflow can obtain; no workflow does either yet, so until one exists the
+  patch is the remedy.
+- **A bad release record on GitHub:** mark it a prerelease or delete the release page; leave the tag.
 - **The workflow itself:** revert the workflow file on `main`; nothing else depends on it.
 
 ## Checks that back this page
 
-| Rule                                          | Check                   | State                        |
-| --------------------------------------------- | ----------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status` | Script live; not in `verify` |
-| No local `changeset version`                  | `guard-bash`            | Live                         |
-| Conventional commits and generated changelogs | commitlint, changesets  | Live                         |
-| Release workflow, tag ruleset                 | CI                      | Not built                    |
+| Rule                                          | Check                                        | State                        |
+| --------------------------------------------- | -------------------------------------------- | ---------------------------- |
+| Changeset per changed member                  | `pnpm changeset:status`                      | Script live; not in `verify` |
+| No local `changeset version`                  | `guard-bash`                                 | Live                         |
+| Conventional commits and generated changelogs | commitlint, changesets                       | Live                         |
+| Publish only from the release workflow        | registry publisher rows and OIDC claim match | Live                         |
+| Publish checks, signatures, provenance        | `workers/registry`                           | Live                         |
+| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                 | Live                         |
+| Packed-tarball smoke test                     | release job                                  | Not built                    |
+| Tag ruleset                                   | owner setting                                | Not checked                  |
 
-See also [Mobile release](/runbooks/mobile-release), [Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).
+See also [Get access and install](/customers/install) (the consumer side), [Mobile release](/runbooks/mobile-release),
+[Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).

@@ -7,7 +7,7 @@ Stackra file contract:
 Purpose: the agent notes of @figentra/docs: the docs layout, its checks, the system map and the personal data it holds.
 Boundary: this member only; the project rules are in the root AGENTS.md.
 Runtime: none
-Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373.
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575.
 -->
 
 Mintlify documentation site. Tier tag `tier:app`.
@@ -18,6 +18,11 @@ Mintlify documentation site. Tier tag `tier:app`.
   `src/assets/`, snippets in `src/snippets/`, the site configuration in `src/config/docs.config.ts` (a `DocsConfig`
   subclass from `@stackra/gen`). Member files (`README.md`, `AGENTS.md`, `package.json`, `stackra.config.ts`,
   `tsconfig.json`) and scripts (`scripts/`) stay outside `src/`.
+- `src/docs/customers/` is the buyer-facing tab: plain, accurate, no invented promise. A term the owner has not
+  decided (support levels, EOL dates, how to buy) stays a marked placeholder (`Owner to supply (STA-n)`).
+  `customers/packages.mdx` is a snapshot of every package's `package.json` (`stackra.summary`, `exports`): update its
+  row when a package is added, renamed or gains an entry. `/licensing` redirects to `customers/install` (the registry
+  points `npm login` there).
 - Never write `docs.json`, `llms.txt` or `api-reference/`: gen writes them into `.stackra/site/`, which is never edited
   or committed.
 - A new page is an `.mdx` under `src/docs/` plus an entry in a group of `src/config/docs.config.ts`; a new ADR needs no
