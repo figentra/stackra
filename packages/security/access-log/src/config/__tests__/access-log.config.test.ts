@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: unit tests of `AccessLogConfig`: a configuration keyed `access_log` that builds with the shipped defaults,
  *          reads the sink from `STACKRA_ACCESS_LOG_SINK`, takes a host override, and refuses an unknown sink or a
- *          retention under 90 days.
+ *          retention under 90 days, and fills the export token from the `ACCESS_LOG_EXPORT_TOKEN` secret.
  * Boundary: test only; pure configuration building, no container.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0146 as amended; ADR 0294 (decision 19); ADR 0212 (decision 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0146 as amended; ADR 0294 (decision 19); ADR 0212 (decision 6); STA-1579.
  */
 import { buildConfig, Config, ConfigInvalidError, configKey } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import type { DriverName } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -33,7 +34,10 @@ describe("AccessLogConfig", () => {
     const config = buildConfig(AccessLogConfig);
     expectTypeOf(config.sink).toEqualTypeOf<DriverName<AccessLogSink>>();
     expectTypeOf(config.retentionDays).toEqualTypeOf<number>();
-    expect({ ...config }).toEqual(ACCESS_LOG_CONFIG_SCHEMA.parse({}));
+    // The export token is a secret: a hidden getter, empty until the secret store fills it, so a spread omits it.
+    expect(Object.keys(config)).not.toContain("exportToken");
+    expect(config.exportToken).toBe("");
+    expect({ ...config, exportToken: "" }).toEqual(ACCESS_LOG_CONFIG_SCHEMA.parse({}));
     expect(config.sink).toBe("postgres");
     expect(config.retentionDays).toBe(400);
   });
@@ -43,6 +47,15 @@ describe("AccessLogConfig", () => {
       "memory",
     );
     expect(buildConfig(HostAccessLogConfig).retentionDays).toBe(730);
+  });
+
+  it("fills the export token from its secret (STA-1579)", () => {
+    const secrets = new (class extends SecretStore {
+      get(name: string): string | undefined {
+        return name === "ACCESS_LOG_EXPORT_TOKEN" ? "tok_1" : undefined;
+      }
+    })();
+    expect(buildConfig(AccessLogConfig, { secrets }).exportToken).toBe("tok_1");
   });
 
   it("refuses a sink no one ships and a retention under 90 days", () => {

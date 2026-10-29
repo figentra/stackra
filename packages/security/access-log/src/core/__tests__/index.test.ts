@@ -26,6 +26,7 @@ describe("@stackra/access-log", () => {
       "AccessLogWriteFailedError",
       "AccessLogged",
       "AccessRecorded",
+      "AuditExportFailedError",
       "MemoryAccessLogSinkDriver",
       "OutboxAccessLogSinkDriver",
       "findAuditChainBreak",

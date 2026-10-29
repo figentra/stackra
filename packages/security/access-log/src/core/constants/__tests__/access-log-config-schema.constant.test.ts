@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ACCESS_LOG_CONFIG_SCHEMA`: `postgres`, 400 days and financial, health and regulated failing
- *          closed by default, the shipped sinks only, known classes only in `failClosed`, and a whole number of days from 90.
+ *          closed by default, the shipped sinks only, known classes only in `failClosed`, a whole number of days from 90,
+ *          the audit retention left to the owner, and an HTTPS export endpoint or none.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26); ADR 0212 (decision 6).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26); ADR 0212 (decision 6); STA-1579.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -17,7 +18,25 @@ describe("ACCESS_LOG_CONFIG_SCHEMA", () => {
       sink: "postgres",
       retentionDays: 400,
       failClosed: ["financial", "health", "regulated"],
+      exportUrl: "",
+      exportToken: "",
     });
+  });
+
+  it("leaves the audit retention unset for the owner and takes whole days from 1 (STA-1579)", () => {
+    expect(ACCESS_LOG_CONFIG_SCHEMA.parse({})).not.toHaveProperty("auditRetentionDays");
+    expect(ACCESS_LOG_CONFIG_SCHEMA.parse({ auditRetentionDays: 2555 }).auditRetentionDays).toBe(
+      2555,
+    );
+    expect(ACCESS_LOG_CONFIG_SCHEMA.safeParse({ auditRetentionDays: 0 }).success).toBe(false);
+  });
+
+  it("takes an HTTPS export endpoint or none", () => {
+    const exportUrl = "https://siem.acme.example/ingest";
+    expect(ACCESS_LOG_CONFIG_SCHEMA.parse({ exportUrl }).exportUrl).toBe(exportUrl);
+    expect(
+      ACCESS_LOG_CONFIG_SCHEMA.safeParse({ exportUrl: "http://siem.acme.example" }).success,
+    ).toBe(false);
   });
 
   it("takes each shipped sink and nothing else", () => {

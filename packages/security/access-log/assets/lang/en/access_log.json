@@ -4,12 +4,16 @@
       "purge": "Purge old access records"
     },
     "audit_log_entry": {
-      "read": "Read the write audit"
+      "read": "Read the write audit",
+      "export": "Export the write audit"
     }
   },
   "errors": {
     "access_log_write_failed": {
       "message": "Access log unavailable; the read was served."
+    },
+    "audit_export_failed": {
+      "message": "Audit export unavailable; it will be retried."
     }
   }
 }

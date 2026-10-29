@@ -49,28 +49,32 @@ or query call throws, because `RequestContext` has no actor to log.
 
 ## What is here
 
-| Entry         | Symbol                                                                | Use                                                               |
-| ------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                      |
-| `.`           | `AccessLogService`                                                    | builds each record; fails open, or closed for `failClosed`        |
-| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink`, `retentionDays` (400, ≥90), `failClosed` classes          |
-| `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`               |
-| `.`           | `OutboxAccessLogSinkDriver`, `AccessRecorded`                         | `sink: "outbox"`: each record to the audit service as an event    |
-| `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run          |
-| `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                    |
-| `./contracts` | `AccessLogSink`                                                       | the port                                                          |
-| `./contracts` | `AccessRecord`, `AccessLink`, `AccessLoggedOptions`                   | types                                                             |
-| `./node`      | `AccessLogModule`, `AccessLogExplorer`                                | the root module and the facet's Explorer                          |
-| `./node`      | `PostgresAccessLogSinkDriver`, `AccessLogEntry`                       | the production sink and its tenant-owned, append-only table       |
-| `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table                 |
-| `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                         |
-| `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L2, system): the permission the retention job runs under |
-| `.`           | `linkAuditEntry`, `findAuditChainBreak`, `AUDIT_WRITE_SKIPPED`        | the audit chain's link and verifier; the skipped-write log event  |
-| `./contracts` | `AuditRecord`, `AuditLink`                                            | the stored write audit and its chain link                         |
-| `./node`      | `PostgresAuditTrailDriver`, `AuditLogEntry`                           | the `AuditTrail` store and its tenant-owned, append-only table    |
-| `./node`      | `AuditQuery`, `AuditQueryInput`, `AuditQueryOutput`                   | `access_log.audit_log_entry.search@1`: filter and page the audit  |
-| `./node`      | `AuditLogEntryView`, `AuditLogEntryPermissions`                       | the page item; `read` (L1), the permission the query derives      |
-| `./testing`   | `AccessLogSinkFake`, `AccessLogEntryFactory`, `toHaveLoggedAccess`    | a failing-capable fake, rows, the matcher                         |
+| Entry         | Symbol                                                                | Use                                                                 |
+| ------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                        |
+| `.`           | `AccessLogService`                                                    | builds each record; fails open, or closed for `failClosed`          |
+| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink`, `retentionDays`, `failClosed`, `auditRetentionDays`, export |
+| `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`                 |
+| `.`           | `OutboxAccessLogSinkDriver`, `AccessRecorded`                         | `sink: "outbox"`: each record to the audit service as an event      |
+| `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run            |
+| `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                      |
+| `./contracts` | `AccessLogSink`                                                       | the port                                                            |
+| `./contracts` | `AccessRecord`, `AccessLink`, `AccessLoggedOptions`                   | types                                                               |
+| `./node`      | `AccessLogModule`, `AccessLogExplorer`                                | the root module and the facet's Explorer                            |
+| `./node`      | `PostgresAccessLogSinkDriver`, `AccessLogEntry`                       | the production sink and its tenant-owned, append-only table         |
+| `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table                   |
+| `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                           |
+| `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L2, system): the permission the retention job runs under   |
+| `.`           | `linkAuditEntry`, `findAuditChainBreak`, `AUDIT_WRITE_SKIPPED`        | the audit chain's link and verifier; the skipped-write log event    |
+| `./contracts` | `AuditRecord`, `AuditLink`                                            | the stored write audit and its chain link                           |
+| `./node`      | `PostgresAuditTrailDriver`, `AuditLogEntry`                           | the `AuditTrail` store and its tenant-owned, append-only table      |
+| `./node`      | `AuditQuery`, `AuditQueryInput`, `AuditQueryOutput`                   | `access_log.audit_log_entry.search@1`: filter and page the audit    |
+| `./node`      | `AuditLogEntryView`, `AuditLogEntryPermissions`                       | the page item; `read` (L1) and `export` (L2)                        |
+| `./node`      | `ExportAuditAction`, `ExportAuditInput`, `ExportAuditOutput`          | `access_log.audit_log_entry.export@1`: the audit as NDJSON          |
+| `./contracts` | `AuditExportSink`                                                     | the port the export pushes each NDJSON batch to                     |
+| `./node`      | `HttpsAuditExportSinkDriver`                                          | `https`: a `fetch` POST to `exportUrl` (a SIEM collector)           |
+| `.`           | `AuditExportFailedError`                                              | the export sink's retryable refusal                                 |
+| `./testing`   | `AccessLogSinkFake`, `AccessLogEntryFactory`, `toHaveLoggedAccess`    | a failing-capable fake, rows, the matcher                           |
 
 No symbol is exported from two entries. `src/{contracts,core,node,testing}/index.ts` are stand-in barrels until gen
 writes the entry barrels (STA-339).
@@ -107,16 +111,42 @@ with `findAuditChainBreak`.
 
 Pick the driver in the host's wiring: `AuditTrail` → `postgres`.
 
+## Export (SIEM)
+
+`ExportAuditAction` (`access_log.audit_log_entry.export@1`, permission `access_log.audit_log_entry.export`, L2) is a
+job a user, a service or the platform dispatches with an optional `from`/`to`. It pages through `AuditQuery` (100 a
+page, newest first) and pushes each page to the `AuditExportSink` port as one NDJSON batch: one `AuditLogEntryView` per
+line, chain fields included, so the receiver verifies consecutive lines with `findAuditChainBreak`. A failed push fails
+the run (`AuditExportFailedError`, retryable); a retry re-sends the range, so the receiver dedupes on `id`.
+
+The `https` driver POSTs each batch (`content-type: application/x-ndjson`) to `AccessLogConfig.exportUrl` (HTTPS only)
+with the `ACCESS_LOG_EXPORT_TOKEN` secret as a bearer token when set; Splunk HEC, Datadog, Elastic or a log shipper
+takes it. No S3 driver ships: this package has no S3 client; a host's own class (`@Replaces(AuditExportSink)`) over its
+object store fills that role.
+
+```ts
+// runway: config.access_log.exportUrl = https://siem.acme.example/ingest; secret ACCESS_LOG_EXPORT_TOKEN
+await pipeline.execute(ExportAuditAction, { from: new Date("2026-10-01") }, { actor });
+```
+
+ZITADEL's sign-in, failed sign-in, second-factor, lockout and sign-out events enter this chain through
+`@stackra/identity`'s `ZitadelAuthEventsService`, which writes them through the `AuditTrail` port (keys
+`identity.idp_auth_event.<event>@1`).
+
 ## Retention
 
 `PurgeAccessLogAction` (`access_log.access_log_entry.purge@1`) runs at 03:30 UTC once per tenant and deletes the
 records older than `AccessLogConfig.retentionDays` (400 by default, about the thirteen months hot of ADR 0212 decision
 6; at least 90). It is the only delete of the table.
 
+The write audit's retention is stated in `AccessLogConfig.auditRetentionDays`. **Owner decision pending (STA-1579):**
+it has no default, and unset means the write audit is kept without limit. It is a stated policy only: no job deletes
+from `audit_log_entries` yet (see below).
+
 ## Not here
 
-- Retention of the write audit: the table grows until partitioned retention lands (data-layer gap analysis, gap 6);
-  `PurgeAccessLogAction` purges access records only.
+- Enforcing the write audit's retention: the table grows until partitioned retention lands (data-layer gap analysis,
+  gap 6); `PurgeAccessLogAction` purges access records only, and `auditRetentionDays` is not read by any job yet.
 - The per-field before/after diff of a write: that is the `Historical` trait (data-layer gap 3), which `AuditQuery`
   will join once it exists.
 

@@ -40,6 +40,7 @@ describe("@stackra/identity/node", () => {
       "VerifyPasskeyAction",
       "VerifyPasskeyInput",
       "VerifyPasskeyOutput",
+      "ZitadelAuthEventsService",
     ]);
   });
 });

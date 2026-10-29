@@ -28,6 +28,7 @@ describe("@stackra/identity/contracts", () => {
       "DeviceTokenStatus",
       "Guardianship",
       "IdpAdmin",
+      "IdpAuthEvent",
       "IdpSecondFactor",
       "LoginDirectoryStore",
       "LoginIdentifierKind",

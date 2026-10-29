@@ -5,7 +5,7 @@
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
  *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
- *          and enums their signatures name)
+ *          and enums their signatures name, and `IdpAuthEvent`, the auth events the audit chain keeps)
  *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package. Each
  *           symbol here is exported from this entry only (ADR 0294 decision 15).
@@ -16,6 +16,7 @@ export { AppApprovalPurpose } from "#contracts/enums/app-approval-purpose.enum";
 export { AppApprovalStatus } from "#contracts/enums/app-approval-status.enum";
 export { AppleSignInRefusal } from "#contracts/enums/apple-sign-in-refusal.enum";
 export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
+export { IdpAuthEvent } from "#contracts/enums/idp-auth-event.enum";
 export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { LoginIdentifierKind } from "#contracts/enums/login-identifier-kind.enum";
 export { PasskeyRefusal } from "#contracts/enums/passkey-refusal.enum";

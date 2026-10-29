@@ -13,7 +13,7 @@ import * as contracts from "#contracts/index";
 
 describe("@stackra/access-log/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["AccessLogSink"]);
+    expect(Object.keys(contracts).sort()).toEqual(["AccessLogSink", "AuditExportSink"]);
   });
 
   it("keeps the record, link and options shapes", () => {
