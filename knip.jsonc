@@ -187,7 +187,17 @@
       // app.json declares no OTA updates; knip's expo plugin assumes them.
       // @babel/plugin-transform-flow-strip-types: babel.config.js resolves it through babel-preset-expo on purpose, so
       // the override runs the preset's own copy (Babel 7) and the app declares none.
-      "ignoreDependencies": ["expo-updates", "@babel/plugin-transform-flow-strip-types"],
+      // expo-intent-launcher, expo-secure-store, expo-widgets, react-native-mmkv: native libraries of the app's packages
+      // (i18n, storage, platform), declared only so Expo autolinks them (tools/scripts/app-native-deps.mjs, STA-1544);
+      // the app never imports them itself.
+      "ignoreDependencies": [
+        "expo-updates",
+        "@babel/plugin-transform-flow-strip-types",
+        "expo-intent-launcher",
+        "expo-secure-store",
+        "expo-widgets",
+        "react-native-mmkv",
+      ],
     },
     // @stackra/app: imported only by gen's `.stackra/entry/<runtime>.ts` (generated_dependency_missing without it).
     // shortcut: CI's knip runs without gen, so the .stackra entry is absent; drop this block once knip runs after gen
