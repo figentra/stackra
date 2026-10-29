@@ -33,7 +33,7 @@ secret value.
    decisions 1 to 3). The app's identity (bundle id, package, name per locale) and capabilities come from the root
    `runway.yaml` `mobile.<app>` entry; its listing from the `assets/store/<app>/<locale>/` folder that entry names
    (`name.txt`, `subtitle.txt`, `description.md`, `keywords.txt`, `privacy.json`, and optional `shortDescription.txt`,
-   `promotionalText.txt`, `whatsNew.txt`); app-level facts from `assets/store/<app>/store.yaml` (urls, review contact
+   `promotionalText.txt`, `whatsNew.txt`); app-level facts from `assets/store/<app>/store.yaml` (the App Store Connect app id once the record exists, urls, review contact
    and notes, the demo account, seed and probe as secret NAMES, TestFlight groups, app groups). `privacy.json` holds
    one row per data type and source, naming a `@stackra/consent` category, and is the same in every locale. Screenshots
    are captured in CI from the app built from its template line (0441 decision 7) and never committed. `pnpm store

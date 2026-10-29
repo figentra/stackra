@@ -10,6 +10,7 @@
  *     review seed|probe          seed the review demo account, then sign in with it on production and see data
  *     submit                     iOS: attach --build to the version and submit for App Review   (owner approval)
  *     promote                    Android: move --version-code to the production track          (owner approval)
+ *     eas-submit                 write store.yaml's ascAppId into the template checkout's eas.json (before EAS)
  *   Flags: --app <key> (default app), --root <product repo> (default the current folder), --template <runway's
  *   template checkout of the app> (its app.json and dependencies), --captures <dir> (default .stackra/captures/<app>),
  *   --version <x.y.z>, --dry-run (default) | --live | --record, --fixtures <dir> (dry-run reads answers from it;
@@ -21,16 +22,17 @@
  * Secrets: ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON and the secrets store.yaml names come from the environment
  *   (Infisical over OIDC in CI) and leave only inside a request. Output is step names, resource ids and counts.
  */
-import { resolve } from "node:path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { ascCredentials, createAsc } from "./store-asc.mjs";
-import { TARGETS, buildStore } from "./store-build.mjs";
+import { TARGETS, buildStore, loadStore } from "./store-build.mjs";
 import { assertLiveAllowed, createTransport } from "./store-http.mjs";
 import { createPlay, playCredentials } from "./store-play.mjs";
 
 const USAGE =
-  "usage: pnpm store build|ios|android|review seed|review probe|submit|promote [--app key] [--root dir] [--template dir] [--captures dir] [--version v] [--build n] [--version-code n] [--dry-run|--live|--record] [--fixtures dir]";
+  "usage: pnpm store build|ios|android|review seed|review probe|submit|promote|eas-submit [--app key] [--root dir] [--template dir] [--captures dir] [--version v] [--build n] [--version-code n] [--dry-run|--live|--record] [--fixtures dir]";
 const APPROVED_ENV = "store-production";
 
 /** Fails unless this run may do an owner-approved step. */
@@ -196,6 +198,40 @@ export async function review(action, { config, transport, env, say }) {
   return 0;
 }
 
+/**
+ * Writes the product's App Store Connect app id into the template checkout's eas.json submit profile: the template
+ * line has no iOS submit block because the id is per product. Touches only the checkout, never the line.
+ */
+export function easSubmit(root, app, template, say) {
+  const { config, problems } = loadStore(root, app, { template });
+  if (!config) {
+    for (const p of problems) say(`problem: ${p}`);
+    return 1;
+  }
+  const file = template && join(template, "eas.json");
+  if (!file || !existsSync(file)) {
+    say(
+      "store: --template must be Runway's checkout of the app's template line (no eas.json there)",
+    );
+    return 1;
+  }
+  if (!config.ios?.ascAppId) {
+    say(
+      `store: ascAppId is missing from assets/store/${app}/store.yaml; set it once the app record exists`,
+    );
+    return 1;
+  }
+  const eas = JSON.parse(readFileSync(file, "utf8"));
+  eas.submit ??= {};
+  eas.submit.production = {
+    ...eas.submit.production,
+    ios: { ...eas.submit.production?.ios, ascAppId: config.ios.ascAppId },
+  };
+  writeFileSync(file, JSON.stringify(eas, null, 2) + "\n");
+  say(`eas.json: submit.production.ios.ascAppId set for ${app}`);
+  return 0;
+}
+
 /** Runs the command; returns the exit code. Tests inject `transport`, `env` and `write`. */
 export async function main(
   argv,
@@ -238,9 +274,10 @@ export async function main(
     positionals: [cmd, sub],
   } = args;
   const mode = o.replay ? "replay" : o.record ? "record" : o.live ? "live" : "dry-run";
+  const at = (p) => p && resolve(cwd, p);
+  if (cmd === "eas-submit") return easSubmit(at(o.root ?? "."), o.app, at(o.template), say);
   try {
     assertLiveAllowed(mode, env);
-    const at = (p) => p && resolve(cwd, p);
     const built = await buildStore(at(o.root ?? "."), o.app, {
       template: at(o.template),
       captures: at(o.captures),

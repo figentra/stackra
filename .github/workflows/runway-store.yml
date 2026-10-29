@@ -56,7 +56,9 @@ on:
         type: boolean
         default: false
       template-dir:
-        description: Runway's checkout of the app's template line, relative to the workspace.
+        description: >-
+          Runway's checkout of the app's template line (runMobileJob's templateDir), relative to the workspace; empty
+          means `.stackra/mobile/<app>`.
         type: string
         default: ""
       captures-dir:
@@ -99,7 +101,7 @@ jobs:
       VERSION_CODE: ${{ inputs.version-code }}
       FRACTION: ${{ inputs.fraction }}
       PLATFORM: ${{ inputs.platform }}
-      TEMPLATE_DIR: ${{ inputs.template-dir }}
+      TEMPLATE_DIR: ${{ inputs.template-dir || format('.stackra/mobile/{0}', inputs.app) }}
       CAPTURES_DIR: ${{ inputs.captures-dir }}
     steps:
       - name: Checkout product
@@ -129,7 +131,9 @@ jobs:
         working-directory: .stackra/core
         run: pnpm install --frozen-lockfile --filter stackra
 
+      # A build comes before its captures exist, so only the other steps need the store data complete.
       - name: Store build
+        if: inputs.action != 'build'
         run: |
           set -eu
           node .stackra/core/tools/scripts/store.mjs build --root . --app "$APP" \
@@ -182,6 +186,9 @@ jobs:
           if [ -z "$TEMPLATE_DIR" ] || [ ! -f "$TEMPLATE_DIR/app.json" ]; then
             echo "::error title=No template checkout::template-dir must be Runway's checkout of the app's template line"
             exit 1
+          fi
+          if [ "$PLATFORM" != android ]; then
+            node .stackra/core/tools/scripts/store.mjs eas-submit --root . --app "$APP" --template "$TEMPLATE_DIR"
           fi
           cd "$TEMPLATE_DIR"
           eas build --platform "$PLATFORM" --profile production --non-interactive --wait --auto-submit

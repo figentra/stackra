@@ -5,7 +5,7 @@
  *     the root runway.yaml `mobile.<app>`   identity (bundle id, package, name per locale), capabilities, `store` path
  *     <store>/<locale>/                     name.txt, subtitle.txt, description.md, keywords.txt, privacy.json, and
  *                                           optional shortDescription.txt, promotionalText.txt, whatsNew.txt
- *     <store>/store.yaml                    app-level facts: urls, review contact and notes, the demo account, seed and
+ *     <store>/store.yaml                    app-level facts: ascAppId, urls, review contact and notes, the demo account, seed and
  *                                           probe as secret NAMES, TestFlight groups, app groups, frame background
  *   and generates into `<root>/.stackra/store/<app>/`:
  *     screenshots/<target>/<locale>/NN.png  every store size from the CI captures (`--captures`, default
@@ -189,6 +189,8 @@ export function loadStore(root, app, { core = CORE, template } = {}) {
       appGroups: meta.appGroups ?? [],
       usesNonExemptEncryption: meta.usesNonExemptEncryption ?? false,
       testflight: meta.testflight ?? {},
+      // The app record's Apple ID: known once the record exists (a browser step), needed by eas submit.
+      ascAppId: meta.ascAppId === undefined ? undefined : String(meta.ascAppId),
     },
     android: id.android?.package && { package: id.android.package },
     urls: meta.urls ?? {},

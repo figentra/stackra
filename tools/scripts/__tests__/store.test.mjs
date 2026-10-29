@@ -38,6 +38,7 @@ function product({
   captures = 2,
   tablet = false,
   review = true,
+  ascAppId,
   locales = { en: { "name.txt": "Example", "subtitle.txt": "An example" } },
 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "store-test-"));
@@ -70,6 +71,7 @@ function product({
   writeFileSync(
     join(store, "store.yaml"),
     stringify({
+      ascAppId,
       urls: { privacyPolicy: "https://example.com/privacy", support: "https://example.com/help" },
       testflight: { groups: ["Internal", "Public Beta"] },
       review: review && {
@@ -480,4 +482,27 @@ test("runway entry and assets/store: store locale codes, capability mapping, one
   assert.deepEqual(loadStore(repo.dir, "shop", { core: ROOT }).problems, [
     "runway.yaml has no mobile.shop",
   ]);
+});
+
+test("eas-submit writes the product's ascAppId into the template checkout's eas.json, keeping the line's Play profile", async () => {
+  const android = {
+    serviceAccountKeyPath: "./.stackra/play-service-account.json",
+    track: "internal",
+  };
+  const write = (repo) =>
+    writeFileSync(
+      join(repo.tpl, "eas.json"),
+      JSON.stringify({ submit: { production: { android } } }),
+    );
+  let out = "";
+  const missing = product();
+  write(missing);
+  assert.equal(await main(["eas-submit", ...missing.args], { write: (t) => (out += t) }), 1);
+  assert.match(out, /ascAppId is missing/);
+
+  const repo = product({ ascAppId: 6_450_000_000 });
+  write(repo);
+  assert.equal(await main(["eas-submit", ...repo.args], { write: () => {} }), 0);
+  const eas = JSON.parse(readFileSync(join(repo.tpl, "eas.json"), "utf8"));
+  assert.deepEqual(eas.submit.production, { android, ios: { ascAppId: "6450000000" } });
 });
