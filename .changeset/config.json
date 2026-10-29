@@ -2,7 +2,7 @@
   "$schema": "../node_modules/.pnpm/node_modules/@changesets/config/schema.json",
   "changelog": "@changesets/changelog-git",
   "commit": false,
-  "fixed": [["@stackra/*", "@stackra-pro/*"]],
+  "fixed": [["@stackra/*"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

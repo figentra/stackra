@@ -77,16 +77,18 @@ jobs:
         with:
           install_args: node pnpm
 
-      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
       # in are not installed; none of them is deployed here (as deploy-static.yml).
       - name: Install dependencies
         run: >-
           pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-          --filter=!@stackra-pro/ui
 
       # A broken build or a failing test never reaches Cloudflare. The build writes dist/main.mjs, wrangler's main.
+      # The test runs outside turbo: turbo's test task waits for //#gen, which refuses the uninstalled playground.
       - name: Test and build
-        run: pnpm turbo run test build --filter=@figentra/worker-turbo-cache
+        run: |
+          pnpm turbo run build --filter=@figentra/worker-turbo-cache
+          pnpm --filter=@figentra/worker-turbo-cache test
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
