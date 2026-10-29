@@ -23,8 +23,18 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
   behind the splash and mounts `ContainerProvider`, then `I18nProvider` (the phone's language and region formats, and
   `setLocale`, which saves the account's `account.locale`).
 - Native permission strings and the Expo libraries' native settings go in `app.json` through each library's config
-  plugin (`NSUserTrackingUsageDescription` through expo-tracking-transparency, the camera through expo-camera, the
-  per-app languages through expo-localization); never hand-edit `ios/` or `android/` (ADR 0478).
+  plugin (the camera through expo-camera, the per-app languages through expo-localization); never hand-edit `ios/` or
+  `android/` (ADR 0478).
+- The app never shows the App Tracking Transparency prompt: it only reads the answer (`followSystem`), so it has no
+  expo-tracking-transparency plugin and no `NSUserTrackingUsageDescription`, and `ios.privacyManifests` says
+  `NSPrivacyTracking: false`. expo-tracking-transparency stays a dependency only so Expo autolinks it for
+  `@stackra/platform`. Adding cross-app tracking means the plugin, its usage string, `NSPrivacyTracking: true` with
+  `NSPrivacyTrackingDomains`, and a row in `store/data-collection.yaml`, in one change.
+- `app.json` and `eas.json` are hand-written in the shape `stackra gen` emits for a template app (runtime policy
+  `fingerprint`, the privacy manifest, `blockedPermissions` with the advertising id; one EAS channel and environment
+  per profile, `staging` and `production` store builds). This app has no `stackra.config.ts`, so gen does not write
+  them: keep them in step with the template's `.stackra/app.config.ts` and `.stackra/eas.json` by hand. Both stay
+  strict JSON (`pnpm validate`, `store build` reads `app.json`).
 - The app lock (`AppLockGate` from `@stackra/platform/native`, around the navigator) is off by default; turn it on
   with an `AppLockConfig` subclass in the container, never a flag in a screen. Face ID's usage text is the
   expo-local-authentication plugin entry in `app.json`.

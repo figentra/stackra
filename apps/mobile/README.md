@@ -13,6 +13,21 @@ HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.
 | `pnpm typecheck` / `pnpm lint` / `pnpm format` | The usual checks                                              |
 | `pnpm doctor`                                  | `expo install --check` — native versions match the SDK        |
 
+## Release config
+
+`app.json` and `eas.json` follow the shape `stackra gen` emits for a template app, by hand (this app has no
+`stackra.config.ts`):
+
+- EAS profiles `development` (simulator), `development-device`, `preview` (internal APK), `staging` and `production`
+  (store, auto-incremented), each on its own EAS Update channel and EAS environment. `submit.production` sends Android
+  to the Play internal track with the gitignored `.stackra/store/play-service-account.json`.
+- `runtimeVersion` uses the `fingerprint` policy. OTA updates are off (`updates.enabled: false`) until the app is
+  linked to an EAS project: `eas init` then `eas update:configure` add the project id and the update URL.
+- `ios.privacyManifests`: no tracking, no collected data (matches `store/data-collection.yaml`), and the
+  required-reason APIs React Native and the Expo modules call. The app reads the App Tracking Transparency answer but
+  never asks, so it ships no tracking prompt.
+- `android.blockedPermissions`: the microphone (the camera never records audio) and the advertising id.
+
 ## Structure
 
 ```text
