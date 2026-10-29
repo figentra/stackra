@@ -16,6 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 describe("emitToolConfigs", () => {
@@ -58,6 +59,12 @@ describe("emitToolConfigs", () => {
     expect(vitest).toContain('        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
     expect(vitest).toContain('        setupFiles: [".stackra/vitest.setup.ts"],');
     expect(vitest).toContain("        passWithNoTests: true,");
+  });
+
+  it("fails a member with source and no tests: only an empty member passes with none", () => {
+    const withSource = emitToolConfigs(LOYALTY_KIT_IR, { entries: [], registrations: false });
+    const vitest = withSource.find((file) => file.path === ".stackra/vitest.config.ts")?.content;
+    expect(vitest).not.toContain("passWithNoTests");
   });
 
   it("loads the registrations, the wiring and the factory partners in the setup", () => {
