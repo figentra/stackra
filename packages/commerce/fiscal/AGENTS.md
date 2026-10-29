@@ -55,6 +55,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./te
 - `FiscalDocument.suppliedAt` is optional; ZATCA prints it on a standard invoice and falls back to the issue date.
 - Every new public file goes in its barrel and that entry's `index.test.ts`.
 
+- `test:int` (`vitest.int.config.ts`, which wraps `vitest.config.ts` in `intTier` from `@stackra/vitest-config/int`)
+  runs the `.int.test.ts` files on a Testcontainers Postgres and needs Docker; `test` never runs them (STA-1570).
+
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`, or another package's `src/`.

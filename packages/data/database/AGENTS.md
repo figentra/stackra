@@ -175,7 +175,8 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
 
 ## Tasks
 
-`build`, `typecheck`, `lint`, `test`, `test:coverage`, `format`, `format:check`, `clean` (package scripts).
+`build`, `typecheck`, `lint`, `test`, `test:coverage`, `test:int`, `format`, `format:check`, `clean` (package scripts).
+`test:int` runs the `.int.test.ts` files through `vitest.int.config.ts` (`intTier`) and needs Docker (STA-1570).
 
 ## PII
 

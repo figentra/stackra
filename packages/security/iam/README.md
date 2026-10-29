@@ -214,6 +214,9 @@ held keys on `PermissionSnapshotService`; `usePermission` reads them.
 connected, and a memory policy source opened to "everyone is owner at the root", so a module's tests exercise its
 policies and handlers. Replace it with `app.get(PolicySource).load({...})` for exact grants.
 
+The Postgres policy snapshot store has an integration test (`.int.test.ts`, Testcontainers): `pnpm turbo run test:int
+--filter=@stackra/iam` runs it through `vitest.int.config.ts` and needs Docker.
+
 ## Not here
 
 - The IAM service: grant writes, the admin API, the explain query, snapshot events and the server `PolicySource`.

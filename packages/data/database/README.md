@@ -743,7 +743,8 @@ Two tiers, one API. The unit tier (`.test.ts`) runs on `MemoryDatabaseDriver`: r
 The integration tier (`.int.test.ts`) runs on a Testcontainers Postgres through `usePostgres()`. Its default image is
 the Stackra test image, built once per test process from PostGIS 3.6 on Postgres 18 plus the PGDG pgvector package, so
 every approved extension (`Extension`, PostGIS included) can be created (gap db19); `usePostgres({ image })` runs
-another image without the build.
+another image without the build. `pnpm turbo run test:int --filter=@stackra/database` runs the tier (`vitest.int.config.ts`,
+Docker needed); the CI Quality Gate runs every member's `test:int` (STA-1570).
 
 `assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
 `column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a

@@ -53,6 +53,9 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 - No `tenant` identifiers (R-59); the running scope comes from row-level security.
 
+- `test:int` (`vitest.int.config.ts`, which wraps `vitest.config.ts` in `intTier` from `@stackra/vitest-config/int`)
+  runs the `.int.test.ts` files on a Testcontainers Postgres and needs Docker; `test` never runs them (STA-1570).
+
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
