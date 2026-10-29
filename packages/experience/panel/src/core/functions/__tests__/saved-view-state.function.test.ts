@@ -12,6 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { Count } from "#core/enums/count.enum";
 import { savedViewState } from "#core/functions/saved-view-state.function";
+import { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
 import type { TableNode } from "#core/types/table-node.type";
 
 const table: TableNode = {
@@ -34,7 +35,7 @@ describe("savedViewState", () => {
   });
 
   it("applies a view's columns, filters and sort", () => {
-    const sort = { key: "status", direction: SortDirection.Asc };
+    const sort = SavedViewSort.create({ key: "status", direction: SortDirection.Asc });
     const state = savedViewState(table, {
       columns: ["status", "gone", "number"],
       filter: { status: "paid" },

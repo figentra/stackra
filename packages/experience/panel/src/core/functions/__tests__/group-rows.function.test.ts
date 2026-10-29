@@ -10,6 +10,8 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { groupRows } from "#core/functions/group-rows.function";
+import { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
+import { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 
 const rows = [
   { id: "a", status: "paid", channel: "web", totals: { totalMinor: 1000 } },
@@ -18,25 +20,29 @@ const rows = [
   { id: "d", channel: "web", totals: { totalMinor: "n/a" } },
 ];
 const totals = [
-  { key: "totals.totalMinor", aggregate: "sum" as const },
-  { key: "id", aggregate: "count" as const },
-  { key: "totals.totalMinor", aggregate: "max" as const },
+  SavedViewTotal.create({ key: "totals.totalMinor", aggregate: "sum" }),
+  SavedViewTotal.create({ key: "id", aggregate: "count" }),
+  SavedViewTotal.create({ key: "totals.totalMinor", aggregate: "max" }),
 ];
 
 describe("groupRows", () => {
   it("makes one group of every row without grouping", () => {
-    expect(groupRows(rows, { totals: [{ key: "totals.totalMinor", aggregate: "avg" }] })).toEqual([
-      { value: null, count: 4, totals: { "avg:totals.totalMinor": 1500 }, rows },
-    ]);
+    expect(
+      groupRows(rows, {
+        totals: [SavedViewTotal.create({ key: "totals.totalMinor", aggregate: "avg" })],
+      }),
+    ).toEqual([{ value: null, count: 4, totals: { "avg:totals.totalMinor": 1500 }, rows }]);
   });
 
   it("counts distinct non-null values", () => {
-    const [all] = groupRows(rows, { totals: [{ key: "status", aggregate: "distinct" }] });
+    const [all] = groupRows(rows, {
+      totals: [SavedViewTotal.create({ key: "status", aggregate: "distinct" })],
+    });
     expect(all?.totals).toEqual({ "distinct:status": 2 });
   });
 
   it("groups in first-met order with counts and totals", () => {
-    const groups = groupRows(rows, { group: { by: "status" }, totals });
+    const groups = groupRows(rows, { group: SavedViewGroup.create({ by: "status" }), totals });
     expect(groups.map((group) => [group.value, group.count])).toEqual([
       ["paid", 2],
       ["open", 1],
@@ -54,8 +60,8 @@ describe("groupRows", () => {
   it("sub-groups each group", () => {
     const [paid] = groupRows(rows, {
       // oxlint-disable-next-line unicorn/no-thenable -- reason: `then` is the saved view's sub-group key, not a promise
-      group: { by: "status", then: "channel" },
-      totals: [{ key: "totals.totalMinor", aggregate: "min" }],
+      group: SavedViewGroup.create({ by: "status", then: "channel" }),
+      totals: [SavedViewTotal.create({ key: "totals.totalMinor", aggregate: "min" })],
     });
     expect(paid?.rows).toBeUndefined();
     expect(

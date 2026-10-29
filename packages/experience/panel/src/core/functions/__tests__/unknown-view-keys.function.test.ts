@@ -12,6 +12,9 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { Count } from "#core/enums/count.enum";
 import { unknownViewKeys } from "#core/functions/unknown-view-keys.function";
+import { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
+import { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
+import { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 import type { TableNode } from "#core/types/table-node.type";
 
 const table: TableNode = {
@@ -33,10 +36,10 @@ describe("unknownViewKeys", () => {
       unknownViewKeys(
         {
           filter: { status: "open", trashed: "with" },
-          sort: { key: "createdAt", direction: SortDirection.Asc },
+          sort: SavedViewSort.create({ key: "createdAt", direction: SortDirection.Asc }),
           columns: ["number", "status"],
-          group: { by: "status" },
-          totals: [{ key: "totals.totalMinor", aggregate: "sum" }],
+          group: SavedViewGroup.create({ by: "status" }),
+          totals: [SavedViewTotal.create({ key: "totals.totalMinor", aggregate: "sum" })],
           layoutBy: "status",
         },
         table,
@@ -49,11 +52,11 @@ describe("unknownViewKeys", () => {
       unknownViewKeys(
         {
           filter: { channel: "web" },
-          sort: { key: "status", direction: SortDirection.Asc },
+          sort: SavedViewSort.create({ key: "status", direction: SortDirection.Asc }),
           columns: ["legacy", "legacy"],
           // oxlint-disable-next-line unicorn/no-thenable -- reason: `then` is the saved view's sub-group key, not a promise
-          group: { by: "status", then: "region" },
-          totals: [{ key: "weight", aggregate: "sum" }],
+          group: SavedViewGroup.create({ by: "status", then: "region" }),
+          totals: [SavedViewTotal.create({ key: "weight", aggregate: "sum" })],
           layoutBy: "dueOn",
         },
         table,
