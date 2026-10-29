@@ -72,4 +72,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
     "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
   ],
+  [
+    /^tools\/scripts\/__tests__\/__fixtures__\/store\//,
+    "recorded App Store Connect, Play and review API payloads, replayed byte-for-byte by store-http.mjs (ADR 0480)",
+  ],
 ];
