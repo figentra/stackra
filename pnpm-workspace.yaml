@@ -189,6 +189,9 @@ catalogs:
     # The native backlog features (owner 2026-10-29, STA-1537 to 1542), at the SDK 57 versions. MIT.
     # expo-local-authentication: the app lock; expo-sharing: receiving shares; expo-widgets and @expo/ui: Live Activities.
     expo-local-authentication: 57.0.3
+    # expo-apple-authentication: Sign in with Apple, required beside social sign-in on iOS (App Store 4.8, STA-1578);
+    # owner-approved 2026-10-29.
+    expo-apple-authentication: 57.0.2
     expo-sharing: 57.0.24
     expo-widgets: 57.0.27
     # Community libraries, owner-approved 2026-10-29: passkeys (STA-1538) and alternate app icons (STA-1541). MIT.

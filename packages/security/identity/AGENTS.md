@@ -43,7 +43,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
 - Sign in with Apple (STA-1578): the web and the hosted flow go through ZITADEL's Apple provider
   (`externalSignIn(SocialProvider.Apple, …)`; `signInProvidersOf` offers a configured Apple in every market).
   `AppleSignIn` is the native device step only, like `Passkeys`: nonce in, Apple's token out, refusals as values.
-  `expo-apple-authentication` is not a dependency (not in the catalog); `ExpoAppleSignInDriver` requires it on use
+  `expo-apple-authentication` is an optional peer (`catalog:mobile`); `ExpoAppleSignInDriver` requires it on use
   and throws a clear error without it. Never add a static import of it.
 - User-facing labels live in `assets/lang/<locale>/identity.json`, all seven locales (`ar`, `de`, `en`, `es`, `fr`,
   `it`, `nl`).

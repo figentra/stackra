@@ -200,7 +200,7 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
   market, after the pack's providers, and `externalSignIn(SocialProvider.Apple, identity)` sends the hosted sign-in
   (web, desktop, and the phone's system authentication session) to Apple through ZITADEL. A phone app that wants
   Apple's native sheet uses the `AppleSignIn` port: `ExpoAppleSignInDriver` needs `expo-apple-authentication` in the
-  app (it is not in the catalog yet; without it every call throws an error naming it), the app renders that
+  app (an optional peer, `catalog:mobile`; without it every call throws an error naming it), the app renders that
   library's `AppleAuthenticationButton`, and the server checks the token's nonce and exchanges it (not built here).
   An iOS app that offers any social provider must offer Apple too; runway's `mobile.<app>.signIn.social` refuses one
   that does not and adds the `com.apple.developer.applesignin` entitlement. The labels are

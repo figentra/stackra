@@ -171,6 +171,7 @@
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
     "electron": "catalog:desktop",
+    "expo-apple-authentication": "catalog:mobile",
     "expo-linking": "catalog:mobile",
     "expo-web-browser": "catalog:mobile",
     "jsdom": "catalog:frontend",
@@ -185,6 +186,7 @@
   },
   "peerDependencies": {
     "electron": "catalog:desktop",
+    "expo-apple-authentication": "catalog:mobile",
     "expo-linking": "catalog:mobile",
     "expo-web-browser": "catalog:mobile",
     "react": "catalog:frontend",
@@ -193,6 +195,9 @@
   },
   "peerDependenciesMeta": {
     "electron": {
+      "optional": true
+    },
+    "expo-apple-authentication": {
       "optional": true
     },
     "expo-linking": {
