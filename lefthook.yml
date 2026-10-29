@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=./node_modules/lefthook/schema.json
 # Stackra file contract:
 # Purpose: git hooks — pre-commit format/lint on staged files and a secret scan, commit-msg conventional
-#          commits, pre-push typecheck. Installed by `pnpm install` (prepare → lefthook install).
+#          commits, pre-push affected typecheck + unit tests. Installed by `pnpm install` (prepare → lefthook install).
 #          Hooks are advisory; the GitHub Actions Quality Gate workflow (.github/workflows/ci.yml) is the gate.
 # Owner: release-operations
 # Secrets: forbidden
@@ -52,8 +52,10 @@ commit-msg:
 
 pre-push:
   jobs:
-    - name: typecheck
-      run: pnpm typecheck
+    # Affected members only (build plan §4); `test` is the unit suite, `.int`/`.contract`/`.e2e`/`.load` have their own tasks.
+    # turbo diffs against `main`; set TURBO_SCM_BASE to change the base.
+    - name: typecheck-unit
+      run: pnpm exec turbo run typecheck test --affected
     # Warns on a non-Linear branch (ADR 0065 D5); never blocks, since a chore-lane PR may use any branch.
     - name: spec-branch
       run: node tools/scripts/spec-gate.mjs branch

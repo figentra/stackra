@@ -20,8 +20,11 @@ import { Enum } from "@stackra/contracts";
  * ```
  */
 export const OnDelete = Enum.of({
+  /** Deleting the parent deletes its rows. */
   Cascade: "cascade",
+  /** Deleting the parent sets the column to null. */
   SetNull: "set_null",
+  /** Deleting a parent that still has rows fails. */
   Restrict: "restrict",
 });
 

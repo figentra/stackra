@@ -27,6 +27,7 @@ interface WorkerContext {
 /** The signer, imported once per isolate and per key. */
 let signer: { readonly pem: string; readonly signer: Promise<Signer> } | null = null;
 
+/** The Worker's module handlers: serves the registry API for each request. */
 export default {
   async fetch(request: Request, env: RegistryEnv, ctx: WorkerContext): Promise<Response> {
     const settings = readSettings(env);

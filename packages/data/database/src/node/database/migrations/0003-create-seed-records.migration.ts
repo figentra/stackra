@@ -12,9 +12,7 @@
  * Governing contract: ADR 0396 (decision 1); ADR 0325 (decision 7: seeds are resumable); ADR 0190 (decision 1:
  *                     profiles); config-model section 6.
  */
-import { Migration } from "#core/bases/migration.base";
-import type { Blueprint } from "#core/types/blueprint.type";
-import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { Migration, type Blueprint, type SchemaBuilder } from "@stackra/database";
 
 /** Creates the seed ledger. */
 export class CreateSeedRecordsMigration extends Migration {

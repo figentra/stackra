@@ -6,9 +6,10 @@
  *          `compileMigration` (macros: the member's `database/macros/*.macro.ts` and every `Macro` a declared package
  *          exports from its `./node` entry), orders them across members (`orderMigrations`, `Migration({ after })`
  *          resolved there) and returns the `.stackra/migrations` files (`emitMigrations`).
- * Boundary: imports the migration and macro files (Node 24 strips their types) and the member's `@stackra/database`,
- *           resolved from the member root so the migration classes and the compiler share one kind registry. Writes
- *           nothing; `generate` writes or checks the files. A migration that does not load or compile is refused
+ * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
+ *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
+ *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
+ *           else; `generate` writes or checks the files. A migration that does not load or compile is refused
  *           (`migration_load_failed`, `migration_compile_failed`); so is a member with migrations and no
  *           `@stackra/database` (`migration_database_missing`), and an own `AppendOnly` model whose table no migration
  *           revokes `UPDATE` on (`append_only_not_revoked`, `checkAppendOnly`). No migration anywhere: no files and no import.
@@ -31,6 +32,7 @@ import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
+import { loadSourceModule } from "#node/functions/load-source-module.function";
 
 /** The part of `@stackra/database` the target calls. */
 interface DatabaseEntry {
@@ -199,9 +201,9 @@ export async function compileMigrations(
   for (const migration of found) {
     let exported: Record<string, unknown>;
     try {
-      // shortcut: Node refuses to strip types under node_modules, so a package installed from the registry (not a
-      // workspace link) does not load here; upgrade to compiling from the package's built output when one ships it.
-      exported = await load(migration.path);
+      // A package installed from the registry ships its migrations as source under node_modules, where Node refuses
+      // to strip types; loadSourceModule strips them into .stackra/cache first.
+      exported = await loadSourceModule(root, migration.path);
     } catch (error) {
       errors.push(
         refusal(

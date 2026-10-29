@@ -95,9 +95,13 @@ The rule behind the table: this repository must not presume a product domain, a 
 
 `pnpm agents:check` (and `node tools/scripts/agents-sync.mjs --lint`) scans every skill in `.agents/skills/` for technology the [not-built-yet list](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects: other ORMs, Nest, `reflect-metadata`, `encore.dev`, expo-router, Next.js, Jest, ESLint, Prettier, Zustand, i18next, class-validator, Express, Fastify, Sanity, Tauri, Better Auth, XState, Storybook, GraphQL, and `.spec` test files or a root `tests/` folder. A hit fails the check unless `SKILL_TECH_ALLOWED` in `tools/scripts/agents-sync.mjs` records why the mention is harmless, for example turborepo's example task names. A vendored skill is never edited in place, so the exception lives in the script, with its reason.
 
+### The licence check
+
+Every skill folder under `.agents/skills/` and `.agents/reference/`, and every plugin enabled in `.claude/settings.json`, records its SPDX licence in `.agents/skills/.licences.yaml` (house skills carry the repository's MIT). `tools/scripts/skill-licences.mjs` fails `pnpm validate` when a skill or plugin has no record, when its licence is not on the allowlist (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC), when a licence file in the skill folder reads as noncommercial, or when a record names a skill or plugin that is gone. A noncommercial or source-available skill (PolyForm Noncommercial and similar) cannot ship in commercial work, so it is never vendored or enabled.
+
 ## Adding a skill
 
-1. Is it upstream? Install it with `npx skills add` and record it here.
+1. Is it upstream? Check its licence is on the allowlist, install it with `npx skills add`, record it here and in `.agents/skills/.licences.yaml`.
 2. Is it a procedure someone re-derived, twice? Write a house skill with a category prefix. This is also where [a finding that outlives its fix](/agents/spec-lifecycle) lands when the class is "procedure".
 3. Does it contradict an accepted decision or the not-built-yet list? Do not add it, or fence it in `.agents/reference/` for the one agent that needs it. Route to `architecture-guardian`.
 4. Hand the change to `dependency-steward`, who owns skills alongside catalogs.

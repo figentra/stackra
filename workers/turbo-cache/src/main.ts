@@ -9,6 +9,7 @@
 import { handleTurboCacheRequest } from "#src/cache";
 import type { TurboCacheEnv } from "#src/interfaces";
 
+/** The Worker's module handlers: hands each request to the turbo cache API. */
 export default {
   fetch: (request: Request, env: TurboCacheEnv): Promise<Response> =>
     handleTurboCacheRequest(request, env),

@@ -1,0 +1,75 @@
+---
+title: "Token rotation after exposure"
+description: "What to do when a token reaches an agent transcript, a log or a terminal, and the guard that keeps process listings from printing injected secrets."
+icon: "refresh-cw"
+---
+
+A token that was printed is exposed, wherever it was printed: an agent transcript, a CI log, a terminal scrollback,
+a screenshot. Treat it as public. This page is the exposure path; the overlap steps themselves are in
+[Secrets: Rotation](/runbooks/secrets#rotation).
+
+## How it happens
+
+The incident of 2026-10-22 (STA-303): an agent ran `pnpm linear get` (which wraps `infisical run`) and a `ps` listing
+in the same command. The process table showed the arguments and environment of the child that held the injected
+`/agents` and `/ci` values, and `TURBO_TOKEN` and the Uniwind token were printed into the transcript. The owner rolled
+both.
+
+Since then `guard-bash` and the OpenCode guard (shared rules in `.agents/hooks/_rules.mjs`) deny:
+
+| Pattern                                                                                                                 | Where                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `ps -E`, a BSD cluster with `e` in any position (`ps eww`, `ps auxe`, `ps -p 1 e`), `launchctl procinfo`                | every command                                                                                                        |
+| a `/proc/<pid>/environ` path                                                                                            | every command                                                                                                        |
+| any `ps`, `pgrep -a` or `-l` (`--list-full`, `--list-name`), `procs`, `top`, `htop`, `btop`, `lsof`, or a `/proc/` path | a command that also runs `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*`, `pnpm pr:merge` or `mcp.sh` |
+
+Run a listing as its own command, after the wrapper has exited: `ps -o pid,command` and `pgrep -fl <name>` stay
+allowed on their own. The guard is an accident guard, not a boundary, so the rule below still holds.
+
+A value belongs in a child's environment or stdin, never on its argv, where any `ps` shows it. The bot wrappers
+(`bot-gh.mjs`, `pr-merge.mjs`) pass the token as `GH_TOKEN` in the child's environment, `linear.mjs` reads its
+token from the environment, and `secrets-import.mjs` writes through `NAME=@file`. The exception today is `mcp.sh`:
+it expands `$NAME` references from `.mcp.yaml` into the MCP server's arguments (`--api-key`, header values), so
+those servers carry a token on argv for as long as they run (STA-303 audit; STA-1617 moves them to environment
+variables).
+
+## When a token was printed
+
+<Steps>
+  <Step title="Stop and tell the owner">
+    Name the token (never its value), where it was printed and the command that printed it. An agent
+    stops its task here: it never rotates, reads or re-sets a value itself.
+  </Step>
+  <Step title="Revoke or roll at the vendor">
+    The owner creates the new value and revokes the old one where it is issued (the self-hosted
+    Turborepo cache for `TURBO_TOKEN`, Uniwind for `UNIWIND_AUTH_TOKEN`, HeroUI for
+    `HEROUI_AUTH_TOKEN`, the GitHub App for a bot key). Where the vendor holds two values, follow
+    the overlap in [Rotation](/runbooks/secrets#rotation); a token printed into a transcript is
+    already public, so keep the overlap short.
+  </Step>
+  <Step title="Set the new value in Infisical">
+    The owner writes it to `/ci` or `/agents`, or drops it in the secrets inbox for `pnpm
+    secrets:import` ([ADR-0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)).
+  </Step>
+  <Step title="Prove it works">
+    One real use of the new value: a CI run that hits the remote cache, a Quality Gate install, a
+    `pnpm linear mine`. Confirm by metadata, never by printing the value.
+  </Step>
+  <Step title="Purge what still holds it">
+    The CI run logs and artifacts that printed it. A transcript cannot be purged everywhere, which
+    is why the old value is revoked first.
+  </Step>
+  <Step title="Close the gap">
+    Record the roll (name, environment, date, who) as in [Rotation](/runbooks/secrets#rotation),
+    open a Linear issue for the command that leaked it, and add the pattern to `guard-bash` with a
+    deny test in `.agents/hooks/__tests__/guard-bash.test.mjs` and
+    `.opencode/plugins/guard/__tests__/decide.test.ts`.
+  </Step>
+</Steps>
+
+## Checks that back this page
+
+- `.agents/hooks/_rules.mjs`: the process-listing and `/proc/<pid>/environ` rules, run by `guard-bash.mjs` and by
+  the OpenCode guard (`.opencode/plugins/guard/decide.ts`)
+- `.agents/hooks/__tests__/guard-bash.test.mjs` and `.opencode/plugins/guard/__tests__/decide.test.ts`: the deny and
+  allow cases of STA-303

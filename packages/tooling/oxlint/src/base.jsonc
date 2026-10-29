@@ -19,13 +19,9 @@
 {
   "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
-  // Loaded from source (Node strips the types), so lint never needs a built dist and the root lint task keeps no
-  // ^build dependency (ADR 0421). The paths are relative to this file. @stackra/coding-standard is also a peer of this
-  // package so a consumer outside the repo installs it (it then names `@stackra/coding-standard`, not this path).
-  "jsPlugins": [
-    "../../../developer/coding-standard/src/core/constants/stackra-plugin.constant.ts",
-    "../../../state/feature-flags/src/lint/constants/feature-flags-lint-plugin.constant.ts",
-  ],
+  // Each loader in ./plugins/ imports the plugin's source inside this repository (Node strips the types, so lint keeps
+  // no ^build dependency, ADR 0421) and the published package everywhere else; both packages are peers of this one.
+  "jsPlugins": ["./plugins/stackra.mjs", "./plugins/feature-flags.mjs"],
   // B-1: a warning never fails a member's `oxlint .`, so every category that is on is an error.
   "categories": { "correctness": "error", "suspicious": "error" },
   "env": { "es2024": true },

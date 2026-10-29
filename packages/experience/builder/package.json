@@ -131,9 +131,6 @@
   "peerDependenciesMeta": {
     "react": {
       "optional": true
-    },
-    "yjs": {
-      "optional": true
     }
   },
   "engines": {

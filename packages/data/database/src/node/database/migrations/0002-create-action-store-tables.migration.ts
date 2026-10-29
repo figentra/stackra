@@ -13,9 +13,7 @@
  * Governing contract: ADR 0136 (decision 3: key, payload hash and result, 24 hours); ADR 0217 (decision 2: token
  *                     buckets); ADR 0396 (decision 2); ADR 0159 (as amended).
  */
-import { Migration } from "#core/bases/migration.base";
-import type { Blueprint } from "#core/types/blueprint.type";
-import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { Migration, type Blueprint, type SchemaBuilder } from "@stackra/database";
 
 /** Creates the idempotency and rate-limit tables. */
 export class CreateActionStoreTablesMigration extends Migration {

@@ -133,6 +133,7 @@ export class StackraDocsConfig extends DocsConfig {
           pages: [
             "runbooks/setup",
             "runbooks/secrets",
+            "runbooks/token-rotation",
             "runbooks/github-identities",
             "runbooks/ci",
             "runbooks/release",

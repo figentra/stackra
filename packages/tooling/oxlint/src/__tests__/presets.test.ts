@@ -27,12 +27,19 @@ describe("@stackra/oxlint-config presets", () => {
     });
   }
 
-  it("base.jsonc loads every JS plugin from a source file that exists", () => {
+  it("base.jsonc loads every JS plugin through a shipped loader whose source file exists here", () => {
     const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
     const plugins = /"jsPlugins":\s*\[([^\]]*)\]/.exec(text)?.[1] ?? "";
     const paths = [...plugins.matchAll(/"([^"]+)"/g)].map((match) => match[1] ?? "");
-    expect(paths).toHaveLength(2);
-    for (const path of paths) expect(existsSync(join(root, "src", path))).toBe(true);
+    expect(paths).toEqual(["./plugins/stackra.mjs", "./plugins/feature-flags.mjs"]);
+    for (const path of paths) {
+      const loader = join(root, "src", path);
+      const loaderText = readFileSync(loader, "utf8");
+      const source = /new URL\(\s*"([^"]+)"/.exec(loaderText)?.[1] ?? "";
+      // Inside this repository the loader takes the source; a consumer falls back to the package it names.
+      expect(existsSync(join(loader, "..", source))).toBe(true);
+      expect(loaderText).toMatch(/: "@stackra\/(coding-standard|feature-flags\/lint)"\)/);
+    }
     expect(text).toContain('"feature-flags/no-plan-targeting": "error"');
   });
 
@@ -60,11 +67,14 @@ describe("@stackra/oxlint-config presets", () => {
     expect([...enabled].sort()).toEqual([...registered].sort());
   });
 
-  it("package.json names @stackra/coding-standard as a peer, so a consumer installs the plugin", () => {
+  it("package.json ships the loaders and names both plugin packages as peers, so a consumer installs them", () => {
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+      files?: string[];
       peerDependencies?: Record<string, string>;
     };
+    expect(manifest.files).toContain("src/plugins/*.mjs");
     expect(manifest.peerDependencies?.["@stackra/coding-standard"]).toBeDefined();
+    expect(manifest.peerDependencies?.["@stackra/feature-flags"]).toBeDefined();
   });
 
   it("boundaries.jsonc keeps the tier rule", () => {

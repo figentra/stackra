@@ -13,9 +13,7 @@
  * Governing contract: ADR 0163 (decision 1: read models with `asOf`); ADR 0294 (decision 16); ADR 0159 (as amended);
  *                     ADR 0327 (decisions 3 and 9); `.agents/rules/tenancy.md` (point 3).
  */
-import { Migration } from "#core/bases/migration.base";
-import type { Blueprint } from "#core/types/blueprint.type";
-import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { Migration, type Blueprint, type SchemaBuilder } from "@stackra/database";
 
 /** Creates the projection versions table. */
 export class CreateProjectionRowsMigration extends Migration {

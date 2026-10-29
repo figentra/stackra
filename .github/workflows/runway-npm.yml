@@ -136,6 +136,9 @@ jobs:
           # The one script `changeset publish` is replaced by, so each package gets its own short-lived token.
           cat > "$RUNNER_TEMP/registry-publish.sh" <<'SH'
           set -euo pipefail
+          # A stalled TLS handshake waited curl's 300 s default and failed run 40891451236: bound each call and
+          # retry the transient failures (timeouts, 429, 5xx); a 404 still answers at once.
+          curl() { command curl --connect-timeout 20 --max-time 90 --retry 4 --retry-delay 5 "$@"; }
           host="${REGISTRY#https://}"
           pnpm -r ls --depth -1 --json |
             jq -r '.[] | select(.private != true) | [.name, .version, .path] | @tsv' |
@@ -155,8 +158,9 @@ jobs:
               export NODE_AUTH_TOKEN
               (cd "$dir" && pnpm publish --no-git-checks --access public --provenance --registry "$REGISTRY")
               unset NODE_AUTH_TOKEN
-              # Annotated, so the tag carries its tagger and date (changesets/action has set the git user).
-              git tag -a "${name}@${version}" -m "${name}@${version}"
+              # A tag left by an earlier run that published nothing is kept (run 40896627689); a new one is
+              # annotated, so it carries its tagger and date (changesets/action has set the git user).
+              git rev-parse -q --verify "refs/tags/${name}@${version}" >/dev/null || git tag -a "${name}@${version}" -m "${name}@${version}"
               # changesets/action reads this line to push the tag and create the GitHub release.
               echo "New tag: ${name}@${version}"
             done

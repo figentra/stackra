@@ -10,9 +10,14 @@ import type { AgentDocumentKind } from "#core/enums/agent-document-kind.enum";
 
 /** The folder of each kind, relative to the skill set root. */
 export const KIND_FOLDERS = {
+  /** Skills. */
   skill: "skills",
+  /** Rules. */
   rule: "rules",
+  /** Subagent definitions. */
   subagent: "subagents",
+  /** Slash commands. */
   command: "commands",
+  /** Hooks. */
   hook: "hooks",
 } as const satisfies Record<AgentDocumentKind, string>;

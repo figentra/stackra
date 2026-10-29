@@ -1386,7 +1386,9 @@ const runsBotReview = (t) =>
 const PRINTS_ENV = atName(
   String.raw`(?:printenv|env(?:\s+-[0v]+|\s+-u\s+\S+)*|set|(?:export|declare|typeset)(?:\s+-[a-zA-Z]*[xp][a-zA-Z]*)?)\s*(?:$|[|;&)\n<>]|\d+>|&>)`,
 );
-/** `ps` listing process environments (`-E`, or a BSD option cluster with `e`: `ps eww`), `launchctl procinfo`. */
+/** `ps` options whose value is the next word. */
+const PS_VALUE = /^-[a-zA-Z]*[oOpUuGgtMNc]$/;
+/** `ps` listing process environments (`-E`, or a BSD option cluster with `e`: `ps eww`, `ps -p 1 e`), `launchctl procinfo`. */
 const listsProcessEnv = (c) =>
   runnable(c).some((t) =>
     simpleCommands(t).some((s) =>
@@ -1395,11 +1397,56 @@ const listsProcessEnv = (c) =>
         if (b === "launchctl") return s.words[k + 1] === "procinfo";
         if (b !== "ps") return false;
         const args = s.words.slice(k + 1); // one `ps` per command: copying the words per name was quadratic
-        return (
-          args.some((a) => /^-[a-zA-Z]*E/.test(a)) || /^[a-zA-Z]*e[a-zA-Z]*$/.test(args[0] ?? "")
+        // A BSD cluster with `e` anywhere (`ps -p 1 eww`, STA-303), not the value of an option (`-o user`).
+        return args.some(
+          (a, i) =>
+            /^-[a-zA-Z]*E/.test(a) ||
+            (/^[a-zA-Z]*e[a-zA-Z]*$/.test(a) && !PS_VALUE.test(args[i - 1] ?? "")),
         );
       }),
     ),
+  );
+/** `/proc/<pid>/environ`: another process's environment, read by any command (STA-303). */
+const PROC_ENVIRON = /\/proc\/[^\s;&|()<>]*\/environ\b/;
+/** The scripts that run their program inside `infisical run` with every /agents value (package.json). */
+const SECRET_SCRIPT = /^(?:linear|spec:linear|pr:merge|bot:\S+|secrets:\S+)$/;
+/**
+ * A text that injects secrets into a child: `infisical run`, `mcp.sh`, or a package manager running a script of
+ * `SECRET_SCRIPT` (`pnpm [options] [run] linear`), the walk `runsBotReview` makes.
+ */
+const injectsSecrets = (t) =>
+  infisicalCommands(t).some((x) => x.sub === "run") ||
+  /(?:^|[\s/;&|(])mcp\.sh\b/.test(t) ||
+  simpleCommands(t).some(({ words }) => {
+    let script = false;
+    for (let k = 0; k < words.length; k++) {
+      const w = words[k];
+      if (["pnpm", "npm", "yarn"].includes(baseName(w))) script = true;
+      else if (script && SECRET_SCRIPT.test(w)) return true;
+      else if (script && PM_VALUE.test(w)) k++;
+      else script &&= w.startsWith("-") || ["run", "run-script"].includes(w);
+    }
+    return false;
+  });
+/**
+ * A process listing that shows another process's arguments or environment: any `ps` (it prints full arguments by
+ * default on macOS), `pgrep -a|-l` (`--list-full`, `--list-name`), `procs`, `top`, `htop`, `btop`, `lsof`, or a
+ * `/proc/` path. shortcut: every `ps` form counts, harmless columns (`-o pid`) too; narrow it if that gets in the way.
+ */
+const PROCESS_VIEWERS = new Set(["ps", "procs", "top", "htop", "btop", "lsof"]);
+const listsProcesses = (t) =>
+  /(?:^|[\s<'"=])\/proc\//.test(t) ||
+  simpleCommands(t).some((s) =>
+    nameIndexes(s.words).some((k) => {
+      const b = baseName(s.words[k]);
+      if (PROCESS_VIEWERS.has(b)) return true;
+      return (
+        b === "pgrep" &&
+        s.words
+          .slice(k + 1)
+          .some((a) => /^-[a-zA-Z]*[al]/.test(a) || a === "--list-full" || a === "--list-name")
+      );
+    }),
   );
 
 const DROP_DB = /\bDROP\s+(?:DATABASE|SCHEMA)\b/i;
@@ -1627,6 +1674,15 @@ const RULES = [
   {
     rx: listsProcessEnv,
     why: "Secrets guard: `ps -E`, `ps eww` (any BSD cluster with `e`) and `launchctl procinfo` print other processes' environments, MCP tokens included. Use `ps -o pid,command` or `pgrep -fl <name>`.",
+  },
+  {
+    rx: (c) => runsQuoted(c, (t) => PROC_ENVIRON.test(t)),
+    why: "Secrets guard: `/proc/<pid>/environ` holds a process's whole environment, injected tokens included (STA-303). Echo the single variable you need, without its value if it is a secret.",
+  },
+  {
+    // STA-303 incident: a `ps` beside `pnpm linear` printed the injected TURBO_TOKEN into the transcript.
+    rx: (c) => runnable(c).some(injectsSecrets) && runsQuoted(c, listsProcesses),
+    why: "Secrets guard: a process listing (`ps`, `pgrep -a|-l`, `procs`, `top`, `lsof`, `/proc/…`) in the same command as `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*` or `mcp.sh` can print the arguments or environment of the child that holds the injected secrets (STA-303). Run the listing as its own command, after the wrapper has exited.",
   },
 
   // --- Encore and deploys: the environment-touching subcommands ---------------------------------

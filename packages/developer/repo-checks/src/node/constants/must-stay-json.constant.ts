@@ -37,6 +37,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /(^|\/)expo-module\.config\.json$/,
     "Expo autolinking reads this fixed name as strict JSON (ADR 0478)",
   ],
+  [
+    /^brand\.json$/,
+    "the brand CLI (figentra-brand pull) reads and writes a product root's brand.json as strict JSON",
+  ],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/^\.github\/rulesets\/[\w-]+\.json$/, "GitHub REST ruleset payload (PUT …/rulesets/<id>)"],
   [

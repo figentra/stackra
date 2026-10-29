@@ -8913,6 +8913,9 @@ importers:
       '@stackra/coding-standard':
         specifier: workspace:*
         version: link:../../developer/coding-standard
+      '@stackra/feature-flags':
+        specifier: workspace:*
+        version: link:../../state/feature-flags
     devDependencies:
       '@stackra/typescript-config':
         specifier: workspace:*
