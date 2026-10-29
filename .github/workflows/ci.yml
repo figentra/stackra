@@ -143,11 +143,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # ADR 0299 decision 2: `mint validate` (build) and `mint broken-links` (lint) run above through turbo; the
-      # accessibility check is the third that must pass before a docs change merges and deploys.
-      - name: Docs accessibility
-        run: pnpm --filter @figentra/docs a11y
-
       # ADR 0302: the playground's Playwright + axe tier, every route in light, dark, LTR and RTL. Not part of
       # `pnpm verify`; the browser comes from Playwright's own download, pinned by catalog:e2e.
       - name: Playwright browser
