@@ -16,8 +16,9 @@
  *          with its `repositoryOf(Revision)`), and in a service the `SERVER_CONTRIBUTIONS` of its declared packages: the
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
- *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds.
- *          A host's follow-the-system ports (`systemDriverDefaults`) are listed and default to the driver of its runtime
+ *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
+ *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504). A host's
+ *          follow-the-system ports (`systemDriverDefaults`) are listed and default to the driver of its runtime
  *          (STA-1535, STA-1536).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
@@ -49,6 +50,7 @@ import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
+import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
@@ -538,6 +540,8 @@ export function emitWiring(ir: MemberIR): string {
       contributedConfigs.push(...contribution.configs);
       for (const dep of tokens) used.push({ module: ir.member, dep });
     }
+    // The pipeline resolves ReplicaReads optionally, so a replica query's port is reached here (STA-1504).
+    for (const dep of replicaReadsPorts(ir)) used.push({ module: ir.member, dep });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();

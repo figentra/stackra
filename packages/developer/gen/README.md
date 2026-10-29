@@ -114,6 +114,10 @@ the cache drivers its tokens reach), so an invalidating event forgets the cached
 `per: principal` and the scope's otherwise), each route subscribed on the bus for its registered event class and sent
 through `RealtimeRelay` when bound, else `RealtimeBroadcaster`.
 
+A service with a `reads: "replica"` query (STA-1504) reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
+pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:
+`@stackra/database`'s `DatabaseReplicaReadsDriver` (`database`) with the `DatabaseConfig` row (`readYourWrites`).
+
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
 `@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
