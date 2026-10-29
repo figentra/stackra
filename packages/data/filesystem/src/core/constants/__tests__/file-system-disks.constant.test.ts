@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `FILE_SYSTEM_DISKS`: one name per shipped driver, each the prefix of its driver file in
  *          snake_case.
- * Boundary: test only; the driver class names stand in for the file names gen reads. `electron` does not load in
- *           vitest, so it is replaced by a stand-in.
+ * Boundary: test only; the driver class names stand in for the file names gen reads. `electron` and
+ *           `expo-file-system` do not load in vitest, so each is replaced by a stand-in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 4).
  */
@@ -13,12 +13,14 @@ import { vi } from "vitest";
 import { FILE_SYSTEM_DISKS } from "#core/constants/file-system-disks.constant";
 import { MemoryFileSystemDriver } from "#core/drivers/memory-file-system.driver";
 import { ElectronFileSystemDriver } from "#desktop/drivers/electron-file-system.driver";
+import { ExpoFileSystemDriver } from "#native/drivers/expo-file-system.driver";
 import { GcsFileSystemDriver } from "#node/drivers/gcs-file-system.driver";
 import { EncoreBucketFileSystemDriver } from "#node/drivers/encore-bucket-file-system.driver";
 import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
 import { S3FileSystemDriver } from "#node/drivers/s3-file-system.driver";
 
 vi.mock("electron", () => ({ app: { getPath: () => "/tmp/stackra-user-data" } }));
+vi.mock("expo-file-system", () => ({ Directory: class {}, File: class {}, Paths: {} }));
 
 /** `MemoryFileSystemDriver` to `memory`: the class name less the port and kind, in snake_case. */
 function driverName(type: { readonly name: string }): string {
@@ -37,6 +39,7 @@ describe("FILE_SYSTEM_DISKS", () => {
       GcsFileSystemDriver,
       EncoreBucketFileSystemDriver,
       ElectronFileSystemDriver,
+      ExpoFileSystemDriver,
     ];
     expect([...FILE_SYSTEM_DISKS]).toEqual(drivers.map(driverName));
   });

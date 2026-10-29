@@ -11,7 +11,7 @@ import type { FILE_SYSTEM_DISKS } from "#core/constants/file-system-disks.consta
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `FileSystem` (`memory`, `local`, `s3`, `gcs`, `encore_bucket`, `electron`). */
+    /** The driver names of `FileSystem` (`memory`, `local`, `s3`, `gcs`, `encore_bucket`, `electron`, `expo`). */
     "filesystem.FileSystem": (typeof FILE_SYSTEM_DISKS)[number];
   }
 }

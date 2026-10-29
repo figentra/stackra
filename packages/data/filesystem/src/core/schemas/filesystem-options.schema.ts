@@ -68,7 +68,10 @@ export class FilesystemOptions extends Schema {
   /** Which driver runs; names are the driver file prefixes. `memory` is safe everywhere and keeps nothing. */
   disk: DriverName<FileSystem> = "memory";
 
-  /** The local disk's folder, resolved against the working directory; the Electron disk's, under `userData`. */
+  /**
+   * The local disk's folder, resolved against the working directory; the Electron disk's, under `userData`; the Expo
+   * disk's, under the app's documents folder.
+   */
   root = "storage";
 
   /** The base URL public files are served from (a CDN or the static route); `null` when the disk is private. */

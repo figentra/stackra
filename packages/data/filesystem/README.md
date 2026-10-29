@@ -2,12 +2,12 @@
 
 Stackra server disks: the `FileSystem` port, its memory, local, S3/R2, Google Cloud Storage and Encore bucket
 drivers, the Electron
-main-process driver, and `FilesystemConfig`, which picks the driver.
+main-process driver, the Expo phone driver, and `FilesystemConfig`, which picks the driver.
 
-**Tier:** `tier:lib` (`packages/data/filesystem`). Entries `.`, `./contracts`, `./node` and `./desktop`. Depends on
+**Tier:** `tier:lib` (`packages/data/filesystem`). Entries `.`, `./contracts`, `./node`, `./desktop` and `./native`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, zod, the AWS SDK S3 client and
 `@google-cloud/storage`;
-`electron` is an optional peer of `./desktop`.
+`electron` is an optional peer of `./desktop`, `expo-file-system` (MIT) of `./native`.
 
 ## What is here
 
@@ -26,6 +26,7 @@ main-process driver, and `FilesystemConfig`, which picks the driver.
 | `./node`      | `GcsFileSystemDriver`                   | `disk: gcs`: Google Cloud Storage (in-country GCP, ADR 0354); V4 signed URLs                               |
 | `./node`      | `EncoreBucketFileSystemDriver`          | `disk: encore_bucket`: the bucket the generated Encore app binds                                           |
 | `./desktop`   | `ElectronFileSystemDriver`              | `disk: electron`: the desktop app's files under `userData/<root>`                                          |
+| `./native`    | `ExpoFileSystemDriver`                  | `disk: expo`: the phone app's files under `<documents>/<root>`, written through a cache file               |
 
 ## Using a disk
 
@@ -72,6 +73,7 @@ for await (const text of body.pipeThrough(new TextDecoderStream())) parser.push(
 | `gcs`           | `filesystem.url` + key                                | V4 signed GET (at most 7 days)       | V4 signed PUT, content type signed       | the store's move    | kept                 | object update time    |
 | `encore_bucket` | the bucket's public URL                               | Encore signed download URL           | Encore signed upload URL, nothing signed | read, write, delete | kept                 | `null`                |
 | `electron`      | `file:` URL                                           | the same `file:` URL                 | refuses (`TypeError`)                    | read, write, delete | `null`               | file time             |
+| `expo`          | `file:` URI                                           | the same `file:` URI                 | refuses (`TypeError`)                    | read, write, delete | `null`               | file time             |
 
 ### Direct uploads and moves
 
@@ -85,7 +87,9 @@ gcs disks needs a CORS rule that allows `content-type` on `PUT`.
 
 ## Choosing the disk
 
-Runway sets `config.filesystem.disk` per environment, typed `DriverName<FileSystem>`:
+Runway sets `config.filesystem.disk` per environment, typed `DriverName<FileSystem>`. `memory` is the default, so a
+target that wires no other disk (a test, a phone build without `expo-file-system`) falls back to memory; an Expo app
+sets `disk: expo` to keep files on the device:
 
 ```yaml
 config:

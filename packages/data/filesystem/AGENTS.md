@@ -1,7 +1,7 @@
 # AGENTS — @stackra/filesystem
 
 Server disks behind the `FileSystem` port. Member at `packages/data/filesystem` (`tier:lib`), in the programming model
-v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
+v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`, `./native`.
 
 ## Where code goes
 
@@ -13,15 +13,16 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
 | A bundle-safe driver (no `node:*`)       | `src/core/drivers/<name>.driver.ts`              |
 | A driver that needs Node or the AWS SDK  | `src/node/drivers/<name>.driver.ts`              |
 | The Electron driver                      | `src/desktop/drivers/`                           |
+| The Expo (phone) driver                  | `src/native/drivers/`                            |
 | A function, a constant, a schema, errors | `src/core/{functions,constants,schemas,errors}/` |
 | A test                                   | `__tests__/<name>.<kind>.test.ts` beside it      |
 
 ## Entries and barrels
 
-- `src/{core,contracts,node,desktop}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/{core,contracts,node,desktop,native}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel.
 - `./contracts` imports no other entry; `.` stays bundle-safe; only `./node` imports `node:*` or `@aws-sdk/*`, only
-  `./desktop` imports `electron`.
+  `./desktop` imports `electron`, only `./native` imports `expo-file-system`.
 
 ## This package
 

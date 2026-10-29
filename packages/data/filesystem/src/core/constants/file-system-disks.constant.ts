@@ -17,4 +17,5 @@ export const FILE_SYSTEM_DISKS = [
   "gcs",
   "encore_bucket",
   "electron",
+  "expo",
 ] as const;

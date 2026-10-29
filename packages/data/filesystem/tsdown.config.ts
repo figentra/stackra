@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: build config of @stackra/filesystem: one tsdown entry per package.json export (core `.` is `index`), each
  *          naming the stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339). `electron`
- *          stays external as the optional peer of `./desktop`.
+ *          and `expo-file-system` stay external as the optional peers of `./desktop` and `./native`.
  * Boundary: build configuration only; spreads gen's `./.stackra/tsdown.config` and lays this package's own entries
  *           (the barrels package.json `exports` names) and options over it, so gen keeps this file (ADR 0295
  *           decision 5; STA-1306, STA-1299). Before gen has run the package's own config builds alone.
@@ -25,5 +25,6 @@ export default {
     contracts: "src/contracts/index.ts",
     node: "src/node/index.ts",
     desktop: "src/desktop/index.ts",
+    native: "src/native/index.ts",
   }),
 };

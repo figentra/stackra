@@ -18,7 +18,7 @@ import { FILESYSTEM_CONFIG_SCHEMA } from "#core/constants/filesystem-config-sche
 describe("DriverRegistry['filesystem.FileSystem']", () => {
   it("narrows DriverName<FileSystem> to the shipped drivers", () => {
     expectTypeOf<DriverName<FileSystem>>().toEqualTypeOf<
-      "memory" | "local" | "s3" | "gcs" | "encore_bucket" | "electron"
+      "memory" | "local" | "s3" | "gcs" | "encore_bucket" | "electron" | "expo"
     >();
     expectTypeOf<DriverRegistry["filesystem.FileSystem"]>().toEqualTypeOf<DriverName<FileSystem>>();
   });
