@@ -12,67 +12,69 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 
 ## What is here
 
-| Entry         | Symbol                                                                                                                | Use                                                                                            |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `.`           | `IdentityConfig`                                                                                                      | the configuration (key `identity`): flow per target, device client, scopes, idle rule          |
-| `.`           | `IdentityConfig$`                                                                                                     | the shipped schema a member's generated override extends                                       |
-| `.`           | `AuthFlow`                                                                                                            | `bff`, `pkce`                                                                                  |
-| `.`           | `SessionStatus`                                                                                                       | `loading`, `signed_in`, `signed_out`, `revoked`                                                |
-| `.`           | `SessionService`                                                                                                      | the client's session: state, listeners, sign-in, sign-out, idle rule                           |
-| `.`           | `BffSessionStoreDriver`                                                                                               | the web's session: the BFF and its cookie                                                      |
-| `.`           | `PkceSessionStoreDriver`                                                                                              | the device's session: PKCE, tokens in the `secrets` storage area                               |
-| `.`           | `MemorySessionStoreDriver`                                                                                            | tests and previews                                                                             |
-| `.`           | `SessionClientSessionDriver`                                                                                          | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`                       |
-| `.`           | `SessionOfflineSessionDriver`                                                                                         | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out         |
-| `.`           | `MemoryIdentityResolverDriver`                                                                                        | the contracts' `IdentityResolver` over principals in memory                                    |
-| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`                                                                                    | the Stackra claim names, and claims to a `SessionUser`                                         |
-| `.`           | `SignInCancelledError`, `SessionRevokedError`                                                                         | refusals                                                                                       |
-| `./contracts` | `SessionStore`                                                                                                        | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                                |
-| `./contracts` | `SignInBrowser`                                                                                                       | the platform step of PKCE: open the hosted sign-in, hand back the redirect                     |
-| `./contracts` | `SessionUser`                                                                                                         | the signed-in user: id, address, name, permissions, memberships                                |
-| `.`           | `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                                              | step-up: the session's level and age, the refusal, the re-authentication                       |
-| `.`           | `signInProvidersOf`, `externalSignIn`                                                                                 | a market's external sign-in providers (pack data) and the hint that sends sign-in there        |
-| `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                                          | staff PIN quick-switch and manager override on a shared device                                 |
-| `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                                   | secret and publishable keys; the origin-bound Storefront key                                   |
-| `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                                      | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
-| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                     | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
-| `.`           | `signInWithPasskey`, `registerPasskey`                                                                                | a `Passkeys` driver wired to the passkey actions (the client half)                             |
-| `./node`      | `BffService`, `BffConfig`, `BffOptions`, `BffConfig$`                                                                 | the BFF's login, callback, session and logout routes with server-side sign-out                 |
-| `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
-| `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
-| `./node`      | `ZitadelAuthEventsService`                                                                                            | ZITADEL's signed auth events (sign-in, MFA, lockout, sign-out) into the audit hash chain       |
-| `./contracts` | `IdpAuthEvent`                                                                                                        | the auth events the audit chain keeps                                                          |
-| `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`          | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
-| `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                   | the durable store, `identity.account_deletions`, per tenant partition                          |
-| `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`      | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
-| `./contracts` | `AccountDeletions`, `AccountDeletion`, `AccountDeletionState`                                                         | the store of scheduled deletions; what the calls answer                                        |
-| `./react`     | `useAccountDeletion`                                                                                                  | the settings section: the date, request, cancel                                                |
-| `./native`    | `useAccountDeletionSheet`                                                                                             | the same with the device's biometric check before a request                                    |
-| `.`           | `MemoryAutomationPrincipalsDriver`                                                                                    | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
-| `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                                   | a guardian acting for a minor, after the relationship check                                    |
-| `.`           | `VerificationService`, `MemoryVerificationDriver`                                                                     | KYC and KYB through the providers the market pack lists                                        |
-| `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions`            | the verification, PIN and guardianship ports; sign-in extras                                   |
-| `./contracts` | `IdpSecondFactor`                                                                                                     | the second factors a login policy offers (`totp`, `u2f`, `otp_email`, `otp_sms`)               |
-| `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                                    | mint and revoke the principal an automation runs as (ADR 0153 decision 2)                      |
-| `.`           | `SignInMethod`, `signInMethodsOf`                                                                                     | the built-in sign-in methods a market offers (pack data), less the scope's switched-off ones   |
-| `.`           | `AppApprovalService`, `MemoryAppApprovalChallengesDriver`                                                             | sign-in and step-up by approving on the mobile app (number matching, QR)                       |
-| `.`           | `AppApprovalRequested`, `AppApprovalApproved`, `AppApprovalDenied`                                                    | `sessions.app_approval.{requested,approved,denied}.v1`; notifications pushes on the first      |
-| `./contracts` | `AppApprovalChallenges`, `AppApprovalChallenge`, `AppApprovalPurpose`, `AppApprovalStatus`                            | the challenge store and the bound devices                                                      |
-| `.`           | `LoginDirectoryWriterService`, `LoginDirectoryConfig`, `MemoryLoginDirectoryStoreDriver`                              | this region's rows of the global login directory: `record` and `forget` identifiers (ADR 0451) |
-| `./contracts` | `LoginDirectoryStore`, `loginDirectoryPrefix`, `LoginIdentifierKind`, `LoginIdentifier`, `LoginDirectoryKey`          | the directory store port and the one key format, shared with the edge Worker                   |
-| `./react`     | `useAppApprovalWait`                                                                                                  | the web's waiting screen: the number, the QR token, the poll                                   |
-| `./native`    | `useAppApprovalSheet`                                                                                                 | the app's approve sheet: requester details, numbers, biometric check, approve, deny, scan      |
-| `./contracts` | `Passkeys`, `PasskeyRefusal`, `PasskeyCreationOptions`, `PasskeyRequestOptions`, `PasskeyCredential`, `PasskeyResult` | the device step of a passkey registration or sign-in, refusals as values                       |
-| `.`           | `MemoryPasskeysDriver`                                                                                                | passkeys in memory: tests, web, local runs                                                     |
-| `./native`    | `ExpoPasskeysDriver`                                                                                                  | Expo: the iOS and Android credential manager through `react-native-passkey`                    |
-| `.`           | `SocialProvider`                                                                                                      | the providers offered in every market once configured: `apple`                                 |
-| `./contracts` | `AppleSignIn`, `AppleSignInRefusal`, `AppleCredential`, `AppleSignInResult`                                           | the native Sign in with Apple device step, refusals as values                                  |
-| `./native`    | `ExpoAppleSignInDriver`                                                                                               | Expo on iOS: the Apple sheet through `expo-apple-authentication`, required on use              |
-| `./native`    | `ExpoSignInBrowserDriver`                                                                                             | Expo: the system authentication session and the app's link                                     |
-| `./desktop`   | `ElectronSignInBrowserDriver`                                                                                         | Electron main: the system browser and a loopback redirect                                      |
-| `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                                       | the session in a component                                                                     |
-| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                                          | a session in any status with spied actions; a resolver over named principals                   |
-| `./testing`   | `runVerificationCase`, `VerificationCase`, `VerificationCaseResult`                                                   | the recorded-fixture harness every `Verification` driver (OS integrations) runs its cases on   |
+| Entry         | Symbol                                                                                                                        | Use                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `.`           | `IdentityConfig`                                                                                                              | the configuration (key `identity`): flow per target, device client, scopes, idle rule          |
+| `.`           | `IdentityConfig$`                                                                                                             | the shipped schema a member's generated override extends                                       |
+| `.`           | `AuthFlow`                                                                                                                    | `bff`, `pkce`                                                                                  |
+| `.`           | `SessionStatus`                                                                                                               | `loading`, `signed_in`, `signed_out`, `revoked`                                                |
+| `.`           | `SessionService`                                                                                                              | the client's session: state, listeners, sign-in, sign-out, idle rule                           |
+| `.`           | `BffSessionStoreDriver`                                                                                                       | the web's session: the BFF and its cookie                                                      |
+| `.`           | `PkceSessionStoreDriver`                                                                                                      | the device's session: PKCE, tokens in the `secrets` storage area                               |
+| `.`           | `MemorySessionStoreDriver`                                                                                                    | tests and previews                                                                             |
+| `.`           | `SessionClientSessionDriver`                                                                                                  | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`                       |
+| `.`           | `SessionOfflineSessionDriver`                                                                                                 | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out         |
+| `.`           | `MemoryIdentityResolverDriver`                                                                                                | the contracts' `IdentityResolver` over principals in memory                                    |
+| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`                                                                                            | the Stackra claim names, and claims to a `SessionUser`                                         |
+| `.`           | `SignInCancelledError`, `SessionRevokedError`                                                                                 | refusals                                                                                       |
+| `./contracts` | `SessionStore`                                                                                                                | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                                |
+| `./contracts` | `SignInBrowser`                                                                                                               | the platform step of PKCE: open the hosted sign-in, hand back the redirect                     |
+| `./contracts` | `SessionUser`                                                                                                                 | the signed-in user: id, address, name, permissions, memberships                                |
+| `.`           | `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                                                      | step-up: the session's level and age, the refusal, the re-authentication                       |
+| `.`           | `signInProvidersOf`, `externalSignIn`                                                                                         | a market's external sign-in providers (pack data) and the hint that sends sign-in there        |
+| `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                                                  | staff PIN quick-switch and manager override on a shared device                                 |
+| `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                                           | secret and publishable keys; the origin-bound Storefront key                                   |
+| `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                                              | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
+| `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                             | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
+| `.`           | `signInWithPasskey`, `registerPasskey`                                                                                        | a `Passkeys` driver wired to the passkey actions (the client half)                             |
+| `./node`      | `BffService`, `BffConfig`, `BffOptions`, `BffConfig$`                                                                         | the BFF's login, callback, session and logout routes with server-side sign-out                 |
+| `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                              | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
+| `./node`      | `EndErasedSubjectSessionsListener`                                                                                            | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
+| `./node`      | `ZitadelAuthEventsService`                                                                                                    | ZITADEL's signed auth events (sign-in, MFA, lockout, sign-out) into the audit hash chain       |
+| `./contracts` | `IdpAuthEvent`                                                                                                                | the auth events the audit chain keeps                                                          |
+| `./node`      | `ListMySessionsQuery` (each session a `SessionLine`), `EndMySessionAction`, `EndAllMySessionsAction`, `EndUserSessionsAction` | where you are signed in and sign out everywhere, yours or (admin) another user's; see below    |
+| `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`                  | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
+| `./node`      | `BootstrapOperatorAction`, `OperatorPermissions`, `BootstrapOperatorInput`, `BootstrapOperatorOutput`                         | an environment's first operator, by email, once (`stackra ops bootstrap-operator`); see below  |
+| `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                           | the durable store, `identity.account_deletions`, per tenant partition                          |
+| `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`              | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
+| `./contracts` | `AccountDeletions`, `AccountDeletion`, `AccountDeletionState`                                                                 | the store of scheduled deletions; what the calls answer                                        |
+| `./react`     | `useAccountDeletion`                                                                                                          | the settings section: the date, request, cancel                                                |
+| `./native`    | `useAccountDeletionSheet`                                                                                                     | the same with the device's biometric check before a request                                    |
+| `.`           | `MemoryAutomationPrincipalsDriver`                                                                                            | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
+| `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                                           | a guardian acting for a minor, after the relationship check                                    |
+| `.`           | `VerificationService`, `MemoryVerificationDriver`                                                                             | KYC and KYB through the providers the market pack lists                                        |
+| `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions`                    | the verification, PIN and guardianship ports; sign-in extras                                   |
+| `./contracts` | `IdpSecondFactor`                                                                                                             | the second factors a login policy offers (`totp`, `u2f`, `otp_email`, `otp_sms`)               |
+| `./contracts` | `AutomationPrincipals`, `AutomationPrincipalInput`                                                                            | mint and revoke the principal an automation runs as (ADR 0153 decision 2)                      |
+| `.`           | `SignInMethod`, `signInMethodsOf`                                                                                             | the built-in sign-in methods a market offers (pack data), less the scope's switched-off ones   |
+| `.`           | `AppApprovalService`, `MemoryAppApprovalChallengesDriver`                                                                     | sign-in and step-up by approving on the mobile app (number matching, QR)                       |
+| `.`           | `AppApprovalRequested`, `AppApprovalApproved`, `AppApprovalDenied`                                                            | `sessions.app_approval.{requested,approved,denied}.v1`; notifications pushes on the first      |
+| `./contracts` | `AppApprovalChallenges`, `AppApprovalChallenge`, `AppApprovalPurpose`, `AppApprovalStatus`                                    | the challenge store and the bound devices                                                      |
+| `.`           | `LoginDirectoryWriterService`, `LoginDirectoryConfig`, `MemoryLoginDirectoryStoreDriver`                                      | this region's rows of the global login directory: `record` and `forget` identifiers (ADR 0451) |
+| `./contracts` | `LoginDirectoryStore`, `loginDirectoryPrefix`, `LoginIdentifierKind`, `LoginIdentifier`, `LoginDirectoryKey`                  | the directory store port and the one key format, shared with the edge Worker                   |
+| `./react`     | `useAppApprovalWait`                                                                                                          | the web's waiting screen: the number, the QR token, the poll                                   |
+| `./native`    | `useAppApprovalSheet`                                                                                                         | the app's approve sheet: requester details, numbers, biometric check, approve, deny, scan      |
+| `./contracts` | `Passkeys`, `PasskeyRefusal`, `PasskeyCreationOptions`, `PasskeyRequestOptions`, `PasskeyCredential`, `PasskeyResult`         | the device step of a passkey registration or sign-in, refusals as values                       |
+| `.`           | `MemoryPasskeysDriver`                                                                                                        | passkeys in memory: tests, web, local runs                                                     |
+| `./native`    | `ExpoPasskeysDriver`                                                                                                          | Expo: the iOS and Android credential manager through `react-native-passkey`                    |
+| `.`           | `SocialProvider`                                                                                                              | the providers offered in every market once configured: `apple`                                 |
+| `./contracts` | `AppleSignIn`, `AppleSignInRefusal`, `AppleCredential`, `AppleSignInResult`                                                   | the native Sign in with Apple device step, refusals as values                                  |
+| `./native`    | `ExpoAppleSignInDriver`                                                                                                       | Expo on iOS: the Apple sheet through `expo-apple-authentication`, required on use              |
+| `./native`    | `ExpoSignInBrowserDriver`                                                                                                     | Expo: the system authentication session and the app's link                                     |
+| `./desktop`   | `ElectronSignInBrowserDriver`                                                                                                 | Electron main: the system browser and a loopback redirect                                      |
+| `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                                               | the session in a component                                                                     |
+| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                                                  | a session in any status with spied actions; a resolver over named principals                   |
+| `./testing`   | `runVerificationCase`, `VerificationCase`, `VerificationCaseResult`                                                           | the recorded-fixture harness every `Verification` driver (OS integrations) runs its cases on   |
 
 ## Configuring a member
 
@@ -273,7 +275,7 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
   A passing key's use is written through `ApiKeyStore.recordUse(id, at)` (the record's `lastUsedAt`, for key hygiene)
   when the last one is older than `apiKeyLastUsedSeconds` (60; `0` writes every time). A failed write never refuses
   the key. A store without the column keeps the port's no-op default.
-- **IdP admin.** `IdpAdmin` creates users and machine users, ends sessions, runs the device flow and sets login
+- **IdP admin.** `IdpAdmin` creates users and machine users, lists and ends sessions, runs the device flow and sets login
   policies. `ZitadelIdpAdminDriver` reads `IdpAdminConfig` (key `idp_admin`): the URL of the managed or the tenant's own
   ZITADEL, and the `IDENTITY_IDP_ADMIN_TOKEN` secret. `listAuthMethods(userId)` answers a user's enrolled methods as
   RFC 8176 `amr` codes, so `assuranceOf({ amr: methods }, identity).level` is the level they reach: the security
@@ -298,6 +300,22 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
   package keeps the port, `VerificationService`, `MemoryVerificationDriver` and the harness below. Each vendor driver
   ships recorded cases from the vendor's public documentation, marked `certification: "pending"` until a run against
   the vendor's sandbox passes (owner decision D3, 2026-10-27).
+
+## Sessions: where you are signed in, sign out everywhere
+
+`./node`'s session calls (STA-1580) act on the identity provider's sessions through `IdpAdmin`, permissions in
+`SessionPermissions` (ADR 0462). The screens belong to the template lines (STA-284); core ships no UI and no lang keys.
+
+| Call                                               | Who                         | What                                                                     |
+| -------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `ListMySessionsQuery` (`session.list@1`, L1)       | the signed-in user          | the caller's live sessions: id, `createdAt`, `lastActiveAt`, `userAgent` |
+| `EndMySessionAction` (`session.end@1`, L2)         | the signed-in user          | ends one of the caller's own sessions; another's is `NotFoundError`      |
+| `EndAllMySessionsAction` (`session.end_all@1`, L2) | the signed-in user          | ends every session of the caller, this device's too; answers `{ ended }` |
+| `EndUserSessionsAction` (`session.end_user@1`, L3) | an administrator or service | ends every session of the `usr_` subject; audited with the count         |
+
+The caller's provider user is found by the actor's `usr_` id, never a body field; a call on someone else's behalf is
+refused. Each device sees `SessionStatus.Revoked` on its next refresh. The provider's sessions span every scope a person
+belongs to and identity holds no membership, so grant `identity.session.end_user` to platform or support roles only.
 
 ## Account deletion (App Store 5.1.1(v), Play)
 
@@ -361,6 +379,24 @@ return deletion.dueAt ? (
 The console (os/console) does the same with `useAccountDeletion` from `./react`, with no device check. Put the entry
 where App Review finds it (Settings, Account), not behind support, and keep the screen reachable while a deletion is
 scheduled so it can be cancelled.
+
+## Operator bootstrap (STA-1586)
+
+An environment's operator roster starts empty, and nobody can grant the first operator through the UI.
+`BootstrapOperatorAction` (`identity.operator.bootstrap@1`, `POST /platform/operators/bootstrap`, platform area) gives
+the user with an email a role at the platform node, the root of the scope tree: `SystemRole.Owner` unless `role`
+names another. It finds the provider's one human user with the email and its `stackra_user_id`
+(`IdpAdmin.findStackraUserId`; two users with the email is an error, never a guess), reads the roles the user holds
+there (`RolesAtNode`) and writes the grant through `@stackra/iam/contracts`' `RoleGrants`, which the IAM service binds.
+It answers `OperatorBootstrapOutcome`: `granted`, `already_granted` (nothing written), `would_grant` (`dryRun`,
+nothing written) or `not_found`. The pipeline audits every call; the action adds the user id, role and outcome, never
+the email.
+
+`OperatorPermissions.bootstrap` is L4 and system-held: only a service principal acting for no one passes the decision
+point, so no user, operator or agent can call it. The caller is the environment's bootstrap credential: a ZITADEL
+service account of that environment whose token the gateway verifies into a `service` actor. The owner runs it with
+`stackra ops bootstrap-operator --env <env> --email <email>` (the CLI README and the deploys runbook say where the
+token comes from).
 
 ## The login directory (ADR 0451)
 

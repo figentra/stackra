@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `identityStack(plan)`, the identity slice of the Pulumi program `stackra infra gen` composes, one stack per
- *          ZITADEL instance: the instance's token lifetimes, password rule and branding, the staff organisation with
+ *          ZITADEL instance: the instance's token lifetimes, password rule, lockout policy and branding, the staff organisation with
  *          its sign-in policy, the project and its roles, one OIDC client per app, and the machine users with their
  *          instance and project roles, and the Apple identity provider when the plan turns it on.
  * Boundary: runs inside a Pulumi program. The provider signs in with the provisioner's key from the stack config
@@ -12,7 +12,8 @@
  * Runtime: node
  * Governing contract: ADR 0171 (decisions 2 to 5), ADR 0206 (decisions 3, 5 and 8), ADR 0207 (decisions 2 and 3),
  *                     ADR 0268 (R3: ZITADEL's own branding), ADR 0274 (decision 5), ADR 0277 (decisions 1, 2 and 4),
- *                     ADR 0345 (decision 3), ADR 0173 (the Apple key by name), STA-1578 (App Store guideline 4.8).
+ *                     ADR 0345 (decision 3), ADR 0173 (the Apple key by name), STA-1578 (App Store guideline 4.8),
+ *                     STA-1580 (lockout).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import { Config, all, dynamic } from "@pulumi/pulumi";
@@ -26,6 +27,9 @@ import type { IdentityStack } from "#node/types/identity-stack.type";
 
 /** Twelve hours, the staff session cap (ADR 0207 decision 3, ADR 0277 decision 4). */
 const STAFF_CHECK = "12h0m0s";
+
+/** Failed password checks before ZITADEL locks the account (STA-1580). */
+const LOCKOUT_ATTEMPTS = 5;
 
 /**
  * Creates one instance's identity resources.
@@ -60,6 +64,9 @@ export function identityStack(plan: IdentityPlan): IdentityStack {
     { minLength: 12, hasUppercase: false, hasLowercase: false, hasNumber: false, hasSymbol: false },
     options,
   );
+  // STA-1580 (ASVS 2.2.1): lock an account after five failed password checks; unlocking is an admin step.
+  // shortcut: provider 0.2.0 has no maxOtpAttempts, so OTP keeps ZITADEL's default; add it when the catalog moves past 0.2.
+  new zitadel.DefaultLockoutPolicy("lockout", { maxPasswordAttempts: LOCKOUT_ATTEMPTS }, options);
   if (plan.branding !== null) {
     const { light, dark } = plan.branding;
     new zitadel.DefaultLabelPolicy(

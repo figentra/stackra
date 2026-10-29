@@ -50,6 +50,7 @@ export type { DeviceTokenResult } from "#contracts/types/device-token-result.typ
 export type { GuardianLink } from "#contracts/types/guardian-link.type";
 export type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
 export type { IdpMachineUserInput } from "#contracts/types/idp-machine-user-input.type";
+export type { IdpSession } from "#contracts/types/idp-session.type";
 export type { IdpSessionGrant } from "#contracts/types/idp-session-grant.type";
 export type { IdpUserInput } from "#contracts/types/idp-user-input.type";
 export type { LoginDirectoryKey } from "#contracts/types/login-directory-key.type";

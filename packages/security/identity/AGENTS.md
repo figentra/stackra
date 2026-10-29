@@ -109,6 +109,11 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   `src/node/{actions,queries,drivers,database}/`, the hooks in
   `src/react/account-deletion/` and `src/native/account-deletion/`. No screen lives in core: template lines wire the
   hooks.
+- Sessions (STA-1580): `ListMySessionsQuery`, `EndMySessionAction` and `EndAllMySessionsAction` act on the actor's
+  own provider user only (found by its `usr_` id; a call on someone's behalf is refused). `EndMySessionAction` checks the
+  session is among the caller's `IdpAdmin.listSessions` before it ends it, and answers `NotFoundError` otherwise, so a
+  foreign session id is neither ended nor confirmed. `EndUserSessionsAction` is the admin call (L3, audited); the
+  provider's sessions are not scoped, so it is granted to platform or support roles only. No screen in core (STA-284).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
