@@ -205,7 +205,11 @@ describe("buildProduct", () => {
       "tap-to-pay",
       "bluetooth",
     ]);
-    expect(app.android.blockedPermissions).toEqual(["android.permission.ACCESS_FINE_LOCATION"]);
+    // the advertising id is blocked unless a capability opts in (STA-1577)
+    expect(app.android.blockedPermissions).toEqual([
+      "android.permission.ACCESS_FINE_LOCATION",
+      "com.google.android.gms.permission.AD_ID",
+    ]);
     expect(read(".stackra/mobile/academorix/package.json").expo.autolinking.exclude).toEqual([
       "expo-location",
     ]);
