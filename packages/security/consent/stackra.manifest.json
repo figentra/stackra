@@ -33,6 +33,17 @@
   "models": [],
   "drivers": [
     {
+      "port": "RegionSource",
+      "key": "consent.RegionSource",
+      "candidates": ["cf_ipcountry"],
+      "classes": {
+        "cf_ipcountry": {
+          "class": "CfIpcountryRegionSourceDriver",
+          "from": "@stackra/consent"
+        }
+      }
+    },
+    {
       "port": "ConsentStore",
       "key": "consent.ConsentStore",
       "candidates": ["cookie", "memory", "storage"],
@@ -94,6 +105,48 @@
           "from": "@stackra/consent"
         }
       }
+    },
+    {
+      "port": "ConsentSnapshotKeys",
+      "key": "consent.ConsentSnapshotKeys",
+      "candidates": ["signer", "static"],
+      "classes": {
+        "signer": {
+          "class": "SignerConsentSnapshotKeysDriver",
+          "from": "@stackra/consent",
+          "deps": [
+            {
+              "class": {
+                "name": "Signer",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        },
+        "static": {
+          "class": "StaticConsentSnapshotKeysDriver",
+          "from": "@stackra/consent"
+        }
+      }
+    },
+    {
+      "port": "ConsentCheck",
+      "key": "actions.ConsentCheck",
+      "candidates": ["snapshot"],
+      "classes": {
+        "snapshot": {
+          "class": "SnapshotConsentCheckDriver",
+          "from": "@stackra/consent",
+          "deps": [
+            {
+              "class": {
+                "name": "ConsentSnapshotVerifier",
+                "from": "@stackra/consent"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],
@@ -116,11 +169,11 @@
     },
     "consent.ConsentCategory": {
       "type": "string",
-      "enum": ["necessary", "analytics", "crash_replay"]
+      "enum": ["necessary", "analytics", "crash_replay", "marketing"]
     },
     "consent.ConsentRegime": {
       "type": "string",
-      "enum": ["gdpr", "ccpa"]
+      "enum": ["gdpr", "ccpa", "lgpd", "pdpl_sa", "pdpl_ae", "dpdp"]
     },
     "consent.ConsentStatus": {
       "type": "string",

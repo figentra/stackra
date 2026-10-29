@@ -43,9 +43,57 @@
       }
     },
     {
+      "port": "CacheMetrics",
+      "key": "cache.CacheMetrics",
+      "candidates": ["counting", "logger", "none"],
+      "classes": {
+        "counting": {
+          "class": "CountingCacheMetricsDriver",
+          "from": "@stackra/cache"
+        },
+        "logger": {
+          "class": "LoggerCacheMetricsDriver",
+          "from": "@stackra/cache",
+          "deps": [
+            {
+              "class": {
+                "name": "Logger",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        },
+        "none": {
+          "class": "NoneCacheMetricsDriver",
+          "from": "@stackra/cache"
+        }
+      },
+      "selectedBy": "config:cache.metrics",
+      "config": {
+        "class": "CacheConfig",
+        "from": "@stackra/cache"
+      }
+    },
+    {
+      "port": "CacheLock",
+      "key": "cache.CacheLock",
+      "candidates": ["local"],
+      "classes": {
+        "local": {
+          "class": "LocalCacheLockDriver",
+          "from": "@stackra/cache"
+        }
+      },
+      "selectedBy": "config:cache.lock",
+      "config": {
+        "class": "CacheConfig",
+        "from": "@stackra/cache"
+      }
+    },
+    {
       "port": "Cache",
       "key": "cache.Cache",
-      "candidates": ["memory", "storage", "valkey", "workers"],
+      "candidates": ["memory", "storage", "postgres", "valkey", "workers"],
       "classes": {
         "memory": {
           "class": "MemoryCacheDriver",
@@ -67,6 +115,12 @@
               "class": {
                 "name": "Clock",
                 "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheMetrics",
+                "from": "@stackra/cache/contracts"
               }
             }
           ]
@@ -92,6 +146,54 @@
                 "name": "Clock",
                 "from": "@stackra/contracts"
               }
+            },
+            {
+              "class": {
+                "name": "CacheMetrics",
+                "from": "@stackra/cache/contracts"
+              }
+            }
+          ]
+        },
+        "postgres": {
+          "class": "PostgresCacheDriver",
+          "from": "@stackra/cache/node",
+          "deps": [
+            {
+              "class": {
+                "name": "CacheConfig",
+                "from": "@stackra/cache"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheSql",
+                "from": "@stackra/cache/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheNamespace",
+                "from": "@stackra/cache/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheLock",
+                "from": "@stackra/cache/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheMetrics",
+                "from": "@stackra/cache/contracts"
+              }
             }
           ]
         },
@@ -115,6 +217,18 @@
               "class": {
                 "name": "Clock",
                 "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheLock",
+                "from": "@stackra/cache/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheMetrics",
+                "from": "@stackra/cache/contracts"
               }
             }
           ]
@@ -140,6 +254,18 @@
                 "name": "Clock",
                 "from": "@stackra/contracts"
               }
+            },
+            {
+              "class": {
+                "name": "CacheLock",
+                "from": "@stackra/cache/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "CacheMetrics",
+                "from": "@stackra/cache/contracts"
+              }
             }
           ]
         }
@@ -159,6 +285,11 @@
           "class": "SharedCacheNamespaceDriver",
           "from": "@stackra/cache"
         }
+      },
+      "selectedBy": "config:cache.namespace",
+      "config": {
+        "class": "CacheConfig",
+        "from": "@stackra/cache"
       }
     }
   ],

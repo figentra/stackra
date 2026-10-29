@@ -34,10 +34,28 @@
       "category": "validation",
       "module": "search",
       "class": "SearchCursorInvalidError"
+    },
+    {
+      "code": "search_model_unknown",
+      "kind": "not_found",
+      "category": "not_found",
+      "module": "search",
+      "class": "SearchModelUnknownError"
     }
   ],
   "models": [],
   "drivers": [
+    {
+      "port": "SearchQueryLog",
+      "key": "search.SearchQueryLog",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemorySearchQueryLogDriver",
+          "from": "@stackra/search"
+        }
+      }
+    },
     {
       "port": "SearchDriver",
       "key": "search.SearchDriver",
@@ -160,6 +178,10 @@
     }
   ],
   "schemas": {
+    "search.SearchIndexState": {
+      "type": "string",
+      "enum": ["valid", "invalid", "rebuilding"]
+    },
     "search.SearchSettings": {
       "type": "object",
       "properties": {
@@ -167,6 +189,45 @@
           "type": "string",
           "maxLength": 20000,
           "default": ""
+        },
+        "rankingRules": {
+          "type": "string",
+          "maxLength": 20000,
+          "default": ""
+        },
+        "querySample": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0
+        }
+      }
+    },
+    "search.SearchQueryInput": {
+      "type": "object",
+      "required": ["q"],
+      "properties": {
+        "q": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "arabizi": {
+          "type": "boolean"
+        }
+      }
+    },
+    "search.SearchQueryOutput": {
+      "type": "object",
+      "required": ["hits"],
+      "properties": {
+        "hits": {
+          "description": "@Field(zod): described by its zod schema"
         }
       }
     }

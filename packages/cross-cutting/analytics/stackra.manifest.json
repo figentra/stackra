@@ -20,8 +20,26 @@
     {
       "port": "AnalyticsDriver",
       "key": "analytics.AnalyticsDriver",
-      "candidates": ["memory", "none", "posthog", "posthog"],
+      "candidates": ["ad_pixel", "memory", "none", "posthog", "posthog"],
       "classes": {
+        "ad_pixel": {
+          "class": "AdPixelAnalyticsDriver",
+          "from": "@stackra/analytics",
+          "deps": [
+            {
+              "class": {
+                "name": "AdPixel",
+                "from": "@stackra/analytics/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "AnalyticsConfig",
+                "from": "@stackra/analytics"
+              }
+            }
+          ]
+        },
         "memory": {
           "class": "MemoryAnalyticsDriver",
           "from": "@stackra/analytics"
@@ -48,6 +66,125 @@
         "class": "AnalyticsConfig",
         "from": "@stackra/analytics"
       }
+    },
+    {
+      "port": "AnalyticsIdentity",
+      "key": "analytics.AnalyticsIdentity",
+      "candidates": ["cookie", "memory", "storage"],
+      "classes": {
+        "cookie": {
+          "class": "CookieAnalyticsIdentityDriver",
+          "from": "@stackra/analytics",
+          "deps": [
+            {
+              "class": {
+                "name": "AnalyticsConfig",
+                "from": "@stackra/analytics"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryAnalyticsIdentityDriver",
+          "from": "@stackra/analytics"
+        },
+        "storage": {
+          "class": "StorageAnalyticsIdentityDriver",
+          "from": "@stackra/analytics",
+          "deps": [
+            {
+              "class": {
+                "name": "AnalyticsConfig",
+                "from": "@stackra/analytics"
+              }
+            },
+            {
+              "class": {
+                "name": "Storage",
+                "from": "@stackra/storage/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:analytics.identityDriver",
+      "config": {
+        "class": "AnalyticsConfig",
+        "from": "@stackra/analytics"
+      }
+    },
+    {
+      "port": "AnalyticsOfflineQueue",
+      "key": "analytics.AnalyticsOfflineQueue",
+      "candidates": ["memory", "none", "storage"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAnalyticsOfflineQueueDriver",
+          "from": "@stackra/analytics",
+          "deps": [
+            {
+              "class": {
+                "name": "AnalyticsConfig",
+                "from": "@stackra/analytics"
+              }
+            }
+          ]
+        },
+        "none": {
+          "class": "NoneAnalyticsOfflineQueueDriver",
+          "from": "@stackra/analytics"
+        },
+        "storage": {
+          "class": "StorageAnalyticsOfflineQueueDriver",
+          "from": "@stackra/analytics",
+          "deps": [
+            {
+              "class": {
+                "name": "AnalyticsConfig",
+                "from": "@stackra/analytics"
+              }
+            },
+            {
+              "class": {
+                "name": "Storage",
+                "from": "@stackra/storage/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:analytics.offlineDriver",
+      "config": {
+        "class": "AnalyticsConfig",
+        "from": "@stackra/analytics"
+      }
+    },
+    {
+      "port": "AdPixel",
+      "key": "analytics.AdPixel",
+      "candidates": ["none"],
+      "classes": {
+        "none": {
+          "class": "NoneAdPixelDriver",
+          "from": "@stackra/analytics"
+        }
+      },
+      "selectedBy": "config:analytics.adPixelDriver",
+      "config": {
+        "class": "AnalyticsConfig",
+        "from": "@stackra/analytics"
+      }
+    },
+    {
+      "port": "AnalyticsDriverLookup",
+      "key": "analytics.AnalyticsDriverLookup",
+      "candidates": ["none"],
+      "classes": {
+        "none": {
+          "class": "NoneAnalyticsDriverLookupDriver",
+          "from": "@stackra/analytics"
+        }
+      }
     }
   ],
   "integrations": [],
@@ -64,9 +201,43 @@
     }
   ],
   "schemas": {
+    "analytics.AnalyticsDeliveryKind": {
+      "type": "string",
+      "enum": ["track", "identify", "group"]
+    },
     "analytics.AnalyticsState": {
       "type": "string",
       "enum": ["opted_in", "opted_out", "pending"]
+    },
+    "analytics.ElementClicked": {
+      "type": "object",
+      "required": ["target", "path"],
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "analytics.PageViewed": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "analytics.ScreenViewed": {
+      "type": "object",
+      "required": ["screen"],
+      "properties": {
+        "screen": {
+          "type": "string"
+        }
+      }
     }
   }
 }

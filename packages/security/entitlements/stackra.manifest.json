@@ -37,6 +37,13 @@
       "class": "LimitReachedError"
     },
     {
+      "code": "quota_exceeded",
+      "kind": "entitlement_required",
+      "category": "entitlement_required",
+      "module": "entitlements",
+      "class": "QuotaExceededError"
+    },
+    {
       "code": "seat_limit_reached",
       "kind": "entitlement_required",
       "category": "entitlement_required",
@@ -53,6 +60,25 @@
   ],
   "models": [],
   "drivers": [
+    {
+      "port": "RateLimitBudget",
+      "key": "actions.RateLimitBudget",
+      "candidates": ["entitlement"],
+      "classes": {
+        "entitlement": {
+          "class": "EntitlementRateLimitBudgetDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "EntitlementSource",
+                "from": "@stackra/entitlements/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
     {
       "port": "CatalogueVersions",
       "key": "entitlements.CatalogueVersions",
@@ -112,6 +138,18 @@
                 "name": "Clock",
                 "from": "@stackra/contracts"
               }
+            },
+            {
+              "class": {
+                "name": "MeterTotals",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "QuotaWarnings",
+                "from": "@stackra/entitlements/contracts"
+              }
             }
           ]
         }
@@ -169,7 +207,11 @@
     },
     "entitlements.EntitlementKind": {
       "type": "string",
-      "enum": ["feature", "limit", "module", "value"]
+      "enum": ["feature", "limit", "module", "value", "quota"]
+    },
+    "entitlements.QuotaPeriod": {
+      "type": "string",
+      "enum": ["day", "month", "year"]
     }
   }
 }

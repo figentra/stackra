@@ -16,6 +16,13 @@
   "permissions": [],
   "errors": [
     {
+      "code": "region_mismatch",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "tenancy",
+      "class": "RegionMismatchError"
+    },
+    {
       "code": "sandbox_not_found",
       "kind": "not_found",
       "category": "not_found",
@@ -76,6 +83,17 @@
       }
     },
     {
+      "port": "TenantPlacement",
+      "key": "tenancy.TenantPlacement",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryTenantPlacementDriver",
+          "from": "@stackra/tenancy"
+        }
+      }
+    },
+    {
       "port": "TenantShares",
       "key": "tenancy.TenantShares",
       "candidates": ["memory"],
@@ -98,6 +116,37 @@
       }
     },
     {
+      "port": "TenancyCheck",
+      "key": "actions.TenancyCheck",
+      "candidates": ["region_guard"],
+      "classes": {
+        "region_guard": {
+          "class": "RegionGuardDriver",
+          "from": "@stackra/tenancy",
+          "deps": [
+            {
+              "class": {
+                "name": "TenantPlacement",
+                "from": "@stackra/tenancy"
+              }
+            },
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "DatabaseConfig",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "CronScopes",
       "key": "scheduler.CronScopes",
       "candidates": ["tenancy"],
@@ -116,6 +165,31 @@
               "class": {
                 "name": "ScopeConfig",
                 "from": "@stackra/scope"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "ConnectionResolver",
+      "key": "database.ConnectionResolver",
+      "candidates": ["tenant_placement"],
+      "classes": {
+        "tenant_placement": {
+          "class": "TenantPlacementConnectionResolverDriver",
+          "from": "@stackra/tenancy",
+          "deps": [
+            {
+              "class": {
+                "name": "TenantPlacement",
+                "from": "@stackra/tenancy"
+              }
+            },
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
               }
             }
           ]

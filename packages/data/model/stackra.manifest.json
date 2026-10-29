@@ -6,6 +6,7 @@
   "modules": [
     {
       "key": "model",
+      "class": "ModelModule",
       "exports": [],
       "dependsOn": []
     }

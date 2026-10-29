@@ -186,6 +186,25 @@
           ]
         }
       }
+    },
+    {
+      "port": "CacheNamespace",
+      "key": "cache.CacheNamespace",
+      "candidates": ["scope"],
+      "classes": {
+        "scope": {
+          "class": "ScopeCacheNamespaceDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ContextStorage",
+                "from": "@stackra/actions/contracts"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],

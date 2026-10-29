@@ -45,6 +45,37 @@
       "output": {
         "$ref": "#/schemas/access_log.PurgeAccessLogOutput"
       }
+    },
+    {
+      "key": "access_log.audit_log_entry.search@1",
+      "kind": "query",
+      "module": "access_log",
+      "class": "AuditQuery",
+      "file": "src/node/queries/audit.query.ts",
+      "permission": "access_log.audit_log_entry.read",
+      "risk": "L1",
+      "actors": ["user", "service"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/audit-log-entries/search",
+        "derived": true
+      },
+      "tool": {
+        "name": "access_log_audit_log_entry_search",
+        "default": true,
+        "hints": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      "input": {
+        "$ref": "#/schemas/access_log.AuditQueryInput"
+      },
+      "output": {
+        "$ref": "#/schemas/access_log.AuditQueryOutput"
+      }
     }
   ],
   "events": [
@@ -66,6 +97,11 @@
       "risk": "L2",
       "class": "AccessLogEntryPermissions",
       "system": true
+    },
+    {
+      "key": "access_log.audit_log_entry.read",
+      "risk": "L1",
+      "class": "AuditLogEntryPermissions"
     }
   ],
   "errors": [
@@ -84,6 +120,14 @@
       "file": "src/node/models/access-log-entry.model.ts",
       "table": "access_log.access_log_entries",
       "publicId": "acl",
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"]
+    },
+    {
+      "key": "access_log.audit_log_entry",
+      "class": "AuditLogEntry",
+      "file": "src/node/models/audit-log-entry.model.ts",
+      "table": "access_log.audit_log_entries",
+      "publicId": "aud",
       "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"]
     }
   ],
@@ -142,6 +186,41 @@
       "config": {
         "class": "AccessLogConfig",
         "from": "@stackra/access-log"
+      }
+    },
+    {
+      "port": "AuditTrail",
+      "key": "actions.AuditTrail",
+      "candidates": ["postgres"],
+      "classes": {
+        "postgres": {
+          "class": "PostgresAuditTrailDriver",
+          "from": "@stackra/access-log/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AuditLogEntry",
+                "from": "@stackra/access-log/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "TenantIsolationService",
+                "from": "@stackra/tenancy/node"
+              }
+            },
+            {
+              "class": {
+                "name": "Logger",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -244,6 +323,242 @@
         },
         "id": {},
         "tenantId": {}
+      }
+    },
+    "access_log.AuditLogEntry": {
+      "type": "object",
+      "required": [
+        "callId",
+        "key",
+        "permission",
+        "risk",
+        "scopeId",
+        "originKind",
+        "originId",
+        "outcome",
+        "code",
+        "sequence",
+        "previousHash",
+        "hash",
+        "effects",
+        "actor",
+        "scopePath",
+        "fields",
+        "at",
+        "id",
+        "tenantId"
+      ],
+      "properties": {
+        "callId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "key": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "permission": {
+          "type": ["string", "null"],
+          "maxLength": 200
+        },
+        "risk": {
+          "type": ["string", "null"],
+          "maxLength": 2
+        },
+        "scopeId": {
+          "type": ["string", "null"],
+          "maxLength": 64
+        },
+        "originKind": {
+          "type": ["string", "null"],
+          "maxLength": 32
+        },
+        "originId": {
+          "type": ["string", "null"],
+          "maxLength": 64
+        },
+        "outcome": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "code": {
+          "type": ["string", "null"],
+          "maxLength": 100
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "previousHash": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "hash": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "actor": {
+          "x-stackra-schema": "@stackra/validation#Actor$"
+        },
+        "scopePath": {
+          "type": ["string", "null"]
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {},
+        "tenantId": {}
+      }
+    },
+    "access_log.AuditLogEntryView": {
+      "type": "object",
+      "required": [
+        "actor",
+        "outcome",
+        "fields",
+        "sequence",
+        "id",
+        "callId",
+        "key",
+        "permission",
+        "risk",
+        "effects",
+        "scopeId",
+        "scopePath",
+        "originKind",
+        "originId",
+        "code",
+        "at",
+        "previousHash",
+        "hash"
+      ],
+      "properties": {
+        "actor": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "outcome": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "fields": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "id": {
+          "type": "string"
+        },
+        "callId": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "permission": {
+          "type": ["string", "null"]
+        },
+        "risk": {
+          "type": ["string", "null"]
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scopeId": {
+          "type": ["string", "null"]
+        },
+        "scopePath": {
+          "type": ["string", "null"]
+        },
+        "originKind": {
+          "type": ["string", "null"]
+        },
+        "originId": {
+          "type": ["string", "null"]
+        },
+        "code": {
+          "type": ["string", "null"]
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "previousHash": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string"
+        }
+      }
+    },
+    "access_log.AuditQueryInput": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "callId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "key": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "actorId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "outcome": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "access_log.AuditQueryOutput": {
+      "type": "object",
+      "required": ["items", "hasMore"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/access_log.AuditLogEntryView"
+          }
+        },
+        "nextCursor": {
+          "type": "string"
+        },
+        "hasMore": {
+          "type": "boolean"
+        }
       }
     },
     "access_log.PurgeAccessLogInput": {

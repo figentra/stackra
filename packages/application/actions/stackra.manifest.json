@@ -14,6 +14,17 @@
   "actions": [],
   "events": [
     {
+      "name": "actions.analytics.tracked.v1",
+      "module": "actions",
+      "class": "AnalyticsTracked",
+      "file": "src/core/events/analytics-tracked.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "#/schemas/actions.AnalyticsTracked"
+      }
+    },
+    {
       "name": "actions.audit_entry.recorded.v1",
       "module": "actions",
       "class": "AuditEntryRecorded",
@@ -268,6 +279,20 @@
       "type": "string",
       "enum": ["storefront", "console", "api_key", "agent"]
     },
+    "actions.ConsentRefusal": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "unchecked",
+        "malformed",
+        "untrusted_key",
+        "bad_signature",
+        "not_yet_valid",
+        "expired",
+        "policy_outdated",
+        "global_privacy_control"
+      ]
+    },
     "actions.Effect": {
       "type": "string",
       "enum": ["financial", "security", "pii", "external_communication", "irreversible", "bulk"]
@@ -275,6 +300,10 @@
     "actions.ReviewReason": {
       "type": "string",
       "enum": ["differs", "older_rule_version"]
+    },
+    "actions.CacheScope": {
+      "type": "string",
+      "enum": ["principal", "scope", "site"]
     },
     "actions.ConflictResolution": {
       "type": "string",
@@ -308,8 +337,55 @@
         "idempotency",
         "rate_limit",
         "interceptors",
+        "cache",
         "handle"
       ]
+    },
+    "actions.AnalyticsTracked": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "name",
+        "properties",
+        "occurredAt",
+        "anonymousId",
+        "callId",
+        "key",
+        "locale"
+      ],
+      "properties": {
+        "eventId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "occurredAt": {
+          "type": "string"
+        },
+        "anonymousId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "callId": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "scopeId": {
+          "type": "string"
+        }
+      }
     },
     "actions.AuditEntryRecorded": {
       "type": "object",

@@ -16,11 +16,46 @@
   "permissions": [],
   "errors": [
     {
+      "code": "append_only_write",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "database",
+      "class": "AppendOnlyWriteError"
+    },
+    {
+      "code": "constraint_violated",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "ConstraintViolatedError"
+    },
+    {
+      "code": "duplicate_record",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "database",
+      "class": "DuplicateRecordError"
+    },
+    {
+      "code": "metadata_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "MetadataInvalidError"
+    },
+    {
       "code": "mixed_currency",
       "kind": "failed_precondition",
       "category": "precondition_failed",
       "module": "database",
       "class": "MixedCurrencyError"
+    },
+    {
+      "code": "model_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "ModelInvalidError"
     },
     {
       "code": "record_held",
@@ -49,6 +84,34 @@
       "category": "conflict",
       "module": "database",
       "class": "SequenceNumberOutOfOrderError"
+    },
+    {
+      "code": "stale_version",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "database",
+      "class": "StaleVersionError"
+    },
+    {
+      "code": "system_field_write",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "SystemFieldWriteError"
+    },
+    {
+      "code": "table_filter_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "TableFilterInvalidError"
+    },
+    {
+      "code": "transaction_conflict",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "database",
+      "class": "TransactionConflictError"
     }
   ],
   "models": [],
@@ -79,6 +142,50 @@
       }
     },
     {
+      "port": "QueryBudget",
+      "key": "actions.QueryBudget",
+      "candidates": ["database"],
+      "classes": {
+        "database": {
+          "class": "DatabaseQueryBudgetDriver",
+          "from": "@stackra/database/node",
+          "deps": [
+            {
+              "class": {
+                "name": "DatabaseConfig",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "Logger",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "ReplicaReads",
+      "key": "actions.ReplicaReads",
+      "candidates": ["database"],
+      "classes": {
+        "database": {
+          "class": "DatabaseReplicaReadsDriver",
+          "from": "@stackra/database/node",
+          "deps": [
+            {
+              "class": {
+                "name": "DatabaseConfig",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "UnitOfWork",
       "key": "actions.UnitOfWork",
       "candidates": ["database"],
@@ -86,6 +193,37 @@
         "database": {
           "class": "DatabaseUnitOfWorkDriver",
           "from": "@stackra/database/node"
+        }
+      }
+    },
+    {
+      "port": "QueryObserver",
+      "key": "database.QueryObserver",
+      "candidates": ["logger"],
+      "classes": {
+        "logger": {
+          "class": "LoggerQueryObserverDriver",
+          "from": "@stackra/database/node",
+          "deps": [
+            {
+              "class": {
+                "name": "DatabaseConfig",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "Logger",
+                "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ContextStorage",
+                "from": "@stackra/actions/contracts"
+              }
+            }
+          ]
         }
       }
     },
@@ -151,6 +289,17 @@
       }
     },
     {
+      "port": "ConnectionResolver",
+      "key": "database.ConnectionResolver",
+      "candidates": ["primary"],
+      "classes": {
+        "primary": {
+          "class": "PrimaryConnectionResolverDriver",
+          "from": "@stackra/database/node"
+        }
+      }
+    },
+    {
       "port": "HoldRegistry",
       "key": "database.HoldRegistry",
       "candidates": ["service"],
@@ -190,11 +339,23 @@
     },
     "database.Aggregate": {
       "type": "string",
-      "enum": ["count", "sum"]
+      "enum": ["count", "sum", "avg", "min", "max", "distinct"]
+    },
+    "database.Count": {
+      "type": "string",
+      "enum": ["estimated", "exact"]
     },
     "database.Extension": {
       "type": "string",
-      "enum": ["vector", "pg_trgm", "ltree", "citext", "pgcrypto"]
+      "enum": ["vector", "pg_trgm", "ltree", "citext", "pgcrypto", "postgis", "pg_stat_statements"]
+    },
+    "database.Isolation": {
+      "type": "string",
+      "enum": ["read committed", "repeatable read", "serializable"]
+    },
+    "database.MetricGrain": {
+      "type": "string",
+      "enum": ["hour", "day", "week", "month", "quarter"]
     }
   }
 }

@@ -80,7 +80,7 @@
       "file": "src/node/models/message.model.ts",
       "table": "ai.messages",
       "publicId": "aimsg",
-      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"]
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly", "HasEncryptedFields"]
     },
     {
       "key": "ai.run_approval",
@@ -228,12 +228,6 @@
               "of": {
                 "name": "repositoryOf",
                 "from": "@stackra/database"
-              }
-            },
-            {
-              "class": {
-                "name": "ScopeKeyCast",
-                "from": "@stackra/ai/node"
               }
             }
           ]
@@ -484,10 +478,10 @@
       "type": "object",
       "required": [
         "position",
+        "content",
         "conversationId",
         "runId",
         "role",
-        "content",
         "at",
         "id",
         "tenantId"
@@ -496,6 +490,9 @@
         "position": {
           "type": "integer"
         },
+        "content": {
+          "type": "string"
+        },
         "conversationId": {
           "type": "string"
         },
@@ -503,9 +500,6 @@
           "type": "string"
         },
         "role": {
-          "type": "string"
-        },
-        "content": {
           "type": "string"
         },
         "at": {

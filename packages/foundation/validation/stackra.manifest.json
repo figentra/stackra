@@ -31,6 +31,10 @@
       "type": "string",
       "enum": ["valid", "invalid", "expired", "locked"]
     },
+    "validation.OutputAudience": {
+      "type": "string",
+      "enum": ["public", "app", "admin", "agent"]
+    },
     "validation.CursorInput": {
       "type": "object",
       "properties": {

@@ -84,6 +84,7 @@
         "datev_ascii_writer",
         "json_lines_writer",
         "memory",
+        "parquet_writer",
         "xlsx_writer"
       ],
       "classes": {
@@ -103,6 +104,10 @@
           "class": "MemoryTabularWriterDriver",
           "from": "@stackra/data-transfer"
         },
+        "parquet_writer": {
+          "class": "ParquetWriterDriver",
+          "from": "@stackra/data-transfer"
+        },
         "xlsx_writer": {
           "class": "XlsxWriterDriver",
           "from": "@stackra/data-transfer/node"
@@ -117,6 +122,25 @@
         "memory": {
           "class": "MemoryImportLedgerDriver",
           "from": "@stackra/data-transfer"
+        }
+      }
+    },
+    {
+      "port": "WarehouseSink",
+      "key": "data_transfer.WarehouseSink",
+      "candidates": ["parquet"],
+      "classes": {
+        "parquet": {
+          "class": "ParquetWarehouseSinkDriver",
+          "from": "@stackra/data-transfer",
+          "deps": [
+            {
+              "class": {
+                "name": "FileSystem",
+                "from": "@stackra/filesystem/contracts"
+              }
+            }
+          ]
         }
       }
     }

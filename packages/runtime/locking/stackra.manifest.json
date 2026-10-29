@@ -26,6 +26,25 @@
   "models": [],
   "drivers": [
     {
+      "port": "CacheLock",
+      "key": "cache.CacheLock",
+      "candidates": ["locks"],
+      "classes": {
+        "locks": {
+          "class": "LocksCacheLockDriver",
+          "from": "@stackra/locking",
+          "deps": [
+            {
+              "class": {
+                "name": "Locks",
+                "from": "@stackra/locking"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "LockDriver",
       "key": "locking.LockDriver",
       "candidates": ["memory", "postgres", "valkey"],

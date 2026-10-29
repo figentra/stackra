@@ -11,30 +11,105 @@
       "dependsOn": []
     }
   ],
+  "facets": [
+    {
+      "name": "Index",
+      "kind": "index",
+      "target": "class",
+      "from": "@stackra/model",
+      "targets": []
+    }
+  ],
   "actions": [],
   "events": [],
-  "permissions": [],
-  "errors": [],
-  "models": [],
-  "drivers": [],
+  "permissions": [
+    {
+      "key": "panel.view.share",
+      "risk": "L1",
+      "class": "ViewPermissions"
+    }
+  ],
+  "errors": [
+    {
+      "code": "view_key_unknown",
+      "kind": "validation",
+      "category": "validation",
+      "module": "panel",
+      "class": "ViewKeyUnknownError"
+    }
+  ],
+  "models": [
+    {
+      "key": "panel.stored_view",
+      "class": "StoredView",
+      "file": "src/node/models/stored-view.model.ts",
+      "table": "panel.stored_views",
+      "publicId": "view",
+      "traits": ["HasPublicId", "BelongsToTenant", "Versioned", "Timestamps"]
+    }
+  ],
+  "drivers": [
+    {
+      "port": "ViewStore",
+      "key": "panel.ViewStore",
+      "candidates": ["database"],
+      "classes": {
+        "database": {
+          "class": "DatabaseViewStoreDriver",
+          "from": "@stackra/panel/node",
+          "deps": [
+            {
+              "class": {
+                "name": "StoredViewService",
+                "from": "@stackra/panel/node"
+              }
+            },
+            {
+              "class": {
+                "name": "TenantIsolationService",
+                "from": "@stackra/tenancy/node"
+              }
+            },
+            {
+              "class": {
+                "name": "ContextStorage",
+                "from": "@stackra/actions/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "PolicyDecisionPointService",
+                "from": "@stackra/iam"
+              }
+            },
+            {
+              "class": {
+                "name": "RolesAtNode",
+                "from": "@stackra/iam/contracts"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
   "integrations": [],
   "sequences": [],
   "outcomes": [],
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "config": [
+    {
+      "key": "panel.export",
+      "class": "ExportConfig",
+      "from": "@stackra/panel/node"
+    }
+  ],
   "schemas": {
     "panel.ActionPlace": {
       "type": "string",
       "enum": ["row", "view", "edit", "bulk", "list_header", "empty"]
-    },
-    "panel.Aggregate": {
-      "type": "string",
-      "enum": ["count", "sum", "average", "min", "max"]
-    },
-    "panel.Count": {
-      "type": "string",
-      "enum": ["estimated", "exact"]
     },
     "panel.DisplayKind": {
       "type": "string",
@@ -46,7 +121,11 @@
     },
     "panel.ExportFormat": {
       "type": "string",
-      "enum": ["csv", "xlsx"]
+      "enum": ["csv", "xlsx", "jsonl", "pdf"]
+    },
+    "panel.FilterComparison": {
+      "type": "string",
+      "enum": ["gt", "gte", "lt", "lte", "ne"]
     },
     "panel.ImportMode": {
       "type": "string",
@@ -68,9 +147,13 @@
       "type": "string",
       "enum": ["today", "yesterday", "last_7_days", "last_30_days", "this_month", "custom"]
     },
+    "panel.ViewLayout": {
+      "type": "string",
+      "enum": ["table", "board", "gallery", "calendar", "chart"]
+    },
     "panel.ViewSharing": {
       "type": "string",
-      "enum": ["private", "scope"]
+      "enum": ["private", "scope", "role"]
     },
     "panel.WidgetSize": {
       "type": "string",
@@ -144,6 +227,11 @@
           "description": "@Field(zod): described by its zod schema",
           "default": []
         },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
         "id": {
           "type": "string"
         },
@@ -159,6 +247,16 @@
         "sharing": {
           "$ref": "#/schemas/panel.ViewSharing",
           "default": "private"
+        },
+        "role": {
+          "type": "string"
+        },
+        "layout": {
+          "$ref": "#/schemas/panel.ViewLayout",
+          "default": "table"
+        },
+        "layoutBy": {
+          "type": "string"
         },
         "columns": {
           "type": "array",
@@ -186,6 +284,143 @@
         "compare": {
           "type": "boolean",
           "default": true
+        }
+      }
+    },
+    "panel.StoredView": {
+      "type": "object",
+      "required": [
+        "resource",
+        "name",
+        "owner",
+        "sharing",
+        "role",
+        "layout",
+        "layoutBy",
+        "sort",
+        "group",
+        "totals",
+        "filter",
+        "columns",
+        "tenantId",
+        "id",
+        "createdAt",
+        "updatedAt",
+        "version"
+      ],
+      "properties": {
+        "resource": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "sharing": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "role": {
+          "type": ["string", "null"],
+          "maxLength": 200
+        },
+        "layout": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "layoutBy": {
+          "type": ["string", "null"],
+          "maxLength": 200
+        },
+        "sort": {
+          "anyOf": [
+            {
+              "description": "@Field(zod): described by its zod schema"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "group": {
+          "anyOf": [
+            {
+              "description": "@Field(zod): described by its zod schema"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "totals": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "filter": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "columns": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "tenantId": {},
+        "id": {},
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "number"
+        }
+      }
+    },
+    "panel.ExportInput": {
+      "type": "object",
+      "required": ["format", "columns"],
+      "properties": {
+        "format": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "columns": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "filters": {
+          "description": "@Field(zod): described by its zod schema",
+          "default": {}
+        },
+        "sort": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "search": {
+          "type": "string"
+        }
+      }
+    },
+    "panel.ExportOutput": {
+      "type": "object",
+      "required": ["rows", "link", "expiresAt", "truncated"],
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "link": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
         }
       }
     }

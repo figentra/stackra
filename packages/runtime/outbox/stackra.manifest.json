@@ -57,6 +57,29 @@
       }
     },
     {
+      "port": "ChangeFeed",
+      "key": "outbox.ChangeFeed",
+      "candidates": ["memory", "postgres"],
+      "classes": {
+        "memory": {
+          "class": "MemoryChangeFeedDriver",
+          "from": "@stackra/outbox"
+        },
+        "postgres": {
+          "class": "PostgresChangeFeedDriver",
+          "from": "@stackra/outbox/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "InboxDriver",
       "key": "outbox.InboxDriver",
       "candidates": ["memory", "postgres"],

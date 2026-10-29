@@ -55,6 +55,28 @@
       }
     },
     {
+      "key": "privacy.hold.place@1",
+      "kind": "action",
+      "module": "privacy",
+      "class": "PlaceHoldAction",
+      "file": "src/node/actions/place-hold.action.ts",
+      "permission": "privacy.hold.place",
+      "risk": "L2",
+      "actors": ["user", "service"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/holds/place",
+        "derived": true
+      },
+      "toolOff": "an agent never places or lifts a legal hold",
+      "input": {
+        "$ref": "#/schemas/privacy.PlaceHoldInput"
+      },
+      "output": {
+        "$ref": "#/schemas/privacy.PlaceHoldOutput"
+      }
+    },
+    {
       "key": "privacy.subject_export.purge@1",
       "kind": "action",
       "module": "privacy",
@@ -77,6 +99,50 @@
       "output": {
         "$ref": "#/schemas/privacy.PurgeSubjectExportsOutput"
       }
+    },
+    {
+      "key": "privacy.hold.release@1",
+      "kind": "action",
+      "module": "privacy",
+      "class": "ReleaseHoldAction",
+      "file": "src/node/actions/release-hold.action.ts",
+      "permission": "privacy.hold.release",
+      "risk": "L4",
+      "actors": ["user", "service"],
+      "endpoint": {
+        "method": "PUT",
+        "path": "/holds/:holdId/release",
+        "derived": true
+      },
+      "toolOff": "an agent never places or lifts a legal hold",
+      "input": {
+        "$ref": "#/schemas/privacy.ReleaseHoldInput"
+      },
+      "output": {
+        "$ref": "#/schemas/privacy.ReleaseHoldOutput"
+      }
+    },
+    {
+      "key": "privacy.hold.list@1",
+      "kind": "query",
+      "module": "privacy",
+      "class": "ListHoldsQuery",
+      "file": "src/node/queries/list-holds.query.ts",
+      "permission": "privacy.hold.read",
+      "risk": "L1",
+      "actors": ["user", "service"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/holds",
+        "derived": true
+      },
+      "toolOff": "legal holds are a compliance officer's surface, not an agent's",
+      "input": {
+        "$ref": "#/schemas/privacy.ListHoldsInput"
+      },
+      "output": {
+        "$ref": "#/schemas/privacy.ListHoldsOutput"
+      }
     }
   ],
   "events": [
@@ -93,6 +159,21 @@
     }
   ],
   "permissions": [
+    {
+      "key": "privacy.hold.place",
+      "risk": "L2",
+      "class": "HoldPermissions"
+    },
+    {
+      "key": "privacy.hold.release",
+      "risk": "L4",
+      "class": "HoldPermissions"
+    },
+    {
+      "key": "privacy.hold.read",
+      "risk": "L1",
+      "class": "HoldPermissions"
+    },
     {
       "key": "privacy.subject_export.purge",
       "risk": "L4",
@@ -138,11 +219,67 @@
     {
       "port": "SubjectSaltStore",
       "key": "privacy.SubjectSaltStore",
-      "candidates": ["memory"],
+      "candidates": ["memory", "postgres"],
       "classes": {
         "memory": {
           "class": "MemorySubjectSaltStoreDriver",
           "from": "@stackra/privacy"
+        },
+        "postgres": {
+          "class": "PostgresSubjectSaltStoreDriver",
+          "from": "@stackra/privacy/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "HoldRegistry",
+      "key": "database.HoldRegistry",
+      "candidates": ["postgres"],
+      "classes": {
+        "postgres": {
+          "class": "PostgresHoldRegistryDriver",
+          "from": "@stackra/privacy/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "SubjectCipherResolver",
+      "key": "model.SubjectCipherResolver",
+      "candidates": ["salted"],
+      "classes": {
+        "salted": {
+          "class": "SaltedSubjectCipherResolverDriver",
+          "from": "@stackra/privacy/node",
+          "deps": [
+            {
+              "class": {
+                "name": "KeyProvider",
+                "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "SubjectSaltStore",
+                "from": "@stackra/privacy/contracts"
+              }
+            }
+          ]
         }
       }
     }
@@ -292,6 +429,88 @@
         }
       }
     },
+    "privacy.LegalHoldLine": {
+      "type": "object",
+      "required": ["id", "model", "recordId", "reason", "placedBy", "placedAt", "releasedAt"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "recordId": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "placedBy": {
+          "type": ["string", "null"]
+        },
+        "placedAt": {
+          "type": "string"
+        },
+        "releasedAt": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "privacy.ListHoldsInput": {
+      "type": "object",
+      "properties": {
+        "recordId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "includeReleased": {
+          "type": "boolean"
+        }
+      }
+    },
+    "privacy.ListHoldsOutput": {
+      "type": "object",
+      "required": ["holds"],
+      "properties": {
+        "holds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/privacy.LegalHoldLine"
+          }
+        }
+      }
+    },
+    "privacy.PlaceHoldInput": {
+      "type": "object",
+      "required": ["model", "recordId", "reason"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 127
+        },
+        "recordId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "privacy.PlaceHoldOutput": {
+      "type": "object",
+      "required": ["holdId"],
+      "properties": {
+        "holdId": {
+          "type": "string"
+        }
+      }
+    },
     "privacy.PurgeSubjectExportsInput": {
       "type": "object",
       "properties": {}
@@ -303,6 +522,31 @@
         "deleted": {
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "privacy.ReleaseHoldInput": {
+      "type": "object",
+      "required": ["holdId", "reason"],
+      "properties": {
+        "holdId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 63
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "privacy.ReleaseHoldOutput": {
+      "type": "object",
+      "required": ["released"],
+      "properties": {
+        "released": {
+          "type": "boolean"
         }
       }
     }

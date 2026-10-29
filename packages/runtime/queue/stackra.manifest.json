@@ -187,7 +187,7 @@
     },
     "queue.JobOutcome": {
       "type": "string",
-      "enum": ["done", "retried", "dead_lettered", "dropped"]
+      "enum": ["done", "retried", "dead_lettered", "dropped", "throttled"]
     }
   }
 }

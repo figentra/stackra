@@ -61,6 +61,17 @@
       }
     },
     {
+      "port": "PreviewDatabaseBrancher",
+      "key": "runway.PreviewDatabaseBrancher",
+      "candidates": ["neon_preview_database"],
+      "classes": {
+        "neon_preview_database": {
+          "class": "NeonPreviewDatabaseDriver",
+          "from": "@stackra/runway/node"
+        }
+      }
+    },
+    {
       "port": "EdgeKvWriter",
       "key": "app.EdgeKvWriter",
       "candidates": ["wrangler_edge_kv"],
@@ -115,6 +126,10 @@
     "runway.DeployKind": {
       "type": "string",
       "enum": ["services", "web", "mobile", "desktop", "docs"]
+    },
+    "runway.PreviewDatabaseSource": {
+      "type": "string",
+      "enum": ["seed-pack", "branch"]
     },
     "runway.RequirementEngine": {
       "type": "string",
