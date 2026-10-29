@@ -74,8 +74,12 @@
     {
       "port": "EdgeKvWriter",
       "key": "app.EdgeKvWriter",
-      "candidates": ["wrangler_edge_kv"],
+      "candidates": ["dry_run_edge_kv", "wrangler_edge_kv"],
       "classes": {
+        "dry_run_edge_kv": {
+          "class": "DryRunEdgeKvDriver",
+          "from": "@stackra/runway/node"
+        },
         "wrangler_edge_kv": {
           "class": "WranglerEdgeKvDriver",
           "from": "@stackra/runway/node",
