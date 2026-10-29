@@ -37,6 +37,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                                      | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
 | `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                     | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
 | `.`           | `signInWithPasskey`, `registerPasskey`                                                                                | a `Passkeys` driver wired to the passkey actions (the client half)                             |
+| `./node`      | `BffService`, `BffConfig`, `BffOptions`, `BffConfig$`                                                                 | the BFF's login, callback, session and logout routes with server-side sign-out                 |
 | `./node`      | `ChallengePasskeyAction`, `VerifyPasskeyAction`, `RegisterPasskeyAction`, `ConfirmPasskeyAction`                      | passkey sign-in and registration over `IdpAdmin`, served by the BFF                            |
 | `./node`      | `EndErasedSubjectSessionsListener`                                                                                    | ends an erased subject's provider sessions and removes its user on `SubjectErased`             |
 | `.`           | `MemoryAutomationPrincipalsDriver`                                                                                    | the `AutomationPrincipals` port in memory: one principal per automation (ADR 0153)             |
@@ -127,6 +128,55 @@ The BFF (web, PWA): `GET <api><bffEndpoint>/session` answers `{ user } | null` w
 `<api><bffEndpoint>/login?returnTo=<path>`; sign-out posts to `/logout`. No token reaches JavaScript. Every BFF call
 carries the CSRF header `csrfHeader` (default `x-stackra-csrf`), which @stackra/app's `CsrfGuard` requires on a
 cookie-bearing POST; keep it equal to the API's `app.csrf.headerName`.
+
+The server half is `./node`'s `BffService`; the host serves it from one raw endpoint (identity cannot import
+@stackra/app, which depends on it):
+
+```ts
+export class AuthController extends Controller({ path: "/api/auth/*" }) {
+  constructor(private readonly bff: BffService) {
+    super();
+  }
+  handle(request: Request): Promise<Response> {
+    return this.bff.handle(request);
+  }
+}
+```
+
+A raw endpoint that needs the caller reads the same cookie with `sessionOf` and passes the actor in the call's options,
+as every caller of the action pipeline does (`CallOptions.actor`, ADR 0098):
+
+```ts
+export class ExportOrdersController extends Controller({ path: "/orders/export" }) {
+  constructor(
+    private readonly bff: BffService,
+    private readonly pipeline: ActionPipeline,
+  ) {
+    super();
+  }
+  async handle(request: Request): Promise<Response> {
+    const session = await this.bff.sessionOf(request); // undefined: no, forged or expired cookie
+    if (session === undefined) return new Response(null, { status: 401 });
+    const actor = { kind: ActorKind.User, id: session.user.userId, realm: Realm.Staff } as const;
+    return Response.json(await this.pipeline.execute(ExportOrdersAction, {}, { actor }));
+  }
+}
+```
+
+| Route          | Does                                                                                                                                                                                                                                           |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET login`    | checks `returnTo` (an in-app path, or a URL on a `BffConfig.returnOrigins` origin; else 400), seals state, nonce and PKCE verifier in `<cookieName>_flow`, redirects to the provider                                                           |
+| `GET callback` | checks the state, exchanges the code (client secret by HTTP Basic), checks the ID token's issuer, audience, expiry, nonce and `sid`, sets the session cookie, returns to `returnTo`; any failure returns with `sign_in_error=1` and no session |
+| `GET session`  | `{ user }`, or 401 (`sessionOf(request)` is the same read for a host)                                                                                                                                                                          |
+| `POST logout`  | needs the CSRF header; `IdpAdmin.endSession(sid)` (a failure throws and keeps the cookie), clears the cookie, answers `{ redirectTo }`, the provider's end-session URL                                                                         |
+
+Both cookies are `__Host-…; Path=/; HttpOnly; Secure; SameSite=Lax`, sealed with AES-GCM under `BffConfig.cookieKey`
+(the cookie name is the associated data). The session cookie holds the user and the provider session id, never a
+token. `BffConfig` (key `bff`, server only, from `./node`): `redirectUri`, `returnOrigins` (the first is exact and is
+where a path resolves), `postLogoutUri`, `cookieName` (default `__Host-stackra_session`), `sessionMinutes` (480),
+`flowMinutes` (10), and the secrets `IDENTITY_BFF_CLIENT_SECRET` and `IDENTITY_BFF_COOKIE_KEY` (at least 32
+characters). The issuer, client id and scopes are `IdentityConfig`'s. The ID token comes straight from the token
+endpoint, so its signature is not checked (OpenID Connect Core 3.1.3.7).
 
 PKCE (desktop, mobile): the issuer's discovery document gives the endpoints; sign-in sends an `S256` request through
 the platform's `SignInBrowser`, checks the state, exchanges the code with the verifier, checks the ID token's issuer,
