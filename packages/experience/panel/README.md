@@ -138,7 +138,7 @@ order and is for a fully loaded relation table only (ADR 0470 decision 4); a pag
 runner pages the list query through the action pipeline as the reader, so the query's permission, the visibility filter
 and row-level security decide every row; it drops `@Classified` columns of the row shape unless the source opts the
 column in and the reader holds its L2 permission; it streams at most `maxRows` rows into the format's `TabularWriter`
-(data-transfer's CSV, JSON Lines and XLSX, documents' `PdfTableWriterDriver` for PDF) under a random name in the
+(data-transfer's CSV, JSON Lines and XLSX, documents' `PdfTableWriter` for PDF) under a random name in the
 configured folder; and it returns a link the disk signs for 24 hours, whose issue is access-logged against the reader.
 `ExportConfig` holds the page size, the row caps, the folder and the PDF page.
 

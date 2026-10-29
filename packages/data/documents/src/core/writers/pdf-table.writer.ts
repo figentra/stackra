@@ -1,20 +1,20 @@
 /**
  * Stackra file contract:
- * Purpose: `PdfTableWriterDriver`, the `pdf` driver of data-transfer's `TabularWriter` port: one sheet printed as a PDF
- *          table (the header row as table headings) through the bound `PdfEngine`, so a queued list or report export
- *          writes PDF through the same port as CSV, XLSX and JSON Lines.
- * Boundary: implements the port only. A PDF is printed whole, so the rows are collected (at most `maxRows`, the caller's
- *           configured cap) and the file is yielded as one chunk once the engine has printed it. Every cell is escaped and
- *           isolated (`dir="auto"`), so Arabic and Latin values keep their own direction; a date prints as ISO 8601 and
- *           an empty cell as nothing. The page size and margins are the caller's (`PdfPage`), never fixed here.
+ * Purpose: `PdfTableWriter`, data-transfer's `TabularWriter` for PDF: one sheet printed as a PDF table (the header row
+ *          as table headings) through a `PdfEngine`, so a queued list or report export writes PDF through the same port
+ *          as CSV, XLSX and JSON Lines.
+ * Boundary: implements the port only. A plain class, not a driver: the caller builds one per export with its page and
+ *           row cap, which are values and not class tokens (gen's `token_not_a_class`). A PDF is printed whole, so the
+ *           rows are collected (at most `maxRows`, the caller's configured cap) and the file is yielded as one chunk
+ *           once the engine has printed it. Every cell is escaped and isolated (`dir="auto"`), so Arabic and Latin
+ *           values keep their own direction; a date prints as ISO 8601 and an empty cell as nothing. The page size and
+ *           margins are the caller's (`PdfPage`), never fixed here.
  * Runtime: isomorphic
  * Governing contract: ADR 0163 (decision 4: exports); ADR 0307 (rule 10); ADR 0470 (decision 7); ADR 0367 (tabular
  *                     ports); reporting gap 11.
  */
-import { Driver } from "@stackra/container";
 import { TransferLimitExceededError } from "@stackra/data-transfer";
-import { TabularWriter } from "@stackra/data-transfer/contracts";
-import type { TabularCell, TabularSheet } from "@stackra/data-transfer/contracts";
+import type { TabularCell, TabularSheet, TabularWriter } from "@stackra/data-transfer/contracts";
 import { escapeHtml } from "@stackra/support";
 
 import type { PdfEngine } from "#contracts/ports/pdf-engine.port";
@@ -28,10 +28,16 @@ const text = (cell: TabularCell | undefined): string =>
  * Prints one sheet as a PDF table.
  *
  * @example
- * const writer = new PdfTableWriterDriver(pdfEngine, { widthMm: 297, heightMm: 210, marginMm: 10 }, 5000);
+ * const writer = new PdfTableWriter(pdfEngine, { widthMm: 297, heightMm: 210, marginMm: 10 }, 5000);
  * await files.writeStream(path, writer.write([{ name: "Orders", rows }]), { contentType: writer.mediaType });
  */
-export class PdfTableWriterDriver extends Driver(TabularWriter) {
+export class PdfTableWriter implements TabularWriter {
+  /** The port brand of `TabularWriter`, type-only: this writer stands in for the port. */
+  declare readonly "~kind": "port";
+
+  /** The port key of `TabularWriter`, type-only. */
+  declare readonly "~key": "data-transfer.TabularWriter";
+
   /** The media type of the written file, `application/pdf`. */
   readonly mediaType = "application/pdf";
 
@@ -50,7 +56,6 @@ export class PdfTableWriterDriver extends Driver(TabularWriter) {
    * @param maxRows - the most data rows one PDF holds, from the caller's configuration.
    */
   constructor(engine: PdfEngine, page: PdfPage, maxRows: number) {
-    super();
     this.engine = engine;
     this.page = page;
     this.maxRows = maxRows;

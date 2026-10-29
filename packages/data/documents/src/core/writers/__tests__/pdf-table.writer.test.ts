@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `PdfTableWriterDriver`: one sheet prints as an HTML table (headings, escaped and isolated
+ * Purpose: unit tests of `PdfTableWriter`: one sheet prints as an HTML table (headings, escaped and isolated
  *          cells, ISO dates) on the given page and yields the engine's bytes; two sheets and more than `maxRows` rows
  *          are refused.
  * Boundary: test only; the engine is a spy, so no Gotenberg runs.
@@ -8,13 +8,12 @@
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 10).
  */
 import { TransferLimitExceededError } from "@stackra/data-transfer";
-import { TabularWriter } from "@stackra/data-transfer/contracts";
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import type { PdfEngine } from "#contracts/ports/pdf-engine.port";
-import { PdfTableWriterDriver } from "#core/drivers/pdf-table-writer.driver";
+import { PdfTableWriter } from "#core/writers/pdf-table.writer";
 
 const PAGE = { widthMm: 297, heightMm: 210, marginMm: 10 };
 
@@ -23,16 +22,12 @@ function writerWith(maxRows = 10) {
   const engine = { print: vi.fn(async () => new Uint8Array([37, 80, 68, 70])) };
   return {
     engine,
-    writer: new PdfTableWriterDriver(engine as unknown as PdfEngine, PAGE, maxRows),
+    writer: new PdfTableWriter(engine as unknown as PdfEngine, PAGE, maxRows),
   };
 }
 
 /** Every chunk `writer` yields for `rows`. */
-async function drain(
-  writer: PdfTableWriterDriver,
-  rows: unknown[][],
-  sheets = 1,
-): Promise<Uint8Array[]> {
+async function drain(writer: PdfTableWriter, rows: unknown[][], sheets = 1): Promise<Uint8Array[]> {
   const chunks: Uint8Array[] = [];
   const sheet = { name: "Orders", rows: rows as never };
   for await (const chunk of writer.write(Array.from({ length: sheets }, () => sheet)))
@@ -40,10 +35,9 @@ async function drain(
   return chunks;
 }
 
-describe("PdfTableWriterDriver", () => {
-  it("is the pdf TabularWriter", () => {
+describe("PdfTableWriter", () => {
+  it("writes application/pdf", () => {
     const { writer } = writerWith();
-    expect(writer).toBeInstanceOf(TabularWriter);
     expect(writer.mediaType).toBe("application/pdf");
   });
 

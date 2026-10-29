@@ -47,7 +47,7 @@ describe("@stackra/documents", () => {
       "MemoryESignatureDriver",
       "PRINT_DOCUMENT_KIND",
       "PdfEngineFailedError",
-      "PdfTableWriterDriver",
+      "PdfTableWriter",
       "SignatureEnvelopeClosedError",
       "SignatureEnvelopeNotFoundError",
       "SignatureNotCompleteError",

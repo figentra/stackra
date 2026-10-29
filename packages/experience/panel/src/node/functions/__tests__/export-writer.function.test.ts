@@ -8,7 +8,7 @@
  */
 import { CsvWriterDriver, JsonLinesWriterDriver } from "@stackra/data-transfer";
 import { XlsxWriterDriver } from "@stackra/data-transfer/node";
-import { PdfTableWriterDriver } from "@stackra/documents";
+import { PdfTableWriter } from "@stackra/documents";
 import type { PdfEngine } from "@stackra/documents/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -24,7 +24,7 @@ describe("exportWriter", () => {
     expect(exportWriter(ExportFormat.Csv, pdf)).toBeInstanceOf(CsvWriterDriver);
     expect(exportWriter(ExportFormat.JsonLines, pdf)).toBeInstanceOf(JsonLinesWriterDriver);
     expect(exportWriter(ExportFormat.Xlsx, pdf)).toBeInstanceOf(XlsxWriterDriver);
-    expect(exportWriter(ExportFormat.Pdf, pdf)).toBeInstanceOf(PdfTableWriterDriver);
+    expect(exportWriter(ExportFormat.Pdf, pdf)).toBeInstanceOf(PdfTableWriter);
   });
 
   it("refuses a PDF without an engine", () => {

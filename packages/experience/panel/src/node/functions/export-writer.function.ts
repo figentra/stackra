@@ -9,7 +9,7 @@
 import { CsvWriterDriver, JsonLinesWriterDriver } from "@stackra/data-transfer";
 import type { TabularWriter } from "@stackra/data-transfer/contracts";
 import { XlsxWriterDriver } from "@stackra/data-transfer/node";
-import { PdfTableWriterDriver } from "@stackra/documents";
+import { PdfTableWriter } from "@stackra/documents";
 import type { PdfEngine, PdfPage } from "@stackra/documents/contracts";
 
 import { ExportFormat } from "#core/enums/export-format.enum";
@@ -38,7 +38,7 @@ export function exportWriter(
     case ExportFormat.Pdf: {
       if (pdf.engine === undefined)
         throw new TypeError("A PDF export needs a bound PdfEngine (documents' gotenberg driver)");
-      return new PdfTableWriterDriver(pdf.engine, pdf.page, pdf.maxRows);
+      return new PdfTableWriter(pdf.engine, pdf.page, pdf.maxRows);
     }
   }
 }
