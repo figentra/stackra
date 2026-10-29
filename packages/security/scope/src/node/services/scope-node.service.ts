@@ -36,7 +36,7 @@ import type { ScopeNode } from "#node/models/scope-node.model";
  * @example
  * const root = await nodes.add({ level: "platform", label: "platform", name: "Platform" });
  * await nodes.add({ parent: { id: root.id, path: root.scopePath }, level: "product", label: "acme", name: "Acme" });
- * await nodes.move(shop, newOrganisation);
+ * await nodes.moveSubtree(shop, newOrganisation);
  */
 export class ScopeNodeService extends CrudService<ScopeNode> {
   /** The deployment's levels and root. */
@@ -74,12 +74,13 @@ export class ScopeNodeService extends CrudService<ScopeNode> {
    * Moves `scope` and its subtree under `parent`, keeping its label and every id: the node's path and each path below
    * it take the parent's path in place of the old prefix, in one statement, and the node records `ScopeMoved` so each
    * service re-paths its own rows from its listener. A move to the parent it already has changes nothing.
+   * Not named `move`: that is `CrudService.move(id, parentId)`, the `HasTree` re-parent of one row.
    *
    * @throws NotFoundError when the node or the parent is not one the session sees.
    * @throws ScopeMoveInvalidError when the parent is the node itself or below it (the root is above every node).
    * @throws ScopeLevelInvalidError when the node's level cannot sit under the parent.
    */
-  async move(scope: ScopeRef, parent: ScopeRef): Promise<ScopeNode> {
+  async moveSubtree(scope: ScopeRef, parent: ScopeRef): Promise<ScopeNode> {
     const node = await this.findOneOrFail({ id: scope.id });
     const target = await this.findOneOrFail({ id: parent.id });
     const from = node.scopePath;

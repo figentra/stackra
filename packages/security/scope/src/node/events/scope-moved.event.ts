@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ScopeMoved`, a scope node and its subtree moved under another parent. Leaves through the host's outbox as
  *          `scope.node.moved.v1`, so every service re-paths its own `scope_path` rows.
- * Boundary: an integration event recorded on the moved node by `ScopeNodeService.move`, written in the move's
+ * Boundary: an integration event recorded on the moved node by `ScopeNodeService.moveSubtree`, written in the move's
  *           transaction. It carries the node's id and its old and new paths, nothing else: each service's listener
  *           calls `repath(from, to)` on its `CrudService` (@stackra/database) in a scope that reaches both paths. It
  *           registers its schema when the module loads (STA-339 replaces the registration).

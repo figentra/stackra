@@ -72,7 +72,7 @@ A label is 1 to 63 of `a-z`, `0-9` and `_`; the root's label is `ScopeConfig.roo
 
 ### Moving a subtree
 
-`nodes.move(scope, parent)` moves a node and everything below it under another parent (an organisation that changes
+`nodes.moveSubtree(scope, parent)` moves a node and everything below it under another parent (an organisation that changes
 hands, a tenant that leaves a reseller). It keeps every id and label, rewrites the path prefix of the node and its
 descendants in one statement, and records `ScopeMoved` (`scope.node.moved.v1`, through the outbox). Each service
 re-paths its own `scope_path` rows from its listener, in the same way:

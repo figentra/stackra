@@ -169,7 +169,7 @@ describe(ScopeNodeService, () => {
     });
     const em = connectMove(shop, nodeAt("platform", "platform"));
     const service = serviceOf();
-    const moved = await service.move(
+    const moved = await service.moveSubtree(
       { id: shop.id, path: "platform.a.shop" },
       { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w0", path: "platform" },
     );
@@ -185,7 +185,7 @@ describe(ScopeNodeService, () => {
     const acme = nodeAt("platform.acme", "product");
     const em = connectMove(acme, nodeAt("platform", "platform"));
     const parent = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w0", path: "platform" } as const;
-    const moved = await serviceOf().move(
+    const moved = await serviceOf().moveSubtree(
       { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" },
       parent,
     );
@@ -198,12 +198,12 @@ describe(ScopeNodeService, () => {
     const scope = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" } as const;
     connectMove(nodeAt("platform.acme", "product"), nodeAt("platform.acme.eu", "product"));
     const loop = await serviceOf()
-      .move(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.eu" })
+      .moveSubtree(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.eu" })
       .catch((error: unknown) => error);
     expect(isRefusal(loop, ScopeMoveInvalidError)).toBe(true);
     connectMove(nodeAt("platform.acme", "product"), nodeAt("platform.beta", "product"));
     const level = await serviceOf()
-      .move(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.beta" })
+      .moveSubtree(scope, { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.beta" })
       .catch((error: unknown) => error);
     expect(isRefusal(level, ScopeLevelInvalidError)).toBe(true);
   });

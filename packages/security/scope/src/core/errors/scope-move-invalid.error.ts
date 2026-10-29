@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ScopeMoveInvalidError`, the refusal of a subtree move whose new parent is the node itself or one of its
  *          descendants (`scope_move_invalid`): the tree would loop.
- * Boundary: raised by `ScopeNodeService.move`; kind `Validation` (HTTP 400), not retryable. Its details are the moved
+ * Boundary: raised by `ScopeNodeService.moveSubtree`; kind `Validation` (HTTP 400), not retryable. Its details are the moved
  *           node's path and the parent's path, both visible to the caller's session.
  * Runtime: isomorphic
  * Governing contract: ADR 0411 (subtree move); ADR 0327 (decision 3); ADR 0140 (envelope and kinds); final review R-02

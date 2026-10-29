@@ -18,7 +18,7 @@ services' databases, so no one statement can move them all.
 
 ## Decision
 
-1. **`ScopeNodeService.move(scope, parent)`** keeps every id and label and rewrites the path prefix of the node and its
+1. **`ScopeNodeService.moveSubtree(scope, parent)`** keeps every id and label and rewrites the path prefix of the node and its
    descendants in `scope.scope_nodes` in one statement, in the caller's transaction. A parent that is the node or below
    it is `scope_move_invalid` (`ScopeMoveInvalidError`, Validation); a level the parent does not take is
    `scope_level_invalid`; a move to the current parent changes nothing.
