@@ -20,18 +20,24 @@ const pdf = (name: string | null): SharedItem => ({
 });
 
 describe("sharedItemPath", () => {
-  it("keeps the file's name inside the folder", () => {
-    expect(sharedItemPath(pdf("My Scan.pdf"))).toBe("inbox/My Scan.pdf");
-    expect(sharedItemPath(pdf("a.pdf"), "receipts")).toBe("receipts/a.pdf");
+  it("keeps the file's name inside the folder behind a unique prefix", () => {
+    expect(sharedItemPath(pdf("My Scan.pdf"))).toMatch(/^inbox\/[0-9a-z]+-My Scan\.pdf$/);
+    expect(sharedItemPath(pdf("a.pdf"), "receipts")).toMatch(/^receipts\/[0-9a-z]+-a\.pdf$/);
+  });
+
+  it("gives two files with the same name different keys", () => {
+    expect(sharedItemPath(pdf("image.jpg"))).not.toBe(sharedItemPath(pdf("image.jpg")));
   });
 
   it("turns path separators into underscores", () => {
-    expect(sharedItemPath(pdf("../../etc/passwd"))).toBe("inbox/.._.._etc_passwd");
-    expect(sharedItemPath(pdf("a\\b\0c"))).toBe("inbox/a_b_c");
+    expect(sharedItemPath(pdf("../../etc/passwd"))).toMatch(
+      /^inbox\/[0-9a-z]+-\.\._\.\._etc_passwd$/,
+    );
+    expect(sharedItemPath(pdf("a\\b\0c"))).toMatch(/^inbox\/[0-9a-z]+-a_b_c$/);
   });
 
-  it("names a nameless or dot-only file by the time", () => {
+  it("calls a nameless or dot-only file shared", () => {
     for (const name of [null, "", "..", "  "])
-      expect(sharedItemPath(pdf(name))).toMatch(/^inbox\/shared-[0-9a-z]+$/);
+      expect(sharedItemPath(pdf(name))).toMatch(/^inbox\/[0-9a-z]+-shared$/);
   });
 });

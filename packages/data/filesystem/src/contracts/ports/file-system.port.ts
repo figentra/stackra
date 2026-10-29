@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `FileSystem` port: one disk of files addressed by relative keys (`invoices/2026/inv_01.pdf`). Code that
  *          stores or serves files injects it; config `filesystem.disk` picks the driver (`memory`, `local`, `s3`,
- *          `gcs`, `encore_bucket`, `electron`).
+ *          `gcs`, `encore_bucket`, `electron`, `expo`).
  * Boundary: an abstract class that is its own token, keyed `filesystem.FileSystem`. A key is relative, `/`-separated,
  *           with no `..` segment; every driver refuses one that is not. Runtime tenant files and their key layout are
  *           the files service's (ADR 0222); a disk only stores bytes. A leaf file: it imports nothing outside

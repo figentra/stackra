@@ -21,7 +21,7 @@ and 9). Anything the configuration refuses is dropped or read as `null`, never t
 | `.`           | `NativeShareConfig` (+ `NativeShareOptions`, `NativeShareConfig$`) | key `native_share`: `text`, `links`, `fileTypes`, `maxItems`, `maxBytes`, `maxTextLength` |
 | `.`           | `IncomingShareDriver`, `MemoryIncomingShareDriver`                 | the base with the configuration's checks; the `memory` driver (tests, web)                |
 | `.`           | `keepSharedItem`, `uploadSharedItem`                               | a shared file onto the `FileSystem` disk, or into a media bucket                          |
-| `.`           | `sharedItemPath`                                                   | the safe disk key a shared file is kept under (`inbox/<name>`)                            |
+| `.`           | `sharedItemPath`                                                   | the safe disk key a shared file is kept under (`inbox/<unique prefix>-<name>`)            |
 | assets        | `native_share::inbox.*`                                            | the inbox screen's strings in en, ar, de, es, fr, it and nl                               |
 | `./native`    | `ExpoIncomingShareDriver`                                          | the phone, over expo-sharing                                                              |
 | `./react`     | `useIncomingShare`, `IncomingShareState`                           | the waiting items, the port and `clear`                                                   |

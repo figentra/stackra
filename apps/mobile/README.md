@@ -41,7 +41,7 @@ src/
 │   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, list by category
 │   ├── design-system-components.ts     the one list (category, title, route, screen) the index and stack read
 │   ├── search-screen.tsx               the Search tab: the review area's search, opening pages in the Home tab
-│   ├── share-inbox-screen.tsx          what other apps shared: keep a file on the phone or upload it, then Done
+│   ├── share-inbox-screen.tsx          what other apps shared: keep a file on the phone, then Done
 │   └── free/<name>-screen.tsx          one review page per @stackra/ui/native component
 └── components/ui/             Screen (scroll container), Section, Sample, ChoiceGroup, ReviewIcons (the review area's icons),
                                useInsetSheet (HeroUI inset bottom-sheet props)
