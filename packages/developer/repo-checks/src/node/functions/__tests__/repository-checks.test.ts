@@ -366,6 +366,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       ".changeset/config.json",
       ".specify/integration.json",
       "assets/landing/index.json",
+      "brand.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
@@ -373,7 +374,13 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     ]),
     [],
   );
-  const flagged = ["apps/console/turbo.json", ".oxfmtrc.json", "knip.json", ".agents/models.json"];
+  const flagged = [
+    "apps/console/turbo.json",
+    ".oxfmtrc.json",
+    "knip.json",
+    ".agents/models.json",
+    "packages/x/brand.json",
+  ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
     flagged,
