@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `TimeSeries<S>({ key, time, dimensions, measures, rollups, lateness, retain })`, the kind base of a time
  *          series over a big append-only source (meter readings, telemetry, fleet positions): rollup tables
- *          `ts_<key>_<grain>` that the `timeseries.rollup` job keeps, so reads of a long range never scan the raw
- *          rows, and the raw table can keep a short retention (`Partitioned`).
+ *          `ts_<key>_<grain>` that the `data_maintenance.timeseries.rollup` job of @stackra/data-maintenance keeps,
+ *          so reads of a long range never scan the raw rows, and the raw table can keep a short retention
+ *          (`Partitioned`).
  * Boundary: called only, with the source model as the type argument (gone at runtime: gen reads it, and its entry
  *           pairs the class with the model through `registerTimeSeries`). It checks the declaration when the class is
  *           declared; whether the fields exist is gen's check and the run's (`columnOf`). Rollups are plain tables, not
