@@ -34,6 +34,8 @@
  *          `event_base_abstract`; an abstract base's protected constructor is not read, a subclass takes the nearest
  *          one; a driver extending its port has no tokens only in `@stackra/contracts`; `I18nKey` is the `i18n_key` brand.
  *          A driver over another package's base takes its port from that package's entry, never the base's `#` path.
+ *          A typed defaulted constructor parameter is a token (the default serves hand construction only), and an
+ *          inferred one is `token_not_a_class` (STA-1536).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1713,5 +1715,51 @@ describe("createSourceReader on a driver of @stackra/contracts (STA-1365)", asyn
     expect(driver?.kind).toBe("port");
     expect(driver?.deps).toEqual([]);
     expect(reader.errors.map((error) => error.code)).not.toContain("token_not_a_class");
+  });
+});
+
+describe("createSourceReader on a defaulted constructor parameter (STA-1536)", async () => {
+  const root = writeFixtureMember("defaulted", {
+    "src/core/services/clock.service.ts": [
+      'import { Service } from "@stackra/container";',
+      "export class ClockService extends Service {}",
+      "",
+    ].join("\n"),
+    "src/core/services/typed-default.service.ts": [
+      'import { Service } from "@stackra/container";',
+      'import { ClockService } from "#core/services/clock.service";',
+      "export class TypedDefaultService extends Service {",
+      "  constructor(readonly clock: ClockService = new ClockService()) {",
+      "    super();",
+      "  }",
+      "}",
+      "",
+    ].join("\n"),
+    "src/core/services/inferred-default.service.ts": [
+      'import { Service } from "@stackra/container";',
+      'import { ClockService } from "#core/services/clock.service";',
+      "export class InferredDefaultService extends Service {",
+      "  constructor(readonly clock = new ClockService()) {",
+      "    super();",
+      "  }",
+      "}",
+      "",
+    ].join("\n"),
+  });
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("injects a typed defaulted parameter's class, so the container passes the bound one", () => {
+    expect(classes.find((declared) => declared.name === "TypedDefaultService")?.deps).toEqual([
+      { class: { name: "ClockService", from: "#core/services/clock.service" } },
+    ]);
+  });
+
+  it("refuses a defaulted parameter whose type is only inferred", () => {
+    expect(reader.errors.map((error) => `${error.code} ${error.subject}`)).toContain(
+      "token_not_a_class InferredDefaultService.constructor",
+    );
   });
 });
