@@ -56,6 +56,36 @@ icon: "rocket"
   </Step>
 </Steps>
 
+## First operator (once per environment, owner)
+
+A new environment's operator roster is empty, and no one can grant the first operator from the UI. Never write SQL for
+it: `stackra ops bootstrap-operator` calls the environment's own `identity.operator.bootstrap@1`, which finds the user
+by email, gives the role at the platform node once and audits the call (STA-1586).
+
+<Steps>
+  <Step title="Sign up the operator">
+    The operator signs up on the environment like any user, so the identity provider holds their email and Stackra id.
+  </Step>
+  <Step title="Mint the bootstrap credential (owner)">
+    In that environment's ZITADEL, create a service account (machine user) named `ops-bootstrap` and give it a
+    personal access token with a one-day expiry. The gateway verifies it into a `service` actor, the only kind the
+    bootstrap's system permission lets through. Put the token in Infisical, that environment, path `/ops`, as
+    `STACKRA_OPS_TOKEN`. The agent never sees it.
+  </Step>
+  <Step title="Dry run">
+    `infisical run --env=<env> --path=/ops -- stackra ops bootstrap-operator --env <environment> --email <email> --dry-run`
+    prints `would grant owner to usr_…`, or `no user with that email` (exit 1). `--api <origin>` overrides the origin
+    read from `runway.yaml` (`https://<edge.apiHost>.<environments.<env>.domains.zone>`).
+  </Step>
+  <Step title="Grant">
+    The same command without `--dry-run` prints `granted owner to usr_…`. Running it again prints `already holds owner;
+    nothing written`. `--role <key>` gives another role than `owner`.
+  </Step>
+  <Step title="Revoke the credential">
+    Delete the token in ZITADEL and the secret in Infisical. Every further operator is added from the operator UI.
+  </Step>
+</Steps>
+
 ## Rollback
 
 - **Choose the target from the release records** (the last release that succeeded before the current one), never from memory.
@@ -101,5 +131,6 @@ The kill switch is a `sw.js` that removes itself.
 | Owner approval for production  | Protected environment                          | Not built |
 | Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
 | No agent sets a secret         | `guard-bash`                                   | Live      |
+| First operator without SQL     | `stackra ops bootstrap-operator` (STA-1586)    | Built     |
 
 See also [Runway](/runbooks/runway), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

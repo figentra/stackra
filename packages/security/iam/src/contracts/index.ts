@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/iam (the `PolicySource`, `PolicySnapshotStore`,
- *          `DimensionValues` and `RolesAtNode` ports, the policy snapshot and its grants, rules, field rules, break-glass grants and
+ *          `DimensionValues`, `RoleGrants` and `RolesAtNode`
+ *          ports, the policy snapshot and its grants, rules, field rules, break-glass grants and
  *          audiences, the shipped `Audience$` (STA-1284), `Capability` and `FieldAccess`) until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
@@ -16,6 +17,7 @@ export { FieldAccess } from "#contracts/enums/field-access.enum";
 export { DimensionValues } from "#contracts/ports/dimension-values.port";
 export { PolicySnapshotStore } from "#contracts/ports/policy-snapshot-store.port";
 export { PolicySource } from "#contracts/ports/policy-source.port";
+export { RoleGrants } from "#contracts/ports/role-grants.port";
 export { RolesAtNode } from "#contracts/ports/roles-at-node.port";
 export type { Audience } from "#contracts/types/audience.type";
 export type { BreakGlassGrant } from "#contracts/types/break-glass-grant.type";

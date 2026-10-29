@@ -59,6 +59,8 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 - **Roles at a node.** A consumer that checks a role rather than a permission (an approver, an escalation role)
   injects `RolesAtNode`; `IamRolesAtNodeDriver` answers it from the snapshot with the decision point's grant rule
   (held at or above the node, unexpired). Never list grants in the consumer.
+- **Writing a grant.** `RoleGrants` (`./contracts`) is the one write port, for the operator bootstrap only; the IAM
+  service binds it and publishes the snapshot. This package ships no grant store and no driver of it.
 - No tenant vocabulary (R-59): scopes are the contracts `ScopeRef`. The access-control driver reads the call's
   `scope`; never read the descriptor's `scopeId` (it is going away).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

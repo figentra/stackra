@@ -3,11 +3,11 @@
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
  *          taken login name refused per organisation; deactivation, removal, listing a user's own sessions and ending them; the device flow stays
  *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last; enrolled methods are listed once
- *          each and dropped with the user; a user is found by its Stackra id; a passkey sign-in needs a known login and
+ *          each and dropped with the user; a user is found by its Stackra id, and its Stackra id by its email; a passkey sign-in needs a known login and
  *          a live session; a passkey registration finishes once and enrols `swk`.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543; STA-1580.
+ * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543; STA-1580; STA-1586.
  */
 import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -135,6 +135,17 @@ describe(MemoryIdpAdminDriver, () => {
     const userId = await idp.createUser({ ...RANA, stackraUserId: "usr_1" });
     expect(await idp.findUserId("usr_1")).toBe(userId);
     expect(await idp.findUserId("usr_2")).toBeUndefined();
+  });
+
+  it("finds a Stackra id by email, case ignored, and refuses an email two users share", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    await idp.createUser({ ...RANA, stackraUserId: "usr_1" });
+    await idp.createUser({ ...RANA, username: "sami", email: "sami@acme.example" });
+    expect(await idp.findStackraUserId("Rana@Acme.example")).toBe("usr_1");
+    expect(await idp.findStackraUserId("sami@acme.example")).toBeUndefined();
+    expect(await idp.findStackraUserId("nobody@acme.example")).toBeUndefined();
+    await idp.createUser({ ...RANA, username: "rana2", stackraUserId: "usr_2" });
+    await expect(idp.findStackraUserId("rana@acme.example")).rejects.toThrow(Error);
   });
 
   it("signs in with a passkey on a known login and a live session only", async () => {

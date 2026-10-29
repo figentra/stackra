@@ -32,6 +32,7 @@ describe("@stackra/identity/contracts", () => {
       "IdpSecondFactor",
       "LoginDirectoryStore",
       "LoginIdentifierKind",
+      "OperatorBootstrapOutcome",
       "PasskeyRefusal",
       "Passkeys",
       "SessionStore",

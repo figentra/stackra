@@ -45,6 +45,7 @@ and `yaml`.
 | `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)                |
 | `stackra search:reindex [Model]`       | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`)  |
 | `stackra search:status`                | each search index's state, document count and rebuild progress                               |
+| `stackra ops bootstrap-operator`       | give an environment's first operator a role, once, through its API (`--email`, `--dry-run`)  |
 | `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)     |
 | `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process                  |
 | `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                               |
@@ -198,6 +199,18 @@ instead. A full rebuild records its cursor in `search.indexes`, so a stopped one
 prints each index's state (`valid`, `invalid` after a facet change, `rebuilding`), document count, resume cursor and
 last rebuild (`searchStatus` of `@stackra/search/node`). Both connect with `directDatabaseUrl()` of `@stackra/database/node`: the member's
 `DATABASE_DIRECT_URL`, else its `DATABASE_URL` (ADR 0473).
+
+## Operator bootstrap
+
+`stackra ops bootstrap-operator --email <email> [--role <role>] [--env <environment>] [--api <origin>] [--dry-run]`
+(STA-1586) calls the environment's own `identity.operator.bootstrap@1` (`POST /platform/operators/bootstrap`); it opens
+no database connection. The origin is `https://<edge.apiHost>.<environments.<env>.domains.zone>` from the root
+`runway.yaml`, or `--api`; the environment is `--env`, else `STACKRA_ENVIRONMENT`, else `dev`. The credential is the
+environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and never printed (run it under
+`infisical run`; the deploys runbook says how the owner mints it). The action finds the user by email, gives the role
+(`owner` by default) at the platform node unless held, and audits the call. It prints `granted`, `already holds`
+(nothing written) or `would grant` (`--dry-run`) and exits 0; no user with the email, an error status or an unreachable
+origin exits 1.
 
 ## Not here yet
 
