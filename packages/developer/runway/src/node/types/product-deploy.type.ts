@@ -14,7 +14,7 @@ import type { ProductPublishResult } from "#node/types/product-publish-result.ty
 export type ProductDeploy = {
   /** The product key. */
   readonly product: string;
-  /** The environment. */
+  /** The environment deployed to. */
   readonly environment: string;
   /** The commit deployed. */
   readonly sha: string;

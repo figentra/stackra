@@ -13,7 +13,7 @@ export type SurfaceBundleFiles = {
   readonly entry: string;
   /** The chunks the Worker preloads. */
   readonly modulepreload: readonly string[];
-  /** The stylesheets. */
+  /** The stylesheets the entry loads. */
   readonly css: readonly string[];
   /** The bare specifiers the bundle leaves to the import map. */
   readonly imports: readonly string[];
