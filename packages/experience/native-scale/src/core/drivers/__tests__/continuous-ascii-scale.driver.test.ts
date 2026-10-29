@@ -18,6 +18,7 @@ import { NativeScaleConfig } from "#config/native-scale.config";
 import { SCALE_SDK } from "#core/__tests__/scale-sdk.fixture";
 import { NATIVE_SCALE_CONFIG_SCHEMA } from "#core/constants/native-scale-config-schema.constant";
 import { ContinuousAsciiScaleDriver } from "#core/drivers/continuous-ascii-scale.driver";
+import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 
 const UNAVAILABLE = { ok: false, error: { code: "unavailable", capability: "serial" } };
 
@@ -27,7 +28,7 @@ function scale(request = ""): ContinuousAsciiScaleDriver {
   return new ContinuousAsciiScaleDriver(
     buildConfig(NativeScaleConfig, {
       values: {
-        protocol: "continuous_ascii",
+        protocol: ScaleProtocolName.ContinuousAscii,
         transport: "usb",
         address: "0403:6001",
         readTimeout: Duration.seconds(0.05),

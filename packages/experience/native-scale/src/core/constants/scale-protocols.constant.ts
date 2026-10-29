@@ -15,7 +15,7 @@
  * Governing contract: ADR 0478 (decisions 5 and 8); ADR 0253 (decision 4).
  */
 import type { ScaleProtocol } from "#core/types/scale-protocol.type";
-import type { ScaleProtocolName } from "#core/types/scale-protocol-name.type";
+import type { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 
 /** The shipped protocol pack. */
 export const SCALE_PROTOCOLS: Readonly<Record<ScaleProtocolName, ScaleProtocol>> = Object.freeze({

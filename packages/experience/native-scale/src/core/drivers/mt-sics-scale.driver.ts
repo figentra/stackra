@@ -18,6 +18,7 @@ import type { ScaleReading } from "@stackra/peripherals/contracts";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { ProtocolScaleDriver } from "#core/drivers/protocol-scale.driver";
+import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 import { connectScale } from "#core/functions/connect-scale.function";
 import { isTareOrFault } from "#core/functions/is-tare-or-fault.function";
 import { listenScaleLines } from "#core/functions/listen-scale-lines.function";
@@ -88,7 +89,7 @@ export class MtSicsScaleDriver extends ProtocolScaleDriver {
 
   /** The MT-SICS commands and terminator. */
   protected override protocol(): ScaleProtocol {
-    return this.config.protocols.mt_sics;
+    return this.config.protocols[ScaleProtocolName.MtSics];
   }
 
   /** One MT-SICS answer line. */

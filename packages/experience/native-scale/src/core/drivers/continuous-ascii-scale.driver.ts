@@ -18,6 +18,7 @@ import type { ScaleReading } from "@stackra/peripherals/contracts";
 import type { CapabilityResult } from "@stackra/platform/contracts";
 
 import { ProtocolScaleDriver } from "#core/drivers/protocol-scale.driver";
+import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 import { listenScaleLines } from "#core/functions/listen-scale-lines.function";
 import { nativeScaleModule } from "#core/functions/native-scale-module.function";
 import { parseContinuousAsciiLine } from "#core/functions/parse-continuous-ascii-line.function";
@@ -58,7 +59,7 @@ export class ContinuousAsciiScaleDriver extends ProtocolScaleDriver {
 
   /** The continuous ASCII terminator and optional request command. */
   protected override protocol(): ScaleProtocol {
-    return this.config.protocols.continuous_ascii;
+    return this.config.protocols[ScaleProtocolName.ContinuousAscii];
   }
 
   /** One line of the stream; a tare line is remembered for `frame`. */

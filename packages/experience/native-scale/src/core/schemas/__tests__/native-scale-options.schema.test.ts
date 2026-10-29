@@ -13,7 +13,7 @@ import { Schema } from "@stackra/validation";
 import { NATIVE_SCALE_CONFIG_SCHEMA } from "#core/constants/native-scale-config-schema.constant";
 import { NativeScaleOptions } from "#core/schemas/native-scale-options.schema";
 import type { ScaleProtocol } from "#core/types/scale-protocol.type";
-import type { ScaleProtocolName } from "#core/types/scale-protocol-name.type";
+import type { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 import type { ScaleTransport } from "#core/types/scale-transport.type";
 
 describe("NativeScaleOptions", () => {

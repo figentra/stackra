@@ -15,8 +15,8 @@ import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { NATIVE_SCALE_CONFIG_SCHEMA } from "#core/constants/native-scale-config-schema.constant";
 import { SCALE_PROTOCOLS } from "#core/constants/scale-protocols.constant";
+import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 import type { ScaleProtocol } from "#core/types/scale-protocol.type";
-import type { ScaleProtocolName } from "#core/types/scale-protocol-name.type";
 import type { ScaleTransport } from "#core/types/scale-transport.type";
 
 /**
@@ -24,7 +24,7 @@ import type { ScaleTransport } from "#core/types/scale-transport.type";
  *
  * @example
  * export class NativeScaleConfig extends BaseNativeScaleConfig {
- *   override protocol: ScaleProtocolName = "continuous_ascii";
+ *   override protocol: ScaleProtocolName = ScaleProtocolName.ContinuousAscii;
  *   override transport: ScaleTransport = "usb";
  *   override address = "0403:6001";
  * }
@@ -33,13 +33,10 @@ export class NativeScaleOptions extends Schema {
   /** The protocol pack: each protocol's terminator, commands and known makers. */
   // reason: a keyed record of nested settings with no shape class; the package's own shipped schema says it
   @Field(NATIVE_SCALE_CONFIG_SCHEMA.shape.protocols.unwrap())
-  protocols: Record<ScaleProtocolName, ScaleProtocol> = {
-    mt_sics: SCALE_PROTOCOLS.mt_sics,
-    continuous_ascii: SCALE_PROTOCOLS.continuous_ascii,
-  };
+  protocols: Record<ScaleProtocolName, ScaleProtocol> = SCALE_PROTOCOLS;
 
   /** The scale's protocol, which is also the driver gen selects (`config:native_scale.protocol`). */
-  protocol: ScaleProtocolName = "mt_sics";
+  protocol: ScaleProtocolName = ScaleProtocolName.MtSics;
 
   /** How the module reaches the scale. */
   transport: ScaleTransport = "ble";

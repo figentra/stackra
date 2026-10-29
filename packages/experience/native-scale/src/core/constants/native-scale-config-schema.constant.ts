@@ -14,6 +14,7 @@ import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
 import { SCALE_PROTOCOLS } from "#core/constants/scale-protocols.constant";
+import { ScaleProtocolName } from "#core/enums/scale-protocol-name.enum";
 
 /** A 128-bit or 16-bit Bluetooth UUID. */
 const BLE_UUID = z
@@ -53,7 +54,9 @@ function protocolDefaults(): z.infer<typeof PROTOCOL_PACK> {
 // shortcut: authored until gen compiles this package's NativeScaleOptions into #stackra/schemas; replace with STA-339.
 /** The shipped `NativeScaleConfig$`. */
 export const NATIVE_SCALE_CONFIG_SCHEMA = z.object({
-  protocol: z.enum(["mt_sics", "continuous_ascii"]).default("mt_sics"),
+  protocol: z
+    .enum([ScaleProtocolName.MtSics, ScaleProtocolName.ContinuousAscii])
+    .default(ScaleProtocolName.MtSics),
   transport: TRANSPORT.default("ble"),
   address: z.string().max(64).default(""),
   baudRate: z.int().min(300).max(921_600).default(9600),
