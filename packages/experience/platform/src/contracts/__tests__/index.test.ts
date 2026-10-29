@@ -25,6 +25,7 @@ describe("@stackra/platform/contracts", () => {
       "CaptchaVerifier",
       "DevicePermissions",
       "KioskMode",
+      "LiveActivities",
       "Platform",
       "PlatformPushTransport",
       "SecondScreen",

@@ -178,6 +178,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@expo/ui": "catalog:mobile",
     "@react-native-community/netinfo": "catalog:mobile",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
@@ -200,6 +201,7 @@
     "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "expo-tracking-transparency": "catalog:mobile",
+    "expo-widgets": "catalog:mobile",
     "fake-indexeddb": "catalog:quality",
     "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
@@ -212,6 +214,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@expo/ui": "catalog:mobile",
     "@react-native-community/netinfo": "catalog:mobile",
     "electron": "catalog:desktop",
     "expo-background-task": "catalog:mobile",
@@ -224,10 +227,14 @@
     "expo-media-library": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "expo-tracking-transparency": "catalog:mobile",
+    "expo-widgets": "catalog:mobile",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
+    "@expo/ui": {
+      "optional": true
+    },
     "@react-native-community/netinfo": {
       "optional": true
     },
@@ -262,6 +269,9 @@
       "optional": true
     },
     "expo-tracking-transparency": {
+      "optional": true
+    },
+    "expo-widgets": {
       "optional": true
     },
     "react-native": {

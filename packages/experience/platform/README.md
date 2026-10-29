@@ -175,6 +175,31 @@ export class AppLockConfig extends BaseAppLockConfig {
 - The cover is a React view drawn when the app turns inactive; iOS snapshots after it. Android may snapshot first; a
   hard guarantee there needs `FLAG_SECURE`, which also blocks screenshots, so it is not set.
 
+### Live Activities
+
+`LiveActivities` (`./contracts`) puts an order or booking in progress on the iPhone Lock Screen and in the Dynamic
+Island (STA-1539). The product calls it as the order moves; every string arrives translated:
+
+```ts
+const activities = useContainer().get(LiveActivities);
+await activities.show({
+  reference: order.id,
+  title: t("orders::live.title", order),
+  status: t(`orders::status.${order.status}`),
+  step: 2,
+  steps: 4,
+  url: `app://orders/${order.id}`,
+});
+await activities.end(order.id, { ...final, step: 4 }); // stays for `platform.liveActivity.endedDismissal` (15 minutes)
+```
+
+- `ExpoLiveActivitiesDriver` (`./native`) renders the one `OrderProgress` layout with expo-widgets and Expo UI's SwiftUI
+  views (ADR 0478 decision 9: Expo's widget library, no hand-written Swift). Android, Expo Go, iOS before 16.2 and a
+  phone with Live Activities switched off resolve `unavailable`. The app needs expo-widgets' config plugin.
+- `MemoryLiveActivitiesDriver` (`.`) is the web, desktop and test driver; `isAvailable = false` makes it refuse.
+- `LiveActivityConfig` (`.`, key `platform.liveActivity`) holds `endedDismissal`.
+- Not yet: home-screen widgets, remote (push) updates and push-to-start, App Shortcuts and Siri intents.
+
 ## Testing
 
 ```ts
