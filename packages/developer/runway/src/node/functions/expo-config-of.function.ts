@@ -3,8 +3,8 @@
  * Purpose: `expoConfigOf(base, input)`, the Expo app config of one product app (or one scope's white-label variant of
  *          it): the template line's base `expo` block with the runway identity (name, ids, scheme, app links, tablet),
  *          the runtime version from the template line, the EAS project and update URL, the config plugins of the
- *          enabled capabilities, and every disabled capability's plugins, Info.plist keys, entitlements and Android
- *          permissions taken out.
+ *          enabled capabilities and their flags (`extra.capabilities`, which the app reads to wire its drivers), and
+ *          every disabled capability's plugins, Info.plist keys, entitlements and Android permissions taken out.
  * Boundary: pure: data in, the `expo` block out; the job writes it. The slug is `<project>-<app>`, the slug of the
  *           app's EAS project. The first entry of `identity.name` is the store name; per-locale names are not written.
  * Runtime: node
@@ -97,6 +97,8 @@ export function expoConfigOf(
 
   const extra = blockOf(base["extra"]);
   if (projectId !== undefined) extra["eas"] = { ...blockOf(extra["eas"]), projectId };
+  // The app wires a driver only for a flag it was built with: the other modules are not in the binary.
+  extra["capabilities"] = [...(entry.capabilities ?? [])];
 
   return {
     ...base,

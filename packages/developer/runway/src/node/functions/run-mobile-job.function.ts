@@ -5,10 +5,13 @@
  *          store accounts, refuses a white-label build under the platform's Apple account until the 4.2.6 and 4.3
  *          checks are recorded as passed, writes the template checkout's Expo config with the capability flags applied
  *          (unused plugins, native modules, permission strings and entitlements left out), and starts the build
- *          through the `eas` provider on the app's EAS channel.
+ *          through the `eas` provider on the app's EAS channel. With `line`, it first checks the app's template line
+ *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
+ *          so EAS builds exactly that commit.
  * Boundary: reads the root runway, the record file and the template's `app.json`, `capabilities.json` and
- *           `package.json`; writes only `app.json` and `package.json` in the template checkout; runs `git` and `eas`
- *           through the command runner. Store submission, the scope theme's icon and splash (stackra-13) and
+ *           `package.json`; writes only `app.json` and `package.json` in the template checkout (and, with `line`,
+ *           the checkout itself); runs `npm`, `tar`, `git` and `eas` through the command runner, so `dryRunCommand`
+ *           makes the whole job a dry run that still writes the generated config. Store submission, the scope theme's icon and splash (stackra-13) and
  *           installing the app's `packages` are not this job's. Store accounts arrive resolved (`storeAccountsOf`).
  * Runtime: node
  * Governing contract: ADR 0439 (decisions 2, 3, 7 and 8, and enforcement); ADR 0352 (decision 3); ADR 0180 and ADR
@@ -27,10 +30,14 @@ import type { DeployTarget } from "#core/types/deploy-target.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { APPLE_GUIDELINE_CHECKS } from "#node/constants/apple-guideline-checks.constant";
 import { APPLE_GUIDELINE_RECORD } from "#node/constants/apple-guideline-record.constant";
+import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 import { capabilityConfig } from "#node/functions/capability-config.function";
+import { checkoutLine } from "#node/functions/checkout-line.function";
 import { expoConfigOf } from "#node/functions/expo-config-of.function";
 import { readRunway } from "#node/functions/read-runway.function";
+import { runCommand } from "#node/functions/run-command.function";
+import type { LineCheckout } from "#node/types/line-checkout.type";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
 import type { MobileJobRequest } from "#node/types/mobile-job-request.type";
 import type { MobileJobResult } from "#node/types/mobile-job-result.type";
@@ -66,7 +73,8 @@ function blockOf(block: Block, key: string): Block {
 /**
  * Runs the mobile job for one app (and one scope).
  *
- * @param request - the repository, app, template checkout, commit, environment, store accounts and variant.
+ * @param request - the repository, app, template checkout (or the line source to check it out from), commit,
+ *        environment, store accounts and variant.
  * @throws RunwayInvalidError when the app is not in the runway `mobile`, is not white-label for a variant, offers no
  *         mode a store account needs, lacks a store account for a platform it targets, has no EAS channel, or lists a
  *         capability the template line does not offer.
@@ -115,6 +123,12 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
       }
     }
   }
+  if (request.line === undefined && request.sha === undefined) {
+    issues.push({
+      path: "sha",
+      message: "Name the commit checked out in templateDir, or pass line",
+    });
+  }
   const channel = entry.eas?.channel;
   if (channel === undefined) {
     issues.push({ path: `${at}.eas.channel`, message: "Name the EAS channel the app builds on" });
@@ -137,6 +151,18 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
         `A white-label build under the platform's Apple account waits on Apple guideline ${open.join(" and ")}: record each check as passed in ${entry.store ?? `${at}.store`}/${APPLE_GUIDELINE_RECORD}`,
       );
     }
+  }
+
+  const run = request.run ?? runCommand;
+  let template: LineCheckout | undefined;
+  if (request.line !== undefined) {
+    template = await checkoutLine({
+      ...request.line,
+      line: entry.template,
+      into: templateDir,
+      git: true,
+      run,
+    });
   }
 
   const appJson = readJson(join(templateDir, "app.json"));
@@ -180,6 +206,28 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     )}\n`,
   );
 
+  let sha = request.sha;
+  if (template !== undefined) {
+    const author = LINE_CHECKOUT_SETTINGS.gitIdentity;
+    await run("git", ["add", "--all"], { cwd: templateDir });
+    await run(
+      "git",
+      [
+        ...author,
+        "commit",
+        "--quiet",
+        "--no-verify",
+        "--message",
+        `runway: ${at} on ${template.package}@${template.version}`,
+      ],
+      { cwd: templateDir },
+    );
+    sha = (await run("git", ["rev-parse", "HEAD"], { cwd: templateDir })).trim();
+  }
+  if (sha === undefined || sha === "") {
+    throw new RunwayUnresolvedError(`The template checkout ${templateDir} has no commit to build`);
+  }
+
   const target: DeployTarget = {
     id: `${request.environment}/mobile/${app}${variant === undefined ? "" : `/scope:${variant.scope}`}`,
     environment: request.environment,
@@ -194,9 +242,9 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
   // The template checkout is any folder, which the config schema (folders inside the repository) refuses.
   const eas = Object.assign(new EasProviderDriver(buildConfig(RunwayConfig)), {
     projectDir: templateDir,
-    ...(request.run === undefined ? {} : { run: request.run }),
+    run,
   });
-  const record = await eas.apply(target, request.sha);
+  const record = await eas.apply(target, sha);
 
   return {
     app,
@@ -204,5 +252,6 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     config,
     record,
     stores,
+    ...(template === undefined ? {} : { template }),
   };
 }

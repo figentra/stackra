@@ -4,7 +4,9 @@
  *          autolinking excludes from the runway app and the capability catalogue and starts `eas build` on the app's
  *          channel; a scope-started white-label build takes the variant identity; a managed white-label iOS build is
  *          refused until 4.2.6 and 4.3 are recorded as passed; an unknown app, a missing store account, a mode the app
- *          does not offer and a variant of an app without white-label are refused.
+ *          does not offer and a variant of an app without white-label are refused; with `line`, the job checks the
+ *          template line out from a local source, commits the written config and builds that commit, all through a
+ *          dry-run runner.
  * Boundary: test only; runs in a temporary folder with a fake command runner, so nothing reaches git or EAS.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0439 (decisions 2, 3 and 8, and enforcement).
@@ -17,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { runMobileJob } from "#node/functions/run-mobile-job.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { MobileJobRequest } from "#node/types/mobile-job-request.type";
@@ -211,5 +214,54 @@ describe("runMobileJob", () => {
     expect(await issuePaths(runMobileJob(request({ stores: OWN, variant })))).toEqual([
       "mobile.shopper.whiteLabel",
     ]);
+  });
+
+  it("checks the template line out, commits the written config and builds that commit", async () => {
+    const local = join(repository, "os-mobile");
+    mkdirSync(local);
+    for (const file of ["app.json", "capabilities.json"])
+      writeFileSync(join(local, file), readFileSync(join(templateDir, file)));
+    writeFileSync(
+      join(local, "package.json"),
+      JSON.stringify({ name: "@figentra/os-mobile", version: "3.1.0" }),
+    );
+    const into = join(repository, ".stackra", "line");
+    const dry = dryRunCommand({ head: SHA });
+
+    const { sha: _, ...job } = request({
+      templateDir: into,
+      line: { scope: "@figentra", local },
+      run: dry,
+    });
+    const result = await runMobileJob(job);
+
+    expect(result.template).toMatchObject({
+      package: "@figentra/os-mobile",
+      version: "3.1.0",
+      from: "local",
+      sha: SHA,
+    });
+    const appJson = JSON.parse(readFileSync(join(into, "app.json"), "utf8"));
+    expect(appJson.expo.extra.capabilities).toEqual(["push"]);
+    expect(JSON.parse(readFileSync(join(into, "package.json"), "utf8")).expo.autolinking).toEqual({
+      exclude: ["expo-camera"],
+    });
+    expect(dry.calls.map((call) => [call.command, call.args[0]])).toEqual([
+      ["git", "init"],
+      ["git", "add"],
+      ["git", "-c"],
+      ["git", "rev-parse"],
+      ["git", "add"],
+      ["git", "-c"],
+      ["git", "rev-parse"],
+      ["git", "rev-parse"],
+      ["eas", "build"],
+    ]);
+    expect(result.record.sha).toBe(SHA);
+  });
+
+  it("refuses a job with neither a commit nor a line", async () => {
+    const { sha: _, ...job } = request();
+    expect(await issuePaths(runMobileJob(job))).toEqual(["sha"]);
   });
 });

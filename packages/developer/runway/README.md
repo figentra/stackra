@@ -44,6 +44,8 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                                  | the `encore-cloud`, `eas` and `mintlify` providers                                                                  |
 | `./node`    | `runCommand`, `CommandRunner`                                                                                               | how a provider runs its CLI, with no shell                                                                          |
 | `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                          |
+| `./node`    | `checkoutLine(request)`, `shellReleaseOf`, `LINE_CHECKOUT_SETTINGS`, `LineSource`, `LineCheckout`, `ShellManifest`          | the template line step: a line's highest release from the registry (or a local checkout) into a folder (ADR 0481)   |
+| `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                              | dry runs: every command and KV write recorded, local outputs still written                                          |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check              |
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …           | the store-screenshot capture job on a Mac CI runner                                                                 |
 | `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary           |
@@ -98,12 +100,34 @@ capability flags, `tablet`, store accounts, EAS project and `whiteLabel` (the en
 `bring-your-own` modes of the tenant-started per-tenant build, ADR 0439). Every asset path sits inside `assets/`.
 An app runway's `release.mobile.whiteLabel` takes `true` or the same `whiteLabel` block.
 
+## Template lines
+
+A root runway names each surface's shell and each mobile app's template as a line, `<owner>/<name>@<major>`. A line is
+the package `<scope>/<owner>-<name>` on the Stackra registry at versions `<major>.x.y` (ADR 0481): `os/mobile@3` is
+`@figentra/os-mobile@3.x.y`. `checkoutLine` reads the highest release of the major with `npm view`, packs and unpacks
+it into `into` (or copies `local`, a checkout of the line's own package), and with `git: true` makes the folder a git
+checkout of that release. `shellReleaseOf` reads a checked-out shell's `dist/shell.json` and answers the
+`shell:<surface>:<major>` release with its entry and import map under `<origin>/shells/<surface>/<major>/<version>/`.
+Runway names no scope itself: the deploy workflow passes it, and the product checkout's `.npmrc` maps it.
+
+```ts
+import { checkoutLine, dryRunCommand, DryRunEdgeKvDriver, shellReleaseOf } from "@stackra/runway/node";
+
+const shell = await checkoutLine({ line: "os/console@3", scope: "@figentra", into: ".stackra/shells/console" });
+const next = shellReleaseOf(shell, "https://assets.figentra.com");
+
+// A dry run: nothing reaches npm, git, EAS, wrangler or KV; the generated config is still written.
+const run = dryRunCommand();
+await runMobileJob({ …, templateDir: ".stackra/mobile/app", line: { scope: "@figentra", local: "../os/apps/mobile" }, run });
+```
+
 ## The mobile job
 
 `runMobileJob` (`./node`) builds one app of the root runway's `mobile` from the OS mobile template (ADR 0439). A merge
 starts it with no variant; an OS event for a scope starts a white-label build with a `variant` (the scope id and the
-identity from the scope's brand and listing data). The caller checks out the app's template line into `templateDir`
-and resolves the store accounts with `storeAccountsOf` from `@stackra/infra-mobile` (the scope's connected App Store
+identity from the scope's brand and listing data). The caller either checks out the app's template line into
+`templateDir` itself, or passes `line` (the registry scope, or a `local` checkout) and the job checks it out there with
+`checkoutLine`, commits the config it writes and builds that commit; the caller resolves the store accounts with `storeAccountsOf` from `@stackra/infra-mobile` (the scope's connected App Store
 Connect key or Google Play service account, else the platform account in `mobile.<app>.stores`).
 
 1. Checks the app exists, every platform it targets has a store account, a variant's app has `whiteLabel` and offers

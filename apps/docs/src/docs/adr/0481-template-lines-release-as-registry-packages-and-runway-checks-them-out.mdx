@@ -1,0 +1,86 @@
+---
+title: "0481 — Template lines release as registry packages, and Runway checks them out by line"
+description: "Proposed · 2026-10-29"
+---
+
+{/* Stackra file contract: Purpose: the decision record that a shell or mobile template line a product's root runway names (`<owner>/<name>@<major>`) is released as an npm package on the Stackra registry, `<scope>/<owner>-<name>`, whose major is the line, and that Runway resolves and checks out the highest release of that major for the mobile job and the shell publish. Boundary: decision text only; the code is @stackra/runway `checkoutLine` and `shellReleaseOf` (STA-1603) and the lines are figentra/os apps/mobile, apps/console and apps/landing (STA-1602). Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0436, 0439, 0440, 0441, 0352. */}
+
+<Note>
+  Proposed (STA-1603, epic STA-1601). Builds on
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells),
+  [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) and
+  [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 3 (the
+  root runway names a line per surface and mobile app). Answers the gap those leave: how Runway gets
+  the line's files.
+</Note>
+
+## Context
+
+A product repository has no `apps/` folder (0441 decision 2). Its root runway names `shell: os/console@3`,
+`shell: os/landing@1` and `template: os/mobile@3`, and the OS repository owns those shells and the mobile template
+(0436 decision 1). Runway's mobile job wrote the Expo config into an already checked-out `templateDir`, and nothing
+fetched a line. Two release mechanisms were weighed:
+
+- **A git tag per line** (`mobile@3.2.0` in figentra/os). Product CI would need read access to the private OS
+  repository, and a member there names its versions as `catalog:` and `workspace:` references that resolve only inside
+  that workspace, so a tagged tree is not buildable on its own. "The highest 3.x" would be a tag search.
+- **A package per line on the Stackra registry** (`npm.stackra.figentra.com`, already used for every `@stackra/*`
+  package and published to over OIDC). `pnpm publish` replaces `catalog:` and `workspace:` with exact versions, so the
+  tarball is a standalone app; the registry answers "the highest 3.x" as a semver range; each tarball has an integrity
+  hash; and access is the same read token product CI already has for `@stackra/*`.
+
+## Decision
+
+1. **A line is a package; its major is the line.** The line `<owner>/<name>@<major>` is the package
+   `<scope>/<owner>-<name>` at versions `<major>.x.y` on the Stackra registry: `os/mobile@3` is
+   `@figentra/os-mobile@3.x.y`, `os/console@3` is `@figentra/os-console@3.x.y`, `os/landing@1` is
+   `@figentra/os-landing@1.x.y`, and a Commerce template such as `commerce/till@1` is `@figentra/commerce-till@1.x.y`.
+   A breaking change to a shell's import map or a new native line is a new major, and so a new line. Pre-releases are
+   never a line's release.
+2. **What a release holds.** A mobile template release is the Expo project: `app.json` (a base `expo` block without
+   product identity), `capabilities.json` (the line's flags, in Runway's `MobileCapability` shape), `package.json`,
+   `eas.json`, the sources and the template's default assets. A web shell release holds its built `dist/` with
+   `dist/shell.json`: the surface, the major, the version, the entry, the stylesheets and the import map of the shared
+   dependencies, each relative to `dist/`.
+3. **Runway checks a line out.** `checkoutLine` reads the highest released version of the major (`npm view`), packs it
+   (`npm pack`) and unpacks it into the target folder, optionally as a git checkout with one commit, because EAS builds
+   from a commit. The mobile job checks the app's line out into its `templateDir` and commits the config it writes
+   there before it builds; the OS deploy and product CI read a shell's release with `shellReleaseOf`, which answers the
+   `shell:<surface>:<major>` row's `{ version, entry, importMap }` with URLs under
+   `<origin>/shells/<surface>/<major>/<version>/`.
+4. **Runway names no owner's scope.** The scope is an input of the step (`LineSource.scope`), passed by the deploy
+   workflow; the registry is the product checkout's `.npmrc` mapping for it. Runway depends on no Figentra code
+   (0441 decision 5).
+5. **A local checkout for development and tests.** `LineSource.local` points at a folder that is the line's own
+   package at the line's major (a local OS checkout, as 0436 decision 6 allows `stackra dev --surface`); it is copied
+   without installs, caches and generated native projects.
+6. **Dry runs.** `dryRunCommand` records every command and answers stand-ins, and `DryRunEdgeKvDriver` keeps the KV
+   rows in memory. Passed to the line checkout, the mobile job, the compatibility gate and the publish step, they leave
+   every local output written (the Expo config, the autolinking excludes) and every external effect (npm, tar, git,
+   EAS, wrangler, KV) recorded, which is how the OS line test set runs in CI. A dry run of a registry checkout still
+   reads the version, and plans the fetch.
+
+## Consequences
+
+- The OS repository publishes `apps/mobile`, `apps/console` and `apps/landing` to the registry from CI on release, with
+  the registry's `@figentra` scope rows; the console and landing tarballs carry their built `dist/`.
+- Products pin nothing: a new 3.x release reaches every product on its next build, and a product that needs time stays
+  on its build of the old release only until its next merge. The contract test of 0436 decision 5 stays the guard.
+- A product's CI needs the registry read token it already has; it never needs access to figentra/os.
+- The mobile job's `sha` is optional when it checks the line out itself: the build commit is the template checkout's,
+  and the result reports the line, package and version built.
+
+## Enforcement
+
+- active — `checkoutLine` refuses a malformed line or scope, a non-empty target, a local checkout of another package
+  or major, and a line whose major has no release.
+- active — `shellReleaseOf` refuses a `shell.json` whose surface, major or version is not the checked-out line's, or
+  whose paths climb out of `dist/`.
+- planned — the OS release workflow publishes each line and fails when a package's major differs from the line its
+  README names.
+- planned — the validator refuses a `@figentra/*` dependency in `@stackra/runway` (0441).
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: the owner decision of 2026-10-29 (no `apps/` folder; lines from core's apps), STA-1601
+to STA-1604, and `packages/developer/runway` (`runMobileJob`, `publishShell`, `checkShellCompatibility`).

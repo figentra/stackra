@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `expoConfigOf`: the runway identity, tablet, links, EAS project and template line land in the
  *          template's base config; a disabled capability's base plugin, Info.plist key and entitlement are removed and
- *          its permission blocked; a white-label variant's identity replaces the entry's key by key.
+ *          its permission blocked, and the enabled flags land in `extra.capabilities`; a white-label variant's identity replaces the entry's key by key.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0439 (decisions 2, 3, 6 and 8).
@@ -84,7 +84,11 @@ describe("expoConfigOf", () => {
           },
         ],
       },
-      extra: { router: {}, eas: { projectId: "0f8c2b1e-5d3a-4c7b-9e21-6a4d8f0b3c57" } },
+      extra: {
+        router: {},
+        eas: { projectId: "0f8c2b1e-5d3a-4c7b-9e21-6a4d8f0b3c57" },
+        capabilities: ["push"],
+      },
     });
   });
 

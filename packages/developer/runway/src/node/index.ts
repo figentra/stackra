@@ -10,30 +10,36 @@
  *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), and the publish step (`publishProduct`,
  *          `publishShell`, `promoteCanary`, `canaryVerdict`, `checkShellCompatibility`, `checkOpsReview`,
  *          `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`) with the
- *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07).
+ *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07), and the
+ *          template line step (`checkoutLine`, `shellReleaseOf`) with the dry-run runner and KV driver
+ *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note; ADR 0439;
- *                     ADR 0441; ADR 0436 (decisions 4 and 10); ADR 0437; app-shells 4.2, 5.3, 15 and 16.
+ *                     ADR 0441; ADR 0436 (decisions 4 and 10); ADR 0437; ADR 0481; app-shells 4.2, 5.3, 15 and 16.
  */
 export { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";
 export { MintlifyProviderDriver } from "#node/drivers/mintlify-provider.driver";
 export { NeonPreviewDatabaseDriver } from "#node/drivers/neon-preview-database.driver";
 export { WranglerEdgeKvDriver } from "#node/drivers/wrangler-edge-kv.driver";
+export { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
+export { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 export { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 export { canaryVerdict } from "#node/functions/canary-verdict.function";
 export { capabilityConfig } from "#node/functions/capability-config.function";
+export { checkoutLine } from "#node/functions/checkout-line.function";
 export { checkOpsReview } from "#node/functions/check-ops-review.function";
 export { checkShellCompatibility } from "#node/functions/check-shell-compatibility.function";
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
+export { dryRunCommand } from "#node/functions/dry-run-command.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
@@ -46,6 +52,7 @@ export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
+export { shellReleaseOf } from "#node/functions/shell-release-of.function";
 export { uploadBundle } from "#node/functions/upload-bundle.function";
 export type { AppLinkKeys } from "#node/types/app-link-keys.type";
 export type { BundleManifest } from "#node/types/bundle-manifest.type";
@@ -69,7 +76,12 @@ export type { BrandStepRequest } from "#node/types/brand-step-request.type";
 export type { BrandStepRun } from "#node/types/brand-step-run.type";
 export type { CaptureStep } from "#node/types/capture-step.type";
 export type { CommandRunner } from "#node/types/command-runner.type";
+export type { DryRunCommand } from "#node/types/dry-run-command.type";
 export type { DevServerOptions } from "#node/types/dev-server-options.type";
+export type { LineCheckout } from "#node/types/line-checkout.type";
+export type { LineCheckoutRequest } from "#node/types/line-checkout-request.type";
+export type { LineSource } from "#node/types/line-source.type";
+export type { ShellManifest } from "#node/types/shell-manifest.type";
 export type { MobileApp } from "#node/types/mobile-app.type";
 export type { ExpoPluginEntry } from "#node/types/expo-plugin-entry.type";
 export type { MobileCapability } from "#node/types/mobile-capability.type";
