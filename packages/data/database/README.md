@@ -391,11 +391,12 @@ its migration creates the table with `t.partitionBy("occurred_at")`:
   catches rows no dated partition covers, and a BRIN index on the column is added (`{ brin: false }` skips it);
 - the column must be NOT NULL and every unique index must include it; an existing table is never converted.
 
-`MaintainPartitionsAction` (`./node`, `partition.maintain@1`, daily at 02:15 UTC, system actor) runs
-`maintainPartitions(model, now)` for every registered `Partitioned` model: it creates the current partition and
+`maintainAllPartitions(now)` (`.`) runs `maintainPartitions(model, now)` for every registered `Partitioned` model; the
+daily job that calls it at 02:15 UTC, `data_maintenance.partition.maintain@1` (system actor), lives in the add-on
+`@stackra/data-maintenance` (ADR 0462 decision 1). Each model's upkeep creates the current partition and
 `premake` ahead (`<table>_p<yyyymmdd>`), and detaches and drops each dated partition whose span ended more than
 `retain` ago, unless the `HoldRegistry` holds one of its rows (`Disposal.Retention`); a held partition is kept and
-reported. Partition names go to the job's audit entry.
+reported. The job puts the partition names in its audit entry.
 
 ## Concurrency and database errors
 
@@ -452,9 +453,10 @@ themselves. The actor comes from the call's `ContextStorage` through the resolve
 
 ## Retention
 
-`PruneRecordsAction` (`record.prune`, `./node`, 03:00 UTC once per scope, system only) runs `pruneRecords(Model, now)`
-for every registered model with `Retention({ keep, basis, policy })` or `SoftDeletes` (ADR 0134 decision 3, ADR 0189
-decision 4):
+`pruneAllRecords(now)` (`.`) runs `pruneRecords(Model, now)` for every registered model with
+`Retention({ keep, basis, policy })` or `SoftDeletes` in the running scope (ADR 0134 decision 3, ADR 0189 decision 4).
+The job that calls it at 03:00 UTC once per scope, `data_maintenance.record.prune` (system only), lives in the add-on
+`@stackra/data-maintenance`:
 
 - `Retention` with `policy: "hard"` deletes rows whose `basis` date is older than `keep`; `"soft"` sets `deletedAt`
   (needs `SoftDeletes`), `"archive"` sets `archivedAt` (needs `Archivable`; a missing trait is a `TypeError`).

@@ -75,6 +75,9 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   must see kept rows turns the filter off by name (`filters: { deleted: false }`), never by dropping all filters.
 - Partitions: `maintainPartitions` is the only code that creates, detaches or drops a partition, and it asks the
   `HoldRegistry` before dropping one. Never drop `<table>_default`, and never convert an existing table in a migration.
+- Jobs: declare no action here. The partition and retention jobs live in @stackra/data-maintenance, which holds their
+  system-held permissions and calls `maintainAllPartitions` and `pruneAllRecords`; database never depends on it (ADR
+  0462 decision 1). Keep those two functions exported from `.`.
 - Transactions (stackra-279): both drivers' `transaction` is `runTransaction` (keep it that way); `isolation`,
   `readOnly` and `retry` are refused inside a running transaction without `requiresNew`, never silently dropped. A
   retry reruns the whole work for `40001`/`40P01` only (`TRANSACTION_RETRY`); never retry a savepoint, and never add a
