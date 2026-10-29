@@ -123,6 +123,20 @@ describe("emitPackageEntries", () => {
     expect(entry("node")).not.toContain("_ENTITIES");
   });
 
+  it("puts no file directly in src/ in a barrel: those are hand-written shell entries", () => {
+    const shell = (file: string): (typeof LOYALTY_KIT_IR.files)[number] => ({
+      file,
+      importPath: `#src/${file.slice(4, file.lastIndexOf("."))}`,
+      folder: "",
+      names: [{ name: "register", typeOnly: false }],
+    });
+    const barrels = emitPackageEntries({
+      ...LOYALTY_KIT_IR,
+      files: [...LOYALTY_KIT_IR.files, shell("src/console.tsx"), shell("src/native.tsx")],
+    });
+    for (const barrel of barrels) expect(barrel.content, barrel.path).not.toContain("#src/");
+  });
+
   it("writes no entry for a service", () => {
     expect(emitPackageEntries(COMMERCE_IR)).toEqual([]);
   });
