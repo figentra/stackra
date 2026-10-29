@@ -189,7 +189,6 @@ catalogs:
     expo-local-authentication: 57.0.3
     expo-sharing: 57.0.24
     expo-widgets: 57.0.27
-    "@expo/ui": 57.0.26
     # Community libraries, owner-approved 2026-10-29: passkeys (STA-1538) and alternate app icons (STA-1541). MIT.
     react-native-passkey: 3.6.2
     expo-alternate-app-icons: 8.0.0
@@ -241,7 +240,8 @@ catalogs:
     lucide-react-native: 1.54.0
     # Platform date and time pickers for @stackra/ui/native DatePicker (owner-approved 2026-10-24); pinned to the
     # Expo SDK 57 version in expo's bundledNativeModules.json.
-    "@expo/ui": 57.0.25
+    # 57.0.26 (owner 2026-10-29): expo-widgets 57.0.27 needs ~57.0.26.
+    "@expo/ui": 57.0.26
     uniwind: 1.12.1
     tailwind-merge: 3.7.0
     tailwind-variants: 3.3.1
