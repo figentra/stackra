@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "Supérieur à",
+      "gte": "Supérieur ou égal à",
+      "lt": "Inférieur à",
+      "lte": "Inférieur ou égal à",
+      "ne": "Différent de"
     },
     "import_mode": {
       "create": "Créer",
@@ -160,9 +169,17 @@
       "this_month": "Ce mois-ci",
       "custom": "Personnalisée"
     },
+    "view_layout": {
+      "table": "Tableau",
+      "board": "Tableau Kanban",
+      "gallery": "Galerie",
+      "calendar": "Calendrier",
+      "chart": "Graphique"
+    },
     "view_sharing": {
       "private": "Privée",
-      "scope": "Partagée dans le périmètre"
+      "scope": "Partagée dans le périmètre",
+      "role": "Partagée avec le rôle"
     },
     "widget_size": {
       "small": "Petit",

@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "أكبر من",
+      "gte": "أكبر من أو يساوي",
+      "lt": "أصغر من",
+      "lte": "أصغر من أو يساوي",
+      "ne": "لا يساوي"
     },
     "import_mode": {
       "create": "إنشاء سجلات جديدة",
@@ -160,9 +169,17 @@
       "this_month": "هذا الشهر",
       "custom": "مخصص"
     },
+    "view_layout": {
+      "table": "جدول",
+      "board": "لوحة",
+      "gallery": "معرض",
+      "calendar": "تقويم",
+      "chart": "مخطط"
+    },
     "view_sharing": {
       "private": "خاص",
-      "scope": "مُشارَك ضمن النطاق"
+      "scope": "مُشارَك ضمن النطاق",
+      "role": "مُشارَك مع الدور"
     },
     "widget_size": {
       "small": "صغير",

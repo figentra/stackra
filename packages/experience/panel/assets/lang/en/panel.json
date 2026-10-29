@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "Greater than",
+      "gte": "Greater than or equal to",
+      "lt": "Less than",
+      "lte": "Less than or equal to",
+      "ne": "Not equal to"
     },
     "import_mode": {
       "create": "Create new",
@@ -160,9 +169,17 @@
       "this_month": "This month",
       "custom": "Custom"
     },
+    "view_layout": {
+      "table": "Table",
+      "board": "Board",
+      "gallery": "Gallery",
+      "calendar": "Calendar",
+      "chart": "Chart"
+    },
     "view_sharing": {
       "private": "Private",
-      "scope": "Shared in scope"
+      "scope": "Shared in scope",
+      "role": "Shared with role"
     },
     "widget_size": {
       "small": "Small",

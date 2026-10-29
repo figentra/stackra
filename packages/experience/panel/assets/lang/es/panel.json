@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "Mayor que",
+      "gte": "Mayor o igual que",
+      "lt": "Menor que",
+      "lte": "Menor o igual que",
+      "ne": "Distinto de"
     },
     "import_mode": {
       "create": "Crear nuevos",
@@ -160,9 +169,17 @@
       "this_month": "Este mes",
       "custom": "Personalizado"
     },
+    "view_layout": {
+      "table": "Tabla",
+      "board": "Tablero",
+      "gallery": "Galería",
+      "calendar": "Calendario",
+      "chart": "Gráfico"
+    },
     "view_sharing": {
       "private": "Privada",
-      "scope": "Compartida en el ámbito"
+      "scope": "Compartida en el ámbito",
+      "role": "Compartida con el rol"
     },
     "widget_size": {
       "small": "Pequeño",

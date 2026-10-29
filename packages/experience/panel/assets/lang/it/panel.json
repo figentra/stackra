@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "Maggiore di",
+      "gte": "Maggiore o uguale a",
+      "lt": "Minore di",
+      "lte": "Minore o uguale a",
+      "ne": "Diverso da"
     },
     "import_mode": {
       "create": "Crea nuovi",
@@ -160,9 +169,17 @@
       "this_month": "Questo mese",
       "custom": "Personalizzato"
     },
+    "view_layout": {
+      "table": "Tabella",
+      "board": "Bacheca",
+      "gallery": "Galleria",
+      "calendar": "Calendario",
+      "chart": "Grafico"
+    },
     "view_sharing": {
       "private": "Privata",
-      "scope": "Condivisa nell'ambito"
+      "scope": "Condivisa nell'ambito",
+      "role": "Condivisa con il ruolo"
     },
     "widget_size": {
       "small": "Piccolo",

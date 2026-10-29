@@ -122,7 +122,16 @@
     },
     "export_format": {
       "csv": "CSV",
-      "xlsx": "Excel (XLSX)"
+      "xlsx": "Excel (XLSX)",
+      "jsonl": "JSON Lines",
+      "pdf": "PDF"
+    },
+    "filter_comparison": {
+      "gt": "Groter dan",
+      "gte": "Groter dan of gelijk aan",
+      "lt": "Kleiner dan",
+      "lte": "Kleiner dan of gelijk aan",
+      "ne": "Niet gelijk aan"
     },
     "import_mode": {
       "create": "Nieuw aanmaken",
@@ -160,9 +169,17 @@
       "this_month": "Deze maand",
       "custom": "Aangepast"
     },
+    "view_layout": {
+      "table": "Tabel",
+      "board": "Bord",
+      "gallery": "Galerij",
+      "calendar": "Kalender",
+      "chart": "Grafiek"
+    },
     "view_sharing": {
       "private": "Privé",
-      "scope": "Gedeeld binnen bereik"
+      "scope": "Gedeeld binnen bereik",
+      "role": "Gedeeld met rol"
     },
     "widget_size": {
       "small": "Klein",
