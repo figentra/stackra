@@ -5,4 +5,4 @@
  *           ./.stackra/tsdown.config is kept; any other is refused.
  * Runtime: node
  */
-export { default } from "./.stackra/tsdown.config";
+export { default } from "./.stackra/tsdown.config.ts";

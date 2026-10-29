@@ -72,22 +72,22 @@ export function emitToolConfigs(
     "",
     'import { withCoverage } from "@stackra/vitest-config/coverage";',
     'import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";',
-    'import { defineConfig, mergeConfig } from "vitest/config";',
+    'import { mergeConfig } from "vitest/config";',
     "",
     "export default mergeConfig(",
     "  stackraVitestDecorators,",
-    "  defineConfig(",
-    "    withCoverage({",
-    '      root: fileURLToPath(new URL("..", import.meta.url)),',
-    "      test: {",
-    '        include: ["src/**/__tests__/**/*.test.{ts,tsx}"],',
+    // No defineConfig: its `UserConfig` would become withCoverage's `T`, compared with the preset's `UserConfig`; two
+    // copies of vitest's types (a linked preset) blow the stack (TS2321). Inferred from the literal, `T` stays shallow.
+    "  withCoverage({",
+    '    root: fileURLToPath(new URL("..", import.meta.url)),',
+    "    test: {",
+    '      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],',
     // A member fresh from `stackra new` has no source and so no tests; one with source and no tests still fails.
-    ...(ir.files.length === 0 ? ["        passWithNoTests: true,"] : []),
-    '        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],',
-    '        setupFiles: [".stackra/vitest.setup.ts"],',
-    "      },",
-    "    }),",
-    "  ),",
+    ...(ir.files.length === 0 ? ["      passWithNoTests: true,"] : []),
+    '      exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],',
+    '      setupFiles: [".stackra/vitest.setup.ts"],',
+    "    },",
+    "  }),",
     ");",
     "",
   ].join("\n");
@@ -177,7 +177,8 @@ export function emitToolConfigs(
         "./.stackra/tsdown.config is kept; any other is refused.",
       runtime: "node",
     }),
-    'export { default } from "./.stackra/tsdown.config";',
+    // The extension: tsdown's native config loader resolves no extensionless import.
+    'export { default } from "./.stackra/tsdown.config.ts";',
     "",
   ].join("\n");
 

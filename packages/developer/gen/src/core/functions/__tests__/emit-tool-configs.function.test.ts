@@ -48,7 +48,7 @@ describe("emitToolConfigs", () => {
       registrations: false,
     });
     expect(pkg.find((file) => file.path === "tsdown.config.ts")?.content).toContain(
-      'export { default } from "./.stackra/tsdown.config";',
+      'export { default } from "./.stackra/tsdown.config.ts";',
     );
   });
 
@@ -57,10 +57,12 @@ describe("emitToolConfigs", () => {
     expect(vitest).toContain(
       'import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";',
     );
-    expect(vitest).toContain("    withCoverage({");
-    expect(vitest).toContain('        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
-    expect(vitest).toContain('        setupFiles: [".stackra/vitest.setup.ts"],');
-    expect(vitest).toContain("        passWithNoTests: true,");
+    expect(vitest).toContain("  withCoverage({");
+    expect(vitest).not.toContain("defineConfig");
+    expect(vitest).not.toContain("defineConfig");
+    expect(vitest).toContain('      exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
+    expect(vitest).toContain('      setupFiles: [".stackra/vitest.setup.ts"],');
+    expect(vitest).toContain("      passWithNoTests: true,");
   });
 
   it("fails a member with source and no tests: only an empty member passes with none", () => {
