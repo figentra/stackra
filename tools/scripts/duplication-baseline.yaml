@@ -135,8 +135,8 @@ members:
     src: 2.78
     tests: 0
   packages/developer/cli:
-    src: 1.02
-    tests: 4.89
+    src: 0.95
+    tests: 4.79
   packages/developer/coding-standard:
     src: 0
     tests: 0.62
@@ -156,8 +156,8 @@ members:
     src: 0
     tests: 0
   packages/developer/runway:
-    src: 0.5
-    tests: 2.59
+    src: 0.68
+    tests: 2.83
   packages/developer/skills:
     src: 0
     tests: 0
