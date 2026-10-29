@@ -151,7 +151,10 @@ Connect key or Google Play service account, else the platform account in `mobile
    until `<store>/apple-guidelines.json` records each as `{ "result": "pass", "checkedAt", "by", "note" }`.
 3. Reads the template line's `capabilities.json` (flag to `modules`, `plugins`, `ios.infoPlist`, `ios.entitlements`,
    `android.permissions`); `capabilityConfig` refuses a flag the line does not offer and lists what every other flag
-   brings, except what an enabled flag also declares.
+   brings, except what an enabled flag also declares. `com.google.android.gms.permission.AD_ID` (which Play
+   Services merges in on its own) is always blocked; to keep it, add an ads or attribution flag whose
+   `android.permissions` lists it to the template line's `capabilities.json` and enable it in the app's
+   `capabilities`.
 4. Writes the template checkout's `app.json`: the runway identity (name, bundle id, package, scheme, `applinks:` and
    verified intent filters for `links`, tablet), slug `<project>-<app>`, runtime version from the template line, the
    EAS project and update URL, the enabled flags' plugins, and the disabled flags' plugins, Info.plist keys and

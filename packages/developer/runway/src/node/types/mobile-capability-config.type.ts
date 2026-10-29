@@ -22,6 +22,9 @@ export type MobileCapabilityConfig = {
   readonly removedInfoPlist: readonly string[];
   /** The entitlement keys of the disabled flags, removed from `ios.entitlements`. */
   readonly removedEntitlements: readonly string[];
-  /** The Android permissions of the disabled flags: `android.blockedPermissions`. */
+  /**
+   * The Android permissions of the disabled flags, plus `com.google.android.gms.permission.AD_ID` unless an enabled
+   * flag lists it: `android.blockedPermissions`.
+   */
   readonly blockedPermissions: readonly string[];
 };

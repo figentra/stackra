@@ -38,6 +38,7 @@
     "spec:linear": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/spec-linear.mjs",
     "ai:spend": "node tools/scripts/ai-spend.mjs",
     "doctor": "node tools/scripts/doctor.mjs",
+    "eas:preflight": "node tools/scripts/eas-preflight.mjs",
     "agents:sync": "node tools/scripts/agents-sync.mjs",
     "agents:check": "node tools/scripts/agents-sync.mjs --check",
     "speckit:sync": "node tools/scripts/speckit-sync.mjs",

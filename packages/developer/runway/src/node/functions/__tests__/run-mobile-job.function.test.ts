@@ -140,7 +140,10 @@ describe("runMobileJob", () => {
     expect(appJson.expo.plugins).toEqual(["expo-router", "expo-notifications"]);
     expect(appJson.expo.ios.infoPlist).toEqual({});
     expect(appJson.expo.ios.bundleIdentifier).toBe("com.figentra.commerce.shopper");
-    expect(appJson.expo.android.blockedPermissions).toEqual(["android.permission.CAMERA"]);
+    expect(appJson.expo.android.blockedPermissions).toEqual([
+      "android.permission.CAMERA",
+      "com.google.android.gms.permission.AD_ID",
+    ]);
     const manifest = JSON.parse(readFileSync(join(templateDir, "package.json"), "utf8"));
     expect(manifest.expo.autolinking.exclude).toEqual(["expo-dev-menu", "expo-camera"]);
 

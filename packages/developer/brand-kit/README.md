@@ -58,7 +58,9 @@ From code (Runway's brand step): `await runBrandKit({ root, check: true })` retu
 | `fonts/*.ttf`, `fonts/*.otf`                          | caption type in store frames                    |
 
 Dark and monochrome sources are optional and fall back to their light ones. Sizes, paths and device frames are the
-tables in `src/core/constants/`.
+tables in `src/core/constants/`. Store frames: `ios_phone` 1290x2796 (6.9"), `ios_tablet` 2048x2732 (13"),
+`android_phone` 1080x1920, `android_tablet_7` 1200x1920 and `android_tablet_10` 1600x2560; Google Play refuses a side
+outside 320 to 3840 px or a long side over twice the short one, which a test keeps true.
 
 ## Entry points
 

@@ -124,6 +124,26 @@ eas update:rollback                                         # roll back a bad up
 - **An update reaches only builds with the same runtime version.** Any native change gives a new runtime version, so build first. Test on the `staging` channel, then republish the same update group to `production`: promote, do not rebuild.
 - **Store rules:** an update may fix bugs and change JS or UI, but must not change the app's core purpose. Big features go through review.
 
+### Local build preflight
+
+`eas build --local` builds on this machine, so check it first and record it after:
+
+```bash
+pnpm eas:preflight check --platform ios                      # or android; --deployed-sha <sha> to pin one
+eas build --local --profile production --platform ios
+pnpm eas:preflight record --platform ios --build-id <eas build id> [--rollout-id <id>] [--profile production]
+```
+
+- `check` refuses a dirty tree, a HEAD that is not the deployed sha, and less than 25 GB free for iOS or 10 GB for
+  Android. The deployed sha is `--deployed-sha`, else `STACKRA_DEPLOYED_SHA`, else the head of `origin/main` (what
+  `pnpm runway deploy` ships to Workers). The backend's deployed sha is not knowable until the Encore deploy path
+  exists (STA-136); pass it explicitly when the build must match a backend release.
+- `record` appends `{ at, platform, profile, sha, buildId, rolloutId }` as one line to
+  `.stackra/releases/eas-builds.jsonl` (git-ignored, per machine), so each build id sits next to the staged-rollout
+  or update id that shipped it.
+- Android builds block `com.google.android.gms.permission.AD_ID` unless the app enables a capability that lists it
+  (runway's `capabilityConfig`); see the runway README.
+
 ### Release checklists
 
 **JS-only change:** merge to `main` (workflow publishes to `staging`); test on a staging build; `eas update:republish` to `production`.
@@ -164,5 +184,6 @@ Validate with `eas workflow:validate .eas/workflows/<file>.yml`; run by hand wit
 | App config and `eas.json` stay valid  | `pnpm run doctor` (expo install --check) in `apps/mobile`, `npx expo config --type public` | Manual    |
 | No secret in `eas.json` or app config | gitleaks                                                                                   | Live      |
 | Workflows validate                    | `eas workflow:validate`                                                                    | Not built |
+| Local build from a clean deployed sha | `pnpm eas:preflight check` (`tools/scripts/eas-preflight.mjs`, + test)                     | Manual    |
 
 See also [Secrets](/runbooks/secrets), [CI](/runbooks/ci) and [Upgrade](/runbooks/upgrade).
