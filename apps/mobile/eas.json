@@ -16,5 +16,12 @@
     "preview": { "extends": "base", "distribution": "internal", "android": { "buildType": "apk" } },
     "production": { "extends": "base", "autoIncrement": true }
   },
-  "submit": { "production": {} }
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./.stackra/store/play-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
 }

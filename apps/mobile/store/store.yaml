@@ -1,0 +1,58 @@
+# Stackra file contract:
+# Purpose: the reference app's store presence as code (ADR 0480): identity, capabilities, listing text per locale,
+#          review details and screenshot sources. `pnpm store build` checks it and generates every store size and the
+#          privacy answers into `.stackra/store/`; `pnpm store ios|android|submit|promote` push it through the APIs.
+# Boundary: no secret value. The review demo account and the contact email and phone are secret NAMES in Infisical prod:/ci/store.
+# Runtime: read by tools/scripts/store.mjs and store-build.mjs
+# Governing contract: ADR 0480; .agents/skills/mobile-store-listing
+ios:
+  bundleId: com.figentra.stackra
+  name: Stackra
+  # Bundle id capability types of the App Store Connect API, enabled when missing.
+  capabilities: []
+  # App group ids are created once in the Apple Developer portal (no public API); listed for the checklist.
+  appGroups: []
+  usesNonExemptEncryption: false
+  testflight:
+    groups: [Internal]
+android:
+  package: com.figentra.stackra
+urls:
+  privacyPolicy: https://stackra.figentra.com/privacy
+  support: https://docs.stackra.figentra.com
+  marketing: https://stackra.figentra.com
+# Every shipped locale, Arabic (RTL) included once the app ships it; captures follow the same folders.
+locales:
+  en-US:
+    name: Stackra
+    subtitle: The Stackra reference app
+    keywords: stackra,figentra,reference,framework
+    shortDescription: The reference app of the Stackra framework.
+    description: >-
+      Stackra is the reference app of the Stackra framework: the screens, navigation and design system every
+      Stackra app starts from.
+review:
+  contact:
+    firstName: Figentra
+    lastName: Review
+    emailSecret: STORE_REVIEW_CONTACT_EMAIL
+    phoneSecret: STORE_REVIEW_CONTACT_PHONE
+  notes: The reference app has no sign-in; every screen is reachable from the tab bar.
+  # An app with accounts adds the demo account and its probe (the seed is optional):
+  # demoAccount:
+  #   usernameSecret: STORE_REVIEW_DEMO_USERNAME
+  #   passwordSecret: STORE_REVIEW_DEMO_PASSWORD
+  # seed:
+  #   url: https://api.example.com/ops/seed-demo
+  #   tokenSecret: STORE_REVIEW_SEED_TOKEN
+  #   body:
+  #     mode: review
+  # probe:
+  #   signIn:
+  #     url: https://api.example.com/auth/sign-in
+  #     tokenField: token
+  #   data:
+  #     url: https://api.example.com/me/dashboard
+screenshots:
+  background: "#F5F6F3"
+  captures: captures

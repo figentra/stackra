@@ -1,0 +1,24 @@
+# Stackra file contract:
+# Purpose: what the app collects, one row per data type and source, from which `pnpm store build` generates the App
+#          Store App Privacy and the Play Data safety answers (ADR 0480). A pull request that adds collection (a field,
+#          an SDK, a permission) adds its row here; `store build` refuses an analytics or crash SDK dependency with no
+#          row naming it.
+# Boundary: facts about the app, no secret. `consent` is a @stackra/consent category code; any category other than
+#           `necessary` makes the data optional for the user (Play) because the user can refuse it.
+# Runtime: read by tools/scripts/store-build.mjs
+# Governing contract: ADR 0480; ADR 0298 (consent categories); ADR 0134 (field classification)
+#
+# Row shape:
+#   - type: crash_data            # store-build.mjs DATA_TYPES
+#     source: sentry              # the feature or SDK (store-build.mjs SDK_SOURCES for third-party SDKs)
+#     consent: crash_replay       # necessary | analytics | crash_replay
+#     purposes: [app_functionality, analytics]
+#     linked: false               # linked to the user's identity (Apple)
+#     tracking: false             # used to track across apps (Apple, ATT)
+#     shared: false               # transferred to a third party that is not a service provider (Play)
+#     ephemeral: false            # processed only in memory (Play)
+#
+# The reference app has no account, analytics or crash SDK: it collects nothing.
+collects: []
+deletion:
+  inApp: false

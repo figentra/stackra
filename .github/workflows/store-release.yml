@@ -1,0 +1,168 @@
+# Stackra file contract:
+# Purpose: the releaser's workflow (ADR 0480). One dispatch per launch step, always from main:
+#            build    EAS build of the production profile and EAS submit (TestFlight, Play internal)    env `store`
+#            prepare  `pnpm store ios|android`: metadata, screenshots, review details, TestFlight groups  env `store`
+#            probe    the review demo account signs in on production and sees data                       env `store`
+#            submit   iOS submit for App Review                                                 env `store-production`
+#            promote  Android production track (optionally staged)                              env `store-production`
+#            seed     seed the review demo account on production, then probe                    env `store-production`
+#          `live: false` (the default) runs every step as a dry run: nothing reaches Apple, Google or Expo.
+# Boundary: one app per run (`app`, default apps/mobile). Creating the first app record, app groups and the privacy
+#           forms stay browser steps (checklist.md from `pnpm store build`).
+# Runtime: GitHub Actions
+# Secrets: the store root kit (ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON, EXPO_TOKEN) and the review secrets come
+#          from Infisical prod:/ci/store over GitHub OIDC, only in a live run. Key files are written 0600 under
+#          RUNNER_TEMP or the gitignored `.stackra/`, and never printed. No repository secret.
+# Governing contract: ADR 0480; ADR 0170 (deploy only commits of main); ADR 0019 (pinned actions, least permission).
+# Owner: release-operations
+name: Store release
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [build, prepare, probe, submit, promote, seed]
+        required: true
+      platform:
+        type: choice
+        options: [all, ios, android]
+        default: all
+      app:
+        description: The app member whose store/ folder is the source of truth.
+        type: string
+        default: apps/mobile
+      version:
+        description: The marketing version (x.y.z).
+        type: string
+        default: ""
+      build:
+        description: The iOS build number (prepare, submit).
+        type: string
+        default: ""
+      version-code:
+        description: The Android version code (prepare, promote).
+        type: string
+        default: ""
+      fraction:
+        description: Promote only, a staged rollout fraction (0.1); empty releases to everyone.
+        type: string
+        default: ""
+      live:
+        description: Send the requests. Off, every step is a dry run.
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: store-release-${{ inputs.app }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # Runbook (release): the owner keeps both environments restricted to main; `store-production` has the owner as its
+    # required reviewer, so submit, promote and the production seed each wait for one approval. The Infisical identity
+    # trusts the environment in the OIDC subject, so a branch cannot obtain the keys.
+    environment: ${{ contains(fromJSON('["submit","promote","seed"]'), inputs.action) && 'store-production' || 'store' }}
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/store
+    env:
+      STORE_ENVIRONMENT: ${{ contains(fromJSON('["submit","promote","seed"]'), inputs.action) && 'store-production' || 'store' }}
+      MODE: ${{ inputs.live && '--live' || '--dry-run' }}
+      APP: ${{ inputs.app }}
+      VERSION: ${{ inputs.version }}
+      BUILD: ${{ inputs.build }}
+      VERSION_CODE: ${{ inputs.version-code }}
+      FRACTION: ${{ inputs.fraction }}
+      PLATFORM: ${{ inputs.platform }}
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_STORE_IDENTITY_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The source of truth must be complete before anything is sent; a dry run prints the plan.
+      - name: Store build
+        run: pnpm store build --app "$APP"
+
+      - name: Store keys (Infisical OIDC)
+        if: inputs.live
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/store
+          export-type: env
+
+      # eas-cli reads the iOS key from EXPO_ASC_* and the Play key from eas.json's serviceAccountKeyPath (gitignored).
+      - name: Key files
+        if: inputs.live && inputs.action == 'build'
+        run: |
+          umask 077
+          printf '%s' "$ASC_API_PRIVATE_KEY" > "$RUNNER_TEMP/asc.p8"
+          mkdir -p "$APP/.stackra/store"
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > "$APP/.stackra/store/play-service-account.json"
+          {
+            echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/asc.p8"
+            echo "EXPO_ASC_KEY_ID=$ASC_API_KEY_ID"
+            echo "EXPO_ASC_ISSUER_ID=$ASC_API_ISSUER_ID"
+          } >> "$GITHUB_ENV"
+
+      - name: EAS
+        if: inputs.live && inputs.action == 'build'
+        uses: expo/expo-github-action@eab7a230208c952974db8c3245cfd78402c7b385 # 9.0.0
+        with:
+          eas-version: 24.14.0
+          packager: pnpm
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: EAS build and submit
+        if: inputs.action == 'build'
+        working-directory: ${{ inputs.app }}
+        run: |
+          if [ "$MODE" = --dry-run ]; then
+            echo "dry run: eas build --platform $PLATFORM --profile production --non-interactive --auto-submit"
+            exit 0
+          fi
+          eas build --platform "$PLATFORM" --profile production --non-interactive --wait --auto-submit
+
+      - name: Store step
+        if: inputs.action != 'build'
+        run: |
+          set -eu
+          run() { pnpm store "$@" --app "$APP" "$MODE"; }
+          case "$INPUT_ACTION" in
+            prepare)
+              if [ "$PLATFORM" != android ]; then run ios --version "$VERSION" ${BUILD:+--build "$BUILD"}; fi
+              if [ "$PLATFORM" != ios ]; then run android --version "$VERSION" ${VERSION_CODE:+--version-code "$VERSION_CODE"}; fi
+              ;;
+            probe) run review probe ;;
+            seed) run review seed ;;
+            submit) run submit --version "$VERSION" --build "$BUILD" ;;
+            promote) run promote --version "$VERSION" --version-code "$VERSION_CODE" ${FRACTION:+--fraction "$FRACTION"} ;;
+          esac
+        env:
+          INPUT_ACTION: ${{ inputs.action }}
+
+      - name: Remove key files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/asc.p8" "$APP/.stackra/store/play-service-account.json"

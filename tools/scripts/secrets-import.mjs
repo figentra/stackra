@@ -318,9 +318,10 @@ function audit(home, entry) {
  * The import core: production confirmation, write, read-back verification. Returns the hash that was
  * there before (null = new). Throws a Refusal; never returns or prints the value.
  */
-function store(t, { value, hash }, { confirm, home, runner, now, actor, inbox }) {
+function store(t, { value, hash }, { confirm, bindHash, home, runner, now, actor, inbox }) {
   if (isProd(t.env)) {
-    const why = checkConfirm(home, confirm, t, hash, now());
+    // A generated value has no hash before its dry run; vault-keeper binds the token to the operation instead.
+    const why = checkConfirm(home, confirm, t, bindHash ?? hash, now());
     if (why) throw new Refusal(why);
     // Spend the token before anything can fail or crash, so it can never be replayed.
     audit(home, { actor, name: t.name, env: t.env, path: t.path, action: "confirm-used", confirm });
@@ -335,8 +336,9 @@ function store(t, { value, hash }, { confirm, home, runner, now, actor, inbox })
 }
 
 /**
- * Programmatic entry (a future local request page): stream a value straight into Infisical.
- * Returns only { name, ok, reason }; the reason is a fixed, value-free string.
+ * Programmatic entry (a future local request page, vault-keeper): stream a value straight into Infisical.
+ * Returns only { name, ok, reason }; the reason is a fixed, value-free string. `bindHash` replaces the value hash
+ * the production token is checked against (a generated value is unknown at its dry run).
  */
 export async function importSecret({
   name,
@@ -345,6 +347,7 @@ export async function importSecret({
   valueStream,
   actor = "unknown",
   confirm,
+  bindHash,
   home = homedir(),
   runner = cliRunner,
   now = Date.now,
@@ -358,7 +361,7 @@ export async function importSecret({
       throw new Refusal("inbox is not a real directory");
     cleanStaleTemps(inbox);
     const t = checkTarget({ name, env, path });
-    store(t, await readStream(valueStream), { confirm, home, runner, now, actor, inbox });
+    store(t, await readStream(valueStream), { confirm, bindHash, home, runner, now, actor, inbox });
     audit(home, { actor, name, env, path, action: "import", result: "ok" });
     return { name: label, ok: true };
   } catch (error) {

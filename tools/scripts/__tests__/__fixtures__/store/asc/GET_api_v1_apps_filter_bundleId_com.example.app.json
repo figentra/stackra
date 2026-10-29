@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "json": {
+    "data": [
+      {
+        "id": "APP1",
+        "type": "apps"
+      }
+    ]
+  }
+}
