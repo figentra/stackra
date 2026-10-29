@@ -87,11 +87,6 @@
       // the MCP server spawns it from PATH (`pnpm exec stackra mcp`) instead of declaring it (a cycle).
       "ignoreBinaries": ["encore", "stackra"],
     },
-    // The edge Worker type-checks @stackra/app's sources, which augment @stackra/navigation; tsc resolves the
-    // augmentation from the Worker, so it declares the package that no Worker file imports.
-    "workers/edge": {
-      "ignoreDependencies": ["@stackra/navigation"],
-    },
     // gen loads the member's own @stackra/database to compile its migrations (`require.resolve` from the member root,
     // stackra-248): the member declares it, gen must not, or gen would depend on a package it compiles for.
     "packages/developer/gen": {
