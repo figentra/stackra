@@ -48,7 +48,6 @@ export const ALLOWED = Object.freeze({
 
 /** The names stackra-225 (STA-1383) renames or gives one home: its issue list plus gap-analysis row 22. */
 const BY_225 = [
-  "Aggregate",
   "DecideOptions",
   "FormField",
   "Run",

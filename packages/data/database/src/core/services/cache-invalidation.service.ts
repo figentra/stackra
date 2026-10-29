@@ -13,13 +13,13 @@
  * Governing contract: ADR 0150 (decision 3: invalidation from changes); ADR 0221 (decision 5) and ADR 0078 (decision
  *                     4: idempotent consumers); data-layer gaps ca4 and cdc10.
  */
+import { SHARED_CACHE_CONTEXT } from "@stackra/actions";
 import type { ContextStorage } from "@stackra/actions/contracts";
 import { CacheKey } from "@stackra/cache";
 import type { Cache } from "@stackra/cache/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 
-import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 import type { Database } from "#core/ports/database.port";
 import type { ChangedRow } from "#core/types/changed-row.type";
 

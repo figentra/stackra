@@ -12,12 +12,12 @@
  * Governing contract: ADR 0150 (decision 5: second-level cache); ADR 0097 (MikroORM only here); data-layer gap ca5.
  */
 import type { CacheAdapter } from "@mikro-orm/core";
+import { SHARED_CACHE_CONTEXT } from "@stackra/actions";
 import { ContextStorage } from "@stackra/actions/contracts";
 import type { CacheKey } from "@stackra/cache";
 import { Cache } from "@stackra/cache/contracts";
 import { Duration } from "@stackra/contracts";
 
-import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 import { VISIBILITY_HOST } from "#core/constants/visibility-host.constant";
 
 /** Runs `work` on the bound cache in the shared namespace, or answers undefined with none bound or on its failure. */

@@ -6,12 +6,12 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0150 (decision 5); ADR 0022; data-layer gap ca5.
  */
+import { SHARED_CACHE_CONTEXT } from "@stackra/actions";
 import { ContextStorage } from "@stackra/actions/contracts";
 import { Cache } from "@stackra/cache/contracts";
 import { Duration } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
-import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
 

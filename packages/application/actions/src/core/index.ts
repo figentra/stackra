@@ -17,6 +17,7 @@ export { Interceptor } from "#core/bases/interceptor.base";
 export { Precondition } from "#core/bases/precondition.base";
 export { Query } from "#core/bases/query.base";
 export { RATE_LIMIT_CONFIG_SCHEMA as RateLimitConfig$ } from "#core/constants/rate-limit-config-schema.constant";
+export { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 export { STORES_CONFIG_SCHEMA as StoresConfig$ } from "#core/constants/stores-config-schema.constant";
 export { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
 export { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";

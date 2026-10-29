@@ -145,5 +145,4 @@ test("the shipped lists never exempt a helper stackra-224 gave one home", () => 
     assert.equal(Object.hasOwn(ALLOWED, name) || Object.hasOwn(PENDING, name), false, name);
   }
   for (const reason of Object.values(ALLOWED)) assert.ok(reason.length > 20);
-  assert.equal(PENDING.Aggregate, "stackra-225");
 });

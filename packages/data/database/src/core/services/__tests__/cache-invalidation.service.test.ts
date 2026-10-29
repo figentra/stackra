@@ -6,12 +6,12 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0150 (decision 3); ADR 0078 (decision 4); ADR 0022; data-layer gap ca4.
  */
+import { SHARED_CACHE_CONTEXT } from "@stackra/actions";
 import type { ContextStorage } from "@stackra/actions/contracts";
 import type { Cache } from "@stackra/cache/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { Database } from "#core/ports/database.port";
-import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 import { CacheInvalidationService } from "#core/services/cache-invalidation.service";
 
 /** A service over a cache and storage that record every call. */
