@@ -1,0 +1,36 @@
+// Stackra file contract:
+// Purpose: the Cloudflare Worker `stackra-edge` (ADR 0437): its script (dist/main.mjs, built by tsdown), the host map,
+//          the origin and the token settings as Worker vars, and observability.
+// Owner: release-operations · Secrets: EDGE_SIGNING_SECRET is a Worker secret (the newest edge signing key, the one the
+//        API's EdgeSigningKeys lists first) set by CI from Infisical (ADR 0173); no secret is in this file.
+// Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "stackra-edge",
+  // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
+  "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
+  "main": "./dist/main.mjs",
+  // Pinned: bumped on purpose, never set to "today" on every deploy.
+  "compatibility_date": "2026-10-01",
+  // Workers Logs: invocation logs and console output (no token or secret is ever logged).
+  "observability": { "enabled": true },
+  // Every value is a setting; src/settings/read-settings.ts refuses a missing or malformed one.
+  "vars": {
+    // Where requests go: scheme://host[:port], no path. The owner sets the API origin before the first deploy.
+    "EDGE_ORIGIN": "https://origin.invalid",
+    // hostname -> { product, surface, realm, scope? }; scope is the tenant's scope id, absent on a platform host.
+    // Interim for ADR 0437's KV `host:<hostname>` rows, which the OS edge projector writes.
+    "EDGE_HOST_MAP": "{}",
+    // The ZITADEL issuer (exactly the tokens' `iss`) and the audience a token must name (the project id).
+    "EDGE_OIDC_ISSUER": "",
+    "EDGE_OIDC_AUDIENCE": "",
+    // The issuer's key set stays in the isolate's memory this long; an unknown kid refetches sooner.
+    "EDGE_OIDC_KEYS_SECONDS": 3600,
+    // Clock skew allowed on a token's exp and nbf.
+    "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+  },
+  // No route or custom domain yet: the owner decides which hosts this Worker fronts and adds them here.
+  "routes": [],
+  "workers_dev": false,
+  "preview_urls": false,
+}

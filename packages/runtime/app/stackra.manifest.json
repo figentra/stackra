@@ -23,6 +23,13 @@
       "class": "AppDrainingError"
     },
     {
+      "code": "bearer_token_invalid",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "app",
+      "class": "BearerTokenInvalidError"
+    },
+    {
       "code": "csrf_token_invalid",
       "kind": "forbidden",
       "category": "forbidden",
@@ -67,6 +74,21 @@
           "from": "@stackra/app/server"
         }
       }
+    },
+    {
+      "port": "JsonWebKeys",
+      "key": "app.JsonWebKeys",
+      "candidates": ["memory", "oidc"],
+      "classes": {
+        "memory": {
+          "class": "MemoryJsonWebKeysDriver",
+          "from": "@stackra/app/server"
+        },
+        "oidc": {
+          "class": "OidcJsonWebKeysDriver",
+          "from": "@stackra/app/server"
+        }
+      }
     }
   ],
   "integrations": [],
@@ -76,6 +98,11 @@
   "passes": [],
   "entitlements": [],
   "config": [
+    {
+      "key": "app.bearer",
+      "class": "BearerConfig",
+      "from": "@stackra/app"
+    },
     {
       "key": "app.cors",
       "class": "CorsConfig",

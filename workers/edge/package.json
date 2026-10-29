@@ -1,0 +1,77 @@
+{
+  "name": "@figentra/worker-edge",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The Stackra edge Worker: resolves a host to its product, surface and realm, refuses a bad ZITADEL bearer token by JWKS, strips inbound edge headers and forwards the request to the origin with signed edge headers.",
+  "keywords": [
+    "cloudflare",
+    "edge",
+    "hmac",
+    "jwks",
+    "oidc",
+    "stackra",
+    "zitadel"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/workers/edge#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
+  "license": "UNLICENSED",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "workers/edge"
+  },
+  "type": "module",
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "scripts": {
+    "dev": "tsdown && wrangler dev",
+    "start": "tsdown && wrangler dev",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist .turbo .wrangler"
+  },
+  "devDependencies": {
+    "@stackra/app": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/navigation": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality",
+    "wrangler": "catalog:deploy"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "app",
+    "runtimes": [
+      "worker"
+    ],
+    "summary": "Change this when working on how a request reaches a Stackra API from the edge: the host map, the early bearer-token refusal, or the signed edge headers the API's EdgeHeaderGuard checks."
+  }
+}

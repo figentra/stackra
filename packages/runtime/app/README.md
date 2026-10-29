@@ -4,11 +4,11 @@
 Stackra file contract:
 Purpose: the reader guide of @stackra/app: `createApp` per runtime target, the generated entries, the shared boot,
          the client contexts, the server lifecycle (boot, drain, close), request guards, the signed edge-header guard,
-         the origin and CSRF guards with CORS, the route session and the desktop baseline.
+         the origin and CSRF guards with CORS, the JWKS bearer-token guard and when to use the edge Worker instead, the route session and the desktop baseline.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0127 2026-10-24 note;
-                    ADR 0457; ADR 0437 (decisions 4 and 8: the signed edge headers, origin and CSRF).
+                    ADR 0457; ADR 0437 (decisions 4 and 8: the signed edge headers, origin and CSRF); ADR 0206 (decision 8: JWKS).
 -->
 
 Stackra app runtime: `createApp` for each runtime target, returning that target's app object, the shared boot from the
@@ -26,34 +26,41 @@ peers, each loaded only by the entry that needs it.
 
 ## What is here
 
-| Symbol                                       | Entry       | Use                                                                                  |
-| -------------------------------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| `bootApp`                                    | `.`         | the boot every target shares: configs from the env, container, reporter              |
-| `AppWiring`                                  | `.`         | the booted wiring as a container token                                               |
-| `AppSections`, `BootOptions`, `BootedApp`    | `.`         | the wiring sections this package reads; boot's options and result                    |
-| `RouteSession`                               | `.`         | `ctx.session` and `ctx.identity`, added to navigation's `RouteServices`              |
-| `signEdgeRequest`                            | `.`         | the edge signature (HMAC-SHA256, base64url); the Worker signs, the guard recomputes  |
-| `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                   |
-| `registerContext`                            | `./react`   | a client package names the component of its context key                              |
-| `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz` |
-| `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                |
-| `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them |
-| `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                            |
-| `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)            |
-| `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature               |
-| `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                            |
-| `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                      |
-| `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin        |
-| `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change       |
-| `OriginNotAllowedError`                      | `./server`  | the 403 refusal for a foreign origin, or a cookie with no origin                     |
-| `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                              |
-| `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`          |
-| `corsHeaders`                                | `./server`  | the CORS answer headers for a request, preflight included                            |
-| `apiCacheControl`                            | `./server`  | `private, no-store` for a signed-in request or a cookie-setting answer (rule 22)     |
-| `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
-| `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
-| `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                |
-| `createApp`, `DesktopApp`, `BRIDGE_CHANNEL`  | `./desktop` | `start()`, `windows`: the hardened main process and its bridges                      |
+| Symbol                                       | Entry       | Use                                                                                   |
+| -------------------------------------------- | ----------- | ------------------------------------------------------------------------------------- |
+| `bootApp`                                    | `.`         | the boot every target shares: configs from the env, container, reporter               |
+| `AppWiring`                                  | `.`         | the booted wiring as a container token                                                |
+| `AppSections`, `BootOptions`, `BootedApp`    | `.`         | the wiring sections this package reads; boot's options and result                     |
+| `RouteSession`                               | `.`         | `ctx.session` and `ctx.identity`, added to navigation's `RouteServices`               |
+| `signEdgeRequest`                            | `.`         | the edge signature (HMAC-SHA256, base64url); the Worker signs, the guard recomputes   |
+| `verifyBearerToken`, `jwksKeySource`         | `.`         | Web Crypto JWT check (RS256, ES256) and an issuer's cached keys; Worker and API share |
+| `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
+| `registerContext`                            | `./react`   | a client package names the component of its context key                               |
+| `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
+| `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
+| `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
+| `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
+| `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
+| `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
+| `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
+| `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                       |
+| `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin         |
+| `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change        |
+| `BearerTokenGuard`                           | `./server`  | authentication without the edge: a JWKS-verified `Authorization: Bearer` JWT          |
+| `VerifiedToken`                              | `./server`  | the request's verified token claims (`Lifetime.Request`), for the checks after it     |
+| `BearerConfig`                               | `./server`  | `app.bearer`: issuer, audience, leeway, key-set cache time                            |
+| `BearerTokenInvalidError`                    | `./server`  | the 401 refusal for a missing or invalid bearer token                                 |
+| `OidcJsonWebKeysDriver`                      | `./server`  | the `oidc` `JsonWebKeys` driver: discovery, key set, cache, refetch on unknown kid    |
+| `MemoryJsonWebKeysDriver`                    | `./server`  | the `memory` `JsonWebKeys` driver (tests, local runs)                                 |
+| `OriginNotAllowedError`                      | `./server`  | the 403 refusal for a foreign origin, or a cookie with no origin                      |
+| `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                               |
+| `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`           |
+| `corsHeaders`                                | `./server`  | the CORS answer headers for a request, preflight included                             |
+| `apiCacheControl`                            | `./server`  | `private, no-store` for a signed-in request or a cookie-setting answer (rule 22)      |
+| `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                         |
+| `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                   |
+| `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                 |
+| `createApp`, `DesktopApp`, `BRIDGE_CHANNEL`  | `./desktop` | `start()`, `windows`: the hardened main process and its bridges                       |
 
 ## The generated entries
 
@@ -163,6 +170,35 @@ unsigned request passes only on one of `publicPaths` (none by default) and only 
 The key provider and the nonce store are ports, so which one answers is configuration: the `memory` drivers ship for
 tests and local runs; production binds a secret-store key driver and, with more than one API instance, a shared
 nonce store. `maxAge` and `publicPaths` are getters a host overrides in `src/overrides/app/` (ADR 0306).
+
+### Bearer tokens (JWKS)
+
+`BearerTokenGuard` (order -50, after rate limits and before tenant state, ADR 0437 decision 8) lets a request through
+only with `Authorization: Bearer <jwt>` that `verifyBearerToken` accepts: RS256 or ES256 (Web Crypto; `none`, HS* and
+a key whose type does not fit are refused), `iss` equal to `BearerConfig.issuer`, `aud` naming `BearerConfig.audience`,
+`exp` and `nbf` within `leewaySeconds` (60). The keys come from the bound `JsonWebKeys` port: the `oidc` driver reads
+the issuer's discovery document and key set, caches it for `keysSeconds` (3600) and refetches once on an unknown `kid`
+(at most every 30 seconds). A request with no token passes only on one of `publicPaths` (a getter, none by default);
+any failure is `BearerTokenInvalidError` (401, no detail). An issuer that cannot be reached throws its own error.
+
+The verified claims go on the request's `VerifiedToken` (`Lifetime.Request`, so one per `container.forRequest()`);
+the scope claim step, assurance and the actor read `verified.claims` from there. Configure it with
+`STACKRA_BEARER_ISSUER` and `STACKRA_BEARER_AUDIENCE` (or runway) and bind the guard, `VerifiedToken` and a
+`JsonWebKeys` driver in the service's wiring; gen does not bind them by default. ZITADEL issues opaque access tokens
+unless the app's token type is JWT; set it to JWT.
+
+### Edge Worker or in-process guard
+
+| Your API runs…                                    | Use                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| behind the edge Worker (`workers/edge`, ADR 0437) | `EdgeHeaderGuard` with the Worker's signing key; add `BearerTokenGuard` to authenticate the user |
+| on its own (a product outside OS, no Worker)      | `BearerTokenGuard` alone; there are no edge headers to check                                     |
+
+The Worker resolves the host, refuses a bad JWT early with the same `verifyBearerToken`, strips inbound edge headers
+and signs the forwarded request; it never authorises and forwards `Authorization` untouched, so the API still
+verifies the token. Behind the Worker, `EdgeHeaderGuard` proves the request came through it (host, tenant, realm);
+`BearerTokenGuard` proves who the user is. Without the Worker, nothing vouches for the host, so do not bind
+`EdgeHeaderGuard` (it would refuse everything) and keep tenant and realm from the token's claims.
 
 ### Origin, CSRF and CORS
 

@@ -135,10 +135,14 @@ probed before any limit applied.
 
 ## Enforcement
 
-- planned — the API pipeline's first step rejects a request whose edge signature is missing, invalid, older than the
-  window or already seen, on a non-public endpoint (a test in the OS service template).
-- planned — a Worker test suite in `workers/edge` covers unknown hosts, suspended tenants, setup routes, the ops/tenant
-  realm split and the `modulepreload` links.
+- built — `EdgeHeaderGuard` (`@stackra/app/server`, order -100) rejects a request whose edge signature is missing,
+  invalid, older than the window or already seen, on a non-public endpoint (its unit tests); the test in the OS service
+  template is still planned.
+- built — core's `workers/edge` (`@figentra/worker-edge`, STA-1566) resolves the host from a host-map var, refuses a bad
+  JWT by JWKS, strips inbound edge headers and signs with `signEdgeRequest`; its tests cover unknown hosts, header
+  stripping and the signing round trip against `EdgeHeaderGuard`.
+- planned — the OS `workers/edge` suite covers suspended tenants, setup routes, the ops/tenant realm split and the
+  `modulepreload` links, with the host rows read from KV.
 - planned — only the projector's and Runway's credentials can write the KV namespace.
 - planned — the regional origin refuses a connection that does not come through the tunnel or present the Worker's
   client certificate.

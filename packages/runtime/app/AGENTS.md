@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/app: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0263; ADR 0260 (decision 4); ADR 0251 (decision 3); ADR 0457;
-                    ADR 0437 (decisions 4 and 8).
+                    ADR 0437 (decisions 4 and 8); ADR 0206 (decision 8).
 -->
 
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
@@ -17,23 +17,26 @@ note).
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                        |
-| ------------------------------------ | -------------------------------------------------- |
-| Boot shared by every target          | `src/core/{functions,services,drivers,types}/`     |
-| A target's `createApp` and its types | `src/<target>/{functions,types}/`                  |
-| The `Controller` kind                | `src/server/bases/controller.base.ts`              |
-| The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`           |
-| The edge-header guard                | `src/server/services/edge-header.guard.ts`         |
-| Its ports (keys, seen nonces)        | `src/contracts/ports/edge-*.port.ts`               |
-| Their memory drivers                 | `src/server/drivers/memory-edge-*.driver.ts`       |
-| The edge signature bytes             | `src/core/functions/sign-edge-request.function.ts` |
-| The origin and CSRF guards           | `src/server/services/{origin,csrf}.guard.ts`       |
-| CORS and CSRF configuration          | `src/config/`, shapes in `src/core/schemas/`       |
-| The CORS answer headers              | `src/server/functions/cors-headers.function.ts`    |
-| The route session (loader, part)     | `src/core/{functions,constants,types}/`            |
-| A refusal                            | `src/<target>/errors/<name>.error.ts`              |
-| React contexts                       | `src/react/contexts/`                              |
-| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it     |
+| You are writing…                     | It goes in…                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Boot shared by every target          | `src/core/{functions,services,drivers,types}/`                                              |
+| A target's `createApp` and its types | `src/<target>/{functions,types}/`                                                           |
+| The `Controller` kind                | `src/server/bases/controller.base.ts`                                                       |
+| The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`                                                    |
+| The edge-header guard                | `src/server/services/edge-header.guard.ts`                                                  |
+| Its ports (keys, seen nonces)        | `src/contracts/ports/edge-*.port.ts`                                                        |
+| Their memory drivers                 | `src/server/drivers/memory-edge-*.driver.ts`                                                |
+| The edge signature bytes             | `src/core/functions/sign-edge-request.function.ts`                                          |
+| The origin and CSRF guards           | `src/server/services/{origin,csrf}.guard.ts`                                                |
+| The bearer-token guard, its claims   | `src/server/services/{bearer-token.guard,verified-token.service}.ts`                        |
+| The JWT verifier, the JWKS source    | `src/core/functions/{verify-bearer-token,jwks-key-source}.function.ts`                      |
+| The issuer key port and its drivers  | `src/contracts/ports/json-web-keys.port.ts`, `src/server/drivers/*-json-web-keys.driver.ts` |
+| CORS, CSRF and bearer configuration  | `src/config/`, shapes in `src/core/schemas/`                                                |
+| The CORS answer headers              | `src/server/functions/cors-headers.function.ts`                                             |
+| The route session (loader, part)     | `src/core/{functions,constants,types}/`                                                     |
+| A refusal                            | `src/<target>/errors/<name>.error.ts`                                                       |
+| React contexts                       | `src/react/contexts/`                                                                       |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it                                              |
 
 ## Entries and barrels
 
@@ -69,7 +72,12 @@ note).
   `OriginGuard` and `corsHeaders` compare origins only through `isAllowedOrigin`.
 - ADR 0325 rule 22 lives only in `apiCacheControl`, which the generated adapter applies to every API answer and which
   overrides a handler's header; never add a per-app switch for it (STA-1448).
-- Server-check order: edge headers -100, origin -90, CSRF -80; the guards fail closed with one refusal each and no
+- Bearer tokens are verified only by `verifyBearerToken` (Web Crypto, RS256 and ES256 only; never `none` or HS*, never
+  a JWT library) with keys from the bound `JsonWebKeys`; the guard and the edge Worker share it, so it and
+  `jwksKeySource` stay runtime-neutral (no `node:*`). The issuer, audience, leeway and key cache are `BearerConfig`
+  fields; public paths are the guard's getter. Verified claims reach later code only through the request's
+  `VerifiedToken`; never a singleton field, never a header.
+- Server-check order: edge headers -100, origin -90, CSRF -80, bearer token -50; the guards fail closed with one refusal each and no
   detail. `CsrfGuard` compares a double-submit token in constant time.
 - The route session is loaded per request container on the Worker and never kept on a singleton: one visitor's session
   must never reach another request. `session` and `identity` are the only `RouteServices` members this package adds.
