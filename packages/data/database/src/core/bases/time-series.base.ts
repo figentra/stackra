@@ -50,9 +50,14 @@ function names(value: unknown): value is readonly string[] {
 /**
  * Checks the options and records them frozen.
  *
+ * The source is erased at runtime, so its field names are read as plain strings (with the default `object` source
+ * they would be `never`).
+ *
  * @throws TypeError for a bad key, time field, dimension, measure, grain, lateness or retention.
  */
-function read(options: TimeSeriesOptions): Readonly<Record<string, unknown>> {
+function read(
+  options: TimeSeriesOptions<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> {
   const key = options?.key;
   if (typeof key !== "string" || !KEY.test(key))
     throw new TypeError(

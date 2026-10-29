@@ -4,9 +4,10 @@
  *          own logger (so `debug` still prints), plus, for every statement the ORM runs, a count in each running
  *          `QueryTally` frame (by normalised shape) and a `QuerySample` handed to each `QueryObserver`.
  * Boundary: internal to this package's drivers (`loggerFactory`). MikroORM calls `logQuery` after every statement
- *           whatever the debug mode, so counting does not depend on it. Transaction control (`begin`, `commit`,
- *           `rollback`, `savepoint`, `release`, `set`) is not counted or observed. An observer that throws is ignored:
- *           telemetry never fails a query. Samples carry the normalised statement only, never the parameters.
+ *           whatever the debug mode, so counting does not depend on it. A context without a statement is neither
+ *           printed nor counted. Transaction control (`begin`, `commit`, `rollback`, `savepoint`, `release`, `set`) is
+ *           not counted or observed. An observer that throws is ignored: telemetry never fails a query. Samples carry
+ *           the normalised statement only, never the parameters.
  * Runtime: node
  * Governing contract: data-layer gaps scale-performance 7 and 8 (stackra-282, STA-1400); ADR 0097 (MikroORM only here).
  */
@@ -34,9 +35,11 @@ export function observedLogger(
   const logger = new DefaultLogger(options);
   const logQuery = logger.logQuery.bind(logger);
   logger.logQuery = (context: LogContext): void => {
-    logQuery(context);
-    if (context.query === undefined) return;
-    const { statement, verb, table } = statementShape(context.query);
+    // `DefaultLogger.logQuery` needs the statement; a context without one has nothing to print or count.
+    const { query } = context;
+    if (query === undefined) return;
+    logQuery({ ...context, query });
+    const { statement, verb, table } = statementShape(query);
     if (CONTROL.has(verb)) return;
     for (let tally = QUERY_TALLY.getStore(); tally !== undefined; tally = tally.parent) {
       tally.queries += 1;
