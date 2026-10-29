@@ -1,19 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `ListHoldsOutput`, what `hold.list` answers: the tenant's matching holds, newest first.
- * Boundary: a schema; at most 500 holds (a shortcut, see the query).
+ * Boundary: a schema; each hold is a `LegalHoldLine` shape. At most 500 holds (a shortcut, see the query).
  * Runtime: node
  * Governing contract: ADR 0134 (2026-10-24 amendment: holds); data-layer gap gov20 (stackra-332).
  */
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
-import type { LegalHold } from "#contracts/types/legal-hold.type";
+import type { LegalHoldLine } from "#node/schemas/legal-hold-line.schema";
 
 /** The listed holds. */
 export class ListHoldsOutput extends Schema {
   /** The holds, newest first. */
-  holds!: LegalHold[];
+  holds!: LegalHoldLine[];
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).

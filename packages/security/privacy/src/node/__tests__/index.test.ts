@@ -21,6 +21,8 @@ describe("@stackra/privacy/node", () => {
       "ExportSubjectDataAction",
       "ExportSubjectDataInput",
       "ExportSubjectDataOutput",
+      "HoldPermissions",
+      "LegalHoldLine",
       "ListHoldsInput",
       "ListHoldsOutput",
       "ListHoldsQuery",

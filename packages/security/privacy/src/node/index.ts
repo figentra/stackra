@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/privacy (the root module, the DSAR export and erasure jobs,
- *          the erasure saga and its search listener, the repository store driver, the Postgres salt store and its migration, the Postgres legal hold store (its migration, `PostgresHoldRegistryDriver`, `PlaceHoldAction`, `ReleaseHoldAction` and `ListHoldsQuery`), the per-subject
+ *          the erasure saga and its search listener, the repository store driver, the Postgres salt store and its migration, the Postgres legal hold store (its migration, `PostgresHoldRegistryDriver`, `PlaceHoldAction`, `ReleaseHoldAction`, `ListHoldsQuery` and `HoldPermissions`), the per-subject
  *          cipher resolver, the shred check and their schemas) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `contracts` and `core`, never `testing`.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { HoldPermissions } from "#node/access/hold.permissions";
 export { SubjectExportPermissions } from "#node/access/subject-export.permissions";
 export { SubjectPermissions } from "#node/access/subject.permissions";
 export { EraseSubjectAction } from "#node/actions/erase-subject.action";
@@ -31,6 +32,7 @@ export { ExportSubjectDataInput } from "#node/schemas/export-subject-data-input.
 export { ExportSubjectDataOutput } from "#node/schemas/export-subject-data-output.schema";
 export { PurgeSubjectExportsInput } from "#node/schemas/purge-subject-exports-input.schema";
 export { PurgeSubjectExportsOutput } from "#node/schemas/purge-subject-exports-output.schema";
+export { LegalHoldLine } from "#node/schemas/legal-hold-line.schema";
 export { ListHoldsInput } from "#node/schemas/list-holds-input.schema";
 export { ListHoldsOutput } from "#node/schemas/list-holds-output.schema";
 export { PlaceHoldInput } from "#node/schemas/place-hold-input.schema";

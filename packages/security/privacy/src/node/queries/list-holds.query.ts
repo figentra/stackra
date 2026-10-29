@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ListHoldsQuery`, `privacy.hold.list@1`: the session tenant's legal holds from the Postgres hold store,
  *          live ones by default, optionally only those on one record or subject, newest first.
- * Boundary: read only. Its permission `privacy.hold.list` is derived. Not an MCP tool, like placing and releasing.
+ * Boundary: read only. Its permission is `privacy.hold.read` (`HoldPermissions.read`). Not an MCP tool, like placing and releasing.
  *           shortcut: at most 500 holds, unpaged; page it when a tenant keeps more.
  * Runtime: node
  * Governing contract: ADR 0134 (2026-10-24 amendment: holds); ADR 0294 (decisions 16 and 21); data-layer gap gov20
