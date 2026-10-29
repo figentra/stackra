@@ -10,7 +10,7 @@ icon: "git-branch"
 | ------------ | ------------------------------------------------------------------------- |
 | `pre-commit` | `oxfmt --check` and `oxlint` on staged files, `gitleaks protect --staged` |
 | `commit-msg` | commitlint (conventional commits)                                         |
-| `pre-push`   | `pnpm typecheck`                                                          |
+| `pre-push`   | `turbo run typecheck test --affected` (unit tests only)                   |
 
 Hooks are advisory; CI runs the full gate.
 
