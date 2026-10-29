@@ -2136,7 +2136,12 @@ export function createSourceReader(
       const baseHeritage = heritageOf(base);
       const partner =
         baseHeritage === undefined ? undefined : partnerOf(base, "driver", baseHeritage);
-      if (partner !== undefined) return partner;
+      if (partner === undefined) continue;
+      // A package base names its port by that package's own `#…` path: the member imports it from its entry.
+      const owner = host.fileName(base);
+      return isOwn(owner)
+        ? partner
+        : { ...partner, from: publicSpecifier(packageOf(owner) ?? "", partner.from) };
     }
     return undefined;
   };

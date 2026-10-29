@@ -33,6 +33,7 @@
  *          `kind_unregistered_base` (other bases and a reasonless disable are); an abstract `Event` base is no
  *          `event_base_abstract`; an abstract base's protected constructor is not read, a subclass takes the nearest
  *          one; a driver extending its port has no tokens only in `@stackra/contracts`; `I18nKey` is the `i18n_key` brand.
+ *          A driver over another package's base takes its port from that package's entry, never the base's `#` path.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -556,6 +557,55 @@ describe("createSourceReader on a driver over its package's own base", async () 
 
   it("still marks the base abstract, so it is never a candidate itself", () => {
     expect(declared("NetworkPrinterDriver")).toMatchObject({ kind: "driver", abstract: true });
+  });
+});
+
+/** A driver over another package's abstract base, whose port that package imports by its own `#contracts` path. */
+const PACKAGE_BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/printer-fixture/package.json": JSON.stringify({
+    name: "@stackra/printer-fixture",
+    type: "module",
+    imports: { "#contracts/*": "./src/contracts/*.ts" },
+    exports: {
+      ".": { "@stackra/source": "./src/core/index.ts" },
+      "./contracts": { "@stackra/source": "./src/contracts/index.ts" },
+    },
+  }),
+  "node_modules/@stackra/printer-fixture/src/contracts/index.ts": [
+    "export abstract class Printer {",
+    "  abstract print(text: string): Promise<void>;",
+    "}",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/printer-fixture/src/core/index.ts": [
+    'import { Driver } from "@stackra/container";',
+    'import { Printer } from "#contracts/index";',
+    "",
+    "export abstract class NetworkPrinterDriver extends Driver(Printer) {",
+    "  async print(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/drivers/epson-printer.driver.ts": [
+    'import { NetworkPrinterDriver } from "@stackra/printer-fixture";',
+    "",
+    "export class EpsonPrinterDriver extends NetworkPrinterDriver {}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a driver over another package's base", async () => {
+  const root = writeFixtureMember("package-base-driver", PACKAGE_BASE_DRIVER_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("imports the port from that package's entry, never its own `#contracts` path", () => {
+    expect(classes.find((candidate) => candidate.name === "EpsonPrinterDriver")).toMatchObject({
+      kind: "driver",
+      partner: { name: "Printer", from: "@stackra/printer-fixture/contracts" },
+    });
   });
 });
 
