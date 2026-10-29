@@ -7,18 +7,38 @@
  *          user ids; an unset provisioner key fails naming it; Apple is off by default, and on it is one Apple identity
  *          provider with the plan's ids whose key comes from the named secret.
  * Boundary: test only; `runtime.setMocks` and `runtime.setAllConfig` stand in for the engine and the stack config,
- *           so nothing reaches ZITADEL.
+ *           so nothing reaches ZITADEL; `dynamic.Resource` is mocked so the Apple provider registers without closure
+ *           serialisation.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171 (decisions 2 to 4); ADR 0206 (decision 8); ADR 0207
  *                     (decision 3); ADR 0274 (decision 5); ADR 0277 (decisions 2 and 4); STA-1578.
  */
 import { all, runtime } from "@pulumi/pulumi";
+import type * as Pulumi from "@pulumi/pulumi";
 import type { Output } from "@pulumi/pulumi";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import type { IdentityPlan } from "#core/types/identity-plan.type";
 import { identityStack } from "#node/functions/identity-stack.function";
 import type { IdentityStack } from "#node/types/identity-stack.type";
+
+// Vitest rewrites the provider's code, so Pulumi's closure serialisation of it never settles under the mocks; the
+// dynamic resource registers here without its serialised provider.
+vi.mock("@pulumi/pulumi", async (original) => {
+  const pulumi = await original<typeof Pulumi>();
+  class Resource extends pulumi.CustomResource {
+    constructor(
+      _provider: unknown,
+      name: string,
+      props: Pulumi.Inputs,
+      opts?: Pulumi.CustomResourceOptions,
+    ) {
+      super("pulumi-nodejs:dynamic:Resource", name, props, opts);
+    }
+  }
+  return { ...pulumi, dynamic: { ...pulumi.dynamic, Resource } };
+});
 
 const PALETTE = { primary: "#1f6feb", background: "#ffffff", warn: "#cf222e", font: "#1f2328" };
 const DARK = { primary: "#4493f8", background: "#0d1117", warn: "#f85149", font: "#f0f6fc" };
@@ -287,7 +307,7 @@ describe("identityStack", () => {
     });
     const stack = identityStack({ ...PLAN, appleSignIn: APPLE });
     await settle(stack);
-    // the dynamic provider is serialised before it registers, so wait for its id, not only the rest of the stack
+    // the Apple resource is not in `settle`'s outputs, so wait for its id too
     const id = stack.appleIdp === null ? null : await valueOf(stack.appleIdp);
 
     expect(id).toBe("apple-idp-id");
