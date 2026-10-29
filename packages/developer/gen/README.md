@@ -108,8 +108,8 @@ query cached `per: CacheScope.Site` whose `handle` reads its caller from its con
 `DeclaredClass.callerReads`) or whose input has a caller id field (`actorId`, `userId`, `principalId`, `customerId`,
 `scopeId`, `tenantId`). The registrations call `registerCachedQueries` from `@stackra/actions` with every query (own
 or hosted) whose `cache.invalidateOn` names events, and a service that declares `@stackra/cache` binds
-`QueryCacheEvictorListener` (a `SERVER_CONTRIBUTIONS` row), so an invalidating event forgets the cached answers after
-commit. A service that runs `@stackra/realtime` and the bus also gets each live query's refresh in its boot: one
+`QueryCacheEvictorListener` (a `SERVER_CONTRIBUTIONS` row; `@stackra/actions`' own wiring never binds it, nor links
+the cache drivers its tokens reach), so an invalidating event forgets the cached answers after commit. A service that runs `@stackra/realtime` and the bus also gets each live query's refresh in its boot: one
 `liveQueryRoutes` call per query with `cache.invalidateOn` (its permission, the principal's audience for
 `per: principal` and the scope's otherwise), each route subscribed on the bus for its registered event class and sent
 through `RealtimeRelay` when bound, else `RealtimeBroadcaster`.

@@ -507,6 +507,53 @@ describe("emitWiring", () => {
     expect(emitWiring(BILLING_IR)).not.toContain("QueryCacheEvictorListener");
   });
 
+  it("never binds the evictor in @stackra/actions' own wiring, nor links the cache drivers it would reach", () => {
+    const action = BILLING_IR.classes.find((declared) => declared.kind === "action");
+    if (action === undefined) throw new Error("the fixture has no action");
+    const cache: MemberIR["dependencies"][number] = {
+      package: "@stackra/cache",
+      manifest: {
+        member: "cache",
+        package: "@stackra/cache",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "Cache",
+            key: "cache.Cache",
+            candidates: ["memory", "storage"],
+            classes: {
+              memory: { class: "MemoryCacheDriver", from: "@stackra/cache" },
+              storage: {
+                class: "StorageCacheDriver",
+                from: "@stackra/cache",
+                deps: [{ class: { name: "Storage", from: "@stackra/storage/contracts" } }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      member: "actions",
+      package: "@stackra/actions",
+      layout: "package",
+      dependencies: [cache],
+      classes: [
+        {
+          ...action,
+          name: "QueryCacheEvictorListener",
+          kind: "listener",
+          file: "src/core/listeners/query-cache-evictor.listener.ts",
+          importPath: "#core/listeners/query-cache-evictor.listener",
+          deps: [{ class: { name: "Cache", from: "@stackra/cache/contracts" } }],
+        },
+      ],
+    });
+    expect(content).not.toContain("QueryCacheEvictorListener");
+    expect(content).not.toContain("@stackra/storage");
+  });
+
   it("binds no guard or indicator outside a service (STA-1385)", () => {
     const content = emitWiring({ ...BILLING_IR, layout: "package" });
     expect(content).not.toContain("OriginGuard");

@@ -16,7 +16,7 @@
  *          with its `repositoryOf(Revision)`), and in a service the `SERVER_CONTRIBUTIONS` of its declared packages: the
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
- *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445).
+ *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds.
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
  *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
@@ -98,6 +98,17 @@ function isClassValue(value: unknown): value is ClassValue {
 /** A member class as a reference generated files import. */
 function own(declared: DeclaredClass): ClassRef {
   return { name: declared.name, from: declared.importPath };
+}
+
+/**
+ * Whether `declared` is a `SERVER_CONTRIBUTIONS` binding of the member's own package: a service that declares the
+ * contribution's package binds it, so the owning package's wiring never does (nor links its tokens' drivers). A
+ * contributed driver stays a candidate of its own port's table.
+ */
+function contributed(ir: MemberIR, declared: DeclaredClass): boolean {
+  return SERVER_CONTRIBUTIONS.some(
+    ({ provide }) => provide.name === declared.name && packageOf(provide.from) === ir.package,
+  );
 }
 
 /** An array literal of printed items. */
@@ -341,7 +352,7 @@ export function emitWiring(ir: MemberIR): string {
   const platform: string[] = [];
   const bindingLines: string[] = [];
   for (const declared of ir.classes) {
-    if (!BINDING_KINDS.includes(declared.kind)) continue;
+    if (!BINDING_KINDS.includes(declared.kind) || contributed(ir, declared)) continue;
     const deps = depsOf(declared);
     for (const dep of deps)
       if (
@@ -488,7 +499,10 @@ export function emitWiring(ir: MemberIR): string {
   // it is injected. A worklist, so `journalOf(M)` brings `Locks` with it.
   const used: { readonly module: string; readonly dep: TokenRef }[] = [];
   for (const declared of ir.classes)
-    if (BINDING_KINDS.includes(declared.kind) || declared.kind === "driver")
+    if (
+      (BINDING_KINDS.includes(declared.kind) && !contributed(ir, declared)) ||
+      declared.kind === "driver"
+    )
       for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
   if (webhookIntegrations(ir).length > 0) {
     const receiver: TokenRef = { class: { name: "WebhookReceiver", from: "@stackra/webhooks" } };
