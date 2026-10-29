@@ -137,9 +137,12 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   override async onReplica<T>(work: () => Promise<T>): Promise<T> {
     if ((this.orm.config.get("replicas") ?? []).length === 0) return work();
     const current = this.em();
-    // raw-sql: pg_settings lists the custom `app.*` settings (scope, tenant) the running transaction carries
+    // raw-sql: the `app.*` settings the row-level-security policies read, by name, because Postgres keeps custom
+    // settings out of pg_settings; an unset one is null and is not replayed
     const settings: readonly { name: string; setting: string }[] = current.isInTransaction()
-      ? await current.execute("select name, setting from pg_settings where name like 'app.%'")
+      ? await current.execute(
+          "select name, setting from (select name, current_setting(name, true) as setting from unnest(array['app.scope_id', 'app.scope_path', 'app.scope_paths', 'app.tenant_id', 'app.owner_id', 'app.workspace_id']) as name) as s where setting is not null",
+        )
       : [];
     const connection = this.orm.em.getConnection("read");
     return connection.transactional(
