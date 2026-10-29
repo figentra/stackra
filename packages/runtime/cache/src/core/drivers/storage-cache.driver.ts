@@ -10,20 +10,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decisions 1, 2 and 4); ADR 0256 (decision 2: the `cache` area); ADR 0305 (rule 32).
  */
-import { Driver } from "@stackra/container";
 import type { Clock, Duration } from "@stackra/contracts";
 import type { Storage } from "@stackra/storage/contracts";
 
-import { Cache } from "#contracts/ports/cache.port";
+import type { Cache } from "#contracts/ports/cache.port";
 import type { CacheMetrics } from "#contracts/ports/cache-metrics.port";
 import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
-import type { CacheKey } from "#contracts/types/cache-key.type";
-import type { CachePutOptions } from "#contracts/types/cache-put-options.type";
-import type { CacheRememberOptions } from "#contracts/types/cache-remember-options.type";
+import { StoredCacheDriver } from "#core/drivers/stored-cache.driver";
 import { markerSets } from "#core/functions/marker-sets.function";
-import { storedCache } from "#core/functions/stored-cache.function";
 import { textEntryStore } from "#core/functions/text-entry-store.function";
-import type { CacheOperations } from "#core/types/cache-operations.type";
 
 /** In front of every key this driver writes to the shared `cache` area. */
 const PREFIX = "cache.";
@@ -36,9 +31,7 @@ const PREFIX = "cache.";
  * { port: Cache, candidates: { storage: () => import("@stackra/cache").then((m) => m.StorageCacheDriver) } }
  * await cache.remember(CacheKey.of(Product, id), Duration.minutes(10), () => this.load(id));
  */
-export class StorageCacheDriver extends Driver(Cache) {
-  private readonly cache: CacheOperations;
-
+export class StorageCacheDriver extends StoredCacheDriver<Cache> {
   /**
    * @param storage - the client storage; this driver uses its `cache` area only.
    * @param namespace - the prefix of every key; the shared namespace unless config `cache.namespace` selects another.
@@ -46,7 +39,6 @@ export class StorageCacheDriver extends Driver(Cache) {
    * @param metrics - where hits, misses, loads and evictions go; config `cache.metrics` picks it (`none` by default).
    */
   constructor(storage: Storage, namespace: CacheNamespace, clock: Clock, metrics: CacheMetrics) {
-    super();
     const area = storage.cache;
     const write = (key: string, text: string, ttl: Duration): Promise<void> => {
       area.set(PREFIX + key, text, { ttl });
@@ -63,7 +55,7 @@ export class StorageCacheDriver extends Driver(Cache) {
           .filter((name) => name.startsWith(PREFIX + prefix))
           .map((name) => name.slice(PREFIX.length)),
       );
-    this.cache = storedCache(
+    super(
       textEntryStore({
         read: (key) => {
           const text = area.get(PREFIX + key);
@@ -78,35 +70,5 @@ export class StorageCacheDriver extends Driver(Cache) {
       clock,
       { metrics },
     );
-  }
-
-  /** The value stored under `key`, or `undefined` when none is stored or it is no longer fresh. */
-  get<T>(key: CacheKey): Promise<T | undefined> {
-    return this.cache.get<T>(key);
-  }
-
-  /** Stores `value` under `key` for `ttl` with its tags; a zero `ttl` stores nothing. A load in flight is not stored. */
-  put<T>(key: CacheKey, value: T, ttl: Duration, options?: CachePutOptions): Promise<void> {
-    return this.cache.put(key, value, ttl, options);
-  }
-
-  /** The stored value, or the result of `load` stored for `ttl`; concurrent calls for one key share one `load`. */
-  remember<T>(
-    key: CacheKey,
-    ttl: Duration,
-    load: () => T | Promise<T>,
-    options?: CacheRememberOptions,
-  ): Promise<T> {
-    return this.cache.remember(key, ttl, load, options);
-  }
-
-  /** Drops `key` and every key it covers; a covered load in flight answers its callers but is not stored. */
-  forget(key: CacheKey): Promise<void> {
-    return this.cache.forget(key);
-  }
-
-  /** Drops every entry of this namespace carrying `tag`; a tagged load in flight is not stored. */
-  forgetTag(tag: CacheKey): Promise<void> {
-    return this.cache.forgetTag(tag);
   }
 }

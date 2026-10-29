@@ -13,22 +13,17 @@
  * Runtime: node
  * Governing contract: ADR 0150 (decisions 1, 2 and 4); ADR 0173 (secrets by name); ADR 0305 (rule 32).
  */
-import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
 import Valkey from "iovalkey";
 
 import type { CacheConfig } from "#config/cache.config";
-import { Cache } from "#contracts/ports/cache.port";
+import type { Cache } from "#contracts/ports/cache.port";
 import type { CacheLock } from "#contracts/ports/cache-lock.port";
 import type { CacheMetrics } from "#contracts/ports/cache-metrics.port";
 import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
-import type { CacheKey } from "#contracts/types/cache-key.type";
-import type { CachePutOptions } from "#contracts/types/cache-put-options.type";
-import type { CacheRememberOptions } from "#contracts/types/cache-remember-options.type";
-import { storedCache } from "#core/functions/stored-cache.function";
+import { StoredCacheDriver } from "#core/drivers/stored-cache.driver";
 import { textEntryStore } from "#core/functions/text-entry-store.function";
-import type { CacheOperations } from "#core/types/cache-operations.type";
 
 /** Between the key prefix and a set's name; `encodeURIComponent` never leaves it in a namespace, so no entry key has it. */
 const SET_MARK = "#";
@@ -40,11 +35,9 @@ const SET_MARK = "#";
  * // runway.yaml (staging): config.cache: { driver: valkey, lock: locks, valkey: { keyPrefix: "commerce:" } }
  * await cache.remember(CacheKey.of(Product, id), Duration.minutes(10), () => this.load(id), { lock: true });
  */
-export class ValkeyCacheDriver extends Driver(Cache) {
+export class ValkeyCacheDriver extends StoredCacheDriver<Cache> {
   /** The client every call goes through. */
   readonly client: Valkey;
-
-  private readonly cache: CacheOperations;
 
   /**
    * @param config - the server (`valkeyUrl`, the `CACHE_VALKEY_URL` secret), the key prefix (`valkey.keyPrefix`), the
@@ -62,7 +55,6 @@ export class ValkeyCacheDriver extends Driver(Cache) {
     lock: CacheLock,
     metrics: CacheMetrics,
   ) {
-    super();
     if (config.valkeyUrl === "")
       throw new TypeError(
         "The valkey cache driver needs a server: set the CACHE_VALKEY_URL secret",
@@ -70,8 +62,7 @@ export class ValkeyCacheDriver extends Driver(Cache) {
     const prefix = config.valkey.keyPrefix;
     const setKey = (set: string): string => prefix + SET_MARK + set;
     const client = new Valkey(config.valkeyUrl, { maxRetriesPerRequest: 1 });
-    this.client = client;
-    this.cache = storedCache(
+    super(
       textEntryStore({
         read: async (key) => (await client.get(prefix + key)) ?? undefined,
         write: async (key, text, ttl) => {
@@ -102,35 +93,6 @@ export class ValkeyCacheDriver extends Driver(Cache) {
       clock,
       { jitter: config.jitter, fill: config.fill, lock, metrics },
     );
-  }
-
-  /** The value stored under `key`, or `undefined` when none is stored or it is no longer fresh. */
-  get<T>(key: CacheKey): Promise<T | undefined> {
-    return this.cache.get<T>(key);
-  }
-
-  /** Stores `value` under `key` for `ttl` with its tags; a zero `ttl` stores nothing. A load in flight is not stored. */
-  put<T>(key: CacheKey, value: T, ttl: Duration, options?: CachePutOptions): Promise<void> {
-    return this.cache.put(key, value, ttl, options);
-  }
-
-  /** The stored value, or the result of `load` stored for `ttl`; concurrent calls for one key share one `load`. */
-  remember<T>(
-    key: CacheKey,
-    ttl: Duration,
-    load: () => T | Promise<T>,
-    options?: CacheRememberOptions,
-  ): Promise<T> {
-    return this.cache.remember(key, ttl, load, options);
-  }
-
-  /** Drops `key` and every key it covers, read from its index set; a covered load in flight is not stored. */
-  forget(key: CacheKey): Promise<void> {
-    return this.cache.forget(key);
-  }
-
-  /** Drops every entry of this namespace carrying `tag`; a tagged load in flight is not stored. */
-  forgetTag(tag: CacheKey): Promise<void> {
-    return this.cache.forgetTag(tag);
+    this.client = client;
   }
 }

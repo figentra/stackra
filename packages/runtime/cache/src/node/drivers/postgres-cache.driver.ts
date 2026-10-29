@@ -15,22 +15,17 @@
  * Governing contract: ADR 0150 (decisions 1, 2 and 4); ADR 0076 (on-prem); ADR 0160 (raw SQL is parameterised);
  *                     ADR 0305 (rule 32); STA-1438.
  */
-import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
 
 import type { CacheConfig } from "#config/cache.config";
-import { Cache } from "#contracts/ports/cache.port";
+import type { Cache } from "#contracts/ports/cache.port";
 import type { CacheLock } from "#contracts/ports/cache-lock.port";
 import type { CacheMetrics } from "#contracts/ports/cache-metrics.port";
 import type { CacheNamespace } from "#contracts/ports/cache-namespace.port";
 import type { CacheSql } from "#contracts/ports/cache-sql.port";
-import type { CacheKey } from "#contracts/types/cache-key.type";
-import type { CachePutOptions } from "#contracts/types/cache-put-options.type";
-import type { CacheRememberOptions } from "#contracts/types/cache-remember-options.type";
-import { storedCache } from "#core/functions/stored-cache.function";
+import { StoredCacheDriver } from "#core/drivers/stored-cache.driver";
 import { textEntryStore } from "#core/functions/text-entry-store.function";
-import type { CacheOperations } from "#core/types/cache-operations.type";
 
 /** `text` with the `like` wildcards and the escape character escaped, so it matches only itself. */
 function literal(text: string): string {
@@ -44,9 +39,7 @@ function literal(text: string): string {
  * // runway.yaml (on-prem): config.cache: { driver: postgres, lock: locks }
  * await cache.remember(CacheKey.of(Product, id), Duration.minutes(10), () => this.load(id));
  */
-export class PostgresCacheDriver extends Driver(Cache) {
-  private readonly cache: CacheOperations;
-
+export class PostgresCacheDriver extends StoredCacheDriver<Cache> {
   /**
    * @param config - the tables' schema and sweep size (`postgres`), the lifetime jitter and the fill wait.
    * @param sql - the connection the statements run on; @stackra/database binds it.
@@ -63,7 +56,6 @@ export class PostgresCacheDriver extends Driver(Cache) {
     lock: CacheLock,
     metrics: CacheMetrics,
   ) {
-    super();
     const { schema, sweep } = config.postgres;
     const entries = `"${schema}"."entries"`;
     const members = `"${schema}"."set_members"`;
@@ -79,7 +71,7 @@ export class PostgresCacheDriver extends Driver(Cache) {
         [clock.now(), sweep],
       );
     };
-    this.cache = storedCache(
+    super(
       textEntryStore({
         read: async (key) => {
           // raw-sql: a read by primary key of a table no model maps (ADR 0160)
@@ -133,35 +125,5 @@ export class PostgresCacheDriver extends Driver(Cache) {
       clock,
       { jitter: config.jitter, fill: config.fill, lock, metrics },
     );
-  }
-
-  /** The value stored under `key`, or `undefined` when none is stored or it is no longer fresh. */
-  get<T>(key: CacheKey): Promise<T | undefined> {
-    return this.cache.get<T>(key);
-  }
-
-  /** Stores `value` under `key` for `ttl` with its tags; a zero `ttl` stores nothing. A load in flight is not stored. */
-  put<T>(key: CacheKey, value: T, ttl: Duration, options?: CachePutOptions): Promise<void> {
-    return this.cache.put(key, value, ttl, options);
-  }
-
-  /** The stored value, or the result of `load` stored for `ttl`; concurrent calls for one key share one `load`. */
-  remember<T>(
-    key: CacheKey,
-    ttl: Duration,
-    load: () => T | Promise<T>,
-    options?: CacheRememberOptions,
-  ): Promise<T> {
-    return this.cache.remember(key, ttl, load, options);
-  }
-
-  /** Drops `key` and every key it covers; a covered load in flight answers its callers but is not stored. */
-  forget(key: CacheKey): Promise<void> {
-    return this.cache.forget(key);
-  }
-
-  /** Drops every entry of this namespace carrying `tag`; a tagged load in flight is not stored. */
-  forgetTag(tag: CacheKey): Promise<void> {
-    return this.cache.forgetTag(tag);
   }
 }
