@@ -113,6 +113,8 @@ describe("NEW_COMMAND", () => {
     };
     expect(pkg.name).toBe("@figentra/beautilon-service-salon");
     expect(pkg.dependencies["@stackra/contracts"]).toBe("catalog:stackra");
+    // gen's server entry imports @stackra/app, and gen refuses an undeclared generated dependency.
+    expect(pkg.dependencies["@stackra/app"]).toBe("catalog:stackra");
     expect(Object.keys(pkg.imports)).toEqual(expect.arrayContaining(["#src/*", "#assets/*"]));
     expect(pkg.exports).toEqual({ "./assets/*": "./assets/*" });
     expect(existsSync(join(root, "services/salon/assets/.gitkeep"))).toBe(true);

@@ -3,7 +3,8 @@
  * Purpose: `serviceTemplate(options)`, the files of a new service member (`options.packageName`: `@figentra/service-
  *          <name>`, `@figentra/<product>-service-<name>` or `@<scope>/service-<name>`) in the shape of stackra/template's
  *          services: package.json (the `#src`, `#modules`, `#config`, `#contracts`, `#assets` and `#stackra` imports,
- *          the `./assets/*` export, `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`),
+ *          the `./assets/*` export, `@stackra/app` for the generated server entry and the other `@stackra/*` at
+ *          `options.stackraVersion`, scripts that call `stackra <task>`),
  *          tsconfig.json (the `service` preset), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
  *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md.
  *          No root module, `main.ts`, Encore file or tool config: gen derives and writes them.
@@ -71,7 +72,8 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       "format:check": "oxfmt --check .",
       clean: "rm -rf dist coverage .turbo .stackra",
     },
-    dependencies: { "@stackra/contracts": stackraVersion },
+    // `@stackra/app` runs the server entry gen writes (`.stackra/entry/server.ts`), which gen refuses undeclared.
+    dependencies: { "@stackra/app": stackraVersion, "@stackra/contracts": stackraVersion },
     devDependencies: {
       "@stackra/cli": stackraVersion,
       "@stackra/tsdown-config": stackraVersion,
