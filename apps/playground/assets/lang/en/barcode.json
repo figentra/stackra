@@ -1,0 +1,15 @@
+{
+  "product_ean": {
+    "product": "Linen abaya",
+    "price": "SAR 420",
+    "label": "Linen abaya, EAN 6291041500213"
+  },
+  "shipping_label": {
+    "title": "Order 2048",
+    "to": "Ship to: Al Olaya, Riyadh",
+    "label": "Parcel SHP-2048-RUH"
+  },
+  "invalid": {
+    "caption": "6291041500214 ends in the wrong check digit (it should be 3)."
+  }
+}

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "a17e70839416a27d",
+    "hash": "70d3001824f1c2bc",
     "heroDoc": "vendor/heroui/react/table.json",
     "propsFiles": ["ui/src/react/table/table.props.ts"]
   },
@@ -43,6 +43,20 @@
           "required": false,
           "source": "stackra",
           "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Web: given, each row gets a drag handle in a leading column (pointer, or the keyboard and a screen reader through\nReact Aria's drag and drop) and a drop calls this with every row in the new order. Controlled: nothing moves\nuntil the app passes the rows back.",
+          "name": "onReorder",
+          "required": false,
+          "source": "stackra",
+          "type": "(items: readonly TItem[]) => void"
+        },
+        {
+          "description": "Web: called with a row's id when the row is actioned: a press with no selection mode, or Enter on the row.",
+          "name": "onRowAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
         }
       ],
       "extends": "Table",
@@ -190,6 +204,41 @@
           "required": false,
           "source": "stackra",
           "type": "(item: TItem) => string | undefined"
+        },
+        {
+          "description": "Web: a row drawn as one cell across every column (an expanded row's detail) when this returns a node.",
+          "name": "renderRowSpan",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "Web: the ids of rows that cannot be selected or dragged (summary and detail rows); their content stays live.",
+          "name": "disabledKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Web: a header's content in place of its label, when this returns a node (the label stays its name).",
+          "name": "renderHeader",
+          "required": false,
+          "source": "stackra",
+          "type": "(column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "Web: the ids of columns that never move: they draw no drag grip and take no drop (a DataTable's tool columns).",
+          "name": "fixedColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Web: true to draw only the rows in view (React Aria's Virtualizer), for thousands of rows. The header stays\nstuck, the start pins stay stuck, rows take the density's height (measured when `renderRowSpan` is given) and\nthe scroll area is `maxHeight` tall. A column pinned to the end scrolls with the rest.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "Additional CSS classes for the root container",

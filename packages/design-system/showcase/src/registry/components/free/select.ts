@@ -37,6 +37,7 @@ export const FREE_SELECT: ComponentEntry = {
     { id: "items" },
     { id: "states" },
     { id: "live" },
+    { id: "sections" },
     { id: "presentation", platforms: ["native"] },
   ],
   related: ["free/radio-group", "free/switch", "free/tag-group"],

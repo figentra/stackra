@@ -1,0 +1,93 @@
+{
+  "generatedFrom": {
+    "hash": "1c6f7f40a419d3d3",
+    "propsFiles": ["ui/src/native/polar-chart/polar-chart.props.ts"]
+  },
+  "importLine": "import { PolarChart } from \"@stackra/ui/native\";",
+  "key": "free/polar-chart",
+  "parts": [
+    {
+      "name": "PolarChart",
+      "props": [
+        {
+          "description": "The key of each row's sector name, such as a month or a weekday.",
+          "name": "xKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the sector name as a date in the locale; names are shown as given without it.",
+          "name": "xFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

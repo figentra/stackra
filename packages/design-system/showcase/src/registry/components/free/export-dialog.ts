@@ -12,7 +12,7 @@ export const FREE_EXPORT_DIALOG: ComponentEntry = {
   slug: "export-dialog",
   tier: "free",
   category: "data_display",
-  platforms: ["react"],
+  platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "ExportDialog",
   parts: ["ExportDialog"],

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ed13e2e82351ca84",
+    "hash": "276010f2a2f7888a",
     "propsFiles": ["ui/src/native/kpi/kpi.props.ts", "ui/src/native/kpi/trend-chip.props.ts"]
   },
   "importLine": "import { Kpi } from \"@stackra/ui/native\";",
@@ -49,6 +49,13 @@
         {
           "description": "The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`.",
           "name": "trend",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The previous period's figure: a muted \"Previous period\" line under the figure, formatted like it, and, when\n`trend` is left out and `value` is a number, the trend worked out from the two.",
+          "name": "previousValue",
           "required": false,
           "source": "stackra",
           "type": "number"

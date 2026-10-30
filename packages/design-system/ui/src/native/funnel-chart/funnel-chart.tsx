@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the native `FunnelChart`: one row per step, the name at the reading start, a centred bar as wide as its
  *          share of the first step, and its value with the conversion from the step before at the end.
- * Boundary: Views and design-system Text only (no Skia text), so Arabic shapes and digits follow the provider; the
+ *          The bar is lit softly from the top (`LitFill`), flat in a flat brand.
+ * Boundary: Views, a Skia fill for the light, and design-system Text only (no Skia text), so Arabic shapes and digits follow the provider; the
  *           whole funnel is one image whose spoken value lists every step.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1; STA-1371.
@@ -15,6 +16,7 @@ import { formatChartNumber } from "#core/functions/format-chart-number.function"
 import { funnelRowsOf } from "#core/functions/funnel-rows-of.function";
 import { sortChartItems } from "#core/functions/sort-chart-items.function";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { LitFill } from "#native/chart/lit-fill";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { FunnelChartProps } from "#native/funnel-chart/funnel-chart.props";
@@ -68,12 +70,15 @@ export function FunnelChart({
           </Text>
           <View className="h-7 flex-1 flex-row justify-center rounded-[var(--radius-control-inner)] bg-default/40">
             <View
-              className="h-full rounded-[var(--radius-control-inner)]"
+              className="h-full overflow-hidden rounded-[var(--radius-control-inner)]"
               style={{
                 width: `${Math.max(row.share * 100, 1)}%`,
                 backgroundColor: paint.series[0],
               }}
-            />
+            >
+              {/* h-7: the bar is 28 points tall. */}
+              <LitFill color={paint.series[0] ?? ""} lift={paint.lift} height={28} />
+            </View>
           </View>
           <View className="items-end">
             <Text type="small" className="font-semibold">

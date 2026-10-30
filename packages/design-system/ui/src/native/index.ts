@@ -179,6 +179,12 @@ export { Thumbnail } from "#native/thumbnail/thumbnail";
 export type { ThumbnailProps } from "#native/thumbnail/thumbnail.props";
 export { TreeView } from "#native/tree-view/tree-view";
 export type { TreeViewProps } from "#native/tree-view/tree-view.props";
+export { TreeSelect } from "#native/tree-select/tree-select";
+export type { TreeSelectProps } from "#native/tree-select/tree-select.props";
+export { MaskedField } from "#native/masked-field/masked-field";
+export type { MaskedFieldProps } from "#native/masked-field/masked-field.props";
+export { MentionInput } from "#native/mention-input/mention-input";
+export type { MentionInputProps } from "#native/mention-input/mention-input.props";
 export { useBreakpoint } from "#native/use-breakpoint/use-breakpoint";
 export { VisuallyHidden } from "#native/visually-hidden/visually-hidden";
 export type { VisuallyHiddenProps } from "#native/visually-hidden/visually-hidden.props";
@@ -269,10 +275,26 @@ export type { TextProps } from "#native/text/text.props";
 export { toast } from "#native/toast/toast";
 export { ToastProvider } from "#native/toast/toast-provider";
 export type { ToastProviderProps } from "#native/toast/toast-provider.props";
+export { RecurrenceEditor } from "#native/recurrence-editor/recurrence-editor";
+export type { RecurrenceEditorProps } from "#native/recurrence-editor/recurrence-editor.props";
+export { TaskTray } from "#native/task-tray/task-tray";
+export type { TaskTrayProps } from "#native/task-tray/task-tray.props";
 export { Tooltip } from "#native/tooltip/tooltip";
 export type { TooltipProps } from "#native/tooltip/tooltip.props";
 export { TwoColumnLayout } from "#native/two-column-layout/two-column-layout";
 export type { TwoColumnLayoutProps } from "#native/two-column-layout/two-column-layout.props";
+export { Stack } from "#native/layout/stack";
+export type { StackProps } from "#native/layout/stack.props";
+export { Cluster } from "#native/layout/cluster";
+export type { ClusterProps } from "#native/layout/cluster.props";
+export { Grid } from "#native/layout/grid";
+export type { GridProps } from "#native/layout/grid.props";
+export { Center } from "#native/layout/center";
+export type { CenterProps } from "#native/layout/center.props";
+export { Disclosure } from "#native/disclosure/disclosure";
+export type { DisclosureProps } from "#native/disclosure/disclosure.props";
+export { ContextMenu } from "#native/context-menu/context-menu";
+export type { ContextMenuProps } from "#native/context-menu/context-menu.props";
 // Native-only HeroUI Native parts the apps compose in HeroUI Native's own API: the list group of a settings screen, the
 // press feedback of a tappable card, the theme colour hook a navigator reads, and the toast hook of a screen.
 export { ListGroup, PressableFeedback, useThemeColor, useToast } from "heroui-native";
@@ -321,6 +343,12 @@ export { DateTimePicker } from "#native/date-time-picker/date-time-picker";
 export type { DateTimePickerProps } from "#native/date-time-picker/date-time-picker.props";
 export { DropZone } from "#native/drop-zone/drop-zone";
 export type { DropZoneProps } from "#native/drop-zone/drop-zone.props";
+export { AttachmentCard } from "#native/attachment-card/attachment-card";
+export type { AttachmentCardProps } from "#native/attachment-card/attachment-card.props";
+export { ShareButton } from "#native/share-button/share-button";
+export type { ShareButtonProps } from "#native/share-button/share-button.props";
+export { ExportDialog } from "#native/export-dialog/export-dialog";
+export type { ExportDialogProps } from "#native/export-dialog/export-dialog.props";
 export { EmojiPicker } from "#native/emoji-picker/emoji-picker";
 export type { EmojiPickerProps } from "#native/emoji-picker/emoji-picker.props";
 export { InlineSelect } from "#native/inline-select/inline-select";
@@ -414,6 +442,12 @@ export type { YearPickerProps } from "#native/year-picker/year-picker.props";
 // Wave 3b: data and dashboard (STA-1371).
 export { Carousel } from "#native/carousel/carousel";
 export type { CarouselProps } from "#native/carousel/carousel.props";
+export { Lightbox } from "#native/lightbox/lightbox";
+export type { LightboxProps } from "#native/lightbox/lightbox.props";
+export { Gallery } from "#native/gallery/gallery";
+export type { GalleryProps } from "#native/gallery/gallery.props";
+export { ImageCropper } from "#native/image-cropper/image-cropper";
+export type { ImageCropperProps } from "#native/image-cropper/image-cropper.props";
 export { CodeBlock } from "#native/code-block/code-block";
 export type { CodeBlockProps } from "#native/code-block/code-block.props";
 export { JsonViewer } from "#native/code-block/json-viewer";
@@ -522,6 +556,9 @@ export type { ToggleButtonGroupProps } from "#native/toggle-button-group/toggle-
 // Wave 3d: DataGrid, DataTable tools.
 export { ColumnChooser } from "#native/column-chooser/column-chooser";
 export type { ColumnChooserProps } from "#native/column-chooser/column-chooser.props";
+export { ColumnEditor } from "#native/column-chooser/column-editor";
+export type { ColumnEditorProps } from "#native/column-chooser/column-editor.props";
+export type { SortableRowAction } from "#native/sortable-list/sortable-row-action.type";
 export { SavedViews } from "#native/saved-views/saved-views";
 export type { SavedViewsProps } from "#native/saved-views/saved-views.props";
 export { DataGrid } from "#native/data-grid/data-grid";
@@ -530,3 +567,62 @@ export type { DataGridProps } from "#native/data-grid/data-grid.props";
 export { useCollection } from "#react/hooks/use-collection";
 export { DataView } from "#native/data-view/data-view";
 export type { DataViewProps } from "#native/data-view/data-view.props";
+
+// Wave B: charts (annotations, dual axis, log scale, sync, tracker strip).
+export { TrackerStrip } from "#native/tracker-strip/tracker-strip";
+export type { TrackerStripProps } from "#native/tracker-strip/tracker-strip.props";
+
+// Wave B: KPI comparison.
+
+// Wave B: period picker.
+export { PeriodPicker } from "#native/period-picker/period-picker";
+export type { PeriodPickerProps } from "#native/period-picker/period-picker.props";
+
+// Wave B: dashboard grid.
+export { DashboardGrid } from "#native/dashboard-grid/dashboard-grid";
+export type { DashboardGridProps } from "#native/dashboard-grid/dashboard-grid.props";
+
+// Wave B: form error summary.
+export { FormErrorSummary } from "#native/form-error-summary/form-error-summary";
+export type { FormErrorSummaryProps } from "#native/form-error-summary/form-error-summary.props";
+// Wave D: AI and the long tail (STA-1371).
+export { PolarChart } from "#native/polar-chart/polar-chart";
+export type { PolarChartProps } from "#native/polar-chart/polar-chart.props";
+export { WaffleChart } from "#native/waffle-chart/waffle-chart";
+export type { WaffleChartProps } from "#native/waffle-chart/waffle-chart.props";
+export { AspectRatio } from "#native/aspect-ratio/aspect-ratio";
+export type { AspectRatioProps } from "#native/aspect-ratio/aspect-ratio.props";
+export { BackToTop } from "#native/back-to-top/back-to-top";
+export type { BackToTopProps } from "#native/back-to-top/back-to-top.props";
+export { Barcode } from "#native/barcode/barcode";
+export type { BarcodeProps } from "#native/barcode/barcode.props";
+export { Marquee } from "#native/marquee/marquee";
+export type { MarqueeProps } from "#native/marquee/marquee.props";
+export { PageIndicator } from "#native/page-indicator/page-indicator";
+export type { PageIndicatorProps } from "#native/page-indicator/page-indicator.props";
+export { ConversationList } from "#native/conversation-list/conversation-list";
+export type { ConversationListProps } from "#native/conversation-list/conversation-list.props";
+export { MessageActions } from "#native/message-actions/message-actions";
+export type { MessageActionsProps } from "#native/message-actions/message-actions.props";
+export { MessageScroller } from "#native/message-scroller/message-scroller";
+export type { MessageScrollerProps } from "#native/message-scroller/message-scroller.props";
+export { PromptSuggestions } from "#native/prompt-suggestions/prompt-suggestions";
+export type { PromptSuggestionsProps } from "#native/prompt-suggestions/prompt-suggestions.props";
+export { Shimmer } from "#native/shimmer/shimmer";
+export type { ShimmerProps } from "#native/shimmer/shimmer.props";
+export { ModelPicker } from "#native/model-picker/model-picker";
+export type { ModelPickerProps } from "#native/model-picker/model-picker.props";
+export { QuestionnaireCard } from "#native/questionnaire-card/questionnaire-card";
+export type { QuestionnaireCardProps } from "#native/questionnaire-card/questionnaire-card.props";
+export { VoiceInput } from "#native/voice-input/voice-input";
+export type { VoiceInputProps } from "#native/voice-input/voice-input.props";
+export { AngleSlider } from "#native/angle-slider/angle-slider";
+export type { AngleSliderProps } from "#native/angle-slider/angle-slider.props";
+export { TimeClock } from "#native/time-clock/time-clock";
+export type { TimeClockProps } from "#native/time-clock/time-clock.props";
+export { Popconfirm } from "#native/popconfirm/popconfirm";
+export type { PopconfirmProps } from "#native/popconfirm/popconfirm.props";
+export { Cascader } from "#native/cascader/cascader";
+export type { CascaderProps } from "#native/cascader/cascader.props";
+export { TransferList } from "#native/transfer-list/transfer-list";
+export type { TransferListProps } from "#native/transfer-list/transfer-list.props";

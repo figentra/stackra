@@ -27,6 +27,7 @@ export const DRAWER_DEMO_KEYS = keys({
       locked: ["open", "heading", "body", "done"],
       form: ["open", "heading", "field", "initial", "close", "save", "saved", "none"],
       snap: ["open", "heading", "body", "close"],
+      resize: ["open", "heading", "body", "close"],
       basic: [
         "open",
         "heading",

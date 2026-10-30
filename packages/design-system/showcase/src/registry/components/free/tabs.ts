@@ -37,10 +37,12 @@ export const FREE_TABS: ComponentEntry = {
     { id: "orientation", platforms: ["react"] },
     { id: "states" },
     { id: "empty" },
+    { id: "closable" },
+    { id: "overflow", platforms: ["react"] },
     { id: "live" },
   ],
   related: ["free/sidebar", "free/navigation-list", "free/navigation-header"],
   tokens: ["color.accent", "radius.field", "motion.duration"],
   haptics: [{ event: "change", style: "selection" }],
-  keywords: ["tabs", "segments", "views"],
+  keywords: ["tabs", "segments", "views", "closable tabs", "overflow", "more menu"],
 };

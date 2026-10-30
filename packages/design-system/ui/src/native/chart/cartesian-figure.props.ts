@@ -9,6 +9,7 @@
 import type { ChartSort } from "#contracts/enums/chart-sort.enum";
 import type { ChartCurve } from "#contracts/enums/chart-curve.enum";
 import type { CartesianChartContractProps } from "#contracts/types/cartesian-chart-contract-props.type";
+import type { ChartEmphasis } from "#contracts/types/chart-emphasis.type";
 
 /** A cartesian chart of one kind. */
 export type CartesianFigureProps = CartesianChartContractProps & {
@@ -17,5 +18,7 @@ export type CartesianFigureProps = CartesianChartContractProps & {
   readonly showDots?: boolean | undefined;
   /** Bar charts: the categories' order. */
   readonly sort?: ChartSort | undefined;
+  /** Bar charts: the column that carries the colour, the rest in its soft tone (see `BarChartContractProps`). */
+  readonly emphasis?: ChartEmphasis | undefined;
   readonly className?: string | undefined;
 };

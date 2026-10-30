@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the native `BulletChart`: one row per measure, its label at the reading start, then a scale with the
- *          qualitative bands (the muted colour at three strengths), the value bar in the accent across the middle,
+ *          qualitative bands (three opaque neutral steps, as on the web), the value bar in the accent across the middle,
  *          the target as an upright tick, and the value at the reading end; every measure is spoken after the name.
  * Boundary: Views with logical `start` insets, so the scale grows from the reading start (the right in Arabic), and
  *           RN Text.
@@ -17,14 +17,14 @@ import { chartTextOf } from "#core/functions/chart-text-of.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { BulletChartProps } from "#native/bullet-chart/bullet-chart.props";
-import { alphaOf } from "#native/chart/alpha-of.function";
 import { ChartFrame } from "#native/chart/chart-frame";
+import { mixOf } from "#native/chart/mix-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import { Text } from "#native/text/text";
 
-/** The bands' strengths of the muted colour, nearest the start first. */
-const BAND_OPACITY = [0.32, 0.2, 0.1] as const;
+/** The bands' shares of the text colour over the card, nearest the start (poor) first, as on the web. */
+const BAND_SHARE = [0.3, 0.17, 0.07] as const;
 
 /** Measures against their targets. */
 export function BulletChart({
@@ -64,9 +64,10 @@ export function BulletChart({
                     style={{
                       start: `${band.from}%`,
                       width: `${band.to - band.from}%`,
-                      backgroundColor: alphaOf(
-                        paint.muted,
-                        BAND_OPACITY[Math.min(index, BAND_OPACITY.length - 1)] ?? 0.1,
+                      backgroundColor: mixOf(
+                        paint.surface,
+                        paint.foreground,
+                        BAND_SHARE[Math.min(index, BAND_SHARE.length - 1)] ?? 0.07,
                       ),
                     }}
                   />
@@ -82,12 +83,12 @@ export function BulletChart({
                 />
                 {scale.target === null ? null : (
                   <View
-                    className="absolute w-0.5"
+                    className="absolute w-[3px] rounded-[var(--radius-pill)]"
                     style={{
-                      top: "15%",
-                      bottom: "15%",
+                      top: "8%",
+                      bottom: "8%",
                       start: `${scale.target}%`,
-                      marginStart: -1,
+                      marginStart: -1.5,
                       backgroundColor: paint.foreground,
                     }}
                   />

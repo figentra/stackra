@@ -2,8 +2,11 @@
  * Stackra file contract:
  * Purpose: the web `AddressField`: a fieldset of the address lines, city, region, postal code and a CountrySelect, the
  *          value an `AddressValue`; each part has the browser's address autofill token.
- * Boundary: the parts are house TextFields; the legend is `label`. National formats (Saudi short address) ride in
- *           the lines for now.
+ * Boundary: the parts are house TextFields; the legend is `label`. The layout answers to the field's own width (a
+ *           container query on the fieldset): one column, then two from 28rem, the address lines spanning both, so
+ *           it fits a side panel on a wide screen and a wide card on a tablet alike. A size container takes no width
+ *           from its content, so the field fills the width it is given (`w-full`, never under 16rem); `className` narrows it. National
+ *           formats (Saudi short address) ride in the lines for now.
  * Runtime: browser
  * Governing contract: wave 3a forms and pickers (owner approval 2026-10-28); ADR 0302 (decision 3); ADR 0055; WCAG 2.2
  *          SC 1.3.1, 1.3.5.
@@ -54,31 +57,35 @@ export function AddressField({
   };
   const flags = { isDisabled, isReadOnly };
   return (
-    <fieldset className={cn("grid gap-3 sm:grid-cols-2", className) ?? ""} disabled={isDisabled}>
+    // The fieldset is the container its grid measures, so the columns follow the room the field is given (a side
+    // panel, a dialog, a card), not the screen.
+    <fieldset className={cn("@container w-full min-w-64", className) ?? ""} disabled={isDisabled}>
       {label ? <legend className="mb-2 text-sm font-medium text-foreground">{label}</legend> : null}
-      {PARTS.map(([part, key, token]) => (
-        <TextField
-          key={part}
-          {...(part.startsWith("line") ? { className: "sm:col-span-2" } : {})}
-          label={t(K[key])}
-          value={address[part] ?? ""}
-          onChange={(text) => set({ [part]: text })}
-          autoComplete={token}
-          isRequired={Boolean(isRequired) && (part === "line1" || part === "city")}
+      <div data-slot="address-field-grid" className="grid gap-3 @md:grid-cols-2">
+        {PARTS.map(([part, key, token]) => (
+          <TextField
+            key={part}
+            {...(part.startsWith("line") ? { className: "@md:col-span-2" } : {})}
+            label={t(K[key])}
+            value={address[part] ?? ""}
+            onChange={(text) => set({ [part]: text })}
+            autoComplete={token}
+            isRequired={Boolean(isRequired) && (part === "line1" || part === "city")}
+            {...(flags.isDisabled ? { isDisabled: true } : {})}
+            {...(flags.isReadOnly ? { isReadOnly: true } : {})}
+          />
+        ))}
+        <CountrySelect
+          label={t(K.country)}
+          {...(countries ? { countries } : {})}
+          value={address.country}
+          onChange={(country) => set({ country: country ?? defaultCountry })}
+          {...(isRequired ? { isRequired } : {})}
           {...(flags.isDisabled ? { isDisabled: true } : {})}
           {...(flags.isReadOnly ? { isReadOnly: true } : {})}
         />
-      ))}
-      <CountrySelect
-        label={t(K.country)}
-        {...(countries ? { countries } : {})}
-        value={address.country}
-        onChange={(country) => set({ country: country ?? defaultCountry })}
-        {...(isRequired ? { isRequired } : {})}
-        {...(flags.isDisabled ? { isDisabled: true } : {})}
-        {...(flags.isReadOnly ? { isReadOnly: true } : {})}
-      />
-      {description ? <p className="text-xs text-muted sm:col-span-2">{description}</p> : null}
+        {description ? <p className="text-xs text-muted @md:col-span-2">{description}</p> : null}
+      </div>
     </fieldset>
   );
 }

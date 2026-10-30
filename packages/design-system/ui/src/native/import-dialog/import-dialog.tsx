@@ -23,6 +23,7 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { importIssuesCsv } from "#core/functions/import-issues-csv.function";
 import { importMappingOf } from "#core/functions/import-mapping-of.function";
 import { unmappedRequiredOf } from "#core/functions/unmapped-required-of.function";
+import { isolatedFileNameOf } from "#core/functions/isolated-file-name-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
 import { Drawer } from "#native/drawer/drawer";
@@ -179,8 +180,8 @@ export function ImportDialog({
           <>
             <Text type="small" tone="muted">
               {file.preview.rowCount === undefined
-                ? file.name
-                : `${file.name} · ${t(K.file_rows, { count: file.preview.rowCount })}`}
+                ? isolatedFileNameOf(file.name)
+                : `${isolatedFileNameOf(file.name)} · ${t(K.file_rows, { count: file.preview.rowCount })}`}
             </Text>
             <ImportMappingList
               columns={file.preview.columns}

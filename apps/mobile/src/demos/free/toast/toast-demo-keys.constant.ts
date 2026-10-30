@@ -44,6 +44,8 @@ export const TOAST_DEMO_KEYS = keys({
         "mention",
         "person",
       ],
+      promise: ["save", "fail", "loading", "success", "error"],
+      undo: ["delete", "deleted", "undone", "committed", "waiting"],
     },
   },
 });

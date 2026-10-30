@@ -15,6 +15,7 @@ import type { CollectionFilter } from "#contracts/types/collection-filter.type";
 import type { CollectionGroup } from "#contracts/types/collection-group.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { CollectionQuery } from "#contracts/types/collection-query.type";
+import type { CollectionSelection } from "#contracts/types/collection-selection.type";
 import type { CollectionState } from "#contracts/types/collection-state.type";
 import type { CollectionView } from "#contracts/types/collection-view.type";
 import type { ResolvedCollectionColumn } from "#contracts/types/resolved-collection-column.type";
@@ -46,6 +47,11 @@ export interface CollectionController<TItem extends CollectionItem = CollectionI
   readonly hasMore: boolean;
   /** The footer aggregate of each column in `state.aggregates`, over every matching row. */
   readonly aggregates: Readonly<Record<string, number | null>>;
+  /**
+   * What a bulk action acts on: the selected ids; with "all matching" chosen, every matching id in client mode, or in
+   * server mode a descriptor of the search and filter (never ids the client does not hold).
+   */
+  readonly selected: CollectionSelection;
   /** True while a server page loads. */
   readonly isLoading: boolean;
   /** What the last server fetch threw, or `undefined`. */
@@ -89,8 +95,10 @@ export interface CollectionController<TItem extends CollectionItem = CollectionI
   readonly setLayout: (layout: CollectionLayout) => void;
   /** Sets the selected row ids; any change drops "all matching". */
   readonly setSelection: (keys: readonly string[]) => void;
-  /** Selects every matching row beyond the ones loaded, or goes back to the rows selected. */
+  /** Selects every matching row beyond the ones loaded, or goes back to the rows selected; either clears the exclusions. */
   readonly setAllMatchingSelected: (isAll: boolean) => void;
+  /** With "all matching" chosen, the rows unticked since: every matching row but these stays selected. */
+  readonly setExcludedKeys: (keys: readonly string[]) => void;
   /** Shows a page, from 0. */
   readonly setPage: (page: number) => void;
   /** Sets the rows per page, back on the first page. */

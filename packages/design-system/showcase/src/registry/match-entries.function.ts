@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `matchEntries`, the showcases' one search rule (moved from mobile `match-pages.ts`): every word of the query must
- *          appear in a doc; a title hit outranks a keyword, a heading, a prop and a description hit.
+ *          appear in a doc; a title hit outranks a keyword, a heading, a prop and a description hit, and a query that is
+ *          the whole title outranks a longer title that starts with it.
  * Boundary: a pure function over `SearchDoc` rows (the generated `search/index.json`); it reads no UI state.
  * Runtime: isomorphic
  * Governing contract: showcase redesign spec (2026-10-27) section 7.5.
@@ -39,7 +40,8 @@ function bestMatch(
 }
 
 /**
- * The docs that contain every word of `query` (ignoring case) in `lang`, best first; ties keep the given order.
+ * The docs that contain every word of `query` (ignoring case) in `lang`, best first; a tie puts the shorter title
+ * first ("check" finds "Checkbox" before "Checkbox field"), then keeps the given order.
  * An empty query matches nothing.
  */
 export function matchEntries(
@@ -57,10 +59,14 @@ export function matchEntries(
     if (matches.some((match) => match === undefined)) continue;
     const found = matches.filter((match) => match !== undefined);
     const best = found.reduce((top, match) => (match.score > top.score ? match : top));
-    const score = found.reduce((sum, match) => sum + match.score, 0);
+    // The whole query naming the title outranks a longer title that starts with it ("checkbox" before "Checkbox field").
+    const exact = doc.title.toLowerCase() === words.join(" ") ? WEIGHTS.keyword : 0;
+    const score = found.reduce((sum, match) => sum + match.score, exact);
     hits.push({ doc, score, reason: best.reason, matched: best.matched });
   }
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  const sorted = [...hits].sort((a, b) => b.score - a.score);
+  const sorted = [...hits].sort(
+    (a, b) => b.score - a.score || a.doc.title.length - b.doc.title.length,
+  );
   return options.limit === undefined ? sorted : sorted.slice(0, options.limit);
 }

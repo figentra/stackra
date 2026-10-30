@@ -14,7 +14,7 @@
  */
 import { kindOf } from "@stackra/container";
 import { byWebPath, compareEntries, COMPONENTS, type ComponentEntry } from "@stackra/showcase";
-import { createElement, type ReactElement } from "react";
+import { createElement, lazy, type ReactElement } from "react";
 
 import { routePath } from "#src/components/playground-pages/route-path.function";
 import type { PageLink } from "#src/types/page-link.type";
@@ -25,9 +25,12 @@ import type { DiscoveredPage } from "#src/components/playground-pages/discovered
 const ROUTE_FILE = /\/([^/]+)\/\1\.route\.ts$/;
 const PAGE_FILE = /\/([^/]+)\/\1\.tsx$/;
 
+/** A page module, loaded already or by a lazy `import.meta.glob` loader. */
+type PageModule = ModuleExports | (() => Promise<ModuleExports>);
+
 /** Folder name to module, for every file of `files` that follows `pattern`. */
-function byFolder(files: Readonly<Record<string, ModuleExports>>, pattern: RegExp) {
-  const folders = new Map<string, ModuleExports>();
+function byFolder<T>(files: Readonly<Record<string, T>>, pattern: RegExp) {
+  const folders = new Map<string, T>();
   for (const [file, exports] of Object.entries(files)) {
     const folder = pattern.exec(file)?.[1];
     if (folder) folders.set(folder, exports);
@@ -55,18 +58,36 @@ function componentOf(exports: ModuleExports) {
     | undefined;
 }
 
+/** The page element of `folder`: the component itself, or a lazy one that loads the module on first render. */
+function pageElement(folder: string, module: PageModule | undefined): ReactElement {
+  const missing = `routes/${folder}: no page component in ${folder}.tsx`;
+  if (typeof module === "function") {
+    return createElement(
+      lazy(async () => {
+        const component = componentOf(await module());
+        if (!component) throw new Error(missing);
+        return { default: component };
+      }),
+    );
+  }
+  const component = componentOf(module ?? {});
+  if (!component) throw new Error(missing);
+  return createElement(component);
+}
+
 /**
  * Pairs each route module whose path names a registry entry with its page module and returns the pages in registry
  * order.
  *
  * @param routes route modules by file path, `routes/<name>/<name>.route.ts`
- * @param pages page modules by file path, `routes/<name>/<name>.tsx`
+ * @param pages page modules by file path, `routes/<name>/<name>.tsx`, loaded or lazy (a loader, so a page's module is
+ *        fetched only when its route renders)
  * @param entries the registry to pair against; the real one by default
  * @throws when a route's path is not `/<folder>` or its page is missing
  */
 export function discoverPages(
   routes: Readonly<Record<string, ModuleExports>>,
-  pages: Readonly<Record<string, ModuleExports>>,
+  pages: Readonly<Record<string, PageModule>>,
   entries: readonly ComponentEntry[] = COMPONENTS,
 ): readonly DiscoveredPage[] {
   const pageByFolder = byFolder(pages, PAGE_FILE);
@@ -76,9 +97,7 @@ export function discoverPages(
     if (!route) continue; // no entry at this path: the index, the components index, the Theme Studio
     if (route.path !== `/${folder}`)
       throw new Error(`routes/${folder}: the path must be "/${folder}", not "${route.path}"`);
-    const component = componentOf(pageByFolder.get(folder) ?? {});
-    if (!component) throw new Error(`routes/${folder}: no page component in ${folder}.tsx`);
-    found.push({ route, element: createElement(component) });
+    found.push({ route, element: pageElement(folder, pageByFolder.get(folder)) });
   }
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return found.sort((a, b) => compareEntries(a.route.entry, b.route.entry));

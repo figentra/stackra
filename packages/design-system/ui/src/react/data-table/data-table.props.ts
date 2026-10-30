@@ -10,11 +10,22 @@
 import type { ComponentPropsWithoutRef } from "react";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
+import type { DataTableRows } from "#react/data-table/data-table-rows.type";
 
 /**
- * Props of the web DataTable: the shared contract plus the attributes of its root `div`, passed through. The rows and
+ * Props of the web DataTable: the shared contract, the web row tools (`DataTableRows`) and the attributes of its root `div`, passed through. The rows and
  * cells are `items` and `renderCell`, so children are refused.
  */
 export type DataTableProps<TItem extends CollectionItem = CollectionItem> =
   DataTableContractProps<TItem> &
-    Omit<ComponentPropsWithoutRef<"div">, keyof DataTableContractProps | "children">;
+    DataTableRows<TItem> &
+    Omit<
+      ComponentPropsWithoutRef<"div">,
+      keyof DataTableContractProps | keyof DataTableRows | "children" | "isVirtualized"
+    > & {
+      /**
+       * Web: true to draw only the rows in view (the Table's virtual scrolling), for thousands of rows: the header and
+       * the start pins stay stuck, group and detail rows scroll with the rest, and the rows scroll inside `maxHeight`.
+       */
+      readonly isVirtualized?: boolean | undefined;
+    };

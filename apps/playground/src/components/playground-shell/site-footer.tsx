@@ -26,7 +26,7 @@ const REPOSITORY = "https://github.com/figentra/stackra";
 export function SiteFooter({ width }: { readonly width: string }) {
   const t = useCatalogueText(MESSAGES.en);
   const { search } = useLocation();
-  const docs = SITE_LINKS.find(({ id }) => id === "docs")?.path ?? "/foundations";
+  const docs = SITE_LINKS.find(({ id }) => id === "docs")?.path ?? "/docs";
   const links = [
     { label: t(K.footer.github), href: REPOSITORY, isExternal: true },
     { label: t(K.docs), href: `${docs}${search}` },

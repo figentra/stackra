@@ -67,6 +67,17 @@ const openDisplay = async (page: Page) => {
   return display;
 };
 
+/**
+ * Presses ⌘K (Ctrl+K) until the palette's dialog shows: on a loaded machine the first press can land before the shell
+ * has attached its key listener, and a press before the app is interactive is not one a person can make.
+ */
+const pressCommandK = async (page: Page) => {
+  await expect(async () => {
+    await page.keyboard.press("ControlOrMeta+k");
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1000 });
+  }).toPass();
+};
+
 /** The command palette's trigger in the top bar, whatever the locale names it. */
 const searchButton = (page: Page) =>
   page.getByRole("banner").getByRole("button", { name: /^(Search components|البحث في المكونات)/ });
@@ -230,16 +241,16 @@ test("a client-side navigation titles the document and moves focus to the new h1
 }) => {
   await page.goto("/?scheme=light&locale=en");
   await page.getByRole("navigation", { name: "Site" }).getByRole("link", { name: "Docs" }).click();
-  await expect(page).toHaveURL(/\/foundations\?/);
+  await expect(page).toHaveURL(/\/docs\?/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await expect(page).toHaveTitle("Foundations · Stackra Design System");
+  await expect(page).toHaveTitle("Docs · Stackra Design System");
 });
 
 test("the command palette opens from the keyboard, filters, and Enter opens the match with focus on its h1", async ({
   page,
 }) => {
   await page.goto("/?scheme=light&locale=en");
-  await page.keyboard.press("ControlOrMeta+k");
+  await pressCommandK(page);
   const palette = page.getByRole("dialog", { name: "Search components" });
   await expect(palette).toBeVisible();
   await expect(palette.getByRole("combobox")).toBeFocused();
@@ -381,7 +392,7 @@ for (const scheme of SCHEMES)
       }) => {
         await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
         await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
-        await page.keyboard.press("ControlOrMeta+k");
+        await pressCommandK(page);
         // In Arabic the palette carries its Arabic name; it is the only dialog, so its role finds it.
         const palette = page.getByRole("dialog");
         await expect(palette).toBeVisible();

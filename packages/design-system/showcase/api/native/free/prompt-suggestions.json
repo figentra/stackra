@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "1c2f4af1690861fa",
+    "propsFiles": ["ui/src/native/prompt-suggestions/prompt-suggestions.props.ts"]
+  },
+  "importLine": "import { PromptSuggestions } from \"@stackra/ui/native\";",
+  "key": "free/prompt-suggestions",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the suggestion chosen.",
+          "name": "onSelect",
+          "required": true,
+          "source": "stackra",
+          "type": "(suggestion: PromptSuggestion) => void"
+        }
+      ],
+      "name": "PromptSuggestions",
+      "props": [
+        {
+          "description": "The suggestions, in order.",
+          "name": "suggestions",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PromptSuggestion[]"
+        },
+        {
+          "description": "`wrap` (the default) flows them onto more lines; `scroll` keeps one line that scrolls sideways.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"scroll\" | \"wrap\""
+        },
+        {
+          "description": "The set's accessible name. Defaults to the catalogue's \"Suggested prompts\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show them but refuse choosing, for example while an answer is being written.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the set.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

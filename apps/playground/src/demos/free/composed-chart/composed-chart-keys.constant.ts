@@ -9,5 +9,14 @@ import { keys } from "@stackra/i18n";
 
 /** The composed_chart namespace's keys. */
 export const COMPOSED_CHART_KEYS = keys({
-  composed_chart: ["label", "revenue", "target"],
+  composed_chart: [
+    "label",
+    "revenue",
+    "target",
+    "dual_title",
+    "dual_description",
+    "visitors",
+    "orders",
+    "launch",
+  ],
 });

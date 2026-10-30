@@ -17,6 +17,7 @@ import type { ReactNode } from "react";
 import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { AreaChart } from "#native/area-chart/area-chart";
 import { BarChart } from "#native/bar-chart/bar-chart";
+import { ComposedChart } from "#native/composed-chart/composed-chart";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 import { DonutChart } from "#native/donut-chart/donut-chart";
 import { RadarChart } from "#native/radar-chart/radar-chart";
@@ -93,6 +94,10 @@ vi.mock("@shopify/react-native-skia", () => {
     DashPathEffect: () => null,
   };
 });
+
+vi.mock("heroui-native", () => ({ useThemeColor: () => "#ffffff" }));
+
+vi.mock("#native/haptics/haptics", () => ({ haptics: { play: () => undefined } }));
 
 vi.mock("victory-native", () => ({
   CartesianChart: (props: Record<string, unknown>) => {
@@ -234,6 +239,52 @@ describe("native chart card options", () => {
     const spoken = (state.images[0]?.["accessibilityValue"] as { text: string } | undefined)?.text;
     expect(spoken).toContain("Desktop, previous period 20");
     expect(spoken).toMatch(/Target: 25$/);
+  });
+
+  it("put secondary series on a second axis at the reading end, scale by log, and speak annotations", () => {
+    within(
+      "ar",
+      "rtl",
+      <AreaChart
+        data={ROWS}
+        series={COMPARED}
+        xKey="month"
+        label="Visitors"
+        secondaryKeys={["mobile"]}
+        valueScale="log"
+        annotations={[{ at: "Feb", label: "Launch" }]}
+      />,
+    );
+    const chart = state.charts[0] ?? {};
+    const axes = chart["yAxis"] as { axisSide: string; yKeys?: string[] }[];
+    expect(axes.map((axis) => [axis.axisSide, axis.yKeys])).toEqual([
+      ["right", ["desktop"]],
+      ["left", ["mobile"]],
+    ]);
+    expect(chart["axisScales"]).toEqual({ yAxisScale: "log" });
+    expect(chart["domain"]).toBeUndefined();
+    const spoken = (state.images[0]?.["accessibilityValue"] as { text: string } | undefined)?.text;
+    expect(spoken).toMatch(/Launch: Feb$/);
+  });
+
+  it("give a composed chart's line its own axis at the reading end", () => {
+    within(
+      "en",
+      "ltr",
+      <ComposedChart
+        data={ROWS}
+        series={COMPARED}
+        xKey="month"
+        label="Visitors"
+        lineKeys={["mobile"]}
+        secondaryKeys={["mobile"]}
+      />,
+    );
+    const axes = state.charts[0]?.["yAxis"] as { axisSide: string; yKeys?: string[] }[];
+    expect(axes.map((axis) => [axis.axisSide, axis.yKeys])).toEqual([
+      ["left", ["desktop"]],
+      ["right", ["mobile"]],
+    ]);
   });
 });
 

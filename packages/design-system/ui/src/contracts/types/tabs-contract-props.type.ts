@@ -27,4 +27,11 @@ export interface TabsContractProps
   readonly variant?: Exclude<Variant, "tertiary"> | undefined;
   /** True to show every tab but refuse selecting any of them. */
   readonly isDisabled?: boolean | undefined;
+  /**
+   * What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that
+   * fit and lists the rest in a "More" menu at the end (the selected tab always stays in the row). Native always scrolls.
+   */
+  readonly overflow?: "scroll" | "menu" | undefined;
+  /** Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web. */
+  readonly onClose?: ((id: string) => void) | undefined;
 }

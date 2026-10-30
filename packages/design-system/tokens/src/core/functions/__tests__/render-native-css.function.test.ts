@@ -47,10 +47,14 @@ describe("renderNativeCss", () => {
         expect(block, role).toContain(`      --${role}: ${STACKRA_THEME.colors[role][mode]};`);
       for (const shadow of ["surface", "overlay", "field"] as const)
         expect(block).toContain(`--${shadow}-shadow: ${STACKRA_THEME.shadows[shadow][mode]};`);
+      // The native charts light their marks by it, so a flat brand draws flat.
+      expect(block).toContain(
+        `      --material-highlight-share: ${STACKRA_THEME.materials.highlight[mode]};`,
+      );
     }
     expect(names(variantOf("dark"))).toEqual(names(variantOf("light")));
     expect(names(variantOf("light"))).toHaveLength(
-      ColorRole.length + 3 + PALETTE.length + SyntaxRole.length,
+      ColorRole.length + 3 + 1 + PALETTE.length + SyntaxRole.length,
     );
   });
 
@@ -90,7 +94,9 @@ describe("renderNativeCss", () => {
     expect(css).toContain(
       '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --field-border-width: 1px;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n}',
     );
-    expect(css).not.toMatch(/--font-(sans|mono|arabic)\b|--space-|--duration-|--material-/);
+    expect(css).not.toMatch(
+      /--font-(sans|mono|arabic)\b|--space-|--duration-|--material-(?!highlight-share:)/,
+    );
   });
 
   // @covers sta-1386

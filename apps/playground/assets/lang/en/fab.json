@@ -13,5 +13,9 @@
   "cancel": "Cancel",
   "close": "Close",
   "created": "Order #{number} created",
-  "nothing_yet": "No orders yet. Press New order."
+  "nothing_yet": "No orders yet. Press New order.",
+  "toast_hint": "On a phone, a toast rises above the floating button instead of covering it.",
+  "save_draft": "Save draft",
+  "draft_saved": "Draft saved",
+  "dismiss": "Dismiss the notification"
 }

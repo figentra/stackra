@@ -248,11 +248,17 @@ describe("renderWebCss", () => {
     );
   });
 
-  it("draws the radio and the switch round, the off track on the field edge, a selected toggle button solid accent, fields with a 1px edge and help text in its own direction", () => {
+  it("draws the radio and the switch round, an off switch edged with a muted thumb, a selected toggle button solid accent, fields with a 1px edge and help text in its own direction", () => {
     expect(layer).toContain(
       "  .radio .radio__control,\n  .radio .radio__indicator,\n  .radio .radio__indicator::before,\n  .switch .switch__control,\n  .switch .switch__thumb {\n    border-radius: var(--radius-full);\n  }",
     );
-    expect(layer).toContain("  .switch {\n    --switch-control-bg: var(--field-border);\n  }");
+    expect(layer).toContain(
+      '  .switch:not([data-selected="true"], [aria-checked="true"]) .switch__control {\n    outline: var(--field-border-width) solid var(--field-border);\n    outline-offset: calc(-1 * var(--field-border-width));\n  }',
+    );
+    expect(layer).toContain(
+      '  .switch:not([data-selected="true"], [aria-checked="true"]):not([data-disabled="true"]) .switch__thumb {\n    background-color: var(--muted);\n  }',
+    );
+    expect(layer).not.toContain("--switch-control-bg");
     expect(layer).toContain(
       "  .toggle-button {\n    --toggle-button-bg-selected: var(--accent);\n    --toggle-button-bg-selected-hover: var(--accent-hover);\n    --toggle-button-bg-selected-pressed: var(--accent-hover);\n    --toggle-button-fg-selected: var(--accent-foreground);\n  }",
     );

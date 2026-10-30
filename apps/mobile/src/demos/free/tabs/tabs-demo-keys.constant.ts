@@ -27,6 +27,7 @@ export const TABS_DEMO_KEYS = keys({
         "security_body",
       ],
       variants: ["label"],
+      closable: ["label", "orders", "returns", "customers", "add", "draft", "empty"],
     },
   },
 });

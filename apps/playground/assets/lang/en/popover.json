@@ -37,5 +37,10 @@
   "live_title": "Order actions",
   "live_body": "Choose what happens to the order.",
   "live_open": "Open from outside",
-  "state": "State: {is_open, select, true {open} other {closed}}"
+  "state": "State: {is_open, select, true {open} other {closed}}",
+  "reposition_trigger": "Delivery notes",
+  "reposition_title": "Delivery notes",
+  "reposition_line": "Note {n}: leave the parcel at the front desk.",
+  "reposition_more": "Show more",
+  "reposition_move": "Move the trigger"
 }

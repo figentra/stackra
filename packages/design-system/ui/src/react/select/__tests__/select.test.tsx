@@ -67,6 +67,36 @@ describe("Select (web)", () => {
     expect(options[2]?.getAttribute("aria-disabled")).toBe("true");
   });
 
+  it("groups choices that name a section under a header that names the group, and none can pick a header", () => {
+    const onChange = vi.fn();
+    render(
+      <Select
+        label="City"
+        onChange={onChange}
+        items={[
+          { id: "cairo", label: "Cairo", section: "Africa" },
+          { id: "paris", label: "Paris", section: "Europe" },
+          { id: "lagos", label: "Lagos", section: "Africa" },
+        ]}
+      />,
+    );
+    press(screen.getByRole("button", { name: /City/ }));
+    const groups = within(screen.getByRole("listbox")).getAllByRole("group");
+    expect(groups.map((group) => group.getAttribute("aria-labelledby") !== null)).toEqual([
+      true,
+      true,
+    ]);
+    expect(within(groups[0] as HTMLElement).getByText("Africa")).toBeTruthy();
+    expect(
+      within(groups[0] as HTMLElement)
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("data-key")),
+    ).toEqual(["cairo", "lagos"]);
+    expect(screen.getByRole("group", { name: "Europe" })).toBe(groups[1]);
+    press(screen.getByText("Africa"));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("reports the chosen key as a string and shows its label alone", () => {
     const onChange = vi.fn();
     const { container } = render(

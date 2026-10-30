@@ -1,0 +1,14 @@
+{
+  "basics": {
+    "recorded": "Recorded {seconds} seconds."
+  },
+  "dictation": {
+    "label": "Reply to the customer",
+    "dictate": "Dictate the reply",
+    "transcript": "Thanks for your order. It leaves our Olaya branch today and should reach you within two days."
+  },
+  "denied": {
+    "label": "Record a voice note",
+    "hint": "This recorder is refused the microphone, as a browser is when access is blocked."
+  }
+}

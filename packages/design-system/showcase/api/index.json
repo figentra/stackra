@@ -41,6 +41,12 @@
     "propsCount": 31,
     "react": true
   },
+  "free/angle-slider": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/app-header": {
     "native": true,
     "partsCount": 1,
@@ -56,7 +62,19 @@
   "free/area-chart": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 19,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/aspect-ratio": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 3,
+    "react": true
+  },
+  "free/attachment-card": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
     "react": true
   },
   "free/avatar": {
@@ -71,6 +89,12 @@
     "propsCount": 21,
     "react": true
   },
+  "free/back-to-top": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
   "free/badge": {
     "native": true,
     "partsCount": 2,
@@ -80,10 +104,16 @@
   "free/bar-chart": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 20,
+    "propsCount": 25,
     "react": true
   },
   "free/bar-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/barcode": {
     "native": true,
     "partsCount": 1,
     "propsCount": 6,
@@ -158,13 +188,19 @@
   "free/carousel": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 6,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/cascader": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 17,
     "react": true
   },
   "free/chart": {
     "native": true,
     "partsCount": 5,
-    "propsCount": 67,
+    "propsCount": 76,
     "react": true
   },
   "free/chart-crosshair": {
@@ -245,7 +281,7 @@
   "free/column-chooser": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 17,
+    "propsCount": 20,
     "react": true
   },
   "free/combo-box": {
@@ -269,7 +305,7 @@
   "free/composed-chart": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 19,
+    "propsCount": 23,
     "react": true
   },
   "free/confirmation": {
@@ -279,6 +315,7 @@
     "react": true
   },
   "free/context-menu": {
+    "native": true,
     "partsCount": 1,
     "propsCount": 6,
     "react": true
@@ -287,6 +324,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 43,
+    "react": true
+  },
+  "free/conversation-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
     "react": true
   },
   "free/copy-button": {
@@ -313,6 +356,12 @@
     "propsCount": 26,
     "react": true
   },
+  "free/dashboard-grid": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/data-grid": {
     "native": true,
     "partsCount": 2,
@@ -321,14 +370,14 @@
   },
   "free/data-table": {
     "native": true,
-    "partsCount": 6,
-    "propsCount": 61,
+    "partsCount": 8,
+    "propsCount": 82,
     "react": true
   },
   "free/data-view": {
     "native": true,
-    "partsCount": 6,
-    "propsCount": 36,
+    "partsCount": 8,
+    "propsCount": 57,
     "react": true
   },
   "free/date-field": {
@@ -373,6 +422,12 @@
     "propsCount": 6,
     "react": true
   },
+  "free/disclosure": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/donut-chart": {
     "native": true,
     "partsCount": 1,
@@ -388,12 +443,12 @@
   "free/drop-zone": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 7,
+    "propsCount": 11,
     "react": true
   },
   "free/dropdown": {
-    "partsCount": 1,
-    "propsCount": 36,
+    "partsCount": 4,
+    "propsCount": 84,
     "react": true
   },
   "free/emoji-picker": {
@@ -433,6 +488,7 @@
     "react": true
   },
   "free/export-dialog": {
+    "native": true,
     "partsCount": 1,
     "propsCount": 13,
     "react": true
@@ -460,6 +516,11 @@
     "propsCount": 22,
     "react": true
   },
+  "free/file-name": {
+    "partsCount": 1,
+    "propsCount": 2,
+    "react": true
+  },
   "free/file-trigger": {
     "native": true,
     "partsCount": 2,
@@ -484,10 +545,26 @@
     "propsCount": 22,
     "react": true
   },
+  "free/floating-panel": {
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/footer": {
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/form": {
     "native": true,
     "partsCount": 1,
     "propsCount": 28,
+    "react": true
+  },
+  "free/form-error-summary": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
     "react": true
   },
   "free/form-field": {
@@ -509,6 +586,12 @@
     "react": true
   },
   "free/funnel-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/gallery": {
     "native": true,
     "partsCount": 1,
     "propsCount": 7,
@@ -568,6 +651,12 @@
     "propsCount": 49,
     "react": true
   },
+  "free/image-cropper": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/import-dialog": {
     "native": true,
     "partsCount": 1,
@@ -619,7 +708,7 @@
   "free/kpi": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 17,
+    "propsCount": 18,
     "react": true
   },
   "free/kpi-group": {
@@ -634,16 +723,28 @@
     "propsCount": 22,
     "react": true
   },
+  "free/layout": {
+    "native": true,
+    "partsCount": 4,
+    "propsCount": 50,
+    "react": true
+  },
   "free/leave-confirmation": {
     "native": true,
     "partsCount": 1,
     "propsCount": 6,
     "react": true
   },
+  "free/lightbox": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/line-chart": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 20,
+    "propsCount": 24,
     "react": true
   },
   "free/link": {
@@ -676,10 +777,50 @@
     "propsCount": 5,
     "react": true
   },
-  "free/menu": {
+  "free/marquee": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 29,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/masked-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 17,
+    "react": true
+  },
+  "free/media-player": {
+    "partsCount": 2,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/mention-input": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/menu": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 42,
+    "react": true
+  },
+  "free/menubar": {
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/message-actions": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/message-scroller": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 3,
     "react": true
   },
   "free/meter": {
@@ -698,6 +839,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 6,
+    "react": true
+  },
+  "free/model-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
     "react": true
   },
   "free/money-field": {
@@ -740,6 +887,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 15,
+    "react": true
+  },
+  "free/navigation-menu": {
+    "partsCount": 1,
+    "propsCount": 4,
     "react": true
   },
   "free/notifications-panel": {
@@ -796,6 +948,12 @@
     "propsCount": 23,
     "react": true
   },
+  "free/page-indicator": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
   "free/page-skeleton": {
     "native": true,
     "partsCount": 1,
@@ -814,6 +972,12 @@
     "propsCount": 65,
     "react": true
   },
+  "free/period-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/permissions-matrix": {
     "native": true,
     "partsCount": 1,
@@ -830,6 +994,18 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 11,
+    "react": true
+  },
+  "free/polar-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
+    "react": true
+  },
+  "free/popconfirm": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
     "react": true
   },
   "free/popover": {
@@ -862,6 +1038,12 @@
     "propsCount": 20,
     "react": true
   },
+  "free/prompt-suggestions": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
   "free/property-list": {
     "native": true,
     "partsCount": 1,
@@ -883,6 +1065,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 27,
+    "react": true
+  },
+  "free/questionnaire-card": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
     "react": true
   },
   "free/radar-chart": {
@@ -912,7 +1100,7 @@
   "free/range-bar-chart": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 13,
+    "propsCount": 14,
     "react": true
   },
   "free/range-calendar": {
@@ -928,6 +1116,12 @@
     "react": true
   },
   "free/reaction-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/recurrence-editor": {
     "native": true,
     "partsCount": 1,
     "propsCount": 8,
@@ -1046,6 +1240,18 @@
     "propsCount": 29,
     "react": true
   },
+  "free/share-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/shimmer": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
   "free/side-panel": {
     "native": true,
     "partsCount": 8,
@@ -1139,7 +1345,7 @@
   "free/stat": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 10,
+    "propsCount": 11,
     "react": true
   },
   "free/state-layout": {
@@ -1186,7 +1392,7 @@
   "free/swipeable-tabs": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 28,
+    "propsCount": 30,
     "react": true
   },
   "free/switch": {
@@ -1216,7 +1422,7 @@
   "free/tabs": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 28,
+    "propsCount": 30,
     "react": true
   },
   "free/tag-group": {
@@ -1229,6 +1435,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 16,
+    "react": true
+  },
+  "free/task-tray": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
     "react": true
   },
   "free/text": {
@@ -1271,6 +1483,12 @@
     "propsCount": 20,
     "react": true
   },
+  "free/time-clock": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
   "free/time-field": {
     "native": true,
     "partsCount": 1,
@@ -1297,8 +1515,8 @@
   },
   "free/toast": {
     "native": true,
-    "partsCount": 4,
-    "propsCount": 23,
+    "partsCount": 5,
+    "propsCount": 24,
     "react": true
   },
   "free/toc-rail": {
@@ -1323,10 +1541,28 @@
     "propsCount": 14,
     "react": true
   },
+  "free/tracker-strip": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/transfer-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 15,
+    "react": true
+  },
+  "free/tree-select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
   "free/tree-view": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 30,
+    "propsCount": 33,
     "react": true
   },
   "free/treemap-chart": {
@@ -1343,7 +1579,7 @@
   },
   "free/turnstile": {
     "partsCount": 1,
-    "propsCount": 2,
+    "propsCount": 3,
     "react": true
   },
   "free/two-column-layout": {
@@ -1368,6 +1604,18 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 9,
+    "react": true
+  },
+  "free/voice-input": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/waffle-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
     "react": true
   },
   "free/waterfall-chart": {

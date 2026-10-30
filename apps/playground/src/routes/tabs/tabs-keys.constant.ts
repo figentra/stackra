@@ -21,5 +21,18 @@ export const TABS_KEYS = keys({
     states: ["disabled_tab", "disabled_list"],
     empty: ["message", "loading"],
     live: ["label", "show_history", "show_overview", "selected", "none"],
+    closable: ["label", "add", "draft", "orders", "returns", "customers", "empty"],
+    overflow: [
+      "label",
+      "sales",
+      "orders",
+      "returns",
+      "customers",
+      "inventory",
+      "payouts",
+      "taxes",
+      "shipping",
+      "content",
+    ],
   },
 });

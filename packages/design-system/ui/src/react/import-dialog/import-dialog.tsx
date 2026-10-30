@@ -27,6 +27,7 @@ import { unmappedRequiredOf } from "#core/functions/unmapped-required-of.functio
 import { Button } from "#react/button/button";
 import { Drawer } from "#react/drawer/drawer";
 import { DropZone } from "#react/drop-zone/drop-zone";
+import { FileName } from "#react/file-name/file-name";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { ImportDialogProps } from "#react/import-dialog/import-dialog.props";
 import { ImportMappingList } from "#react/import-flow/import-mapping-list";
@@ -201,7 +202,7 @@ export function ImportDialog({
         {step === "match" && file ? (
           <>
             <Text type="small" tone="muted">
-              <bdi>{file.name}</bdi>
+              <FileName name={file.name} />
               {file.preview.rowCount === undefined
                 ? null
                 : ` · ${t(K.file_rows, { count: file.preview.rowCount })}`}

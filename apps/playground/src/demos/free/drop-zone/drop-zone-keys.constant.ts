@@ -8,4 +8,10 @@
 import { keys } from "@stackra/i18n";
 
 /** The demos' keys. */
-export const DROP_ZONE_KEYS = keys({ drop_zone: { basics: ["label", "hint", "count"] } });
+export const DROP_ZONE_KEYS = keys({
+  drop_zone: {
+    basics: ["label", "hint", "count"],
+    paste: ["label", "hint"],
+    previews: ["label", "hint"],
+  },
+});

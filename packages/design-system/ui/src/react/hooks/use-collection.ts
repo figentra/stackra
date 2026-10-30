@@ -3,7 +3,8 @@
  * Purpose: `useCollection()`, the one headless engine of every data view (DataTable, DataGrid, List, Cards, DataView):
  *          the columns model (order, visibility, rename, width, pin, wrap), the multi-key sort, the and/or rule tree and
  *          the quick search, the group-by and footer aggregates, the selection ("all matching" too), the paging (page,
- *          cursor or infinite), the density, the layout and the saved views, in client mode (computed here) or server
+ *          cursor or infinite; `selected` says what a bulk action acts on: ids, or in server mode a descriptor of every
+ *          matching row), the density, the layout and the saved views, in client mode (computed here) or server
  *          mode (a `CollectionQuery` out, rows and totals back), persisted by collection key through a `CollectionStore`.
  * Boundary: plain React (no DOM, no React Native), so both runtimes' components share it; the pure steps live in
  *           `core/functions` and are tested there. A slice in `options.state` is controlled. Persistence keeps the
@@ -25,6 +26,7 @@ import { applyCollection } from "#core/functions/apply-collection.function";
 import { collectionAggregatesOf } from "#core/functions/collection-aggregates-of.function";
 import { collectionGroupsOf } from "#core/functions/collection-groups-of.function";
 import { collectionQueryOf } from "#core/functions/collection-query-of.function";
+import { collectionSelectionOf } from "#core/functions/collection-selection-of.function";
 import { collectionSnapshotOf } from "#core/functions/collection-snapshot-of.function";
 import { createLocalCollectionStore } from "#core/functions/create-local-collection-store.function";
 import { defaultCollectionStateOf } from "#core/functions/default-collection-state-of.function";
@@ -53,6 +55,7 @@ const viewStateOf = (current: CollectionState): CollectionView["state"] => {
   const {
     selection: _s,
     isAllMatchingSelected: _a,
+    excludedKeys: _e,
     page: _p,
     cursor: _c,
     viewId: _v,
@@ -78,11 +81,12 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     state: controlled,
     onStateChange,
     collectionKey,
-    fetch,
+    source,
     totalCount: givenTotal,
     isLoading: givenLoading = false,
     locale = "en",
   } = options;
+  const fetch = options.fetch ?? source?.fetch;
   const store =
     options.store === null || collectionKey === undefined ? null : (options.store ?? LOCAL_STORE);
 
@@ -160,22 +164,23 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
   });
   const [refreshCount, setRefreshCount] = useState(0);
   const queryKey = JSON.stringify(query);
-  // The last fetched query without its page and cursor, and its page: `loadMore` moves both page and cursor.
-  const previous = useRef<{ rest: string; page: number } | null>(null);
+  // The last query answered, without its page and cursor, and its page: the next page of the same query is appended.
+  const previous = useRef<{ readonly base: string; readonly page: number } | null>(null);
   useEffect(() => {
     if (mode !== "server" || fetch === undefined) return;
     const controller = new AbortController();
-    const rest = JSON.stringify({ ...query, page: 0, cursor: null });
+    const base = JSON.stringify({ ...query, page: 0, cursor: null });
     const isAppend =
       paging === "infinite" &&
       query.page > 0 &&
-      previous.current?.rest === rest &&
+      previous.current?.base === base &&
       previous.current.page === query.page - 1;
-    previous.current = { rest, page: query.page };
     setFetchState({ isLoading: true, error: undefined });
     fetch(query, controller.signal).then(
       (page) => {
         if (controller.signal.aborted) return;
+        // Remembered once answered, so a fetch aborted and made again (a re-run effect) still appends.
+        previous.current = { base, page: query.page };
         setFetched((current) =>
           isAppend && current ? { ...page, items: [...current.items, ...page.items] } : page,
         );
@@ -236,6 +241,7 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     pageCount,
     hasMore,
     aggregates,
+    selected: collectionSelectionOf(state, mode, matched, totalCount),
     isLoading: fetch ? fetchState.isLoading : givenLoading,
     error: fetchState.error,
     query,
@@ -280,8 +286,11 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     resetColumns: () => update({ columns: boot.base.columns }),
     setDensity: (density) => update({ density }),
     setLayout: (layout) => update({ layout }),
-    setSelection: (selection) => update({ selection, isAllMatchingSelected: false }),
-    setAllMatchingSelected: (isAllMatchingSelected) => update({ isAllMatchingSelected }),
+    setSelection: (selection) =>
+      update({ selection, isAllMatchingSelected: false, excludedKeys: [] }),
+    setAllMatchingSelected: (isAllMatchingSelected) =>
+      update({ isAllMatchingSelected, excludedKeys: [] }),
+    setExcludedKeys: (excludedKeys) => update({ excludedKeys }),
     setPage: (page) => update({ page: Math.max(0, page) }),
     setPageSize: (pageSize) => update({ pageSize, ...FIRST_PAGE }),
     loadMore: () =>
@@ -297,6 +306,7 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
         ...view.state,
         selection: [],
         isAllMatchingSelected: false,
+        excludedKeys: [],
         ...FIRST_PAGE,
         viewId,
       });

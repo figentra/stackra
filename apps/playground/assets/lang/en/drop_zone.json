@@ -3,5 +3,13 @@
     "label": "Drop your product photos here",
     "hint": "PNG or JPG, up to 5 MB each.",
     "count": "{count, plural, =0 {No files yet.} one {One file ready.} other {# files ready.}}"
+  },
+  "paste": {
+    "label": "Attach the receipt",
+    "hint": "Copy a screenshot, then press Ctrl+V or ⌘V anywhere on this page."
+  },
+  "previews": {
+    "label": "Add product photos",
+    "hint": "Pick photos or take new ones; each one shows below."
   }
 }

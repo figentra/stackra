@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: draws one queued toast on web from HeroUI v3's Toast parts, as a grid of four columns: the tone's icon (or
  *          the caller's, the person's avatar, or none) at the start; the message with its description on the next
- *          line; the optional action; and the dismiss button, a ghost 24 px icon button in its own column at the end of
+ *          line (a spinner in place of the icon while a promise toast's work runs); the optional action; and the dismiss button, a ghost 24 px icon button in its own column at the end of
  *          the title row, so text never runs under it. The card is the overlay surface with a soft shadow and the
  *          container radius; the tone colours only the icon (and, in the `bar` looks, a thin start-edge accent), the
  *          text stays foreground. Looks: the `alert` card, a `bar` with the start-edge accent, the bar flipping in
@@ -29,6 +29,7 @@ import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
 import { useMotion } from "#react/design-system-provider/use-motion";
 import { FeedbackIcon } from "#react/feedback-icon/feedback-icon";
+import { Spinner } from "#react/spinner/spinner";
 import type { ToastItemProps } from "#react/toast/toast-item.props";
 
 /**
@@ -93,7 +94,14 @@ export function ToastItem({
   dismissLabel,
   variant = "alert",
 }: ToastItemProps): ReactElement {
-  const { title, description, indicator, variant: tone = "default", actionProps } = toast.content;
+  const {
+    title,
+    description,
+    indicator,
+    variant: tone = "default",
+    actionProps,
+    isLoading,
+  } = toast.content;
   const motion = useMotion();
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -144,7 +152,11 @@ export function ToastItem({
     >
       {indicator === null ? null : (
         <HeroToast.Indicator variant={tone} className={`p-0.5 ${ICON_TONE[tone]}`}>
-          {indicator ?? <FeedbackIcon tone={tone} />}
+          {isLoading ? (
+            <Spinner size="sm" tone="muted" />
+          ) : (
+            (indicator ?? <FeedbackIcon tone={tone} />)
+          )}
         </HeroToast.Indicator>
       )}
       <HeroToast.Content

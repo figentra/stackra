@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "label": "Pickup time"
+  },
+  "twenty_four_hour": {
+    "label": "Kitchen opens at"
+  },
+  "with_field": {
+    "label": "Delivery slot",
+    "field": "Delivery time"
+  }
+}

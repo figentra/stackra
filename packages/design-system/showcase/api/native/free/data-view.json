@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "9b54b268bae748b2",
+    "hash": "c030a981b21773c1",
     "propsFiles": ["ui/src/native/data-view/data-view.props.ts"]
   },
   "importLine": "import { DataView } from \"@stackra/ui/native\";",
@@ -255,6 +255,10 @@
     },
     {
       "name": "DataViewCards",
+      "props": []
+    },
+    {
+      "name": "DataViewBoard",
       "props": []
     },
     {

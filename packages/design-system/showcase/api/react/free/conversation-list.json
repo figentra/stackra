@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "d6ed01f65f09674c",
+    "propsFiles": ["ui/src/react/conversation-list/conversation-list.props.ts"]
+  },
+  "importLine": "import { ConversationList } from \"@stackra/ui/react\";",
+  "key": "free/conversation-list",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a conversation's id when it is chosen.",
+          "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the id and the new state when Pin or Unpin is chosen; the menu offers it only when set.",
+          "name": "onPinChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string, isPinned: boolean) => void"
+        },
+        {
+          "description": "Called with the id when Rename is chosen; the menu offers it only when set.",
+          "name": "onRename",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the id when Delete is chosen; the menu offers it only when set.",
+          "name": "onDelete",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "ConversationList",
+      "props": [
+        {
+          "description": "The past conversations, in any order; the list groups them by day and puts pinned ones first.",
+          "name": "conversations",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ConversationSummary[]"
+        },
+        {
+          "description": "The id of the conversation that is open, drawn selected.",
+          "name": "selectedId",
+          "required": false,
+          "source": "stackra",
+          "type": "string | null"
+        },
+        {
+          "description": "The list's accessible name. Defaults to the catalogue's \"Conversations\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "\"Now\", for a fixed point in a test or a demo; defaults to the moment the list mounted.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "Styles the list.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -13,6 +13,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
+import { isolatedFileNameOf } from "#core/functions/isolated-file-name-of.function";
 import { ImportDialog } from "#native/import-dialog/import-dialog";
 
 const state = vi.hoisted(() => ({
@@ -221,7 +222,7 @@ describe("ImportDialog (native)", () => {
     expect(state.dropZone["isDisabled"]).toBe(true);
     expect(state.bars.some((bar) => bar["label"] === `${K}reading`)).toBe(true);
     await act(async () => finish?.({ columns: ["Email"] }));
-    expect(screen.getByText("a.csv")).toBeTruthy();
+    expect(screen.getByText(isolatedFileNameOf("a.csv"))).toBeTruthy();
   });
 
   it("announces a failed read and stays on upload", async () => {
@@ -235,7 +236,9 @@ describe("ImportDialog (native)", () => {
     const { onRead, onDryRun, onImport, onOpenChange } = open();
     await pick();
     expect(onRead).toHaveBeenCalledWith(FILE);
-    expect(screen.getByText(`a.csv · ${K}file_rows {"count":12}`)).toBeTruthy();
+    expect(
+      screen.getByText(`${isolatedFileNameOf("a.csv")} · ${K}file_rows {"count":12}`),
+    ).toBeTruthy();
     expect(lastBar()["label"]).toBe(`${K}step_match`);
 
     press(`${K}back`);
@@ -274,7 +277,7 @@ describe("ImportDialog (native)", () => {
   it("holds the check until required fields are mapped", async () => {
     open({ onRead: vi.fn(() => Promise.resolve({ columns: ["Other"] })) });
     await pick();
-    expect(screen.getByText("a.csv")).toBeTruthy();
+    expect(screen.getByText(isolatedFileNameOf("a.csv"))).toBeTruthy();
     expect(screen.getByText("ui::import_flow.check")).toHaveProperty("disabled", true);
   });
 

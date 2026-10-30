@@ -43,9 +43,10 @@ export const FREE_LIST: ComponentEntry = {
     { id: "live-press", platforms: ["react"] },
     { id: "live-select", platforms: ["react"] },
     { id: "live-more", platforms: ["react"] },
+    { id: "virtual", platforms: ["react"] },
     { id: "rows", platforms: ["native"] },
   ],
   related: ["free/property-list", "free/filter-bar", "free/data-table"],
   tokens: ["color.surface", "radius.base", "color.border"],
-  keywords: ["listbox", "items", "rows"],
+  keywords: ["listbox", "items", "rows", "virtual scrolling"],
 };

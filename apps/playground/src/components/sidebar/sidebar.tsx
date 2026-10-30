@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the sidebar of a component page: a filter box, then the web pages in collapsible category groups
  *          (`CATEGORIES` order, `byCategory` within), each header the category title and its count, each row the
- *          page title and the status chip, ending at the row's end edge. The current page is marked
+ *          page title, the Advanced chip of a specialist entry and the status chip, ending at the row's end edge. The current page is marked
  *          (`aria-current="page"`: the soft accent with a start-edge bar, on the control radius: `.sidebar-row` in the app stylesheet), its group opens on its own and, when the row is
  *          out of view, the sidebar scrolls to show it with its whole group, label first. The groups are an
  *          accordion: one is open at a time, so opening another closes the one before (STA-1371). While the filter has
@@ -24,7 +24,7 @@ import {
   type ComponentCategory,
 } from "@stackra/showcase";
 import type { I18nKey } from "@stackra/i18n";
-import { Button, Icon, Link, SearchField, useCatalogueText } from "@stackra/ui/react";
+import { Button, Chip, Icon, Link, SearchField, useCatalogueText } from "@stackra/ui/react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useLocation } from "react-router";
 
@@ -171,6 +171,11 @@ export function Sidebar({ current, className }: SidebarProps) {
                           className="sidebar-row"
                         >
                           <span className="min-w-0 flex-1 truncate">{title}</span>
+                          {entry.advanced ? (
+                            <Chip size="sm" variant="soft">
+                              {t(K.ui.advanced)}
+                            </Chip>
+                          ) : null}
                           <StatusChip status={entry.status} />
                         </Link>
                       </li>

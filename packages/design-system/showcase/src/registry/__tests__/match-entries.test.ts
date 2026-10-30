@@ -59,6 +59,20 @@ describe("matchEntries", () => {
     expect(matchEntries([BUTTON], "   ")).toEqual([]);
   });
 
+  it("ranks the title the query names whole above a longer title that starts with it", () => {
+    const field = doc({ key: "free/button-field", title: "Button field" });
+    expect(matchEntries([field, BUTTON], "button").map((hit) => hit.doc.key)).toEqual([
+      "free/button",
+      "free/button-field",
+    ]);
+    expect(matchEntries([BUTTON, field], "button field")[0]?.doc.key).toBe("free/button-field");
+    // A prefix of both titles ties on score; the shorter title, which the query covers more of, comes first.
+    expect(matchEntries([field, BUTTON], "butt").map((hit) => hit.doc.key)).toEqual([
+      "free/button",
+      "free/button-field",
+    ]);
+  });
+
   it("filters by platform, locale and limit", () => {
     expect(matchEntries([BUTTON, SLIDE], "isloading", { platform: "react" })).toHaveLength(1);
     expect(matchEntries([BUTTON, ARABIC], "حدث", { lang: "ar" })[0]?.reason).toBe("description");

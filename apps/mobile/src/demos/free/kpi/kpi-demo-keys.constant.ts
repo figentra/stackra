@@ -13,6 +13,7 @@ export const KPI_DEMO_KEYS = keys({
     kpi: {
       band: ["band", "revenue", "orders", "refunds", "basket", "vs_last"],
       tiles: ["revenue", "customers", "opened", "vs_last"],
+      previous: ["revenue", "orders", "refunds", "opened"],
     },
   },
 });

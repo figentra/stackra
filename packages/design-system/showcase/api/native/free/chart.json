@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "16220e3fe31825e1",
+    "hash": "ba02f6134619ef3c",
     "propsFiles": [
       "ui/src/native/chart/cartesian-figure.props.ts",
       "ui/src/native/chart/chart-frame.props.ts",
@@ -77,6 +77,34 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
+          "name": "annotations",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChartAnnotation[]"
+        },
+        {
+          "description": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
+          "name": "secondaryKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
+          "name": "valueScale",
+          "required": false,
+          "source": "stackra",
+          "type": "\"linear\" | \"log\""
+        },
+        {
+          "description": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
+          "name": "syncId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The rows, in reading order.",
@@ -161,6 +189,13 @@
           "required": false,
           "source": "stackra",
           "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        },
+        {
+          "description": "Bar charts: the column that carries the colour, the rest in its soft tone (see `BarChartContractProps`).",
+          "name": "emphasis",
+          "required": false,
+          "source": "stackra",
+          "type": "ChartEmphasis"
         },
         {
           "description": "",
@@ -339,6 +374,34 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
+          "name": "annotations",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChartAnnotation[]"
+        },
+        {
+          "description": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
+          "name": "secondaryKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
+          "name": "valueScale",
+          "required": false,
+          "source": "stackra",
+          "type": "\"linear\" | \"log\""
+        },
+        {
+          "description": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
+          "name": "syncId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The rows, in reading order.",

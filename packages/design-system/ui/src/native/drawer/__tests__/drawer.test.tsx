@@ -21,6 +21,7 @@ import type { ReactNode } from "react";
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
 import { Drawer } from "#native/drawer/drawer";
+import { DrawerHandle } from "#native/drawer/drawer-handle";
 import type { DrawerProps } from "#native/drawer/drawer.props";
 import type { DrawerTitleProps } from "#native/drawer/drawer-title.props";
 import { ModalBody } from "#native/modal/modal-body";
@@ -305,5 +306,23 @@ describe("Drawer (native)", () => {
     const snapPoints = [240, "80%"] as const;
     render(<Drawer snapPoints={snapPoints}>x</Drawer>);
     expect(propsOf("content")["snapPoints"]).toEqual([240, "80%"]);
+  });
+
+  it("draws the resize handle and tracks the snap point only with two or more snap points", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <Drawer snapPoints={[240, "80%"]} onChange={onChange}>
+        x
+      </Drawer>,
+    );
+    expect(propsOf("content")["handleComponent"]).toBe(DrawerHandle);
+    (propsOf("content")["onChange"] as (index: number, position: number, type: number) => void)(
+      1,
+      200,
+      0,
+    );
+    expect(onChange).toHaveBeenCalledWith(1, 200, 0);
+    rerender(<Drawer snapPoints={["50%"]}>x</Drawer>);
+    expect(propsOf("content")["handleComponent"]).toBeUndefined();
   });
 });

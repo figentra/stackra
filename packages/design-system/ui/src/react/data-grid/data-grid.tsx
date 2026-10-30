@@ -33,11 +33,12 @@ import {
 } from "react";
 import { useLocale } from "react-aria-components";
 
-import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
 import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
+import { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
+import { dataGridColumnWidth as widthOf } from "#core/functions/data-grid-column-width.function";
 import { fillPatternOf } from "#core/functions/fill-pattern-of.function";
 import { parseGridValue } from "#core/functions/parse-grid-value.function";
 import { parseTsv } from "#core/functions/parse-tsv.function";
@@ -65,18 +66,6 @@ const OVERSCAN = 6;
 
 /** The row height of each density, in CSS pixels. */
 const ROW_HEIGHT = Object.freeze({ compact: 30, normal: 36, roomy: 48 } as const);
-
-/** A grid column as the collection engine sees it. */
-function collectionColumnOf(column: DataGridColumn): CollectionColumn {
-  return {
-    id: column.id,
-    label: column.label,
-    width: widthOf(column),
-    minWidth: 64,
-    type: column.type === "number" ? "number" : column.type === "select" ? "choice" : "text",
-    ...(column.align ? { align: column.align } : {}),
-  };
-}
 
 /** The resize strip at the end of a header: a drag, or the arrows, Home and End when it has focus. */
 function ResizeStrip({
@@ -115,11 +104,6 @@ function ResizeStrip({
       className="absolute inset-y-0 -end-1 z-[4] w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-1 after:start-1/2 after:w-0.5 after:bg-transparent hover:after:bg-accent focus-visible:after:bg-focus"
     />
   );
-}
-
-/** The default width of a column, by kind. */
-function widthOf(column: DataGridColumn): number {
-  return column.width ?? (column.type === "number" || column.type === "boolean" ? 96 : 160);
 }
 
 /** The text alignment class of a column. */
@@ -171,7 +155,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   const isMatrix = variant === "matrix";
   const rowHeight = givenRowHeight ?? ROW_HEIGHT[density];
   // The columns as the engine arranges them (the app's, or the grid's own with the first `frozenColumns` pinned).
-  const definitions = useMemo(() => given.map(collectionColumnOf), [given]);
+  const definitions = useMemo(() => given.map(collectionColumnOfGrid), [given]);
   const own = useCollection<TRow>({
     columns: definitions,
     items: rows,

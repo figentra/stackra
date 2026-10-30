@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0340 (decision 9: the chart set); STA-1371.
  */
+import type { ChartAnnotation } from "#contracts/types/chart-annotation.type";
 import type { ChartContractProps } from "#contracts/types/chart-contract-props.type";
 import type { ChartReference } from "#contracts/types/chart-reference.type";
 
@@ -36,4 +37,21 @@ export interface CartesianChartContractProps extends ChartContractProps {
    * reads every row and ignores it). Off by default.
    */
   readonly showBrush?: boolean | undefined;
+  /** Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top. */
+  readonly annotations?: readonly ChartAnnotation[] | undefined;
+  /**
+   * The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures
+   * of different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.
+   */
+  readonly secondaryKeys?: readonly string[] | undefined;
+  /**
+   * The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale
+   * a value of zero or below is not drawn; use it on lines and unstacked charts.
+   */
+  readonly valueScale?: "linear" | "log" | undefined;
+  /**
+   * Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip
+   * (web; native reads one chart at a time and ignores it).
+   */
+  readonly syncId?: string | undefined;
 }

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the web `AreaChart` on Recharts: one area per series, each edge in the series' theme colour over a fade
- *          to clear, overlapping or stacked, with the shared grid, axes, tooltip, legend and data table.
+ *          to clear (flat in a flat brand), overlapping or stacked, with the shared grid, axes, tooltip, legend and
+ *          data table.
  * Boundary: no style of its own: colours are `var(--chart-<n>)` presentation attributes. Recharts animates only
  *           without `prefers-reduced-motion`; the plot is an `img` named by `label`, focusable, and arrow keys move
  *           the tooltip from row to row.
@@ -15,8 +16,10 @@ import { Area, AreaChart as RechartsAreaChart } from "recharts";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import type { AreaChartProps } from "#react/area-chart/area-chart.props";
 import { activeDotOf } from "#react/chart/active-dot-of.function";
+import { axisOf } from "#react/chart/axis-of.function";
 import { cartesianParts } from "#react/chart/cartesian-parts";
 import { ChartFrame } from "#react/chart/chart-frame";
+import { MARK_PAINT } from "#react/chart/mark-paint.constant";
 import { paintOf } from "#react/chart/paint-of.function";
 import { useCartesianChart } from "#react/chart/use-cartesian-chart";
 
@@ -29,6 +32,7 @@ export function AreaChart(props: AreaChartProps): ReactElement {
   return (
     <ChartFrame {...frame}>
       <RechartsAreaChart
+        {...(props.syncId === undefined ? {} : { syncId: props.syncId })}
         {...(props.stacked && props.isNormalized ? { stackOffset: "expand" as const } : {})}
         data={[...data]}
         responsive
@@ -41,8 +45,17 @@ export function AreaChart(props: AreaChartProps): ReactElement {
         <defs>
           {series.map((item, index) => (
             <linearGradient key={item.key} id={`${id}-${index}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={colorOf(index)} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={colorOf(index)} stopOpacity={0} />
+              <stop
+                offset="0%"
+                stopColor={colorOf(index)}
+                stopOpacity={`calc(0.35 - 0.17 * (1 - ${MARK_PAINT.lift}))`}
+              />
+              {/* Lit: the wash fades from 35% to nothing. Flat brand: an even 18% wash, like the bars losing their top light. */}
+              <stop
+                offset="100%"
+                stopColor={colorOf(index)}
+                stopOpacity={`calc(0.18 * (1 - ${MARK_PAINT.lift}))`}
+              />
             </linearGradient>
           ))}
         </defs>
@@ -59,6 +72,7 @@ export function AreaChart(props: AreaChartProps): ReactElement {
             strokeDasharray="5 4"
             fill="none"
             activeDot={false}
+            {...axisOf(twin.series.key, props.secondaryKeys)}
             hide={hidden.includes(twin.series.key)}
           />
         ))}
@@ -74,6 +88,7 @@ export function AreaChart(props: AreaChartProps): ReactElement {
             activeDot={activeDotOf(colorOf(index))}
             {...(props.stacked ? { stackId: "stack" } : {})}
             connectNulls={false}
+            {...axisOf(item.key, props.secondaryKeys)}
             hide={hidden.includes(item.key)}
           />
         ))}

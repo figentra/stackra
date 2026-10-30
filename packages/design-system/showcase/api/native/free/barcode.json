@@ -1,0 +1,59 @@
+{
+  "generatedFrom": {
+    "hash": "4b99664aeba02530",
+    "propsFiles": ["ui/src/native/barcode/barcode.props.ts"]
+  },
+  "importLine": "import { Barcode } from \"@stackra/ui/native\";",
+  "key": "free/barcode",
+  "parts": [
+    {
+      "name": "Barcode",
+      "props": [
+        {
+          "description": "What to encode: printable ASCII for `code128`; 12 or 13 digits for `ean13` (a 13th must be the check digit).",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "code128",
+          "description": "The symbology. Defaults to `code128`.",
+          "name": "format",
+          "required": false,
+          "source": "stackra",
+          "type": "\"code128\" | \"ean13\""
+        },
+        {
+          "description": "The accessible name. Defaults to the value (with its check digit for EAN-13).",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The bars' height in pixels. Defaults to 64; each module is 2 pixels wide.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "False to hide the human-readable text under the bars. Defaults to true.",
+          "name": "showText",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

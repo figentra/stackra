@@ -8,4 +8,9 @@
 import { keys } from "@stackra/i18n";
 
 /** The demos' keys. */
-export const ADDRESS_FIELD_KEYS = keys({ address_field: { basics: ["label", "hint"] } });
+export const ADDRESS_FIELD_KEYS = keys({
+  address_field: {
+    basics: ["label", "hint"],
+    container: ["narrow", "wide", "billing", "shipping"],
+  },
+});

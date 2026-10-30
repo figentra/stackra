@@ -5,7 +5,7 @@
  *          up above it one after another, each a small IconButton with its label, while the plus turns into a cross.
  * Boundary: builds on `#native/button/button` and `#native/icon-button/icon-button` (their press haptic included). It
  *           floats in its nearest positioned ancestor (`absolute`, logical `start`/`end`), and lets presses through
- *           around it. No scrim: a second press on the Fab or an action closes the dial. Reduced motion skips the
+ *           around it; while it floats it counts itself in `FLOATING_FABS`, so a bottom toast clears it. No scrim: a second press on the Fab or an action closes the dial. Reduced motion skips the
  *           fades and the turn.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); wave 3c mobile interactions (owner approval
@@ -30,6 +30,7 @@ import type { ReactElement } from "react";
 
 import type { FabPlacement } from "#contracts/enums/fab-placement.enum";
 import type { FabAction } from "#contracts/types/fab-action.type";
+import { FLOATING_FABS } from "#core/constants/floating-fabs.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Button } from "#native/button/button";
 import type { FabProps } from "#native/fab/fab.props";
@@ -78,6 +79,8 @@ export function Fab({
     onOpenChange?.(next);
   };
   const isReduced = useReducedMotion();
+  // A floating Fab tells the ToastProvider it is there, so a bottom toast is lifted clear of it.
+  useEffect(() => (placement === "inline" ? undefined : FLOATING_FABS.register()), [placement]);
   // The plus turns an eighth into a cross; any other icon is swapped for a cross instead.
   const turn = useSharedValue(open ? 45 : 0);
   useEffect(() => {

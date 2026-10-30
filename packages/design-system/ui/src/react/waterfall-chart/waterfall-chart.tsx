@@ -1,16 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: the web `WaterfallChart` on Recharts: a bridge from a start total to an end total, each step a bar floating
- *          from the running total by its change, rises in success and falls in danger, totals in the accent, with the
- *          quiet grid and value axis, a tooltip giving the change and the running total, and the data table.
+ *          from the running total by its change, joined to the next by a dashed connector at the running total. Rises
+ *          and falls are drawn in the success and danger soft steps with a solid outline, totals in the accent lit
+ *          softly from the top; the pointed bar stands while the others dim. With the quiet grid and value axis, a
+ *          tooltip giving the change and the running total, and the data table.
  * Boundary: no style of its own; the bars are Recharts range bars. The categories run right to left in Arabic and the
  *           value axis sits on the reading start. A change is also written with its sign, so it never rests on colour.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1, 1.4.1 and 1.4.11; STA-1371.
  */
 import { useReducedMotion } from "motion/react";
-import type { ReactElement } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Tooltip, XAxis, YAxis } from "recharts";
+import { type ReactElement, useId } from "react";
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { WATERFALL_COLOR } from "#core/constants/waterfall-color.constant";
@@ -19,8 +21,11 @@ import { waterfallRowsOf } from "#core/functions/waterfall-rows-of.function";
 import type { WaterfallRow } from "#core/types/waterfall-row.type";
 import { CHART_PAINT } from "#react/chart/chart-paint.constant";
 import { ChartFrame } from "#react/chart/chart-frame";
+import { MarkGradient } from "#react/chart/mark-gradient";
+import { MARK_PAINT } from "#react/chart/mark-paint.constant";
 import { paintOf } from "#react/chart/paint-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
+import { usePointedIndex } from "#react/chart/use-pointed-index";
 import { ChartTooltip } from "#react/chart-tooltip/chart-tooltip";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { WaterfallChartProps } from "#react/waterfall-chart/waterfall-chart.props";
@@ -52,6 +57,15 @@ export function WaterfallChart({
     ]),
   };
   const side = isRtl ? ("right" as const) : ("left" as const);
+  const id = useId().replaceAll(/[^\w-]/g, "");
+  const { pointed, handlers } = usePointedIndex();
+  // A total is a lit solid bar; a step is its status colour's soft step (the hover step while pointed) in an outline.
+  const fillOf = (row: WaterfallRow, index: number) =>
+    row.kind === "total"
+      ? `url(#${id}-total)`
+      : paintOf(
+          `${row.kind === "up" ? "success" : "danger"}-soft${pointed === index ? "-hover" : ""}`,
+        );
   return (
     <ChartFrame label={label} table={table} legend={[]} className={className}>
       <BarChart
@@ -61,7 +75,11 @@ export function WaterfallChart({
         margin={{ top: 8, left: 12, right: 12 }}
         role="img"
         aria-label={label}
+        {...handlers}
       >
+        <defs>
+          <MarkGradient id={`${id}-total`} color={paintOf(WATERFALL_COLOR.total)} />
+        </defs>
         <CartesianGrid {...CHART_PAINT.grid} vertical={false} />
         <XAxis
           dataKey="label"
@@ -107,14 +125,36 @@ export function WaterfallChart({
             }}
           />
         ) : null}
+        {/* Each bar's running total carries on to the next bar: a dashed connector behind the bars. */}
+        {rows.slice(1).map((next, index) => {
+          const total = rows[index]?.total ?? 0;
+          return (
+            <ReferenceLine
+              key={`connector-${next.key}`}
+              segment={[
+                { x: rows[index]?.label ?? next.label, y: total },
+                { x: next.label, y: total },
+              ]}
+              stroke={paintOf("muted")}
+              strokeOpacity={0.6}
+              strokeDasharray="3 3"
+            />
+          );
+        })}
         <Bar
           dataKey={(row: WaterfallRow) => [row.low, row.high]}
           radius={4}
           maxBarSize={48}
           isAnimationActive={!isReduced}
         >
-          {rows.map((row) => (
-            <Cell key={row.key} fill={paintOf(WATERFALL_COLOR[row.kind])} />
+          {rows.map((row, index) => (
+            <Cell
+              key={row.key}
+              fill={fillOf(row, index)}
+              stroke={paintOf(WATERFALL_COLOR[row.kind])}
+              strokeWidth={row.kind === "total" ? 0 : 1.5}
+              opacity={pointed === null || pointed === index ? 1 : MARK_PAINT.dimOpacity}
+            />
           ))}
         </Bar>
       </BarChart>

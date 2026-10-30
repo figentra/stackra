@@ -30,6 +30,8 @@ export interface CollectionState {
   readonly selection: readonly string[];
   /** True when every row matching the query is selected, beyond the rows loaded. */
   readonly isAllMatchingSelected: boolean;
+  /** With "all matching" chosen, the ids the user unticked since: every matching row but these is selected. */
+  readonly excludedKeys: readonly string[];
   /** The page shown, from 0 (for `infinite`, the last page loaded). */
   readonly page: number;
   /** The rows per page. */

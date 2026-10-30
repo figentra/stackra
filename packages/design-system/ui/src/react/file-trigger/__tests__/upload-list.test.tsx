@@ -37,11 +37,12 @@ describe("UploadList (web)", () => {
     expect(rows[2]?.textContent).toContain("Upload failed");
     expect(rows[3]?.textContent).toContain("Waiting");
     expect(screen.getByRole("progressbar", { name: "Uploading invoice-1042.pdf" })).toBeTruthy();
-    expect(
-      within(rows[0] as HTMLElement)
-        .getByText("invoice-1042.pdf")
-        .getAttribute("dir"),
-    ).toBe("auto");
+    // The name is a FileName: isolated in its base's direction, the extension apart.
+    const name = within(rows[0] as HTMLElement)
+      .getByText(".pdf")
+      .closest("[data-slot=file-name]");
+    expect(name?.textContent).toBe("invoice-1042.pdf");
+    expect(name?.getAttribute("dir")).toBe("ltr");
   });
 
   it("writes the size in Arabic digits and shows a file's own error", () => {

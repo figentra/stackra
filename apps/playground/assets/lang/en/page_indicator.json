@@ -1,0 +1,20 @@
+{
+  "onboarding": {
+    "title_1": "Browse the new season",
+    "body_1": "Fresh pieces every Thursday, picked for the Gulf heat.",
+    "title_2": "Save what you love",
+    "body_2": "Tap the heart and find it again in your wishlist.",
+    "title_3": "Pay your way",
+    "body_3": "Card, Apple Pay or four instalments.",
+    "title_4": "Track every order",
+    "body_4": "From our studio to your door, step by step.",
+    "back": "Back",
+    "next": "Next",
+    "done": "Start shopping",
+    "label": "Onboarding steps",
+    "step": "Step {page} of {count}"
+  },
+  "display_only": {
+    "caption": "Photo 3 of 5"
+  }
+}

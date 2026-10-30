@@ -1,0 +1,90 @@
+{
+  "generatedFrom": {
+    "hash": "b129cdc55c586f77",
+    "propsFiles": ["ui/src/react/share-button/share-button.props.ts"]
+  },
+  "importLine": "import { ShareButton } from \"@stackra/ui/react\";",
+  "key": "free/share-button",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called once something was shared: `shared` through the system share sheet, `copied` when the browser has none and\nthe link was copied instead (web only). Never called when the person closes the sheet.",
+          "name": "onShare",
+          "required": false,
+          "source": "stackra",
+          "type": "(outcome: \"shared\" | \"copied\") => void"
+        }
+      ],
+      "name": "ShareButton",
+      "props": [
+        {
+          "description": "The link to share, for example a product page.",
+          "name": "url",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The title the share sheet shows, for example the product's name.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line shared with the link, for example \"Look at this abaya\".",
+          "name": "text",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The button's words and accessible name. Defaults to the catalogue's \"Share\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw only the share icon, named by `label`.",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "secondary",
+          "description": "The button's emphasis. Defaults to `secondary`, or `ghost` when icon only.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "default": "md",
+          "description": "The button's size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to show the button but refuse sharing.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the button.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

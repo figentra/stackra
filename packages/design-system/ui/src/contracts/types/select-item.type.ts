@@ -17,4 +17,10 @@ export interface SelectItem {
   readonly description?: string | undefined;
   /** True to show the choice but refuse it. */
   readonly isDisabled?: boolean | undefined;
+  /**
+   * The header a Select groups this choice under, for example "Europe". Choices that share it are drawn together in
+   * the order the section first appears; a header is a label, never a choice. Only Select groups by it; the other
+   * fields that take these choices ignore it.
+   */
+  readonly section?: string | undefined;
 }

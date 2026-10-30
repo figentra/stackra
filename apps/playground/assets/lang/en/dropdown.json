@@ -1,0 +1,17 @@
+{
+  "account": "Account",
+  "account_menu": "Account actions",
+  "profile": "Profile",
+  "profile_hint": "Name, photo and contact details",
+  "billing": "Billing",
+  "billing_hint": "Plan, invoices and payment method",
+  "sign_out": "Sign out",
+  "chosen": "Chosen: {action}",
+  "nothing_chosen": "Nothing chosen yet",
+  "language": "Language",
+  "languages": "Languages",
+  "english": "English",
+  "arabic": "Arabic",
+  "french": "French",
+  "current": "Showing the shop in {language}"
+}

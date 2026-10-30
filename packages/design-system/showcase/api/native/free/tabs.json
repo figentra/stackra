@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "485444419ac0ad4b",
+    "hash": "0400b3beccaa2fcf",
     "heroDoc": "vendor/heroui/native/tabs.json",
     "propsFiles": ["ui/src/native/tabs/tabs.props.ts"]
   },
@@ -9,6 +9,13 @@
   "parts": [
     {
       "events": [
+        {
+          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
+          "name": "onClose",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
         {
           "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
           "name": "onSelectionChange",
@@ -50,6 +57,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
+          "name": "overflow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"menu\" | \"scroll\""
         },
         {
           "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",

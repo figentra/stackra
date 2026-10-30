@@ -12,6 +12,7 @@
 export const WidgetMenuAction = Object.freeze([
   "csv",
   "png",
+  "svg",
   "table",
   "fullscreen",
   "link",

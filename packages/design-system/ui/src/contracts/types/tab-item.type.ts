@@ -18,4 +18,6 @@ export interface TabItem extends CollectionItem {
   readonly content: ReactNode;
   /** True to show the tab but refuse selecting it. */
   readonly isDisabled?: boolean | undefined;
+  /** True to draw a close mark on the tab (Delete closes it from the keyboard on web); the Tabs' `onClose` is called. */
+  readonly isClosable?: boolean | undefined;
 }

@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "b3dd881850d8c3c2",
+    "propsFiles": ["ui/src/react/angle-slider/angle-slider.props.ts"]
+  },
+  "importLine": "import { AngleSlider } from \"@stackra/ui/react\";",
+  "key": "free/angle-slider",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each new angle, 0 to 359.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: number) => void"
+        }
+      ],
+      "name": "AngleSlider",
+      "props": [
+        {
+          "description": "The angle in degrees, for a controlled slider.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The starting angle, for an uncontrolled slider; defaults to 0.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The degrees one arrow key or drag stop moves; defaults to 1. Shift and Page Up/Down move 15 steps.",
+          "name": "step",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The slider's visible name, for example \"Gradient angle\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw ticks at 0, 90, 180 and 270 degrees.",
+          "name": "hasMarks",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The dial's width and height in pixels (points on native); defaults to 160.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True to show the angle but refuse changes.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the outer element.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -10,9 +10,12 @@
 import { stackraVitestReact } from "@stackra/vitest-config/preset-react";
 import { defineConfig, mergeConfig } from "vitest/config";
 
+import { cataloguesPlugin } from "./scripts/catalogues.plugin";
+
 export default mergeConfig(
   stackraVitestReact,
   defineConfig({
+    plugins: [cataloguesPlugin()],
     test: {
       // A page test mounts a whole page of real HeroUI components in jsdom; beside the other members' suites on a shared
       // runner it needs more than the 5000 ms default (about 300 ms alone).

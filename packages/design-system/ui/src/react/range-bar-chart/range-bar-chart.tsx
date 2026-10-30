@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `RangeBarChart` on Recharts: one floating bar per category from its low to its high value,
  *          standing (`vertical`, the default) or lying (`horizontal`), with the shared quiet grid, axes, a low and high
- *          tooltip and the data table.
+ *          tooltip and the data table. Bars are lit softly from the top (flat in a flat brand); with `emphasis` one
+ *          bar carries the colour and the rest its soft tone, and the pointed bar stands while the others dim.
  * Boundary: no style of its own: the colour is a `var(--…)` presentation attribute. Categories run right to left in
  *           Arabic and horizontal bars grow from the reading start; animation follows the motion setting.
  * Runtime: browser
@@ -10,17 +11,22 @@
  *          2.3.3; STA-1371.
  */
 import { useReducedMotion } from "motion/react";
-import type { ReactElement } from "react";
-import { Bar, BarChart as RechartsBarChart, Tooltip } from "recharts";
+import { type ReactElement, useId } from "react";
+import { Bar, BarChart as RechartsBarChart, Cell, Tooltip } from "recharts";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
+import { emphasisIndexOf } from "#core/functions/emphasis-index-of.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { CHART_PAINT } from "#react/chart/chart-paint.constant";
 import { cartesianParts } from "#react/chart/cartesian-parts";
 import { ChartFrame } from "#react/chart/chart-frame";
+import { MarkGradient } from "#react/chart/mark-gradient";
+import { MARK_PAINT } from "#react/chart/mark-paint.constant";
+import { markToneOf } from "#react/chart/mark-tone-of.function";
 import { paintOf } from "#react/chart/paint-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
+import { usePointedIndex } from "#react/chart/use-pointed-index";
 import { ChartTooltip } from "#react/chart-tooltip/chart-tooltip";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { RangeBarChartProps } from "#react/range-bar-chart/range-bar-chart.props";
@@ -52,6 +58,10 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
   const value = (figure: number) => formatChartNumber(figure, locale, valueFormat);
   const category = (raw: unknown) => formatChartCategory(raw, locale, xFormat);
   const fill = paintOf(color);
+  const id = useId().replaceAll(/[^\w-]/g, "");
+  const { pointed, handlers } = usePointedIndex();
+  const emphasis = props.emphasis ?? "none";
+  const emphasised = emphasisIndexOf(emphasis, data.length, pointed);
   const rows = data.map((row) => {
     const from = numberOf(row[fromKey]);
     const to = numberOf(row[toKey]);
@@ -75,7 +85,12 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
         margin={{ top: 8, left: 12, right: 12 }}
         role="img"
         aria-label={label}
+        {...handlers}
       >
+        <defs>
+          <MarkGradient id={`${id}-on`} color={fill} />
+          <MarkGradient id={`${id}-off`} color={markToneOf(fill, false)} />
+        </defs>
         {cartesianParts({
           xKey,
           xFormat,
@@ -108,13 +123,22 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
             }}
           />
         )}
-        <Bar
-          dataKey="range"
-          fill={fill}
-          radius={4}
-          maxBarSize={40}
-          isAnimationActive={!isReduced}
-        />
+        <Bar dataKey="range" fill={fill} radius={4} maxBarSize={40} isAnimationActive={!isReduced}>
+          {data.map((row, index) => (
+            <Cell
+              key={String(row[xKey])}
+              fill={`url(#${id}-${emphasis === "none" || index === emphasised ? "on" : "off"})`}
+              {...(emphasis === "none" || index === emphasised
+                ? {}
+                : { stroke: MARK_PAINT.contextEdge, strokeWidth: 1 })}
+              fillOpacity={
+                emphasis !== "none" || pointed === null || pointed === index
+                  ? 1
+                  : MARK_PAINT.dimOpacity
+              }
+            />
+          ))}
+        </Bar>
       </RechartsBarChart>
     </ChartFrame>
   );

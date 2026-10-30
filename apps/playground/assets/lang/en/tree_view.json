@@ -34,5 +34,39 @@
     "finance": "Finance",
     "payroll": "Payroll",
     "it": "IT support"
+  },
+  "checked": {
+    "label": "Cashier permissions",
+    "summary": "{count, plural, =0 {No permissions granted} one {# permission granted} other {# permissions granted}}",
+    "orders": "Orders",
+    "orders_view": "View orders",
+    "orders_refund": "Refund orders",
+    "catalogue": "Catalogue",
+    "catalogue_edit": "Edit products",
+    "catalogue_prices": "Change prices",
+    "reports": "Daily reports"
+  },
+  "lazy": {
+    "label": "Branches by region",
+    "central": "Central region",
+    "western": "Western region",
+    "eastern": "Eastern region",
+    "olaya": "Olaya, Riyadh",
+    "malqa": "Al Malqa, Riyadh",
+    "tahlia": "Tahlia, Jeddah",
+    "aziziyah": "Al Aziziyah, Makkah",
+    "dammam": "Dammam",
+    "khobar": "Al Khobar"
+  },
+  "drag": {
+    "label": "Menu",
+    "hint": "Drag a row by its handle, or focus the handle and press Enter, then the arrow keys.",
+    "hot": "Hot drinks",
+    "espresso": "Espresso",
+    "latte": "Latte",
+    "cold": "Cold drinks",
+    "iced_latte": "Iced latte",
+    "lemonade": "Mint lemonade",
+    "sweets": "Sweets"
   }
 }

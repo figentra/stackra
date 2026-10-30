@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "9293ff98e00c1c14",
+    "propsFiles": ["ui/src/native/context-menu/context-menu.props.ts"]
+  },
+  "importLine": "import { ContextMenu } from \"@stackra/ui/native\";",
+  "key": "free/context-menu",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the id of the chosen action, after its own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "ContextMenu",
+      "props": [
+        {
+          "description": "The area that answers a right-click or a long press: a row, a card, a canvas.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The actions, in groups.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenuSection[]"
+        },
+        {
+          "description": "The menu's accessible name, such as \"Order actions\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to open no menu: on web the browser's own menu opens instead.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the area.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

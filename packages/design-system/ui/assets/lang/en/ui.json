@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "Tabs"
   },
+  "tabs": {
+    "more": "More",
+    "more_label": "More tabs",
+    "close": "Close {tab}"
+  },
+  "navigation_menu": {
+    "label": "Main navigation"
+  },
   "entity_picker": {
     "search": "Search",
     "close": "Close"
@@ -101,6 +109,9 @@
     "close": "Close panel",
     "resize": "Resize panel"
   },
+  "split_view": {
+    "resize": "Resize panes"
+  },
   "data_table": {
     "loading": "Loading",
     "actions_column": "Actions",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "Expand {label}",
-    "collapse": "Collapse {label}"
+    "collapse": "Collapse {label}",
+    "loading": "Loading…"
+  },
+  "tree_select": {
+    "placeholder": "Choose",
+    "count": "{count, plural, one {# chosen} other {# chosen}}"
+  },
+  "mention_input": {
+    "people": "People to mention"
   },
   "sortable_list": {
     "handle": "Reorder {label}",
@@ -196,6 +215,51 @@
     "complete": "All set",
     "show": "Show tasks",
     "hide": "Hide tasks"
+  },
+  "recurrence_editor": {
+    "label": "Repeat",
+    "every": "Repeat every",
+    "unit": "{unit, select, daily {{count, plural, one {day} other {days}}} weekly {{count, plural, one {week} other {weeks}}} monthly {{count, plural, one {month} other {months}}} other {{count, plural, one {year} other {years}}}}",
+    "weekdays": "On",
+    "monthly": "Each month",
+    "ends": "Ends",
+    "never": "Never",
+    "until_label": "On a date",
+    "count_label": "After a number of times",
+    "end_date": "End date",
+    "occurrences": "Times",
+    "summary": "Repeats",
+    "every_unit": "{unit, select, daily {{interval, plural, one {Every day} other {Every {n} days}}} weekly {{interval, plural, one {Every week} other {Every {n} weeks}}} monthly {{interval, plural, one {Every month} other {Every {n} months}}} other {{interval, plural, one {Every year} other {Every {n} years}}}}",
+    "on_days": "{rule} on {days}",
+    "on_day": "{rule} on day {day}",
+    "on_last_day": "{rule} on the last day",
+    "on_nth": "{rule} on the {nth, select, 1 {first} 2 {second} 3 {third} 4 {fourth} other {last}} {weekday}",
+    "on_date": "{rule} on {date}",
+    "until": "{rule}, until {date}",
+    "times": "{rule}, {count, plural, one {once} other {{n} times}}",
+    "hijri": "{rule}, in the Hijri calendar",
+    "day_option": "On day {day}",
+    "last_day_option": "On the last day",
+    "nth_option": "On the {nth, select, 1 {first} 2 {second} 3 {third} 4 {fourth} other {last}} {weekday}"
+  },
+  "task_tray": {
+    "label": "Background tasks",
+    "running": "{count, plural, one {{n} task in progress} other {{n} tasks in progress}}",
+    "finished": "{count, plural, one {{n} task finished} other {{n} tasks finished}}",
+    "failed": "{count, plural, one {{n} failed} other {{n} failed}}",
+    "show": "Show tasks",
+    "hide": "Hide tasks",
+    "clear": "Clear finished",
+    "cancel": "Cancel {name}",
+    "retry": "Try {name} again",
+    "dismiss": "Remove {name}",
+    "queued": "Waiting",
+    "done": "Done",
+    "error": "Failed",
+    "canceled": "Canceled"
+  },
+  "toast": {
+    "undo": "Undo"
   },
   "inline_loading": {
     "loading": "Loading…",
@@ -458,7 +522,24 @@
     "previous_page": "Previous page",
     "next_page": "Next page",
     "page_of": "Page {page, number} of {count, number}",
-    "load_more": "Load more"
+    "load_more": "Load more",
+    "row_handle": "Drag {name}",
+    "reorder_column": "Order",
+    "details_column": "Details",
+    "expand_row": "Show details of {name}",
+    "collapse_row": "Hide details of {name}",
+    "expand_all": "Show all details",
+    "collapse_all": "Hide all details",
+    "row_detail": "Details of {name}",
+    "edit_cell": "Edit {column} of {name}",
+    "open_row": "Open {name}",
+    "row_panel": "{label} details",
+    "board_column": "{label}: {column}",
+    "board_empty": "Nothing here yet",
+    "board_count": "{count, plural, one {# card} other {# cards}}",
+    "move_to": "Move to",
+    "move_card": "Move {name}",
+    "card_moved": "{name} moved to {column}"
   },
   "number_pad": {
     "delete": "Delete",
@@ -491,7 +572,8 @@
     "sort_value_desc": "Largest first",
     "sort_value_asc": "Smallest first",
     "sort_label": "By name",
-    "compare": "Compare to previous period"
+    "compare": "Compare to previous period",
+    "svg": "Download SVG"
   },
   "trend_chip": {
     "up": "Up {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "Target {value}",
-    "drill_down": "Open {label}"
+    "drill_down": "Open {label}",
+    "previous": "Previous period: {value}"
   },
   "funnel_chart": {
     "conversion": "{value} of the step before"
@@ -529,6 +612,25 @@
     "next": "Next slide",
     "slide": "Slide {index} of {count}",
     "pages": "Choose a slide"
+  },
+  "lightbox": {
+    "label": "Image viewer",
+    "previous": "Previous image",
+    "next": "Next image",
+    "close": "Close",
+    "counter": "{index} of {count}",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out"
+  },
+  "gallery": {
+    "open": "Open {name}"
+  },
+  "image_cropper": {
+    "label": "Crop image",
+    "zoom": "Zoom",
+    "hint": "Drag the image or use the arrow keys to move it. Plus and minus zoom.",
+    "hint_touch": "Drag the image to move it, and zoom with the slider.",
+    "loading": "Loading image"
   },
   "command_palette": {
     "label": "Command palette",
@@ -617,7 +719,11 @@
     "last_30_days": "Last 30 days",
     "this_month": "This month",
     "last_month": "Last month",
-    "this_year": "This year"
+    "this_year": "This year",
+    "last_90_days": "Last 90 days",
+    "this_quarter": "This quarter",
+    "last_quarter": "Last quarter",
+    "last_12_months": "Last 12 months"
   },
   "year_picker": {
     "label": "Choose a year"
@@ -666,7 +772,22 @@
     "label": "Drop files here",
     "browse": "Choose files",
     "label_one": "Drop a file here",
-    "browse_one": "Choose a file"
+    "browse_one": "Choose a file",
+    "paste_hint": "You can also paste a file or a screenshot",
+    "taken": "Chosen files"
+  },
+  "attachment_card": {
+    "remove": "Remove {name}",
+    "download": "Download {name}",
+    "open": "Open {name}",
+    "uploading": "Uploading",
+    "failed": "Upload failed",
+    "retry": "Retry {name}"
+  },
+  "share_button": {
+    "share": "Share",
+    "copied": "Link copied",
+    "copy_link": "Copy link"
   },
   "color_picker": {
     "label": "Colour",
@@ -775,5 +896,175 @@
     "in_7_days": "In 7 days",
     "start_of_month": "Start of month",
     "end_of_month": "End of month"
+  },
+  "period_picker": {
+    "label": "Period",
+    "preset": "Range",
+    "custom": "Custom range",
+    "dates": "Dates",
+    "compare": "Compare to previous period",
+    "mode": "Compare with",
+    "previous": "Previous period",
+    "year": "Same period last year",
+    "versus": "vs {range}"
+  },
+  "tracker_strip": {
+    "up": "Operational",
+    "degraded": "Degraded",
+    "down": "Down",
+    "none": "No data",
+    "uptime": "{value} uptime",
+    "cell": "{label}: {status}"
+  },
+  "dashboard_grid": {
+    "handle": "Drag {label}",
+    "earlier": "Move {label} earlier",
+    "later": "Move {label} later",
+    "size": "Change the size of {label}, now {size}",
+    "size_small": "Small",
+    "size_medium": "Medium",
+    "size_large": "Large",
+    "size_full": "Full width",
+    "moved": "{label} moved to position {position, number} of {count, number}",
+    "resized": "{label} is now {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, one {There is # problem} other {There are # problems}}"
+  },
+  "marquee": {
+    "pause": "Pause scrolling",
+    "play": "Resume scrolling"
+  },
+  "barcode": {
+    "invalid": "This barcode can't be drawn: check the value."
+  },
+  "page_indicator": {
+    "pages": "Pages",
+    "page": "Page {index} of {count}"
+  },
+  "back_to_top": {
+    "label": "Back to top"
+  },
+  "footer": {
+    "label": "Footer"
+  },
+  "waffle_chart": {
+    "share": "Share"
+  },
+  "questionnaire_card": {
+    "from_assistant": "Asked by your assistant",
+    "progress": "Question {current} of {total}",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "review": "Review answers",
+    "submit": "Send answers",
+    "summary": "Your answers",
+    "edit": "Edit",
+    "edit_answer": "Edit the answer to: {question}",
+    "other": "Other",
+    "other_label": "Your answer",
+    "skipped": "Skipped"
+  },
+  "model_picker": {
+    "label": "Model",
+    "placeholder": "Choose a model",
+    "context": "{size} context",
+    "new": "New",
+    "beta": "Beta",
+    "unavailable": "Unavailable"
+  },
+  "voice_input": {
+    "start": "Start recording",
+    "stop": "Stop recording",
+    "idle": "Press the microphone to speak",
+    "requesting": "Waiting for microphone access…",
+    "listening": "Listening…",
+    "cancel_hint": "Esc to cancel",
+    "processing": "Processing…",
+    "denied": "Microphone access is blocked. Allow it in settings, then try again.",
+    "error": "Could not record. Try again.",
+    "cancelled": "Recording cancelled"
+  },
+  "popconfirm": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "menubar": {
+    "label": "Application menu"
+  },
+  "floating_panel": {
+    "move": "Move the panel",
+    "move_hint": "Use the arrow keys to move it; hold Shift to move further.",
+    "resize": "Resize the panel",
+    "resize_hint": "Use the arrow keys to resize it; hold Shift for bigger steps.",
+    "minimise": "Minimise",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "cascader": {
+    "placeholder": "Choose",
+    "back": "Back",
+    "loading": "Loading…",
+    "empty": "Nothing here"
+  },
+  "transfer_list": {
+    "available": "Available",
+    "chosen": "Chosen",
+    "filter": "Filter {list}",
+    "add": "Add the ticked items",
+    "remove": "Remove the ticked items",
+    "add_all": "Add all",
+    "remove_all": "Remove all",
+    "empty": "Nothing here",
+    "moved": "{count, plural, one {# item moved} other {# items moved}}"
+  },
+  "media_player": {
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "volume": "Volume",
+    "seek": "Seek",
+    "time_of": "{elapsed} of {duration}",
+    "speed": "Playback speed",
+    "normal_speed": "Normal",
+    "captions": "Captions",
+    "fullscreen": "Full screen",
+    "exit_fullscreen": "Exit full screen"
+  },
+  "conversation_list": {
+    "label": "Conversations",
+    "pinned": "Pinned",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "previous_7_days": "Previous 7 days",
+    "older": "Older",
+    "actions": "Actions for {title}",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "rename": "Rename",
+    "delete": "Delete",
+    "empty_title": "No conversations yet",
+    "empty_description": "Your chats with the assistant will appear here."
+  },
+  "message_actions": {
+    "label": "Message actions",
+    "copy": "Copy message",
+    "retry": "Retry",
+    "edit": "Edit",
+    "good": "Good response",
+    "bad": "Bad response"
+  },
+  "message_scroller": {
+    "label": "Conversation",
+    "new_messages": "New messages",
+    "new_messages_count": "{count, plural, one {# new message} other {# new messages}}"
+  },
+  "prompt_suggestions": {
+    "label": "Suggested prompts"
+  },
+  "shimmer": {
+    "thinking": "Thinking…"
   }
 }
