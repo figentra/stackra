@@ -1,9 +1,16 @@
 ---
 title: "0025 — Packages publish to npm.figentra.com; every package builds to ESM dist"
-description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20 · amended 2026-10-30 (STA-1656, owner-approved 2026-10-30)"
+description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20 · amended 2026-10-30 (STA-1656 and STA-1679)"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0025, the first registry and dist-build decision. Boundary: decision text only; superseded by ADR 0177, its registry decisions amended by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0177, 0453. */}
+
+<Note>
+  Amended 2026-10-30 (STA-1679): every TypeScript preset's `lib` is ES2023 (Expo keeps ESNext), so
+  the ES2023 array methods `toSorted`, `toReversed`, `toSpliced`, `with` and `findLast` typecheck in
+  services and libraries without `@types/node`. Node 24 (the pinned runtime) and every supported
+  browser ship them; `target` stays ES2022, so no emitted syntax changes.
+</Note>
 
 <Note>
   Amended 2026-10-30 (STA-1656), approved by the owner on 2026-10-30: decision 3's `@stackra/source`

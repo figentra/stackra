@@ -10,7 +10,7 @@
   "display": "@stackra/typescript-config — base",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     // ADR 0025: typecheck reads a workspace package's source through its `@stackra/source` export condition.

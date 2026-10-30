@@ -8,7 +8,7 @@
   "display": "@stackra/typescript-config — service worker",
   "extends": "./base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "WebWorker"],
+    "lib": ["ES2023", "WebWorker"],
     "types": []
   },
   "include": ["${configDir}/sw.ts"]

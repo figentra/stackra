@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves every preset listed in package.json `exports` exists, parses as JSONC, and resolves its `extends`
  *          chain back to base.json — so a broken preset fails here, not in the first consumer's typecheck — and that
- *          every preset reads decorated workspace sources as legacy decorators (STA-1656).
+ *          every preset reads decorated workspace sources as legacy decorators (STA-1656) with an ES2023 lib or newer
+ *          (STA-1679).
  * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0025 (typecheck reads source).
@@ -77,6 +78,21 @@ describe("@stackra/typescript-config presets", () => {
       const options = Object.assign({}, ...chain) as Record<string, unknown>;
       expect(options["experimentalDecorators"], file).toBe(true);
       expect(options["emitDecoratorMetadata"], file).toBe(false);
+    }
+  });
+
+  it("every preset's lib has the ES2023 library or newer, so `toSorted` and `toReversed` typecheck (STA-1679)", () => {
+    for (const file of Object.values(pkg.exports)) {
+      let lib: unknown;
+      for (let current: string | undefined = join(root, file); current !== undefined;) {
+        const preset = readJsonc(current);
+        lib ??= preset.compilerOptions?.["lib"];
+        current = preset.extends === undefined ? undefined : join(dirname(current), preset.extends);
+      }
+      const years = (lib as string[]).map((entry) =>
+        /^esnext$/i.test(entry) ? 9999 : Number(/^es(\d{4})$/i.exec(entry)?.[1] ?? 0),
+      );
+      expect(Math.max(...years), file).toBeGreaterThanOrEqual(2023);
     }
   });
 
