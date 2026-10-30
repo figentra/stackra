@@ -1,4 +1,4 @@
-# Feature Specification: tenant Google Analytics: a tenant's visitor events also go to the tenant's own GA4 property
+# Feature Specification: analytics routing across the tenant tree: connected tools at every level, sent from the integrations service
 
 **Feature Branch**: `figentra/sta-1628-tenant-ga4-destination`
 
@@ -12,69 +12,85 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending (owner questions Q1 to Q8 below)
+**Clarifications status**: pending (owner questions Q1 to Q7 below)
 
-**Input**: Owner request, 2026-10-30: tenants (businesses on the platform) can see their own analytics in their own
-Google Analytics. ADR 0483 (STA-1624) routes app analytics through the `relay` driver to the analytics service and
-covers only Figentra measuring its own product; its decision 5 and STA-1624 clarification Q2 left a tenant's own
-property to a separate decision. Decision record: ADR 0485 (Proposed, this branch). Builds on the unlanded branch
-`figentra/sta-1624-analytics-relay`.
+**Input**: Owner request, 2026-10-30: tenants see their own analytics in their own tools. Widened the same day: every
+analytics or ad tool (PostHog, GA4, Firebase, Meta, TikTok and others) is a connector of the integrations service,
+offered to tenants at every level of the recursive tree; Figentra and the levels above a tenant see transactions from
+everywhere; and no tenant finds its tools short of data without knowing why. Builds on ADR 0483 (STA-1624, unlanded
+branch `figentra/sta-1624-analytics-relay`). Decision record: ADR 0485 (Proposed, this branch). The branch and folder
+keep the first name (GA4 only); the scope is the whole routing.
 
 ## Impact
 
-- **Apps touched**: none in core. Template lines mark the events of tenant-owned surfaces (storefront, site, branded
-  app, portal) as tenant visible, and the console gains the connect form (template line and OS follow-ups)
-- **Services touched**: none in core. Figentra OS `services/analytics-reports` owns the `analytics.scopeGa4` setting
-  and runs the scope fan-out; the OS integrations service hosts the `Ga4Connection` in the connection store (OS
-  follow-ups)
-- **Packages touched**: `packages/cross-cutting/analytics` (`./contracts`: the tenant-visible event marker and the
-  scope destination type; `./node`: the scope branch of `IngestAnalyticsBatchAction` and `FanOutAnalyticsListener`,
-  the setting class); `@stackra-pro/analytics-destinations` in `figentra/stackra-pro` (`Ga4Integration`,
-  `Ga4Connection`, the `ga4` driver taking per-call credentials)
-- **Cross-service events**: none new. The existing `analytics.batch.accepted.v1` gains the destination `scope-ga4` and
-  the `ScopeRef` it was accepted for; it is written and consumed inside the analytics service. The setting cache is
-  dropped on the existing `settings.changed.v1`
-- **Tenancy and data**: tenant-owned data. One setting row per tenant (`analytics.scopeGa4`, `TenancyScopes.Tenant`
-  level, owned by analytics-reports) and one connection per tenant in the connection store (integrations service, RLS
-  and the tenant data key). The scope for routing comes only from the request's tenant context, never from the
-  envelope. No identifier containing `tenant` is declared outside `@stackra/tenancy` (ADR 0323, R-59). The
-  isolation test (`security-tenancy-isolation-test`) is required: tenant B's batch never reaches tenant A's property,
-  and tenant B cannot read or replace tenant A's connection
-- **Secrets**: names only. `GA4_API_SECRET` is a tenant secret, a `@Secret` field of `Ga4Connection` in the connection
-  store, written blind and never read back (ADR 0485 decision 3); it is not in Infisical. The deployment's own
-  `ANALYTICS_GA4_API_SECRET` (ADR 0483) is unchanged and never used for a tenant send
-- **ADR needed**: yes, ADR 0485 (this branch, Proposed); it extends ADR 0483 decision 5
-- **New dependencies**: none (`fetch`; `@stackra/integrations`, `@stackra/settings`, `@stackra/contracts` are
-  existing packages; whether `@stackra/analytics` may take `@stackra/settings` as a new workspace dependency is a
-  plan-time check, no catalog change)
-- **Deploy modes**: SaaS in every region (ADR 0485 decision 8), lockable off per region or plan by deployment
-  setting lock. On-prem and air-gapped: off by default; an air-gapped install cannot reach Google and keeps the lock on
-- **Licence tier**: free for the scope destination mechanism in `@stackra/analytics/node`; Pro for the `ga4` driver,
-  `Ga4Integration` and `Ga4Connection` (`@stackra-pro/analytics-destinations`, ADR 0461). Figentra plan entitlement:
-  owner question Q3
-- **Privacy**: tenant is controller, Figentra processor; Google is the controller's own vendor, not our sub-processor
-  for this flow (owner question Q1). DPA clause, record of processing and tenant-surface consent text change before
-  release. No `user_id`, IP, user agent or advertising id leaves (ADR 0071 decision 6, ADR 0483 decisions 3 and 6)
-- **Docs to update**: ADR 0485; the analytics package README (Destinations, Erasure, Not here yet); the DPA template
-  and privacy pages (ADR 0071 decision 5); the ADR index row and nav (integration batch)
+- **Apps touched**: none in core. Template lines: the console's connection pages, the per-connection health page, the
+  sharing level on the organisation join flow, and the tenant surface's consent banner listing recipients (template
+  line follow-ups)
+- **Services touched**: none in core. Figentra OS follow-ups:
+  - `services/analytics-reports`: routing, the connection and sharing-level projections, conversions from business
+    events, drop summaries, reconciliation, Figentra's in-region platform warehouse and self-hosted PostHog per region.
+  - The OS integrations service: vendor connectors, sends, the recipients ledger, erasure, the replay store, alerts and
+    the health page.
+  - OS tenancy: the sharing level on each parent-child link.
+  - Commerce and payments: no change; their existing integration events are mapped to conversions.
+- **Packages touched**:
+  - `packages/cross-cutting/analytics` (`./contracts`, `./node`): the route computation, `AnalyticsDeliveryRouted`,
+    `AnalyticsRouteSummarised`, the projections' shapes and the conversion mapping.
+  - `packages/communication/integrations`: the `AnalyticsToolConnector` port (`ConnectorKind.Analytics`), an optional
+    `erasePerson` and the `canErase` declaration on `AdPlatformConnector`, the recipients ledger contract, the replay
+    contract, and `ConversionBridge` taking routed conversions.
+  - No vendor code in Stackra (ADR 0443 decision 8).
+- **Cross-service events** (all within one region):
+  - New `analytics.delivery.routed.v1`: analytics to integrations, one per connection.
+  - New `analytics.route.summarised.v1`: analytics to integrations, hourly drop counts per connection.
+  - Connection lifecycle events from integrations to analytics (connector key, kind, owning scope, category,
+    `canErase`, `phoneFormat`; no secret). Whether they exist today is checked at plan.
+  - Sharing-level changes from tenancy to analytics.
+  - Existing business events (`OrderPlaced` and the payment and refund events) consumed by analytics.
+- **Tenancy and data**: tenant-owned data that crosses tenants by rule.
+  - **Route.** The route is computed only from the request context and records (ADR 0485 decision 3), never from an
+    envelope id.
+  - **Tables.**
+    - Analytics projections: connections per scope, sharing levels.
+    - Integrations: recipients ledger (subject public id, connection, first and last sent), replay store (encrypted,
+      region, window), health counters.
+  - **Isolation.** RLS on each. No identifier with `tenant` outside `@stackra/tenancy` (ADR 0323). The isolation test
+    (`security-tenancy-isolation-test`) is required: a tenant outside the route never receives an event, and an
+    ancestor at `aggregates` or `none` never receives one.
+  - **Classification.** Match keys are a classified field of the routed event (ADR 0134).
+- **Secrets**: names only, all tenant secrets in the connection store, declared on each OS connector's `Connection`
+  (for example `GA4_API_SECRET`, `META_CAPI_ACCESS_TOKEN`, `TIKTOK_EVENTS_ACCESS_TOKEN`, plus OAuth grants for erasure
+  APIs). They are written blind, never read back and never in Infisical. The deployment's own
+  `ANALYTICS_GA4_API_SECRET` and `ANALYTICS_POSTHOG_PERSONAL_API_KEY` (ADR 0483) are unchanged
+- **ADR needed**: yes, ADR 0485 (this branch, Proposed); it amends ADR 0210 decision 1, ADR 0243 decision 7 and ADR
+  0483 decision 5
+- **New dependencies**: none expected. Whether `@stackra/analytics` may depend on `@stackra/integrations` for
+  `matchKeysOf` (or the hashing moves to `@stackra/contracts`) is checked at plan; no catalog change
+- **Deploy modes**: SaaS in every region, each connector lockable off per region or plan (ADR 0485 decision 11).
+  On-prem: routing runs, connectors as the install allows. Air-gapped: no external connector; routing to in-install
+  tools only
+- **Licence tier**: free for the routing (`@stackra/analytics/node`) and the ports and machinery
+  (`@stackra/integrations`); vendor connectors are OS integrations code, not a Stackra package (ADR 0443 decision 7).
+  Figentra plan entitlement: Q3
+- **Privacy**:
+  - Roles: the tenant is controller, Figentra its processor and also a controller for named purposes of its own
+    (platform terms).
+  - Documents: the DPA, the record of processing, the platform terms, the organisation join terms and the tenant
+    surface banner change before release.
+  - Contacts: only hashed, only to connectors that can erase, only with `marketing`.
+- **Docs to update**: ADR 0485; the analytics and integrations package READMEs; the DPA and privacy templates (ADR 0071
+  decision 5); forward Notes on ADR 0210, 0243, 0483 and the ADR index row and nav (integration batch)
 - **Lane**: full
-- **Change risk**: R3 (tenancy, tenant secrets, PII boundary, outbound HTTP to a tenant-chosen vendor, consent)
+- **Change risk**: R3 (tenancy and cross-tenant flow, tenant secrets, PII, outbound HTTP to tenant-chosen vendors,
+  consent, erasure)
 
 ## Clarifications
 
-### Session 2026-10-30
+### Session 2026-10-30 (first)
 
-Settled by the ADRs, recorded for review (ADR 0485 takes these as its proposal):
-
-- Credentials: a tenant `Connection` with `measurementId` (plain) and `apiSecret` (`@Secret`) in the connection store
-  (ADR 0107, 0308 rules 2, 3, 12); a setting holds only a `@ConnectionRef` (ADR 0108 S4). The brief's "measurement id
-  is a setting" becomes a plain field of the connection, so the id and its secret stay one credential set.
-- Routing scope: the tenant the host resolves for the request; envelope ids are never trusted (tenancy rules).
-- Consent: the visitor's verified snapshot (ADR 0472), gated by the setting's category, default `analytics`.
-- Region: every region, sent from the tenant's region (ADR 0353 decision 5).
-- Code tier: mechanism free, `ga4` and its connection Pro (ADR 0461 decisions 1 and 2).
-- Erasure: no `user_id` is sent, the Measurement Protocol cannot delete, so deletion inside the tenant's property is
-  the controller's; our hop keeps nothing beyond the outbox row.
+The first draft covered one tenant's GA4 only. Its decisions that survive are in ADR 0485 decisions 5 (secrets
+written blind, never read back) and 12 (not the built-in dashboards). Its open questions Q1 (Google's role), Q4
+(which events), Q5 (`user_id`) and Q6 (scope level) are settled or replaced by the answers below.
 
 ### Owner answers, 2026-10-30 (second session: routing across the tenant tree)
 
@@ -85,110 +101,129 @@ transactions from everywhere. Answers:
 - **Roll-up.** Full event-level detail goes to the parties (the tenant whose surface it happened on, and the seller)
   and to every organisation ancestor (ADR 0243). Other ancestors (host, reseller) get full detail only if the child
   agreed at join, otherwise aggregates. Disclosed in each child's settings.
-- **Figentra's view.** Full event level across all tenants. Figentra has a dual role like Shopify: processor of tenant
-  data in general, and controller for named purposes of its own (platform analytics, fraud, billing, product
-  improvement), stated in the platform terms. That data stays in each region (Figentra's warehouse and a self-hosted
-  PostHog per region); Figentra's global tools (PostHog EU, GA4) get events without hashed contacts.
-- **Payload to tenant connectors.** Behaviour, conversions, and hashed contact data, but contacts go only to
-  connectors where we can carry out an erasure (a deletion API reachable with the tenant's grant); the others get
-  behaviour and conversions without contacts. Contacts need the per-person stored consent proof (ADR 0472 decision 5).
+- **Figentra's view.** Full event level across all tenants, with a dual role like Shopify's: processor of tenant data in
+  general, and controller for named purposes of its own (platform analytics, fraud, billing, product improvement),
+  stated in the platform terms. That data stays in each region (Figentra's warehouse and a self-hosted PostHog per
+  region). Figentra's global tools (PostHog EU, GA4) get events without hashed contacts.
+- **Payload to tenant connectors.** Behaviour, conversions and hashed contact data. Contacts go only to connectors
+  where we can carry out an erasure; the others get behaviour and conversions without contacts.
 - **Routing.** The analytics service checks consent and decides which connections get which events, then publishes
-  one event per connection; the integrations service owns the connector, its credentials and the vendor call. Tenant
-  secrets never leave integrations. This replaces ADR 0485 decisions 2 and 6 as drafted.
-- **Delivery guarantees.** All four: a health page per connection (sent, dropped by consent with reason, failed, last
-  error); a replay window (delivered events kept encrypted in region for a set number of days); alerts on repeated
-  failure or rejected credentials; a daily reconciliation report (ledger orders and revenue against what each tool
-  was sent).
+  one event per connection. The integrations service owns the connector, its credentials and the vendor call.
+- **Delivery guarantees.** All four: a health page per connection, a replay window, alerts on failure, and a daily
+  reconciliation report.
 
-Still open: the replay window length; the source of the Firebase app stream (its app reports need the Firebase SDK on
-the device, which ADR 0483 removed); legal review of the KSA and UAE transfer rules. ADR 0485 must be rewritten to
-these answers before Q1 to Q8 below are reconsidered; several (Q1, Q4, Q5, Q6) are superseded by them.
+Builder choices, recorded for review (ADR 0485 states them):
+
+- **Aggregates** for non-detail ancestors are served by the built-in dashboards and the warehouse, never pushed to
+  their vendor tools.
+- **Regions.** A route never crosses a region; an ancestor in another region gets aggregates only (ADR 0353).
+- **Match keys** are hashed in memory by the analytics service with the existing `matchKeysOf`, with the
+  destination connection's `phoneFormat`. Raw contacts are never stored or put on the bus. A conversion with match
+  keys needs `marketing` in the event's snapshot, as `ConversionBridge` does today; an audience upload also needs the
+  person's stored proof (ADR 0472 decision 5). In the second session the owner's wording was "a per-person stored
+  consent proof" for contacts; Q6 confirms which.
+- **Behaviour envelope.** It never carries contacts, IP, user agent or advertising id, so ADR 0483 holds for clients.
+- **Erasure capability.** `canErase` is declared per connector and proven by a recorded case. No vendor is assumed
+  capable; GA4 through the Measurement Protocol alone is not.
 
 ### Open questions for the owner
 
-- **Q1 — Google's role on our documents.** Proposed: Google is the controller's own vendor for this flow, named in a
-  DPA clause and the record of processing, and not added to our sub-processor list. Or list it anyway as a
-  sub-processor "on the controller's instruction"? (legal review)
-- **Q2 — Consent category.** Proposed default `analytics`, tenant may choose the stricter `marketing`. Or always
-  `marketing`, because the data leaves for Google, where the tenant could link it to ads?
-- **Q3 — Plan.** Which Figentra plans get it (ADR 0242: Starter, Pro, Business, Enterprise)? Proposed: every plan, as
-  it costs us one outbox event per batch. Separately confirmed: Stackra customers need Pro for the `ga4` driver.
-- **Q4 — Which events.** Proposed: only events of tenant-owned surfaces, marked tenant visible by the product, and
-  never `identify`, `group` or the tenant staff's use of Figentra's console. Does the owner want a fixed list per
-  product (for example `page.viewed`, `screen.viewed`, commerce funnel events), or a tenant-editable include list?
-- **Q5 — `user_id`.** Proposed: never, as for our own GA4. Some tenants will ask for signed-in user reports; allow a
-  per-tenant hashed id later (then erasure needs the GA4 User Deletion API with the tenant's OAuth grant)?
-- **Q6 — Scope level.** Proposed: one property per tenant. Should a scope below the tenant (a branch, a store) be able
-  to connect its own property (connection levels `[Scope, Tenant]`, scope depth is a plan limit)?
-- **Q7 — Regions that restrict transfers.** Proposed: available in every region, a deployment may lock it off. Should
-  it start locked off in the GCC region for KSA PDPL transfer rules until legal review, or for government tenants?
-- **Q8 — Consent policy per tenant surface.** Enabling the destination must name Google Analytics on the tenant
-  surface's banner and bump that surface's consent policy version (ADR 0298 decision 3). Do tenant surfaces carry a
-  consent policy version of their own today, or is that new work in `@stackra/consent` this spec must add?
+- **Q1 — Replay window.** How many days are delivered events kept for replay (encrypted, in region)? Proposed: 7.
+- **Q2 — Figentra's own destinations.** "All connectors live in the integrations service": should Figentra's own
+  PostHog and GA4 of ADR 0483 also become platform-level connections in the integrations service? ADR 0483 binds them
+  in the analytics service, and ADR 0461 puts the `ga4` driver in `@stackra-pro/analytics-destinations`, which names a
+  vendor against ADR 0443 decision 7. Proposed: yes, in a follow-up that amends ADR 0483 decision 4.
+- **Q3 — Plans.** Which Figentra plans (ADR 0242) get connectors, how many per tenant, and which plan unlocks the
+  replay window and reconciliation?
+- **Q4 — Firebase.** Firebase's app reports need the Firebase SDK on the device, which ADR 0483 removed. Offer the
+  Firebase connector as a GA4 stream only (server-side, no app-instance reports), or not at all?
+- **Q5 — IP address and user agent for conversions.** Meta and TikTok match better with them. ADR 0483 decision 3
+  forbids forwarding them. Keep that, or allow them on conversions to `canErase` connectors with `marketing`?
+- **Q6 — Consent for match keys.** `marketing` in the event's snapshot (today's `ConversionBridge` rule), or also the
+  person's stored consent proof for every conversion with match keys?
+- **Q7 — Legal.** Review of the KSA and UAE PDPL transfer rules for tenant-chosen vendors, and of the platform terms
+  for Figentra's controller purposes, before release. Start any connector locked off in the GCC region until then?
 
 ## User Scenarios & Testing
 
-### User Story 1 - A tenant admin connects its GA4 property (Priority: P1)
+### User Story 1 - A tenant at any level connects a tool (Priority: P1)
 
-A tenant admin opens Analytics → Google Analytics in the console, pastes the measurement id and an API secret created
-in GA4, picks the consent category and saves.
+A tenant admin at any depth opens Integrations, picks GA4, Meta or another analytics or ad connector, enters its
+credentials and the consent category, and saves.
 
-**Acceptance**: the connection is created at the tenant level; the API secret is never returned by any read, list,
-export, log or error, and the console shows only that it is set and when; `check()` validates the id against the
-debug endpoint and the console says a wrong secret cannot be detected; the action is audited with actor and time; an
+**Acceptance**: the connection is created at the tenant or scope level in the integrations service; no secret is
+returned by any read, list, export, log or error; the console states whether the connector can erase and therefore
+whether it receives match keys; the analytics service's projection shows the connection without any secret; an
 entitlement or region lock refuses with a typed refusal.
 
-### User Story 2 - The tenant's visitors appear in its GA4 (Priority: P1)
+### User Story 2 - The route reaches every recipient the rules allow (Priority: P1)
 
-A shopper on the tenant's storefront grants `analytics`; `page.viewed` is relayed.
+A shopper on a marketplace storefront (host tenant H, organisation parent O of seller S) buys from S.
 
-**Acceptance**: the analytics service publishes one `scope-ga4` event for that tenant besides the deployment's
-destinations; the listener sends it with the tenant's credentials; GA4 receives `client_id` (the anonymous id), the
-event name and declared properties only.
+**Acceptance**: S (seller) and the storefront owner receive full detail; O receives full detail through its
+organisation membership; a reseller ancestor at `aggregates` receives nothing in its tools and sees totals in its
+dashboard; an ancestor in another region receives nothing; Figentra's regional warehouse and PostHog receive the event
+with match keys absent; Figentra's global tools receive it without contacts.
 
-### User Story 3 - Isolation and consent (Priority: P1)
+### User Story 3 - Consent and payload per connection (Priority: P1)
 
-**Acceptance**: an envelope carrying another tenant's `groups.scope` still routes by the host's tenant; tenant B's
-batch never reaches tenant A's property; a snapshot without the setting's category sends nothing to the tenant
-destination while the deployment's `analytics` destinations still get it; events not marked tenant visible,
-`identify` and `group` never reach it; a request with no tenant context publishes no scope event.
+**Acceptance**: a behaviour event reaches only connections whose category the snapshot grants; match keys reach only
+`canErase` connections and only with `marketing`; a behaviour event never carries a contact field, IP, user agent or
+advertising id; one routed event is published per connection.
 
-### User Story 4 - Disconnect, offboarding and failure (Priority: P2)
+### User Story 4 - A tenant always knows why (Priority: P1)
 
-**Acceptance**: disconnecting destroys the stored secret and stops sends at once; a missing or disabled connection
-skips and logs `analytics.scope_destination.skipped` without retry; a GA4 failure retries for that tenant alone; on
-offboarding the setting and connection go with the tenant.
+**Acceptance**: the health page shows sent, dropped by consent (by reason), sent without match keys (by reason),
+failed and the last error; a replay re-sends a time range with the same event ids; repeated failures or a rejected
+credential alert the tenant's admins; the daily reconciliation sets ledger orders and revenue against routed and sent
+counts, by reason.
+
+### User Story 5 - Erasure and leaving (Priority: P2)
+
+**Acceptance**: `SubjectErased` calls `erasePerson` on every connection in the recipients ledger for that subject and
+lists each on the receipt; the replay store is purged for that subject; disconnecting destroys the secret; a child that
+leaves its organisation stops routing upward at once; offboarding deletes connections and sharing levels.
 
 ## Requirements
 
-- **FR-001**: `./contracts` declares a tenant-visible marker for analytics events and the `scope-ga4` destination of
-  `analytics.batch.accepted.v1`, which carries the `ScopeRef` from the call context.
-- **FR-002**: `IngestAnalyticsBatchAction` publishes one scope event per batch when the request has a scope, its
-  `analytics.scopeGa4` setting is enabled and entitled, and the verified snapshot grants the setting's category;
-  the event holds only tenant-visible `track` deliveries; no envelope field selects the scope.
-- **FR-003**: `FanOutAnalyticsListener` sends a scope event in that scope's context with the connection the setting
-  references; a missing, disabled or disconnected connection is skipped, logged and not retried.
-- **FR-004**: the Pro `ga4` driver takes the measurement id and API secret per send, sends `client_id` = `anonymousId`,
-  and never sends `user_id`, IP, user agent or advertising id.
-- **FR-005**: `Ga4Connection.apiSecret` is write-only through every surface (console, API, export, logs, audit,
-  errors); `check()` posts to the Measurement Protocol debug endpoint.
-- **FR-006**: the setting is lockable off per region and per plan by the deployment.
-- **FR-007**: an isolation test proves no cross-tenant send or connection access.
+- **FR-001**: the route of an event is the parties, their organisation ancestors and other ancestors per sharing
+  level, all in the event's region, computed from the request context and records only.
+- **FR-002**: the analytics service publishes one `AnalyticsDeliveryRouted` per connection on the route whose consent
+  category is granted, holding only what ADR 0485 decision 7 allows.
+- **FR-003**: business integration events mapped to conversions are routed by the same rule with the snapshot they
+  carry.
+- **FR-004**: match keys are computed in memory with `matchKeysOf` and the connection's `phoneFormat`, only for
+  `canErase` connections with `marketing`, and never stored raw.
+- **FR-005**: `@stackra/integrations` ships `AnalyticsToolConnector` (`ConnectorKind.Analytics`), optional
+  `erasePerson` on it and on `AdPlatformConnector`, and the `canErase` declaration with its recorded-case check.
+- **FR-006**: the integrations service sends each routed event in the owning scope's context, retries per
+  connection, and records each subject that received match keys or a user id in the recipients ledger.
+- **FR-007**: erasure calls `erasePerson` for every ledger entry of the subject and purges its replay rows.
+- **FR-008**: the health page, the replay of a time range, alerts and the daily reconciliation exist per connection.
+- **FR-009**: Figentra's own full event-level view lands in its regional warehouse and PostHog; its global tools
+  receive no contacts.
+- **FR-010**: connection secrets are write-only on every surface.
+- **FR-011**: an isolation test proves that no tenant outside the route, and no ancestor at `aggregates` or `none`,
+  receives an event.
 
 ## Success Criteria
 
-- **SC-001**: a two-tenant test shows each batch reaching only its own tenant's property.
-- **SC-002**: a canary secret never appears in any read model, log line, error or export in tests.
-- **SC-003**: with the category refused, the tenant destination receives nothing while the deployment destination
-  receives the batch.
+- **SC-001**: the marketplace scenario of User Story 2 routes to exactly the expected connections in a test.
+- **SC-002**: a canary contact never appears unhashed in any event, row or log, and match keys never reach a
+  connection without `canErase`.
+- **SC-003**: an erasure test clears every recipient-ledger connection and the replay store.
+- **SC-004**: the reconciliation of a seeded day matches ledger revenue to sent values, with every difference given
+  a reason.
 
 ## Out of scope (named, not built)
 
-- Built-in tenant dashboards and the warehouse (ADR 0190, 0163): unchanged; ADR 0485 decision 11 states the split.
-- Google tag or Firebase SDK on tenant pages, GA4 Admin API (OAuth, property creation, user deletion), BigQuery
-  export, other tenant destinations (Meta, TikTok server events: the `ConversionBridge` covers conversions).
-- All code until the owner approves this spec and answers Q1 to Q8.
+- Vendor connectors themselves (OS integrations follow-ups, one per vendor, each with recorded cases).
+- The built-in dashboards and warehouse (ADR 0190, 0163), except showing aggregates to non-detail ancestors.
+- Google tag, Firebase or other vendor SDKs on devices (ADR 0483 decision 6).
+- All code until the owner approves this spec and answers Q1 to Q7.
 
 ## Status history
 
-- 2026-10-30 · — → Draft · Claude (builder) · spec and ADR 0485 written for owner approval
+- 2026-10-30 · — → Draft · Claude (builder) · spec and ADR 0485 written for owner approval (tenant GA4 only)
+- 2026-10-30 · Draft → Draft · Claude (builder) · rewritten to the owner's routing answers: tree roll-up, connectors
+  in integrations, Figentra dual role, delivery guarantees
