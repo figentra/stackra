@@ -3,7 +3,7 @@ title: "0493 — Runway resources and workloads: one runway provisions a product
 description: "Draft · 2026-10-30"
 ---
 
-{/* Stackra file contract: Purpose: the decision record that a product's root runway declares named managed `resources:` (postgres, kafka, and the existing queues, topics, caches and buckets) and generic container `workloads:` (ECS Fargate), sized and capped per environment, that Runway provisions them in the product's AWS account through @stackra/infra-aws-runtime, that their connection secrets go to Infisical and reach only the consumers that declare them, and that a workload is allowed only when no managed option fits. Boundary: decision text only; the code is @stackra/runway (schema) and @stackra/infra-aws-runtime (plan and Pulumi), STA-1640. Runtime: docs. Governing contract: ADR template; ADR 0296, 0238, 0473, 0172, 0173, 0227, 0352, 0444, 0206, 0482. */}
+{/* Stackra file contract: Purpose: the decision record that a product's root runway declares named managed `resources:` (postgres, and the existing queues, topics, caches and buckets) and generic container `workloads:` (ECS Fargate), sized and capped per environment, that Runway provisions them in the product's AWS account through @stackra/infra-aws-runtime, that their connection secrets go to Infisical and reach only the consumers that declare them, and that a workload is allowed only when no managed option fits. Boundary: decision text only; the code is @stackra/runway (schema) and @stackra/infra-aws-runtime (plan and Pulumi), STA-1640. Runtime: docs. Governing contract: ADR template; ADR 0296, 0238, 0473, 0172, 0173, 0227, 0352, 0444, 0206, 0482. */}
 
 <Note>
   Draft (epic STA-1640), waiting for the owner's answers (spec
@@ -11,8 +11,8 @@ description: "Draft · 2026-10-30"
   [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) (member `requires`, root
   `shared`) and generalises
   [0444](/adr/0444-one-self-hosted-tools-stack-per-region-from-the-root-runway)'s Fargate stack.
-  Revives two rows of [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) as resource
-  kinds, subject to Q1. Numbered after the highest ADR in flight (0492); the ADR steward reconciles
+  Keeps [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)'s Kafka and OpenSearch
+  deferrals (owner, Q1). Numbered after the highest ADR in flight (0492); the ADR steward reconciles
   the number.
 </Note>
 
@@ -24,13 +24,13 @@ SQS queues, SNS topics, Valkey caches and S3 buckets. The environment's Postgres
 Cloud through the role `encoreAccess` grants. Self-hosted servers run only in the per-region tools stack (0444),
 from a fixed catalogue.
 
-Nothing lets a product declare a database, a Kafka cluster or a container it needs beside its services, size it per
+Nothing lets a product declare a database or a container it needs beside its services, size it per
 environment, and get its connection details where they are used. Each new need becomes hand-written infrastructure.
 
 ## Decision
 
 1. **One root runway declares the runtime.** Two new top-level blocks, both named maps:
-   - `resources.<name>`: a managed kind (`postgres`, `kafka`, and the existing `queue`, `topic`, `cache`, `bucket`),
+   - `resources.<name>`: a managed kind (`postgres`, and the existing `queue`, `topic`, `cache`, `bucket`),
      its engine options, and a size per environment.
    - `workloads.<name>`: a container (image pinned by digest, port, health check, env, secret names, size and scale per
      environment, `uses` of resources, `expose: internal | public`) and a required `reason`.
@@ -40,8 +40,7 @@ environment, and get its connection details where they are used. Each new need b
 
 2. **Runway provisions, per environment, in the product's account** (0172 decision 1). `@stackra/infra-aws-runtime`
    plans each kind (pure, `.`) and declares it with Pulumi (`./node`), as it does for queues and caches. Postgres is
-   RDS by default or Aurora, with RDS Proxy in front (0473); Kafka is MSK (Serverless by default, IAM auth, no
-   passwords). Workloads run on one ECS Fargate cluster per environment, with service discovery for `internal` and
+   RDS by default or Aurora, with RDS Proxy in front (0473). Workloads run on one ECS Fargate cluster per environment, with service discovery for `internal` and
    an ALB for `public`. This is the construct 0444's tools stack already uses, extracted and shared.
 3. **Sizes come from a catalogue; limits come from the runway.** Each kind has named sizes (`small`, `medium`,
    `large`) in a catalogue that maps to instance classes, capacity and a monthly estimate. Each resource and workload
@@ -55,9 +54,8 @@ environment, and get its connection details where they are used. Each new need b
    (0173), workloads through SSM parameters the same sync fills (0444 decision 4). Nobody reads a value.
 5. **Managed first; a workload needs a reason.** A workload is allowed only when no managed resource or vendor cloud
    fits, when residency forces self-hosting (an in-country region), or for on-prem parity. Its `reason` is required by
-   the schema and read in review. A kind that 0227 defers is allowed only as a resource with a `reason`: Kafka and
-   OpenSearch become available as kinds, and the bus decision of 0142 and the search decision of 0221 keep their own
-   triggers.
+   the schema and read in review. Kinds that 0227 defers (Kafka, OpenSearch) are reserved names the schema refuses;
+   each comes back through its own trigger (0142 for the bus, 0221 for search) and a new ADR.
 6. **Nothing changes AWS without the owner.** Runway's `plan` is data and runs nothing. `pulumi preview` runs in CI,
    and `pulumi up` runs only from the product's `production`-protected deploy job, as every infrastructure change
    does (0352).
@@ -81,7 +79,6 @@ environment, and get its connection details where they are used. Each new need b
 
 ## Supersedes and sources
 
-`Supersedes: none`. Amends [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (the Kafka and OpenSearch
-rows become resource kinds with a reason; subject to Q1) and, subject to Q3,
+`Supersedes: none`. Subject to Q3, amends
 [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 4 (self-hosted
 ZITADEL in a SaaS region that residency forces). Sources: owner decision relayed 2026-10-30; STA-1640.
