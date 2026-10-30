@@ -155,13 +155,17 @@ Rollback before the last step: the shim still names the old boxes, and `aws ec2 
 
 ## Step 1 in detail: AWS Auth on the gate identity
 
-The boxes use the shared gate identity, the one whose id is the GitHub variable `INFISICAL_GATE_IDENTITY_ID` and which
-the Quality Gate already uses to read `/ci` in `figentra-ci-gate`. Nothing is created; one login method is added. All of
-this happens in the Infisical web app (EU, `eu.infisical.com`) as the owner, and no value is typed anywhere.
+The boxes use the shared machine identity `figentra-ci-gate`, the one the Quality Gate uses over GitHub OIDC (its id is
+the GitHub organization variable `INFISICAL_GATE_IDENTITY_ID`). It already has **Viewer** on the Infisical project
+`figentra-ci-gate`, which holds exactly what a job needs: `prod` `/ci` (`HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`) and
+`prod` `/ci/turbo` (`TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`). The project is the boundary; the free plan has no
+custom roles. Nothing is created: one login method is added, so no identity slot is spent. The owner does this in the
+Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 
-1. **Open the identity.** Organization, Access Control, Machine Identities, then the gate identity. Leave its OIDC
-   auth exactly as it is: CI depends on it.
-2. **Add AWS Auth** (Authentication, Add auth method, AWS Auth) with:
+1. Organization, **Access Control**, **Machine Identities**, then open `figentra-ci-gate`.
+2. In **Authentication**, leave **OIDC Auth** exactly as it is (CI depends on it) and choose **Add auth method**,
+   **AWS Auth**.
+3. Fill in:
 
    | Field                           | Value                                                                      |
    | ------------------------------- | -------------------------------------------------------------------------- |
@@ -173,16 +177,13 @@ this happens in the Infisical web app (EU, `eu.infisical.com`) as the owner, and
    | Access Token Max Number of Uses | `0`                                                                        |
    | Access Token Trusted IPs        | leave `0.0.0.0/0` (boxes have changing public IPs)                         |
 
-   These settings belong to the AWS Auth method only; the OIDC tokens CI gets keep their own. The role does not exist
-   yet; the ARN may be added before it does. Account `591473336656` is the `academorix` profile's.
+4. Save. The identity page now lists two auth methods, OIDC Auth and AWS Auth.
 
-3. **Project access is already there** for `/ci` in `figentra-ci-gate`. The turbo values (`/ci/turbo`) live behind a
-   separate identity and project in CI (`INFISICAL_TURBO_IDENTITY_ID`, `INFISICAL_TURBO_PROJECT_ID`). Optional: give
-   the gate identity the **Viewer** role on that project too, and set `turboProjectId` in step 2. Without it, testbed
-   jobs use the local turbo cache only, as fork pull requests do in CI.
-4. **Copy the ids**, none of them secret: the gate identity's **ID** (the identity page, or the
-   `INFISICAL_GATE_IDENTITY_ID` variable), the project id of `figentra-ci-gate` (`INFISICAL_GATE_PROJECT_ID`), and the
-   turbo project's id if you did the optional part.
+These settings belong to the AWS Auth method only; CI's OIDC tokens keep theirs. The role does not exist until step 2
+creates it, and Infisical accepts the ARN before then. Account `591473336656` is the `academorix` profile's.
+
+Step 2 needs two ids, neither of them secret: the identity's id (`INFISICAL_GATE_IDENTITY_ID`) and the project's id
+(`INFISICAL_GATE_PROJECT_ID`).
 
 ## Step 2 in detail: the first deploy
 
@@ -207,8 +208,8 @@ pulumi config set identityId <identity id> && pulumi config set ciGateProjectId 
 pulumi config set --path 'sshCidrs[0]' "$(curl -s https://checkip.amazonaws.com)/32"
 ```
 
-Add `pulumi config set turboProjectId <id>` only if you did the optional part of step 1. Then the stand-up
-counts and the first pass:
+The `/ci/turbo` grant uses the same project, so nothing more is needed for the turbo cache. Then the stand-up counts
+and the first pass:
 
 ```bash
 pulumi config set heavyMin 1 && pulumi config set lightMin 0 && pulumi config set groups false
