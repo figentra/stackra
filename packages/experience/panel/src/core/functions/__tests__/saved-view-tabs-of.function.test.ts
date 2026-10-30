@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `savedViewTabsOf`: the all-rows tab first and selected, then one tab per view, each drawing
- *          the caller's `render` for its view.
+ * Purpose: unit tests of `savedViewTabsOf`: the all-rows tab first and selected, then the preset tabs, then one tab
+ *          per view, each drawing the caller's `render` for its view.
  * Boundary: test only; plain views and a recording `render`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0271 (decision 7).
@@ -31,5 +31,16 @@ describe("savedViewTabsOf", () => {
       { id: "view_1", label: "Open", content: "view_1" },
       { id: "view_2", label: "Late", content: "view_2" },
     ]);
+  });
+
+  it("puts the preset view tabs between the all-rows tab and the saved views", () => {
+    const tabs = savedViewTabsOf({
+      label: "Views",
+      allLabel: "All",
+      presets: [{ id: "preset:merged", label: "Merged", content: "merged" }],
+      views: views.slice(0, 1),
+      render: (view) => view?.id ?? "none",
+    });
+    expect(tabs.items.map((item) => item.id)).toEqual(["all", "preset:merged", "view_1"]);
   });
 });

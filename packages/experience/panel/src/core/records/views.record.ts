@@ -9,10 +9,10 @@ import { ViewRecord } from "#core/records/view.record";
 import type { Path } from "#core/types/path.type";
 import type { Views } from "#core/types/views.type";
 
-/** Builds preset views over row type `R`. */
-export class ViewsRecord<R> implements Views<R> {
+/** Builds preset views over row type `R` and list-query input `I`. */
+export class ViewsRecord<R, I = Readonly<Record<string, unknown>>> implements Views<R, I> {
   /** A preset view. */
-  view(name: string, filter: { readonly [K in Path<R>]?: unknown }): ViewRecord<R> {
-    return new ViewRecord<R>(name, filter as Readonly<Record<string, unknown>>);
+  view(name: string, filter: { readonly [K in Path<R>]?: unknown }): ViewRecord<R, I> {
+    return new ViewRecord<R, I>(name, filter as Readonly<Record<string, unknown>>);
   }
 }

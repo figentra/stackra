@@ -11,6 +11,7 @@ import type { ReactElement } from "react";
 
 import type { SavedView } from "#core/schemas/saved-view.schema";
 import type { TableNode } from "#core/types/table-node.type";
+import type { ViewNode } from "#core/types/view-node.type";
 
 /** Props of `ResourceTable`. */
 export interface ResourceTableProps {
@@ -38,4 +39,6 @@ export interface ResourceTableProps {
   readonly emptyState?: ReactElement;
   /** The saved view the table starts from: its columns, filter values and sort; the table's own when absent. */
   readonly view?: SavedView | undefined;
+  /** The preset view the table starts from: its filter values and sort, and its fixed input on every read. */
+  readonly preset?: ViewNode | undefined;
 }

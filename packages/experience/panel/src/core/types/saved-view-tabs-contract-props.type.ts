@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SavedViewTabsContractProps`, the props the web and native saved view tabs share: the views, the label of
- *          the all-rows tab and what each tab draws.
+ *          the all-rows tab, the resource's preset view tabs and what each tab draws.
  * Boundary: a type only; each `SavedViewTabsProps` is this contract, and `savedViewTabsOf` reads it.
  * Runtime: isomorphic
  * Governing contract: ADR 0271 (decisions 1 and 7); ADR 0359 (decision 14); ADR 0305 (`<name>.props.ts`).
@@ -16,6 +16,8 @@ export interface SavedViewTabsContractProps {
   readonly label: string;
   /** The text of the first tab, which draws the list with no view. */
   readonly allLabel: string;
+  /** The resource's preset view tabs, drawn after the all-rows tab and before the saved views. */
+  readonly presets?: readonly TabItem[];
   /** The views the viewer may see, in the store's order. */
   readonly views: readonly SavedView[];
   /** What the selected tab draws: the list under `view`, or with no view for the first tab. */

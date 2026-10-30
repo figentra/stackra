@@ -3,7 +3,9 @@
  * Purpose: unit tests of `ResourceListPage`: the recorded columns and their cells, the closed list input (default sort,
  *          page size, the next page's cursor), the header create link, row actions (view, edit, a placed record action
  *          run with the record id, delete) and the bulk bar fanning out per record; a resource with no registered tree
- *          shows the row's own keys; a page's row count shows, capped past the limit; a view store's saved views draw as tabs, a view's columns and sort reach the table.
+ *          shows the row's own keys; a page's row count shows, capped past the limit; a view store's saved views draw
+ *          as tabs, a view's columns and sort reach the table; the preset views draw as tabs without a store, and a
+ *          preset's filter values and fixed input reach the list query (STA-1688).
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -339,6 +341,39 @@ describe("ResourceListPage", () => {
     expect(screen.getByText("orders::resources.order.columns.status")).toBeTruthy();
     expect(spies.useQuery.mock.calls.at(-1)?.[1]).toMatchObject({
       sort: { key: "status", direction: SortDirection.Asc },
+    });
+    dispose();
+  });
+
+  it("draws the preset views as tabs and reads a preset with its fixed input", () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        table: {
+          columns: [{ kind: "value", key: "status" }],
+          filters: [{ kind: "value", key: "status" }],
+          count: Count.Estimated,
+        },
+        views: [
+          { name: "paid", filter: { status: "paid" } },
+          { name: "merged", filter: { status: "open" }, input: { includeMerged: true } },
+        ],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} />);
+    expect(screen.getByText("panel::resources.all_views")).toBeTruthy();
+    expect(screen.getByText("orders::resources.order.views.paid")).toBeTruthy();
+    expect(screen.getByText("orders::resources.order.views.merged")).toBeTruthy();
+    expect(spies.useQuery.mock.calls.at(-1)?.[1]).toEqual({
+      includeMerged: true,
+      limit: 25,
+      filter: { status: "open" },
     });
     dispose();
   });

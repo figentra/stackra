@@ -21,6 +21,12 @@ export const View = Object.freeze({
   of: (
     name: string,
     filter: Readonly<Record<string, unknown>>,
-    options: { readonly sort?: SortNode } = {},
-  ): ViewNode => Object.freeze({ name, filter: Object.freeze({ ...filter }), ...options }),
+    options: { readonly sort?: SortNode; readonly input?: Readonly<Record<string, unknown>> } = {},
+  ): ViewNode =>
+    Object.freeze({
+      name,
+      filter: Object.freeze({ ...filter }),
+      ...options,
+      ...(options.input === undefined ? {} : { input: Object.freeze({ ...options.input }) }),
+    }),
 });

@@ -92,11 +92,14 @@ class OrderResource extends Resource<Order, OrderView>({
       .defaultSort("createdAt", SortDirection.Desc);
   }
 
-  override views(v: Views<OrderView>) {
+  override views(v: Views<OrderView, { readonly includeArchived?: boolean }>) {
     return [
       v
         .view("paid_today", { status: ["paid"], createdAt: DateRange.today() })
         .sort("createdAt", SortDirection.Desc),
+      v.view("archived", {}).input({ includeArchived: true }),
+      // @ts-expect-error a fixed input names only the list query's input keys
+      v.view("typo", {}).input({ includeArchive: true }),
     ];
   }
 
@@ -203,6 +206,8 @@ describe("Resource", () => {
         filter: { status: ["paid"], createdAt: "today" },
         sort: { key: "createdAt", direction: "desc" },
       },
+      { name: "archived", filter: {}, input: { includeArchived: true } },
+      { name: "typo", filter: {}, input: { includeArchive: true } },
     ]);
     expect(tree.infolist?.entries[1]).toEqual({
       kind: "section",

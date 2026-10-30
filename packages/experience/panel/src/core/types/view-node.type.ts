@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ViewNode`, one recorded preset view of a resource table: its name, its filter values and its sort.
+ * Purpose: `ViewNode`, one recorded preset view of a resource table: its name, its filter values, its sort and the fixed
+ *          list-query input it reads with.
  * Boundary: a type only; built by `View.of` and by the views builder. The label is derived
  *           (`<module>::resources.<model>.views.<name>`).
  * Runtime: isomorphic
@@ -18,4 +19,7 @@ export interface ViewNode {
 
   /** The sort, when it differs from the table's default. */
   readonly sort?: SortNode;
+
+  /** Fixed list-query input (`{ includeMerged: true }`), sent with every read under the user's filters. */
+  readonly input?: Readonly<Record<string, unknown>>;
 }

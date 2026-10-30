@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `savedViewTabsOf`, the `Tabs` props of a saved view picker: an all-rows tab first and selected, then one tab
- *          per saved view, each drawing the list under its view.
+ * Purpose: `savedViewTabsOf`, the `Tabs` props of a saved view picker: an all-rows tab first and selected, then the
+ *          resource's preset view tabs, then one tab per saved view, each drawing the list under its view.
  * Boundary: a pure function the web and native `SavedViewTabs` share, so both pickers list the same tabs. Each tab's
  *           content is the caller's `render` result; `Tabs` draws only the selected one.
  * Runtime: isomorphic
@@ -23,6 +23,7 @@ const ALL = "all";
 export function savedViewTabsOf({
   label,
   allLabel,
+  presets = [],
   views,
   render,
 }: SavedViewTabsContractProps): TabsContractProps {
@@ -31,6 +32,7 @@ export function savedViewTabsOf({
     defaultSelectedKeys: [ALL],
     items: [
       { id: ALL, label: allLabel, content: render(undefined) },
+      ...presets,
       ...views.map((view) => ({ id: view.id, label: view.name, content: render(view) })),
     ],
   };

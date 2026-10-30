@@ -9,7 +9,9 @@
  *           until gen writes filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
  *           yes or no, and contains and compare as text. A principal column shows the principal's name. A saved view
  *           (`view`) sets the columns shown and the filter values and sort the table starts with (`savedViewState`); the
- *           caller keys the table by view so a new view starts fresh. A page that carries a count shows it beside the
+ *           caller keys the table by view so a new view starts fresh. A preset view (`preset`) sets the filter values
+ *           and sort the table starts with, and its fixed input goes with every read under the user's state, below a
+ *           relation's bound keys (`tableInput`). A page that carries a count shows it beside the
  *           filter bar, capped as "10,000+" (`CrudService.table`'s `TableCount`).
  * Runtime: browser
  * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); reporting gaps 5 and 7.
@@ -75,17 +77,21 @@ export function ResourceTable({
   bulkActions,
   emptyState,
   view,
+  preset,
 }: ResourceTableProps): ReactElement {
   const { t } = useTranslation();
-  const [state, setState] = useState<ResourceQuery>(() => ({
-    search: "",
-    // reason: a saved view's filter values were drawn by this same filter bar before they were stored
-    filterValues: (view?.filter ?? {}) as FilterState,
-    sort:
-      view?.sort === undefined
-        ? null
-        : { column: view.sort.key, direction: toUi(view.sort.direction) },
-  }));
+  const [state, setState] = useState<ResourceQuery>(() => {
+    const start = view ?? preset;
+    return {
+      search: "",
+      // reason: a view's filter values were drawn by this same filter bar, or declared against its filters
+      filterValues: (start?.filter ?? {}) as FilterState,
+      sort:
+        start?.sort === undefined
+          ? null
+          : { column: start.sort.key, direction: toUi(start.sort.direction) },
+    };
+  });
   const [cursors, setCursors] = useState<readonly (string | undefined)[]>([undefined]);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const cursor = cursors.at(-1);
@@ -98,16 +104,17 @@ export function ResourceTable({
         };
   const answer = useQuery(
     query,
-    {
-      ...input,
-      ...tableInput(table, {
+    tableInput(
+      table,
+      {
         search: state.search,
         filters: state.filterValues,
         sort,
         limit: pageSize,
         ...(cursor === undefined ? {} : { cursor }),
-      }),
-    } as never,
+      },
+      preset?.input === undefined ? input : { ...preset.input, ...input },
+    ) as never,
     { keepPreviousData: true },
   );
   const page = (answer.data ?? {}) as Page;

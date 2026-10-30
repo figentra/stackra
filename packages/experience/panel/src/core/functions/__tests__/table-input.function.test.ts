@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `tableInput`: the closed list input keeps declared filters (operator kinds in wire form, empty
  *          ones dropped), a sortable column's sort (else the default sort with its tiebreak keys), a trimmed search and
- *          the cursor, and passes everything when no table is recorded.
+ *          the cursor, and passes everything when no table is recorded; a fixed input sits under the user's state,
+ *          its filter merged one level (STA-1688).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 2); reporting gap 5.
@@ -93,5 +94,33 @@ describe("tableInput", () => {
       sort: { key: "name", direction: SortDirection.Asc },
       filter: { tier: "gold" },
     });
+  });
+
+  it("sends a fixed input under the user's state, merging a fixed filter one level", () => {
+    expect(
+      tableInput(
+        table,
+        { search: "", filters: { status: "paid" }, sort: null, limit: 25, cursor: "c2" },
+        {
+          includeMerged: true,
+          limit: 500,
+          cursor: "stale",
+          filter: { status: "open", tier: "gold" },
+        },
+      ),
+    ).toEqual({
+      includeMerged: true,
+      limit: 25,
+      cursor: "c2",
+      sort: { key: "createdAt", direction: SortDirection.Desc },
+      filter: { status: "paid", tier: "gold" },
+    });
+    expect(
+      tableInput(
+        table,
+        { search: "", filters: {}, sort: null, limit: 25 },
+        { filter: { tier: "gold" } },
+      ),
+    ).toMatchObject({ filter: { tier: "gold" } });
   });
 });

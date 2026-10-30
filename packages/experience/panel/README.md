@@ -133,6 +133,16 @@ version (`StaleVersionError`). `ResourceListPage` takes a `views` store and draw
 native `SavedViewTabs` does the same for a native list. `groupRows(rows, view)` groups what is on screen in first-met
 order and is for a fully loaded relation table only (ADR 0470 decision 4); a paged list waits for the server group-by.
 
+A resource's preset views (`views(v)`) draw as tabs too, after the all-rows tab and before the saved views. A preset can
+read its list query with a fixed input, typed by the query's input when the override names it, sent under the viewer's
+filters, sort, search and cursor (a fixed `filter` merges one level, the viewer's values winning):
+
+```ts
+override views(v: Views<CustomerView, QueryInput<typeof ListCustomersQuery>>) {
+  return [v.view("merged", {}).input({ includeMerged: true })];
+}
+```
+
 ## Queued export
 
 `a.export({ formats })` places the export button; the work is a module's export action (`job` on the action, the

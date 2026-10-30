@@ -5,8 +5,10 @@
  *          pagination, row actions and the bulk bar.
  * Boundary: reads the resource's route constants and its registered tree (`resourceTreeOf`); a resource with no
  *           registered tree shows the row's own keys. Runs nothing itself: every button goes through the action
- *           runner. With a `ViewStore`, the viewer's saved views draw as tabs over the table (`SavedViewTabs`), the
- *           first tab being the list with no view; a store that fails to read leaves the tabs out. Grouping and the
+ *           runner. The resource's preset views (`views(v)`) and, with a `ViewStore`, the viewer's saved views draw as
+ *           tabs over the table (`SavedViewTabs`), the first tab being the list with no view; a preset tab reads with
+ *           its fixed input (`includeMerged`) under the user's filters; a store that fails to read leaves the saved
+ *           tabs out. Grouping and the
  *           non-table layouts are not drawn yet: grouping waits for the server group-by (ADR 0470 decision 4), never
  *           `groupRows` over one page.
  * Runtime: browser
@@ -22,6 +24,7 @@ import { ActionPlace } from "#core/enums/action-place.enum";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { resourceTreeOf } from "#core/functions/resource-tree-of.function";
 import type { SavedView } from "#core/schemas/saved-view.schema";
+import type { ViewNode } from "#core/types/view-node.type";
 import type { ResourceListPageProps } from "#react/resource-pages/resource-list-page.props";
 import { ResourceTable } from "#react/resource-pages/resource-table";
 import { useResourceActions } from "#react/resource-pages/use-resource-actions";
@@ -62,10 +65,11 @@ export function ResourceListPage({
   if (list === undefined) throw new TypeError(`${resource.key} has no list query`);
   const title = t(resourceLabel(resource.key, "title"));
   const empty = actions.at(ActionPlace.Empty);
-  const table = (view: SavedView | undefined) => (
+  const table = (view: SavedView | undefined, preset?: ViewNode) => (
     <ResourceTable
-      key={view?.id ?? "all"}
+      key={preset === undefined ? (view?.id ?? "all") : `preset:${preset.name}`}
       view={view}
+      preset={preset}
       resourceKey={resource.key}
       label={title}
       query={list}
@@ -86,18 +90,24 @@ export function ResourceListPage({
       }
     />
   );
+  const presets = (tree.views ?? []).map((preset) => ({
+    id: `preset:${preset.name}`,
+    label: t(resourceLabel(resource.key, "views", preset.name)),
+    content: table(undefined, preset),
+  }));
   return (
     <>
       <PageHeader title={title} actions={actions.at(ActionPlace.ListHeader)} />
       {actions.modal}
-      {saved.length === 0 ? (
+      {saved.length === 0 && presets.length === 0 ? (
         table(undefined)
       ) : (
         <SavedViewTabs
           label={t(PANEL_KEYS.panel.resources.saved_views)}
           allLabel={t(PANEL_KEYS.panel.resources.all_views)}
+          presets={presets}
           views={saved}
-          render={table}
+          render={(view) => table(view)}
         />
       )}
     </>
