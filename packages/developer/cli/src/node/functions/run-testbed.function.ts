@@ -10,7 +10,7 @@
  * Runtime: node
  * Governing contract: ADR 0484 (the testbed); the agent contract in the testbed spec; ADR 0282 (decision 3).
  */
-import { basename, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { TESTBED_DEFAULTS } from "#node/constants/testbed-defaults.constant";
 import { TESTBED_EXIT } from "#node/constants/testbed-exit.constant";
@@ -26,6 +26,7 @@ import { parseTestbedBoxes } from "#node/functions/parse-testbed-boxes.function"
 import { refusesTestbedCommand } from "#node/functions/refuses-testbed-command.function";
 import { releaseTestbedClaim } from "#node/functions/release-testbed-claim.function";
 import { shouldScaleTestbed } from "#node/functions/should-scale-testbed.function";
+import { testbedProject } from "#node/functions/testbed-project.function";
 import type { CliIo } from "#node/types/cli-io.type";
 import type { TestbedBox } from "#node/types/testbed-box.type";
 import type { TestbedDeps } from "#node/types/testbed-deps.type";
@@ -299,7 +300,7 @@ export async function runTestbed(
     }
     const slot = classifyTestbedCommand(command);
     const directory = resolve(request.cwd, dir);
-    const project = basename(directory);
+    const project = testbedProject(directory);
     const skip = new Set<string>();
     let retried = false;
     for (let attempt = 1; ; attempt += 1) {
@@ -379,7 +380,7 @@ export async function runTestbed(
       const box = await pickBox();
       if (box === undefined) return 1;
       const directory = resolve(request.cwd, dir);
-      const project = basename(directory);
+      const project = testbedProject(directory);
       const synced = await prepareAndSync(
         box,
         `sync-${project.replaceAll(/[^A-Za-z0-9_.-]/g, "-")}`,
