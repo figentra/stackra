@@ -36,8 +36,10 @@
       ],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm). wrangler: the reusable
       // runway-cloudflare-workers workflow runs `pnpm exec wrangler` in the Worker member's folder, and the member
-      // (workers/static) declares it; knip attributes workflow commands to the root.
-      "ignoreBinaries": ["opencode", "infisical", "specify", "wrangler"],
+      // (workers/static) declares it; knip attributes workflow commands to the root. playwright and stackra: the
+      // reusable runway-smoke workflow runs them in the product repository that calls it, where @stackra/cli and
+      // @stackra/runway's optional Playwright peer are installed (STA-265).
+      "ignoreBinaries": ["opencode", "infisical", "specify", "wrangler", "playwright", "stackra"],
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports, which knip reads as entries); the only TS

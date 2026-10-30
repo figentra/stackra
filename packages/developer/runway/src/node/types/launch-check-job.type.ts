@@ -13,7 +13,7 @@ import type { CaptureStep } from "#node/types/capture-step.type";
 export type LaunchCheckJob = {
   /** The app key. */
   readonly app: string;
-  /** The platform. */
+  /** The platform the app is built and launched on. */
   readonly platform: "ios" | "android";
   /** The CI runner label. */
   readonly runner: string;
