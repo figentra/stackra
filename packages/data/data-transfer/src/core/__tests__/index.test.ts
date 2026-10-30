@@ -68,6 +68,7 @@ describe("@stackra/data-transfer", () => {
       "compileMapping",
       "datevWriteOptionsOf",
       "detectEncoding",
+      "exportSheet",
       "matchColumns",
       "normalizeHeader",
       "payrollSheet",

@@ -29,6 +29,7 @@ export { UnreadableEncodingError } from "#core/errors/unreadable-encoding.error"
 export { compileMapping } from "#core/functions/compile-mapping.function";
 export { datevWriteOptionsOf } from "#core/functions/datev-write-options-of.function";
 export { detectEncoding } from "#core/functions/detect-encoding.function";
+export { exportSheet } from "#core/functions/export-sheet.function";
 export { matchColumns } from "#core/functions/match-columns.function";
 export { normalizeHeader } from "#core/functions/normalize-header.function";
 export { payrollSheet } from "#core/functions/payroll-sheet.function";

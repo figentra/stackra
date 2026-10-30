@@ -47,6 +47,9 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
   never `tenant=`. The batch size, models, prefix and row group size are the caller's settings.
 - `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small
   archive stays readable by every unzip tool.
+- A tenant export or backup of a model's records builds its sheet with `exportSheet` and the model's
+  `Classified.members`: a classified column needs the export's opt-in, and a `credential` column is never written,
+  even opted in (ADR 0494). Never build such a sheet by hand around it.
 - Only add a symbol a consumer imports today (OS data-exchange, a product importer, the registry row).
 
 ## Rules that fail the build

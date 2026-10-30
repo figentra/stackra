@@ -99,6 +99,19 @@ const bytes = new XlsxWriterDriver().write([
 ]);
 ```
 
+A tenant export or backup of a model's records builds its sheet with `exportSheet`, which drops every classified column
+the export does not opt in and never writes a `credential` column, even opted in (ADR 0494):
+
+```ts
+import { exportSheet } from "@stackra/data-transfer";
+
+const sheet = exportSheet(connections, {
+  name: "connections",
+  columns: ["id", "provider", "accessToken"],
+  classes: Classified.members(Connection),
+}); // the header is ["id", "provider"]: accessToken is a credential
+```
+
 ## A zip
 
 ```ts
