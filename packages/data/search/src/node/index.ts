@@ -8,7 +8,8 @@
  *          `reindexSemantic` (the jobs that run them live in @stackra/data-maintenance, ADR 0462 decision 1), the
  *          `search:status` runner (`searchStatus`) the CLI loads, `SearchForgetService`, which an erasure uses to drop
  *          rows from every index (stackra-275), and `SearchQuery`, the base of the search query gen writes per
- *          `@Searchable` model, with its input, output and hit shapes (stackra-305), until `stackra gen` writes the
+ *          `@Searchable` model, with its input, output and hit shapes (stackra-305), the `HttpRerankerDriver`, the `Recommender` drivers (`PostgresRecommenderDriver`, `HttpRecommenderDriver`) and the
+ *          tenant's synonyms (`Synonym`, its permissions, service, source driver, three actions and a list query), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: all of it reaches Postgres through
  *           @stackra/database. Migrations are found by their path, as every migration is, so none is re-exported; the
@@ -17,24 +18,44 @@
  * Governing contract: ADR 0294 (decision 15); STA-1326; ADR 0127 2026-10-24 note (an entry exists once its folder has a
  *                     file); the STA-347 stand-in barrel decision.
  */
+export { SynonymPermissions } from "#node/access/synonym.permissions";
+export { CreateSynonymAction } from "#node/actions/create-synonym.action";
+export { DeleteSynonymAction } from "#node/actions/delete-synonym.action";
+export { UpdateSynonymAction } from "#node/actions/update-synonym.action";
 export { SearchQuery } from "#node/bases/search-query.base";
 export { SearchableMacro } from "#node/database/macros/searchable.macro";
+export { DatabaseSynonymSourceDriver } from "#node/drivers/database-synonym-source.driver";
 export { HttpEmbedderDriver } from "#node/drivers/http-embedder.driver";
+export { HttpRecommenderDriver } from "#node/drivers/http-recommender.driver";
+export { HttpRerankerDriver } from "#node/drivers/http-reranker.driver";
 export { PgvectorVectorIndexDriver } from "#node/drivers/pgvector-vector-index.driver";
+export { PostgresRecommenderDriver } from "#node/drivers/postgres-recommender.driver";
 export { PostgresSearchQueryLogDriver } from "#node/drivers/postgres-search-query-log.driver";
 export { PostgresSearchDriver } from "#node/drivers/postgres-search.driver";
+export { Synonym } from "#node/models/synonym.model";
+export { ListSynonymsQuery } from "#node/queries/list-synonyms.query";
 export { registerSearchableModels } from "#node/functions/register-searchable-models.function";
 export { reindexSearch } from "#node/functions/reindex-search.function";
 export { reindexSemantic } from "#node/functions/reindex-semantic.function";
 export { searchFacetHashOf } from "#node/functions/search-facet-hash-of.function";
 export { searchStatus } from "#node/functions/search-status.function";
+export { CreateSynonymInput } from "#node/schemas/create-synonym-input.schema";
+export { CreateSynonymOutput } from "#node/schemas/create-synonym-output.schema";
+export { DeleteSynonymInput } from "#node/schemas/delete-synonym-input.schema";
+export { DeleteSynonymOutput } from "#node/schemas/delete-synonym-output.schema";
+export { ListSynonymsInput } from "#node/schemas/list-synonyms-input.schema";
+export { ListSynonymsOutput } from "#node/schemas/list-synonyms-output.schema";
 export { SearchQueryInput } from "#node/schemas/search-query-input.schema";
 export { SearchQueryOutput } from "#node/schemas/search-query-output.schema";
+export { UpdateSynonymInput } from "#node/schemas/update-synonym-input.schema";
+export { UpdateSynonymOutput } from "#node/schemas/update-synonym-output.schema";
 export { RelatedChangeService } from "#node/services/related-change.service";
 export { SearchForgetService } from "#node/services/search-forget.service";
 export { SearchIndexRegistry } from "#node/services/search-index-registry.service";
 export { SearchableChangeService } from "#node/services/searchable-change.service";
 export { SemanticChangeService } from "#node/services/semantic-change.service";
+export { SynonymService } from "#node/services/synonym.service";
+export type { SynonymView } from "#node/types/synonym-view.type";
 export type { SearchQueryReportOptions } from "#node/types/search-query-report-options.type";
 export type { SearchQueryReportRow } from "#node/types/search-query-report-row.type";
 export type { SearchableColumns } from "#node/types/searchable-columns.type";

@@ -10,10 +10,17 @@ import { describe, expect, it } from "@stackra/testing";
 import * as testing from "#testing/index";
 
 describe("@stackra/search/testing", () => {
-  it("exports the conformance suite", () => {
+  it("exports the conformance suites and the evaluation set", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "SEARCH_CONFORMANCE_CASES",
       "SEARCH_CONFORMANCE_DOCUMENTS",
+      "SEARCH_EVALUATION_CATALOGUE",
+      "SEARCH_EVALUATION_QUERIES",
+      "SEARCH_EVALUATION_SYNONYMS",
+      "SEARCH_EVALUATION_THRESHOLDS",
+      "ndcgAt",
+      "recallAt",
+      "runRerankerConformance",
       "runSearchConformance",
       "searchConformanceTable",
     ]);

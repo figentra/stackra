@@ -16,8 +16,11 @@
  */
 export { SearchConfig } from "#config/search.config";
 export { SEARCH_CONFIG_SCHEMA as SearchConfig$ } from "#core/constants/search-config-schema.constant";
+export { MemoryRecommenderDriver } from "#core/drivers/memory-recommender.driver";
+export { MemoryRerankerDriver } from "#core/drivers/memory-reranker.driver";
 export { MemorySearchDriver } from "#core/drivers/memory-search.driver";
 export { MemorySearchQueryLogDriver } from "#core/drivers/memory-search-query-log.driver";
+export { MemorySynonymSourceDriver } from "#core/drivers/memory-synonym-source.driver";
 export { MemoryVectorIndexDriver } from "#core/drivers/memory-vector-index.driver";
 export { SearchHealthIndicatorDriver } from "#core/drivers/search-health-indicator.driver";
 export { SearchIndexState } from "#core/enums/search-index-state.enum";
@@ -27,6 +30,7 @@ export { searchWordsOf } from "#core/functions/search-words-of.function";
 export { SearchOptions } from "#core/schemas/search-options.schema";
 export { SearchSettings } from "#core/search.settings";
 export { Search } from "#core/services/search.service";
+export type { MemoryRecommenderSeed } from "#core/types/memory-recommender-seed.type";
 export type { SearchAcrossOptions } from "#core/types/search-across-options.type";
 export type { SearchFacetOptions } from "#core/types/search-facet-options.type";
 export type { SearchFindOptions } from "#core/types/search-find-options.type";

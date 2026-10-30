@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "synonym": {
+      "read": "Ver grupos de sinónimos",
+      "create": "Añadir un grupo de sinónimos",
+      "update": "Cambiar un grupo de sinónimos",
+      "delete": "Eliminar un grupo de sinónimos"
+    }
+  },
+  "actions": {
+    "synonym": {
+      "create": {
+        "success": "Grupo de sinónimos añadido."
+      },
+      "update": {
+        "success": "Grupo de sinónimos actualizado."
+      },
+      "delete": {
+        "confirm": "¿Eliminar este grupo de sinónimos? Las búsquedas dejarán de tratar estos términos como iguales.",
+        "success": "Grupo de sinónimos eliminado."
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/search (the `SearchDriver`, `VectorIndex` and `Embedder`
- *          ports and the types they use)
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/search (the `SearchDriver`, `VectorIndex`, `Embedder`,
+ *          `Reranker`, `Recommender` and `SynonymSource` ports and the types they use)
  *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
  *           (ADR 0294 decision 15).
@@ -9,9 +9,16 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { Embedder } from "#contracts/ports/embedder.port";
+export { Recommender } from "#contracts/ports/recommender.port";
+export { Reranker } from "#contracts/ports/reranker.port";
 export { SearchDriver } from "#contracts/ports/search-driver.port";
 export { SearchQueryLog } from "#contracts/ports/search-query-log.port";
+export { SynonymSource } from "#contracts/ports/synonym-source.port";
 export { VectorIndex } from "#contracts/ports/vector-index.port";
+export type { RecommendOptions } from "#contracts/types/recommend-options.type";
+export type { Recommendation } from "#contracts/types/recommendation.type";
+export type { RerankCandidate } from "#contracts/types/rerank-candidate.type";
+export type { RerankHit } from "#contracts/types/rerank-hit.type";
 export type { SearchBoost } from "#contracts/types/search-boost.type";
 export type { SearchDocument } from "#contracts/types/search-document.type";
 export type { SearchFacetRequest } from "#contracts/types/search-facet-request.type";
@@ -26,6 +33,7 @@ export type { SearchRequest } from "#contracts/types/search-request.type";
 export type { SearchSort } from "#contracts/types/search-sort.type";
 export type { SearchTable } from "#contracts/types/search-table.type";
 export type { SearchVector } from "#contracts/types/search-vector.type";
+export type { SynonymSet } from "#contracts/types/synonym-set.type";
 export type { VectorHit } from "#contracts/types/vector-hit.type";
 export type { VectorItem } from "#contracts/types/vector-item.type";
 export type { VectorQueryOptions } from "#contracts/types/vector-query-options.type";

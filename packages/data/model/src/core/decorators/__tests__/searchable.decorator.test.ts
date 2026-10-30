@@ -54,6 +54,15 @@ describe(Searchable, () => {
     expect(Searchable.on(Memo)?.semantic).toBe(false);
   });
 
+  it("keeps rerank in the frozen options", () => {
+    @Searchable({
+      text: ["title"],
+      rerank: true,
+    })
+    class Listing extends Model.with() {}
+    expect(Searchable.on(Listing)).toEqual({ text: ["title"], rerank: true });
+  });
+
   it("keeps the field kinds frozen", () => {
     @Searchable({
       text: ["title", "variants.sku"],

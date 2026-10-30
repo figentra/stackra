@@ -25,8 +25,11 @@ import type {
 describe("@stackra/search", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(search).sort()).toEqual([
+      "MemoryRecommenderDriver",
+      "MemoryRerankerDriver",
       "MemorySearchDriver",
       "MemorySearchQueryLogDriver",
+      "MemorySynonymSourceDriver",
       "MemoryVectorIndexDriver",
       "Search",
       "SearchConfig",

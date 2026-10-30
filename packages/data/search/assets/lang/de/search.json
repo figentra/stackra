@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "synonym": {
+      "read": "Synonymgruppen ansehen",
+      "create": "Synonymgruppe hinzufügen",
+      "update": "Synonymgruppe ändern",
+      "delete": "Synonymgruppe entfernen"
+    }
+  },
+  "actions": {
+    "synonym": {
+      "create": {
+        "success": "Synonymgruppe hinzugefügt."
+      },
+      "update": {
+        "success": "Synonymgruppe aktualisiert."
+      },
+      "delete": {
+        "confirm": "Diese Synonymgruppe entfernen? Die Suche behandelt diese Begriffe dann nicht mehr als gleich.",
+        "success": "Synonymgruppe entfernt."
+      }
+    }
+  }
+}

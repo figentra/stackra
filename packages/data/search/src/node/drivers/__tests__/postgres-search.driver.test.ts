@@ -375,6 +375,21 @@ describe(PostgresSearchDriver, () => {
 describe("PostgresSearchDriver versions", () => {
   const SHADOWED = ["search_vector_ar__v2", "search_vector_en", "search_vector_en__v2"];
 
+  it("fills the Arabic stemmer lane (`ar` shadow beside a plain live vector) with the arabic configuration, and ranks on the live lane until the swap (ADR 0492)", async () => {
+    const { database, statements } = databaseWith(["search_vector", "search_vector_ar__v2"]);
+    const driver = new PostgresSearchDriver(database);
+    await driver.index({ ...PRODUCTS, version: 2 }, [
+      { id: "prd_1", fields: ["قميص كتان"], filters: {} },
+    ]);
+    expect(statements[1]?.sql).toContain(
+      `"search_vector_ar__v2" = setweight(to_tsvector('arabic', ?), 'A')`,
+    );
+    await driver.search(PRODUCTS, { words: ["قميص"], filters: {}, offset: 0, limit: 5 });
+    const search = statements.find((statement) => statement.sql.startsWith("with q"));
+    expect(search?.sql).toContain("to_tsquery('simple', ?)");
+    expect(search?.sql).not.toContain("search_vector_ar__v2");
+  });
+
   it("writes the live and every shadow version's columns in one statement, and clears them alike", async () => {
     const { database, statements } = databaseWith(SHADOWED);
     const driver = new PostgresSearchDriver(database);

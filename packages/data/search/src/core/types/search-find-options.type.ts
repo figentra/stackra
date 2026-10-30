@@ -12,6 +12,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decision 1); cursor pagination in the HTTP conventions (limit 1 to 100, default 20);
  *                     OS-173 (Arabizi expansion); STA-1251 (the per-query switch);
+ *                     ADR 0492 (decision 4: `rerank`);
  *                     stackra-301 (the hybrid read); stackra-302 (any-of filters, ranges and sort).
  */
 import type { Embedder, SearchFilterValue, SearchRange, SearchSort } from "#contracts/index";
@@ -40,6 +41,12 @@ export interface SearchFindOptions<M extends object> {
 
   /** The phrase's locale (`ar-SA`): only that language's synonym sets apply; every language's when absent. */
   readonly locale?: string | undefined;
+
+  /**
+   * Whether the fused candidates go through the reranker (`Reranker`) before they are paged: on when true, off when
+   * false, and the model's `@Searchable({ rerank })` when absent. No effect without a bound reranker.
+   */
+  readonly rerank?: boolean | undefined;
 
   /** Whether an Arabizi word (`7abibi`) also matches its Arabic spelling; on when absent. */
   readonly arabizi?: boolean | undefined;

@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/search: where code goes, entries and barrels, the package rules, the rules that fail the build and PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0221; ADR 0160; ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap); se9 / stackra-302 (facet field kinds); se11 to se13 / stackra-326 (ranking rules, query log,
+Governing contract: ADR 0221; ADR 0160; ADR 0492 (reranker, Arabic quality, synonyms, recommender, evaluation set); ADR 0294; ADR 0404; STA-1251 (word helpers, Arabizi switch, across filters, HNSW); ADR 0380 and STA-1326 (semantic indexing); ADR 0089 d5 and ADR 0461 (conformance suite); data-layer gaps se3 and se4 (batched consumers, parent invalidation); se8 / stackra-301 (vector lane, `similar`, content hash, chunker); se7 / stackra-303 (versioned index swap); se9 / stackra-302 (facet field kinds); se11 to se13 / stackra-326 (ranking rules, query log,
 suggest).
 -->
 
@@ -16,20 +16,22 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## Where code goes
 
-| You are writing…                         | It goes in…                                                 |
-| ---------------------------------------- | ----------------------------------------------------------- |
-| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                               |
-| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                               |
-| Its options shape                        | `src/core/schemas/search-options.schema.ts`                 |
-| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`       |
-| The port or a type it uses               | `src/contracts/{ports,types}/`                              |
-| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                      |
-| A server driver                          | `src/node/drivers/`                                         |
-| The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts` |
-| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                  |
-| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`   |
-| A conformance case or its runner         | `src/testing/` (`./testing`, imports `./contracts` only)    |
-| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                 |
+| You are writing…                         | It goes in…                                                                            |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                                                          |
+| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                                                          |
+| Its options shape                        | `src/core/schemas/search-options.schema.ts`                                            |
+| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`                                  |
+| The port or a type it uses               | `src/contracts/{ports,types}/`                                                         |
+| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                                                 |
+| A server driver                          | `src/node/drivers/`                                                                    |
+| The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts`                            |
+| The synonym model, actions and query     | `src/node/{models,actions,queries}/` (schemas in `schemas/`, permissions in `access/`) |
+| Its texts (labels, success, confirm)     | `assets/lang/<locale>/search.json`, in all seven locales (ar, de, en, es, fr, it, nl)  |
+| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                                             |
+| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`                              |
+| A conformance case or its runner         | `src/testing/` (`./testing`, imports `./contracts` only)                               |
+| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                                            |
 
 ## Entries and barrels
 
@@ -85,8 +87,28 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   records its cursor in `search.indexes` through `SearchIndexRegistry`; never loop `SearchIndex.reindex` in a request.
   The registry holds counts and states only, no row data, and has no RLS; only platform code reads it. The CLI reaches
   it through `searchStatus` here and `searchReindex` of @stackra/data-maintenance.
-- Declare no action here. A job over this package's work goes in @stackra/data-maintenance, which holds its
-  system-held permission; search never depends on it (ADR 0462 decision 1).
+- Declare no job here. A job over this package's work goes in @stackra/data-maintenance, which holds its
+  system-held permission; search never depends on it (ADR 0462 decision 1). The only actions here are the tenant's synonym
+  actions and list query (`search.synonym.*`, tools by default, ADR 0492 d5).
+- Reranking (ADR 0492 d4): `Reranker` is a port; `SearchIndex.read` reranks only when the read passes `rerank: true` or the
+  facet declares `rerank: true`, and only when a reranker is bound; it takes the first `Reranker.topN` fused candidates,
+  sends each row's raw text (`searchRerankTextOf`, never folded, own fields only) and the raw phrase, and pages from the
+  reranked order. A failing reranker keeps fused order: never let a rerank fail a search. `HttpRerankerDriver` reads its token
+  from `SecretStore` at call time; never log or cache a value.
+- Arabic stemmer lane (ADR 0492 d5): no code of its own. A model adds it as a versioned `ar` shadow vector
+  (`t.searchable({ text, locales: ["ar"], version: n })`), fills it with `reindex({ version: n })` and swaps it live; the
+  driver ranks every `search_vector_*` column it finds with that column's `TEXT_SEARCH_CONFIGS` configuration. A host table
+  is the host's migration, so this package ships none for it.
+- Data synonyms (ADR 0492 d5): the `Synonym` model (`search.synonyms`, `BelongsToTenant`, forced RLS) is read through the
+  `SynonymSource` port and joins the `search.synonyms` setting's lines in `SearchIndex.synonymsOf`; `SYNONYM_FIELDS` is
+  the one rule set for a set (no comma, `#` or line break in a term), because a set is turned into a settings line.
+- Arabizi is a query-only spelling (`arabiziOf`): with a digit-and-letter word always, with any Latin word only when the
+  read's locale is Arabic (`anyLatin`). Never map documents.
+- `Recommender` (ADR 0492 d8) is generic: ids and scores only, no Commerce names. `PostgresRecommenderDriver` reads
+  `search.vector_items` and the host's co-occurrence table (`search.recommender.cooccurrence`, columns `item_id`,
+  `other_id`, `score`); `HttpRecommenderDriver` calls `tools-recommend` and needs `options.scope` (sent as `tenant`).
+- The evaluation set (`SEARCH_EVALUATION_*`, `ndcgAt`, `recallAt` in `./testing`) is the relevance gate of ADR 0492: a
+  ranking change runs `pnpm --filter @stackra/search test:int` and keeps `SEARCH_EVALUATION_THRESHOLDS` met.
 - Facet field kinds (stackra-302): any-of filters, ranges and sort keys reach a driver only when its `fieldKinds` is
   true; `SearchIndex` refuses them otherwise, never drops them. Sortable and range values live in `search_filters`
   (`searchDocumentOf`), so the macro writes no column for them; `boost` reaches a driver as `SearchDocument.weights`.

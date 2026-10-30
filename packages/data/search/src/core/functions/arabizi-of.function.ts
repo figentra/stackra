@@ -5,7 +5,8 @@
  *          Arabizi.
  * Boundary: pure, and only for search recall: the result is an extra alternative, never a replacement, so a wrong
  *           guess widens a search a little and hides nothing. A word counts as Arabizi only when it mixes Latin letters
- *           with one of the Arabizi digits (2 3 5 6 7 8 9), so English words and plain numbers pass through. Short
+ *           with one of the Arabizi digits (2 3 5 6 7 8 9), so English words and plain numbers pass through. In an Arabic locale
+ *           (`anyLatin`) any Latin word counts, since a digit-free `habibi` is Arabizi there too. Short
  *           vowels are dropped except a leading or final `a` (alef); the output is folded with `searchWordsOf`, the
  *           one normalisation of the index.
  * Runtime: isomorphic
@@ -15,6 +16,9 @@ import { searchWordsOf } from "#core/functions/search-words-of.function";
 
 /** Letters and digits with an Arabizi digit among Latin letters. */
 const ARABIZI = /^(?=.*[a-z])(?=.*[2356789])[a-z0-9]+$/;
+
+/** Latin letters and digits with at least one letter, for a query typed in an Arabic locale. */
+const LATIN = /^(?=.*[a-z])[a-z0-9]+$/;
 
 /** Two-letter sounds, matched before single letters. */
 const DIGRAPHS: ReadonlyMap<string, string> = new Map([
@@ -62,13 +66,15 @@ const LETTERS: ReadonlyMap<string, string> = new Map([
 /**
  * The Arabic spelling of the Arabizi `word`, or `undefined`.
  *
+ * @param anyLatin - true for a query in an Arabic locale, where any Latin word (`habibi`, no digit) counts.
  * @example
  * arabiziOf("7abibi"); // "حبيبي"
  * arabiziOf("linen"); // undefined
+ * arabiziOf("habibi", true); // "هبيبي"
  */
-export function arabiziOf(word: string): string | undefined {
+export function arabiziOf(word: string, anyLatin = false): string | undefined {
   const latin = word.toLowerCase();
-  if (!ARABIZI.test(latin)) return undefined;
+  if (!(anyLatin ? LATIN : ARABIZI).test(latin)) return undefined;
   let arabic = "";
   for (let index = 0; index < latin.length;) {
     const digraph = DIGRAPHS.get(latin.slice(index, index + 2));

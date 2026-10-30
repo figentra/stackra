@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `SearchOptions`, the shape of `SearchConfig`: which search driver runs.
+ *          `reranker` and `recommender` set the in-region rerank and recommend endpoints and the co-occurrence table.
  *          `health` tunes `SearchHealthIndicatorDriver`, the `/readyz` probe.
  * Boundary: a shape class; it registers this package's own schema (`SEARCH_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(SearchConfig)` validates with no generated file. Deploy-time values only.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0221 (decision 9: engines behind one
- *                     interface).
+ *                     interface); ADR 0492 (decisions 4 and 8).
  */
 import "#core/types/search-driver-names.type";
 
@@ -54,6 +55,39 @@ export class SearchOptions extends Schema {
     passageCharacters: 2000,
     passageOverlap: 200,
   };
+
+  /**
+   * The text-embeddings-inference `/rerank` endpoint `HttpRerankerDriver` calls, in the tenant's region; no credential
+   * is a field, only the name of the runtime secret that holds the token (ADR 0173).
+   */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(SEARCH_CONFIG_SCHEMA.shape.reranker)
+  reranker: {
+    /** The endpoint base URL (`https://rerank.me-central-1.acme.internal`); `null` while none is configured. */
+    url: string | null;
+    /** The secret holding the bearer token, read through `SecretStore`; `null` for an endpoint that needs none. */
+    tokenSecret: string | null;
+    /** How many fused candidates one rerank takes. */
+    topN: number;
+  } = { url: null, tokenSecret: null, topN: 50 };
+
+  /**
+   * The recommenders: `HttpRecommenderDriver` calls the `tools-recommend` image at `url`; `PostgresRecommenderDriver`
+   * answers bought-together from the `cooccurrence` table (`schema.table` with the columns `item_id`, `other_id` and
+   * `score`) the host keeps, and similar from the vector index.
+   */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(SEARCH_CONFIG_SCHEMA.shape.recommender)
+  recommender: {
+    /** The `tools-recommend` base URL; `null` while none is configured. */
+    url: string | null;
+    /** The secret holding the bearer token, read through `SecretStore`; `null` for an endpoint that needs none. */
+    tokenSecret: string | null;
+    /** How many items one answer holds when the call names no limit. */
+    limit: number;
+    /** The co-occurrence table `schema.table`; `null` while the host keeps none, so bought-together is empty. */
+    cooccurrence: string | null;
+  } = { url: null, tokenSecret: null, limit: 10, cooccurrence: null };
 
   /** How `SearchHealthIndicatorDriver` probes the search engine for `/readyz`. */
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
