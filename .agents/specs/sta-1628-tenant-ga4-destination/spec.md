@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft
+**Status**: Clarified
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
@@ -12,13 +12,13 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending (owner questions Q1 to Q7 below)
+**Clarifications status**: complete
 
 **Input**: Owner request, 2026-10-30: tenants see their own analytics in their own tools. Widened the same day: every
 analytics or ad tool (PostHog, GA4, Firebase, Meta, TikTok and others) is a connector of the integrations service,
 offered to tenants at every level of the recursive tree; Figentra and the levels above a tenant see transactions from
 everywhere; and no tenant finds its tools short of data without knowing why. Builds on ADR 0483 (STA-1624, unlanded
-branch `figentra/sta-1624-analytics-relay`). Decision record: ADR 0485 (Proposed, this branch). The branch and folder
+branch `figentra/sta-1624-analytics-relay`). Decision record: ADR 0485 (Accepted, this branch). The branch and folder
 keep the first name (GA4 only); the scope is the whole routing.
 
 ## Impact
@@ -62,7 +62,7 @@ keep the first name (GA4 only); the scope is the whole routing.
   (for example `GA4_API_SECRET`, `META_CAPI_ACCESS_TOKEN`, `TIKTOK_EVENTS_ACCESS_TOKEN`, plus OAuth grants for erasure
   APIs). They are written blind, never read back and never in Infisical. The deployment's own
   `ANALYTICS_GA4_API_SECRET` and `ANALYTICS_POSTHOG_PERSONAL_API_KEY` (ADR 0483) are unchanged
-- **ADR needed**: yes, ADR 0485 (this branch, Proposed); it amends ADR 0210 decision 1, ADR 0243 decision 7 and ADR
+- **ADR needed**: yes, ADR 0485 (this branch, Accepted); it amends ADR 0210 decision 1, ADR 0243 decision 7 and ADR
   0483 decision 5
 - **New dependencies**: none expected. Whether `@stackra/analytics` may depend on `@stackra/integrations` for
   `matchKeysOf` (or the hashing moves to `@stackra/contracts`) is checked at plan; no catalog change
@@ -71,7 +71,7 @@ keep the first name (GA4 only); the scope is the whole routing.
   tools only
 - **Licence tier**: free for the routing (`@stackra/analytics/node`) and the ports and machinery
   (`@stackra/integrations`); vendor connectors are OS integrations code, not a Stackra package (ADR 0443 decision 7).
-  Figentra plan entitlement: Q3
+  Figentra plan entitlement `analytics.connectors`, off on every plan until the owner sets it (Q3)
 - **Privacy**:
   - Roles: the tenant is controller, Figentra its processor and also a controller for named purposes of its own
     (platform terms).
@@ -121,28 +121,30 @@ Builder choices, recorded for review (ADR 0485 states them):
   destination connection's `phoneFormat`. Raw contacts are never stored or put on the bus. A conversion with match
   keys needs `marketing` in the event's snapshot, as `ConversionBridge` does today; an audience upload also needs the
   person's stored proof (ADR 0472 decision 5). In the second session the owner's wording was "a per-person stored
-  consent proof" for contacts; Q6 confirms which.
+  consent proof" for contacts; Q6 settled it: both.
 - **Behaviour envelope.** It never carries contacts, IP, user agent or advertising id, so ADR 0483 holds for clients.
 - **Erasure capability.** `canErase` is declared per connector and proven by a recorded case. No vendor is assumed
   capable; GA4 through the Measurement Protocol alone is not.
 
-### Open questions for the owner
+### Owner answers to Q1 to Q7, 2026-10-30
 
-- **Q1 — Replay window.** How many days are delivered events kept for replay (encrypted, in region)? Proposed: 7.
-- **Q2 — Figentra's own destinations.** "All connectors live in the integrations service": should Figentra's own
-  PostHog and GA4 of ADR 0483 also become platform-level connections in the integrations service? ADR 0483 binds them
-  in the analytics service, and ADR 0461 puts the `ga4` driver in `@stackra-pro/analytics-destinations`, which names a
-  vendor against ADR 0443 decision 7. Proposed: yes, in a follow-up that amends ADR 0483 decision 4.
-- **Q3 — Plans.** Which Figentra plans (ADR 0242) get connectors, how many per tenant, and which plan unlocks the
-  replay window and reconciliation?
-- **Q4 — Firebase.** Firebase's app reports need the Firebase SDK on the device, which ADR 0483 removed. Offer the
-  Firebase connector as a GA4 stream only (server-side, no app-instance reports), or not at all?
-- **Q5 — IP address and user agent for conversions.** Meta and TikTok match better with them. ADR 0483 decision 3
-  forbids forwarding them. Keep that, or allow them on conversions to `canErase` connectors with `marketing`?
-- **Q6 — Consent for match keys.** `marketing` in the event's snapshot (today's `ConversionBridge` rule), or also the
-  person's stored consent proof for every conversion with match keys?
-- **Q7 — Legal.** Review of the KSA and UAE PDPL transfer rules for tenant-chosen vendors, and of the platform terms
-  for Figentra's controller purposes, before release. Start any connector locked off in the GCC region until then?
+The owner answered "go with all", relayed verbatim by the leader session: the recommended answer where one was
+proposed, and the most conservative choice, marked changeable, where none was.
+
+- **Q1 — Replay window**: 7 days, encrypted, in region. Changeable.
+- **Q2 — Figentra's own destinations**: yes. Figentra's PostHog and GA4 of ADR 0483 become platform-level connections
+  of the integrations service, in a follow-up ADR that amends ADR 0483 decision 4 and the `analytics-destinations` row
+  of ADR 0461; ADR 0483 holds until then (ADR 0485 decision 14).
+- **Q3 — Plans**: conservative. The entitlement `analytics.connectors` (connectors, replay and reconciliation) is off on
+  every plan until the owner switches it on per plan in the console, with a limit on connections per tenant.
+  Changeable.
+- **Q4 — Firebase**: conservative. No Firebase connector; a tenant measuring an app connects GA4. Changeable.
+- **Q5 — IP and user agent**: conservative. Never on conversions, as ADR 0483 decision 3 says for behaviour. Changeable.
+- **Q6 — Consent for match keys**: conservative. `marketing` in the event's snapshot and the person's stored consent
+  proof (ADR 0472 decision 5), for every conversion and audience upload with match keys. Changeable.
+- **Q7 — Legal**: every connector starts locked off in the GCC region until legal review of the KSA and UAE PDPL
+  transfer rules and of Figentra's controller purposes in the platform terms; that review is a release condition in
+  every region.
 
 ## User Scenarios & Testing
 
@@ -220,10 +222,12 @@ leaves its organisation stops routing upward at once; offboarding deletes connec
 - Vendor connectors themselves (OS integrations follow-ups, one per vendor, each with recorded cases).
 - The built-in dashboards and warehouse (ADR 0190, 0163), except showing aggregates to non-detail ancestors.
 - Google tag, Firebase or other vendor SDKs on devices (ADR 0483 decision 6).
-- All code until the owner approves this spec and answers Q1 to Q7.
+- Code before `/speckit.plan` and `/speckit.tasks` run on this clarified spec.
 
 ## Status history
 
 - 2026-10-30 · — → Draft · Claude (builder) · spec and ADR 0485 written for owner approval (tenant GA4 only)
 - 2026-10-30 · Draft → Draft · Claude (builder) · rewritten to the owner's routing answers: tree roll-up, connectors
   in integrations, Figentra dual role, delivery guarantees
+- 2026-10-30 · Draft → Clarified · owner · "go with all" (relayed by the leader): recommended answers to Q1 to Q7, conservative
+  where none was proposed; ADR 0485 Accepted

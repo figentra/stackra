@@ -1,9 +1,9 @@
 ---
 title: "0485 — Analytics routing across the tenant tree: parties and organisation parents get detail, and connectors send from the integrations service"
-description: "Proposed · 2026-10-30"
+description: "Accepted · 2026-10-30"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0485 (Proposed 2026-10-30), which decides who receives analytics and transaction events across the recursive tenant tree, which connected tools they reach, how the analytics service routes and the integrations service sends, Figentra's dual role, erasure and the delivery guarantees, from the owner's answers of 2026-10-30. Boundary: decision text only, as a new ADR file; the spec is STA-1628 (`.agents/specs/sta-1628-tenant-ga4-destination/`); the forward Notes on the amended ADRs, the ADR index row and the docs nav belong to the integration batch once the owner accepts it. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0071, 0107, 0108, 0134, 0163, 0189, 0190, 0210, 0243, 0298, 0308, 0323, 0353, 0443, 0461, 0472, 0483. */}
+{/* Stackra file contract. Purpose: ADR 0485 (Accepted 2026-10-30, owner answers of the same day), which decides who receives analytics and transaction events across the recursive tenant tree, which connected tools they reach, how the analytics service routes and the integrations service sends, Figentra's dual role, erasure and the delivery guarantees, from the owner's answers of 2026-10-30. Boundary: decision text only, as a new ADR file; the spec is STA-1628 (`.agents/specs/sta-1628-tenant-ga4-destination/`); the forward Notes on the amended ADRs, the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0071, 0107, 0108, 0134, 0163, 0189, 0190, 0210, 0242, 0243, 0298, 0308, 0323, 0353, 0443, 0461, 0472, 0483. */}
 
 ## Context
 
@@ -66,8 +66,10 @@ it. The tree sets the hard part: today a parent sees a child only through an exp
    - `AdPlatformConnector` gains an optional `erasePerson`.
    - Each connector declares `canErase`: true only when it can erase a person at the vendor with the connection's own
      grant, proven by a recorded case.
-   - The vendor connectors (GA4, PostHog, Firebase, Meta, TikTok, Snap, Google Ads and later ones) are OS integrations
+   - The vendor connectors (GA4, PostHog, Meta, TikTok, Snap, Google Ads and later ones) are OS integrations
      connectors (0443 decision 7). Their connections sit at the tenant level or at a scope below it (0308 decision 9).
+   - No Firebase connector: its app reports need the Firebase SDK on the device, which 0483 decision 6 removed; a
+     tenant measuring an app connects GA4. Owner default, changeable.
 
    Their secrets are tenant secrets in the connection store: written blind on create or replace, never returned by a
    read, list, export, log, audit entry or error, resolved only by the sending connector at call time
@@ -92,12 +94,13 @@ it. The tree sets the hard part: today a parent sees a child only through an exp
    - **Behaviour.** The 0483 envelope, unchanged: event name, declared properties, anonymous id, session id and public
      user id. It never carries a contact field, an IP address, a user agent or an advertising id.
    - **Conversions.** Name, value, currency, items, the order's public id as the event id (so a pixel and a server
-     send count once), and the ad click id when `marketing` is granted.
+     send count once), and the ad click id when `marketing` is granted. No IP address or user agent, as 0483 decision 3
+     says for behaviour. Owner default, changeable.
    - **Match keys.** Hashed email, phone and external id (`matchKeysOf`, the connection's `phoneFormat`). Computed in
      memory by the analytics service and never stored raw. Sent only to a connection whose connector declares
-     `canErase`, and only when the event's consent grants `marketing`. An audience upload also needs the person's
-     stored proof ([0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls)
-     decision 5).
+     `canErase`, only when the event's consent grants `marketing`, and only when the person's stored consent proof
+     grants it too ([0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls)
+     decision 5), for every conversion and audience upload. Owner default, changeable.
    - **Classification.** Match keys are a classified field ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle))
      of the routed event.
 8. **Consent per connection.**
@@ -120,7 +123,7 @@ it. The tree sets the hard part: today a parent sees a child only through an exp
     - **Health page.** One page per connection, in the owner's console: events sent, dropped by consent (with the
       reason), sent without match keys (with the reason), failed, and the last error. It is fed by the integrations
       service's send outcomes and an hourly `AnalyticsRouteSummarised` of the analytics service's drops.
-    - **Replay window.** Delivered events are kept encrypted in the region for a set number of days. The tenant can
+    - **Replay window.** Delivered events are kept encrypted in the region for 7 days (owner default, changeable). The tenant can
       re-send a time range after fixing a key or an outage, with the same event ids. The console warns where the
       vendor does not dedup, such as GA4's Measurement Protocol.
     - **Alerts.** The tenant's admins are notified after repeated failures or a rejected credential.
@@ -129,11 +132,21 @@ it. The tree sets the hard part: today a parent sees a child only through an exp
 11. **Every region, lockable.** Connectors are available in every region's stack and run in the region of the scope
     that holds the connection. A deployment may lock a connector off per region or per plan
     ([0108](/adr/0108-scoped-settings) S2). The transfer to the vendor is the controller's choice, and the console
-    states it before the tenant connects.
+    states it before the tenant connects. Every connector starts locked off in the GCC region until legal review of
+    the KSA and UAE PDPL transfer rules and of Figentra's controller purposes in the platform terms; that review is a
+    release condition everywhere.
 12. **Not the built-in dashboards.** analytics-reports' dashboards and the warehouse
     ([0190](/adr/0190-seed-profiles-and-product-analytics) decision 3, 0163) read business data, stay in the region and
     are served by us. They are also where `aggregates` ancestors see their children. Connected tools receive only the
     routed events of decisions 7 and 8. Neither replaces the other.
+13. **Plans.** Connected tools, the replay window and reconciliation sit behind the entitlement
+    `analytics.connectors` ([0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial)). It is off on
+    every plan until the owner sets it per plan in the console, with a limit on connections per tenant. Owner default,
+    changeable.
+14. **Figentra's own destinations follow.** Figentra's PostHog and GA4 of 0483 become platform-level connections of
+    the integrations service, so every connector lives there. A follow-up ADR amends 0483 decision 4 and the
+    `analytics-destinations` row of 0461 decision 6, since a `ga4` driver in `@stackra-pro` names a vendor against
+    0443 decision 7. Until it lands, 0483 holds.
 
 ## Consequences
 
@@ -159,7 +172,8 @@ planned:
 
 - `@stackra/analytics/node` tests: a route is built only from the request context and records; an organisation
   ancestor gets detail; a host at `aggregates` gets nothing; a route never crosses a region; match keys only reach a
-  `canErase` connection with `marketing`; one routed event per connection.
+  `canErase` connection with `marketing` and the person's stored proof; no conversion carries an IP address or user
+  agent; one routed event per connection.
 - `@stackra/integrations` tests: `canErase` connectors erase every subject in the recipients ledger; a secret never
   appears in a read model, log or error.
 - The tenancy isolation test: a tenant outside the route never receives an event.
@@ -184,4 +198,5 @@ decision 7 and [0483](/adr/0483-analytics-relay-apps-send-product-analytics-only
 [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers),
 [0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls). Sources: owner
 answers of 2026-10-30 recorded in the STA-1628 spec (roll-up, Figentra's view and role, payload, routing, delivery
-guarantees); STA-1624 clarification Q2; Linear STA-1628. Open owner questions are in the spec.
+guarantees), and the owner's acceptance of the recommended answers to Q1 to Q7 ("go with all"), with the
+conservative choice where no answer was recommended (decisions 5, 7, 13); STA-1624 clarification Q2; Linear STA-1628.
