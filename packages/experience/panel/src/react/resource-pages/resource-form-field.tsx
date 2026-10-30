@@ -112,7 +112,7 @@ function ListField({
           </div>
           <Button
             variant="ghost"
-            onPress={() => list.onChange(rows.filter((__, other) => other !== index))}
+            onPress={() => list.onChange?.(rows.filter((__, other) => other !== index))}
           >
             {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
           </Button>
@@ -120,7 +120,7 @@ function ListField({
       ))}
       <Button
         variant="secondary"
-        onPress={() => list.onChange([...rows, item === "object" ? {} : undefined])}
+        onPress={() => list.onChange?.([...rows, item === "object" ? {} : undefined])}
       >
         {t(PANEL_KEYS.panel.resources.add_item)}
       </Button>
@@ -148,7 +148,7 @@ function MoneyField({
       formatOptions={{ style: "currency", currency }}
       value={typeof field.value === "number" ? field.value / scale : null}
       onChange={(major) =>
-        field.onChange(
+        field.onChange?.(
           typeof major === "number" && !Number.isNaN(major) ? Math.round(major * scale) : null,
         )
       }

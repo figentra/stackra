@@ -47,7 +47,18 @@ export class EntriesRecord<R> implements EntryFactory<R> {
       >;
     },
   ): Built<EntryNode> {
-    return { toNode: () => Entry.list(key, { columns, ...options }) };
+    const { currency, labels } = options ?? {};
+    return {
+      toNode: () =>
+        Entry.list(key, {
+          columns,
+          ...(currency === undefined ? {} : { currency }),
+          // A Partial map of item paths: every key present holds a label map.
+          ...(labels === undefined
+            ? {}
+            : { labels: labels as Readonly<Record<string, Readonly<Record<string, I18nKey>>>> }),
+        }),
+    };
   }
 
   /** Groups entries into a named section. */
