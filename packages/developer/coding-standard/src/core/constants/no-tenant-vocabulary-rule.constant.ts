@@ -7,11 +7,12 @@
  *           interface member, and the file name. Never reported: an import or re-export, any use of a name (a
  *           reference, a type reference, a member access such as `TenancyScopes.Tenant`) and an object literal key,
  *           which conforms to a type declared elsewhere, except a key of `Enum.of({ ... })`, the house enum member. Strings and comments are not read. Exempt paths:
- *           `packages/<group>/tenancy/`, the IAM scope code (under `packages/<group>/iam/`, a folder or file whose
+ *           `packages/<group>/tenancy/`, a product's tenancy service (`services/tenancy/`), the IAM scope code (under `packages/<group>/iam/`, a folder or file whose
  *           name contains `scope`, such as `iam-granted-scopes.driver.ts`), generated code under `.stackra/`,
  *           `lang/` and `docs/` folders, and this rule's own source and test. No autofix: a rename is not a lint fix.
  * Runtime: isomorphic
- * Governing contract: ADR 0323 (decisions 1 and 5); owner decisions H and R-59 (2026-10-24 final review).
+ * Governing contract: ADR 0323 (decisions 1 and 5); owner decisions H and R-59 (2026-10-24 final review);
+ *                     owner decision of 2026-10-30 (the OS tenancy service is exempt).
  */
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
@@ -19,6 +20,8 @@ import type { Rule } from "#core/types/rule.type";
 const TENANT = /tenant/i;
 const EXEMPT_PATHS = [
   /(?:^|[\\/])packages[\\/](?:[^\\/]+[\\/])?tenancy[\\/]/,
+  // The OS tenancy service implements tenancy, as the package does.
+  /(?:^|[\\/])services[\\/]tenancy[\\/]/,
   /(?:^|[\\/])packages[\\/](?:[^\\/]+[\\/])?iam[\\/](?:[^\\/]+[\\/])*[^\\/]*scope/i,
   /(?:^|[\\/])\.stackra[\\/]/,
   /(?:^|[\\/])(?:lang|docs)[\\/]/,
