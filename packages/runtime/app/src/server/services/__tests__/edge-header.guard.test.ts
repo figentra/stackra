@@ -115,9 +115,11 @@ describe("EdgeHeaderGuard", () => {
   });
 
   it("refuses a timestamp outside the window on either side", async () => {
+    // Ten minutes out, not 61 s: on a slow runner seconds pass between this line and the guard's own clock read, so a
+    // timestamp one second past the 60 s window could fall back inside it.
     const now = Math.floor(Date.now() / 1000);
-    expect(await refuses(guard(), await forwarded({ timestamp: now - 61 }))).toBe(true);
-    expect(await refuses(guard(), await forwarded({ timestamp: now + 61 }))).toBe(true);
+    expect(await refuses(guard(), await forwarded({ timestamp: now - 600 }))).toBe(true);
+    expect(await refuses(guard(), await forwarded({ timestamp: now + 600 }))).toBe(true);
   });
 
   it("refuses a replayed request id", async () => {
