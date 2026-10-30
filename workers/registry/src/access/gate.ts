@@ -6,9 +6,8 @@
  * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 5, 9, 10 and 13); ADR 0461 (decision 3).
  */
-import { readAccess } from "#src/access/read-access";
+import { resolveAccess } from "#src/access/resolve-access";
 import { failure } from "#src/http/failure";
-import { splitName } from "#src/http/split-name";
 import type { LicenceView } from "#src/interfaces/licence-view.interface";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import type { ScopeRow } from "#src/interfaces/scope-row.interface";
@@ -27,20 +26,9 @@ export async function gate(
   request: Request,
   name: string,
 ): Promise<Gate | Response> {
-  const [row, nameRule] = await Promise.all([
-    deps.store.scope(splitName(name).scope),
-    deps.store.nameRule(name),
-  ]);
-  if (row === null) return failure(404, "not_found");
-  const scope: ScopeRow = nameRule === null ? row : { ...row, read_rule: nameRule };
-  const access = await readAccess(
-    scope,
-    name,
-    request.headers.get("authorization"),
-    deps.licences,
-    deps.settings,
-    deps.now(),
-  );
+  const resolved = await resolveAccess(deps, request, name);
+  if (resolved === null) return failure(404, "not_found");
+  const { scope, access } = resolved;
   if (access.allowed) return { scope, licence: access.licence };
   return failure(
     access.status,

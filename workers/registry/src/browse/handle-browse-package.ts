@@ -10,7 +10,7 @@
  * Runtime: worker
  * Governing contract: ADR 0453 (decisions 9, 10 and 13); ADR 0461 (decision 3); STA-1608 spec FR-001, FR-003.
  */
-import { readAccess } from "#src/access/read-access";
+import { resolveAccess } from "#src/access/resolve-access";
 import { browseNotFound } from "#src/browse/browse-not-found";
 import { browsePage } from "#src/browse/browse-page";
 import { escapeHtml } from "#src/browse/escape-html";
@@ -25,7 +25,6 @@ import { splitName } from "#src/http/split-name";
 import type { BrowseLocale } from "#src/interfaces/browse-locale.type";
 import type { ProvenanceSummary } from "#src/interfaces/provenance-summary.interface";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
-import type { ScopeRow } from "#src/interfaces/scope-row.interface";
 import type { VersionRow } from "#src/interfaces/version-row.interface";
 import { attestationKey } from "#src/npm/attestation-key";
 
@@ -107,21 +106,12 @@ export async function handleBrowsePackage(
 ): Promise<Response> {
   const text = BROWSE_MESSAGES[locale];
   const path = `/package/${name}`;
-  const [pkg, row, nameRule] = await Promise.all([
+  const [pkg, resolved] = await Promise.all([
     deps.store.package(name),
-    deps.store.scope(splitName(name).scope),
-    deps.store.nameRule(name),
+    resolveAccess(deps, request, name),
   ]);
-  if (pkg === null || row === null) return browseNotFound(locale, path);
-  const scope: ScopeRow = nameRule === null ? row : { ...row, read_rule: nameRule };
-  const access = await readAccess(
-    scope,
-    name,
-    request.headers.get("authorization"),
-    deps.licences,
-    deps.settings,
-    deps.now(),
-  );
+  if (pkg === null || resolved === null) return browseNotFound(locale, path);
+  const { scope, access } = resolved;
   if (scope.read_rule === "internal" && !access.allowed) return browseNotFound(locale, path);
   const full = access.allowed;
 
