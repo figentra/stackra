@@ -50,6 +50,19 @@ describe("readServiceManifests", () => {
     ]);
   });
 
+  it("reads a package three folders deep from the repository's services folder (STA-1673)", () => {
+    const root = writeFixtureMember("packages/commerce/console-ui", {});
+    const repository = dirname(dirname(dirname(root)));
+    writeFileSync(join(repository, "pnpm-workspace.yaml"), "packages: []\n");
+    const sales = { member: "sales", package: "@acme/sales", version: "0.1.0" };
+    const path = join(repository, "services", "sales", "stackra.manifest.json");
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(sales));
+    expect(readServiceManifests(root, ["sales"])).toEqual([
+      { member: "sales", folder: "sales", manifest: sales },
+    ]);
+  });
+
   it("matches a snake-case member under a kebab-case specifier (STA-1296)", () => {
     const root = writeFixtureMember("audit", {});
     const privacy = {

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `readServiceManifests`, the committed `stackra.manifest.json` of each service the member injects a
  *          generated client of, found in the folder beside the member (`services/<service>` next to
- *          `services/<member>`), or for an app in the repo's `services/` (`apps/<app>` reads `services/<service>`), by the service key or its kebab-case folder name, the manifest's member matched in snake or kebab case (STA-1296): what the clients target writes
+ *          `services/<member>`), or in the repository's `services/` (the nearest folder with `pnpm-workspace.yaml`,
+ *          so `apps/<app>` and `packages/<category>/<name>` read `services/<service>`, STA-1673), by the service key or its kebab-case folder name, the manifest's member matched in snake or kebab case (STA-1296): what the clients target writes
  *          `#stackra/clients/<service>` from, with the folder it sits in (where the events target imports its topics).
  * Boundary: reads files only. A service is matched by the manifest's `member`, never by importing its package
  *           (ADR 0010: services never import each other). A service with no manifest is left out, and the clients
@@ -32,11 +33,18 @@ export function readServiceManifests(
   services: readonly string[],
 ): NonNullable<MemberIR["services"]> {
   const found: { member: string; folder: string; manifest: StackraManifest }[] = [];
-  // Beside the member first; an app (`apps/<app>`) also looks in the repo's `services/`.
-  const parents = [...new Set([dirname(root), join(dirname(dirname(root)), "services")])];
+  // Beside the member first, then `services/` two folders up (`apps/<app>`), then the repository's `services/`: the
+  // nearest folder above the member holding `pnpm-workspace.yaml` (as `dependencyPath` finds it), so a member three
+  // folders deep (`packages/commerce/console-ui`) finds them too (STA-1673).
+  const parents = [dirname(root), join(dirname(dirname(root)), "services")];
+  for (let directory = root; dirname(directory) !== directory; directory = dirname(directory))
+    if (existsSync(join(directory, "pnpm-workspace.yaml"))) {
+      parents.push(join(directory, "services"));
+      break;
+    }
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const service of [...new Set(services)].sort()) {
-    search: for (const parent of parents)
+    search: for (const parent of new Set(parents))
       for (const folder of new Set([service, kebabCase(service)])) {
         const path = join(parent, folder, "stackra.manifest.json");
         if (!existsSync(path)) continue;
