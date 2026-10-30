@@ -22,6 +22,9 @@ which is plain HTTP inside the VPC: a private Cloud Map namespace, reachable onl
 security groups. If the tools stack moves to TLS (ECS Service Connect with a private CA), only `baseUrl` changes and
 no driver does.
 
+**Production blocker:** STA-1653 (TLS on the tools namespace, security-tenancy review). No health or privileged audio
+reaches `tools-speech` in production until it is done.
+
 ## Auth
 
 None at the HTTP layer. Like `tools-ocr`, it listens only on the private DNS namespace of the tools stack, and its
