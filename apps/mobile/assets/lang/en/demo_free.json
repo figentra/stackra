@@ -2576,6 +2576,16 @@
       "variant": "Variant {variant}"
     }
   },
+  "media_player": {
+    "video": {
+      "label": "Test pattern clip"
+    },
+    "audio": {
+      "label": "Voice note from the warehouse",
+      "title": "Voice note: order 2048",
+      "ended": "Played to the end."
+    }
+  },
   "save_bar": {
     "product_name": "Product name",
     "sample_product": "Flat white",

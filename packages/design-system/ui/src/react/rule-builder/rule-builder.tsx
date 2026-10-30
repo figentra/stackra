@@ -10,10 +10,9 @@
 import { cn } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import type { RuleCondition } from "#contracts/types/rule-condition.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { ruleOperatorsOf } from "#core/functions/rule-operators-of.function";
 import { Button } from "#react/button/button";
+import { useRuleBuilderState } from "#react/hooks/use-rule-builder-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
 import type { RuleBuilderProps } from "#react/rule-builder/rule-builder.props";
@@ -33,26 +32,11 @@ export function RuleBuilder({
   className,
 }: RuleBuilderProps): ReactElement {
   const t = useUiText();
-  const fieldOf = (key: string) => fields.find((field) => field.key === key) ?? fields[0];
-  const update = (id: string, patch: Partial<RuleCondition>) =>
-    onChange({
-      ...value,
-      conditions: value.conditions.map((condition) =>
-        condition.id === id ? { ...condition, ...patch } : condition,
-      ),
-    });
-  const add = () => {
-    const field = fields[0];
-    if (!field) return;
-    const id = `c${Date.now().toString(36)}${value.conditions.length}`;
-    onChange({
-      ...value,
-      conditions: [
-        ...value.conditions,
-        { id, field: field.key, operator: ruleOperatorsOf(field.type)[0] ?? "equals", value: "" },
-      ],
-    });
-  };
+  const { matchItems, setMatch, fieldItems, add, remove, rowOf } = useRuleBuilderState({
+    fields,
+    value,
+    onChange,
+  });
   return (
     <fieldset
       data-slot="rule-builder"
@@ -64,12 +48,9 @@ export function RuleBuilder({
         <span className="text-muted">{t(K.match)}</span>
         <Select
           aria-label={t(K.match)}
-          items={[
-            { id: "all", label: t(K.match_all) },
-            { id: "any", label: t(K.match_any) },
-          ]}
+          items={matchItems}
           value={value.match}
-          onChange={(match) => onChange({ ...value, match: match === "any" ? "any" : "all" })}
+          onChange={setMatch}
           isDisabled={isDisabled}
         />
       </div>
@@ -79,10 +60,8 @@ export function RuleBuilder({
       {/* A query container: each row lays out by the builder's own width, not the window's (a card, a side panel). */}
       <ol className="@container m-0 flex list-none flex-col gap-2 p-0">
         {value.conditions.map((condition) => {
-          const field = fieldOf(condition.field);
-          const operators = field ? ruleOperatorsOf(field.type) : [];
-          const needsValue =
-            condition.operator !== "is_empty" && condition.operator !== "is_not_empty";
+          const { field, needsValue, operatorItems, setField, setOperator, setValue } =
+            rowOf(condition);
           return (
             <li
               key={condition.id}
@@ -92,38 +71,21 @@ export function RuleBuilder({
               <div className="min-w-0">
                 <Select
                   aria-label={t(K.field)}
-                  items={fields.map((item) => ({ id: item.key, label: item.label }))}
+                  items={fieldItems}
                   value={condition.field}
                   isDisabled={isDisabled}
                   isFullWidth
-                  onChange={(key) => {
-                    const next = fields.find((item) => item.key === key);
-                    if (!next) return;
-                    const allowed = ruleOperatorsOf(next.type);
-                    update(condition.id, {
-                      field: next.key,
-                      operator: allowed.includes(condition.operator)
-                        ? condition.operator
-                        : (allowed[0] ?? "equals"),
-                      value: "",
-                    });
-                  }}
+                  onChange={setField}
                 />
               </div>
               <div className="col-span-2 min-w-0 @lg:col-span-1">
                 <Select
                   aria-label={t(K.operator)}
-                  items={operators.map((operator) => ({
-                    id: operator,
-                    label: t(UI_KEYS.ui.rule_operator[operator]),
-                  }))}
+                  items={operatorItems}
                   value={condition.operator}
                   isDisabled={isDisabled}
                   isFullWidth
-                  onChange={(operator) => {
-                    const next = operators.find((item) => item === operator);
-                    if (next) update(condition.id, { operator: next });
-                  }}
+                  onChange={setOperator}
                 />
               </div>
               <div className="col-span-2 min-w-0 @lg:col-span-1">
@@ -134,7 +96,7 @@ export function RuleBuilder({
                     value={condition.value || null}
                     isDisabled={isDisabled}
                     isFullWidth
-                    onChange={(next) => update(condition.id, { value: next ?? "" })}
+                    onChange={setValue}
                   />
                 ) : (
                   <TextField
@@ -142,7 +104,7 @@ export function RuleBuilder({
                     {...(field?.type === "number" ? { inputMode: "decimal" as const } : {})}
                     value={condition.value}
                     isDisabled={isDisabled}
-                    onChange={(next) => update(condition.id, { value: next })}
+                    onChange={setValue}
                   />
                 )}
               </div>
@@ -152,12 +114,7 @@ export function RuleBuilder({
                 variant="ghost"
                 size="sm"
                 isDisabled={isDisabled}
-                onPress={() =>
-                  onChange({
-                    ...value,
-                    conditions: value.conditions.filter((item) => item.id !== condition.id),
-                  })
-                }
+                onPress={() => remove(condition.id)}
               />
             </li>
           );

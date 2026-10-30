@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `EntityOptions`: what `useEntityOptions` returns.
  * Boundary: types only.
- * Runtime: browser
+ * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 10 and 12: one declaration per file); ADR 0302 (decision 3); ADR 0318 (wave 7
  *          vocabulary).
  */

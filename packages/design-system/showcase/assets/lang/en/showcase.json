@@ -7811,7 +7811,7 @@
         },
         "media_player": {
           "headline": "Play it here, in your own controls.",
-          "intro": "The browser plays the file; the controls are the house ones, in the customer's language and digits, with captions and the shortcuts people already know.",
+          "intro": "The browser or the phone plays the file; the controls are the house ones, in the customer's language and digits, with captions and speeds, and on the web the shortcuts people already know.",
           "tags": "Video · Audio · Captions · Speed",
           "what": "Controls over a video or audio file: play, a timeline with what is loaded, the time, volume, speed, captions and full screen.",
           "when": "For product videos, tutorials, voice notes and recorded calls inside the app.",

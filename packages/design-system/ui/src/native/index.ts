@@ -626,3 +626,5 @@ export { Cascader } from "#native/cascader/cascader";
 export type { CascaderProps } from "#native/cascader/cascader.props";
 export { TransferList } from "#native/transfer-list/transfer-list";
 export type { TransferListProps } from "#native/transfer-list/transfer-list.props";
+export { MediaPlayer } from "#native/media-player/media-player";
+export type { MediaPlayerProps } from "#native/media-player/media-player.props";

@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 import { cn } from "@heroui/react";
 
 import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
-import { activeViewIdOf } from "#core/functions/active-view-id-of.function";
+import { savedViewsOf } from "#core/functions/saved-views-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import type { SavedViewsProps } from "#react/saved-views/saved-views.props";
@@ -35,39 +35,29 @@ export function SavedViews({
   ...rest
 }: SavedViewsProps): ReactElement {
   const t = useUiText();
-  const activeId = activeViewIdOf(views, query);
-  const facetValue = facetFilterId ? query.filterValues[facetFilterId] : undefined;
-  const picked = Array.isArray(facetValue) ? (facetValue as readonly string[]) : [];
+  const { activeId, viewItems, facetItems, picked, pickView, pickFacets } = savedViewsOf({
+    views,
+    query,
+    onQueryChange,
+    facetFilterId,
+    facets,
+  });
   return (
     <div {...rest} className={cn("grid gap-3", className)}>
       <TagGroup
         label={label}
         selectionMode="single"
-        items={views.map((view) => ({ id: view.id, label: view.label }))}
+        items={viewItems}
         value={activeId ? [activeId] : []}
-        onChange={(ids) => {
-          const view = views.find((candidate) => candidate.id === ids[0]);
-          if (view) onQueryChange(view.query);
-        }}
+        onChange={pickView}
       />
       {facetFilterId && facets && facets.length > 0 ? (
         <TagGroup
           label={facetLabel}
           selectionMode="multiple"
-          items={facets.map((facet) => ({
-            id: facet.id,
-            label:
-              facet.count === undefined
-                ? facet.label
-                : `${facet.label} (${facet.count.toLocaleString()})`,
-          }))}
+          items={facetItems}
           value={picked}
-          onChange={(ids) =>
-            onQueryChange({
-              ...query,
-              filterValues: { ...query.filterValues, [facetFilterId]: ids },
-            })
-          }
+          onChange={pickFacets}
         />
       ) : null}
       {onSaveView && activeId === undefined ? (

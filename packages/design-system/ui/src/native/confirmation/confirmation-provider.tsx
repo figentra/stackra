@@ -19,7 +19,7 @@ import type { ConfirmationOptions } from "#contracts/types/confirmation-options.
 import { AlertDialog } from "#native/alert-dialog/alert-dialog";
 import { ConfirmationContext } from "#native/confirmation/confirmation-context";
 import { haptics } from "#native/haptics/haptics";
-import { usePendingChoice } from "#native/confirmation/use-pending-choice";
+import { usePendingChoice } from "#react/hooks/use-pending-choice";
 import { TextField } from "#native/text-field/text-field";
 import type { ConfirmationProviderProps } from "#native/confirmation/confirmation-provider.props";
 

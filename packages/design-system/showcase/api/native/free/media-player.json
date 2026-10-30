@@ -1,0 +1,140 @@
+{
+  "generatedFrom": {
+    "hash": "7e8af4a7919671dd",
+    "propsFiles": [
+      "ui/src/native/media-player/media-player.props.ts",
+      "ui/src/native/media-player/media-range.props.ts"
+    ]
+  },
+  "importLine": "import { MediaPlayer } from \"@stackra/ui/native\";",
+  "key": "free/media-player",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called once the file plays to its end.",
+          "name": "onEnded",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "MediaPlayer",
+      "props": [
+        {
+          "description": "The file's address.",
+          "name": "src",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`video` (the default) or `audio`.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"audio\" | \"video\""
+        },
+        {
+          "description": "The player's accessible name, for example the video's title.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A still shown before a video plays.",
+          "name": "poster",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first.\nWeb only: on native the captions button appears when the file itself carries captions.",
+          "name": "tracks",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly MediaTrack[]"
+        },
+        {
+          "description": "The speeds the speed menu offers; defaults to 0.5, 1, 1.25, 1.5 and 2.",
+          "name": "playbackRates",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly number[]"
+        },
+        {
+          "description": "Styles the outer element.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the new position.",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: number) => void"
+        }
+      ],
+      "name": "MediaRange",
+      "props": [
+        {
+          "description": "The position, 0 to `max`.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The end of the range (the length in seconds, or 1 for the volume).",
+          "name": "max",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How far the file is loaded, drawn behind the fill; leave it out for none.",
+          "name": "buffered",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What a screen reader says for the value, for example \"0:12 of 1:05\".",
+          "name": "valueText",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What one step moves: an arrow key (Page Up and Down move ten times as far), or a screen reader's swipe.",
+          "name": "step",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the track.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

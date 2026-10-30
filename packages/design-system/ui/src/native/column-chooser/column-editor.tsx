@@ -11,13 +11,13 @@
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3, adapted forms); STA-1371;
  *          WCAG 2.2 SC 1.3.1, 2.5.7 and 4.1.2.
  */
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import type { CollectionDensity } from "#contracts/enums/collection-density.enum";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
-import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
+import { useColumnEditorState } from "#react/hooks/use-column-editor-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
 import { Checkbox } from "#native/checkbox/checkbox";
@@ -42,10 +42,9 @@ export function ColumnEditor<TItem extends CollectionItem = CollectionItem>({
   isIconOnly = false,
 }: ColumnEditorProps<TItem>): ReactElement {
   const t = useUiText();
-  const name = label ?? t(DATA_GRID_KEYS.ui.data_table_tools.columns);
+  const { name, open, setOpenId, toggle, setShown, rename, pinItems, setPin } =
+    useColumnEditorState(collection, label);
   const { columns } = collection;
-  const [openId, setOpenId] = useState<string | null>(null);
-  const open = columns.find((column) => column.id === openId);
 
   return (
     <Drawer
@@ -91,8 +90,7 @@ export function ColumnEditor<TItem extends CollectionItem = CollectionItem>({
                         label: t(column.isHidden ? K.show_column : K.hide_column, {
                           label: column.label,
                         }),
-                        onAction: () =>
-                          collection.updateColumn(column.id, { isHidden: !column.isHidden }),
+                        onAction: () => setShown(column.id, column.isHidden === true),
                       },
                     ]
                   : []),
@@ -116,9 +114,7 @@ export function ColumnEditor<TItem extends CollectionItem = CollectionItem>({
                     accessibilityLabel={t(K.show_column, { label: column.label })}
                     value={!column.isHidden}
                     isDisabled={!column.canHide}
-                    onChange={(isShown) =>
-                      collection.updateColumn(column.id, { isHidden: !isShown })
-                    }
+                    onChange={(isShown) => setShown(column.id, isShown)}
                   />
                   {column.pin ? (
                     <Icon
@@ -133,7 +129,7 @@ export function ColumnEditor<TItem extends CollectionItem = CollectionItem>({
                     size="sm"
                     variant="ghost"
                     label={t(K.rename_column, { label: column.label })}
-                    onPress={() => setOpenId(openId === column.id ? null : column.id)}
+                    onPress={() => toggle(column.id)}
                   />
                 </View>
               );
@@ -148,23 +144,15 @@ export function ColumnEditor<TItem extends CollectionItem = CollectionItem>({
                 label={t(K.column_name)}
                 value={open.label === open.defaultLabel ? "" : open.label}
                 placeholder={open.defaultLabel}
-                onChange={(value) => collection.updateColumn(open.id, { label: value })}
+                onChange={rename}
               />
               <SegmentedControl
                 label={t(K.pin)}
                 size="sm"
                 isFullWidth
                 selectedKey={open.pin ?? "none"}
-                onSelectionChange={(key) =>
-                  collection.updateColumn(open.id, {
-                    pin: key === "start" || key === "end" ? key : null,
-                  })
-                }
-                items={[
-                  { id: "start", label: t(K.pin_start) },
-                  { id: "none", label: t(K.pin_none) },
-                  { id: "end", label: t(K.pin_end) },
-                ]}
+                onSelectionChange={setPin}
+                items={pinItems}
               />
             </View>
           ) : null}

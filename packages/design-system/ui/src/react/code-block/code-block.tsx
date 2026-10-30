@@ -13,15 +13,15 @@
  */
 import { cn } from "@heroui/react";
 import { TextWrap } from "@stackra/icons/react/lucide-icons";
-import { type CSSProperties, type ReactElement, useMemo, useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { codeRowsOf } from "#core/functions/code-rows-of.function";
 import { codeTextOf } from "#core/functions/code-text-of.function";
 import type { CodeRow } from "#core/types/code-row.type";
 import { Button } from "#react/button/button";
 import type { CodeBlockProps } from "#react/code-block/code-block.props";
 import { CopyButton } from "#react/copy-button/copy-button";
+import { useCodeFrameState } from "#react/hooks/use-code-frame-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Tabs } from "#react/tabs/tabs";
@@ -57,16 +57,26 @@ function CodeFrame({
   className,
 }: Omit<CodeBlockProps, "files">): ReactElement {
   const t = useUiText();
-  const [isWrapped, setWrapped] = useState(isWrappedAtStart);
-  const [isExpanded, setExpanded] = useState(false);
-  const rows = useMemo(
-    () => codeRowsOf(code, { language, isDiff, highlightLines }),
-    [code, language, isDiff, highlightLines],
-  );
-  const isCollapsible = maxLines > 0 && rows.length > maxLines;
-  const shown = isCollapsible && !isExpanded ? rows.slice(0, maxLines) : rows;
+  const {
+    rows,
+    shown,
+    isCollapsible,
+    isExpanded,
+    isWrapped,
+    toggleWrap,
+    toggleExpanded,
+    expandLabel,
+    numberDigits,
+  } = useCodeFrameState({
+    code,
+    language,
+    isDiff,
+    highlightLines,
+    isWrapped: isWrappedAtStart,
+    maxLines,
+  });
   const hasHeader = title !== undefined || language !== undefined || isCopyable || showWrapToggle;
-  const numberWidth = `${String(rows.length).length}ch`;
+  const numberWidth = `${numberDigits}ch`;
   return (
     <figure
       data-slot="code-block"
@@ -102,7 +112,7 @@ function CodeFrame({
               variant={isWrapped ? "secondary" : "ghost"}
               size="sm"
               aria-pressed={isWrapped}
-              onPress={() => setWrapped((wrapped) => !wrapped)}
+              onPress={toggleWrap}
             />
           ) : null}
           {isCopyable ? (
@@ -188,11 +198,9 @@ function CodeFrame({
             size="sm"
             isFullWidth
             aria-expanded={isExpanded}
-            onPress={() => setExpanded((expanded) => !expanded)}
+            onPress={toggleExpanded}
           >
-            {isExpanded
-              ? t(UI_KEYS.ui.code_block.show_less)
-              : t(UI_KEYS.ui.code_block.show_all, { count: rows.length })}
+            {expandLabel}
           </Button>
         </div>
       ) : null}

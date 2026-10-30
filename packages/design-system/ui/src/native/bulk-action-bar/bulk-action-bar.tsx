@@ -27,7 +27,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { pageActionVariant } from "#core/functions/page-action-variant.function";
-import { usePendingActions } from "#native/bulk-action-bar/use-pending-actions";
+import { usePendingActions } from "#react/hooks/use-pending-actions";
 import { Button } from "#native/button/button";
 import { Drawer } from "#native/drawer/drawer";
 import { IconButton } from "#native/icon-button/icon-button";

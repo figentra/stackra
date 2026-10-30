@@ -17,28 +17,18 @@
 import type { ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
-import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import type { SelectItem } from "#contracts/types/select-item.type";
-import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
+import { booleanFilterChoicesOf } from "#core/functions/boolean-filter-choices-of.function";
+import { choiceOptionsOf } from "#core/functions/choice-options-of.function";
+import { listedOptionIdsOf } from "#core/functions/listed-option-ids-of.function";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
-import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { CheckboxGroup } from "#react/checkbox-group/checkbox-group";
 import { DateField } from "#react/date-field/date-field";
 import { NumberField } from "#react/number-field/number-field";
 import { RadioGroup } from "#react/radio-group/radio-group";
 import { TextField } from "#react/text-field/text-field";
 import type { FilterEditorProps } from "#react/filter-bar/filter-editor.props";
-
-/** The radios or checkboxes of a list of short choices. */
-const choicesOf = (options: readonly SelectItem[]): readonly ChoiceOption[] =>
-  options.map((option) => ({
-    value: option.id,
-    label: option.label,
-    ...(option.description === undefined ? {} : { description: option.description }),
-    ...(option.isDisabled === undefined ? {} : { isDisabled: option.isDisabled }),
-  }));
 
 /**
  * The editor of one filter. Every change is reported at once, so the table behind it narrows while the user edits.
@@ -88,7 +78,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <RadioGroup
           aria-label={definition.label}
-          options={choicesOf(definition.options)}
+          options={choiceOptionsOf(definition.options)}
           value={filterValueOfKind("select", value) ?? ""}
           onChange={onChange}
         />
@@ -98,14 +88,10 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <CheckboxGroup
           aria-label={definition.label}
-          options={choicesOf(definition.options)}
+          options={choiceOptionsOf(definition.options)}
           value={filterValueOfKind("multi-select", value) ?? []}
           // Reported in the order the options are listed, not the order they were ticked, so the value is stable.
-          onChange={(chosen) =>
-            onChange(
-              definition.options.map((option) => option.id).filter((id) => chosen.includes(id)),
-            )
-          }
+          onChange={(chosen) => onChange(listedOptionIdsOf(definition.options, chosen))}
         />
       );
     }
@@ -135,16 +121,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <RadioGroup
           aria-label={definition.label}
-          options={[
-            {
-              value: "true",
-              label: filterChipTextOf(definition, true, locale, filterChipWordsOf(t)),
-            },
-            {
-              value: "false",
-              label: filterChipTextOf(definition, false, locale, filterChipWordsOf(t)),
-            },
-          ]}
+          options={booleanFilterChoicesOf(definition, locale, t)}
           value={answer === undefined ? "" : String(answer)}
           onChange={(next) => onChange(next === "true")}
         />

@@ -15,14 +15,13 @@
  *          request 2026-10-29).
  */
 import { cn } from "@heroui/react";
-import { useId, useState, type ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 
-import type { TaskTrayTask } from "#contracts/types/task-tray-task.type";
 import { TASK_TRAY_KEYS } from "#core/constants/task-tray-keys.constant";
-import { taskTrayCountsOf } from "#core/functions/task-tray-counts-of.function";
 import { Button } from "#react/button/button";
 import { useNumberFormat } from "#react/hooks/use-number-format";
 import { FileName } from "#react/file-name/file-name";
+import { useTaskTrayState } from "#react/hooks/use-task-tray-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
@@ -58,27 +57,12 @@ export function TaskTray({
   const t = useUiText();
   const format = useNumberFormat();
   const listId = useId();
-  const [own, setOwn] = useState(defaultCollapsed);
-  const isCollapsed = collapsedProp ?? own;
+  const { isCollapsed, toggle, headline, finished, wordOf } = useTaskTrayState(
+    { tasks, isCollapsed: collapsedProp, defaultCollapsed, onCollapsedChange },
+    format,
+  );
   if (tasks.length === 0) return null;
-
-  const { running, finished, failed } = taskTrayCountsOf(tasks);
-  const headline = [
-    running > 0
-      ? t(K.running, { count: running, n: format(running) })
-      : t(K.finished, { count: finished, n: format(finished) }),
-    failed > 0 ? t(K.failed, { count: failed, n: format(failed) }) : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
   const name = label ?? t(K.label);
-  const word = (task: TaskTrayTask) =>
-    task.detail ??
-    (task.status === "running"
-      ? task.progress === undefined
-        ? ""
-        : format(task.progress / 100, { style: "percent" })
-      : t(K[task.status === "queued" ? "queued" : task.status]));
 
   return (
     <section
@@ -109,10 +93,7 @@ export function TaskTray({
           label={isCollapsed ? t(K.show) : t(K.hide)}
           aria-expanded={!isCollapsed}
           aria-controls={listId}
-          onPress={() => {
-            setOwn(!isCollapsed);
-            onCollapsedChange?.(!isCollapsed);
-          }}
+          onPress={toggle}
         />
       </div>
       <ul
@@ -137,7 +118,7 @@ export function TaskTray({
                   <FileName name={task.label} />
                 </Text>
                 <Text type="small" tone={task.status === "error" ? "danger" : "muted"}>
-                  {word(task)}
+                  {wordOf(task)}
                 </Text>
               </span>
               <span className="flex items-center gap-1">

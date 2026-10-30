@@ -40,7 +40,7 @@ import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-
 import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { ActionMenu } from "#native/action-menu/action-menu";
 import { BulkActionBar } from "#native/bulk-action-bar/bulk-action-bar";
-import { usePendingActions } from "#native/bulk-action-bar/use-pending-actions";
+import { usePendingActions } from "#react/hooks/use-pending-actions";
 import { Button } from "#native/button/button";
 import { CursorPagination } from "#native/cursor-pagination/cursor-pagination";
 import { EmptyState } from "#native/empty-state/empty-state";

@@ -14,15 +14,17 @@
  */
 import { cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
-import { useNumerals } from "@stackra/i18n/react";
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
-import { MEDIA_TIME_KEYS } from "#core/constants/media-time-keys.constant";
-import { mediaTimeOf } from "#core/functions/media-time-of.function";
+import { MEDIA_PLAYER_STEPS } from "#core/constants/media-player-steps.constant";
+import { captionIndexOf } from "#core/functions/caption-index-of.function";
+import { mediaMuteToggleOf } from "#core/functions/media-mute-toggle-of.function";
+import { mediaSeekOf } from "#core/functions/media-seek-of.function";
+import { mediaVolumeOf } from "#core/functions/media-volume-of.function";
 import { Button } from "#react/button/button";
 import { useNumberFormat } from "#react/hooks/use-number-format";
-import { useUiText } from "#react/hooks/use-ui-text";
+import { useMediaPlayerState } from "#react/hooks/use-media-player-state";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { MEDIA_PLAYER_ICONS } from "#react/media-player/media-player-icons.constant";
@@ -30,13 +32,8 @@ import type { MediaPlayerProps } from "#react/media-player/media-player.props";
 import { MediaRange } from "#react/media-player/media-range";
 import { Menu } from "#react/menu/menu";
 
-/** The player's words. */
-const K = MEDIA_TIME_KEYS.ui.media_player;
-
-/** The speeds offered by default, the seconds an arrow seeks and the volume an arrow moves. */
-const RATES = [0.5, 1, 1.25, 1.5, 2] as const;
-const SEEK_SECONDS = 5;
-const VOLUME_STEP = 0.1;
+/** The seconds an arrow seeks and the volume an arrow moves, shared with the native player. */
+const { seekSeconds: SEEK_SECONDS, volumeStep: VOLUME_STEP } = MEDIA_PLAYER_STEPS;
 
 /** A video or audio file with the house controls. */
 export function MediaPlayer({
@@ -45,24 +42,17 @@ export function MediaPlayer({
   label,
   poster,
   tracks,
-  playbackRates = RATES,
+  playbackRates = MEDIA_PLAYER_STEPS.rates,
   onEnded,
   className,
 }: MediaPlayerProps): ReactElement {
-  const t = useUiText();
   const { locale } = useLocale();
   const format = useNumberFormat();
-  const numerals = useNumerals();
+  const player = useMediaPlayerState(playbackRates, format);
+  const { time, duration, volume, hasCaptions } = player.state;
+  const patch = player.patch;
   const root = useRef<HTMLDivElement>(null);
   const media = useRef<HTMLVideoElement & HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [buffered, setBuffered] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [hasCaptions, setHasCaptions] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isVideo = kind === "video";
   const canFullscreen = isVideo && typeof document !== "undefined" && document.fullscreenEnabled;
@@ -77,7 +67,8 @@ export function MediaPlayer({
   useEffect(() => {
     const ready = media.current;
     if (ready && ready.readyState >= 1 && Number.isFinite(ready.duration))
-      setDuration(ready.duration);
+      patch({ duration: ready.duration });
+    // oxlint-disable-next-line react/exhaustive-deps -- reason: once on mount; `patch` only merges into the state
   }, []);
 
   const element = () => media.current;
@@ -90,21 +81,20 @@ export function MediaPlayer({
   };
   const seek = (to: number) => {
     const playing = element();
-    if (playing) playing.currentTime = Math.min(Math.max(0, to), duration || 0);
+    if (playing) playing.currentTime = mediaSeekOf(to, duration);
   };
   const changeVolume = (to: number) => {
     const playing = element();
     if (!playing) return;
-    playing.volume = Math.min(1, Math.max(0, Math.round(to * 100) / 100));
+    playing.volume = mediaVolumeOf(to);
     playing.muted = playing.volume === 0;
   };
   const toggleMute = () => {
     const playing = element();
     if (!playing) return;
-    // Unmuting at zero volume would stay silent, so it comes back at full volume.
-    const isSilent = playing.muted || playing.volume === 0;
-    if (playing.volume === 0) playing.volume = 1;
-    playing.muted = !isSilent;
+    const next = mediaMuteToggleOf({ volume: playing.volume, isMuted: playing.muted });
+    playing.volume = next.volume;
+    playing.muted = next.isMuted;
   };
   const toggleFullscreen = () => {
     if (!canFullscreen) return;
@@ -116,12 +106,12 @@ export function MediaPlayer({
     if (!list || list.length === 0) return;
     const next = !hasCaptions;
     // The track in the reader's language, else the first.
-    const shown = Math.max(0, tracks?.findIndex((track) => locale.startsWith(track.language)) ?? 0);
+    const shown = captionIndexOf(tracks?.map((track) => track.language) ?? [], locale);
     for (let index = 0; index < list.length; index += 1) {
       const track = list[index];
       if (track) track.mode = next && index === shown ? "showing" : "disabled";
     }
-    setHasCaptions(next);
+    patch({ hasCaptions: next });
   };
   const shortcuts: Readonly<Record<string, () => void>> = {
     " ": togglePlay,
@@ -144,29 +134,24 @@ export function MediaPlayer({
     run();
   };
 
-  const isSilent = isMuted || volume === 0;
-  const elapsed = mediaTimeOf(time, numerals);
-  const total = mediaTimeOf(duration, numerals);
-  const rateText = (speed: number) => (speed === 1 ? t(K.normal_speed) : `${format(speed)}×`);
   const events = {
-    onPlay: () => setIsPlaying(true),
-    onPause: () => setIsPlaying(false),
+    onPlay: () => patch({ isPlaying: true }),
+    onPause: () => patch({ isPlaying: false }),
     onEnded: () => {
-      setIsPlaying(false);
+      patch({ isPlaying: false });
       onEnded?.();
     },
-    onTimeUpdate: () => setTime(element()?.currentTime ?? 0),
-    onLoadedMetadata: () => setDuration(element()?.duration ?? 0),
-    onDurationChange: () => setDuration(element()?.duration ?? 0),
+    onTimeUpdate: () => patch({ time: element()?.currentTime ?? 0 }),
+    onLoadedMetadata: () => patch({ duration: element()?.duration ?? 0 }),
+    onDurationChange: () => patch({ duration: element()?.duration ?? 0 }),
     onProgress: () => {
       const ranges = element()?.buffered;
-      setBuffered(ranges && ranges.length > 0 ? ranges.end(ranges.length - 1) : 0);
+      patch({ buffered: ranges && ranges.length > 0 ? ranges.end(ranges.length - 1) : 0 });
     },
     onVolumeChange: () => {
-      setVolume(element()?.volume ?? 1);
-      setIsMuted(element()?.muted ?? false);
+      patch({ volume: element()?.volume ?? 1, isMuted: element()?.muted ?? false });
     },
-    onRateChange: () => setRate(element()?.playbackRate ?? 1),
+    onRateChange: () => patch({ rate: element()?.playbackRate ?? 1 }),
   };
 
   return (
@@ -221,68 +206,57 @@ export function MediaPlayer({
           <MediaRange
             value={time}
             max={duration || 0}
-            buffered={buffered}
-            label={t(K.seek)}
-            valueText={t(K.time_of, { elapsed, duration: total })}
+            buffered={player.state.buffered}
+            label={player.seekLabel}
+            valueText={player.seekText}
             step={SEEK_SECONDS}
             onChange={seek}
           />
           <div className="flex items-center gap-1">
             <IconButton
-              icon={<Icon name={isPlaying ? "pause" : "play"} />}
-              label={t(isPlaying ? K.pause : K.play)}
+              icon={<Icon name={player.state.isPlaying ? "pause" : "play"} />}
+              label={player.playLabel}
               variant="ghost"
               size="sm"
               onPress={togglePlay}
             />
             <IconButton
-              icon={<Icon name={isSilent ? "volume-x" : "volume-2"} />}
-              label={t(isSilent ? K.unmute : K.mute)}
+              icon={<Icon name={player.isSilent ? "volume-x" : "volume-2"} />}
+              label={player.muteLabel}
               variant="ghost"
               size="sm"
               onPress={toggleMute}
             />
             <MediaRange
-              value={isMuted ? 0 : volume}
+              value={player.shownVolume}
               max={1}
-              label={t(K.volume)}
-              valueText={format(isMuted ? 0 : volume, { style: "percent" })}
+              label={player.volumeLabel}
+              valueText={player.volumeText}
               step={VOLUME_STEP}
               onChange={changeVolume}
               className="w-20"
             />
             <span className="ms-2 text-xs whitespace-nowrap text-muted tabular-nums">
-              {elapsed} / {total}
+              {player.timeText}
             </span>
             <span className="flex-1" />
             <Menu
-              sections={[
-                {
-                  id: "speed",
-                  title: t(K.speed),
-                  isTitleHidden: true,
-                  items: playbackRates.map((speed) => ({
-                    id: String(speed),
-                    label: rateText(speed),
-                  })),
-                },
-              ]}
+              sections={player.speedSections}
               selectionMode="single"
-              value={[String(rate)]}
+              value={[String(player.state.rate)]}
               onAction={(id) => {
                 const playing = element();
                 if (playing) playing.playbackRate = Number(id);
               }}
             >
-              {/* The name carries the shown "1×", not "Normal" (WCAG 2.5.3, label in name). */}
-              <Button variant="ghost" size="sm" label={`${t(K.speed)}: ${format(rate)}×`}>
-                <span className="tabular-nums">{`${format(rate)}×`}</span>
+              <Button variant="ghost" size="sm" label={player.speedLabel}>
+                <span className="tabular-nums">{player.speedText}</span>
               </Button>
             </Menu>
             {tracks?.length ? (
               <IconButton
                 icon={<Icon name={hasCaptions ? "captions" : "captions-off"} />}
-                label={t(K.captions)}
+                label={player.captionsLabel}
                 aria-pressed={hasCaptions}
                 variant="ghost"
                 size="sm"
@@ -292,7 +266,7 @@ export function MediaPlayer({
             {canFullscreen ? (
               <IconButton
                 icon={<Icon name={isFullscreen ? "minimize" : "maximize"} />}
-                label={t(isFullscreen ? K.exit_fullscreen : K.fullscreen)}
+                label={player.fullscreenLabel(isFullscreen)}
                 variant="ghost"
                 size="sm"
                 onPress={toggleFullscreen}

@@ -12,8 +12,7 @@
  */
 import { useState, type ReactElement } from "react";
 
-import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#react/hooks/use-ui-text";
+import { useCursorPaginationState } from "#react/hooks/use-cursor-pagination-state";
 import { Button } from "#react/button/button";
 import { Icon } from "#react/icon/icon";
 import { Text } from "#react/text/text";
@@ -26,10 +25,10 @@ import type { CursorPaginationProps } from "#react/cursor-pagination/cursor-pagi
  */
 export function CursorPagination({
   hasMore,
-  hasPrevious = false,
+  hasPrevious,
   onNext,
   onPrevious,
-  mode = "pager",
+  mode,
   count,
   isLoading = false,
   size,
@@ -41,19 +40,20 @@ export function CursorPagination({
   className,
   ...rest
 }: CursorPaginationProps): ReactElement | null {
-  const t = useUiText();
-  const label = labelProp ?? t(UI_KEYS.ui.cursor_pagination.label);
-  const previousLabel = previousLabelProp ?? t(UI_KEYS.ui.cursor_pagination.previous);
-  const nextLabel = nextLabelProp ?? t(UI_KEYS.ui.cursor_pagination.next);
-  const loadMoreLabel = loadMoreLabelProp ?? t(UI_KEYS.ui.cursor_pagination.load_more);
-  const countLabel =
-    countLabelProp ?? ((total) => t(UI_KEYS.ui.cursor_pagination.count, { count: total }));
-  const isPager = mode === "pager";
-  // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
-  // end-reached call) is the next page.
-  const [pressed, setPressed] = useState<"previous" | "next">("next");
-  const isPreviousLoading = isLoading && pressed === "previous";
-  const isNextLoading = isLoading && pressed === "next";
+  const { label, previousLabel, nextLabel, loadMoreLabel, countLabel, isPager, previous, next } =
+    useCursorPaginationState({
+      hasMore,
+      hasPrevious,
+      onNext,
+      onPrevious,
+      mode,
+      isLoading,
+      label: labelProp,
+      previousLabel: previousLabelProp,
+      nextLabel: nextLabelProp,
+      loadMoreLabel: loadMoreLabelProp,
+      countLabel: countLabelProp,
+    });
   // The load-more button stays mounted, disabled, once the last page has arrived: if it unmounted while it had focus,
   // focus would fall to the page's body (WCAG 2.4.3).
   const [hadMore, setHadMore] = useState(hasMore);
@@ -81,12 +81,7 @@ export function CursorPagination({
             <Button
               size={size}
               variant="secondary"
-              isDisabled={!hasPrevious || isNextLoading}
-              isLoading={isPreviousLoading}
-              onPress={() => {
-                setPressed("previous");
-                onPrevious?.();
-              }}
+              {...previous}
               startIcon={<Icon name="chevron-left" />}
             >
               {previousLabel}
@@ -94,12 +89,7 @@ export function CursorPagination({
             <Button
               size={size}
               variant="secondary"
-              isDisabled={!hasMore || isPreviousLoading}
-              isLoading={isNextLoading}
-              onPress={() => {
-                setPressed("next");
-                onNext?.();
-              }}
+              {...next}
               endIcon={<Icon name="chevron-right" />}
             >
               {nextLabel}

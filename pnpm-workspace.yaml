@@ -232,6 +232,8 @@ catalogs:
     expo-clipboard: 57.0.2
     expo-document-picker: 57.0.3
     expo-image-picker: 57.0.20
+    # @stackra/ui's native MediaPlayer (owner approval 2026-10-30, STA-1371): Expo SDK 57's bundled version. MIT.
+    expo-video: 57.0.5
     expo-font: 57.0.4
     babel-preset-expo: 57.0.16
     react: 19.2.3

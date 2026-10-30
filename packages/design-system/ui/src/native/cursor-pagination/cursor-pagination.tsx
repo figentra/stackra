@@ -11,11 +11,10 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 4 and 7); ADR 0060
  *          (right-to-left).
  */
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
-import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#react/hooks/use-ui-text";
+import { useCursorPaginationState } from "#react/hooks/use-cursor-pagination-state";
 import { Button } from "#native/button/button";
 import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
@@ -28,10 +27,10 @@ import type { CursorPaginationProps } from "#native/cursor-pagination/cursor-pag
  */
 export function CursorPagination({
   hasMore,
-  hasPrevious = false,
+  hasPrevious,
   onNext,
   onPrevious,
-  mode = "pager",
+  mode,
   count,
   isLoading = false,
   size,
@@ -43,19 +42,20 @@ export function CursorPagination({
   className,
   ...rest
 }: CursorPaginationProps): ReactElement | null {
-  const t = useUiText();
-  const keys = UI_KEYS.ui.cursor_pagination;
-  const label = labelProp ?? t(keys.label);
-  const previousLabel = previousLabelProp ?? t(keys.previous);
-  const nextLabel = nextLabelProp ?? t(keys.next);
-  const loadMoreLabel = loadMoreLabelProp ?? t(keys.load_more);
-  const countLabel = countLabelProp ?? ((total) => t(keys.count, { count: total }));
-  const isPager = mode === "pager";
-  // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
-  // end-reached call) is the next page.
-  const [pressed, setPressed] = useState<"previous" | "next">("next");
-  const isPreviousLoading = isLoading && pressed === "previous";
-  const isNextLoading = isLoading && pressed === "next";
+  const { label, previousLabel, nextLabel, loadMoreLabel, countLabel, isPager, previous, next } =
+    useCursorPaginationState({
+      hasMore,
+      hasPrevious,
+      onNext,
+      onPrevious,
+      mode,
+      isLoading,
+      label: labelProp,
+      previousLabel: previousLabelProp,
+      nextLabel: nextLabelProp,
+      loadMoreLabel: loadMoreLabelProp,
+      countLabel: countLabelProp,
+    });
   // A load-more form with nothing more to load and no count has nothing to draw.
   if (!isPager && !hasMore && count === undefined) return null;
 
@@ -79,12 +79,7 @@ export function CursorPagination({
             <Button
               variant="secondary"
               size={size}
-              isDisabled={!hasPrevious || isNextLoading}
-              isLoading={isPreviousLoading}
-              onPress={() => {
-                setPressed("previous");
-                onPrevious?.();
-              }}
+              {...previous}
               startIcon={<Icon name="chevron-left" />}
             >
               {previousLabel}
@@ -92,12 +87,7 @@ export function CursorPagination({
             <Button
               variant="secondary"
               size={size}
-              isDisabled={!hasMore || isPreviousLoading}
-              isLoading={isNextLoading}
-              onPress={() => {
-                setPressed("next");
-                onNext?.();
-              }}
+              {...next}
               endIcon={<Icon name="chevron-right" />}
             >
               {nextLabel}

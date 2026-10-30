@@ -11,14 +11,14 @@
 import { cn } from "@heroui/react";
 import type { PointerEvent, ReactElement } from "react";
 
+import { mediaShareOf } from "#core/functions/media-share-of.function";
 import type { MediaRangeProps } from "#react/media-player/media-range.props";
 
 /** A full round from the theme's radius token. */
 const ROUND = { borderRadius: "var(--radius-full)" } as const;
 
 /** A share of the track as a CSS percentage. */
-const percent = (part: number, max: number) =>
-  `${max > 0 ? Math.min(100, Math.max(0, (part / max) * 100)) : 0}%`;
+const percent = (part: number, max: number) => `${mediaShareOf(part, max) * 100}%`;
 
 /** The timeline or the volume of a MediaPlayer. */
 export function MediaRange({

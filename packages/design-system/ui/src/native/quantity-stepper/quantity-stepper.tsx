@@ -11,13 +11,11 @@
  */
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { cn } from "heroui-native";
-import { useState } from "react";
 import { View } from "react-native";
 import Animated, { ReduceMotion, ZoomIn } from "react-native-reanimated";
 import type { ReactElement } from "react";
 
-import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { useUiText } from "#react/hooks/use-ui-text";
+import { useQuantityStepperState } from "#react/hooks/use-quantity-stepper-state";
 import { IconButton } from "#native/icon-button/icon-button";
 import type { QuantityStepperProps } from "#native/quantity-stepper/quantity-stepper.props";
 import { Text } from "#native/text/text";
@@ -42,16 +40,19 @@ export function QuantityStepper({
   className,
   ...rest
 }: QuantityStepperProps): ReactElement {
-  const t = useUiText();
-  const [ownCount, setOwnCount] = useState(defaultValue ?? minValue);
-  const count = value ?? ownCount;
-  const set = (next: number) => {
-    setOwnCount(next);
-    onChange?.(next);
-  };
-  const isAtMin = count <= minValue;
-  const isAtMax = maxValue !== undefined && count >= maxValue;
-  const removes = isAtMin && onRemove !== undefined;
+  const { count, decrement, increment } = useQuantityStepperState({
+    value,
+    defaultValue,
+    onChange,
+    minValue,
+    maxValue,
+    step,
+    onRemove,
+    incrementLabel,
+    decrementLabel,
+    removeLabel,
+    isDisabled,
+  });
 
   return (
     <View
@@ -63,18 +64,7 @@ export function QuantityStepper({
         ) ?? ""
       }
     >
-      <IconButton
-        size="sm"
-        variant="ghost"
-        icon={removes ? "trash" : "minus"}
-        label={
-          removes
-            ? (removeLabel ?? t(UI_KEYS.ui.quantity_stepper.remove))
-            : (decrementLabel ?? t(UI_KEYS.ui.number_field.decrement))
-        }
-        isDisabled={isDisabled || (isAtMin && !removes)}
-        onPress={() => (removes ? onRemove() : set(Math.max(minValue, count - step)))}
-      />
+      <IconButton size="sm" variant="ghost" {...decrement} />
       <Animated.View
         key={count}
         entering={ZoomIn.duration(FAST.durationMs).reduceMotion(ReduceMotion.System)}
@@ -90,16 +80,7 @@ export function QuantityStepper({
           {count}
         </Text>
       </Animated.View>
-      <IconButton
-        size="sm"
-        variant="ghost"
-        icon="plus"
-        label={incrementLabel ?? t(UI_KEYS.ui.number_field.increment)}
-        isDisabled={isDisabled || isAtMax}
-        onPress={() =>
-          set(maxValue === undefined ? count + step : Math.min(maxValue, count + step))
-        }
-      />
+      <IconButton size="sm" variant="ghost" icon="plus" {...increment} />
     </View>
   );
 }

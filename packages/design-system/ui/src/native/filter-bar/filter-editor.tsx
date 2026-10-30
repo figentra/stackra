@@ -21,10 +21,9 @@ import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
-import type { ChoiceOption } from "#contracts/types/choice-option.type";
-import type { SelectItem } from "#contracts/types/select-item.type";
-import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
-import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
+import { booleanFilterChoicesOf } from "#core/functions/boolean-filter-choices-of.function";
+import { choiceOptionsOf } from "#core/functions/choice-options-of.function";
+import { listedOptionIdsOf } from "#core/functions/listed-option-ids-of.function";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
 import { CheckboxGroup } from "#native/checkbox-group/checkbox-group";
 import { DateField } from "#native/date-field/date-field";
@@ -33,15 +32,6 @@ import { NumberField } from "#native/number-field/number-field";
 import { RadioGroup } from "#native/radio-group/radio-group";
 import { TextField } from "#native/text-field/text-field";
 import type { FilterEditorProps } from "#native/filter-bar/filter-editor.props";
-
-/** The radios or checkboxes of a list of short choices. */
-const choicesOf = (options: readonly SelectItem[]): readonly ChoiceOption[] =>
-  options.map((option) => ({
-    value: option.id,
-    label: option.label,
-    ...(option.description === undefined ? {} : { description: option.description }),
-    ...(option.isDisabled === undefined ? {} : { isDisabled: option.isDisabled }),
-  }));
 
 /**
  * The editor of one filter. Every change is reported at once, so the list behind the sheet narrows while the user edits.
@@ -90,7 +80,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <RadioGroup
           accessibilityLabel={definition.label}
-          options={choicesOf(definition.options)}
+          options={choiceOptionsOf(definition.options)}
           value={filterValueOfKind("select", value) ?? ""}
           onChange={onChange}
         />
@@ -100,14 +90,10 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <CheckboxGroup
           accessibilityLabel={definition.label}
-          options={choicesOf(definition.options)}
+          options={choiceOptionsOf(definition.options)}
           value={filterValueOfKind("multi-select", value) ?? []}
           // Reported in the order the options are listed, not the order they were ticked, so the value is stable.
-          onChange={(chosen) =>
-            onChange(
-              definition.options.map((option) => option.id).filter((id) => chosen.includes(id)),
-            )
-          }
+          onChange={(chosen) => onChange(listedOptionIdsOf(definition.options, chosen))}
         />
       );
     }
@@ -137,16 +123,7 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       return (
         <RadioGroup
           accessibilityLabel={definition.label}
-          options={[
-            {
-              value: "true",
-              label: filterChipTextOf(definition, true, locale, filterChipWordsOf(t)),
-            },
-            {
-              value: "false",
-              label: filterChipTextOf(definition, false, locale, filterChipWordsOf(t)),
-            },
-          ]}
+          options={booleanFilterChoicesOf(definition, locale, t)}
           value={answer === undefined ? "" : String(answer)}
           onChange={(next) => onChange(next === "true")}
         />

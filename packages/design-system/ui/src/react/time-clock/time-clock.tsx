@@ -14,19 +14,15 @@
  */
 import { cn } from "@heroui/react";
 import { useNumerals } from "@stackra/i18n/react";
-import { useState, type KeyboardEvent, type PointerEvent, type ReactElement } from "react";
+import type { KeyboardEvent, PointerEvent, ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
-import type { ClockView } from "#contracts/types/clock-view.type";
 import { FORMS_KEYS } from "#core/constants/forms-keys.constant";
-import { angleOfPoint } from "#core/functions/angle-of-point.function";
 import { clockFaceOf } from "#core/functions/clock-face-of.function";
 import { clockTimeTextOf } from "#core/functions/clock-time-text-of.function";
 import { dayPeriodsOf } from "#core/functions/day-periods-of.function";
-import { hourCycleOf } from "#core/functions/hour-cycle-of.function";
-import { stepClockTime } from "#core/functions/step-clock-time.function";
-import { timeOfClockAngle } from "#core/functions/time-of-clock-angle.function";
 import { useNumberFormat } from "#react/hooks/use-number-format";
+import { useTimeClockState } from "#react/hooks/use-time-clock-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { TimeClockProps } from "#react/time-clock/time-clock.props";
 
@@ -71,38 +67,18 @@ export function TimeClock({
   const format = useNumberFormat();
   const t = useUiText();
   const K = FORMS_KEYS.ui.wheel;
-  const cycle = hourCycle ?? hourCycleOf(locale);
-  const [view, setView] = useState<ClockView>("hours");
-  const [own, setOwn] = useState(() => defaultValue ?? { hour: 12, minute: 0 });
-  const time = value ?? own;
-  const change = (next: typeof time) => {
-    if (next.hour === time.hour && next.minute === time.minute) return;
-    if (value === undefined) setOwn(next);
-    onChange?.(next);
-  };
+  const { cycle, view, setView, time, hourText, minuteText, isPm, pointTo, step, setPeriod } =
+    useTimeClockState({ value, defaultValue, onChange, minuteStep, hourCycle }, locale, format);
   const face = clockFaceOf(time, view, cycle, format);
   const knob = pointAt(face.hand.angle, face.hand.isInner ? INNER : OUTER);
   const periods = dayPeriodsOf(locale);
-  const isPm = time.hour >= 12;
-  const two = { minimumIntegerDigits: 2, useGrouping: false } as const;
-  const hourText =
-    cycle === 12 ? format(time.hour % 12 === 0 ? 12 : time.hour % 12) : format(time.hour, two);
 
-  const pointTo = (event: PointerEvent<HTMLDivElement>) => {
+  const pointAtEvent = (event: PointerEvent<HTMLDivElement>) => {
     const box = event.currentTarget.getBoundingClientRect();
     const scale = BOX / box.width;
     const dx = (event.clientX - box.left) * scale - BOX / 2;
     const dy = (event.clientY - box.top) * scale - BOX / 2;
-    const isInner = cycle === 24 && Math.hypot(dx, dy) < (OUTER + INNER) / 2;
-    change(
-      timeOfClockAngle(angleOfPoint(dx, dy), {
-        view,
-        value: time,
-        hourCycle: cycle,
-        isInner,
-        minuteStep,
-      }),
-    );
+    pointTo(dx, dy, Math.hypot(dx, dy) < (OUTER + INNER) / 2);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const large = view === "hours" ? 3 : Math.max(1, Math.round(15 / minuteStep));
@@ -117,7 +93,7 @@ export function TimeClock({
     const by = steps[event.key];
     if (by !== undefined) {
       event.preventDefault();
-      change(stepClockTime(time, view, by, minuteStep));
+      step(by);
       return;
     }
     const isForward = event.key === "Enter" || (event.key === "Tab" && !event.shiftKey);
@@ -159,7 +135,7 @@ export function TimeClock({
             >
               {/* The name is "Hour 3": the part, then the shown value (WCAG 2.5.3, label in name). */}
               <span className="sr-only">{t(part === "hours" ? K.hour : K.minute)} </span>
-              {part === "hours" ? hourText : format(time.minute, two)}
+              {part === "hours" ? hourText : minuteText}
             </button>
           </span>
         ))}
@@ -177,9 +153,7 @@ export function TimeClock({
                   type="button"
                   aria-pressed={isOn}
                   disabled={isDisabled}
-                  onClick={() =>
-                    change({ hour: (time.hour % 12) + (index === 1 ? 12 : 0), minute: time.minute })
-                  }
+                  onClick={() => setPeriod(index === 1)}
                   style={CONTROL_RADIUS}
                   className={cn(
                     PART,
@@ -215,10 +189,10 @@ export function TimeClock({
           event.currentTarget.setPointerCapture(event.pointerId);
           event.currentTarget.focus({ preventScroll: true });
           event.preventDefault();
-          pointTo(event);
+          pointAtEvent(event);
         }}
         onPointerMove={(event) => {
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) pointTo(event);
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) pointAtEvent(event);
         }}
         onPointerUp={(event) => {
           if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;

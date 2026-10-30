@@ -21,8 +21,8 @@ import {
 } from "react-aria-components";
 
 import type { ConversationSummary } from "#contracts/types/conversation-summary.type";
-import type { MenuItem } from "#contracts/types/menu-item.type";
 import { AI_CHAT_KEYS } from "#core/constants/ai-chat-keys.constant";
+import { conversationActionsOf } from "#core/functions/conversation-actions-of.function";
 import { groupConversations } from "#core/functions/group-conversations.function";
 import { updatedAgoOf } from "#core/functions/updated-ago-of.function";
 import { ActionMenu } from "#react/action-menu/action-menu";
@@ -64,39 +64,8 @@ export function ConversationList({
     );
   }
 
-  const itemsOf = (item: ConversationSummary): MenuItem[] => [
-    ...(onPinChange
-      ? [
-          {
-            id: "pin",
-            label: t(item.isPinned ? K.unpin : K.pin),
-            icon: item.isPinned ? ("pin-off" as const) : ("pin" as const),
-            onPress: () => onPinChange(item.id, !item.isPinned),
-          },
-        ]
-      : []),
-    ...(onRename
-      ? [
-          {
-            id: "rename",
-            label: t(K.rename),
-            icon: "pencil" as const,
-            onPress: () => onRename(item.id),
-          },
-        ]
-      : []),
-    ...(onDelete
-      ? [
-          {
-            id: "delete",
-            label: t(K.delete),
-            icon: "trash" as const,
-            tone: "danger" as const,
-            onPress: () => onDelete(item.id),
-          },
-        ]
-      : []),
-  ];
+  const itemsOf = (item: ConversationSummary) =>
+    conversationActionsOf(item, { onPinChange, onRename, onDelete }, t);
 
   return (
     <IconRegistryProvider registry={CONVERSATION_LIST_ICONS}>

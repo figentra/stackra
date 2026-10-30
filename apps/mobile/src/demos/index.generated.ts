@@ -643,6 +643,10 @@ import FreeMaskedFieldPatterns from "#src/demos/free/masked-field/patterns";
 import FreeMaskedFieldPatternsCode from "#src/demos/free/masked-field/patterns.code";
 import FreeMaskedFieldRaw from "#src/demos/free/masked-field/raw";
 import FreeMaskedFieldRawCode from "#src/demos/free/masked-field/raw.code";
+import FreeMediaPlayerVideo from "#src/demos/free/media-player/video";
+import FreeMediaPlayerVideoCode from "#src/demos/free/media-player/video.code";
+import FreeMediaPlayerAudio from "#src/demos/free/media-player/audio";
+import FreeMediaPlayerAudioCode from "#src/demos/free/media-player/audio.code";
 import FreeMentionInputBasics from "#src/demos/free/mention-input/basics";
 import FreeMentionInputBasicsCode from "#src/demos/free/mention-input/basics.code";
 import FreeMenuBasics from "#src/demos/free/menu/basics";
@@ -2310,6 +2314,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/masked-field.json") as ApiDoc,
+  },
+  "free/media-player": {
+    examples: {
+      video: { Demo: FreeMediaPlayerVideo, code: FreeMediaPlayerVideoCode },
+      audio: { Demo: FreeMediaPlayerAudio, code: FreeMediaPlayerAudioCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/media-player.json") as ApiDoc,
   },
   "free/mention-input": {
     examples: {

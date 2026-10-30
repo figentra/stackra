@@ -11,20 +11,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0307 (decision 17); ADR 0060 (right-to-left); WCAG 2.2 SC 4.1.2;
  *          STA-1371.
  */
-import { getLocalTimeZone, today as todayIn } from "@internationalized/date";
-import { withDigits } from "@stackra/i18n";
 import { useNumerals } from "@stackra/i18n/react";
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
-import { PeriodCompareMode } from "#contracts/enums/period-compare-mode.enum";
-import type { PeriodValue } from "#contracts/types/period-value.type";
-import { FORMS_KEYS } from "#core/constants/forms-keys.constant";
-import { PERIOD_PRESETS } from "#core/constants/period-presets.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { dateRangeOfPreset } from "#core/functions/date-range-of-preset.function";
-import { formatDateRange } from "#core/functions/format-date-range.function";
-import { periodOf } from "#core/functions/period-of.function";
+import { usePeriodPickerState } from "#react/hooks/use-period-picker-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { DateRangePicker } from "#native/date-range-picker/date-range-picker";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -38,7 +30,7 @@ export function PeriodPicker({
   value,
   defaultValue,
   onChange,
-  presets = PERIOD_PRESETS,
+  presets,
   showComparison = true,
   today,
   isDisabled,
@@ -46,23 +38,20 @@ export function PeriodPicker({
 }: PeriodPickerProps): ReactElement {
   const t = useUiText();
   const K = UI_KEYS.ui.period_picker;
-  const P = FORMS_KEYS.ui.date_range_picker;
   const { locale } = useDesignSystem();
   const numerals = useNumerals();
-  const from = today ?? todayIn(getLocalTimeZone());
-  const [own, setOwn] = useState<PeriodValue>(
-    () => defaultValue ?? periodOf("last_30_days", dateRangeOfPreset("last_30_days", from), null),
-  );
-  const period = value ?? own;
-  const preset = period.preset ?? "custom";
-  const mode = period.compare?.mode ?? null;
-  const change = (next: PeriodValue) => {
-    if (value === undefined) setOwn(next);
-    onChange?.(next);
-  };
-  const versus = period.compare
-    ? t(K.versus, { range: withDigits(formatDateRange(period.compare.range, locale), numerals) })
-    : undefined;
+  const {
+    period,
+    preset,
+    mode,
+    versus,
+    presetItems,
+    modeItems,
+    choosePreset,
+    chooseRange,
+    setCompare,
+    chooseMode,
+  } = usePeriodPickerState({ value, defaultValue, onChange, presets, today }, locale, numerals);
   return (
     <View accessibilityLabel={label ?? t(K.label)} className={className ?? "gap-3"}>
       <Select
@@ -70,19 +59,8 @@ export function PeriodPicker({
         isFullWidth
         isDisabled={isDisabled}
         value={preset}
-        items={[
-          ...presets.map((id) => ({ id, label: t(P[id]) })),
-          { id: "custom", label: t(K.custom) },
-        ]}
-        onChange={(id) => {
-          if (!id) return;
-          const picked = presets.find((item) => item === id);
-          change(
-            picked
-              ? periodOf(picked, dateRangeOfPreset(picked, from), mode)
-              : periodOf("custom", period.range, mode),
-          );
-        }}
+        items={presetItems}
+        onChange={choosePreset}
       />
       {preset === "custom" ? (
         <DateRangePicker
@@ -90,9 +68,7 @@ export function PeriodPicker({
           presets={[]}
           isDisabled={isDisabled}
           value={period.range}
-          onChange={(range) => {
-            if (range) change(periodOf("custom", range, mode));
-          }}
+          onChange={chooseRange}
         />
       ) : null}
       {showComparison ? (
@@ -102,7 +78,7 @@ export function PeriodPicker({
             description={versus}
             isDisabled={isDisabled}
             value={mode !== null}
-            onChange={(isOn) => change(periodOf(preset, period.range, isOn ? "previous" : null))}
+            onChange={setCompare}
           />
           {mode === null ? null : (
             <Select
@@ -110,11 +86,8 @@ export function PeriodPicker({
               isFullWidth
               isDisabled={isDisabled}
               value={mode}
-              items={PeriodCompareMode.map((id) => ({ id, label: t(K[id]) }))}
-              onChange={(id) => {
-                const next = PeriodCompareMode.find((item) => item === id);
-                if (next) change(periodOf(preset, period.range, next));
-              }}
+              items={modeItems}
+              onChange={chooseMode}
             />
           )}
         </>

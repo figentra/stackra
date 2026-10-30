@@ -2576,6 +2576,16 @@
       "variant": "النمط {variant}"
     }
   },
+  "media_player": {
+    "video": {
+      "label": "مقطع نموذج الألوان"
+    },
+    "audio": {
+      "label": "رسالة صوتية من المستودع",
+      "title": "رسالة صوتية: الطلب 2048",
+      "ended": "اكتمل التشغيل."
+    }
+  },
   "save_bar": {
     "product_name": "اسم المنتج",
     "sample_product": "فلات وايت",
