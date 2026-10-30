@@ -24,11 +24,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { citext } from "@electric-sql/pglite/contrib/citext";
-import { ltree } from "@electric-sql/pglite/contrib/ltree";
-import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
-import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
-import { vector } from "@electric-sql/pglite-pgvector";
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/pglite";
 import type { PgliteConnection } from "@mikro-orm/pglite";
@@ -46,12 +41,10 @@ import { runTransaction } from "#core/functions/run-transaction.function";
 import { observedLogger } from "#node/functions/observed-logger.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
+import { PGLITE_EXTENSIONS } from "#testing/constants/pglite-extensions.constant";
 
 /** Where gen writes a member's compiled migrations, relative to the member root. */
 const MIGRATIONS_FOLDER = join(".stackra", "migrations");
-
-/** The approved extensions PGlite runs: all of ADR 0160's; PostGIS (ADR 0314) is not loaded yet. */
-const EXTENSIONS = ["vector", "ltree", "pg_trgm", "citext", "pgcrypto"] as const;
 
 /**
  * The in-process Postgres database of the unit tier.
@@ -87,7 +80,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,
       ensureDatabase: false,
-      driverOptions: { extensions: { vector, ltree, pg_trgm, citext, pgcrypto } },
+      driverOptions: { extensions: PGLITE_EXTENSIONS },
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),
     });
@@ -151,7 +144,9 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       const pglite = await connection.getNativeClient();
       // raw-sql: extensions and compiled migrations are DDL the schema owns, not queries a model makes
       await pglite.exec(
-        EXTENSIONS.map((name) => `create extension if not exists ${name};`).join("\n"),
+        Object.keys(PGLITE_EXTENSIONS)
+          .map((name) => `create extension if not exists ${name};`)
+          .join("\n"),
       );
       const folder = join(process.cwd(), MIGRATIONS_FOLDER);
       if (!existsSync(folder)) {
