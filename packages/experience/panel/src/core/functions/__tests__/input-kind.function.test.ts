@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `inputKind`: a boolean, a number, an enum (with its codes), text, an object (its keys) and a
  *          list (of objects or values), through the optional, nullable and default wrappers, a nested path and a list
- *          item's numeric segment; an unknown path is text.
+ *          item's numeric segment; an unknown path is missing.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307.
@@ -40,8 +40,8 @@ describe("inputKind", () => {
     expect(inputKind(input, "tags.0")).toEqual({ kind: "text" });
   });
 
-  it("answers text for a path the schema does not have", () => {
-    expect(inputKind(input, "missing.path")).toEqual({ kind: "text" });
-    expect(inputKind(undefined, "x")).toEqual({ kind: "text" });
+  it("answers missing for a path the schema does not have", () => {
+    expect(inputKind(input, "missing.path")).toEqual({ kind: "missing" });
+    expect(inputKind(undefined, "x")).toEqual({ kind: "missing" });
   });
 });

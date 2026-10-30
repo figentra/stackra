@@ -4,8 +4,8 @@
  *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, or text; the optional,
  *          nullable and default wrappers are looked through, and a numeric segment of the path is a list's item
  *          (`parcels.0.weight`).
- * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, entries) only, never parses. A path the schema does
- *           not have is text. Web and native forms share it.
+ * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, entries) only, never parses. A path the
+ *           schema does not have is `missing`, which a form draws as text. Web and native forms share it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
  */
@@ -46,6 +46,7 @@ export function inputKind(schema: ZodType | undefined, path: string): InputKind 
     const outer = defOf(current);
     current = bare(outer.type === "array" ? outer.element : outer.shape?.[segment]);
   }
+  if (current === undefined) return { kind: "missing" };
   const def = defOf(current);
   if (def.type === "boolean") return { kind: "boolean" };
   if (def.type === "number" || def.type === "int" || def.type === "bigint")

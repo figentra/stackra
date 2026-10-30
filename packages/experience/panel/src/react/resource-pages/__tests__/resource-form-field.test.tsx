@@ -3,7 +3,8 @@
  * Purpose: unit tests of `ResourceFormField`'s objects and lists: an object input draws its keys as a titled group; a
  *          list of objects draws a group per row bound by index, labelled without the index, with remove and add; a list
  *          of values adds an empty row; a select's options take their enum labels; a `…Minor` amount is entered in
- *          major units of the record's currency, or in minor units without one.
+ *          major units of the record's currency, or in minor units without one; a money object or a list row's
+ *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -83,6 +84,8 @@ const BuyLabelInput = z.object({
   service: z.enum(["standard", "express"]),
   mode: z.enum(["live", "test"]),
   handedOverMinor: z.number().int(),
+  landedCost: z.object({ minor: z.number().int(), currency: z.string() }),
+  lines: z.array(z.object({ sku: z.string(), priceMinor: z.number().int(), currency: z.string() })),
 });
 
 /** Draws the field of `key`, as the buy-label action's modal does over `record`. */
@@ -159,5 +162,25 @@ describe("ResourceFormField objects and lists", () => {
   it("keeps minor units without a known currency", () => {
     draw("handedOverMinor", { id: "run_1" });
     expect(screen.getByText(/^number:handedOverMinor:/)).toBeTruthy();
+  });
+
+  it("draws a money object as an amount in major units of its chosen currency, and the currency as a pick", () => {
+    spies.lists = { "landedCost.minor": 12_345, "landedCost.currency": "KWD" };
+    draw("landedCost");
+    expect(screen.getByText("money:landedCost.minor:12.345:KWD")).toBeTruthy();
+    expect(screen.getByText(/^combo:landedCost\.currency:/)).toBeTruthy();
+  });
+
+  it("enters a list row's minor-unit price in its row's currency", () => {
+    spies.lists = { lines: [{}], "lines.0.priceMinor": 500, "lines.0.currency": "SAR" };
+    draw("lines");
+    fireEvent.click(screen.getByText("money:lines.0.priceMinor:5:SAR"));
+    expect(spies.onChange).toHaveBeenLastCalledWith("lines.0.priceMinor", 13_050);
+  });
+
+  it("keeps a money object's amount in minor units until a valid currency is chosen", () => {
+    spies.lists = { "landedCost.minor": 12_345, "landedCost.currency": "" };
+    draw("landedCost");
+    expect(screen.getByText(/^number:landedCost\.minor:/)).toBeTruthy();
   });
 });

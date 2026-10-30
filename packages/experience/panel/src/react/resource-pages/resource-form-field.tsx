@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ResourceFormField`, one recorded form element bound into the surrounding schema form: a value field drawn
  *          by its input type (switch, number, select of the enum's codes by their labels, text, an object's keys as a titled group, a
- *          list as rows to add and remove, a `…Minor` amount in major units of the record's currency), a picker over an options query, a grid of fields, and the steps of a set as
+ *          list as rows to add and remove, a `currency` as a pick of ISO 4217 codes, a `…Minor` or money object's
+ *          `minor` amount in major units of the currency beside it in the form, else of the record's), a picker over an options query, a grid of fields, and the steps of a set as
  *          titled sections.
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
  *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
@@ -154,6 +155,36 @@ function MoneyField({
   );
 }
 
+/** Whether `key` holds minor units: a `…Minor` field or a money object's `minor`. */
+const isMinorKey = (key: string): boolean =>
+  key.endsWith("Minor") || key === "minor" || key.endsWith(".minor");
+
+/** The `currency` path beside `key` (`totals.totalMinor` and `cost.minor` sit beside `totals.currency`, `cost.currency`). */
+const currencyBeside = (key: string): string => `${key.slice(0, key.lastIndexOf(".") + 1)}currency`;
+
+/** The ISO 4217 codes a currency field offers. */
+const CURRENCIES: readonly { readonly id: string }[] = Intl.supportedValuesOf("currency").map(
+  (id) => ({ id }),
+);
+
+/** A minor-unit amount whose currency is the form's own value at `currencyPath`, entered in major units once known. */
+function FormMoneyField({
+  name,
+  label,
+  currencyPath,
+}: {
+  readonly name: string;
+  readonly label: string;
+  readonly currencyPath: string;
+}): ReactElement {
+  const currency = useSchemaField<string | null | undefined>(currencyPath).value;
+  const scale = scaleOf(typeof currency === "string" ? currency : undefined);
+  // Until a valid currency is chosen the amount stays in minor units, so nothing is scaled by a guess.
+  if (typeof currency !== "string" || scale === undefined)
+    return <Field.Number name={name} label={label} />;
+  return <MoneyField name={name} label={label} currency={currency} scale={scale} />;
+}
+
 /** The scale of `currency`, or undefined when it is not a currency code (the field then stays in minor units). */
 function scaleOf(currency: string | undefined): number | undefined {
   if (currency === undefined) return undefined;
@@ -240,7 +271,11 @@ export function ResourceFormField({
       />
     );
   if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} />;
-  if (kind.kind === "number" && node.key.endsWith("Minor")) {
+  if (kind.kind === "number" && isMinorKey(node.key)) {
+    // A currency beside it in the input (a MoneyAmount, a list row's `priceMinor` and `currency`) is the form's own.
+    const beside = currencyBeside(node.key);
+    if (inputKind(schema, beside).kind !== "missing")
+      return <FormMoneyField name={node.key} label={label} currencyPath={beside} />;
     // Money travels in minor units; with a known currency it is entered in major units.
     const currency = listCellCurrency(record ?? {}, node.key, record ?? {}, "currency");
     const scale = scaleOf(currency);
@@ -248,5 +283,15 @@ export function ResourceFormField({
       return <MoneyField name={node.key} label={label} currency={currency} scale={scale} />;
   }
   if (kind.kind === "number") return <Field.Number name={node.key} label={label} />;
+  if (fieldLabelPath(node.key).split(".").at(-1) === "currency")
+    return (
+      <Field.ComboBox
+        name={node.key}
+        label={label}
+        items={CURRENCIES}
+        itemKey="id"
+        itemLabel={(item) => item.id}
+      />
+    );
   return <Field.Text name={node.key} label={label} />;
 }

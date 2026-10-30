@@ -9,8 +9,8 @@
 /** The control kind of one form field. */
 export type InputKind =
   | {
-      /** Text, a number or a switch. */
-      readonly kind: "text" | "number" | "boolean";
+      /** Text, a number or a switch; `missing` when the schema has no such path (drawn as text). */
+      readonly kind: "text" | "number" | "boolean" | "missing";
     }
   | {
       /** A choice of the enum's codes. */
