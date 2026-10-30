@@ -618,7 +618,16 @@ const CLIENT_ENUM_SOURCES: Readonly<Record<string, string>> = {
 };
 
 describe("createSourceReader on an enum of a consumed service", async () => {
-  const root = writeFixtureMember("sales", CLIENT_ENUM_SOURCES);
+  // A client this member's earlier gen wrote, now stale: the manifest, not the client, is the source.
+  const root = writeFixtureMember("sales", {
+    ...CLIENT_ENUM_SOURCES,
+    ".stackra/gen/clients/catalogue.ts": [
+      'import { Enum } from "@stackra/contracts";',
+      'export const WeighedKind = Enum.of({ Weight: "weight" });',
+      "export type WeighedKind = Enum.Value<typeof WeighedKind>;",
+      "",
+    ].join("\n"),
+  });
   // The catalogue service's committed manifest beside the member; no client is generated yet.
   mkdirSync(join(dirname(root), "catalogue"), { recursive: true });
   writeFileSync(
@@ -636,7 +645,7 @@ describe("createSourceReader on an enum of a consumed service", async () => {
   const codes = reader.errors.map((error) => error.code);
   host.close();
 
-  it("reads its codes from the service's manifest", () => {
+  it("reads its codes from the service's committed manifest, over a stale client", () => {
     expect(shapes.find((shape) => shape.name === "ResolvedBarcode")?.fields[0]?.type).toEqual({
       kind: "enum",
       name: "WeighedKind",

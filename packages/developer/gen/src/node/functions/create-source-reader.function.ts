@@ -1214,14 +1214,22 @@ export function createSourceReader(
     );
   };
 
-  // An enum of a consumed service, by its `#stackra/clients/<service>` import, before gen has written that client
-  // (ADR 0260 decision 3): its codes from the service's committed manifest, which the client is written from (STA-1663).
+  // An enum of a consumed service, by its `#stackra/clients/<service>` import: its codes from the service's committed
+  // manifest, the client's own source, whether or not this member's gen has written that client yet (ADR 0260
+  // decision 3; STA-1663). Reading the client would be circular: only this member's clean gen writes it.
+  const serviceManifests = new Map<
+    string,
+    ReturnType<typeof readServiceManifests>[number] | undefined
+  >();
   const clientEnum = (node: TsNode): TypeDesc | undefined => {
     if (node.typeName === undefined) return undefined;
     const name = nameOf(node.typeName);
     const specifier = importsOf(host.fileName(node)).get(name);
     if (specifier?.startsWith(CLIENTS_SPECIFIER) !== true) return undefined;
-    const [found] = readServiceManifests(facts.root, [specifier.slice(CLIENTS_SPECIFIER.length)]);
+    const service = specifier.slice(CLIENTS_SPECIFIER.length);
+    if (!serviceManifests.has(service))
+      serviceManifests.set(service, readServiceManifests(facts.root, [service])[0]);
+    const found = serviceManifests.get(service);
     const schemas = (found?.manifest.schemas ?? {}) as Readonly<Record<string, unknown>>;
     for (const [key, schema] of Object.entries(schemas)) {
       const [module = "", last = key] = key.split(".");
@@ -1234,10 +1242,12 @@ export function createSourceReader(
   };
 
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
+    const fromClient = clientEnum(node);
+    if (fromClient !== undefined) return fromClient;
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
     // An unresolved import de-aliases to the checker's `unknown` symbol, which has no declaration.
     if (symbol === undefined || host.declarations(symbol).length === 0)
-      return clientEnum(node) ?? unknownType(node, subject, quiet);
+      return unknownType(node, subject, quiet);
     const name = host.symbolName(symbol);
     const args = node.typeArguments ?? [];
     const declaration = host.declarations(symbol)[0];
