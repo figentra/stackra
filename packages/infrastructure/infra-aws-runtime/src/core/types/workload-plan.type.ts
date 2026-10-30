@@ -29,8 +29,9 @@ export type WorkloadPlan = {
   readonly secrets: readonly string[];
   /** The resources it uses, by name. */
   readonly uses: readonly string[];
-  /** Fargate vCPU units and memory in MiB. */
+  /** Fargate vCPU units (1024 is one vCPU). */
   readonly cpu: number;
+  /** Task memory in MiB. */
   readonly memoryMb: number;
   /** Task count bounds; one task when the runway sets none. */
   readonly scale: { readonly min: number; readonly max: number };
