@@ -42,7 +42,8 @@
  *                     (rules 6, 13 and 19); ADR 0097 (decision 3); ADR 0162 (decision 2); ADR 0222 (decision 2);
  *                     ADR 0260 (decision 4).
  */
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
 
@@ -598,6 +599,48 @@ describe("createSourceReader on an enum from a workspace package", async () => {
       kind: "enum",
       name: "ChannelKind",
       values: ["online", "pos"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
+/** A field typed with an enum of a consumed service, imported from its client before gen writes it (STA-1663). */
+const CLIENT_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/schemas/resolved-barcode.schema.ts": [
+    'import type { WeighedKind } from "#stackra/clients/catalogue";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class ResolvedBarcode extends Schema {",
+    "  weighed!: WeighedKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a consumed service", async () => {
+  const root = writeFixtureMember("sales", CLIENT_ENUM_SOURCES);
+  // The catalogue service's committed manifest beside the member; no client is generated yet.
+  mkdirSync(join(dirname(root), "catalogue"), { recursive: true });
+  writeFileSync(
+    join(dirname(root), "catalogue", "stackra.manifest.json"),
+    JSON.stringify({
+      member: "catalogue",
+      package: "@fixture/catalogue",
+      version: "1.0.0",
+      schemas: { "catalogue.WeighedKind": { type: "string", enum: ["weight", "count"] } },
+    }),
+  );
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the service's manifest", () => {
+    expect(shapes.find((shape) => shape.name === "ResolvedBarcode")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "WeighedKind",
+      values: ["weight", "count"],
     });
     expect(codes).not.toContain("shape_unknown_type");
   });

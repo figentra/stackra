@@ -51,7 +51,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { refusalCode } from "@stackra/errors";
-import { snakeCase } from "@stackra/support";
+import { pascalCase, snakeCase } from "@stackra/support";
 
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -81,6 +81,7 @@ import { NOT_CONSTANT } from "#node/constants/not-constant.constant";
 import { RELATION_TYPES } from "#node/constants/relation-types.constant";
 import { SHAPE_DECORATORS } from "#node/constants/shape-decorators.constant";
 import { SHAPE_KINDS } from "#node/constants/shape-kinds.constant";
+import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 import type { MemberFacts } from "#node/types/member-facts.type";
 import type { SourceReader } from "#node/types/source-reader.type";
 import type { TsHost } from "#node/types/ts-host.type";
@@ -1213,9 +1214,30 @@ export function createSourceReader(
     );
   };
 
+  // An enum of a consumed service, by its `#stackra/clients/<service>` import, before gen has written that client
+  // (ADR 0260 decision 3): its codes from the service's committed manifest, which the client is written from (STA-1663).
+  const clientEnum = (node: TsNode): TypeDesc | undefined => {
+    if (node.typeName === undefined) return undefined;
+    const name = nameOf(node.typeName);
+    const specifier = importsOf(host.fileName(node)).get(name);
+    if (specifier?.startsWith(CLIENTS_SPECIFIER) !== true) return undefined;
+    const [found] = readServiceManifests(facts.root, [specifier.slice(CLIENTS_SPECIFIER.length)]);
+    const schemas = (found?.manifest.schemas ?? {}) as Readonly<Record<string, unknown>>;
+    for (const [key, schema] of Object.entries(schemas)) {
+      const [module = "", last = key] = key.split(".");
+      const values = (schema as { readonly enum?: unknown } | null)?.enum;
+      // The client names a clashing enum with its module first (`PosWeighedKind`).
+      if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
+        return { kind: "enum", name, values: values.map(String) };
+    }
+    return undefined;
+  };
+
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
-    if (symbol === undefined) return unknownType(node, subject, quiet);
+    // An unresolved import de-aliases to the checker's `unknown` symbol, which has no declaration.
+    if (symbol === undefined || host.declarations(symbol).length === 0)
+      return clientEnum(node) ?? unknownType(node, subject, quiet);
     const name = host.symbolName(symbol);
     const args = node.typeArguments ?? [];
     const declaration = host.declarations(symbol)[0];
