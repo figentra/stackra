@@ -12,13 +12,10 @@
  *          ExportDialog).
  */
 import type { ReactElement } from "react";
-import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, ScrollView } from "react-native";
 
-import { ExportScope } from "#contracts/enums/export-scope.enum";
-import type { ExportDelivery } from "#contracts/enums/export-delivery.enum";
 import { EXPORT_DIALOG_KEYS } from "#core/constants/export-dialog-keys.constant";
-import { usePendingPress } from "#react/hooks/use-pending-press";
+import { useExportDialogState } from "#react/hooks/use-export-dialog-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
 import { CheckboxGroup } from "#native/checkbox-group/checkbox-group";
@@ -28,75 +25,40 @@ import { ProgressBar } from "#native/progress-bar/progress-bar";
 import { RadioGroup } from "#native/radio-group/radio-group";
 import { Text } from "#native/text/text";
 
-/** The default deliveries: one stable array, not a new one each render. */
-const DOWNLOAD_ONLY = ["download"] as const;
-
 /** The dialog's words. */
 const K = EXPORT_DIALOG_KEYS.ui.export_dialog;
 
-/** How long the done tick shows before the dialog closes, in milliseconds. */
-const DONE_MS = 1200;
-
-/** The catalogue key of each scope's label. */
-const SCOPE_KEY = { selection: K.scope_selection, filtered: K.scope_filtered, all: K.scope_all };
-
 /** Chooses a format, columns, rows and a delivery, then exports with a pending-to-done button. */
 export function ExportDialog({
-  formats,
-  columns,
-  counts,
-  deliveries = DOWNLOAD_ONLY,
-  email,
-  defaultValue,
-  onExport,
   trigger,
   title,
   description,
-  isOpen,
-  defaultOpen,
-  onOpenChange,
+  ...choices
 }: ExportDialogProps): ReactElement {
   const t = useUiText();
-  const scopes = ExportScope.filter((scope) => counts[scope] !== undefined);
-  const [format, setFormat] = useState(defaultValue?.format ?? formats[0]?.value ?? "");
-  const [chosen, setChosen] = useState<readonly string[]>(
-    defaultValue?.columns ?? columns?.map((column) => column.value) ?? [],
-  );
-  const [scope, setScope] = useState(
-    defaultValue?.scope ?? scopes.find((each) => (counts[each] ?? 0) > 0) ?? scopes[0] ?? "all",
-  );
-  const [delivery, setDelivery] = useState<ExportDelivery>(
-    defaultValue?.delivery ?? deliveries[0] ?? "download",
-  );
-  const [phase, setPhase] = useState<"idle" | "done" | "failed">("idle");
-  const [fraction, setFraction] = useState<number | undefined>(undefined);
-  const [innerOpen, setInnerOpen] = useState(defaultOpen ?? false);
-  const open = isOpen ?? innerOpen;
-  const closing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(closing.current), []);
-
-  const setOpen = (next: boolean) => {
-    clearTimeout(closing.current);
-    if (next) setPhase("idle");
-    if (isOpen === undefined) setInnerOpen(next);
-    onOpenChange?.(next);
-  };
-
-  const { isPending, press } = usePendingPress(onExport);
-  const hasNoColumns = columns !== undefined && chosen.length === 0;
-
-  const submit = async () => {
-    setPhase("idle");
-    setFraction(undefined);
-    const isDone = await press({ format, columns: chosen, scope, delivery }, setFraction);
-    setPhase(isDone ? "done" : "failed");
-    AccessibilityInfo.announceForAccessibility(
-      isDone ? t(delivery === "email" ? K.done_email : K.done_download) : t(K.failed),
-    );
-    if (isDone) closing.current = setTimeout(() => setOpen(false), DONE_MS);
-  };
-
-  const isDone = phase === "done";
+  const {
+    open,
+    setOpen,
+    format,
+    setFormat,
+    chosen,
+    setChosen,
+    scope,
+    setScope,
+    delivery,
+    setDelivery,
+    scopes,
+    deliveries,
+    scopeOptions,
+    deliveryOptions,
+    phase,
+    fraction,
+    isPending,
+    isDone,
+    hasNoColumns,
+    doneText,
+    submit,
+  } = useExportDialogState(choices);
   const isLocked = isPending || isDone;
   return (
     <Modal
@@ -119,7 +81,7 @@ export function ExportDialog({
       <ScrollView className="max-h-[480px]" contentContainerClassName="gap-6 py-2">
         <RadioGroup
           label={t(K.format)}
-          options={formats}
+          options={choices.formats}
           value={format}
           onChange={setFormat}
           orientation="horizontal"
@@ -128,20 +90,16 @@ export function ExportDialog({
         {scopes.length > 1 ? (
           <RadioGroup
             label={t(K.scope)}
-            options={scopes.map((each) => ({
-              value: each,
-              label: t(SCOPE_KEY[each], { count: counts[each] ?? 0 }),
-              isDisabled: counts[each] === 0,
-            }))}
+            options={scopeOptions}
             value={scope}
-            onChange={(next) => setScope(next as typeof scope)}
+            onChange={setScope}
             isDisabled={isLocked}
           />
         ) : null}
-        {columns === undefined ? null : (
+        {choices.columns === undefined ? null : (
           <CheckboxGroup
             label={t(K.columns)}
-            options={columns}
+            options={choices.columns}
             value={chosen}
             onChange={setChosen}
             isInvalid={hasNoColumns}
@@ -152,13 +110,9 @@ export function ExportDialog({
         {deliveries.length > 1 ? (
           <RadioGroup
             label={t(K.delivery)}
-            options={deliveries.map((each) => ({
-              value: each,
-              label:
-                each === "email" && email !== undefined ? t(K.email_to, { email }) : t(K[each]),
-            }))}
+            options={deliveryOptions}
             value={delivery}
-            onChange={(next) => setDelivery(next as ExportDelivery)}
+            onChange={setDelivery}
             isDisabled={isLocked}
           />
         ) : null}
@@ -185,7 +139,11 @@ export function ExportDialog({
           variant="primary"
           isLoading={isPending}
           isDisabled={hasNoColumns || isDone || format === ""}
-          onPress={() => void submit()}
+          onPress={() =>
+            void submit((isExported) =>
+              AccessibilityInfo.announceForAccessibility(isExported ? doneText : t(K.failed)),
+            )
+          }
           {...(isDone ? { startIcon: "check" as const } : {})}
         >
           {isDone ? t(K.done) : t(K.export)}

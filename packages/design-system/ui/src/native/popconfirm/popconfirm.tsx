@@ -8,7 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); STA-1371 (wave D, owner approval 2026-10-30).
  */
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import { OVERLAY_SELECTION_KEYS } from "#core/constants/overlay-selection-keys.constant";
@@ -16,6 +16,7 @@ import { Button } from "#native/button/button";
 import type { PopconfirmProps } from "#native/popconfirm/popconfirm.props";
 import { Popover } from "#native/popover/popover";
 import { Text } from "#native/text/text";
+import { usePopconfirmState } from "#react/hooks/use-popconfirm-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 
 /** The popconfirm's words. */
@@ -39,34 +40,13 @@ export function Popconfirm({
   className,
 }: PopconfirmProps): ReactElement {
   const t = useUiText();
-  const [own, setOwn] = useState(defaultOpen ?? false);
-  const [isPending, setPending] = useState(false);
-  const open = isOpen ?? own;
-
-  const setOpen = (next: boolean) => {
-    if (isOpen === undefined) setOwn(next);
-    onOpenChange?.(next);
-  };
-  const cancel = () => {
-    onCancel?.();
-    setOpen(false);
-  };
-  const confirm = () => {
-    const result = onConfirm?.();
-    if (!(result instanceof Promise)) {
-      setOpen(false);
-      return;
-    }
-    setPending(true);
-    result.then(
-      () => {
-        setPending(false);
-        setOpen(false);
-      },
-      // A refused confirm stays open, so the person can try again or cancel.
-      () => setPending(false),
-    );
-  };
+  const { open, isPending, setOpen, cancel, confirm } = usePopconfirmState({
+    isOpen,
+    defaultOpen,
+    onOpenChange,
+    onConfirm,
+    onCancel,
+  });
 
   return (
     <Popover

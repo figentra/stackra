@@ -32,7 +32,7 @@ import { Text as AriaText, type Key } from "react-aria-components";
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Avatar } from "#react/avatar/avatar";
-import { useEntityOptions } from "#react/entity-picker/use-entity-options";
+import { useEntityOptions } from "#react/hooks/use-entity-options";
 import { Icon } from "#react/icon/icon";
 import { Spinner } from "#react/spinner/spinner";
 import { Text } from "#react/text/text";

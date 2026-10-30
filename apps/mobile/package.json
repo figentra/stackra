@@ -109,6 +109,7 @@
     "expo-system-ui": "catalog:mobile",
     "expo-tracking-transparency": "catalog:mobile",
     "expo-updates": "catalog:mobile",
+    "expo-video": "catalog:mobile",
     "expo-widgets": "catalog:mobile",
     "heroui-native": "catalog:mobile",
     "lucide-react-native": "catalog:mobile",

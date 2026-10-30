@@ -11,13 +11,13 @@
  */
 import type { SyntaxRole } from "@stackra/tokens/contracts";
 import { TextWrap } from "@stackra/icons/native/lucide-icons";
-import { type ReactElement, useMemo, useState } from "react";
+import type { ReactElement } from "react";
 import { ScrollView, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { codeRowsOf } from "#core/functions/code-rows-of.function";
 import { codeTextOf } from "#core/functions/code-text-of.function";
 import type { CodeRow } from "#core/types/code-row.type";
+import { useCodeFrameState } from "#react/hooks/use-code-frame-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
 import type { CodeBlockProps } from "#native/code-block/code-block.props";
@@ -75,15 +75,24 @@ function CodeFrame({
   className,
 }: Omit<CodeBlockProps, "files">): ReactElement {
   const t = useUiText();
-  const [isWrapped, setWrapped] = useState(isWrappedAtStart);
-  const [isExpanded, setExpanded] = useState(false);
-  const rows = useMemo(
-    () => codeRowsOf(code, { language, isDiff, highlightLines }),
-    [code, language, isDiff, highlightLines],
-  );
-  const isCollapsible = maxLines > 0 && rows.length > maxLines;
-  const shown = isCollapsible && !isExpanded ? rows.slice(0, maxLines) : rows;
-  const numberWidth = String(rows.length).length;
+  const {
+    rows,
+    shown,
+    isCollapsible,
+    isWrapped,
+    toggleWrap,
+    toggleExpanded,
+    expandLabel,
+    numberDigits,
+  } = useCodeFrameState({
+    code,
+    language,
+    isDiff,
+    highlightLines,
+    isWrapped: isWrappedAtStart,
+    maxLines,
+  });
+  const numberWidth = numberDigits;
   const body = (
     <View className="min-w-full py-3">
       {shown.map((row) => (
@@ -161,7 +170,7 @@ function CodeFrame({
               variant={isWrapped ? "secondary" : "ghost"}
               size="sm"
               accessibilityState={{ selected: isWrapped }}
-              onPress={() => setWrapped((wrapped) => !wrapped)}
+              onPress={toggleWrap}
             />
           ) : null}
           {isCopyable ? (
@@ -182,15 +191,8 @@ function CodeFrame({
       )}
       {isCollapsible ? (
         <View className="border-t border-separator p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            isFullWidth
-            onPress={() => setExpanded((expanded) => !expanded)}
-          >
-            {isExpanded
-              ? t(UI_KEYS.ui.code_block.show_less)
-              : t(UI_KEYS.ui.code_block.show_all, { count: rows.length })}
+          <Button variant="ghost" size="sm" isFullWidth onPress={toggleExpanded}>
+            {expandLabel}
           </Button>
         </View>
       ) : null}

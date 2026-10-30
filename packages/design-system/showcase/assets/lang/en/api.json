@@ -3162,7 +3162,7 @@
         "playbackRates": "The speeds the speed menu offers; defaults to 0.5, 1, 1.25, 1.5 and 2.",
         "poster": "A still shown before a video plays.",
         "src": "The file's address.",
-        "tracks": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first."
+        "tracks": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first.\nWeb only: on native the captions button appears when the file itself carries captions."
       },
       "MediaRange": {
         "buffered": "How far the file is loaded, drawn behind the fill; leave it out for none.",
@@ -3170,7 +3170,7 @@
         "label": "The accessible name.",
         "max": "The end of the range (the length in seconds, or 1 for the volume).",
         "onChange": "Called with the new position.",
-        "step": "What one arrow key moves. Page Up and Page Down move ten times as far.",
+        "step": "What one step moves: an arrow key (Page Up and Down move ten times as far), or a screen reader's swipe.",
         "value": "The position, 0 to `max`.",
         "valueText": "What a screen reader says for the value, for example \"0:12 of 1:05\"."
       }

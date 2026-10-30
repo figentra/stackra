@@ -17,7 +17,7 @@
 import { Checkbox as HeroCheckbox, cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import {
   Button as AriaButton,
   DropIndicator,
@@ -28,12 +28,12 @@ import {
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
-import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { fitColumnWidth } from "#core/functions/fit-column-width.function";
 import { Button } from "#react/button/button";
 import type { ColumnEditorProps } from "#react/column-chooser/column-editor.props";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
+import { useColumnEditorState } from "#react/hooks/use-column-editor-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
@@ -55,10 +55,11 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
 }: ColumnEditorProps<TItem>): ReactElement {
   const t = useUiText();
   const isReduced = useReducedMotion() ?? false;
-  const name = label ?? t(DATA_GRID_KEYS.ui.data_table_tools.columns);
+  const { name, openId, open, toggle, setShown, rename, pinItems, setPin } = useColumnEditorState(
+    collection,
+    label,
+  );
   const { columns } = collection;
-  const [openId, setOpenId] = useState<string | null>(null);
-  const open = columns.find((column) => column.id === openId);
   const labelOf = (id: unknown) => columns.find((column) => column.id === id)?.label ?? "";
 
   const { dragAndDropHooks } = useDragAndDrop({
@@ -95,7 +96,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
           // No grid selection: React Aria drags every selected row, so visibility is each row's own checkbox and a
           // drag moves only the row it lifts.
           selectionMode="none"
-          onAction={(key) => setOpenId(openId === String(key) ? null : String(key))}
+          onAction={(key) => toggle(String(key))}
           dragAndDropHooks={dragAndDropHooks}
           className="flex max-h-72 flex-col overflow-auto rounded-[var(--radius-container)] border border-separator"
         >
@@ -126,7 +127,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
                 </AriaButton>
                 <HeroCheckbox
                   isSelected={!column.isHidden}
-                  onChange={(isShown) => collection.updateColumn(column.id, { isHidden: !isShown })}
+                  onChange={(isShown) => setShown(column.id, isShown)}
                   isDisabled={!column.canHide}
                   aria-label={t(K.show_column, { label: column.label })}
                 >
@@ -154,7 +155,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
                   size="sm"
                   variant="ghost"
                   label={t(K.rename_column, { label: column.label })}
-                  onPress={() => setOpenId(openId === column.id ? null : column.id)}
+                  onPress={() => toggle(column.id)}
                 />
               </motion.div>
             </GridListItem>
@@ -170,23 +171,15 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
               label={t(K.column_name)}
               value={open.label === open.defaultLabel ? "" : open.label}
               placeholder={open.defaultLabel}
-              onChange={(value) => collection.updateColumn(open.id, { label: value })}
+              onChange={rename}
             />
             <SegmentedControl
               label={t(K.pin)}
               size="sm"
               isFullWidth
               selectedKey={open.pin ?? "none"}
-              onSelectionChange={(key) =>
-                collection.updateColumn(open.id, {
-                  pin: key === "start" || key === "end" ? key : null,
-                })
-              }
-              items={[
-                { id: "start", label: t(K.pin_start) },
-                { id: "none", label: t(K.pin_none) },
-                { id: "end", label: t(K.pin_end) },
-              ]}
+              onSelectionChange={setPin}
+              items={pinItems}
             />
             <div className="flex items-end gap-2">
               <NumberField

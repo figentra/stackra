@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the web EntityPicker's hold on its records: one `createEntityOptionsLoader` store per picker, read with
- *          `useSyncExternalStore`, so the picker redraws on each answer and drops the stale ones the store drops.
- * Boundary: internal to `EntityPicker`, not in the `./react` barrel. The latest `loadOptions` and pause are read
- *           through refs, so a picker given a new function on each render keeps one store and one pending request.
- * Runtime: browser
+ * Purpose: the web and native EntityPicker's hold on its records: one `createEntityOptionsLoader` store per picker,
+ *          read with `useSyncExternalStore`, so the picker redraws on each answer and drops the stale ones the store
+ *          drops.
+ * Boundary: internal to `EntityPicker`, in the shared React layer; not in a barrel. The latest `loadOptions` and pause
+ *           are read through refs, so a picker given a new function on each render keeps one store and one pending
+ *           request.
+ * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (wave 7 vocabulary).
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -12,7 +14,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
 import { createEntityOptionsLoader } from "#core/functions/create-entity-options-loader.function";
 import type { EntityOptionsLoader } from "#core/types/entity-options-loader.type";
-import type { EntityOptions } from "#react/entity-picker/entity-options.type";
+import type { EntityOptions } from "#react/hooks/entity-options.type";
 
 /**
  * Holds the records an EntityPicker lists.

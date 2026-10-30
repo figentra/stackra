@@ -1,18 +1,18 @@
 /**
  * Stackra file contract:
- * Purpose: `usePendingChoice()`, the hook the web `ConfirmationProvider` and `LeaveConfirmation` hold their one
- *          yes-or-no question with: it keeps a `createPendingChoice` store for the life of the component and re-renders
- *          it on every change.
- * Boundary: React glue only; the questions, the promises and the replacement rule are the store's. Internal: not in
- *           the `./react` barrel. When its owner unmounts with a question open, the question is answered no, so the
- *           caller who awaited it never waits for ever.
- * Runtime: browser
+ * Purpose: `usePendingChoice()`, the hook the web and native `ConfirmationProvider` and `LeaveConfirmation` hold
+ *          their one yes-or-no question with: it keeps a `createPendingChoice` store for the life of the component and
+ *          re-renders it on every change.
+ * Boundary: React glue only; the questions, the promises and the replacement rule are the store's. Internal, in the
+ *           shared React layer: not in a barrel. When its owner unmounts with a question open, the question is
+ *           answered no, so the caller who awaited it never waits for ever.
+ * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0312.
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { createPendingChoice } from "#core/functions/create-pending-choice.function";
-import type { PendingChoice } from "#react/confirmation/pending-choice.type";
+import type { PendingChoice } from "#react/hooks/pending-choice.type";
 
 /**
  * Holds one pending yes-or-no question for the component. `ask` and `settle` keep their identity across renders, so

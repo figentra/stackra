@@ -12,11 +12,12 @@
  *          (wave D, owner approval 2026-10-30).
  */
 import { cn, Popover as HeroPopover } from "@heroui/react";
-import { useId, useState, type ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 
 import { OVERLAY_SELECTION_KEYS } from "#core/constants/overlay-selection-keys.constant";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
 import { Button } from "#react/button/button";
+import { usePopconfirmState } from "#react/hooks/use-popconfirm-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { PopconfirmProps } from "#react/popconfirm/popconfirm.props";
 
@@ -42,35 +43,14 @@ export function Popconfirm({
 }: PopconfirmProps): ReactElement {
   const t = useUiText();
   const id = useId();
-  const [own, setOwn] = useState(defaultOpen ?? false);
-  const [isPending, setPending] = useState(false);
-  const open = isOpen ?? own;
+  const { open, isPending, setOpen, cancel, confirm } = usePopconfirmState({
+    isOpen,
+    defaultOpen,
+    onOpenChange,
+    onConfirm,
+    onCancel,
+  });
   const isDanger = tone === "danger";
-
-  const setOpen = (next: boolean) => {
-    if (isOpen === undefined) setOwn(next);
-    onOpenChange?.(next);
-  };
-  const cancel = () => {
-    onCancel?.();
-    setOpen(false);
-  };
-  const confirm = () => {
-    const result = onConfirm?.();
-    if (!(result instanceof Promise)) {
-      setOpen(false);
-      return;
-    }
-    setPending(true);
-    result.then(
-      () => {
-        setPending(false);
-        setOpen(false);
-      },
-      // A refused confirm stays open, so the person can try again or cancel.
-      () => setPending(false),
-    );
-  };
 
   return (
     <HeroPopover

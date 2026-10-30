@@ -60,7 +60,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import { useDataTableLayout } from "#react/data-table/use-data-table-layout";
 import { ActionMenu } from "#react/action-menu/action-menu";
 import { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
-import { usePendingActions } from "#react/bulk-action-bar/use-pending-actions";
+import { usePendingActions } from "#react/hooks/use-pending-actions";
 import { Button } from "#react/button/button";
 import { CursorPagination } from "#react/cursor-pagination/cursor-pagination";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";

@@ -16,7 +16,7 @@
 import { useImperativeHandle, type ReactElement } from "react";
 
 import { AlertDialog } from "#native/alert-dialog/alert-dialog";
-import { usePendingChoice } from "#native/confirmation/use-pending-choice";
+import { usePendingChoice } from "#react/hooks/use-pending-choice";
 import type { LeaveConfirmationProps } from "#native/leave-confirmation/leave-confirmation.props";
 
 /**

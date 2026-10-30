@@ -9,13 +9,12 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0060; STA-1371 (owner request 2026-10-29).
  */
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
-import type { TaskTrayTask } from "#contracts/types/task-tray-task.type";
 import { TASK_TRAY_KEYS } from "#core/constants/task-tray-keys.constant";
-import { taskTrayCountsOf } from "#core/functions/task-tray-counts-of.function";
 import { isolatedFileNameOf } from "#core/functions/isolated-file-name-of.function";
+import { useTaskTrayState } from "#react/hooks/use-task-tray-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
 import { useNumberFormat } from "#native/hooks/use-number-format";
@@ -52,26 +51,11 @@ export function TaskTray({
 }: TaskTrayProps): ReactElement | null {
   const t = useUiText();
   const format = useNumberFormat();
-  const [own, setOwn] = useState(defaultCollapsed);
-  const isCollapsed = collapsedProp ?? own;
+  const { isCollapsed, toggle, headline, finished, wordOf } = useTaskTrayState(
+    { tasks, isCollapsed: collapsedProp, defaultCollapsed, onCollapsedChange },
+    format,
+  );
   if (tasks.length === 0) return null;
-
-  const { running, finished, failed } = taskTrayCountsOf(tasks);
-  const headline = [
-    running > 0
-      ? t(K.running, { count: running, n: format(running) })
-      : t(K.finished, { count: finished, n: format(finished) }),
-    failed > 0 ? t(K.failed, { count: failed, n: format(failed) }) : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const word = (task: TaskTrayTask) =>
-    task.detail ??
-    (task.status === "running"
-      ? task.progress === undefined
-        ? ""
-        : format(task.progress / 100, { style: "percent" })
-      : t(K[task.status === "queued" ? "queued" : task.status]));
 
   return (
     <View
@@ -95,10 +79,7 @@ export function TaskTray({
           icon={isCollapsed ? "chevron-up" : "chevron-down"}
           label={isCollapsed ? t(K.show) : t(K.hide)}
           accessibilityState={{ expanded: !isCollapsed }}
-          onPress={() => {
-            setOwn(!isCollapsed);
-            onCollapsedChange?.(!isCollapsed);
-          }}
+          onPress={toggle}
         />
       </View>
       {isCollapsed ? null : (
@@ -117,7 +98,7 @@ export function TaskTray({
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1}>{isolatedFileNameOf(task.label)}</Text>
                     <Text type="small" tone={task.status === "error" ? "danger" : "muted"}>
-                      {word(task)}
+                      {wordOf(task)}
                     </Text>
                   </View>
                   {isActive && onCancel ? (

@@ -10489,7 +10489,7 @@
     "key": "free/media-player",
     "keywords": ["video", "audio", "player", "captions", "playback", "media", "speed"],
     "lang": "en",
-    "platforms": ["react"],
+    "platforms": ["react", "native"],
     "propNames": [
       "buffered",
       "className",
@@ -10516,7 +10516,7 @@
     "key": "free/media-player",
     "keywords": ["فيديو", "صوت", "مشغّل", "ترجمة مرئية", "تشغيل", "سرعة"],
     "lang": "ar",
-    "platforms": ["react"],
+    "platforms": ["react", "native"],
     "propNames": [
       "buffered",
       "className",

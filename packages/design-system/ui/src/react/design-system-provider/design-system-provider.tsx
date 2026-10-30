@@ -21,15 +21,12 @@ import { intlLocale, NumberingSystem } from "@stackra/i18n";
 import { useNumerals } from "@stackra/i18n/react";
 import { MotionConfig } from "motion/react";
 import { I18nProvider } from "react-aria-components";
-import { useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from "react";
+import { useLayoutEffect, useSyncExternalStore, type ReactElement } from "react";
 
-import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
 import type { Direction } from "#contracts/enums/direction.enum";
-import type { MotionLevel } from "#contracts/enums/motion-level.enum";
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
-import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { directionOf } from "#core/functions/direction-of.function";
-import { resolveMotion } from "#core/functions/resolve-motion.function";
+import { useDesignSystemState } from "#react/hooks/use-design-system-state";
 
 import { DesignSystemContext } from "./design-system-context";
 
@@ -73,41 +70,23 @@ const ariaLocaleOf = (locale: string, direction: Direction) => {
  */
 export function DesignSystemProvider({
   children,
-  colorScheme,
-  defaultColorScheme = "system",
-  onColorSchemeChange,
-  locale,
-  defaultLocale = "en",
-  onLocaleChange,
-  brand,
-  defaultBrand,
-  onBrandChange,
-  transition,
-  defaultTransition = "none",
-  onTransitionChange,
-  motion,
-  defaultMotion = "full",
-  onMotionChange,
-  direction,
-  theme = "stackra",
   material = "solid",
+  ...props
 }: DesignSystemProviderProps): ReactElement {
-  const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
-  const [ownLocale, setOwnLocale] = useState(defaultLocale);
-  const [ownBrand, setOwnBrand] = useState(defaultBrand);
-  const [ownTransition, setOwnTransition] = useState(defaultTransition);
-  const [ownMotion, setOwnMotion] = useState<MotionLevel>(defaultMotion);
-  const currentMotion = motion ?? ownMotion;
   const systemReduced = useSyncExternalStore(subscribeToSystemMotion, isSystemReduced, () => false);
-  const resolvedMotion = resolveMotion(currentMotion, systemReduced);
-  const currentColorScheme = colorScheme ?? ownColorScheme;
-  const currentLocale = locale ?? ownLocale;
-  const currentBrand = brand ?? ownBrand;
-  const currentTransition = transition ?? ownTransition;
   const systemDark = useSyncExternalStore(subscribeToSystemScheme, isSystemDark, () => false);
-  const resolvedColorScheme =
-    currentColorScheme === "system" ? (systemDark ? "dark" : "light") : currentColorScheme;
-  const currentDirection = direction ?? directionOf(currentLocale);
+  const state = useDesignSystemState(props, {
+    isSystemReduced: systemReduced,
+    resolveColorScheme: (scheme) =>
+      scheme === "system" ? (systemDark ? "dark" : "light") : scheme,
+  });
+  const {
+    resolvedColorScheme,
+    resolvedMotion,
+    brand: currentBrand,
+    locale: currentLocale,
+    direction: currentDirection,
+  } = state;
   const numerals = useNumerals();
   const ariaLocale = ariaLocaleOf(currentLocale, currentDirection);
 
@@ -148,56 +127,6 @@ export function DesignSystemProvider({
     currentLocale,
     currentDirection,
   ]);
-
-  const state = useMemo<DesignSystemState>(
-    () => ({
-      colorScheme: currentColorScheme,
-      resolvedColorScheme,
-      locale: currentLocale,
-      direction: currentDirection,
-      theme,
-      brand: currentBrand,
-      transition: currentTransition,
-      motion: currentMotion,
-      resolvedMotion,
-      setColorScheme: (next) => {
-        setOwnColorScheme(next);
-        onColorSchemeChange?.(next);
-      },
-      setLocale: (next) => {
-        setOwnLocale(next);
-        onLocaleChange?.(next);
-      },
-      setBrand: (next) => {
-        setOwnBrand(next);
-        onBrandChange?.(next);
-      },
-      setTransition: (next) => {
-        setOwnTransition(next);
-        onTransitionChange?.(next);
-      },
-      setMotion: (next) => {
-        setOwnMotion(next);
-        onMotionChange?.(next);
-      },
-    }),
-    [
-      currentColorScheme,
-      resolvedColorScheme,
-      currentLocale,
-      currentDirection,
-      theme,
-      currentBrand,
-      currentTransition,
-      currentMotion,
-      resolvedMotion,
-      onColorSchemeChange,
-      onLocaleChange,
-      onBrandChange,
-      onTransitionChange,
-      onMotionChange,
-    ],
-  );
 
   return (
     <DesignSystemContext value={state}>

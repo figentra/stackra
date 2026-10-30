@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "54a56517d20451bb",
+    "hash": "7e8af4a7919671dd",
     "propsFiles": [
       "ui/src/react/media-player/media-player.props.ts",
       "ui/src/react/media-player/media-range.props.ts"
@@ -50,7 +50,7 @@
           "type": "string"
         },
         {
-          "description": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first.",
+          "description": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first.\nWeb only: on native the captions button appears when the file itself carries captions.",
           "name": "tracks",
           "required": false,
           "source": "stackra",
@@ -120,7 +120,7 @@
           "type": "string"
         },
         {
-          "description": "What one arrow key moves. Page Up and Page Down move ten times as far.",
+          "description": "What one step moves: an arrow key (Page Up and Down move ten times as far), or a screen reader's swipe.",
           "name": "step",
           "required": true,
           "source": "stackra",

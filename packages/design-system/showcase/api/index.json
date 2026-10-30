@@ -790,6 +790,7 @@
     "react": true
   },
   "free/media-player": {
+    "native": true,
     "partsCount": 2,
     "propsCount": 16,
     "react": true

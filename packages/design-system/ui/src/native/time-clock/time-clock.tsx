@@ -14,20 +14,15 @@
  */
 import { useNumerals } from "@stackra/i18n/react";
 import { useThemeColor } from "heroui-native";
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { PanResponder, Pressable, View, type GestureResponderEvent } from "react-native";
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 
-import type { ClockView } from "#contracts/types/clock-view.type";
-import type { TimeValue } from "#contracts/types/time-value.type";
 import { FORMS_KEYS } from "#core/constants/forms-keys.constant";
-import { angleOfPoint } from "#core/functions/angle-of-point.function";
 import { clockFaceOf } from "#core/functions/clock-face-of.function";
 import { clockTimeTextOf } from "#core/functions/clock-time-text-of.function";
 import { dayPeriodsOf } from "#core/functions/day-periods-of.function";
-import { hourCycleOf } from "#core/functions/hour-cycle-of.function";
-import { stepClockTime } from "#core/functions/step-clock-time.function";
-import { timeOfClockAngle } from "#core/functions/time-of-clock-angle.function";
+import { useTimeClockState } from "#react/hooks/use-time-clock-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { useNumberFormat } from "#native/hooks/use-number-format";
@@ -74,44 +69,24 @@ export function TimeClock({
     "foreground",
     "muted",
   ]);
-  const cycle = hourCycle ?? hourCycleOf(locale);
-  const [view, setView] = useState<ClockView>("hours");
-  const [own, setOwn] = useState<TimeValue>(() => defaultValue ?? { hour: 12, minute: 0 });
-  const time = value ?? own;
-  const change = (next: TimeValue) => {
-    if (next.hour === time.hour && next.minute === time.minute) return;
-    if (value === undefined) setOwn(next);
-    onChange?.(next);
-  };
+  const { cycle, view, setView, time, hourText, minuteText, isPm, pointTo, step, setPeriod } =
+    useTimeClockState({ value, defaultValue, onChange, minuteStep, hourCycle }, locale, format);
   const drawn = clockFaceOf(time, view, cycle, format);
   const knob = pointAt(drawn.hand.angle, drawn.hand.isInner ? INNER : OUTER);
-  const two = { minimumIntegerDigits: 2, useGrouping: false } as const;
-  const hourText =
-    cycle === 12 ? format(time.hour % 12 === 0 ? 12 : time.hour % 12) : format(time.hour, two);
-  const isPm = time.hour >= 12;
 
-  const pointTo = (event: GestureResponderEvent) => {
+  const pointAtTouch = (event: GestureResponderEvent) => {
     const scale = BOX / SIZE;
     const dx = event.nativeEvent.locationX * scale - BOX / 2;
     const dy = event.nativeEvent.locationY * scale - BOX / 2;
-    const isInner = cycle === 24 && Math.hypot(dx, dy) < (OUTER + INNER) / 2;
-    change(
-      timeOfClockAngle(angleOfPoint(dx, dy), {
-        view,
-        value: time,
-        hourCycle: cycle,
-        isInner,
-        minuteStep,
-      }),
-    );
+    pointTo(dx, dy, Math.hypot(dx, dy) < (OUTER + INNER) / 2);
   };
   // Made each render so the handlers see the current time and face; they read only the touch's position, never the
   // responder's accumulated gesture state, so a new one mid-drag loses nothing.
   const responder = PanResponder.create({
     onStartShouldSetPanResponder: () => !isDisabled,
     onMoveShouldSetPanResponder: () => !isDisabled,
-    onPanResponderGrant: pointTo,
-    onPanResponderMove: pointTo,
+    onPanResponderGrant: pointAtTouch,
+    onPanResponderMove: pointAtTouch,
     onPanResponderRelease: () => {
       if (view === "hours") setView("minutes");
     },
@@ -132,7 +107,7 @@ export function TimeClock({
               className="px-2 py-1"
             >
               <Text className="text-3xl font-semibold tabular-nums" tone={toneOf(view === which)}>
-                {which === "hours" ? hourText : format(time.minute, two)}
+                {which === "hours" ? hourText : minuteText}
               </Text>
             </Pressable>
           </View>
@@ -152,9 +127,7 @@ export function TimeClock({
                   accessibilityLabel={period}
                   accessibilityState={{ checked: isOn, disabled: isDisabled }}
                   disabled={isDisabled}
-                  onPress={() =>
-                    change({ hour: (time.hour % 12) + (index === 1 ? 12 : 0), minute: time.minute })
-                  }
+                  onPress={() => setPeriod(index === 1)}
                   className="px-1.5 py-0.5"
                 >
                   <Text type="small" tone={toneOf(isOn)} className="font-semibold">
@@ -181,8 +154,7 @@ export function TimeClock({
         accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
         onAccessibilityAction={(event) => {
           if (isDisabled) return;
-          const by = event.nativeEvent.actionName === "increment" ? 1 : -1;
-          change(stepClockTime(time, view, by, minuteStep));
+          step(event.nativeEvent.actionName === "increment" ? 1 : -1);
         }}
         style={{ width: SIZE, height: SIZE }}
       >

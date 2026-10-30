@@ -17,7 +17,7 @@ import type { ConfirmFunction } from "#contracts/types/confirm-function.type";
 import type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
 import { AlertDialog } from "#react/alert-dialog/alert-dialog";
 import { ConfirmationContext } from "#react/confirmation/confirmation-context";
-import { usePendingChoice } from "#react/confirmation/use-pending-choice";
+import { usePendingChoice } from "#react/hooks/use-pending-choice";
 import { TextField } from "#react/text-field/text-field";
 import type { ConfirmationProviderProps } from "#react/confirmation/confirmation-provider.props";
 

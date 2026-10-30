@@ -24,18 +24,15 @@
  */
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
-import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useLayoutEffect, useMemo, useRef, type ReactElement } from "react";
 import { Appearance, View } from "react-native";
 import { ReducedMotionConfig, ReduceMotion, useReducedMotion } from "react-native-reanimated";
 import { LayoutDirection, Uniwind, useUniwind } from "uniwind";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
-import type { MotionLevel } from "#contracts/enums/motion-level.enum";
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
-import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-import { directionOf } from "#core/functions/direction-of.function";
-import { resolveMotion } from "#core/functions/resolve-motion.function";
+import { useDesignSystemState } from "#react/hooks/use-design-system-state";
 
 import { haptics as hapticsSwitch } from "#native/haptics/haptics";
 
@@ -47,44 +44,24 @@ import { DesignSystemContext } from "./design-system-context";
  */
 export function DesignSystemProvider({
   children,
-  colorScheme,
-  defaultColorScheme = "system",
-  onColorSchemeChange,
-  locale,
-  defaultLocale = "en",
-  onLocaleChange,
-  brand,
-  defaultBrand,
-  onBrandChange,
-  transition,
-  defaultTransition = "none",
-  onTransitionChange,
-  motion,
-  defaultMotion = "full",
-  onMotionChange,
-  direction,
-  theme = "stackra",
   maxFontScale = null,
   schemeTransition,
   haptics,
+  ...props
 }: DesignSystemProviderProps & {
   /** The transition a scheme change after mount draws, read at the change (Uniwind Pro); none when left out. */
   readonly schemeTransition?: (() => object | undefined) | undefined;
   /** Whether controls play touch feedback (`useHaptic()`); left out, the switch keeps its state (on by default). */
   readonly haptics?: boolean | undefined;
 }): ReactElement {
-  const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
-  const [ownLocale, setOwnLocale] = useState(defaultLocale);
-  const [ownBrand, setOwnBrand] = useState(defaultBrand);
-  const [ownTransition, setOwnTransition] = useState(defaultTransition);
-  const [ownMotion, setOwnMotion] = useState<MotionLevel>(defaultMotion);
-  const currentMotion = motion ?? ownMotion;
-  const resolvedMotion = resolveMotion(currentMotion, useReducedMotion());
-  const currentColorScheme = colorScheme ?? ownColorScheme;
-  const currentLocale = locale ?? ownLocale;
-  const currentBrand = brand ?? ownBrand;
-  const currentTransition = transition ?? ownTransition;
-  const currentDirection = direction ?? directionOf(currentLocale);
+  const isSystemReduced = useReducedMotion();
+  // Uniwind reports the theme on screen, `system` already resolved; it re-renders this hook on every change.
+  const resolvedColorScheme = useUniwind().theme === "dark" ? "dark" : "light";
+  const state = useDesignSystemState(props, {
+    isSystemReduced,
+    resolveColorScheme: () => resolvedColorScheme,
+  });
+  const { colorScheme: currentColorScheme, resolvedMotion, direction: currentDirection } = state;
   const isRtl = currentDirection === "rtl";
 
   // Layout effect: on the New Architecture (the only one Expo 57 runs) it runs before the frame is shown, and the
@@ -118,58 +95,6 @@ export function DesignSystemProvider({
     if (haptics !== undefined) hapticsSwitch.setEnabled(haptics);
   }, [haptics]);
 
-  // Uniwind reports the theme on screen, `system` already resolved; it re-renders this hook on every change.
-  const resolvedColorScheme = useUniwind().theme === "dark" ? "dark" : "light";
-
-  const state = useMemo<DesignSystemState>(
-    () => ({
-      colorScheme: currentColorScheme,
-      resolvedColorScheme,
-      locale: currentLocale,
-      direction: currentDirection,
-      theme,
-      brand: currentBrand,
-      transition: currentTransition,
-      motion: currentMotion,
-      resolvedMotion,
-      setColorScheme: (next) => {
-        setOwnColorScheme(next);
-        onColorSchemeChange?.(next);
-      },
-      setLocale: (next) => {
-        setOwnLocale(next);
-        onLocaleChange?.(next);
-      },
-      setBrand: (next) => {
-        setOwnBrand(next);
-        onBrandChange?.(next);
-      },
-      setTransition: (next) => {
-        setOwnTransition(next);
-        onTransitionChange?.(next);
-      },
-      setMotion: (next) => {
-        setOwnMotion(next);
-        onMotionChange?.(next);
-      },
-    }),
-    [
-      currentColorScheme,
-      resolvedColorScheme,
-      currentLocale,
-      currentDirection,
-      theme,
-      currentBrand,
-      currentTransition,
-      currentMotion,
-      resolvedMotion,
-      onColorSchemeChange,
-      onLocaleChange,
-      onBrandChange,
-      onTransitionChange,
-      onMotionChange,
-    ],
-  );
   // Text follows the device's text size (Dynamic Type, Android font scale); 0 means no cap.
   const config = useMemo(() => {
     const scaling = { allowFontScaling: true, maxFontSizeMultiplier: maxFontScale ?? 0 };

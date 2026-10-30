@@ -129,7 +129,7 @@ members:
     src: 0.5
     tests: 0
   packages/design-system/ui:
-    src: 5.98
+    src: 5.21
     tests: 9.27
   packages/developer/brand-kit:
     src: 2.78

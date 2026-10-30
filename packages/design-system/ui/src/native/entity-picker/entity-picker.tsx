@@ -39,7 +39,7 @@ import type { EntityOption } from "#contracts/types/entity-option.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Avatar } from "#native/avatar/avatar";
 import { Drawer } from "#native/drawer/drawer";
-import { useEntityOptions } from "#native/entity-picker/use-entity-options";
+import { useEntityOptions } from "#react/hooks/use-entity-options";
 import { Icon } from "#native/icon/icon";
 import { ListItem } from "#native/list/list-item";
 import { Spinner } from "#native/spinner/spinner";

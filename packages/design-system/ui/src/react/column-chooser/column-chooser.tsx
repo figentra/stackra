@@ -10,6 +10,7 @@
 
 import type { ReactElement } from "react";
 import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
+import { columnChooserOf } from "#core/functions/column-chooser-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#react/button/button";
 import { CheckboxGroup } from "#react/checkbox-group/checkbox-group";
@@ -26,7 +27,7 @@ export function ColumnChooser({
 }: ColumnChooserProps): ReactElement {
   const t = useUiText();
   const name = label ?? t(DATA_GRID_KEYS.ui.data_table_tools.columns);
-  const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id;
+  const chooser = columnChooserOf(columns, hiddenColumns);
   return (
     <div {...rest}>
       <Popover
@@ -39,19 +40,9 @@ export function ColumnChooser({
       >
         <CheckboxGroup
           label={name}
-          options={columns.map((column) => ({
-            value: column.id,
-            label: column.label,
-            isDisabled: column.id === rowHeaderId,
-          }))}
-          value={columns.map((column) => column.id).filter((id) => !hiddenColumns.includes(id))}
-          onChange={(shown) =>
-            onHiddenColumnsChange(
-              columns
-                .map((column) => column.id)
-                .filter((id) => id !== rowHeaderId && !shown.includes(id)),
-            )
-          }
+          options={chooser.options}
+          value={chooser.shown}
+          onChange={(shown) => onHiddenColumnsChange(chooser.hiddenOf(shown))}
         />
       </Popover>
     </div>
