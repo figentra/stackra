@@ -696,6 +696,53 @@ describe("createSourceReader on an enum of a package whose entry is not generate
   });
 });
 
+/** The same, for a package that commits no manifest either: its `Enum.of` source under `src/core` (STA-1663). */
+const UNBUILT_PACKAGE_SOURCE_ENUM: Readonly<Record<string, string>> = {
+  "node_modules/@acme/commerce-packs/package.json": JSON.stringify({
+    name: "@acme/commerce-packs",
+    exports: { ".": "./.stackra/entry/index.ts" },
+  }),
+  "node_modules/@acme/commerce-packs/src/contracts/types/provider-mode.type.ts":
+    'export type ProviderMode = "live" | "test";\n',
+  "node_modules/@acme/commerce-packs/src/core/enums/provider-mode.enum.ts": [
+    'import { Enum } from "@stackra/contracts";',
+    "",
+    "export const ProviderMode = Enum.of({",
+    "  /** Real money. */",
+    '  Live: "live",',
+    '  Test: ["test", { label: "Sandbox: no money" }],',
+    "});",
+    "",
+  ].join("\n"),
+  "src/core/schemas/card-terminal.schema.ts": [
+    'import type { ProviderMode } from "@acme/commerce-packs";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class CardTerminal extends Schema {",
+    "  mode!: ProviderMode;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a package with neither its entry nor a manifest", async () => {
+  const root = writeFixtureMember("sales", UNBUILT_PACKAGE_SOURCE_ENUM);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the Enum.of in the package's source for that entry", () => {
+    expect(shapes.find((shape) => shape.name === "CardTerminal")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "ProviderMode",
+      values: ["live", "test"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
 /** A driver over another package's abstract base, whose port that package imports by its own `#contracts` path. */
 const PACKAGE_BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/printer-fixture/package.json": JSON.stringify({

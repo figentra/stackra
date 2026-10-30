@@ -47,7 +47,7 @@
  *                     a package below the container is built by hand, so its constructor is not read; `I18nKey` of a
  *                     `@stackra/*` package reads as the `i18n_key` brand, a string).
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
@@ -57,6 +57,8 @@ import { pascalCase, snakeCase } from "@stackra/support";
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { entryOf } from "#core/functions/entry-of.function";
+import { enumCodesOf } from "#core/functions/enum-codes-of.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
@@ -82,6 +84,7 @@ import { NOT_CONSTANT } from "#node/constants/not-constant.constant";
 import { RELATION_TYPES } from "#node/constants/relation-types.constant";
 import { SHAPE_DECORATORS } from "#node/constants/shape-decorators.constant";
 import { SHAPE_KINDS } from "#node/constants/shape-kinds.constant";
+import { dependencyPath } from "#node/functions/dependency-path.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 import type { MemberFacts } from "#node/types/member-facts.type";
@@ -1260,7 +1263,25 @@ export function createSourceReader(
     const pkg = specifier.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? specifier);
     if (!dependencyManifests.has(pkg))
       dependencyManifests.set(pkg, readDependencyManifests(facts.root, [pkg])[0]?.manifest);
-    return enumIn(dependencyManifests.get(pkg), name);
+    const manifest = dependencyManifests.get(pkg);
+    if (manifest !== undefined) return enumIn(manifest, name);
+    // No committed manifest either: the `Enum.of` in the package's source folders of that entry (`.` is src/core and
+    // src/config), as gen's own entry barrel would export it.
+    const json = dependencyPath(facts.root, pkg, "package.json");
+    if (json === undefined) return undefined;
+    const entry = specifier === pkg ? "index" : specifier.slice(pkg.length + 1);
+    const src = join(dirname(json), "src");
+    if (!existsSync(src)) return undefined;
+    for (const file of readdirSync(src, { recursive: true, encoding: "utf8" }))
+      if (
+        file.endsWith(".enum.ts") &&
+        !file.includes("__tests__") &&
+        entryOf(`src/${file}`) === entry
+      ) {
+        const values = enumCodesOf(readFileSync(join(src, file), "utf8"), name);
+        if (values !== undefined) return { kind: "enum", name, values };
+      }
+    return undefined;
   };
 
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
