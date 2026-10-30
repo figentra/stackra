@@ -9,9 +9,9 @@ action needs a permission (ADR 0462 decision 1), and `Permissions` lives in `@st
 lower package (`@stackra/database`, `@stackra/search`, `@stackra/outbox`) keeps as a plain function or port method.
 
 **Tier:** `tier:lib` (`packages/data/data-maintenance`). Entries `.` (the permissions) and `./node` (the jobs). Depends
-on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/iam`,
+on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/iam`, `@stackra/model`,
 `@stackra/outbox`, `@stackra/queue` and `@stackra/scheduler` (gen's job registrations), `@stackra/search`,
-`@stackra/validation` and zod. None of them depends on it.
+`@stackra/tenancy`, `@stackra/validation` and zod. None of them depends on it.
 
 ## The jobs
 
@@ -42,6 +42,15 @@ queues `ReindexSearchAction` or `ReindexSemanticAction` in the member's queue; `
 `QueuedSearchQueryLogDriver` (`./node`) is the `SearchQueryLog` a Postgres service binds: the abstract
 `PostgresSearchQueryLogDriver` of `@stackra/search/node` (its `store`, `popular` and reports) whose `record` queues the
 entry as `RecordSearchQueryAction`, off the read path; an entry without a scope is not logged.
+
+## Tenant search synonyms
+
+`Synonym` (`data_maintenance.synonyms`, migration 0001, tenant-owned under forced row-level security) holds a tenant's synonym
+sets: an index, a language and two to sixteen terms (no comma, `#` or line break). `data_maintenance.synonym.create`,
+`.update` and `.delete` (L1, L1, L2; tools by default) edit them and `data_maintenance.synonym.list` reads them.
+`DatabaseSynonymSourceDriver` implements `@stackra/search`'s `SynonymSource`, so each search read expands its phrase with the
+tenant's sets. They live here because search must stay below iam. Texts are in `assets/lang/<locale>/data_maintenance.json`
+for `ar`, `de`, `en`, `es`, `fr`, `it` and `nl`.
 
 ## Install
 

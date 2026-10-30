@@ -14,4 +14,5 @@ export { OutboxMessagePermissions } from "#core/access/outbox-message.permission
 export { PartitionPermissions } from "#core/access/partition.permissions";
 export { QueryPermissions } from "#core/access/query.permissions";
 export { RecordPermissions } from "#core/access/record.permissions";
+export { SynonymPermissions } from "#core/access/synonym.permissions";
 export { TimeseriesPermissions } from "#core/access/timeseries.permissions";

@@ -26,7 +26,6 @@
   },
   "files": [
     "dist",
-    "assets",
     "src",
     "stackra.manifest.json",
     "README.md",
@@ -87,8 +86,7 @@
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
-    },
-    "./assets/*": "./assets/*"
+    }
   },
   "publishConfig": {
     "access": "public",
@@ -113,11 +111,9 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/i18n": "workspace:*",
-    "@stackra/iam": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/settings": "workspace:*",
-    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: the `SynonymSource` port: the synonym sets a tenant keeps as data, which `Search` adds to a phrase's
  *          alternatives beside the `search.synonyms` setting.
- * Boundary: an abstract class that is its own token. `DatabaseSynonymSourceDriver` (`./node`) reads the tenant-owned
- *           `search.synonym` rows under row-level security, so a call sees its own tenant's sets only;
+ * Boundary: an abstract class that is its own token. `DatabaseSynonymSourceDriver` (of
+ *           @stackra/data-maintenance, which depends on this package) reads the tenant-owned `Synonym` rows under row-level
+ *           security, so a call sees its own tenant's sets only;
  *           `MemorySynonymSourceDriver` (`.`) is the test double. Reading never writes. A leaf file.
  * Runtime: isomorphic
  * Governing contract: ADR 0492 (decision 5: the per-tenant synonym list); ADR 0327 (decision 9); ADR 0294 (decisions 15

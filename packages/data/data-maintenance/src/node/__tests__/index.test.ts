@@ -13,6 +13,16 @@ import * as node from "#node/index";
 describe("@stackra/data-maintenance/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "CreateSynonymAction",
+      "CreateSynonymInput",
+      "CreateSynonymOutput",
+      "DatabaseSynonymSourceDriver",
+      "DeleteSynonymAction",
+      "DeleteSynonymInput",
+      "DeleteSynonymOutput",
+      "ListSynonymsInput",
+      "ListSynonymsOutput",
+      "ListSynonymsQuery",
       "MaintainChangeLogAction",
       "MaintainChangeLogInput",
       "MaintainChangeLogOutput",
@@ -35,6 +45,11 @@ describe("@stackra/data-maintenance/node", () => {
       "RollUpTimeSeriesAction",
       "RollUpTimeSeriesInput",
       "RollUpTimeSeriesOutput",
+      "Synonym",
+      "SynonymService",
+      "UpdateSynonymAction",
+      "UpdateSynonymInput",
+      "UpdateSynonymOutput",
       "searchReindex",
     ]);
   });

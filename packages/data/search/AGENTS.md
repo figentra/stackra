@@ -16,22 +16,20 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 ## Where code goes
 
-| You are writing…                         | It goes in…                                                                            |
-| ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                                                          |
-| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                                                          |
-| Its options shape                        | `src/core/schemas/search-options.schema.ts`                                            |
-| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`                                  |
-| The port or a type it uses               | `src/contracts/{ports,types}/`                                                         |
-| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                                                 |
-| A server driver                          | `src/node/drivers/`                                                                    |
-| The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts`                            |
-| The synonym model, actions and query     | `src/node/{models,actions,queries}/` (schemas in `schemas/`, permissions in `access/`) |
-| Its texts (labels, success, confirm)     | `assets/lang/<locale>/search.json`, in all seven locales (ar, de, en, es, fr, it, nl)  |
-| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                                             |
-| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`                              |
-| A conformance case or its runner         | `src/testing/` (`./testing`, imports `./contracts` only)                               |
-| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                                            |
+| You are writing…                         | It goes in…                                                 |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| The configuration (`SearchConfig`)       | `src/config/search.config.ts`                               |
+| The settings group (`SearchSettings`)    | `src/core/search.settings.ts`                               |
+| Its options shape                        | `src/core/schemas/search-options.schema.ts`                 |
+| Its shipped zod schema (`SearchConfig$`) | `src/core/constants/search-config-schema.constant.ts`       |
+| The port or a type it uses               | `src/contracts/{ports,types}/`                              |
+| An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                      |
+| A server driver                          | `src/node/drivers/`                                         |
+| The outbox change consumers              | `src/node/services/{searchable,semantic}-change.service.ts` |
+| A migration macro                        | `src/node/database/macros/<name>.macro.ts`                  |
+| A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts`   |
+| A conformance case or its runner         | `src/testing/` (`./testing`, imports `./contracts` only)    |
+| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                 |
 
 ## Entries and barrels
 
@@ -88,8 +86,8 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   The registry holds counts and states only, no row data, and has no RLS; only platform code reads it. The CLI reaches
   it through `searchStatus` here and `searchReindex` of @stackra/data-maintenance.
 - Declare no job here. A job over this package's work goes in @stackra/data-maintenance, which holds its
-  system-held permission; search never depends on it (ADR 0462 decision 1). The only actions here are the tenant's synonym
-  actions and list query (`search.synonym.*`, tools by default, ADR 0492 d5).
+  system-held permission; search never depends on it (ADR 0462 decision 1). Search stays below
+  iam (and so below tenancy): the synonym rows, actions and permissions are data-maintenance's too.
 - Reranking (ADR 0492 d4): `Reranker` is a port; `SearchIndex.read` reranks only when the read passes `rerank: true` or the
   facet declares `rerank: true`, and only when a reranker is bound; it takes the first `Reranker.topN` fused candidates,
   sends each row's raw text (`searchRerankTextOf`, never folded, own fields only) and the raw phrase, and pages from the
@@ -99,9 +97,10 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   (`t.searchable({ text, locales: ["ar"], version: n })`), fills it with `reindex({ version: n })` and swaps it live; the
   driver ranks every `search_vector_*` column it finds with that column's `TEXT_SEARCH_CONFIGS` configuration. A host table
   is the host's migration, so this package ships none for it.
-- Data synonyms (ADR 0492 d5): the `Synonym` model (`search.synonyms`, `BelongsToTenant`, forced RLS) is read through the
-  `SynonymSource` port and joins the `search.synonyms` setting's lines in `SearchIndex.synonymsOf`; `SYNONYM_FIELDS` is
-  the one rule set for a set (no comma, `#` or line break in a term), because a set is turned into a settings line.
+- Data synonyms (ADR 0492 d5): the tenant's sets are read through the `SynonymSource` port (the `Synonym` model, its actions
+  and `DatabaseSynonymSourceDriver` live in @stackra/data-maintenance, which depends on search, never the reverse) and join
+  the `search.synonyms` setting's lines in `SearchIndex.synonymsOf`. A set is turned into a settings line, so a term holds no
+  comma, `#` or line break. Never import @stackra/iam or @stackra/tenancy here: iam reaches ai, which depends on search.
 - Arabizi is a query-only spelling (`arabiziOf`): with a digit-and-letter word always, with any Latin word only when the
   read's locale is Arabic (`anyLatin`). Never map documents.
 - `Recommender` (ADR 0492 d8) is generic: ids and scores only, no Commerce names. `PostgresRecommenderDriver` reads
