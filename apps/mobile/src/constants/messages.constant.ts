@@ -53,7 +53,7 @@ const ARABIC: Messages = {
 };
 
 /** The merged catalogues of each locale the app offers. */
-export const MESSAGES = {
+export const MESSAGES: Readonly<{ en: Messages; ar: Messages }> = {
   en: ENGLISH,
   ar: Object.fromEntries(
     Object.entries(ENGLISH).map(([namespace, english]) => [
@@ -61,4 +61,4 @@ export const MESSAGES = {
       mergeCatalogues([english, ARABIC[namespace] ?? {}]),
     ]),
   ),
-} as const satisfies Record<string, Messages>;
+};
