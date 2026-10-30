@@ -55,7 +55,12 @@ export function useResourceActions(
   const removeRef = typeof remove === "function" ? (remove as ActionRef) : undefined;
   const placed = tree.actions ?? [];
   const [pending, setPending] = useState<
-    | { readonly action: ActionRef; readonly idKey: string; readonly ids: readonly string[] }
+    | {
+        readonly action: ActionRef;
+        readonly idKey: string | undefined;
+        readonly ids: readonly string[] | undefined;
+        readonly keys: readonly string[];
+      }
     | undefined
   >();
 
@@ -68,14 +73,16 @@ export function useResourceActions(
     id,
     label: t(actionLabelKey(resource.key, action.key)),
     onPress: async () => {
-      const key = idKey(action);
-      if (ids === undefined || key === undefined) {
-        await run(action, {} as never);
+      const key = ids === undefined ? undefined : idKey(action);
+      // An input that needs more than the id opens one modal form for every record, or once without a record
+      // (ADR 0307 rule 3).
+      const keys = actionFormKeys(action.input, key);
+      if (keys.length > 0) {
+        setPending({ action, idKey: key, ids, keys });
         return;
       }
-      // An input that needs more than the id opens one modal form for every record (ADR 0307 rule 3).
-      if (actionFormKeys(action.input, key).length > 0) {
-        setPending({ action, idKey: key, ids });
+      if (ids === undefined || key === undefined) {
+        await run(action, {} as never);
         return;
       }
       // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
@@ -97,7 +104,7 @@ export function useResourceActions(
           action={pending.action}
           idKey={pending.idKey}
           ids={pending.ids}
-          keys={actionFormKeys(pending.action.input, pending.idKey)}
+          keys={pending.keys}
           onClose={() => setPending(undefined)}
         />
       ),

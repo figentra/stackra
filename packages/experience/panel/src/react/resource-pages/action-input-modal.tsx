@@ -24,7 +24,7 @@ import type { ActionInputModalProps } from "#react/resource-pages/action-input-m
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
 
 /**
- * The modal form of `action` over `ids`.
+ * The modal form of `action` over `ids`, or run once without a record when `idKey` is absent.
  *
  * @example
  * <ActionInputModal resourceKey="reviews.review" action={ModerateReviewAction} idKey="reviewId" ids={["rev_1"]}
@@ -40,22 +40,26 @@ export function ActionInputModal({
 }: ActionInputModalProps): ReactElement {
   const { t } = useTranslation();
   const run = useActionRunner();
-  const [left, setLeft] = useState(ids);
+  // An action without a record runs once, with no id.
+  const [left, setLeft] = useState<readonly (string | undefined)[]>(
+    idKey === undefined || ids === undefined ? [undefined] : ids,
+  );
   const [serverErrors, setServerErrors] = useState<Readonly<Record<string, string>>>({});
   // The ref's input is its schema; the schema form reads schemas by class, so record it under the ref.
   useState(() => registerSchemas([[action, action.input]]));
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
     // The id field is not drawn; it is filled so the schema validates, and replaced per record on submit.
-    defaultValues: { [idKey]: ids[0] },
+    defaultValues: idKey === undefined || ids?.[0] === undefined ? {} : { [idKey]: ids[0] },
     serverErrors,
   });
   const ask = action.texts.confirm;
   const submit = async (values: Readonly<Record<string, unknown>>) => {
-    const refused: string[] = [];
+    const refused: (string | undefined)[] = [];
     let errors: Readonly<Record<string, string>> = {};
     // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
     for (const id of left) {
-      const done = await run(action, { ...values, [idKey]: id } as never, { confirmed: true });
+      const input = idKey === undefined || id === undefined ? values : { ...values, [idKey]: id };
+      const done = await run(action, input as never, { confirmed: true });
       if (done.status === ActionRunStatus.Refused) {
         refused.push(id);
         errors = done.error.fieldErrors ?? errors;

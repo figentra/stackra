@@ -178,4 +178,27 @@ describe("ActionInputModal", () => {
     fireEvent.click(screen.getByText("x"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("runs once without a record id when the action takes no record", async () => {
+    spies.run.mockResolvedValue({ status: "done", data: {} });
+    spies.values = { decision: "approve" };
+    const onClose = vi.fn();
+    render(
+      <ActionInputModal
+        resourceKey="reviews.review"
+        action={ModerateReviewAction}
+        keys={["decision", "note"]}
+        onClose={onClose}
+      />,
+    );
+    expect(spies.useSchemaForm.mock.calls[0]?.[1]).toMatchObject({ defaultValues: {} });
+    await act(async () => fireEvent.click(screen.getByText("submit")));
+    expect(spies.run).toHaveBeenCalledTimes(1);
+    expect(spies.run).toHaveBeenCalledWith(
+      ModerateReviewAction,
+      { decision: "approve" },
+      { confirmed: true },
+    );
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

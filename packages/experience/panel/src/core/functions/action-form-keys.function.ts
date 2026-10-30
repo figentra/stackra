@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `actionFormKeys(input, idKey)`, the input keys a record action's modal form asks for: every top-level key but
- *          the record id, when at least one of them is required; none when the record id is all the action needs.
+ * Purpose: `actionFormKeys(input, idKey)`, the input keys an action's modal form asks for: every top-level key but
+ *          the record id (all of them for an action without a record), when at least one of them is required; none
+ *          when the record id is all the action needs.
  * Boundary: internal; reads the top-level shape of a zod object schema and asks each field whether it takes
  *           `undefined` (optional and default fields do). Web and native pages share it.
  * Runtime: isomorphic
@@ -15,7 +16,7 @@ import type { ZodType } from "zod";
  * @example
  * actionFormKeys(ModerateReviewAction.input, "reviewId"); // ["decision", "note"]
  */
-export function actionFormKeys(input: ZodType | undefined, idKey: string): string[] {
+export function actionFormKeys(input: ZodType | undefined, idKey?: string): string[] {
   const shape = (input as { readonly shape?: Readonly<Record<string, ZodType>> } | undefined)
     ?.shape;
   if (shape === undefined) return [];

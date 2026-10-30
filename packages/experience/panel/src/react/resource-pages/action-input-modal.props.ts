@@ -16,11 +16,11 @@ export interface ActionInputModalProps {
   /** The action the form submits. */
   readonly action: ActionRef;
 
-  /** The input key the record id goes under. */
-  readonly idKey: string;
+  /** The input key the record id goes under; absent for an action without a record (List header, empty state). */
+  readonly idKey?: string | undefined;
 
-  /** The records the action runs on: one from a row or a page header, the selection from the bulk bar. */
-  readonly ids: readonly string[];
+  /** The records the action runs on: one from a row or a View header, the selection from the bulk bar; absent, once. */
+  readonly ids?: readonly string[] | undefined;
 
   /** The input keys the form asks for (`actionFormKeys`). */
   readonly keys: readonly string[];

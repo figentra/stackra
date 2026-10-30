@@ -39,4 +39,9 @@ describe("actionFormKeys", () => {
     expect(actionFormKeys(undefined, "id")).toEqual([]);
     expect(actionFormKeys(z.string(), "id")).toEqual([]);
   });
+
+  it("asks for every key of an action without a record", () => {
+    const input = z.object({ until: z.string(), reason: z.string().optional() });
+    expect(actionFormKeys(input)).toEqual(["until", "reason"]);
+  });
 });
