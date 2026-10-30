@@ -5,7 +5,7 @@
  *          to export as stack outputs.
  * Boundary: type only; Pulumi outputs, resolved when the stack is previewed or applied.
  * Runtime: node
- * Governing contract: ADR 0171 (decision 3), ADR 0296 (decision 1).
+ * Governing contract: ADR 0171 (decision 3), ADR 0296 (decision 1), ADR 0493 (database endpoints).
  */
 import type { Output } from "@pulumi/pulumi";
 
@@ -21,4 +21,8 @@ export type AwsRuntime = {
   readonly caches: Readonly<Record<string, Output<string>>>;
   /** Each bucket's name. */
   readonly buckets: Readonly<Record<string, Output<string>>>;
+  /** Each Postgres resource's RDS Proxy endpoint and port (ADR 0493). */
+  readonly databases: Readonly<
+    Record<string, { readonly endpoint: Output<string>; readonly port: number }>
+  >;
 };

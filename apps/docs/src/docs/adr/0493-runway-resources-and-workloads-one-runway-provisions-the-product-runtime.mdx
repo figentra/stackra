@@ -53,7 +53,9 @@ environment, and get its connection details where they are used. Each new need b
    inside the CI job and written blind to Infisical at `<env>:/runtime/<resource>/` (0482 decision 7). A connection
    string is written there too. Each consumer that `uses` a resource gets fixed variable names
    (`<RESOURCE>_URL`, `<RESOURCE>_PASSWORD`, …): Encore services through the Infisical sync into Encore secrets
-   (0173), workloads through SSM parameters the same sync fills (0444 decision 4). Nobody reads a value.
+   (0173), workloads through SSM parameters the same sync fills (0444 decision 4). RDS Proxy logs in only through
+   Secrets Manager, so the admin password is also stored there for the proxy alone; Infisical stays the source. Nobody
+   reads a value.
 5. **Managed first; a workload needs a reason.** A workload is allowed only when no managed resource or vendor cloud
    fits, when residency forces self-hosting (an in-country region), or for on-prem parity. Its `reason` is required by
    the schema and read in review. Kinds that 0227 defers (Kafka, OpenSearch) are reserved names the schema refuses;

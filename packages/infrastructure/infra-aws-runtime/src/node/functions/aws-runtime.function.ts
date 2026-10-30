@@ -5,7 +5,8 @@
  *          after five receives), the SNS topic of a topic-fed queue (SSE with the AWS-managed key) with its raw
  *          subscription and the queue policy that admits only that topic, each Valkey replication group (TLS and
  *          at-rest encryption, its own parameter group for an eviction policy, one subnet group for all) and each S3
- *          bucket (public access blocked, versioning and the noncurrent-version expiry the plan asks for).
+ *          bucket (public access blocked, versioning and the noncurrent-version expiry the plan asks for), then the
+ *          Postgres resources through `awsDatabases` (ADR 0493).
  * Boundary: declares resources only, inside the Pulumi program that calls it; `pulumi preview` shows them and only the
  *           owner applies them (agents never run `pulumi up`). No secret is created or read: caches are reached
  *           over TLS inside the given security groups.
@@ -17,6 +18,7 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
 import { resourceName } from "#core/functions/resource-name.function";
+import { awsDatabases } from "#node/functions/aws-databases.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import type { AwsRuntime } from "#node/types/aws-runtime.type";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
@@ -192,5 +194,5 @@ export function awsRuntime(plan: RuntimePlan, options: AwsRuntimeOptions): AwsRu
     buckets[bucket.key] = s3Bucket.bucket;
   }
 
-  return { queues, topics, caches, buckets };
+  return { queues, topics, caches, buckets, databases: awsDatabases(plan, options) };
 }
