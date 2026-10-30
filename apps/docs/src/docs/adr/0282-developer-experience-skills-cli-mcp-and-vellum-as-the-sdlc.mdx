@@ -1,7 +1,17 @@
 ---
 title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Vellum as the SDLC"
-description: "Accepted, amended by 0286, 0334 · 2026-10-22"
+description: "Accepted, amended by 0286, 0334 · 2026-10-22 · note 2026-10-30 (STA-1669, pending the owner)"
 ---
+
+<Note>
+  Note 2026-10-30 (STA-1669), **pending the owner**: decision 4 keeps Linear and the other
+  Figentra-internal operations in this repository; it does not keep the spec checks. The read-only
+  spec checks (folder shape, the Impact questionnaire, the stage and plan gates, the tasks lint, the
+  lane, and the trace from tasks to tests) ship in `@stackra/repo-checks`, and `stackra check` runs
+  them in any repository with `.agents/specs`, as decision 3's `spec` operation implies. Their
+  Linear side effects (stage comments, issue creation, the branch-name rule) and the spec-kit preset
+  tripwire stay in `tools/scripts`. The owner may instead ask for a formal amendment of decision 4.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by
