@@ -46,6 +46,7 @@ describe("@stackra/actions/contracts", () => {
       "ConsentRefusal",
       "ContextStorage",
       "DeviceSequenceStore",
+      "DeviceStatusReader",
       "Effect",
       "EntitlementCheck",
       "FlagCheck",

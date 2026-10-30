@@ -19,6 +19,7 @@ export { AuditTrail } from "#contracts/ports/audit-trail.port";
 export { ConsentCheck } from "#contracts/ports/consent-check.port";
 export { ContextStorage } from "#contracts/ports/context-storage.port";
 export { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
+export { DeviceStatusReader } from "#contracts/ports/device-status-reader.port";
 export { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 export { FlagCheck } from "#contracts/ports/flag-check.port";
 export { IdempotencyStore } from "#contracts/ports/idempotency-store.port";

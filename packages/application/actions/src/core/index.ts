@@ -20,6 +20,7 @@ export { RATE_LIMIT_CONFIG_SCHEMA as RateLimitConfig$ } from "#core/constants/ra
 export { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 export { STORES_CONFIG_SCHEMA as StoresConfig$ } from "#core/constants/stores-config-schema.constant";
 export { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
+export { MemoryDeviceStatusReaderDriver } from "#core/drivers/memory-device-status-reader.driver";
 export { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
 export { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-store.driver";
 export { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
@@ -35,6 +36,7 @@ export { OfflineMode } from "#core/enums/offline-mode.enum";
 export { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 export { PipelineStage } from "#core/enums/pipeline-stage.enum";
 export { ApprovalRequiredError } from "#core/errors/approval-required.error";
+export { DeviceRevokedError } from "#core/errors/device-revoked.error";
 export { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 export { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 export { InputInvalidError } from "#core/errors/input-invalid.error";

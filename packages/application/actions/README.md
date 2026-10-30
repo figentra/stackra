@@ -19,39 +19,39 @@ configuration and the action testing helpers.
 
 ## What is here
 
-| Entry         | Symbol                                                                                             | Use                                                                     |
-| ------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `.`           | `Action`, `ActionContext`                                                                          | `extends Action({ key, actors, ... })`, `handle(input, ctx)`            |
-| `.`           | `Query`, `QueryContext`                                                                            | `extends Query({ key, actors, ... })`, `handle(input, ctx)`             |
-| `.`           | `Precondition`, `PreconditionContext`                                                              | `extends Precondition`, `check(ctx)`; listed in `preconditions`         |
-| `.`           | `ExtensionPoint`, `Extension`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`              | slots `after<V, A>()` and `before<A>()`; `Extension<Point["slot"]>`     |
-| `.`           | `Interceptor`                                                                                      | `extends Interceptor`, `intercept(ctx, next)`; listed in `interceptors` |
-| `.`           | `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`             | the enums of the `idempotency` and `offline` options                    |
-| `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                                | the runtime: the fixed steps, their names, the running call's context   |
-| `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                              | the area and default action buckets (key `actions.rate_limit`)          |
-| `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                                       | the in-process stores                                                   |
-| `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                                       | what gen's entry and the runtime call at boot                           |
-| `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                                   | `offline.cap`, `accepts` (client rule code)                             |
-| `.`           | `QueryReplica`, `ReplicaPage`, `ReplicaBounds`, `ReplicaFeed`                                      | `replica` on a query, `ctx.replica(fill, slice)`, recording changes     |
-| `.`           | `OfflineCapReachedError`, `DeviceSequenceOutOfOrderError`                                          | `offline_cap_reached`, `device_sequence_out_of_order`                   |
-| `.`           | `MemoryDeviceSequenceStoreDriver`, `MemoryOfflineCapStoreDriver`                                   | the in-process device order and cap stores                              |
-| `.`           | `MemoryReplicaLogDriver`, `MemoryReviewItemSinkDriver`                                             | the in-process replica log and review sink                              |
-| `.`           | `rawBody`, `isRawBody`, `RawBody`                                                                  | a query output the transport sends as the body itself (iCal, CSV)       |
-| `.`           | `QueryCache`, `CacheScope`, `registerCachedQueries`, `QueryCacheEvictorListener`                   | a query's `cache` option, its sharing, and the evictor gen registers    |
-| `.`           | `requestCallOptions`                                                                               | the header-borne call options a generated endpoint lifts (ADR 0472)     |
-| `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                                   | the ports of the pipeline's checks                                      |
-| `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                                   | the ports of its stores and its transaction                             |
-| `./contracts` | `RateLimitBudget`                                                                                  | the plan-sized area bucket of a call's scope (a value entitlement)      |
-| `./contracts` | `WorkflowRunner`, `JobDispatcher`, `ContextStorage`                                                | the ports behind `ctx.run`, `ctx.signal`, `ctx.dispatch`, the context   |
-| `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason`           | the offline stores and the review sink, with their types                |
-| `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`                       | the device on the call, a device's last settled call, replica rows      |
-| `./contracts` | `CallClient`                                                                                       | the network client on `ctx.client` (address, user agent)                |
-| `./contracts` | `CallOrigin`, `CallOriginKind`                                                                     | the request origin on `ctx.origin` and the descriptor (ADR 0456)        |
-| `./contracts` | `ConsentCheck`, `CallConsent`, `ConsentRefusal`                                                    | the consent snapshot check behind `ctx.consent()` (ADR 0472)            |
-| `./contracts` | `CALL_HEADERS`                                                                                     | the header names `requestCallOptions` reads (Idempotency-Key, consent)  |
-| `./node`      | `AsyncContextStorageDriver`                                                                        | `ContextStorage` over `AsyncLocalStorage`                               |
-| `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`, `grantedConsent` | call through the real pipeline; fake contexts; inline extensions        |
-| `./testing`   | `expectScopeCacheSafe`, `ScopeCacheSafeOptions`                                                    | a `per: CacheScope.Scope` query answers every caller the same           |
+| Entry         | Symbol                                                                                                         | Use                                                                         |
+| ------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `.`           | `Action`, `ActionContext`                                                                                      | `extends Action({ key, actors, ... })`, `handle(input, ctx)`                |
+| `.`           | `Query`, `QueryContext`                                                                                        | `extends Query({ key, actors, ... })`, `handle(input, ctx)`                 |
+| `.`           | `Precondition`, `PreconditionContext`                                                                          | `extends Precondition`, `check(ctx)`; listed in `preconditions`             |
+| `.`           | `ExtensionPoint`, `Extension`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`                          | slots `after<V, A>()` and `before<A>()`; `Extension<Point["slot"]>`         |
+| `.`           | `Interceptor`                                                                                                  | `extends Interceptor`, `intercept(ctx, next)`; listed in `interceptors`     |
+| `.`           | `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`                         | the enums of the `idempotency` and `offline` options                        |
+| `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                                            | the runtime: the fixed steps, their names, the running call's context       |
+| `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                                          | the area and default action buckets (key `actions.rate_limit`)              |
+| `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                                                   | the in-process stores                                                       |
+| `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                                                   | what gen's entry and the runtime call at boot                               |
+| `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                                               | `offline.cap`, `accepts` (client rule code)                                 |
+| `.`           | `QueryReplica`, `ReplicaPage`, `ReplicaBounds`, `ReplicaFeed`                                                  | `replica` on a query, `ctx.replica(fill, slice)`, recording changes         |
+| `.`           | `OfflineCapReachedError`, `DeviceSequenceOutOfOrderError`                                                      | `offline_cap_reached`, `device_sequence_out_of_order`                       |
+| `.`           | `MemoryDeviceSequenceStoreDriver`, `MemoryDeviceStatusReaderDriver`, `MemoryOfflineCapStoreDriver`             | the in-process device order, device status and cap stores                   |
+| `.`           | `MemoryReplicaLogDriver`, `MemoryReviewItemSinkDriver`                                                         | the in-process replica log and review sink                                  |
+| `.`           | `rawBody`, `isRawBody`, `RawBody`                                                                              | a query output the transport sends as the body itself (iCal, CSV)           |
+| `.`           | `QueryCache`, `CacheScope`, `registerCachedQueries`, `QueryCacheEvictorListener`                               | a query's `cache` option, its sharing, and the evictor gen registers        |
+| `.`           | `requestCallOptions`                                                                                           | the header-borne call options a generated endpoint lifts (ADR 0472)         |
+| `./contracts` | `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`                                               | the ports of the pipeline's checks                                          |
+| `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                                               | the ports of its stores and its transaction                                 |
+| `./contracts` | `RateLimitBudget`                                                                                              | the plan-sized area bucket of a call's scope (a value entitlement)          |
+| `./contracts` | `WorkflowRunner`, `JobDispatcher`, `ContextStorage`                                                            | the ports behind `ctx.run`, `ctx.signal`, `ctx.dispatch`, the context       |
+| `./contracts` | `DeviceSequenceStore`, `DeviceStatusReader`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores, the device status and the review sink, with their types |
+| `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`                                   | the device on the call, a device's last settled call, replica rows          |
+| `./contracts` | `CallClient`                                                                                                   | the network client on `ctx.client` (address, user agent)                    |
+| `./contracts` | `CallOrigin`, `CallOriginKind`                                                                                 | the request origin on `ctx.origin` and the descriptor (ADR 0456)            |
+| `./contracts` | `ConsentCheck`, `CallConsent`, `ConsentRefusal`                                                                | the consent snapshot check behind `ctx.consent()` (ADR 0472)                |
+| `./contracts` | `CALL_HEADERS`                                                                                                 | the header names `requestCallOptions` reads (Idempotency-Key, consent)      |
+| `./node`      | `AsyncContextStorageDriver`                                                                                    | `ContextStorage` over `AsyncLocalStorage`                                   |
+| `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, `toHaveAudited`, `grantedConsent`             | call through the real pipeline; fake contexts; inline extensions            |
+| `./testing`   | `expectScopeCacheSafe`, `ScopeCacheSafeOptions`                                                                | a `per: CacheScope.Scope` query answers every caller the same               |
 
 ## Declaring an action
 
@@ -247,6 +247,10 @@ on the device) lives in `@stackra/query`, `@stackra/storage` and `@stackra/clien
   `device_sequence_out_of_order` with `acknowledged`. Bind a `DeviceSequenceStore`; `last(deviceId)` is the device's
   last acknowledged sequence, which the `devices.device.acknowledged` query of `@stackra/devices` answers. A call
   with a device and no sequence (that query) is not ordered; `ctx.deviceId` names the device.
+- **Revoked devices.** Bind a `DeviceStatusReader` (the devices service provides the durable one; the memory driver
+  ships here) and a call from a device it reports revoked is refused `device_revoked` (403) before device order, so
+  nothing runs and its sequence is not settled. With no reader bound there is no check; identity revoking the
+  device's credential (401) stays the first line.
 - **Caps.** `offline: { ..., cap: { count?, amount?, window } }`. The client refuses the action offline at the cap;
   the idempotency step counts the device's applied calls in the window (`OfflineCapStore`) and refuses beyond it
   with the same `offline_cap_reached`. The amount is read from `input.amount`, as the client reads it: minor units,

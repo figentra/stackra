@@ -57,6 +57,13 @@
       "class": "ApprovalRequiredError"
     },
     {
+      "code": "device_revoked",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "actions",
+      "class": "DeviceRevokedError"
+    },
+    {
       "code": "device_sequence_out_of_order",
       "kind": "conflict",
       "category": "conflict",
@@ -94,6 +101,17 @@
       "classes": {
         "memory": {
           "class": "MemoryDeviceSequenceStoreDriver",
+          "from": "@stackra/actions"
+        }
+      }
+    },
+    {
+      "port": "DeviceStatusReader",
+      "key": "actions.DeviceStatusReader",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryDeviceStatusReaderDriver",
           "from": "@stackra/actions"
         }
       }

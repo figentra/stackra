@@ -7,8 +7,8 @@
  *          buckets of an action with no `rateLimit`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
  *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
- *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
- *          resend replays or is refused; a call with no sequence is not ordered and reads `ctx.deviceId`), the offline
+ *          offline additions: a revoked device's call refused before device order (STA-1684); a device's calls in
+ *          sequence order (sequences are not contiguous; refusals settle; a resend replays or is refused; a call with no sequence is not ordered and reads `ctx.deviceId`), the offline
  *          cap by count and amount, the review of offline-computed documents, and a replica query's full fill and the
  *          changes since the cursor in its input; and the governance additions: the approval step before idempotency,
  *          the live-configuration guard of a structural action, the meter's usage event inside the unit of work, the
@@ -79,6 +79,7 @@ import {
   ConsentCheck,
   ContextStorage,
   DeviceSequenceStore,
+  DeviceStatusReader,
   EntitlementCheck,
   FlagCheck,
   IdempotencyStore,
@@ -113,6 +114,7 @@ import { Precondition } from "#core/bases/precondition.base";
 import { Query } from "#core/bases/query.base";
 import { CacheScope } from "#core/enums/cache-scope.enum";
 import { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
+import { MemoryDeviceStatusReaderDriver } from "#core/drivers/memory-device-status-reader.driver";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
 import { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-store.driver";
 import { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
@@ -126,6 +128,7 @@ import { IdMinting } from "#core/enums/id-minting.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import { ApprovalRequiredError } from "#core/errors/approval-required.error";
+import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
@@ -1066,6 +1069,31 @@ describe(ActionPipeline, () => {
         { actor: customer, device: { deviceId: "dev_1", sequence: 1 } },
       ),
     ).rejects.toThrow(/DeviceSequenceStore is not bound/);
+  });
+
+  it("refuses a revoked device's call before device order, so nothing runs and its sequence stays", async () => {
+    const devices = new MemoryDeviceSequenceStoreDriver();
+    const status = new MemoryDeviceStatusReaderDriver();
+    status.revoke("dev_lost");
+    const { pipeline, shop } = setup([
+      [DeviceSequenceStore, devices],
+      [DeviceStatusReader, status],
+    ]);
+    const call = (deviceId: string, key: string) =>
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: key, scope: SCOPE, device: { deviceId, sequence: 5 } },
+      );
+    await expect(call("dev_lost", "k1")).rejects.toBeInstanceOf(DeviceRevokedError);
+    await expect(call("dev_lost", "k2")).rejects.toMatchObject({ code: "device_revoked" });
+    expect(await devices.last("dev_lost")).toBeUndefined();
+    expect(shop.placed).toBe(0);
+    expect(await call("dev_kept", "k3")).toEqual({ orderId: "ord_1", key: "k3" });
+    // A call without a sequence from the revoked device is refused too: the reader is asked whenever a call carries one.
+    await expect(
+      pipeline.execute(InspectAction, {}, { actor: customer, device: { deviceId: "dev_lost" } }),
+    ).rejects.toBeInstanceOf(DeviceRevokedError);
   });
 
   it("reconciles a device's replayed calls against the offline cap, by count and by amount", async () => {

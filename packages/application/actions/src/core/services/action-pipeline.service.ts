@@ -29,7 +29,9 @@
  *           sees the validated input; a metered action's usage event and a successful call's audit entry are written
  *           in its unit of work, after `handle`, and the unit of work runs inside the `LimitReservation` (reserve, then
  *           commit). Nothing reorders the steps: device order wraps them all (like the audit, whose refusal and replay
- *           entries are written outside), so a call refused by any step still settles its sequence; the cap is part
+ *           entries are written outside), so a call refused by any step still settles its sequence; a call from a
+ *           device a bound `DeviceStatusReader` reports revoked is refused before device order and settles nothing (no
+ *           reader bound, no check); the cap is part
  *           of the idempotency step and the review part of `handle`. A device's sequences are strictly increasing, not contiguous: one above
  *           the last settled is applied (the client sends one call at a time, so it is the next), one at or below may
  *           only replay its stored output. Only a Refusal is a refusal; any other error is a bug and propagates. A
@@ -88,6 +90,7 @@ import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
 import { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
+import { DeviceStatusReader } from "#contracts/ports/device-status-reader.port";
 import { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 import { FlagCheck } from "#contracts/ports/flag-check.port";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
@@ -126,6 +129,7 @@ import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant"
 import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 import { CacheScope } from "#core/enums/cache-scope.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
+import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
@@ -461,7 +465,8 @@ export class ActionPipeline {
   }
 
   /**
-   * Runs `work` for an action call replayed from a device's queue when its sequence is above the device's last settled
+   * Refuses a call from a device the bound `DeviceStatusReader` reports revoked (`DeviceRevokedError`). Then runs
+   * `work` for an action call replayed from a device's queue when its sequence is above the device's last settled
    * one, then settles it on an output or a refusal (a rejected call is settled too, so the next one may run). One at or
    * below the last settled may only replay its stored output (a resend after a lost response), which the idempotency
    * step enforces. A reused Idempotency-Key does not settle (the first call with it does), and any other error leaves
@@ -469,6 +474,14 @@ export class ActionPipeline {
    */
   private async ordered(call: Call, work: () => Promise<unknown>): Promise<unknown> {
     const { device } = call.request;
+    // A revoked device is refused before its sequence is touched, so nothing runs and nothing settles. Unbound, no
+    // check: identity revoking the device's credential stays the first line (ADR 0361 decision 7).
+    if (
+      typeof device?.deviceId === "string" &&
+      device.deviceId !== "" &&
+      (await this.optional(DeviceStatusReader)?.isRevoked(device.deviceId)) === true
+    )
+      throw DeviceRevokedError.create();
     const sequence = device?.sequence;
     if (call.kind !== "action" || device === undefined || sequence === undefined) return work();
     const fieldErrors = {
