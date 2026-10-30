@@ -200,12 +200,15 @@ test("a Link opens an overlay on the client and closing returns to the page", as
   let loads = 0;
   page.on("load", () => loads++);
   await page.getByRole("link", { name: "Open the modal through a Link" }).click();
-  const url = page.url();
+  // The hash is left out: focus returning to the Link scrolls the page, and the table of contents records the
+  // section it lands on (`#usage`) by replaceState, which is no navigation.
+  const pageAddress = () => page.url().split("#")[0];
+  const url = pageAddress();
   // The Link sits in the Usage example, whose router draws no route line: the dialog and the unchanged address show it.
   const dialog = await settled(page.getByRole("dialog", { name: "Modal route" }));
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  expect(page.url()).toBe(url);
+  expect(pageAddress()).toBe(url);
   expect(loads).toBe(0);
 });
 
