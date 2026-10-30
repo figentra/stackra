@@ -33,8 +33,16 @@ id = "GHSA-gcqx-w48m-w2h4"
 ignoreUntil = 2027-01-31
 reason = "deepmerge mergeObject prototype poisoning: no fixed release; build-time only via @expo/config and @rollup/plugin-node-resolve"
 
-# node-forge: no fixed release exists. Only Expo's CLI and its code-signing helper use it, at development time.
+# glob 9 to 13: the fix ships only in glob 14. No Stackra member depends on glob; the copies come from build and test
+# tooling (rimraf, test runners, docs and Expo CLIs) walking our own trees, and none passes a caller's AbortSignal.
 [[IgnoredVulns]]
-id = "GHSA-86w9-cpqp-85rv"
+id = "GHSA-3g3m-2fjr-6pw4"
 ignoreUntil = 2027-01-31
-reason = "node-forge RSA PKCS#1 v1.5 verification: no fixed release; dev-only use through @expo/cli code signing"
+reason = "glob AbortSignal cancellation bypass: fixed only in glob 14; tooling-only, globs over our own trees"
+
+# minimatch 3 to 10: the fix ships only in minimatch 11. No Stackra member depends on minimatch; tooling matches the
+# repository's own patterns with it, never a pattern from user input.
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2027-01-31
+reason = "minimatch globparts amplification DoS: fixed only in minimatch 11; tooling-only, our own patterns"
