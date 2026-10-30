@@ -8,7 +8,7 @@
 
 **Linear**: STA-1626
 
-**Clarifications status**: complete (Q1 to Q6 answered as proposed)
+**Clarifications status**: complete
 
 **Input**: The owner's brief: turn the eight shared EC2 test boxes behind `~/.local/bin/ci-box` into disposable,
 identical infrastructure in Stackra core, image-based, with a sandbox per job, so testing is never interrupted.
@@ -28,6 +28,8 @@ identical infrastructure in Stackra core, image-based, with a sandbox per job, s
 - **New dependencies**: none in the CLI (it runs `aws`, `ssh`, `rsync`); `infra-testbed` uses `@pulumi/aws` and
   `@pulumi/pulumi` from `catalog:infra`, as the other `infra-*` packages do
 - **Deploy modes**: internal infrastructure only; not shipped to tenants
+- **Licence tier**: free (internal tooling, MIT like every `@stackra/*` package)
+- **Docs to update**: ADR 0484, `runbooks/test-infrastructure.mdx`, the CLI and infra-testbed READMEs and AGENTS.md, `.github/workflows/README.md`, `.agents/skills/README.md`
 - **Lane**: full
 - **Change risk**: R3 (cloud resources, a credential path, the tool every builder depends on)
 
