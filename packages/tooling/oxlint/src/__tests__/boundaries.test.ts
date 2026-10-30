@@ -32,7 +32,10 @@ it("boundaries.jsonc reports every banned import in the fixtures", () => {
   );
 
   const expected = (readdirSync(fixtures, { recursive: true }) as string[])
-    .filter((file) => file.endsWith(".ts"))
+    // fixtures/cycle and fixtures/hooks hold other tests' legal imports, not banned ones.
+    .filter(
+      (file) => file.endsWith(".ts") && !file.startsWith("cycle") && !file.startsWith("hooks"),
+    )
     .flatMap((file) =>
       readFileSync(join(fixtures, file), "utf8")
         .split("\n")

@@ -170,6 +170,14 @@
   },
   "overrides": [
     {
+      // STA-1654: a two-way relation is a value import each way (`@ManyToOne(() => Order)` in order-line.model.ts,
+      // `@OneToMany(() => OrderLine)` in order.model.ts), which the ORM's thunks resolve at run time, so a cycle
+      // among a module's models is the relation itself. The rule is off in the model files only: a cycle that runs
+      // through any other file (a model importing a service that imports it back) still fails at that file.
+      "files": ["**/src/**/models/*.ts"],
+      "rules": { "import/no-cycle": "off" },
+    },
+    {
       // B-7: only a published package has a module boundary worth spelling. Apps, workers, repo tools, agent hooks,
       // editor plugins, a package's build scripts, tests, stories and e2e specs export nothing a consumer types against.
       "files": [
