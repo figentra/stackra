@@ -1,0 +1,56 @@
+---
+title: "0482 — Mobile onboarding is a Runway step, and EAS owns signing"
+description: "Draft · 2026-10-30"
+---
+
+{/* Stackra file contract: Purpose: the decision record that taking a product's mobile app from nothing to store-ready is one idempotent Runway step list (`stackra mobile onboard`) behind store ports with mock drivers, that ids derive from the product key, that EAS creates and holds every signing credential, and that Runway detects the manual first Play upload. Boundary: decision text only; the code is @stackra/runway `onboardMobile` and its ports (STA-1623). Runtime: docs. Governing contract: ADR template; ADR 0439, 0441, 0480, 0352, 0062, 0173, 0257. */}
+
+<Note>
+  Draft (STA-1623), waiting for the owner. Builds on
+  [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 6 (ids),
+  [0480](/adr/0480-api-first-release-and-vault-keeper-agents) (store APIs, root kit, dry run by
+  default) and [0062](/adr/0062-mobile-release-push-and-crash-reporting) (Expo push).
+</Note>
+
+## Context
+
+Runway builds, updates and submits a product's mobile app from its template line, and ADR 0480 drives the App Store
+Connect and Play APIs for listings and review. Nothing takes a product from no app to its first store build: the
+bundle id, the EAS project and profiles, signing, the Android push key and the Play app are each done by hand, and
+only the template has an EAS project.
+
+## Decision
+
+1. **One step list.** `stackra mobile onboard --app <key>` runs Runway's `onboardMobile`: identity, EAS project, EAS
+   profiles, Apple bundle id and capabilities, App Store Connect app record, signing, push, store keys, Play app. Each
+   step is idempotent and reports done, planned, manual or blocked; the run stops at the first manual step (exit 2).
+2. **Ids derive from the product key** when the runway does not set them: `com.figentra.<product>.<app>`, without
+   `<app>` when it repeats `<product>`, `_` for `-` on Android. A set id is never changed (0439 decision 6).
+3. **EAS owns signing.** Distribution certificates, provisioning profiles, the APNs key and the Android upload keystore
+   are created and held by EAS. Runway never generates, stores, prints or moves one; it only asks EAS whether they
+   exist.
+4. **Store calls behind ports.** `AppleDeveloper`, `PlayConsole` and `ExpoProjects` are ports with a real driver and a
+   mock driver. ADR 0480's API clients become their real drivers (owner question Q2 of STA-1623).
+5. **Firebase is one key.** Android push uses Expo push; the only Firebase artefact is the FCM v1 service-account key,
+   held in Infisical by name and uploaded to EAS from CI. No Firebase project automation.
+6. **Manual where no API exists, detected when done.** The App Store Connect app record and the Play app with its first
+   upload are owner steps with exact values from the runway and `assets/store`; Runway reads the store APIs to mark
+   them done.
+7. **ADR 0480's limits hold:** dry run by default, live only in CI, portal-creating steps only in the product's
+   `production` environment, nobody reads a value.
+
+## Consequences
+
+- A new product's app is: owner creates two portal records once, everything else is the command.
+- A store-side change in Apple, Google or Expo shows as a failing onboarding step, caught by the mock-driver contract
+  tests only when a recorded fixture is refreshed.
+
+## Enforcement
+
+- `packages/developer/runway` tests: every step's states with mock drivers, idempotency, dry run sends nothing, no
+  secret in output.
+- planned — STA-1623: the `eas.json` writer refuses a major-only node version.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: STA-1623; owner brief 2026-10-30.
