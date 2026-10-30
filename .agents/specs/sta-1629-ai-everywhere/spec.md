@@ -148,7 +148,7 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 | FR-802 | `images/forecast` (StatsForecast) with a batch HTTP contract; `Forecaster` port and HTTP driver in `@stackra/reports` | 0492 d8  |
 | FR-803 | `Recommender` port in `@stackra/search`: Postgres driver (co-occurrence read model + vector nearest) day one          | 0492 d8  |
 | FR-804 | `images/recommend` (implicit ALS) and its HTTP driver, enabled per tenant by a settings threshold                     | 0492 d8  |
-| FR-805 | `images/speech` (faster-whisper) as an in-region speech provider for the 0376 region map                              | 0492 d9  |
+| FR-805 | `images/speech` (faster-whisper) and its catalogue entry, HTTP contract documented; provider Connections are OS (D06) | 0492 d9  |
 | FR-806 | `validate-repository.mjs`: a `.py` file outside `packages/infrastructure/infra-tools/images/` fails                   | 0492 enf |
 
 ### Lane 9 — runtime deployment (STA-1638)
@@ -162,15 +162,16 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 
 ## Dependencies on OS and Commerce
 
-| Who                                               | What                                                                                                       | Blocks                   |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------ |
-| OS · Services A (STA-705)                         | ai service: runtime, run/conversation stores, MCP server, client-result route, speech route, deploy        | lanes 1, 2, 5, 9 live    |
-| OS (service mounting panel, settings, experience) | migrations for the lane 3 and 4 tables                                                                     | lanes 3, 4 live          |
-| OS integrations                                   | WhatsApp Business Platform driver (messages, interactive messages), the message projection renderer        | lane 5 on WhatsApp       |
-| OS lines (console@3, mobile@3, till)              | place the sidekick, declare anchors, publish page context                                                  | lanes 1, 2, 4 in product |
-| Commerce · Services                               | `ShopperAgent`, cards, `checkout.prepare`, `order_timeline`, `@Searchable` filters, B2B and marketplace    | lanes 5, 6 in product    |
-| Commerce · Frontend                               | storefront chat placement, hosted payment page, wallet and 3DS                                             | lanes 5, 6 in product    |
-| Owner                                             | ADR approval; catalog entries; GPU cost per region; Meta business verification; MCP host directory reviews | all                      |
+| Who                                               | What                                                                                                                     | Blocks                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| OS · Services A (STA-705)                         | ai service: runtime, run/conversation stores, MCP server, client-result route, speech route, deploy                      | lanes 1, 2, 5, 9 live    |
+| OS (service mounting panel, settings, experience) | migrations for the lane 3 and 4 tables                                                                                   | lanes 3, 4 live          |
+| OS integrations                                   | WhatsApp Business Platform driver (messages, interactive messages), the message projection renderer                      | lane 5 on WhatsApp       |
+| OS lines (console@3, mobile@3, till)              | place the sidekick, declare anchors, publish page context                                                                | lanes 1, 2, 4 in product |
+| Commerce · Services                               | `ShopperAgent`, cards, `checkout.prepare`, `order_timeline`, `@Searchable` filters, B2B and marketplace                  | lanes 5, 6 in product    |
+| Commerce · Frontend                               | storefront chat placement, hosted payment page, wallet and 3DS                                                           | lanes 5, 6 in product    |
+| OS integrations (D06)                             | speech provider Connections: Azure AI Speech (uaenorth), self-hosted `tools-speech`, AWS Transcribe (me-south-1, opt-in) | voice in lane 1          |
+| Owner                                             | ADR approval; catalog entries; GPU cost per region; Meta business verification; MCP host directory reviews               | all                      |
 
 ## Owner questions
 
