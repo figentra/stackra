@@ -26,6 +26,8 @@ export const TESTBED_PLAN_INPUT_SCHEMA = z
     identityId: z.string().min(1).optional(),
     /** Infisical project id of `figentra-ci-gate`, from Pulumi config; without it no project has a grant. */
     ciGateProjectId: z.string().min(1).optional(),
+    /** Infisical project id holding `/ci/turbo`, when it is not `figentra-ci-gate` (CI's INFISICAL_TURBO_PROJECT_ID). */
+    turboProjectId: z.string().min(1).optional(),
     /** The Infisical environment slug the grants read. */
     infisicalEnvironment: z.string().min(1).optional(),
   })

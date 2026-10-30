@@ -31,11 +31,15 @@ export function testbedPlan(input: TestbedPlanInput = {}): TestbedPlan {
     given.ciGateProjectId === undefined
       ? {}
       : {
-          core: ["/", "/ci/turbo"].map((path) => ({
-            projectId: given.ciGateProjectId as string,
-            environment,
-            path,
-          })),
+          // The paths CI reads (ci.yml): the licence tokens in /ci, the remote cache in /ci/turbo.
+          core: [
+            { projectId: given.ciGateProjectId, environment, path: "/ci" },
+            {
+              projectId: given.turboProjectId ?? given.ciGateProjectId,
+              environment,
+              path: "/ci/turbo",
+            },
+          ],
         };
 
   return TESTBED_PLAN_SCHEMA.parse({

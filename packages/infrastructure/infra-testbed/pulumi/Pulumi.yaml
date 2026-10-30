@@ -1,0 +1,17 @@
+# Stackra file contract:
+# Purpose: the Pulumi project that applies the testbed (ADR 0484, STA-1626): `main.mjs` declares
+#          `awsTestbed(testbedPlan(...))` from this stack's config. The owner runs it from the Mac with the
+#          `academorix` AWS profile; see the runbook's "First deploy".
+# Boundary: one stack, `testbed`. State lives at the owner's PULUMI_BACKEND_URL. Its config holds ids and CIDRs only, no
+#           secret value, so `Pulumi.testbed.yaml` may stay local. Stands in for the program `stackra infra gen` will
+#           compose.
+# Runtime: Pulumi CLI (nodejs)
+# Governing contract: ADR 0484; ADR 0171 (decisions 4 and 6); ADR 0173.
+name: stackra-testbed
+description: The shared test boxes (image pipeline, heavy and light Auto Scaling groups)
+runtime:
+  name: nodejs
+  options:
+    # Plain ESM over the built package (run `turbo build --filter @stackra/infra-testbed` first), so no ts-node.
+    typescript: false
+main: main.mjs

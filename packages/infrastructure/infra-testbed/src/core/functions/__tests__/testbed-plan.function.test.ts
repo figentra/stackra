@@ -73,9 +73,13 @@ describe("testbedPlan", () => {
 
   it("grants figentra-ci-gate paths to the core project, ids only", () => {
     expect(plan.secretGrants.projects.core).toEqual([
-      { projectId: "proj-1", environment: "prod", path: "/" },
+      { projectId: "proj-1", environment: "prod", path: "/ci" },
       { projectId: "proj-1", environment: "prod", path: "/ci/turbo" },
     ]);
+    expect(
+      testbedPlan({ identityId: "id-1", ciGateProjectId: "proj-1", turboProjectId: "proj-2" })
+        .secretGrants.projects.core?.[1],
+    ).toEqual({ projectId: "proj-2", environment: "prod", path: "/ci/turbo" });
     expect(plan.secretGrants.identityName).toBe("figentra-ci-boxes");
     expect(testbedPlan().secretGrants.projects).toEqual({});
   });

@@ -18,6 +18,9 @@ ROOT=${TESTBED_ROOT_DIR:-/}
 STATE=${TESTBED_STATE_DIR:-/run/testbed}
 ETC=${TESTBED_ETC_DIR:-/etc/testbed}
 IMAGE=${TESTBED_IMAGE:-stackra-testbed-job:current}
+# The Infisical CLI defaults to the US cloud; ours is Infisical Cloud EU (.infisical.yaml).
+INFISICAL_DOMAIN=${INFISICAL_DOMAIN:-https://eu.infisical.com}
+export INFISICAL_DOMAIN
 PG_IMAGE=${TESTBED_POSTGRES_IMAGE:-postgres:17.6-alpine}
 STORE=${TESTBED_STORE:-$DATA/pnpm-store}
 CLEAN_PCT=${TESTBED_CLEAN_PCT:-70}
@@ -415,7 +418,7 @@ EOF
     -v /var/run/docker.sock:/var/run/docker.sock --group-add "$(stat -c %g /var/run/docker.sock 2>/dev/null || echo 0)" \
     -e TURBO_CACHE_DIR=/turbo-cache -e "TESTBED_JOB=$JOB_ID"
   [ "$postgres" = 0 ] || set -- "$@" -e "TESTBED_POSTGRES_HOST=tb-$JOB_ID-pg"
-  [ -z "${INFISICAL_TOKEN:-}" ] || set -- "$@" -e INFISICAL_TOKEN
+  [ -z "${INFISICAL_TOKEN:-}" ] || set -- "$@" -e INFISICAL_TOKEN -e INFISICAL_DOMAIN
   JOB_RAN=1
   timeout "$TIMEOUT" docker run "$@" "$IMAGE" sh -c "$wrapped"
   finish "$?"

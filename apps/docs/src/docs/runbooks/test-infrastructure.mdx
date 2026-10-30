@@ -153,3 +153,95 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
 </Steps>
 
 Rollback before the last step: the shim still names the old boxes, and `aws ec2 start-instances` brings them back.
+
+## Step 1 in detail: the Infisical identity
+
+All of this happens in the Infisical web app (EU, `eu.infisical.com`) as the owner. No value is typed anywhere.
+
+1. **Create the identity.** Organization, Access Control, Machine Identities, Create. Name it `figentra-ci-boxes`,
+   with the organization role **No Access**. Project access is granted in step 3, and nothing else is needed.
+2. **Switch its auth to AWS.** On the identity's page, remove **Universal Auth** and add **AWS Auth** with:
+
+   | Field                           | Value                                                                      |
+   | ------------------------------- | -------------------------------------------------------------------------- |
+   | Allowed Principal ARNs          | `arn:aws:iam::591473336656:role/stackra-testbed-instance`                  |
+   | Allowed Account IDs             | `591473336656`                                                             |
+   | STS Endpoint                    | leave the default `https://sts.amazonaws.com/`                             |
+   | Access Token TTL                | `14400` (4 hours: covers the 3-hour job timeout, with the fetch before it) |
+   | Access Token Max TTL            | `14400`                                                                    |
+   | Access Token Max Number of Uses | `0`                                                                        |
+   | Access Token Trusted IPs        | leave `0.0.0.0/0` (boxes have changing public IPs)                         |
+
+   The role does not exist yet; the ARN may be added before it does. Account `591473336656` is the `academorix`
+   profile's.
+
+3. **Give it read access.** Open the project `figentra-ci-gate`, Access Control, Machine Identities, Add, pick
+   `figentra-ci-boxes` with the **Viewer** role. If the turbo values (`/ci/turbo`) live in another project (CI reads
+   them through `INFISICAL_TURBO_PROJECT_ID`), add the identity as Viewer there too.
+4. **Copy three ids**, none of them secret: the identity's **ID** (the identity page), the project id of
+   `figentra-ci-gate` (Project Settings), and, if it differs, the turbo project's id. They go into the Pulumi config in
+   step 2.
+
+The free plan allows four identities; this is the fourth.
+
+## Step 2 in detail: the first deploy
+
+The Auto Scaling groups start boxes from the AMI named in the SSM parameter `/stackra/testbed/ami`, and that parameter
+exists only after the image pipeline has built once. So the first deploy runs in two passes. The owner runs it from the
+Mac, after stackra-f4 has landed STA-1626 on `main` (with the lockfile). Building this one package on the Mac is the
+owner's own exception to the Mac rule; agents still never build there.
+
+```bash
+cd packages/infrastructure/infra-testbed && pnpm build
+```
+
+```bash
+cd packages/infrastructure/infra-testbed/pulumi && pulumi stack init testbed
+```
+
+```bash
+pulumi config set identityId <identity id> && pulumi config set ciGateProjectId <figentra-ci-gate project id>
+```
+
+```bash
+pulumi config set --path 'sshCidrs[0]' "$(curl -s https://checkip.amazonaws.com)/32"
+```
+
+Add `pulumi config set turboProjectId <id>` only when the turbo values live in another project. Then the stand-up
+counts and the first pass:
+
+```bash
+pulumi config set heavyMin 1 && pulumi config set lightMin 0 && pulumi config set groups false
+```
+
+```bash
+AWS_PROFILE=academorix pulumi preview
+```
+
+Check the preview (security group, two roles, launch template, S3 bucket, Image Builder components, recipe, pipeline;
+no Auto Scaling group). Then:
+
+```bash
+AWS_PROFILE=academorix pulumi up
+```
+
+Build the first image. It takes 30 to 60 minutes, on one build instance that stops when it is done:
+
+```bash
+aws imagebuilder start-image-pipeline-execution --image-pipeline-arn "$(pulumi stack output testbed --json | jq -r .imagePipelineArn)" --profile academorix --region eu-west-1
+```
+
+Wait until the parameter holds an AMI id:
+
+```bash
+aws ssm get-parameter --name /stackra/testbed/ami --query Parameter.Value --output text --profile academorix --region eu-west-1
+```
+
+The second pass adds the groups (one heavy box from here on, about $280 a month):
+
+```bash
+pulumi config set groups true && AWS_PROFILE=academorix pulumi up
+```
+
+Then `stackra testbed status` should list one healthy heavy box. If the image build fails, its log is in the Image
+Builder console under the `stackra-testbed` pipeline; nothing else has been started.
