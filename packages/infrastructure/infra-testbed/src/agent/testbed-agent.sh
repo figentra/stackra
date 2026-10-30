@@ -56,7 +56,18 @@ free_gb() { df -Pk "$1" | awk 'NR==2 { print int($4 / 1048576) }'; }
 
 imds() {
   token=$(curl -sS -m 2 -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token) || return 1
-  curl -sS -m 2 -H "X-aws-ec2-metadata-token: $token" "http://169.254.169.254/latest/meta-data/$1"
+  curl -fsS -m 2 -H "X-aws-ec2-metadata-token: $token" "http://169.254.169.254/latest/meta-data/$1"
+}
+# A spot box AWS is about to reclaim (interruption notice) or recommends replacing (rebalance) takes no new job, so the
+# caller gets exit 75 and picks another box. Both paths answer 404 on an on-demand box.
+reclaim_notice() {
+  if imds spot/instance-action >/dev/null 2>&1; then
+    say reclaim
+  elif imds events/recommendations/rebalance >/dev/null 2>&1; then
+    say rebalance
+  else
+    return 1
+  fi
 }
 instance_id() { if [ -n "${TESTBED_INSTANCE_ID:-}" ]; then say "$TESTBED_INSTANCE_ID"; else imds instance-id; fi; }
 region() {
@@ -144,6 +155,7 @@ health_check() {
     say draining
     return 1
   fi
+  if reclaim_notice; then return 1; fi
   data=$(pct "$DATA")
   rootfree=$(free_gb "$ROOT")
   if [ "${data:-100}" -ge "$DRAIN_PCT" ] || [ "${rootfree:-0}" -lt "$ROOT_MIN_GB" ]; then

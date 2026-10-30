@@ -5,7 +5,7 @@
  *          and the drain (an unhealthy mark only with no job running), a busy slot (exit 73), cleanup and scale-in
  *          protection released after a failing job, the Infisical token reaching the container by environment and
  *          never by a command line, a project without grants getting no token, seed clone and seed refresh, and the
- *          idle stop above the group's minimum only.
+ *          idle stop above the group's minimum only; a spot reclaim or rebalance notice refusing new jobs (exit 75).
  * Boundary: test only; every path is a temp folder and every tool a stub, so no cloud, container or secret is
  *           touched. The agent needs `sh`, `jq`, `rsync`, `flock`, GNU `find`, `stat`, `cp` and `timeout`, so this runs
  *           on a Linux box (the AMI build and the tester's box), never on the Mac.
@@ -116,6 +116,16 @@ case "$1" in
 esac`,
   );
   stub("pnpm", `echo "pnpm $*" >> "$FAKE_LOG"`);
+  // IMDS: a token always; the spot notices only when the test sets them (404, so curl -f fails, otherwise).
+  stub(
+    "curl",
+    `case "$*" in
+  *api/token*) echo imds-token ;;
+  *spot/instance-action*) [ -n "\${FAKE_SPOT:-}" ] || exit 22; echo '{"action":"stop"}' ;;
+  *recommendations/rebalance*) [ -n "\${FAKE_REBALANCE:-}" ] || exit 22; echo '{"noticeTime":"now"}' ;;
+  *) exit 22 ;;
+esac`,
+  );
 });
 
 afterEach(() => {
@@ -194,6 +204,17 @@ describe("testbed-agent health", () => {
     });
     expect(job.code).toBe(75);
     expect(job.out).toContain("unhealthy: disk");
+    expect(logged()).not.toContain("docker run");
+  });
+
+  it("refuses new jobs on a spot reclaim or rebalance notice, with exit 75", () => {
+    expect(agent(["health"], { FAKE_SPOT: "1" }).out.trim()).toBe("unhealthy: reclaim");
+    expect(agent(["health"], { FAKE_REBALANCE: "1" }).out.trim()).toBe("unhealthy: rebalance");
+    const job = agent(["job", "run", "j1", "light", "me", "core", "--", "true"], {
+      FAKE_SPOT: "1",
+    });
+    expect(job.code).toBe(75);
+    expect(job.out).toContain("unhealthy: reclaim");
     expect(logged()).not.toContain("docker run");
   });
 
