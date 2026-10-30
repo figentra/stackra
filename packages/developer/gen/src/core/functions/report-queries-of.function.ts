@@ -5,7 +5,9 @@
  *          convention, the MCP tool and the wiring treat it like an authored query (ADR 0470 decision 1, STA-1459).
  * Boundary: pure; reads `ir.classes`. Empty when the member does not declare `@stackra/reports` or has no report with
  *           a written key. The query injects `ReportRunner` and reads the report's own `Permissions` static when it
- *           names one; without one it reads the query default, `<module>.report.read`. Its input and output are
+ *           names one; without one it reads the query default, `<module>.report.read`. Its actors are the report's
+ *           `actors` as written, or `user` and `agent` (a report reads only and is an MCP tool by default, STA-1690),
+ *           since `Query` refuses a call with none. Its input and output are
  *           `ReportRequest` and `ReportResult` of `@stackra/reports`, written from `GENERATED_QUERY_SCHEMAS`.
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decision 1); ADR 0294 (decisions 16, 20 and 21); ADR 0155 (queries are MCP tools).
@@ -13,6 +15,9 @@
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+
+/** The actors of a report query that names none: a person and an agent, as for a read-only MCP tool. */
+const DEFAULT_REPORT_ACTORS: readonly string[] = Object.freeze(["user", "agent"]);
 
 /** Whether `value` is a static member of a class written as a value. */
 function isMemberValue(value: unknown): value is ClassValue & { readonly member: string } {
@@ -35,6 +40,9 @@ export function reportQueriesOf(
     .filter((declared) => declared.kind === "report" && typeof declared.options["key"] === "string")
     .map((report) => {
       const permission = report.options["permission"];
+      const written = report.options["actors"];
+      const actors =
+        Array.isArray(written) && written.length > 0 ? written.map(String) : DEFAULT_REPORT_ACTORS;
       return {
         report,
         query: {
@@ -46,6 +54,7 @@ export function reportQueriesOf(
           options: {
             key: `report.${String(report.options["key"])}`,
             ...(isMemberValue(permission) ? { permission } : {}),
+            actors,
           },
           deps: [{ class: { name: "ReportRunner", from: "@stackra/reports" } }],
           facets: [],

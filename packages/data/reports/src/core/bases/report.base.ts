@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `Report<Source>({ key, dimensions, measures, defaultFilter, permission })`, the kind base of a module's
+ * Purpose: `Report<Source>({ key, dimensions, measures, defaultFilter, permission, actors })`, the kind base of a module's
  *          report: `class OrderSalesReport extends Report<Order>({ key: "order_sales", ... }) {}` in a module's
  *          `reports/<name>.report.ts`. It checks the closed vocabulary when the class is declared: dimension paths and
  *          grains, measure kinds with the field each needs, money only where it adds up, formulas that parse and
@@ -14,7 +14,7 @@
  *                     ADR 0305 (rule 5: the partner is the type argument); ADR 0154 (no tenant code or SQL).
  */
 import { createKind, type WithPartner } from "@stackra/container";
-import { Enum } from "@stackra/contracts";
+import { ActorKind, Enum } from "@stackra/contracts";
 
 import { ReportBase } from "#core/bases/report-base.base";
 import { MeasureKind } from "#core/enums/measure-kind.enum";
@@ -227,12 +227,23 @@ function read(options: ReportOptions): Readonly<Record<string, unknown>> {
   const filter = options.defaultFilter === undefined ? {} : objectOf(options.defaultFilter);
   if (filter === undefined || Object.keys(filter).some((path) => !PATH.test(path)))
     throw new TypeError(`Report "${key}" defaultFilter maps field paths to constant values`);
+  const actors = options.actors;
+  if (
+    actors !== undefined &&
+    (!Array.isArray(actors) ||
+      actors.length === 0 ||
+      actors.some((actor) => !Enum.values(ActorKind).includes(actor)))
+  )
+    throw new TypeError(
+      `Report "${key}" actors is a non-empty list of ActorKind values, or left out`,
+    );
   const declaration: ReportDeclaration = {
     key,
     dimensions: Object.freeze(dimensions),
     measures: Object.freeze(measures),
     defaultFilter: Object.freeze({ ...filter }) as ReportDeclaration["defaultFilter"],
     ...(options.permission !== undefined ? { permission: options.permission } : {}),
+    ...(actors !== undefined ? { actors: Object.freeze([...actors]) } : {}),
   };
   // The kind registry holds plain records; the base reads it back as a `ReportDeclaration`.
   return Object.freeze({ ...declaration });

@@ -10,6 +10,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0470 (decisions 1 and 2); ADR 0294 (decision 16).
  */
 import { kindOf } from "@stackra/container";
+import { ActorKind } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Report } from "#core/bases/report.base";
@@ -101,6 +102,17 @@ describe("Report", () => {
       permission,
     }) {}
     expect(new Permitted().declaration.permission).toBe(permission);
+  });
+
+  it("keeps the actors as written, and refuses an empty or unknown list (STA-1690)", () => {
+    class Tool extends Report<Order>({ ...BASE, actors: [ActorKind.User, ActorKind.Agent] }) {}
+    expect(new Tool().declaration.actors).toEqual([ActorKind.User, ActorKind.Agent]);
+    class Default extends Report<Order>({ ...BASE }) {}
+    expect(new Default().declaration.actors).toBeUndefined();
+    expect(() => {
+      class Empty extends Report<Order>({ ...BASE, actors: [] }) {}
+      return new Empty().declaration;
+    }).toThrow(/actors is a non-empty list of ActorKind values/);
   });
 
   it("keeps each column's permission and data class", () => {

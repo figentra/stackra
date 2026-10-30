@@ -281,9 +281,19 @@ describe("emitReports", () => {
       'import { OrderPermissions } from "#modules/orders/permissions/order.permissions";',
     );
     expect(file).toContain(
-      'export class OrderSalesReportQuery extends Query({ key: "report.order_sales", permission: OrderPermissions.report }) {',
+      'export class OrderSalesReportQuery extends Query({ key: "report.order_sales", permission: OrderPermissions.report, actors: [ActorKind.User, ActorKind.Agent] }) {',
     );
     expect(file).toContain("    return this.runner.run(OrderSalesReport, input);");
+    expect(file).toContain('import { ActorKind } from "@stackra/contracts";');
+  });
+
+  it("writes the report's own actors on its query (STA-1690)", () => {
+    const file = emitReports(
+      service([report({ ...OPTIONS, actors: ["service", "external_agent"] })], {
+        packages: ["@stackra/actions", "@stackra/reports"],
+      }),
+    );
+    expect(file).toContain("actors: [ActorKind.Service, ActorKind.ExternalAgent] }) {");
   });
 
   it("writes nothing without a report or without @stackra/reports", () => {
@@ -302,7 +312,11 @@ describe("reportQueriesOf", () => {
       kind: "query",
       module: "orders",
       importPath: "#stackra/reports",
-      options: { key: "report.order_sales", permission: OPTIONS.permission },
+      options: {
+        key: "report.order_sales",
+        permission: OPTIONS.permission,
+        actors: ["user", "agent"],
+      },
       deps: [{ class: { name: "ReportRunner", from: "@stackra/reports" } }],
     });
     const { manifest } = buildManifest({
