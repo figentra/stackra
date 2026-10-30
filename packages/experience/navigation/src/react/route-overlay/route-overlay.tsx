@@ -75,6 +75,7 @@ export function RouteOverlay({
   const layers = useMemo(() => [...under, { label, path: pathname }], [under, label, pathname]);
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" && layers.length > ROUTE_OVERLAY_MAX_DEPTH)
+      // oxlint-disable-next-line no-console -- reason: a dev-only depth warning; navigation has no logger dependency
       console.warn(
         `RouteOverlay: ${layers.length} overlays are stacked; the design stops at ${ROUTE_OVERLAY_MAX_DEPTH}.`,
       );
