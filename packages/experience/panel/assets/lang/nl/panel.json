@@ -43,7 +43,8 @@
     "yes": "Ja",
     "no": "Nee",
     "add_item": "Toevoegen",
-    "remove_item": "Item {number} verwijderen"
+    "remove_item": "Item {number} verwijderen",
+    "invalid_json": "Dit is geen geldige JSON."
   },
   "plan_catalogue": {
     "history": "Versies",

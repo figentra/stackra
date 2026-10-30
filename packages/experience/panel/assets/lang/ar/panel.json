@@ -43,7 +43,8 @@
     "yes": "نعم",
     "no": "لا",
     "add_item": "إضافة",
-    "remove_item": "إزالة العنصر {number}"
+    "remove_item": "إزالة العنصر {number}",
+    "invalid_json": "هذا ليس JSON صالحًا."
   },
   "plan_catalogue": {
     "history": "الإصدارات",

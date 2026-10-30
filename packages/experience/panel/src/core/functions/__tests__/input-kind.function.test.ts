@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `inputKind`: a boolean, a number, an enum (with its codes), text, an object (its keys) and a
- *          list (of objects or values), through the optional, nullable and default wrappers, a nested path and a list
- *          item's numeric segment; an unknown path is missing.
+ * Purpose: unit tests of `inputKind`: a boolean, a number, an enum (with its codes), text, an object (its keys), a
+ *          list (of objects or values) and any JSON value, through the optional, nullable and default wrappers, a
+ *          nested path and a list item's numeric segment; an unknown path is missing.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307.
@@ -20,6 +20,8 @@ const input = z.object({
   address: z.object({ zip: z.number() }),
   parcels: z.array(z.object({ weight: z.number(), kind: z.enum(["box", "tube"]) })).min(1),
   tags: z.array(z.string()).optional(),
+  condition: z.json(),
+  evidence: z.unknown().optional(),
 });
 
 describe("inputKind", () => {
@@ -38,6 +40,11 @@ describe("inputKind", () => {
     expect(inputKind(input, "parcels.0")).toEqual({ kind: "object", keys: ["weight", "kind"] });
     expect(inputKind(input, "parcels.2.weight")).toEqual({ kind: "number" });
     expect(inputKind(input, "tags.0")).toEqual({ kind: "text" });
+  });
+
+  it("reads a JSON value, whether zod's json() or unknown", () => {
+    expect(inputKind(input, "condition")).toEqual({ kind: "json" });
+    expect(inputKind(input, "evidence")).toEqual({ kind: "json" });
   });
 
   it("answers missing for a path the schema does not have", () => {

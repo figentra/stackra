@@ -43,7 +43,8 @@
     "yes": "Yes",
     "no": "No",
     "add_item": "Add",
-    "remove_item": "Remove item {number}"
+    "remove_item": "Remove item {number}",
+    "invalid_json": "This is not valid JSON."
   },
   "plan_catalogue": {
     "history": "Versions",

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `inputKind(schema, path)`, which control a form field draws from the input schema at `path`: a switch, a
- *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, or text; the optional,
+ *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, any JSON value, or text; the optional,
  *          nullable and default wrappers are looked through, and a numeric segment of the path is a list's item
  *          (`parcels.0.weight`).
  * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, entries) only, never parses. A path the
@@ -49,6 +49,8 @@ export function inputKind(schema: ZodType | undefined, path: string): InputKind 
   if (current === undefined) return { kind: "missing" };
   const def = defOf(current);
   if (def.type === "boolean") return { kind: "boolean" };
+  // `json()` is zod's lazy JSON union; `unknown` and `any` take any JSON value too.
+  if (def.type === "lazy" || def.type === "unknown" || def.type === "any") return { kind: "json" };
   if (def.type === "number" || def.type === "int" || def.type === "bigint")
     return { kind: "number" };
   if (def.type === "enum" && def.entries !== undefined)

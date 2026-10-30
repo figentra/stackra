@@ -4,7 +4,8 @@
  *          list of objects draws a group per row bound by index, labelled without the index, with remove and add; a list
  *          of values adds an empty row; a select's options take their enum labels; a `…Minor` amount is entered in
  *          major units of the record's currency, or in minor units without one; a money object or a list row's
- *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes.
+ *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes; a JSON value is
+ *          edited as text that submits the parsed value and refuses text that does not parse.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -69,6 +70,24 @@ vi.mock("@stackra/ui/react", async () => {
         { type: "button", onClick: () => props.onChange(130.5) },
         `money:${props.name}:${props.value}:${props.formatOptions.currency}`,
       ),
+    TextAreaField: (props: {
+      readonly label: string;
+      readonly value: string;
+      readonly isInvalid?: boolean;
+      readonly errorMessage?: string;
+      readonly onChange: (value: string) => void;
+    }) =>
+      createElement(
+        "label",
+        null,
+        props.label,
+        createElement("textarea", {
+          value: props.value,
+          onChange: (event: { readonly target: { readonly value: string } }) =>
+            props.onChange(event.target.value),
+        }),
+        props.isInvalid === true ? props.errorMessage : null,
+      ),
     FormSection: (props: { readonly title: string; readonly children?: ReactNode }) =>
       createElement("fieldset", null, createElement("legend", null, props.title), props.children),
     Button: (props: { readonly onPress?: () => void; readonly children?: ReactNode }) =>
@@ -86,6 +105,7 @@ const BuyLabelInput = z.object({
   handedOverMinor: z.number().int(),
   landedCost: z.object({ minor: z.number().int(), currency: z.string() }),
   lines: z.array(z.object({ sku: z.string(), priceMinor: z.number().int(), currency: z.string() })),
+  condition: z.json(),
 });
 
 /** Draws the field of `key`, as the buy-label action's modal does over `record`. */
@@ -182,5 +202,18 @@ describe("ResourceFormField objects and lists", () => {
     spies.lists = { "landedCost.minor": 12_345, "landedCost.currency": "" };
     draw("landedCost");
     expect(screen.getByText(/^number:landedCost\.minor:/)).toBeTruthy();
+  });
+
+  it("edits a JSON value as text, submitting the parsed value and refusing text that does not parse", () => {
+    spies.lists = { condition: { minQty: 10 } };
+    draw("condition");
+    const editor = screen.getByRole("textbox") as HTMLTextAreaElement;
+    expect(JSON.parse(editor.value)).toEqual({ minQty: 10 });
+    fireEvent.change(editor, { target: { value: '{ "minQty": 12, "tiers": [1, 2] }' } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("condition", { minQty: 12, tiers: [1, 2] });
+    expect(screen.queryByText("panel::resources.invalid_json")).toBeNull();
+    fireEvent.change(editor, { target: { value: "{ minQty: 12" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("condition", Number.NaN);
+    expect(screen.getByText("panel::resources.invalid_json")).toBeTruthy();
   });
 });

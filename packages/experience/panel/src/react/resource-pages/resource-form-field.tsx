@@ -3,7 +3,8 @@
  * Purpose: `ResourceFormField`, one recorded form element bound into the surrounding schema form: a value field drawn
  *          by its input type (switch, number, select of the enum's codes by their labels, text, an object's keys as a titled group, a
  *          list as rows to add and remove, a `currency` as a pick of ISO 4217 codes, a `…Minor` or money object's
- *          `minor` amount in major units of the currency beside it in the form, else of the record's), a picker over an options query, a grid of fields, and the steps of a set as
+ *          `minor` amount in major units of the currency beside it in the form, else of the record's, a JSON value as
+ *          JSON text that submits the parsed value), a picker over an options query, a grid of fields, and the steps of a set as
  *          titled sections.
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
  *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
@@ -17,8 +18,8 @@ import { useQuery } from "@stackra/clients/react";
 import { Enum } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
 import { useSchemaField } from "@stackra/ui/form";
-import { Button, Field, FormSection, NumberField } from "@stackra/ui/react";
-import type { ReactElement } from "react";
+import { Button, Field, FormSection, NumberField, TextAreaField } from "@stackra/ui/react";
+import { useState, type ReactElement } from "react";
 import type { ZodType } from "zod";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
@@ -185,6 +186,46 @@ function FormMoneyField({
   return <MoneyField name={name} label={label} currency={currency} scale={scale} />;
 }
 
+/** A JSON value edited as JSON text: valid text holds the parsed value, invalid text shows an error and fails the form. */
+function JsonField({
+  name,
+  label,
+}: {
+  readonly name: string;
+  readonly label: string;
+}): ReactElement {
+  const { t } = useTranslation();
+  const field = useSchemaField<unknown>(name);
+  const [text, setText] = useState(() =>
+    field.value === undefined ? "" : JSON.stringify(field.value, null, 2),
+  );
+  const [isBroken, setBroken] = useState(false);
+  const onChange = (next: string) => {
+    setText(next);
+    setBroken(false);
+    if (next.trim() === "") return field.onChange?.(undefined);
+    try {
+      field.onChange?.(JSON.parse(next));
+    } catch {
+      setBroken(true);
+      // NaN is no JSON value, so the schema refuses the submit until the text parses; the raw text never goes out.
+      field.onChange?.(Number.NaN);
+    }
+  };
+  return (
+    <TextAreaField
+      name={name}
+      label={label}
+      rows={6}
+      value={text}
+      onChange={onChange}
+      onBlur={field.onBlur}
+      isInvalid={isBroken || field.isInvalid === true}
+      errorMessage={isBroken ? t(PANEL_KEYS.panel.resources.invalid_json) : field.errorMessage}
+    />
+  );
+}
+
 /** The scale of `currency`, or undefined when it is not a currency code (the field then stays in minor units). */
 function scaleOf(currency: string | undefined): number | undefined {
   if (currency === undefined) return undefined;
@@ -271,6 +312,7 @@ export function ResourceFormField({
       />
     );
   if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} />;
+  if (kind.kind === "json") return <JsonField name={node.key} label={label} />;
   if (kind.kind === "number" && isMinorKey(node.key)) {
     // A currency beside it in the input (a MoneyAmount, a list row's `priceMinor` and `currency`) is the form's own.
     const beside = currencyBeside(node.key);

@@ -9,8 +9,11 @@
 /** The control kind of one form field. */
 export type InputKind =
   | {
-      /** Text, a number or a switch; `missing` when the schema has no such path (drawn as text). */
-      readonly kind: "text" | "number" | "boolean" | "missing";
+      /**
+       * Text, a number, a switch, any JSON value (`z.json()`, `unknown`) edited as JSON text, or `missing` when the
+       * schema has no such path (drawn as text).
+       */
+      readonly kind: "text" | "number" | "boolean" | "json" | "missing";
     }
   | {
       /** A choice of the enum's codes. */
