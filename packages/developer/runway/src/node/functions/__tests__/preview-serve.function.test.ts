@@ -78,7 +78,7 @@ beforeAll(async () => {
     line: "3",
     version: "3.0.2",
     entry: "assets/main.js",
-    css: [],
+    css: ["assets/shell.css"],
     importMap: { imports: { react: "assets/react.js" } },
   });
   put(".stackra/lines/console/dist/assets/main.js", "console.log('shell');");
@@ -150,6 +150,8 @@ describe("previewServe", () => {
     expect(page).toContain(
       `<link rel="stylesheet" crossorigin href="${server.url}/assets/acme/console/1.0.0/index.css">`,
     );
+    expect(page).toContain(`${server.url}/assets/shells/console/3/3.0.2/assets/shell.css`);
+    expect(page.indexOf("shell.css")).toBeLessThan(page.indexOf("index.css"));
     expect(record).toMatchObject({
       product: "acme",
       surface: "console",

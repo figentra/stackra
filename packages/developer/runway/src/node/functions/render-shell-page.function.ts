@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `renderShellPage(page)`, the HTML of one shell page load, as the edge Worker writes it (ADR 0437 decision
  *          2.5): the shell's import map, the startup record as `#stackra-startup`, `modulepreload` links for the shell
- *          entry and the bundle, the bundle's stylesheets, the root element and the shell entry as a module script.
+ *          entry and the bundle, the shell's then the bundle's stylesheets, the root element and the shell entry as a module script.
  * Boundary: pure; for the local edge (`previewServe`). shortcut: a copy of the OS edge Worker's `renderShellPage`
  *           (os workers/edge); keep the two in step until the Worker's renderer is a shared package. JSON is written
  *           with `<` escaped so no value can close its element; every attribute value is escaped.
@@ -49,7 +49,9 @@ export function renderShellPage(page: {
     ...[...new Set([shell.entry, ...release.modulepreload])].map(
       (url) => `<link rel="modulepreload" crossorigin href="${escape(url)}">`,
     ),
-    ...release.css.map((url) => `<link rel="stylesheet" crossorigin href="${escape(url)}">`),
+    ...[...(shell.css ?? []), ...release.css].map(
+      (url) => `<link rel="stylesheet" crossorigin href="${escape(url)}">`,
+    ),
   ];
   return `<!doctype html><html lang="${escape(record.locales.default)}"><head>${head.join("")}</head><body class="bg-background text-foreground"><div id="root"></div><script type="module" crossorigin src="${escape(shell.entry)}"></script></body></html>`;
 }
