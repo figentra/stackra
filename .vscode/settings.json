@@ -176,10 +176,11 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,
   "explorer.fileNesting.patterns": {
-    "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml, turbo.jsonc, knip.jsonc, .npmrc, mise.toml, .node-version",
-    ".oxlintrc.jsonc": ".oxfmtrc.jsonc, .editorconfig, .gitattributes, .gitleaks.toml",
+    "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml, .pnpmfile.mjs, turbo.jsonc, knip.jsonc, .npmrc, mise.toml, .node-version, runway.yaml",
+    ".oxlintrc.jsonc": ".oxfmtrc.jsonc, .editorconfig, .markdownlint.yaml, .gitattributes, .gitignore, .gitmodules, .gitleaks.toml, osv-scanner.toml",
     "lefthook.yml": ".commitlintrc.yaml, cspell.config.yaml",
-    "README.md": "CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE, AGENTS.md, CLAUDE.md"
+    "AGENTS.md": "CLAUDE.md, .mcp.yaml, .mcp.json, opencode.jsonc, .infisical.yaml",
+    "README.md": "CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE, TRADEMARKS.md"
   },
 
   // ── Search and watching: skip build output and caches ────────────────────────────────────────
