@@ -1,10 +1,10 @@
 # Stackra file contract:
 # Purpose: the Pulumi project that applies the testbed (ADR 0484, STA-1626): `main.mjs` declares
-#          `awsTestbed(testbedPlan(...))` from this stack's config. The owner runs it from the Mac with the
-#          `academorix` AWS profile; see the runbook's "First deploy".
-# Boundary: one stack, `testbed`. State lives at the owner's PULUMI_BACKEND_URL. Its config holds ids and CIDRs only, no
-#           secret value, so `Pulumi.testbed.yaml` may stay local. Stands in for the program `stackra infra gen` will
-#           compose.
+#          `awsTestbed(testbedPlan(...))` from this stack's config. Applied only by .github/workflows/apply-testbed.yml
+#          (manual, main, `testbed` environment, AWS by GitHub OIDC); see the runbook's "Step 2 in detail".
+# Boundary: one stack, `testbed`. State lives in s3://stackra-pulumi-state-591473336656 (eu-west-1). The workflow sets
+#           its config (ids and CIDRs, no secret) on every run, so no Pulumi.testbed.yaml is committed. Stands in for
+#           the program `stackra infra gen` will compose.
 # Runtime: Pulumi CLI (nodejs)
 # Governing contract: ADR 0484; ADR 0171 (decisions 4 and 6); ADR 0173.
 name: stackra-testbed

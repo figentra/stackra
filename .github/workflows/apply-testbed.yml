@@ -1,0 +1,142 @@
+# Stackra file contract:
+# Purpose: apply the testbed (ADR 0484, STA-1626) with Pulumi from CI only, by hand: test and build
+#          @stackra/infra-testbed, then `pulumi preview`, `pulumi up`, or a run of the image pipeline, against the
+#          `testbed` stack of packages/infrastructure/infra-testbed/pulumi in the academorix AWS account
+#          (591473336656, eu-west-1).
+# Boundary: workflow_dispatch only, main only, in the `testbed` environment (restricted to main, required reviewer:
+#           the owner approves every run). The first apply is two passes (runbook "Step 2 in detail"): `groups`
+#           unticked until the first image exists. Creates the private, versioned state bucket on its first run.
+# Runtime: GitHub Actions
+# Governing contract: ADR 0484, ADR 0171 (decisions 4 and 6), ADR 0019, ADR 0173.
+# Owner: release-operations
+# Secrets: none. AWS access is GitHub OIDC into the role in the `testbed` environment variable TESTBED_DEPLOY_ROLE_ARN
+#          (trusts repo:figentra/stackra:environment:testbed only). The stack config is ids and CIDRs, no secret, so
+#          the Pulumi passphrase is empty by design. The Infisical ids come from the organization variables.
+name: Apply testbed
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "preview, up, or build-image (start the image pipeline once)"
+        type: choice
+        options: [preview, up, build-image]
+        default: preview
+      groups:
+        description: "Declare the Auto Scaling groups (untick only before the first image exists)"
+        type: boolean
+        default: true
+      heavy_min:
+        description: "Heavy group minimum (stand-up: 1, after the switch: 2)"
+        type: choice
+        options: ["0", "1", "2"]
+        default: "1"
+      light_min:
+        description: "Light group minimum (stand-up: 0, after the switch: 1)"
+        type: choice
+        options: ["0", "1"]
+        default: "0"
+
+concurrency:
+  group: apply-testbed
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  apply:
+    name: Apply infra-testbed (${{ inputs.action }})
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: testbed
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC token, exchanged with AWS STS for the deploy role
+    env:
+      AWS_REGION: eu-west-1
+      ROLE_ARN: ${{ vars.TESTBED_DEPLOY_ROLE_ARN }}
+      SSH_CIDRS: ${{ vars.TESTBED_SSH_CIDRS }}
+      IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+      PROJECT_ID: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+      STATE_BUCKET: stackra-pulumi-state-591473336656
+      PULUMI_TOOL: pulumi@3.268.0
+      PULUMI_SKIP_UPDATE_CHECK: "true"
+      PULUMI_CONFIG_PASSPHRASE: "" # the stack holds no secret (see Secrets above)
+      STACK: testbed
+      ACTION: ${{ inputs.action }}
+      DECLARE_GROUPS: ${{ inputs.groups }}
+      HEAVY_MIN: ${{ inputs.heavy_min }}
+      LIGHT_MIN: ${{ inputs.light_min }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: Prerequisites
+        run: |
+          for name in ROLE_ARN SSH_CIDRS IDENTITY_ID PROJECT_ID; do
+            [ -n "${!name}" ] || { echo "::error title=$name::missing (runbook: test-infrastructure, Step 2)"; exit 1; }
+          done
+          mise install "$PULUMI_TOOL"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+
+      - name: Test and build
+        run: pnpm turbo run test build --filter=@stackra/infra-testbed
+
+      - name: AWS (GitHub OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: apply-testbed-${{ github.run_id }}
+
+      # Pulumi's S3 backend locks with objects in the bucket itself, so no lock table is needed.
+      - name: State bucket
+        run: |
+          set -euo pipefail
+          if ! aws s3api head-bucket --bucket "$STATE_BUCKET" 2>/dev/null; then
+            aws s3api create-bucket --bucket "$STATE_BUCKET" --create-bucket-configuration "LocationConstraint=$AWS_REGION"
+            aws s3api put-public-access-block --bucket "$STATE_BUCKET" --public-access-block-configuration \
+              BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+            aws s3api put-bucket-versioning --bucket "$STATE_BUCKET" --versioning-configuration Status=Enabled
+          fi
+
+      - name: Pulumi ${{ inputs.action }}
+        working-directory: packages/infrastructure/infra-testbed/pulumi
+        run: |
+          set -euo pipefail
+          pulumi() { mise exec "$PULUMI_TOOL" -- pulumi --non-interactive "$@"; }
+          pulumi login "s3://$STATE_BUCKET?region=$AWS_REGION"
+          pulumi stack select --create "$STACK"
+          pulumi config set identityId "$IDENTITY_ID"
+          pulumi config set ciGateProjectId "$PROJECT_ID"
+          # TESTBED_SSH_CIDRS is a comma-separated list (the Mac's IP/32 to start; `stackra testbed` swaps it later).
+          i=0
+          for cidr in $(printf '%s' "$SSH_CIDRS" | tr ',' ' '); do
+            pulumi config set --path "sshCidrs[$i]" "$cidr"
+            i=$((i + 1))
+          done
+          pulumi config set groups "$DECLARE_GROUPS"
+          pulumi config set heavyMin "$HEAVY_MIN"
+          pulumi config set lightMin "$LIGHT_MIN"
+          case "$ACTION" in
+            up) pulumi up --yes --diff ;;
+            preview) pulumi preview --diff ;;
+            build-image)
+              arn=$(pulumi stack output testbed --json | jq -r .imagePipelineArn)
+              aws imagebuilder start-image-pipeline-execution --image-pipeline-arn "$arn"
+              echo "::notice title=Image build started::30 to 60 minutes; then run this workflow with action up and groups ticked."
+              ;;
+          esac

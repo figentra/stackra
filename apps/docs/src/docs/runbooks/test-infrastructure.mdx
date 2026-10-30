@@ -130,8 +130,8 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
     The owner adds AWS Auth to the shared gate identity, bound to the testbed instance role.
   </Step>
   <Step title="Stand up beside">
-    `pulumi up` of `@stackra/infra-testbed` in eu-west-1: the image pipeline, the first AMI, `heavy`
-    minimum 1, `light` minimum 0.
+    The `apply-testbed.yml` workflow in eu-west-1 (Step 2 below): the image pipeline, the first AMI,
+    `heavy` minimum 1, `light` minimum 0.
   </Step>
   <Step title="Canary">
     The tester runs the same jobs on both fleets for a day (core verify, playground e2e, an
@@ -187,62 +187,61 @@ Step 2 needs two ids, neither of them secret: the identity's id (`INFISICAL_GATE
 
 ## Step 2 in detail: the first deploy
 
-The Auto Scaling groups start boxes from the AMI named in the SSM parameter `/stackra/testbed/ami`, and that parameter
-exists only after the image pipeline has built once. So the first deploy runs in two passes. The owner runs it from the
-Mac, after stackra-f4 has landed STA-1626 on `main` (with the lockfile). Building this one package on the Mac is the
-owner's own exception to the Mac rule; agents still never build there.
+Nothing is applied from the Mac. The testbed is applied by the manual workflow `apply-testbed.yml` (Actions, "Apply
+testbed", Run workflow), on `main` only, in the GitHub environment `testbed`, whose required reviewer (the owner)
+approves every run. It signs in to AWS by GitHub OIDC, so no AWS key is stored anywhere, and keeps Pulumi's state in the
+private, versioned bucket `stackra-pulumi-state-591473336656` (eu-west-1), which its first run creates. Pulumi's S3
+backend locks with objects in that bucket, so there is no lock table. The stack holds ids and CIDRs only, so its
+passphrase is empty by design.
+
+### 2a. One-time bootstrap (owner, with the `academorix` AWS profile)
+
+The workflow cannot create the role it signs in with, so the owner creates it once. GitHub's OIDC provider, if the
+account has none yet:
 
 ```bash
-cd packages/infrastructure/infra-testbed && pnpm build
+aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com --client-id-list sts.amazonaws.com --profile academorix
+```
+
+The deploy role, trusted only by this repository's `testbed` environment:
+
+```bash
+aws iam create-role --role-name stackra-testbed-deploy --profile academorix --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::591473336656:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":"repo:figentra/stackra:environment:testbed"}}}]}'
+```
+
+Its rights: everything but IAM (`PowerUserAccess`), plus IAM only for the testbed's own roles and instance profiles:
+
+```bash
+aws iam attach-role-policy --role-name stackra-testbed-deploy --policy-arn arn:aws:iam::aws:policy/PowerUserAccess --profile academorix
 ```
 
 ```bash
-cd packages/infrastructure/infra-testbed/pulumi && pulumi stack init testbed
+aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed-iam --profile academorix --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["iam:*Role","iam:*Roles","iam:*RolePolicy","iam:*RolePolicies","iam:*InstanceProfile","iam:*InstanceProfiles","iam:*RoleFromInstanceProfile","iam:*RoleToInstanceProfile","iam:TagRole","iam:UntagRole","iam:TagInstanceProfile","iam:PassRole"],"Resource":["arn:aws:iam::591473336656:role/stackra-testbed-*","arn:aws:iam::591473336656:instance-profile/stackra-testbed-*"]},{"Effect":"Allow","Action":"iam:CreateServiceLinkedRole","Resource":"*"}]}'
 ```
 
-```bash
-pulumi config set identityId <identity id> && pulumi config set ciGateProjectId <figentra-ci-gate project id>
-```
+Then in GitHub, figentra/stackra, Settings, Environments, New environment `testbed`: deployment branches **main**
+only, required reviewer the owner, and two environment variables (neither is secret):
 
-```bash
-pulumi config set --path 'sshCidrs[0]' "$(curl -s https://checkip.amazonaws.com)/32"
-```
+- `TESTBED_DEPLOY_ROLE_ARN` = `arn:aws:iam::591473336656:role/stackra-testbed-deploy`
+- `TESTBED_SSH_CIDRS` = the Mac's public IP as `x.x.x.x/32` (comma-separate more). `stackra testbed` swaps its own
+  entry later.
 
-The `/ci/turbo` grant uses the same project, so nothing more is needed for the turbo cache. Then the stand-up counts
-and the first pass:
+`INFISICAL_GATE_IDENTITY_ID` and `INFISICAL_GATE_PROJECT_ID` are already organization variables.
 
-```bash
-pulumi config set heavyMin 1 && pulumi config set lightMin 0 && pulumi config set groups false
-```
+### 2b. The two passes
 
-```bash
-AWS_PROFILE=academorix pulumi preview
-```
+Each run below is Actions, "Apply testbed", Run workflow on `main`, then the owner approves it in the `testbed`
+environment.
 
-Check the preview (security group, two roles, launch template, S3 bucket, Image Builder components, recipe, pipeline;
-no Auto Scaling group). Then:
+1. **action** `preview`, **groups** unticked, heavy `1`, light `0`. Read the plan: a security group, two roles with
+   their profiles and policies, a launch template, the build bucket and its object, the Image Builder components,
+   recipe, infrastructure, distribution and pipeline, and no Auto Scaling group.
+2. **action** `up`, same inputs. Creates the state bucket on the first run, then the pipeline. No instance runs yet.
+3. **action** `build-image`. Starts the pipeline once: 30 to 60 minutes on one build instance that stops when done. Its
+   log is in the Image Builder console under `stackra-testbed`. When it succeeds, the SSM parameter
+   `/stackra/testbed/ami` holds the AMI id.
+4. **action** `preview`, **groups** ticked, heavy `1`, light `0`: the two Auto Scaling groups appear.
+5. **action** `up`, same inputs. One heavy box starts (about $280 a month from here). `stackra testbed status` should
+   list it healthy within about five minutes.
 
-```bash
-AWS_PROFILE=academorix pulumi up
-```
-
-Build the first image. It takes 30 to 60 minutes, on one build instance that stops when it is done:
-
-```bash
-aws imagebuilder start-image-pipeline-execution --image-pipeline-arn "$(pulumi stack output testbed --json | jq -r .imagePipelineArn)" --profile academorix --region eu-west-1
-```
-
-Wait until the parameter holds an AMI id:
-
-```bash
-aws ssm get-parameter --name /stackra/testbed/ami --query Parameter.Value --output text --profile academorix --region eu-west-1
-```
-
-The second pass adds the groups (one heavy box from here on, about $280 a month):
-
-```bash
-pulumi config set groups true && AWS_PROFILE=academorix pulumi up
-```
-
-Then `stackra testbed status` should list one healthy heavy box. If the image build fails, its log is in the Image
-Builder console under the `stackra-testbed` pipeline; nothing else has been started.
+At the switch step of the migration, run `up` again with heavy `2` and light `1`.
