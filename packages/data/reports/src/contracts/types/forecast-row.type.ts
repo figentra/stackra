@@ -8,7 +8,7 @@
  */
 import type { ForecastModel } from "#contracts/types/forecast-model.type";
 
-/** One forecast. */
+/** One model's forecast of one series: the future timestamps, the expected value and the 80% band per step. */
 export interface ForecastRow {
   /** The series' id. */
   readonly id: string;

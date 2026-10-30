@@ -19,7 +19,8 @@ function invalid(reason: string): never {
 }
 
 /**
- * Checks `query`.
+ * Checks that a forecast query is well formed before a driver acts on it: the horizon, frequency, models, series
+ * count, ids, lengths, point counts and values.
  *
  * @throws ForecastQueryInvalidError for the first problem found.
  * @example

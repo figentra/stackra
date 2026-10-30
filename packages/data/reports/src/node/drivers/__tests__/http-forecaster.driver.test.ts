@@ -35,7 +35,7 @@ function storeOf(values: Readonly<Record<string, string>>): SecretStore {
 /** A driver over the forecast settings `forecast`, with the token bound unless `bound` is false. */
 function driverWith(forecast: Record<string, unknown> = {}, bound = true): HttpForecasterDriver {
   const config = buildConfig(ReportsConfig, {
-    values: { forecast: { baseUrl: "http://forecast.test:8080/", ...forecast } },
+    values: { forecast: { baseUrl: "http://forecast.test:8080/", tokenSecret: null, ...forecast } },
   });
   return new HttpForecasterDriver(config, storeOf(bound ? { FORECAST_TOKEN: TOKEN } : {}));
 }
