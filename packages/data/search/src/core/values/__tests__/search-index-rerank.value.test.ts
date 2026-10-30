@@ -161,7 +161,7 @@ describe("SearchIndex reranking", () => {
 
 describe("SearchIndex data synonyms and Arabic locale", () => {
   it("adds the tenant's data synonym sets, in the read's language", async () => {
-    const source = new MemorySynonymSourceDriver([
+    const source = new MemorySynonymSourceDriver().seed([
       { index: "products", language: "en", terms: ["tunic", "shirt"] },
       { index: "products", language: "ar", terms: ["flax", "linen"] },
     ]);

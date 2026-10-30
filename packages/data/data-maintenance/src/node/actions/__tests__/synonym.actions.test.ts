@@ -115,7 +115,7 @@ describe("the synonym actions and query", () => {
   });
 
   it("lists the sets matching the input as views", async () => {
-    const find = vi.fn(async () => [row(["a", "b"])]);
+    const find = vi.fn(async (_where: object, _options?: object) => [row(["a", "b"])]);
     const query = new ListSynonymsQuery({ find } as unknown as SynonymService);
     const output = await query.handle(
       ListSynonymsInput.create({ indexName: "products", language: "en" }),

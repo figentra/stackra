@@ -16,19 +16,17 @@ import type { SynonymSet } from "#contracts/index";
  * Answers from the sets it holds.
  *
  * @example
- * const source = new MemorySynonymSourceDriver([{ index: "products", language: "ar", terms: ["كنبة", "أريكة"] }]);
+ * const source = new MemorySynonymSourceDriver().seed([{ index: "products", language: "ar", terms: ["كنبة", "أريكة"] }]);
  * await source.setsOf(["products"], "ar"); // the one set
  */
 export class MemorySynonymSourceDriver extends Driver(SynonymSource) {
   /** The sets held. */
-  private readonly sets: readonly SynonymSet[];
+  private sets: readonly SynonymSet[] = [];
 
-  /**
-   * @param sets - the sets of every index and language; none when absent.
-   */
-  constructor(sets: readonly SynonymSet[] = []) {
-    super();
+  /** Holds `sets` (of every index and language) in place of any held, so a test builds the driver with no argument. */
+  seed(sets: readonly SynonymSet[]): this {
     this.sets = sets;
+    return this;
   }
 
   /** The held sets of `indexes` in `language`, or in every language when it is absent. */

@@ -12,10 +12,9 @@ import { Reranker } from "#contracts/index";
 import { MemoryRerankerDriver } from "#core/drivers/memory-reranker.driver";
 
 describe(MemoryRerankerDriver, () => {
-  it("is a Reranker with a window of 50 unless told otherwise", () => {
+  it("is a Reranker with a window of 50", () => {
     expect(new MemoryRerankerDriver()).toBeInstanceOf(Reranker);
     expect(new MemoryRerankerDriver().topN).toBe(50);
-    expect(new MemoryRerankerDriver(5).topN).toBe(5);
   });
 
   it("ranks by the share of the query's words, ties in the order given", async () => {

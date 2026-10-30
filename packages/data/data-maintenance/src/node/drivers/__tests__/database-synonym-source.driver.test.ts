@@ -18,7 +18,7 @@ import { Synonym } from "#node/models/synonym.model";
 
 describe(DatabaseSynonymSourceDriver, () => {
   it("reads the asked indexes' rows, oldest first, with no tenant filter of its own", async () => {
-    const find = vi.fn(async () => [
+    const find = vi.fn(async (_model: unknown, _where: object, _options?: object) => [
       Object.assign(new Synonym(), { indexName: "products", language: "en", terms: ["a", "b"] }),
     ]);
     const database = { em: () => ({ find }) } as unknown as Database;

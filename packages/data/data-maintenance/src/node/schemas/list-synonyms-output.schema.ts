@@ -10,7 +10,7 @@ import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
 import { SYNONYM_VIEW_SCHEMA } from "#node/constants/synonym-view-schema.constant";
-import type { SynonymView } from "#node/types/synonym-view.type";
+import type { SynonymView } from "#node/schemas/synonym-view.schema";
 
 const ListSynonymsOutput$ = z.object({ items: z.array(SYNONYM_VIEW_SCHEMA) });
 

@@ -8,4 +8,9 @@
  */
 
 /** The lowest scores a search change may leave the set with. */
-export const SEARCH_EVALUATION_THRESHOLDS = { ndcgAt10: 0.85, recallAt50: 0.95 } as const;
+export const SEARCH_EVALUATION_THRESHOLDS = {
+  /** The lowest mean NDCG@10 over the judged queries. */
+  ndcgAt10: 0.85,
+  /** The lowest mean recall@50 over the judged queries. */
+  recallAt50: 0.95,
+} as const;

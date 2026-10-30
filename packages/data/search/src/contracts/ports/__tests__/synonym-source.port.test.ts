@@ -13,7 +13,7 @@ import { SynonymSource } from "#contracts/ports/synonym-source.port";
 
 /** Always answers one set. */
 class OneSetSynonymSourceDriver extends Driver(SynonymSource) {
-  async setsOf() {
+  async setsOf(_indexes: readonly string[]) {
     return [{ index: "products", language: "en", terms: ["sofa", "couch"] }];
   }
 }

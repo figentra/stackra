@@ -15,6 +15,7 @@ import { ActorKind } from "@stackra/contracts";
 import { SynonymPermissions } from "#core/access/synonym.permissions";
 import type { ListSynonymsInput } from "#node/schemas/list-synonyms-input.schema";
 import { ListSynonymsOutput } from "#node/schemas/list-synonyms-output.schema";
+import { SynonymView } from "#node/schemas/synonym-view.schema";
 import type { SynonymService } from "#node/services/synonym.service";
 
 /**
@@ -49,12 +50,14 @@ export class ListSynonymsQuery extends Query({
       { orderBy: { createdAt: "asc", id: "asc" } },
     );
     return ListSynonymsOutput.create({
-      items: rows.map((row) => ({
-        id: row.id,
-        indexName: row.indexName,
-        language: row.language,
-        terms: [...row.terms],
-      })),
+      items: rows.map((row) =>
+        SynonymView.create({
+          id: row.id,
+          indexName: row.indexName,
+          language: row.language,
+          terms: [...row.terms],
+        }),
+      ),
     });
   }
 }

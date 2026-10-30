@@ -16,7 +16,7 @@ import type { RecommendOptions } from "#contracts/types/recommend-options.type";
 import type { Recommendation } from "#contracts/types/recommendation.type";
 
 /**
- * A recommender.
+ * Suggests items similar to an item and items bought together with it.
  *
  * @example
  * const similar = await recommender.similar(product.id, { limit: 8 });

@@ -24,15 +24,7 @@ import { searchWordsOf } from "#core/functions/search-words-of.function";
  */
 export class MemoryRerankerDriver extends Driver(Reranker) {
   /** The most candidates one call takes. */
-  readonly topN: number;
-
-  /**
-   * @param topN - the most candidates one call takes; 50 when absent.
-   */
-  constructor(topN = 50) {
-    super();
-    this.topN = topN;
-  }
+  readonly topN = 50;
 
   /**
    * The best `topN` of `candidates`, best first.

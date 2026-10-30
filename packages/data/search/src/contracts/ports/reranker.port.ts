@@ -15,7 +15,7 @@ import type { RerankCandidate } from "#contracts/types/rerank-candidate.type";
 import type { RerankHit } from "#contracts/types/rerank-hit.type";
 
 /**
- * A reranker.
+ * Reorders fused search candidates by how well each answers the query.
  *
  * @example
  * const hits = await reranker.rerank("linen shirt", candidates, 20);

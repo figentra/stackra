@@ -47,7 +47,7 @@ export { RollUpTimeSeriesInput } from "#node/schemas/roll-up-time-series-input.s
 export { RollUpTimeSeriesOutput } from "#node/schemas/roll-up-time-series-output.schema";
 export { ReindexSearchInput } from "#node/schemas/reindex-search-input.schema";
 export { ReindexSearchOutput } from "#node/schemas/reindex-search-output.schema";
+export { SynonymView } from "#node/schemas/synonym-view.schema";
 export { UpdateSynonymInput } from "#node/schemas/update-synonym-input.schema";
 export { UpdateSynonymOutput } from "#node/schemas/update-synonym-output.schema";
 export { SynonymService } from "#node/services/synonym.service";
-export type { SynonymView } from "#node/types/synonym-view.type";

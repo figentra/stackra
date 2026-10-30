@@ -19,7 +19,7 @@ const SETS = [
 
 describe(MemorySynonymSourceDriver, () => {
   it("is a SynonymSource filtering by index and language", async () => {
-    const source = new MemorySynonymSourceDriver(SETS);
+    const source = new MemorySynonymSourceDriver().seed(SETS);
     expect(source).toBeInstanceOf(SynonymSource);
     expect(await source.setsOf(["products"])).toEqual([SETS[0], SETS[1]]);
     expect(await source.setsOf(["products", "orders"], "en")).toEqual([SETS[0], SETS[2]]);

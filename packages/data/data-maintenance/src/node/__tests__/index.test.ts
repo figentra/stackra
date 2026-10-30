@@ -47,6 +47,7 @@ describe("@stackra/data-maintenance/node", () => {
       "RollUpTimeSeriesOutput",
       "Synonym",
       "SynonymService",
+      "SynonymView",
       "UpdateSynonymAction",
       "UpdateSynonymInput",
       "UpdateSynonymOutput",

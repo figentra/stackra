@@ -24,7 +24,7 @@ const SEED = {
 
 describe(MemoryRecommenderDriver, () => {
   it("is a Recommender answering both kinds from its seed", async () => {
-    const recommender = new MemoryRecommenderDriver(SEED);
+    const recommender = new MemoryRecommenderDriver().seed(SEED);
     expect(recommender).toBeInstanceOf(Recommender);
     expect(await recommender.similar("a")).toEqual([
       { id: "c", score: 0.9 },
@@ -34,7 +34,7 @@ describe(MemoryRecommenderDriver, () => {
   });
 
   it("cuts at the limit, knows nothing of an unknown item and refuses a bad limit", async () => {
-    const recommender = new MemoryRecommenderDriver(SEED);
+    const recommender = new MemoryRecommenderDriver().seed(SEED);
     expect(await recommender.similar("a", { limit: 1 })).toEqual([{ id: "c", score: 0.9 }]);
     expect(await recommender.similar("zzz")).toEqual([]);
     expect(await new MemoryRecommenderDriver().boughtTogether("a")).toEqual([]);

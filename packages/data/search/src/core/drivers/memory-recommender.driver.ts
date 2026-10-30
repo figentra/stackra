@@ -20,19 +20,17 @@ const DEFAULT_LIMIT = 10;
  * Answers from what it was given.
  *
  * @example
- * const recommender = new MemoryRecommenderDriver({ similar: { prd_1: [{ id: "prd_2", score: 0.9 }] } });
+ * const recommender = new MemoryRecommenderDriver().seed({ similar: { prd_1: [{ id: "prd_2", score: 0.9 }] } });
  * await recommender.similar("prd_1"); // [{ id: "prd_2", score: 0.9 }]
  */
 export class MemoryRecommenderDriver extends Driver(Recommender) {
   /** The seeded answers. */
-  private readonly seed: MemoryRecommenderSeed;
+  private answers: MemoryRecommenderSeed = {};
 
-  /**
-   * @param seed - the answers per item; none when absent.
-   */
-  constructor(seed: MemoryRecommenderSeed = {}) {
-    super();
-    this.seed = seed;
+  /** Holds `answers` per item in place of any held, so a test builds the driver with no argument. */
+  seed(answers: MemoryRecommenderSeed): this {
+    this.answers = answers;
+    return this;
   }
 
   /** The seeded similar items of `itemId`. */
@@ -40,7 +38,7 @@ export class MemoryRecommenderDriver extends Driver(Recommender) {
     itemId: string,
     options: RecommendOptions = {},
   ): Promise<readonly Recommendation[]> {
-    return this.answer(this.seed.similar, itemId, options);
+    return this.answer(this.answers.similar, itemId, options);
   }
 
   /** The seeded bought-together items of `itemId`. */
@@ -48,7 +46,7 @@ export class MemoryRecommenderDriver extends Driver(Recommender) {
     itemId: string,
     options: RecommendOptions = {},
   ): Promise<readonly Recommendation[]> {
-    return this.answer(this.seed.boughtTogether, itemId, options);
+    return this.answer(this.answers.boughtTogether, itemId, options);
   }
 
   /**

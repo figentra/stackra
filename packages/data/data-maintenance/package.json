@@ -89,7 +89,6 @@
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
-    "@stackra/scheduler": "workspace:*",
     "@stackra/search": "workspace:*",
     "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
