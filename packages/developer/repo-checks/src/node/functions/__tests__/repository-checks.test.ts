@@ -643,12 +643,17 @@ test("isMemberSource: member TS only; Node-loaded tooling presets and lint fixtu
     "services/s/src/m.mts",
     "workers/w/src/main.ts",
     "packages/developer/coding-standard/src/core/constants/__tests__/stackra-plugin.constant.test.ts",
+    "packages/developer/repo-checks/src/node/functions/__tests__/spec-trace.function.test.ts",
+    "packages/developer/repo-checks/src/node/functions/check-member.function.ts",
   ])
     assert.equal(isMemberSource(p), true);
   for (const p of [
     "packages/tooling/vitest/src/preset-react.ts",
     "packages/developer/coding-standard/src/core/constants/stackra-plugin.constant.ts",
     "packages/developer/coding-standard/src/core/functions/file-kind.function.ts",
+    "packages/developer/repo-checks/src/node/functions/spec-check-stage.function.ts",
+    "packages/developer/repo-checks/src/node/constants/spec-dir.constant.ts",
+    "packages/developer/repo-checks/src/node/types/spec-task.type.ts",
     "packages/tooling/oxlint/src/__tests__/fixtures/packages/demo/pkg/src/index.ts",
     "tools/scripts/scaffold.mjs",
     ".opencode/plugins/guard/decide.ts",
