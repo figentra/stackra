@@ -19,6 +19,7 @@ import type {
   CheckOptions,
   MemoryPolicyState,
   PermissionRegistration,
+  PolicyClass,
   PolicyOptions,
   PolicyRegistration,
   RecordFacts,
@@ -71,6 +72,7 @@ describe("@stackra/iam", () => {
     expectTypeOf<PermissionRegistration["keys"]>().toEqualTypeOf<
       Readonly<Record<string, string>>
     >();
+    expectTypeOf<PolicyClass>().toEqualTypeOf<abstract new () => iam.Policy>();
     expectTypeOf<PolicyOptions["permissions"]>().toEqualTypeOf<
       AnyClass<iam.Permissions> | undefined
     >();

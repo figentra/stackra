@@ -48,6 +48,7 @@ export type { DimensionRegistration } from "#core/types/dimension-registration.t
 export type { FieldPermissions } from "#core/types/field-permissions.type";
 export type { MemoryPolicyState } from "#core/types/memory-policy-state.type";
 export type { PermissionRegistration } from "#core/types/permission-registration.type";
+export type { PolicyClass } from "#core/types/policy-class.type";
 export type { PolicyOptions } from "#core/types/policy-options.type";
 export type { PolicyRegistration } from "#core/types/policy-registration.type";
 export type { PolicySnapshotEvent } from "#core/types/policy-snapshot-event.type";
