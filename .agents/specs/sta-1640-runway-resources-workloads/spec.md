@@ -4,13 +4,13 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft
+**Status**: Clarified
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
 **Linear**: STA-1640
 
-**Clarifications status**: open (owner questions Q1 to Q7)
+**Clarifications status**: complete (owner answers 2026-10-30)
 
 **Input**: the owner's decision, relayed by the leader on 2026-10-30. One runway.yaml declares everything a product
 needs, and Runway provisions it per environment in the product's AWS account. `resources:` are managed kinds that
@@ -128,7 +128,8 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
   exactly as before.
 - **FR-005**: Each kind shall have a size catalogue (`small`, `medium`, `large`) mapping to AWS classes and a monthly
   estimate; an environment a resource does not size runs `small`.
-- **FR-006**: `environments.<env>.limits.monthly` shall cap the plan's estimate; a plan over it is refused before
+- **FR-006**: `environments.<env>.limits.monthly` (default $150 dev, $500 staging) shall cap the plan's estimate; with
+  no cap the plan only warns. A plan over a cap is refused before
   any declaration.
 - **FR-007**: Postgres shall plan RDS (default) or Aurora, RDS Proxy (ADR 0473), encryption, backups (ADR 0186) and
   a security group open only to its consumers.
@@ -152,21 +153,15 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 ## Owner questions
 
 - **Q1: Kafka.** Answered 2026-10-30: not now. It stays a reserved kind, and ADR 0227's deferral stands.
-- **Q2: Postgres and Encore.** Encore Cloud creates the environment's Postgres today. Recommended: `resources.postgres`
-  serves workloads and non-Encore consumers now, and Encore services keep Encore's own until the Encore deploy path
-  (STA-136) settles; one server per environment (0238) is then reconciled. Alternative: Runway owns the one server and
-  Encore points at it.
-- **Q3: ZITADEL.** ADR 0206 decision 4 says ZITADEL Cloud for SaaS and self-hosted only on-prem. Recommended: amend it
-  so a SaaS region that residency forces (KSA in-country) self-hosts as a workload, and ZITADEL Cloud stays the
-  default elsewhere.
-- **Q4: Cost cap.** Recommended: refuse over the cap in dev and preview; in staging and production, refuse unless the
-  deploy job's approval names the overrun.
-- **Q5: Public workloads.** Recommended: an ALB with an ACM certificate, behind Cloudflare-proxied DNS
-  (`@stackra/infra-cloudflare`). Alternative: Cloudflare Tunnel, with no public load balancer.
-- **Q6: Runtime secrets for workloads.** Recommended: SSM parameters filled by the Infisical sync (ADR 0444's pattern).
-  Alternative: an Infisical agent sidecar per task.
-- **Q7: Postgres in dev.** ADR 0238 says RDS by default. Recommended: dev `small` is RDS `db.t4g.micro`; Aurora
-  Serverless v2 only where a product opts in.
+- **Q2: Postgres and Encore.** Answered: `resources.postgres` serves workloads and non-Encore consumers now; Encore
+  services keep Encore's own until STA-136 settles.
+- **Q3: ZITADEL.** Answered: amend ADR 0206 decision 4 so in-country (residency) regions self-host ZITADEL as a
+  workload; ZITADEL Cloud stays the default elsewhere.
+- **Q4: Cost cap.** Answered: default caps of $150 a month in dev and $500 in staging, overridable in the runway; a plan
+  over its cap is refused. An environment with no cap (production, until the owner sets a number) only warns.
+- **Q5: Public workloads.** Answered: an ALB with an ACM certificate, behind Cloudflare-proxied DNS.
+- **Q6: Runtime secrets for workloads.** Answered: SSM parameters filled by the Infisical sync.
+- **Q7: Postgres in dev.** Answered: the smallest Graviton class (`db.t4g.micro`), single-AZ.
 
 ## Lanes (after approval)
 
@@ -190,3 +185,5 @@ Epic STA-1640; lanes L1 to L9 are STA-1641 to STA-1649.
 
 - 2026-10-30 Draft, waiting for the owner on Q1 to Q7.
 - 2026-10-30 Q1 answered: no Kafka now; L4 cancelled.
+- 2026-10-30 Clarified: owner approved Q2 to Q7 as recommended (via the leader), with caps dev $150 and staging $500,
+  production warn-only. ADR 0493 Accepted.
