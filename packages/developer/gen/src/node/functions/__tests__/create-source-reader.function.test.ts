@@ -655,6 +655,47 @@ describe("createSourceReader on an enum of a consumed service", async () => {
   });
 });
 
+/** An enum of a workspace package whose `.` entry is its own gen's barrel, not written yet (STA-1663). */
+const UNBUILT_PACKAGE_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@acme/packs/package.json": JSON.stringify({
+    name: "@acme/packs",
+    exports: { ".": "./.stackra/entry/index.ts" },
+  }),
+  "node_modules/@acme/packs/stackra.manifest.json": JSON.stringify({
+    member: "packs",
+    package: "@acme/packs",
+    version: "0.1.0",
+    schemas: { "setup.SetupSeedKind": { type: "string", enum: ["reason_code", "role_preset"] } },
+  }),
+  "src/core/schemas/setup-record.schema.ts": [
+    'import type { SetupSeedKind } from "@acme/packs";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class SetupRecord extends Schema {",
+    "  kind!: SetupSeedKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a package whose entry is not generated yet", async () => {
+  const root = writeFixtureMember("catalogue", UNBUILT_PACKAGE_ENUM_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the package's committed manifest", () => {
+    expect(shapes.find((shape) => shape.name === "SetupRecord")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "SetupSeedKind",
+      values: ["reason_code", "role_preset"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
 /** A driver over another package's abstract base, whose port that package imports by its own `#contracts` path. */
 const PACKAGE_BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/printer-fixture/package.json": JSON.stringify({

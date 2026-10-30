@@ -50,6 +50,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import type { StackraManifest } from "@stackra/contracts";
 import { refusalCode } from "@stackra/errors";
 import { pascalCase, snakeCase } from "@stackra/support";
 
@@ -81,6 +82,7 @@ import { NOT_CONSTANT } from "#node/constants/not-constant.constant";
 import { RELATION_TYPES } from "#node/constants/relation-types.constant";
 import { SHAPE_DECORATORS } from "#node/constants/shape-decorators.constant";
 import { SHAPE_KINDS } from "#node/constants/shape-kinds.constant";
+import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 import type { MemberFacts } from "#node/types/member-facts.type";
 import type { SourceReader } from "#node/types/source-reader.type";
@@ -1214,6 +1216,18 @@ export function createSourceReader(
     );
   };
 
+  /** The enum `name` among a manifest's schemas (`<module>.<Name>`, or module-prefixed as a client prints a clash). */
+  const enumIn = (manifest: StackraManifest | undefined, name: string): TypeDesc | undefined => {
+    const schemas = (manifest?.schemas ?? {}) as Readonly<Record<string, unknown>>;
+    for (const [key, schema] of Object.entries(schemas)) {
+      const [module = "", last = key] = key.split(".");
+      const values = (schema as { readonly enum?: unknown } | null)?.enum;
+      if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
+        return { kind: "enum", name, values: values.map(String) };
+    }
+    return undefined;
+  };
+
   // An enum of a consumed service, by its `#stackra/clients/<service>` import: its codes from the service's committed
   // manifest, the client's own source, whether or not this member's gen has written that client yet (ADR 0260
   // decision 3; STA-1663). Reading the client would be circular: only this member's clean gen writes it.
@@ -1229,16 +1243,24 @@ export function createSourceReader(
     const service = specifier.slice(CLIENTS_SPECIFIER.length);
     if (!serviceManifests.has(service))
       serviceManifests.set(service, readServiceManifests(facts.root, [service])[0]);
-    const found = serviceManifests.get(service);
-    const schemas = (found?.manifest.schemas ?? {}) as Readonly<Record<string, unknown>>;
-    for (const [key, schema] of Object.entries(schemas)) {
-      const [module = "", last = key] = key.split(".");
-      const values = (schema as { readonly enum?: unknown } | null)?.enum;
-      // The client names a clashing enum with its module first (`PosWeighedKind`).
-      if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
-        return { kind: "enum", name, values: values.map(String) };
-    }
-    return undefined;
+    return enumIn(serviceManifests.get(service)?.manifest, name);
+  };
+
+  // An enum a declared package exports from an entry that does not resolve yet (a workspace package whose `.` is its
+  // gen-written `.stackra/entry/index.ts`, before its own gen ran): its codes from the package's committed
+  // manifest, as for a client (STA-1663). A resolvable import is read from its source as before.
+  const dependencyManifests = new Map<string, StackraManifest | undefined>();
+  const packageEnum = (node: TsNode): TypeDesc | undefined => {
+    if (node.typeName === undefined) return undefined;
+    const name = nameOf(node.typeName);
+    const specifier = importsOf(host.fileName(node)).get(name);
+    if (specifier === undefined || specifier.startsWith("#") || specifier.startsWith("."))
+      return undefined;
+    const parts = specifier.split("/");
+    const pkg = specifier.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? specifier);
+    if (!dependencyManifests.has(pkg))
+      dependencyManifests.set(pkg, readDependencyManifests(facts.root, [pkg])[0]?.manifest);
+    return enumIn(dependencyManifests.get(pkg), name);
   };
 
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
@@ -1247,7 +1269,7 @@ export function createSourceReader(
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
     // An unresolved import de-aliases to the checker's `unknown` symbol, which has no declaration.
     if (symbol === undefined || host.declarations(symbol).length === 0)
-      return unknownType(node, subject, quiet);
+      return packageEnum(node) ?? unknownType(node, subject, quiet);
     const name = host.symbolName(symbol);
     const args = node.typeArguments ?? [];
     const declaration = host.declarations(symbol)[0];
