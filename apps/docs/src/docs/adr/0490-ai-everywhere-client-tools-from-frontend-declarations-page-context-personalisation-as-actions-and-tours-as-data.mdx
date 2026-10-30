@@ -1,0 +1,170 @@
+---
+title: "0490 — AI everywhere: client tools from frontend declarations, page context, personalisation as actions and tours as data"
+description: "Proposed · 2026-10-30"
+---
+
+{/* Stackra file contract: Purpose: the decision record that one tool system drives every surface: server tools stay generated from actions and queries, client tools are generated from an app's routes, resources, panel actions, theming and tours, a declared page context travels with each turn, personalisation is ordinary actions, tours are documents of client-tool steps, and @stackra/ai gains react and native entries with the sidekick and generative cards. Boundary: decision text only; the lanes are .agents/specs/sta-1629-ai-everywhere. Runtime: docs. Governing contract: ADR template; ADR 0155, 0245, 0271, 0307, 0348, 0360, 0376, 0398, 0491, 0492. */}
+
+<Note>
+  Proposed (STA-1629). Amends
+  [0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents)
+  decision 3 and [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1. The
+  shopper side is
+  [0491](/adr/0491-shopping-assistant-shared-cards-on-every-surface-and-the-payer-approves-their-own-payment);
+  the runtime, retrieval and ML workers are
+  [0492](/adr/0492-one-ai-runtime-and-mcp-gateway-behind-the-edge-hybrid-retrieval-with-a-reranker-and-python-only-as-tools-stack-workers).
+</Note>
+
+## Context
+
+Server tools exist: gen projects every L0 and L1 query and every `tool: true` action into the tool table, with the
+risk of its permission and the approval modes of 0360; `AgentRuntime` in `@stackra/ai` runs the loop, parks a run on
+an approval and resumes it; `Facts` give record context on the server; `@stackra/mcp` builds the tool and `ui://`
+resource tables from the manifests. What is missing is everything on the client. The agent cannot open a screen,
+filter a list, prefill an action's form, switch the theme or walk a user through a feature, because 0245 decision 3
+allows only tools that project an action or a query. It does not know which screen the user is on. Saved views exist
+as a model (`panel.stored_view`, 0271) but not as actions, so the agent cannot save one. There is no React or React
+Native entry, no sidekick and no tour. Hand-written client tools would drift from the screens they drive, so the gap
+must be closed the way server tools were: by generation from what the app already declares.
+
+## Decision
+
+### Client tools
+
+1. **A client tool is the projection of a frontend declaration, generated, never hand-written.** 0245 decision 3
+   reads: "A tool is the projection of a capability or of a frontend declaration, generated, never hand-written."
+   `ToolSource` gains `Client`. gen writes one client tool table per app member into `#stackra/client-tools` from:
+
+   | Declaration                               | Client tools                                                                                                  |
+   | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+   | a route (`routes/<name>/`)                | `navigate.<route>`: the route's typed params and search params are the input                                  |
+   | a panel resource                          | `<resource>.list.open`, `.filter`, `.sort`, `.select`, `.view.apply`; `<resource>.record.open`                |
+   | a panel record or bulk action placement   | `<resource>.<action>.prefill`: opens the action input modal with the agent's draft; the human submits         |
+   | theming and mode (`@stackra/theming`)     | `ui.theme.preview`, `ui.mode.preview`, `ui.density.preview`: this screen only; persisting is an action (d. 9) |
+   | a tour document (decision 11)             | `tour.start`, `tour.next`, `tour.stop`                                                                        |
+   | an anchor (`anchor="..."` on a component) | `ui.point` at a declared anchor key, used by tours and answers                                                |
+
+   Names follow the action key grammar (`orders.list.filter`), keyed by the app member. A declaration opts out with
+   `ai: false`. The table carries each tool's input schema, compiled from the declaration's types as action inputs are.
+
+2. **A client tool changes only the viewer's screen.** Its risk is L0 and it needs no approval, under every mode. It
+   never calls a server action: a write reaches the server only as a server tool under its own approval, or as a
+   `.prefill` that the human submits. A `.prefill` is how "propose" (0398) looks on a screen.
+
+3. **The tools offered are the session's.** The sidekick opens a session with its surface descriptor: the app member,
+   its client tool table hash, the route and the user's locale. The runtime offers the model the server tools the
+   caller may call (as today) plus the client tools of that surface, filtered by the route permissions and the panel
+   resource permissions the caller holds. A surface with no screen (an MCP host, WhatsApp, a background run) is
+   offered no client tools.
+
+4. **Hand-off and result.** A client tool call parks the run as an approval does: the runtime records the call,
+   emits a `client_tool` part on the run's stream to the one surface that opened the turn (by its surface id), and
+   waits. The surface runs the generated handler and posts the result to the `ai.run.client_result` action
+   (`PUT /runs/:runId/client-result`, input `{ toolCallId, result | refusal }`, idempotent by `toolCallId`); the
+   runtime validates the result against the tool's output schema and resumes the loop. No result within 30 seconds
+   (or the surface closed) resumes the loop with the refusal `client_unavailable`, which the model sees as a tool
+   error. A result is never trusted as data about records: it reports only what the screen did.
+
+### Page context
+
+5. **A route declares its page context.** A route or panel page declares which context it publishes: `record` (a
+   model and the param that holds its public id), `selection`, `filters`, `view`, `modal`. Panel pages publish theirs
+   without a declaration. The SDK keeps the current `PageContext` and sends it with each turn:
+   `{ app, route, params, record?: PublicId, selection?: { ids ≤ 200, count, filter? }, filters?, view?, modal?: { action, fields } }`.
+   It holds ids and declared keys only, never record field values, and never a field the user cannot see.
+
+6. **The server turns context into facts under the caller's permissions.** The runtime drops any id the caller cannot
+   read, loads each remaining record through its `Facts` provider, applies the field allow-list of the data class
+   (0360 decision 15), and adds the result to the turn under the token budget. Client-sent context is a pointer, not
+   evidence.
+
+### Personalisation as actions
+
+7. **Personalisation is ordinary actions with `tool: true`,** so the agent gets them as server tools under the same
+   approvals, and every change is audited and undoable as any action is. Each lives in the package that owns its model:
+
+   | What                                                          | Owner (node module)   | Actions and queries                                                           | Risk                       |
+   | ------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+   | saved views (personal)                                        | `@stackra/panel`      | `panel.view.create`, `.update`, `.delete`, `.set_default`; `panel.view.list`  | L0 (own rows)              |
+   | saved views (role or scope)                                   | `@stackra/panel`      | `panel.view.share`, `panel.view.unshare`                                      | L1 (`panel.view.share`)    |
+   | personal dashboard arrangement (the overlay of 0307 d20)      | `@stackra/panel`      | `panel.dashboard.arrange`, `panel.widget.add`, `.remove`, `.resize`, `.reset` | L0                         |
+   | tenant base dashboards                                        | `@stackra/experience` | `experience.document.*` for the `Dashboard` kind (existing documents path)    | L2, live via promotion     |
+   | user settings (theme, mode, density, locale, home, shortcuts) | `@stackra/settings`   | `settings.user_setting.set`, `.reset`; `settings.user_setting.list`           | L0                         |
+   | scope and tenant settings                                     | `@stackra/settings`   | existing setting actions                                                      | per setting; floor applies |
+
+   Each package's node module is mounted by the OS service that already mounts it; these tables live in that
+   service's database, under `BelongsToTenant`.
+
+8. **The floor still applies.** A personal change stays below every floor item. A change that alters what other people
+   see (a shared view, a tenant dashboard, a scope setting) keeps its own risk, and a live tenant's configuration
+   reaches live only through promotion (0360 decision 8, item 4).
+
+9. **Preview, then persist.** The agent may preview a theme or a layout with a client tool; it keeps the change only
+   by calling the action. The sidekick shows the action as any other tool call.
+
+### Tours
+
+10. **A tour is a document of kind `Tour`** in `@stackra/experience`: an ordered list of steps, each one client-tool
+    call (`navigate.*`, `ui.point`, `*.prefill`, `*.filter`) with a text (an i18n key, or generated text for a
+    generated tour), an anchor and an advance rule (`click`, `route`, `tool_result`, `manual`). A tour references only
+    declared client tools and anchors, so it is data that references registered code (allowed by 0227); the server
+    validates every step against the app's client tool table, and a step whose tool vanished fails validation at gen.
+
+11. **The agent can start, generate and personalise a tour.** `tour.start` runs a stored tour. The agent may compose a
+    tour for the question in front of it: the composed document is validated as a stored one, runs once, and is kept
+    only through `experience.tour.save` (L1). Progress is per user (`experience.tour_progress`, L0): completed and
+    skipped steps, so a tour resumes and the agent skips what the user already did. Onboarding is a stored tour bound
+    to a role and a first-sign-in trigger in settings; a tenant may reorder or hide steps of a shipped tour through an
+    overlay, never add a step that calls an undeclared tool.
+
+### The SDK and the sidekick
+
+12. **`@stackra/ai` gains `./react` and `./native` entries** (0294 decision 15): `AiProvider`, `useAgent` (turns,
+    streaming, stop, retry), `usePageContext`, `useClientTools` (registers the generated handlers), `useVoiceInput`.
+    The stream is the AI SDK UI message stream over Streamable HTTP from the ai service; the client library is
+    `@ai-sdk/react`, the same vendor as the server's AI SDK core (catalog entry needs the owner).
+
+13. **The sidekick is one component contract with a web and a native implementation** on `@stackra/ui` (the shared
+    contract; no shared implementation, 0165): composer, voice button, streamed answer, tool-call rows, the approval
+    card, the plan view, the mode switch of 0360 and the AI marker. It runs in the console, the mobile staff app and
+    the till. Because all AI code is free (0155 decision 3), `AssistantPanel`, `ApprovalCard` and `PlanView` move
+    from `@stackra-pro/ui-pro` into `@stackra/ui`.
+
+14. **Generative UI cards are declared once and rendered on three kinds of surface.** A `Card` is keyed by a tool
+    output `Schema` and has a web component, a native component and a message projection (text, an image and at most
+    three buttons, each a tool call or a link). The sidekick renders the web or native component for a tool result
+    of that schema; gen builds the web component into the `ui://<module>/<name>` single-file bundle of 0348 decision 2
+    for MCP hosts; WhatsApp and SMS take the message projection. A tool result with no card renders as a summary.
+
+15. **Voice is the speech port of 0376.** `useVoiceInput` captures audio (MediaRecorder on web; the
+    `native-audio` Expo module package on mobile and the till, per 0478) and streams it to the ai service, which runs
+    `SpeechService.listen` for the tenant's region and metered on `speech.seconds`. No speech provider is named in
+    client code.
+
+## Consequences
+
+- An app gets AI over its own screens by declaring routes, resources and anchors it already has; nobody writes a
+  tool. A renamed route or action changes the tool table and fails the tours that use it at gen, not in front of a
+  user.
+- The runtime gains a third park reason (client tool) beside approval and plan; the run store records it.
+- Panel, settings and experience each gain actions and a small amount of model work; the OS services that mount them
+  carry the migrations.
+- `ui-pro` loses three components to the free `ui` package; their tests move with them.
+- The sidekick depends on the ai service (0492) for every turn; with no ai service deployed there is no sidekick.
+
+## Enforcement
+
+- planned — STA-1631: gen fails on a client tool name collision, a `.prefill` of an action without `tool: true` or a
+  placement, an anchor key used by a tour and not declared, and a route `context.record` param that is not a public id.
+- planned — STA-1631: the runtime test that a client tool call from one surface is never delivered to another, and
+  that a `client_result` for an unknown or already-answered `toolCallId` is refused.
+- planned — STA-1631: an `ai: false` declaration is absent from the generated table (gen snapshot test).
+- planned — STA-1633: the tour validator refuses a step whose tool is not in the app's client tool table.
+- `ToolSource` stays a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`, its test).
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0245 decision 3 and 0155 decision 1 (client tools, L0, no approval). Sources: the
+leader's brief of 2026-10-30 (STA-1629); `packages/application/ai`, `packages/developer/mcp`,
+`packages/experience/panel` (`StoredView`), `packages/communication/integrations` (`SpeechService`) on core main
+6f3536ed.

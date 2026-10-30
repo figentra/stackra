@@ -1,0 +1,103 @@
+---
+title: "0491 — Shopping assistant: shared cards on every surface, and the payer approves their own payment"
+description: "Proposed · 2026-10-30"
+---
+
+{/* Stackra file contract: Purpose: the decision record that the shopping assistant is an ordinary agent over Commerce queries and shopper actions, that product, cart, order and tracking cards are Card declarations shared by the storefront, WhatsApp and MCP hosts, that B2B and marketplace flows reuse escalation and per-seller orders, and that the shopper counts as the named human of ADR 0360 decision 8 for their own payment, approved by a payer step-up the agent cannot drive. Boundary: decision text only; the Stackra half is in .agents/specs/sta-1629-ai-everywhere lanes 5 and 6, the Commerce half is Commerce's. Runtime: docs. Governing contract: ADR template; ADR 0360, 0348, 0390, 0398, 0490, 0492. */}
+
+<Note>
+  Proposed (STA-1629). Clarifies
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
+  decision 8 item 1 and amends
+  [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes)
+  decision 7 (MCP host rendering and WhatsApp chat move to day one). Builds on
+  [0490](/adr/0490-ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data)
+  (cards) and
+  [0492](/adr/0492-one-ai-runtime-and-mcp-gateway-behind-the-edge-hybrid-retrieval-with-a-reranker-and-python-only-as-tools-stack-workers)
+  (runtime, search).
+</Note>
+
+## Context
+
+Commerce has the shopper's model (carts, checkout, orders, returns, tenders) and its actions (`SetCartLineAction`,
+`CheckoutCartAction`, ...). Shoppers will meet the product in the storefront, in WhatsApp and inside assistant hosts
+(ChatGPT, Claude) through the MCP gateway. Each surface would otherwise grow its own cards and its own checkout. 0360
+decision 8 says no mode, setting or session skips a named human for money movement; it was written for staff (refunds,
+payouts, price changes) and does not say who the named human is when a shopper pays for their own order. Read
+literally it would make an agent-assisted checkout impossible, or push a staff member into every sale.
+
+## Decision
+
+1. **The shopping assistant is an ordinary agent.** `ShopperAgent` (an `Agent` of `@stackra/ai`) lives in Commerce's
+   storefront module. Its tools are Commerce queries and shopper actions, generated as every tool is: catalogue
+   search, filter, sort and facets (`@stackra/search` under record visibility, 0492), product, availability and price
+   for the shopper's market, cart actions, the shopper's orders, tracking, returns. Its actor is the shopper: a
+   signed-in customer, or a guest session that may browse and fill a cart but must sign in or verify a contact (OTP)
+   before checkout. No staff permission is ever reachable from a shopper session.
+
+2. **Cards are shared.** Commerce declares `ProductCard`, `ProductListCard`, `CartCard`, `OrderCard`,
+   `OrderTrackingCard` and `CheckoutCard` as `Card`s (0490 decision 14). The storefront renders the web and native
+   components; MCP hosts receive the `ui://commerce/<card>` bundle; WhatsApp receives the message projection (an
+   interactive message with an image and up to three reply buttons, or a product list message). One card, one
+   output schema, three renderers.
+
+3. **Tracking comes from events.** Commerce keeps an `order_timeline` projection fed by its order, payment and
+   fulfilment integration events; `orders.order.track` reads it. Proactive updates (shipped, out for delivery,
+   delivered, delayed) go through the notifications service on the channel the shopper consented to, WhatsApp
+   included, under the consent rules of 0472.
+
+4. **B2B.** A company buyer acts under the company's account and price lists; a quote, a PO number and payment terms
+   are inputs of the same checkout. An order above the buyer's limit goes to the company's approver by Escalate
+   (0360 decision 9): the approver takes the order over, the buyer's agent never borrows the approver's authority.
+   Payment on terms moves no money at checkout; the invoice settles it later under the staff rules.
+
+5. **Marketplace.** A multi-seller cart splits at checkout into one order per seller with one payment that the
+   connection mode of 0390 divides. Each seller's staff work their orders through the staff sidekick under the staff
+   floor. A shopper's question about a seller's order is answered from that order's timeline; a seller never sees
+   another seller's lines.
+
+6. **The payer is the named human for their own payment (clarifies 0360 decision 8 item 1).** For an action tagged
+   `financial` whose only money movement is the actor paying for their own order from their own payment method, the
+   named human of decision 8 is that actor, and their approval is a payer step-up that the agent cannot perform:
+   - a wallet sheet (Apple Pay, Google Pay) confirmed on the device with its own biometric or passcode;
+   - a card authentication (3-D Secure) challenge the issuer presents;
+   - a one-time code sent to the shopper's verified phone or email and typed by the shopper, where the method has
+     neither of the above (cash on delivery, payment on terms, a stored method).
+     The agent may build the cart and call `commerce.checkout.prepare`, which returns a payment intent that needs the
+     payer's confirmation and binds the cart version, the total, the currency and the payee. Confirmation happens only
+     in a payer surface: the wallet sheet or 3-D Secure frame in the storefront and the apps, or, on WhatsApp and in an
+     MCP host, a `CheckoutCard` whose button opens a short-lived hosted payment page on the storefront bound to that
+     intent. Any change to the cart voids the intent. The agent never holds a card number, never confirms a payment
+     intent, and never sees a one-time code.
+
+7. **Staff money stays on the existing floor.** Refunds, voids, store credit, discounts, price and coupon activation,
+   payouts and every other `financial` action by a staff actor keep a named staff human on every call, whatever
+   the mode. Applying a coupon code the shopper typed to their own cart is not activation and is not `financial`; an
+   agent offering a discount that no rule grants is refused.
+
+8. **Day one, not later (amends 0348 decision 7).** MCP host rendering of cards and WhatsApp chat (the WhatsApp
+   Business Platform's messages and interactive messages through the OS integrations service) are day-one surfaces.
+   WhatsApp Flows stay tier later. Meta business verification and each host's directory review stay owner steps.
+
+## Consequences
+
+- Commerce owns the shopper agent, its skills and its cards; Stackra owns the `Card` kind, the renderers, the
+  `ui://` build and the WhatsApp projection.
+- `commerce.checkout.prepare` and a payer-confirmation webhook path are Commerce work; `CheckoutCartAction` becomes
+  the server half that runs only after confirmation.
+- The approval gate of `@stackra/ai` gains a `payer` approval kind: satisfied by the payment provider's confirmed
+  event for the bound intent, or by a verified one-time code, never by a tool call.
+- An abandoned agent-built cart is an ordinary abandoned cart.
+
+## Enforcement
+
+- planned — STA-1635: the approval gate test that a `financial` action whose actor is staff never resolves through a
+  `payer` approval, and that a `payer` approval for one intent never confirms another.
+- planned — STA-1635: the runtime test that no tool output, log or stored message carries a card number or a one-time
+  code (the guardrail redaction rules of `@stackra/ai`).
+- planned — Commerce: the checkout test that a cart change after `prepare` voids the intent.
+
+## Supersedes and sources
+
+`Supersedes: none`. Clarifies 0360 decision 8 item 1; amends 0348 decision 7. Sources: the leader's brief of
+2026-10-30 (STA-1629); Commerce resources and actions as listed in the Commerce 0.1.0 shape (commerce wave-a).

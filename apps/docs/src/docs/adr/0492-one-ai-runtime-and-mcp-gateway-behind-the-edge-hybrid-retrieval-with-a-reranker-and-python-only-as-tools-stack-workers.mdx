@@ -1,0 +1,121 @@
+---
+title: "0492 — One AI runtime and MCP gateway behind the edge, hybrid retrieval with a reranker, and Python only as tools-stack workers"
+description: "Proposed · 2026-10-30"
+---
+
+{/* Stackra file contract: Purpose: the decision record that the AI runtime and the one MCP gateway are modules of OS's ai service, in-region, with Cloudflare only as layer 1 in front; that @stackra/search keeps its Postgres hybrid lanes and gains a reranker port, Arabic stemming, Arabizi and synonyms, with pgvector until a measured trigger; that Python runs only as pinned tools-stack images behind ports (OCR, reranking and embeddings, forecasting, recommendations, in-region speech); and which tools those are. Boundary: decision text only; lanes 7 to 9 of .agents/specs/sta-1629-ai-everywhere. Runtime: docs. Governing contract: ADR template; ADR 0155, 0221, 0237, 0284, 0348, 0360, 0376, 0404, 0444, 0490, 0491. */}
+
+<Note>
+  Proposed (STA-1629). Restates [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free)
+  decision 4 with its deployment, extends
+  [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) and
+  [0404](/adr/0404-search-facets-under-record-visibility-one-arabic-normaliser-and-the-embedder-token-from-the-secret-store),
+  and adds images to the tools stack of
+  [0444](/adr/0444-one-self-hosted-tools-stack-per-region-from-the-root-runway).
+</Note>
+
+## Context
+
+0155 decision 4 puts the one MCP gateway in the `ai` service; OS is porting that service now (STA-705, a skeleton on
+os `figentra/sta-705-ai`). The edge is a Cloudflare Worker per product (os `workers/edge`) and the static-assets Worker
+(0284), so a Worker gateway was a fair question. `@stackra/search` already fuses full-text, trigram and pgvector lanes
+by reciprocal rank (0221 decision 1) and folds Arabic (0404 decision 2), with an OpenAI-compatible embedder at 1024
+dimensions; there is no reranker, no Arabic stemming and no Arabizi. OCR runs as a pinned Python image in the regional
+tools stack on ECS Fargate (0444), reached as a Connection behind `TextExtractor`. Speech already sits behind
+`SpeechService` with region-mapped providers (0376). Forecasting and recommendations have nothing yet.
+
+## Decision
+
+### Runtime and gateway
+
+1. **The AI runtime and the MCP gateway are modules of OS's `ai` service,** deployed once per region (GCC first,
+   EU when it opens) with the rest of OS on the generated Encore app on AWS. The service holds the agent runtime,
+   the run and conversation stores, the client-tool relay of 0490 decision 4, the speech stream, and the MCP server
+   (Streamable HTTP, one logical server per tenant, OAuth through ZITADEL, protected-resource metadata). Model calls
+   are routed by region (0360 decision 14). Every product uses this one deployment; no product runs its own.
+
+2. **The gateway is not a Cloudflare Worker.** Cloudflare is layer 1 of 0237 in front of it: `mcp.figentra.com` and
+   the sidekick's `/app/ai/*` routes get TLS, WAF, bot control and a per-IP and per-token rate limit, and are routed
+   to the ai service of the tenant's region. The `ui://` bundles are static assets served by the static Worker
+   (0284) and referenced by the gateway. A Worker gateway is refused because every call needs the registry, IAM,
+   entitlements, the approval gate, the audit and the run store, which live in-region in the service; a Worker would
+   either duplicate them or be one more hop. Long-lived streams stay on the service.
+
+3. **One tool table across products.** gen writes each service's tool rows into its `stackra.manifest.json`; the ai
+   service's build reads the manifests of every service in the region's deployment (`@stackra/mcp`
+   `readManifests`, `toolTable`) and dispatches each call through the generated client of the owning service
+   (0260). A tenant sees only the tools of the products and modules it is entitled to. A product whose services are
+   deployed outside OS's Encore app registers its manifest and its client endpoint with the ai service (an OS
+   dependency, STA-1638).
+
+### Retrieval
+
+4. **Postgres hybrid stays, and a reranker follows it.** `@stackra/search` gains a `Reranker` port: it takes the query
+   and the top N fused candidates (default 50, with their searchable text) and returns them reordered with scores.
+   `SearchService` reranks when the request asks for it or the searchable model sets `rerank: true` (products do).
+   Drivers: `HttpRerankerDriver` for any endpoint speaking the text-embeddings-inference `/rerank` contract (the
+   self-hosted image of decision 8, or a provider's in-region endpoint), and a memory driver. No reranker bound
+   means fused order, as today.
+
+5. **Arabic quality.** On top of the fold of 0404: the Arabic Snowball stemmer as an extra full-text configuration
+   lane for Arabic locales; Arabizi (Latin letters and digits written for Arabic, `7` for ح, `3` for ع) mapped to
+   Arabic in the query only; a per-tenant synonym list (`search.synonym`, data, edited through actions) expanded in
+   the query; and the multilingual embedder (`BAAI/bge-m3`, 1024 dimensions, unchanged index). A fixed evaluation set
+   of Arabic, English and mixed shopper queries per catalogue scores NDCG@10 and recall@50; a change that lowers
+   either fails its test.
+
+6. **pgvector until a measured trigger.** Qdrant, or any separate vector store, is not added (0227). The trigger is
+   one tenant index above 5 million vectors, or a p95 vector-lane latency above 150 ms at 200 candidates after HNSW
+   tuning and partitioning by tenant. The OpenSearch trigger of 0221 decision 9 is unchanged.
+
+### Python and the ML workers
+
+7. **Python runs only as tools-stack images behind ports.** Each is a pinned image built from
+   `packages/infrastructure/infra-tools/images/<name>`, published to the registry, run by the regional tools stack on
+   ECS Fargate (0444) or, where it needs a GPU, on an ECS capacity provider of GPU instances in the same cluster, and
+   reached as a Connection by a TypeScript driver behind a port. No Python service, no Python in a member, no Python
+   business logic: an image takes data in and returns numbers or text.
+
+8. **The images.**
+
+   | Image                | Tool (licence)                                                                         | Port (package)                             | Hardware               | Day one                   |
+   | -------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------- | ------------------------- |
+   | `tools-ocr` (exists) | PaddleOCR, or Surya (0444)                                                             | `TextExtractor` (`@stackra/media`)         | CPU                    | yes                       |
+   | `tools-retrieval`    | Hugging Face text-embeddings-inference (Apache-2.0), `bge-m3` and `bge-reranker-v2-m3` | `Embedder`, `Reranker` (`@stackra/search`) | one GPU (CPU fallback) | yes                       |
+   | `tools-forecast`     | Nixtla StatsForecast (Apache-2.0): AutoETS, AutoARIMA, Croston for intermittent demand | `Forecaster` (`@stackra/reports`)          | CPU                    | yes                       |
+   | `tools-recommend`    | `implicit` ALS (MIT) over interactions                                                 | `Recommender` (`@stackra/search`)          | CPU                    | built; enabled per tenant |
+   | `tools-speech`       | faster-whisper (MIT), `large-v3`                                                       | the speech Connection of 0376              | one GPU                | in-region option          |
+
+   `tools-retrieval` is the one image that is not ours: it runs unmodified, with the models pinned by revision.
+   Forecasts run as scheduled jobs in the owning service (demand per item and location, nightly), which call the
+   image in batches and store the results as records. Recommendations answer from Postgres on day one
+   (co-occurrence from orders as an indexer read model, plus nearest products by vector); `tools-recommend` replaces
+   that per tenant once its interactions pass a threshold in settings, behind the same port.
+
+9. **Speech stays behind 0376.** The region map names the speech provider; `tools-speech` is one more provider a
+   region may name when audio must not leave it. Voice input on mobile and the till is 0490 decision 15.
+
+## Consequences
+
+- OS's ai service is on the critical path of every AI surface; its port (STA-705) gates the sidekick, the shopping
+  assistant and MCP hosts going live.
+- The tools stack gains a GPU capacity provider in each region that runs `tools-retrieval` (and `tools-speech` where
+  named); this is a cost line the owner approves per region.
+- Search quality becomes measured: each catalogue carries an evaluation set, and reindexing to the stemmer lane
+  follows the versioned swap of 0221 decision 7.
+- No new language enters any workspace member; the images are build recipes, like `tools-ocr`.
+
+## Enforcement
+
+- planned — STA-1636: the search evaluation test (NDCG@10, recall@50) over the shipped fixture catalogue, Arabic and
+  English, as a `test:int` of `@stackra/search`.
+- planned — STA-1636: the `Reranker` driver contract test shared by the HTTP and memory drivers.
+- planned — STA-1637: `validate-repository.mjs` refuses a `.py` file outside `packages/infrastructure/infra-tools/images/`.
+- `TOOLS_CATALOGUE` pins every image to a tag (`packages/infrastructure/infra-tools/src/core/constants/tools-catalogue.constant.ts`
+  and its test).
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: the leader's brief and the owner's message of 2026-10-30 (STA-1629); os
+`figentra/sta-705-ai` (4f57f0df); `packages/data/search` and `packages/infrastructure/infra-tools` on core main
+6f3536ed.
