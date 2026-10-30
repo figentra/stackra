@@ -1,0 +1,38 @@
+# Stackra file contract:
+# Purpose: EC2 Image Builder component `testbed-images`: builds the job image from images/job/Dockerfile (no build
+#          context) with the plan's pins, and pulls the pinned Postgres image, both into Docker's data root on /data so
+#          the AMI's data volume carries them and a box needs no pull at boot.
+# Boundary: build-time only; Double-at placeholders (bucket, pins) are filled by `awsTestbed`. No secret is read or written.
+# Owner: release-operations · Secrets: forbidden
+# Governing contract: ADR 0484 (decision 2).
+name: testbed-images
+description: Preload the testbed job image and the Postgres image
+schemaVersion: 1.0
+phases:
+  - name: build
+    steps:
+      - name: JobImage
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -eu
+              cd /opt/testbed-build
+              docker build -t stackra-testbed-job:current \
+                --build-arg MISE_VERSION=@@MISE@@ --build-arg NODE_VERSION=@@NODE@@ --build-arg PNPM_VERSION=@@PNPM@@ \
+                --build-arg INFISICAL_VERSION=@@INFISICAL@@ --build-arg PLAYWRIGHT_VERSION=@@PLAYWRIGHT@@ - < Dockerfile
+      - name: PostgresImage
+        action: ExecuteBash
+        inputs:
+          commands:
+            - docker pull @@POSTGRES@@
+  - name: validate
+    steps:
+      - name: Check
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -eu
+              docker run --rm stackra-testbed-job:current sh -c 'node --version && pnpm --version && infisical --version && encore version' | grep -q 'v@@NODE@@'
+              docker image inspect @@POSTGRES@@ >/dev/null
