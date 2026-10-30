@@ -128,7 +128,8 @@ token of its OIDC exchange (ADR 0453 decision 6); the registry Worker runs the l
 ## The quality gate
 
 `stackra check` runs the same way in core, in every product, in lefthook and in CI. Phases, in order: `config`,
-`format` (oxfmt), `spelling` (cspell), `secrets` (gitleaks), `structure`, `docs`, `lint` (oxlint), `gen`
+`format` (oxfmt), `spelling` (cspell), `secrets` (gitleaks), `structure`, `docs`, `lint` (oxlint), `hooks` (oxlint `react/rules-of-hooks` over the compiled output of the `.tsx` files in the
+component homes, where `lint` has the rule off because it flags a class component's hook fields; ADR 0305), `gen`
 (`stackra gen --check`), `typecheck` (`turbo run typecheck`; `tsc --noEmit -p <member>` per member when turbo is
 absent or refuses a dependency cycle), `catalogues`, `spec` (the repository's spec gates) and,
 opt-in, `test` (`turbo run test`). The `config`, `structure`, `docs` and `catalogues` checks come from
