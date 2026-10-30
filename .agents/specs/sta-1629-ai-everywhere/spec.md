@@ -68,7 +68,7 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 | ------ | --------------------------------------------------------------------------------------------------------------------- | -------- |
 | FR-201 | `ToolSource.Client`; ADR 0245 d3 amended text in the enum docblock                                                    | 0490 d1  |
 | FR-202 | gen writes `#stackra/client-tools` per app from routes, panel resources, action placements, theming, tours, anchors   | 0490 d1  |
-| FR-203 | gen checks: name collision, `.prefill` without `tool: true`, undeclared anchor, non-public-id record param            | 0490 enf |
+| FR-203 | gen checks: name collision, `.prefill` of a `tool: false` action, undeclared anchor, non-public-id record param       | 0490 enf |
 | FR-204 | Session descriptor and per-surface filtering; no client tools for MCP, WhatsApp or background runs                    | 0490 d3  |
 | FR-205 | `AgentRuntime` parks on a client tool call; `ai.run.client_result` action; 30 s timeout → `client_unavailable`        | 0490 d4  |
 | FR-206 | Generated handlers for each client tool kind (router, panel list state, action modal prefill, theming preview, point) | 0490 d1  |
@@ -79,7 +79,7 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 
 | Id     | Requirement                                                                                                           | Source  |
 | ------ | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| FR-301 | `panel.view.create`, `.update`, `.delete`, `.set_default`, `.share`, `.unshare`; `panel.view.list` (`tool: true`)     | 0490 d7 |
+| FR-301 | `panel.view.create`, `.update`, `.delete`, `.set_default`, `.share`, `.unshare`; `panel.view.list` (tools by default) | 0490 d7 |
 | FR-302 | `panel.dashboard.arrange`, `panel.widget.add`, `.remove`, `.resize`, `.reset` over the personal overlay (0307 d20)    | 0490 d7 |
 | FR-303 | `settings.user_setting.set`, `.reset`, `settings.user_setting.list` for theme, mode, density, locale, home, shortcuts | 0490 d7 |
 | FR-304 | Risks per the ADR table; shared and tenant-wide changes keep the floor and promotion                                  | 0490 d8 |

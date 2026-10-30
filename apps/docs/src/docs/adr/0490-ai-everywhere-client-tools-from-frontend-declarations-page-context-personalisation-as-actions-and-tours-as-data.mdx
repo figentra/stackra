@@ -17,7 +17,7 @@ description: "Accepted · 2026-10-30"
 
 ## Context
 
-Server tools exist: gen projects every L0 and L1 query and every `tool: true` action into the tool table, with the
+Server tools exist: gen projects every L0 and L1 query and every action a user can perform (unless it says `tool: false` with a reason, 0360 decision 4) into the tool table, with the
 risk of its permission and the approval modes of 0360; `AgentRuntime` in `@stackra/ai` runs the loop, parks a run on
 an approval and resumes it; `Facts` give record context on the server; `@stackra/mcp` builds the tool and `ui://`
 resource tables from the manifests. What is missing is everything on the client. The agent cannot open a screen,
@@ -80,7 +80,7 @@ must be closed the way server tools were: by generation from what the app alread
 
 ### Personalisation as actions
 
-7. **Personalisation is ordinary actions with `tool: true`,** so the agent gets them as server tools under the same
+7. **Personalisation is ordinary actions, tools by default (0360 decision 4),** so the agent gets them as server tools under the same
    approvals, and every change is audited and undoable as any action is. Each lives in the package that owns its model:
 
    | What                                                          | Owner (node module)   | Actions and queries                                                           | Risk                       |
@@ -166,8 +166,8 @@ must be closed the way server tools were: by generation from what the app alread
 
 ## Enforcement
 
-- planned — STA-1631: gen fails on a client tool name collision, a `.prefill` of an action without `tool: true` or a
-  placement, an anchor key used by a tour and not declared, and a route `context.record` param that is not a public id.
+- planned — STA-1631: gen fails on a client tool name collision, a `.prefill` of an action that is not a tool
+  (`tool: false`) or has no placement, an anchor key used by a tour and not declared, and a route `context.record` param that is not a public id.
 - planned — STA-1631: the runtime test that a client tool call from one surface is never delivered to another, and
   that a `client_result` for an unknown or already-answered `toolCallId` is refused.
 - planned — STA-1631: an `ai: false` declaration is absent from the generated table (gen snapshot test).
@@ -176,7 +176,7 @@ must be closed the way server tools were: by generation from what the app alread
 
 ## Supersedes and sources
 
-`Supersedes: none`. Amends 0245 decision 3 and 0155 decision 1 (client tools, L0, no approval). Sources: the
+`Supersedes: none`. Amends 0245 decision 3 (client tools, L0, no approval); server tool exposure stays 0360 decision 4. Sources: the
 leader's brief of 2026-10-30 (STA-1629); `packages/application/ai`, `packages/developer/mcp`,
 `packages/experience/panel` (`StoredView`), `packages/communication/integrations` (`SpeechService`) on core main
 6f3536ed.

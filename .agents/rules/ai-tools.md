@@ -9,9 +9,9 @@ description: Every AI tool, server or client, is generated from its own module's
 Every module exposes its own AI tools, and gen only collects them (ADR 0490 decision 16, ADR 0155, ADR 0245 as
 amended). This applies in Stackra, OS, Commerce and every product.
 
-- **Server tools** come from the module's own actions and queries: an L0 or L1 query is a tool by default
-  (`tool: false` opts out); an action is a tool with `tool: true`. Risk comes from the permission; approvals and the
-  never-bypass floor come from ADR 0360. Never write an MCP tool, a tool list or a wrapper.
+- **Server tools** come from the module's own actions and queries. Every query, and every action whose `actors`
+  include a user, is a tool by default (ADR 0360 decision 4); `tool: false` opts out and needs a `// reason:` (above
+  or trailing), or gen fails. Risk comes from the permission; approvals and the never-bypass floor come from ADR 0360. Never write an MCP tool, a tool list or a wrapper.
 - **Client tools** come from the module's own routes, panel resources, action placements, anchors (`anchor="..."`),
   tours and cards (ADR 0490 decisions 1 to 4). `ai: false` opts a declaration out. A client tool only changes the
   viewer's screen; a write is a server action, or a `.prefill` the human submits.
@@ -28,7 +28,7 @@ amended). This applies in Stackra, OS, Commerce and every product.
 ## Enforcement
 
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
-- planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action without `tool: true`, and an
+- planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
   undeclared anchor.
 - planned — STA-1637: `validate-repository.mjs` refuses a `.py` file outside the tools-stack images.
 
