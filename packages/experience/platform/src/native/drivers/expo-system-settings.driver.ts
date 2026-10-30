@@ -7,7 +7,10 @@
  * Boundary: device only, and concrete: it imports expo-tracking-transparency, expo-battery and expo-background-task
  *           itself (optional peers the app adds to its own dependencies, so they link); the constructor takes nothing.
  *           `modules` is protected so a test subclass hands fakes in, and a `null` library reads as absent: tracking
- *           on iOS reads `denied`, since tracking needs the prompt's yes (ADR 0071 decision 4). NetInfo's `isConnectionExpensive` covers metered and cellular connections; it is
+ *           on iOS reads `denied`, since tracking needs the prompt's yes (ADR 0071 decision 4). Tracking is read only
+ *           when the host asks for it (`asksForTracking`, false by default): expo-tracking-transparency's status read
+ *           itself calls `RCTFatal` when Info.plist has no `NSUserTrackingUsageDescription`, so an app that never
+ *           prompts (no usage string) reads `denied` without touching the library. NetInfo's `isConnectionExpensive` covers metered and cellular connections; it is
  *           read live. Low Power Mode starts listening on first read.
  * Runtime: react-native
  * Governing contract: ADR 0250 (2026-10-29 note); ADR 0071 (decision 4: ATT); ADR 0298 (2026-10-29 note); ADR 0478.
@@ -32,6 +35,10 @@ import type { ExpoSystemModules } from "#native/types/expo-system-modules.type";
  *
  * @example
  * { provide: SystemSettings, useClass: ExpoSystemSettingsDriver }
+ * // An app that shows the App Tracking Transparency prompt (with the plugin and its usage string):
+ * class TrackingSystemSettings extends ExpoSystemSettingsDriver {
+ *   protected override readonly asksForTracking = true;
+ * }
  */
 export class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
   /** An expensive connection, from NetInfo. */
@@ -43,6 +50,13 @@ export class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
     battery: Battery,
     backgroundTask: BackgroundTask,
   };
+
+  /**
+   * Whether this app asks for tracking: it declares `NSUserTrackingUsageDescription` (the expo-tracking-transparency
+   * plugin) and may show the prompt. A host that does subclasses the driver with `true`, in the same change as the
+   * plugin; without it, tracking on iOS reads `denied` and the library is never called.
+   */
+  protected readonly asksForTracking: boolean = false;
 
   /** Low Power Mode, once something has read it. */
   private lowPower: LiveValue<boolean> | undefined;
@@ -71,11 +85,13 @@ export class ExpoSystemSettingsDriver extends Driver(SystemSettings) {
     return lowPower;
   }
 
-  /** Where App Tracking Transparency stands; `null` off iOS. */
+  /** Where App Tracking Transparency stands; `null` off iOS, `denied` in an app that does not ask for it. */
   async tracking(): Promise<PermissionStatus | null> {
     if (Os.OS !== "ios") return null;
     const module = this.modules.trackingTransparency;
-    return module === null ? "denied" : expoPermission(await module.getTrackingPermissionsAsync());
+    return module === null || !this.asksForTracking
+      ? "denied"
+      : expoPermission(await module.getTrackingPermissionsAsync());
   }
 
   /** Shows the App Tracking Transparency prompt when it is not decided. */
