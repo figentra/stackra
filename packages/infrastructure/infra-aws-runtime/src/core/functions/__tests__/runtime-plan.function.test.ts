@@ -145,6 +145,16 @@ describe("runtimePlan", () => {
           tags: commerceTags,
         },
       ],
+      databases: [],
+      workloads: [],
+      cost: {
+        items: [
+          { key: "shared", monthlyUsd: 24 },
+          { key: "commerce.cache", monthlyUsd: 12 },
+        ],
+        monthlyUsd: 36,
+        limit: 500,
+      },
     });
     expect(plan.queues[1]?.deadLetterName).toBeUndefined();
   });
@@ -198,6 +208,9 @@ describe("runtimePlan", () => {
       queues: [],
       caches: [],
       buckets: [],
+      databases: [],
+      workloads: [],
+      cost: { items: [], monthlyUsd: 0 },
     });
   });
 

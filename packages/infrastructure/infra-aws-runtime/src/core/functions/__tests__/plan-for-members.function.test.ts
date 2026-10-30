@@ -25,7 +25,33 @@ const PLAN: RuntimePlan = {
     { key: "notifications.cache", name: "c1", nodeType: "cache.t4g.micro", replicas: 0, tags },
   ],
   buckets: [{ key: "commerce.images", name: "b1", versioning: true, tags }],
+  databases: [
+    {
+      key: "resources.main-db",
+      resource: "main-db",
+      name: "d1",
+      engine: "rds",
+      version: "17",
+      instanceClass: "db.t4g.micro",
+      multiAz: false,
+      storageGb: 20,
+      backupDays: 14,
+      consumers: ["commerce"],
+      tags,
+    },
+  ],
+  workloads: [],
+  cost: { items: [], monthlyUsd: 0 },
 };
+
+describe("planForMembers drops the shared resources", () => {
+  // @covers sta-1640:FR-001
+  it("leaves databases and workloads to the environment's whole stack", () => {
+    const plan = planForMembers(PLAN, ["commerce"]);
+    expect(plan.databases).toEqual([]);
+    expect(plan.workloads).toEqual([]);
+  });
+});
 
 describe("planForMembers", () => {
   it("keeps the member's resources and the shared cache", () => {
