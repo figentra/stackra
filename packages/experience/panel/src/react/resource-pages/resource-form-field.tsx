@@ -4,7 +4,7 @@
  *          by its input type (switch, number, select of the enum's codes by their labels, text, an object's keys as a titled group, a
  *          list as rows to add and remove, a `currency` as a pick of ISO 4217 codes, a `…Minor` or money object's
  *          `minor` amount in major units of the currency beside it in the form, else of the record's, a JSON value as
- *          JSON text that submits the parsed value), a picker over an options query, a grid of fields, and the steps of a set as
+ *          JSON text that submits the parsed value, a map of string keys as key and value rows), a picker over an options query, a grid of fields, and the steps of a set as
  *          titled sections.
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
  *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
@@ -18,7 +18,14 @@ import { useQuery } from "@stackra/clients/react";
 import { Enum } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
 import { useSchemaField } from "@stackra/ui/form";
-import { Button, Field, FormSection, NumberField, TextAreaField } from "@stackra/ui/react";
+import {
+  Button,
+  Field,
+  FormSection,
+  NumberField,
+  TextAreaField,
+  TextField,
+} from "@stackra/ui/react";
 import { useState, type ReactElement } from "react";
 import type { ZodType } from "zod";
 
@@ -226,6 +233,71 @@ function JsonField({
   );
 }
 
+/** A map of string keys as key and value rows; a row with an empty key is left out of the value. */
+function RecordField({
+  name,
+  label,
+  value: valueKind,
+}: {
+  readonly name: string;
+  readonly label: string;
+  readonly value: "number" | "text";
+}): ReactElement {
+  const { t } = useTranslation();
+  const field = useSchemaField<Readonly<Record<string, unknown>> | null | undefined>(name);
+  // The rows live here: a key being typed or renamed, or a second row with the same key, is not yet a valid map.
+  const [rows, setRows] = useState<readonly (readonly [string, unknown])[]>(() =>
+    Object.entries(field.value ?? {}),
+  );
+  const change = (next: readonly (readonly [string, unknown])[]) => {
+    setRows(next);
+    // shortcut: a repeated key keeps its last row's value; flag duplicates if a map ever needs it.
+    field.onChange?.(Object.fromEntries(next.filter(([key]) => key.trim() !== "")));
+  };
+  const set = (index: number, row: readonly [string, unknown]) =>
+    change(rows.map((other, at) => (at === index ? row : other)));
+  const error =
+    field.isInvalid === true && typeof field.errorMessage === "string"
+      ? field.errorMessage
+      : undefined;
+  return (
+    <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
+      {rows.map(([key, value], index) => (
+        // oxlint-disable-next-line react/no-array-index-key -- reason: a row is its place in the list; its key is being edited
+        <div key={index} className="flex items-end gap-2">
+          <TextField
+            label={t(PANEL_KEYS.panel.resources.record_key, { number: index + 1 })}
+            value={key}
+            onChange={(next) => set(index, [next, value])}
+          />
+          {valueKind === "number" ? (
+            <NumberField
+              label={t(PANEL_KEYS.panel.resources.record_value, { number: index + 1 })}
+              value={typeof value === "number" ? value : null}
+              onChange={(next) => set(index, [key, next])}
+            />
+          ) : (
+            <TextField
+              label={t(PANEL_KEYS.panel.resources.record_value, { number: index + 1 })}
+              value={typeof value === "string" ? value : ""}
+              onChange={(next) => set(index, [key, next])}
+            />
+          )}
+          <Button variant="ghost" onPress={() => change(rows.filter((__, at) => at !== index))}>
+            {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
+          </Button>
+        </div>
+      ))}
+      <Button
+        variant="secondary"
+        onPress={() => change([...rows, ["", valueKind === "number" ? null : ""]])}
+      >
+        {t(PANEL_KEYS.panel.resources.add_item)}
+      </Button>
+    </FormSection>
+  );
+}
+
 /** The scale of `currency`, or undefined when it is not a currency code (the field then stays in minor units). */
 function scaleOf(currency: string | undefined): number | undefined {
   if (currency === undefined) return undefined;
@@ -289,6 +361,8 @@ export function ResourceFormField({
     );
   if (kind.kind === "list")
     return <ListField shared={shared} name={node.key} label={label} item={kind.item} />;
+  if (kind.kind === "record")
+    return <RecordField name={node.key} label={label} value={kind.value} />;
   const codes =
     node.enum === undefined
       ? kind.kind === "enum"

@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `inputKind(schema, path)`, which control a form field draws from the input schema at `path`: a switch, a
- *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, any JSON value, or text; the optional,
+ *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, a map of key and value
+ *          rows, any JSON value, or text; the optional,
  *          nullable and default wrappers are looked through, and a numeric segment of the path is a list's item
  *          (`parcels.0.weight`).
- * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, entries) only, never parses. A path the
+ * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, valueType, entries) only, never parses. A path the
  *           schema does not have is `missing`, which a form draws as text. Web and native forms share it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
@@ -19,6 +20,7 @@ interface Def {
   readonly innerType?: ZodType;
   readonly shape?: Readonly<Record<string, ZodType>>;
   readonly element?: ZodType;
+  readonly valueType?: ZodType;
   readonly entries?: Readonly<Record<string, string>>;
 }
 
@@ -57,6 +59,10 @@ export function inputKind(schema: ZodType | undefined, path: string): InputKind 
     return { kind: "enum", options: Object.values(def.entries) };
   if (def.type === "object" && def.shape !== undefined)
     return { kind: "object", keys: Object.keys(def.shape) };
+  if (def.type === "record") {
+    const value = defOf(bare(def.valueType)).type;
+    return { kind: "record", value: value === "number" || value === "int" ? "number" : "text" };
+  }
   if (def.type === "array")
     return { kind: "list", item: defOf(bare(def.element)).type === "object" ? "object" : "value" };
   return { kind: "text" };

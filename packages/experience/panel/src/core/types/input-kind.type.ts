@@ -32,4 +32,10 @@ export type InputKind =
       readonly kind: "list";
       /** Whether an item is an object (a group per row) or a single value. */
       readonly item: "object" | "value";
+    }
+  | {
+      /** A map of string keys (`z.record(z.string(), v)`), drawn as key and value rows. */
+      readonly kind: "record";
+      /** Whether a value is a number or text. */
+      readonly value: "number" | "text";
     };

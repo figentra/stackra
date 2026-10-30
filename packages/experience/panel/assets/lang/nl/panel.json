@@ -44,7 +44,9 @@
     "no": "Nee",
     "add_item": "Toevoegen",
     "remove_item": "Item {number} verwijderen",
-    "invalid_json": "Dit is geen geldige JSON."
+    "invalid_json": "Dit is geen geldige JSON.",
+    "record_key": "Sleutel {number}",
+    "record_value": "Waarde {number}"
   },
   "plan_catalogue": {
     "history": "Versies",

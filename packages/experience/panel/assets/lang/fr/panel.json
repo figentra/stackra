@@ -44,7 +44,9 @@
     "no": "Non",
     "add_item": "Ajouter",
     "remove_item": "Retirer l’élément {number}",
-    "invalid_json": "Ce n’est pas un JSON valide."
+    "invalid_json": "Ce n’est pas un JSON valide.",
+    "record_key": "Clé {number}",
+    "record_value": "Valeur {number}"
   },
   "plan_catalogue": {
     "history": "Versions",

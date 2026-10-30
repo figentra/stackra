@@ -44,7 +44,9 @@
     "no": "لا",
     "add_item": "إضافة",
     "remove_item": "إزالة العنصر {number}",
-    "invalid_json": "هذا ليس JSON صالحًا."
+    "invalid_json": "هذا ليس JSON صالحًا.",
+    "record_key": "المفتاح {number}",
+    "record_value": "القيمة {number}"
   },
   "plan_catalogue": {
     "history": "الإصدارات",

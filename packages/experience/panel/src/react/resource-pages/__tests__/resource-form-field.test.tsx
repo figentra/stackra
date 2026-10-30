@@ -5,7 +5,8 @@
  *          of values adds an empty row; a select's options take their enum labels; a `…Minor` amount is entered in
  *          major units of the record's currency, or in minor units without one; a money object or a list row's
  *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes; a JSON value is
- *          edited as text that submits the parsed value and refuses text that does not parse.
+ *          edited as text that submits the parsed value and refuses text that does not parse; a map is edited as key and
+ *          value rows.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -70,6 +71,21 @@ vi.mock("@stackra/ui/react", async () => {
         { type: "button", onClick: () => props.onChange(130.5) },
         `money:${props.name}:${props.value}:${props.formatOptions.currency}`,
       ),
+    TextField: (props: {
+      readonly label: string;
+      readonly value: string;
+      readonly onChange: (value: string) => void;
+    }) =>
+      createElement(
+        "label",
+        null,
+        props.label,
+        createElement("input", {
+          value: props.value,
+          onChange: (event: { readonly target: { readonly value: string } }) =>
+            props.onChange(event.target.value),
+        }),
+      ),
     TextAreaField: (props: {
       readonly label: string;
       readonly value: string;
@@ -106,6 +122,7 @@ const BuyLabelInput = z.object({
   landedCost: z.object({ minor: z.number().int(), currency: z.string() }),
   lines: z.array(z.object({ sku: z.string(), priceMinor: z.number().int(), currency: z.string() })),
   condition: z.json(),
+  fieldMap: z.record(z.string(), z.string()),
 });
 
 /** Draws the field of `key`, as the buy-label action's modal does over `record`. */
@@ -120,6 +137,14 @@ function draw(key: string, record?: object): void {
     />,
   );
 }
+
+/** A map row's key input. */
+const keyInput = (row: number): HTMLElement =>
+  screen.getByLabelText(`panel::resources.record_key {"number":${row}}`);
+
+/** A map row's value input. */
+const valueInput = (row: number): HTMLElement =>
+  screen.getByLabelText(`panel::resources.record_value {"number":${row}}`);
 
 afterEach(() => {
   cleanup();
@@ -215,5 +240,21 @@ describe("ResourceFormField objects and lists", () => {
     fireEvent.change(editor, { target: { value: "{ minQty: 12" } });
     expect(spies.onChange).toHaveBeenLastCalledWith("condition", Number.NaN);
     expect(screen.getByText("panel::resources.invalid_json")).toBeTruthy();
+  });
+
+  it("edits a map as key and value rows, leaving out a row whose key is empty", () => {
+    spies.lists = { fieldMap: { sku: "ITEM_NO" } };
+    draw("fieldMap");
+    expect((valueInput(1) as HTMLInputElement).value).toBe("ITEM_NO");
+
+    fireEvent.change(keyInput(1), { target: { value: "ean" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { ean: "ITEM_NO" });
+    fireEvent.click(screen.getByText("panel::resources.add_item"));
+    expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { ean: "ITEM_NO" });
+    fireEvent.change(keyInput(2), { target: { value: "qty" } });
+    fireEvent.change(valueInput(2), { target: { value: "QTY" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { ean: "ITEM_NO", qty: "QTY" });
+    fireEvent.click(screen.getByText('panel::resources.remove_item {"number":1}'));
+    expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { qty: "QTY" });
   });
 });

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `inputKind`: a boolean, a number, an enum (with its codes), text, an object (its keys), a
- *          list (of objects or values) and any JSON value, through the optional, nullable and default wrappers, a
- *          nested path and a list item's numeric segment; an unknown path is missing.
+ *          list (of objects or values), a map of string keys and any JSON value, through the optional, nullable and
+ *          default wrappers, a nested path and a list item's numeric segment; an unknown path is missing.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307.
@@ -22,6 +22,8 @@ const input = z.object({
   tags: z.array(z.string()).optional(),
   condition: z.json(),
   evidence: z.unknown().optional(),
+  fieldMap: z.record(z.string(), z.string()),
+  weights: z.record(z.string(), z.number()).optional(),
 });
 
 describe("inputKind", () => {
@@ -45,6 +47,11 @@ describe("inputKind", () => {
   it("reads a JSON value, whether zod's json() or unknown", () => {
     expect(inputKind(input, "condition")).toEqual({ kind: "json" });
     expect(inputKind(input, "evidence")).toEqual({ kind: "json" });
+  });
+
+  it("reads a map of string keys with text or number values", () => {
+    expect(inputKind(input, "fieldMap")).toEqual({ kind: "record", value: "text" });
+    expect(inputKind(input, "weights")).toEqual({ kind: "record", value: "number" });
   });
 
   it("answers missing for a path the schema does not have", () => {
