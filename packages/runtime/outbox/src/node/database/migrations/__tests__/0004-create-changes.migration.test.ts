@@ -42,6 +42,22 @@ describe("CreateChangesMigration", () => {
       expect(sql).toContain(`comment on column outbox.changes.${column} is`);
   });
 
+  it("doubles the quotes in a comment, so each one is a valid literal (STA-1664)", () => {
+    expect(sql).toContain(
+      "comment on column outbox.changes.type is 'The changed model''s class name.'",
+    );
+    expect(sql).toContain(
+      "comment on column outbox.change_cursors.consumer is 'The change consumer class''s name.'",
+    );
+    const comments = steps
+      .flatMap((step) => step.sql)
+      .filter((statement) => statement.startsWith("comment on column"));
+    expect(comments).toHaveLength(14);
+    // Inside the literal, a quote only ever comes doubled.
+    for (const statement of comments)
+      expect(statement.slice(statement.indexOf(" is '") + 5, -1)).not.toMatch(/(^|[^'])'([^']|$)/);
+  });
+
   it("keys a cursor by its consumer", () => {
     expect(sql).toContain("create table outbox.change_cursors (consumer varchar(255) primary key");
     expect(sql).toContain("stalled_at timestamptz)");
