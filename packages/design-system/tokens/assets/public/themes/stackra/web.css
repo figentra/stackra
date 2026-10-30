@@ -560,6 +560,17 @@ html[data-motion="none"] *::after {
   [data-slot="field-error"] {
     unicode-bidi: plaintext;
   }
+  .input-group__input,
+  .search-field__input,
+  .color-input-group__input {
+    min-width: 0;
+    width: 100%;
+  }
+  .tabs__tab:not([data-selected="true"]):not([data-disabled="true"]):hover,
+  .tabs__tab[data-hovered="true"]:not([data-selected="true"]):not([data-disabled="true"]) {
+    opacity: 1;
+    color: var(--foreground);
+  }
   .button,
   .toggle-button,
   .tabs__list-container {

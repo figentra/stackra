@@ -221,6 +221,21 @@ const selectionControlRules = () => [
   inRule('[data-slot="description"],\n  [data-slot="field-error"]', [
     "    unicode-bidi: plaintext;",
   ]),
+  // A flexible input beside its affixes or icons takes the room its group has, never its intrinsic width (`size` 20
+  // times the font's average glyph): with a wider font (Linux) that pushed the suffix out of the border, widened the
+  // sidebar and the hero past a phone, and left axe the input obscured. `min-width: 0` lets it shrink in its row, as
+  // HeroUI's number field does; a percentage width gives an input no min-content width (CSS Sizing 3, compressible
+  // replaced elements), so its grid or flex ancestors stop growing to fit it, while flex still sizes it in the row.
+  inRule(".input-group__input,\n  .search-field__input,\n  .color-input-group__input", [
+    "    min-width: 0;",
+    "    width: 100%;",
+  ]),
+  // A hovered tab is the foreground colour, not HeroUI's muted text at 70% opacity, which fell to about 3.2:1 in light
+  // and 4.2:1 in dark (SC 1.4.3). The selectors repeat HeroUI's, so they win by order in the same layer.
+  inRule(
+    '.tabs__tab:not([data-selected="true"]):not([data-disabled="true"]):hover,\n  .tabs__tab[data-hovered="true"]:not([data-selected="true"]):not([data-disabled="true"])',
+    ["    opacity: 1;", "    color: var(--foreground);"],
+  ),
 ];
 
 /** An element nested in one of `role`'s radius with `inset` of padding between them: the outer radius less it. */
