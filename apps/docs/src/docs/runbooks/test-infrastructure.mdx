@@ -194,7 +194,7 @@ private, versioned bucket `stackra-pulumi-state-591473336656` (eu-west-1), which
 backend locks with objects in that bucket, so there is no lock table. The stack holds ids and CIDRs only, so its
 passphrase is empty by design.
 
-### 2a. One-time bootstrap (owner, with the `academorix` AWS profile)
+### 2a. One-time bootstrap (owner, with the `academorix` AWS profile; done 2026-10-30)
 
 The workflow cannot create the role it signs in with, so the owner creates it once. GitHub's OIDC provider, if the
 account has none yet:
@@ -203,20 +203,22 @@ account has none yet:
 aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com --client-id-list sts.amazonaws.com --profile academorix
 ```
 
-The deploy role, trusted only by this repository's `testbed` environment:
+The deploy role, trusted only by this repository's `testbed` environment. The organization's tokens use the immutable
+subject form (`repo:figentra@314302700/stackra@1425140001:…`, as `ci.yml` notes), so both forms are listed:
 
 ```bash
-aws iam create-role --role-name stackra-testbed-deploy --profile academorix --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::591473336656:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":"repo:figentra/stackra:environment:testbed"}}}]}'
+aws iam create-role --role-name stackra-testbed-deploy --profile academorix --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::591473336656:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":["repo:figentra/stackra:environment:testbed","repo:figentra@314302700/stackra@1425140001:environment:testbed"]}}}]}'
 ```
 
-Its rights: everything but IAM (`PowerUserAccess`), plus IAM only for the testbed's own roles and instance profiles:
+Its rights: everything but IAM (`PowerUserAccess`), plus IAM only for the testbed's own roles and instance profiles,
+and never for itself (the deny keeps it from granting its own role more):
 
 ```bash
 aws iam attach-role-policy --role-name stackra-testbed-deploy --policy-arn arn:aws:iam::aws:policy/PowerUserAccess --profile academorix
 ```
 
 ```bash
-aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed-iam --profile academorix --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["iam:*Role","iam:*Roles","iam:*RolePolicy","iam:*RolePolicies","iam:*InstanceProfile","iam:*InstanceProfiles","iam:*RoleFromInstanceProfile","iam:*RoleToInstanceProfile","iam:TagRole","iam:UntagRole","iam:TagInstanceProfile","iam:PassRole"],"Resource":["arn:aws:iam::591473336656:role/stackra-testbed-*","arn:aws:iam::591473336656:instance-profile/stackra-testbed-*"]},{"Effect":"Allow","Action":"iam:CreateServiceLinkedRole","Resource":"*"}]}'
+aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed-iam --profile academorix --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["iam:*Role","iam:*Roles","iam:*RolePolicy","iam:*RolePolicies","iam:*InstanceProfile","iam:*InstanceProfiles","iam:*RoleFromInstanceProfile","iam:*RoleToInstanceProfile","iam:TagRole","iam:UntagRole","iam:TagInstanceProfile","iam:PassRole"],"Resource":["arn:aws:iam::591473336656:role/stackra-testbed-*","arn:aws:iam::591473336656:instance-profile/stackra-testbed-*"]},{"Effect":"Allow","Action":"iam:CreateServiceLinkedRole","Resource":"*"},{"Sid":"NeverItsOwnRole","Effect":"Deny","Action":"iam:*","Resource":"arn:aws:iam::591473336656:role/stackra-testbed-deploy"}]}'
 ```
 
 Then in GitHub, figentra/stackra, Settings, Environments, New environment `testbed`: deployment branches **main**
