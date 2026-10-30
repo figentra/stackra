@@ -233,7 +233,7 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
   A list entry's `…Minor` cells are money in the item's own `currency`, else the record's at
   `e.list("customs", ["sku", "valueMinor"], { currency: "currency" })`.
 - **Labels** are derived: `<module>::resources.<model>.title`, `.columns.<path>`, `.filters.<path>`, `.entries.<path>`,
-  `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (paths in
+  `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (`.actions.<model>_<verb>` for another model's action) (paths in
   snake_case).
 
 The generated web entry calls `registerResources({ "orders.order": tree })` with the trees gen records; a resource with

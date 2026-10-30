@@ -21,19 +21,16 @@ import { useState } from "react";
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
+import { actionLabelKey } from "#core/functions/action-label-key.function";
 import { idOf } from "#core/functions/id-of.function";
 import { placementsAt } from "#core/functions/placements-at.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
-import { resourceLabel } from "#core/functions/resource-label.function";
 import type { ResourceRoutes } from "#core/types/resource-routes.type";
 import type { ResourceTree } from "#core/types/resource-tree.type";
 import type { PageRef } from "#core/types/page-ref.type";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import { ActionInputModal } from "#react/resource-pages/action-input-modal";
 import type { ResourceActions } from "#react/resource-pages/resource-actions.type";
-
-/** The verb of an action key (`orders.order.cancel@1` is `cancel`). */
-const verbOf = (key: string): string => key.replace(/@\d+$/, "").split(".").pop() ?? key;
 
 /** The resource page refs, read loosely (each exists only when the resource declares it). */
 type Pages = { readonly view?: PageRef; readonly edit?: PageRef; readonly create?: PageRef };
@@ -69,7 +66,7 @@ export function useResourceActions(
     id: string,
   ): ResourceAction => ({
     id,
-    label: t(resourceLabel(resource.key, "actions", verbOf(action.key))),
+    label: t(actionLabelKey(resource.key, action.key)),
     onPress: async () => {
       const key = idKey(action);
       if (ids === undefined || key === undefined) {

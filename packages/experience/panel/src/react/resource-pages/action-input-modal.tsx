@@ -17,14 +17,11 @@ import { registerSchemas } from "@stackra/validation";
 import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
-import { resourceLabel } from "#core/functions/resource-label.function";
+import { actionLabelKey } from "#core/functions/action-label-key.function";
 import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#react/resource-pages/action-input-modal.props";
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
-
-/** The verb of an action key (`orders.order.cancel@1` is `cancel`). */
-const verbOf = (key: string): string => key.replace(/@\d+$/, "").split(".").pop() ?? key;
 
 /**
  * The modal form of `action` over `ids`.
@@ -77,7 +74,7 @@ export function ActionInputModal({
     >
       <Form form={form} submit={submit} className="contents">
         <Modal.Header>
-          <Modal.Title>{t(resourceLabel(resourceKey, "actions", verbOf(action.key)))}</Modal.Title>
+          <Modal.Title>{t(actionLabelKey(resourceKey, action.key))}</Modal.Title>
           {ask === undefined ? null : <Text>{t(typeof ask === "object" ? ask.text : ask)}</Text>}
         </Modal.Header>
         <Modal.Body>
