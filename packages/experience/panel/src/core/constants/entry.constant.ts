@@ -40,7 +40,10 @@ export const Entry = Object.freeze({
     options: { readonly currency: string; readonly copyable?: boolean },
   ): EntryNode => Object.freeze({ kind: "money", key, ...options }),
 
-  /** A list field as a small table of the item paths `columns`. */
-  list: (key: string, options: { readonly columns: readonly string[] }): EntryNode =>
-    Object.freeze({ kind: "list", key, columns: Object.freeze([...options.columns]) }),
+  /** A list field as a small table of the item paths `columns`; `…Minor` columns are money in `currency`. */
+  list: (
+    key: string,
+    options: { readonly columns: readonly string[]; readonly currency?: string },
+  ): EntryNode =>
+    Object.freeze({ ...options, kind: "list", key, columns: Object.freeze([...options.columns]) }),
 });

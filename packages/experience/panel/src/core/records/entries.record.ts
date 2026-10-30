@@ -36,8 +36,9 @@ export class EntriesRecord<R> implements EntryFactory<R> {
   list<K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
+    options?: { readonly currency: Path<R> },
   ): Built<EntryNode> {
-    return { toNode: () => Entry.list(key, { columns }) };
+    return { toNode: () => Entry.list(key, { columns, ...options }) };
   }
 
   /** Groups entries into a named section. */

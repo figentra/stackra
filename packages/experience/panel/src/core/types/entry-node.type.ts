@@ -39,6 +39,8 @@ export type EntryNode =
       readonly key: string;
       /** The item paths shown as columns. */
       readonly columns: readonly string[];
+      /** The record path of the currency a `…Minor` column is in when its item has no `currency` of its own. */
+      readonly currency?: string;
     }
   | {
       /** A titled group of entries. */

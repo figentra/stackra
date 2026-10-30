@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ResourceViewPage`: the get query read with the record id under its input key, the recorded
  *          entries and sections, the header actions (edit, a placed record action run with the id, delete), the
- *          relation managers with their bound input, the derived entries without a tree, and the error state.
+ *          relation managers with their bound input, the derived entries without a tree, a list entry's minor units as
+ *          money in the item's or the record's currency, and the error state.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the relation manager and the web
  *           kit are DOM stand-ins, translation returns the key.
  * Runtime: node (vitest)
@@ -49,7 +50,24 @@ vi.mock("@stackra/ui/react", async () => {
     PageSkeleton: () => createElement("p", null, "loading"),
     ErrorState: (props: Props) => createElement("p", null, props.title),
     Section: (props: Props) => createElement("section", null, props.title, props.children),
-    Table: (props: Props) => createElement("table", null, props.label),
+    Table: (props: Props) =>
+      createElement(
+        "table",
+        { "aria-label": props.label },
+        createElement(
+          "tbody",
+          null,
+          props.items.map((item: Props) =>
+            createElement(
+              "tr",
+              { key: item.id },
+              props.columns.map((column: Props) =>
+                createElement("td", { key: column.id }, props.renderCell(item, column)),
+              ),
+            ),
+          ),
+        ),
+      ),
     PropertyList: (props: Props) =>
       createElement(
         "dl",
@@ -179,5 +197,36 @@ describe("ResourceViewPage", () => {
     });
     render(<ResourceViewPage resource={Orders} id="ord_1" />);
     expect(screen.getByText("panel::resources.failed")).toBeTruthy();
+  });
+
+  it("draws a list entry's minor units as money in the item's own currency, else the record's", () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { get: true } },
+        infolist: {
+          entries: [
+            { kind: "list", key: "customs", columns: ["sku", "valueMinor"], currency: "currency" },
+          ],
+        },
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: {
+        id: "ord_1",
+        currency: "SAR",
+        customs: [
+          { sku: "SKU-1", valueMinor: 1250 },
+          { sku: "SKU-2", valueMinor: 99, currency: "EUR" },
+        ],
+      },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceViewPage resource={Orders} id="ord_1" />);
+    expect(screen.getByText("SKU-1")).toBeTruthy();
+    expect(screen.getByText("SAR 1250")).toBeTruthy();
+    expect(screen.getByText("EUR 99")).toBeTruthy();
+    dispose();
   });
 });
