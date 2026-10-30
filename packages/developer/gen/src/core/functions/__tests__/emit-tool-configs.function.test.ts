@@ -83,6 +83,15 @@ describe("emitToolConfigs", () => {
     expect(vitest).not.toContain("passWithNoTests");
   });
 
+  it("runs a package's generated migration check in its unit tier, never a service's (STA-1689)", () => {
+    const configOf = (ir: typeof LOYALTY_KIT_IR) =>
+      emitToolConfigs(ir, { entries: [], registrations: false }).find(
+        (file) => file.path === ".stackra/vitest.config.ts",
+      )?.content ?? "";
+    expect(configOf(LOYALTY_KIT_IR)).toContain('".stackra/tests/**/*.test.{ts,tsx}"');
+    expect(configOf(BILLING_IR)).not.toContain(".stackra/tests");
+  });
+
   it("loads the registrations, the wiring and the factory partners in the setup", () => {
     const setup = content(".stackra/vitest.setup.ts");
     expect(setup).toContain('import "#stackra/registrations";');

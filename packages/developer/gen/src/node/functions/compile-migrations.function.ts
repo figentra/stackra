@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `compileMigrations`, the node half of the migration target: finds a service's own migrations
- *          (`src/modules/<key>/database/migrations/NNNN-<name>.migration.ts`) and those its declared packages ship
+ *          (`src/modules/<key>/database/migrations/NNNN-<name>.migration.ts`), a package's own
+ *          (`src/node/database/migrations/`, for its migration check, STA-1689) and those its declared packages ship
  *          (`src/node/database/migrations/`), compiles each with the member's own `@stackra/database`
  *          `compileMigration` (macros: the member's `database/macros/*.macro.ts` and every `Macro` a declared package
  *          exports from its `./node` entry), orders them across members (`orderMigrations`, `Migration({ after })`
@@ -123,6 +124,24 @@ export async function compileMigrations(
         });
     }
     const macros = join(module.dir, "database/macros");
+    macroFiles.push(...filesOf(macros, ".macro.ts").map((name) => join(macros, name)));
+  }
+  // A package's own migrations, keyed as a host keys them (`@stackra/ai` is `ai`), for its migration check (STA-1689).
+  if (ir.layout === "package") {
+    const module = folderKey(ir.package.slice(ir.package.lastIndexOf("/") + 1));
+    const dir = join(root, "src/node/database/migrations");
+    for (const name of filesOf(dir, ".migration.ts")) {
+      const id = migrationId(module, name);
+      if (id !== undefined)
+        found.push({
+          id,
+          module,
+          owner: "member",
+          path: join(dir, name),
+          file: relative(root, join(dir, name)),
+        });
+    }
+    const macros = join(root, "src/node/database/macros");
     macroFiles.push(...filesOf(macros, ".macro.ts").map((name) => join(macros, name)));
   }
   for (const name of ir.packages ?? []) {
