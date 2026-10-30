@@ -13,10 +13,15 @@ import * as native from "#native/index";
 
 vi.mock("react-native", () => ({
   AppState: { addEventListener: () => ({ remove: () => undefined }) },
+  Platform: { OS: "ios", Version: "18.0" },
 }));
 
 describe("@stackra/analytics/native", () => {
-  it("exports exactly the native PostHog driver and the screen view hook", () => {
-    expect(Object.keys(native).sort()).toEqual(["PosthogAnalyticsDriver", "useScreenViews"]);
+  it("exports exactly the native PostHog and relay drivers and the screen view hook", () => {
+    expect(Object.keys(native).sort()).toEqual([
+      "PosthogAnalyticsDriver",
+      "RelayAnalyticsDriver",
+      "useScreenViews",
+    ]);
   });
 });

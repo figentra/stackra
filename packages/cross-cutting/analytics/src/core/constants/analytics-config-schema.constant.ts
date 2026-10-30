@@ -36,7 +36,7 @@ const GATING_CATEGORY = z
   });
 
 /** The shipped analytics driver names. */
-const DRIVER = z.enum(["none", "memory", "posthog", "ad-pixel"]);
+const DRIVER = z.enum(["none", "memory", "posthog", "relay", "ad-pixel"]);
 
 /** One destination: a driver instance, its own gating category and its event routing. */
 const DESTINATION = z.object({

@@ -22,6 +22,7 @@ import type {
 describe("@stackra/analytics/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ANALYTICS_INGEST_PATH",
       "AdPixel",
       "AnalyticsDeliveryKind",
       "AnalyticsDriver",
@@ -44,6 +45,10 @@ describe("@stackra/analytics/contracts", () => {
       readonly sessionId: string;
       readonly context: AnalyticsContext;
     }>();
+  });
+
+  it("names the ingest path", () => {
+    expect(contracts.ANALYTICS_INGEST_PATH).toBe("/analytics/batches");
   });
 
   it("names the delivery kinds and types the kept identity", () => {

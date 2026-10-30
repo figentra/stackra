@@ -34,6 +34,7 @@ describe("@stackra/analytics", () => {
       "NoneAnalyticsOfflineQueueDriver",
       "PageViewed",
       "PosthogAnalyticsDriver",
+      "RelayAnalyticsDriver",
       "ScreenViewed",
       "StorageAnalyticsIdentityDriver",
       "StorageAnalyticsOfflineQueueDriver",
@@ -62,6 +63,8 @@ describe("@stackra/analytics", () => {
   });
 
   it("names the shipped drivers", () => {
-    expectTypeOf<AnalyticsDriverName>().toEqualTypeOf<"none" | "memory" | "posthog" | "ad-pixel">();
+    expectTypeOf<AnalyticsDriverName>().toEqualTypeOf<
+      "none" | "memory" | "posthog" | "relay" | "ad-pixel"
+    >();
   });
 });
