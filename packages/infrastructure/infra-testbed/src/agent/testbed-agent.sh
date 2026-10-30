@@ -47,7 +47,7 @@ usage() {
 }
 
 # A name that reaches a path or a command word: letters, digits, dot, dash, underscore.
-safe_name() { case $1 in '' | *[!A-Za-z0-9._-]*) return 1 ;; esac; }
+safe_name() { case $1 in '' | *[!A-Za-z0-9._-]*) return 1 ;; esac }
 # Single-quote a string for sh.
 sq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 
@@ -380,8 +380,8 @@ $grants
 EOF
   }
 
-  [ ! -f "$JOB_WS/services/encore.app" ] ||
-    sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
+  [ ! -f "$JOB_WS/services/encore.app" ] \
+    || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
 
   # One writer to the shared store; the job then installs offline against it read-only.
   mkdir -p "$STORE" "$DATA/turbo-cache"

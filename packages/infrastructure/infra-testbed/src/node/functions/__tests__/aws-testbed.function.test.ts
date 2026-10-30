@@ -207,8 +207,11 @@ describe("awsTestbed", () => {
     for (const name of ["testbed-base", "testbed-images", "testbed-agent"]) {
       const data = String(resource("imagebuilder/component:Component", name).inputs.data);
       expect(data).not.toContain("@@");
-      expect(data).toContain("mock-bucket");
     }
+    // Only the base component downloads the build inputs; the others use the files it fetched.
+    expect(
+      String(resource("imagebuilder/component:Component", "testbed-base").inputs.data),
+    ).toContain("s3://mock-bucket/build/");
     const distribution = resource(
       "imagebuilder/distributionConfiguration:DistributionConfiguration",
       "testbed",

@@ -19,7 +19,10 @@ for _ in $(seq 1 30); do
   [ -z "$device" ] || break
   sleep 2
 done
-[ -n "$device" ] || { echo "testbed-data-mount: no data volume found" >&2; exit 1; }
+[ -n "$device" ] || {
+  echo "testbed-data-mount: no data volume found" >&2
+  exit 1
+}
 
 if ! blkid "$device" >/dev/null 2>&1; then
   mkfs.xfs -m reflink=1 -L testbed-data "$device"

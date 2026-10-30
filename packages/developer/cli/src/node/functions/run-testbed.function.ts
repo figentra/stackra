@@ -12,7 +12,7 @@
  */
 import { resolve } from "node:path";
 
-import { TESTBED_DEFAULTS } from "#node/constants/testbed-defaults.constant";
+import { TESTBED_CLI_DEFAULTS } from "#node/constants/testbed-cli-defaults.constant";
 import { TESTBED_EXIT } from "#node/constants/testbed-exit.constant";
 import { TESTBED_POLL_MS } from "#node/constants/testbed-poll-ms.constant";
 import { TESTBED_PRESETS } from "#node/constants/testbed-presets.constant";
@@ -73,10 +73,10 @@ export async function runTestbed(
       "ec2",
       "describe-instances",
       "--filters",
-      `Name=tag-key,Values=${TESTBED_DEFAULTS.tag}`,
+      `Name=tag-key,Values=${TESTBED_CLI_DEFAULTS.tag}`,
       "Name=instance-state-name,Values=running",
       "--query",
-      `Reservations[].Instances[].{id:InstanceId,ip:PublicIpAddress,group:Tags[?Key==\`${TESTBED_DEFAULTS.tag}\`]|[0].Value,launch:LaunchTime}`,
+      `Reservations[].Instances[].{id:InstanceId,ip:PublicIpAddress,group:Tags[?Key==\`${TESTBED_CLI_DEFAULTS.tag}\`]|[0].Value,launch:LaunchTime}`,
       "--output",
       "json",
     ]);
@@ -94,7 +94,7 @@ export async function runTestbed(
       "ec2",
       "describe-security-groups",
       "--group-names",
-      TESTBED_DEFAULTS.securityGroup,
+      TESTBED_CLI_DEFAULTS.securityGroup,
       "--query",
       "SecurityGroups[0].IpPermissions[?FromPort==`22`].IpRanges[].CidrIp",
       "--output",
@@ -106,7 +106,7 @@ export async function runTestbed(
       aws([
         `${verb}-security-group-ingress`,
         "--group-name",
-        TESTBED_DEFAULTS.securityGroup,
+        TESTBED_CLI_DEFAULTS.securityGroup,
         "--protocol",
         "tcp",
         "--port",
@@ -159,7 +159,7 @@ export async function runTestbed(
       "autoscaling",
       "describe-auto-scaling-groups",
       "--auto-scaling-group-names",
-      `${TESTBED_DEFAULTS.groupPrefix}${slot}`,
+      `${TESTBED_CLI_DEFAULTS.groupPrefix}${slot}`,
       "--query",
       "AutoScalingGroups[0].[DesiredCapacity,MaxSize,MinSize]",
       "--output",
@@ -178,7 +178,7 @@ export async function runTestbed(
       "autoscaling",
       "set-desired-capacity",
       "--auto-scaling-group-name",
-      `${TESTBED_DEFAULTS.groupPrefix}${slot}`,
+      `${TESTBED_CLI_DEFAULTS.groupPrefix}${slot}`,
       "--desired-capacity",
       String(desired),
     ]);
@@ -188,14 +188,14 @@ export async function runTestbed(
     const code = await deps.stream("gh", [
       "workflow",
       "run",
-      TESTBED_DEFAULTS.fallbackWorkflow,
+      TESTBED_CLI_DEFAULTS.fallbackWorkflow,
       "--ref",
       request.ref ?? "",
       "-f",
       `preset=${preset}`,
     ]);
     if (code === 0)
-      say(`no healthy box: dispatched ${TESTBED_DEFAULTS.fallbackWorkflow} (${preset})`);
+      say(`no healthy box: dispatched ${TESTBED_CLI_DEFAULTS.fallbackWorkflow} (${preset})`);
     return code;
   };
 
@@ -419,7 +419,7 @@ export async function runTestbed(
         "ssm",
         "get-parameter",
         "--name",
-        TESTBED_DEFAULTS.imageParameter,
+        TESTBED_CLI_DEFAULTS.imageParameter,
         "--query",
         "Parameter.[Value,LastModifiedDate]",
         "--output",
@@ -427,7 +427,7 @@ export async function runTestbed(
       ]);
       const [image, modified] = out.stdout.trim().split(/\s+/);
       if (out.code !== 0 || image === undefined) {
-        say(`cannot read ${TESTBED_DEFAULTS.imageParameter}`);
+        say(`cannot read ${TESTBED_CLI_DEFAULTS.imageParameter}`);
         return 1;
       }
       const at =

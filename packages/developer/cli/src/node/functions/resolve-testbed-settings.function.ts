@@ -8,7 +8,7 @@
  */
 import { join } from "node:path";
 
-import { TESTBED_DEFAULTS } from "#node/constants/testbed-defaults.constant";
+import { TESTBED_CLI_DEFAULTS } from "#node/constants/testbed-cli-defaults.constant";
 import type { TestbedSettings } from "#node/types/testbed-settings.type";
 
 const text = (value: string | boolean | undefined): string | undefined =>
@@ -32,13 +32,13 @@ export function resolveTestbedSettings(
     profile:
       text(values["profile"]) ??
       text(env["STACKRA_TESTBED_AWS_PROFILE"]) ??
-      TESTBED_DEFAULTS.profile,
+      TESTBED_CLI_DEFAULTS.profile,
     region:
-      text(values["region"]) ?? text(env["STACKRA_TESTBED_REGION"]) ?? TESTBED_DEFAULTS.region,
+      text(values["region"]) ?? text(env["STACKRA_TESTBED_REGION"]) ?? TESTBED_CLI_DEFAULTS.region,
     key:
       text(values["key"]) ??
       text(env["STACKRA_TESTBED_SSH_KEY"]) ??
-      join(home, TESTBED_DEFAULTS.key),
-    user: TESTBED_DEFAULTS.user,
+      join(home, TESTBED_CLI_DEFAULTS.key),
+    user: TESTBED_CLI_DEFAULTS.user,
   };
 }

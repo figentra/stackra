@@ -461,6 +461,6 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     imagePipelineArn: pipeline.arn,
     imageVersion: inputs.version,
     amiParameter: plan.image.amiParameter,
-    groups,
+    ...(groups === undefined ? {} : { groups }),
   };
 }
