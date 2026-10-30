@@ -13,13 +13,12 @@
  *          ADR 0022 (test placement); WCAG 2.2 SC 1.3.1, 1.4.10, 2.1.1 and 4.1.3.
  */
 // @covers sta-350:FR-173 sta-350:SC-012 sta-350:SC-002
-import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expectNoAxeFindings } from "../support/expect-no-axe-findings.function";
 import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
-const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
 const open = async (page: Page, scheme: string, locale: string, width = 1280) => {
   await page.setViewportSize({ width, height: 900 });
@@ -28,19 +27,6 @@ const open = async (page: Page, scheme: string, locale: string, width = 1280) =>
   await expect(
     page.getByRole("heading", { level: 1, name: pageTitle("Single column layout", locale) }),
   ).toBeVisible();
-};
-
-/** Runs axe over the page and expects neither violations nor checks left for review. */
-const expectAxeClean = async (page: Page) => {
-  const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-  expect(
-    violations.map((finding) => finding.id),
-    "axe violations",
-  ).toEqual([]);
-  expect(
-    incomplete.map((finding) => finding.id),
-    "axe checks left for review",
-  ).toEqual([]);
 };
 
 const boxOf = async (locator: Locator) => {
@@ -59,7 +45,7 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await expectAxeClean(page);
+      await expectNoAxeFindings(page);
     });
 
     test(`axe finds nothing after the live layout changes in ${scheme}, ${locale}`, async ({
@@ -71,7 +57,7 @@ for (const scheme of SCHEMES)
         .getByRole("button", { name: locale === "en" ? "Add a section" : "إضافة قسم" })
         .click();
       await expect(sample(page, "live").getByRole("heading", { level: 3 })).toHaveCount(3);
-      await expectAxeClean(page);
+      await expectNoAxeFindings(page);
     });
   }
 

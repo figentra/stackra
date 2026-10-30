@@ -84,10 +84,8 @@ for (const scheme of SCHEMES)
     page,
   }) => {
     await open(page, scheme, "en");
-    // The demos load lazily: wait for the last example's badge before reading them all.
-    await expect(
-      page.locator('section#example-control [data-slot="badge"]').first(),
-    ).toBeAttached();
+    // The demos load lazily, each in its own Suspense and in no set order: wait until every one has mounted.
+    await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
     const labels = await page
       .locator('[data-slot="badge"]:has([data-slot="badge-label"])')
       .evaluateAll((badges) => {

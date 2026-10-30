@@ -47,6 +47,8 @@ test("every icon button has an accessible name and is at least 24 by 24 pixels",
   page,
 }) => {
   await open(page, "light", "en");
+  // The demos load lazily: every one mounted before the buttons are counted.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
   // The page's own buttons only: the shell's switcher is not under test here.
   const buttons = await page.getByRole("main").getByRole("button").all();
   // One per variant in each of three sizes, then the states and the live samples.

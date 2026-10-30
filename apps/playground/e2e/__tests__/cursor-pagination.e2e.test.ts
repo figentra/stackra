@@ -53,8 +53,8 @@ for (const scheme of SCHEMES)
 
 test("every pagination is a navigation landmark with its own name", async ({ page }) => {
   await open(page, "light", "en");
-  // The demos load lazily: wait for the last example's pagers before reading the names.
-  await expect(page.getByRole("navigation", { name: "Orders, paged" })).toBeVisible();
+  // The demos load lazily, each in its own Suspense and in no set order: wait until every one has mounted.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
   const names = await page.locator("nav[aria-label]").evaluateAll((navs) =>
     navs
       // The preview copies are hidden from assistive tech, and the "On this page" menu or rail the width does not
