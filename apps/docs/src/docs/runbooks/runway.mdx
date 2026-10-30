@@ -99,6 +99,39 @@ The sync is designed here and built in STA-606, once its targets exist.
 5. **Vars.** A member's per-environment `vars` are public values. A `ref:<path>` value resolves from the stacks repository's Pulumi config at deploy time ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)); a `${pr}` value from the build environment.
 6. **Drift.** A name in the runtime that no runway declares is reported, never deleted, until a prune rule is decided.
 
+## Resources and workloads
+
+One root runway declares the runtime a product needs beside its services (ADR 0493). A managed resource first; a
+container workload only when nothing managed fits, residency forces it, or for on-prem parity, and its `reason` says
+which.
+
+```yaml
+resources:
+  main-db:
+    kind: postgres
+    size:
+      production: large
+workloads:
+  zitadel:
+    image: ghcr.io/zitadel/zitadel@sha256:<digest>
+    port: 8080
+    health: /debug/healthz
+    expose: public
+    uses: [main-db]
+    secrets: [ZITADEL_MASTERKEY]
+    scale:
+      production: { min: 2, max: 4 }
+    reason: "Residency: KSA in-country tenants cannot use ZITADEL Cloud"
+environments:
+  production:
+    limits:
+      monthly: 900
+```
+
+A service member names what it uses in its own runway (`uses: [main-db]`). The plan prints each item's monthly
+estimate; dev ($150) and staging ($500) refuse a plan over their cap, production only warns until it has a `limits`.
+Kafka, OpenSearch and SES are reserved kinds. `pulumi preview` shows the change; only the owner applies it.
+
 ## What is not built yet
 
 | Item                                                                               | Waits for                                          |

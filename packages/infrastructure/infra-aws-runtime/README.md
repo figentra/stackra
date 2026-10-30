@@ -62,10 +62,33 @@ stable hash (ElastiCache ids 40, S3 63, SQS 80). A dedicated cache whose `memory
 Valkey does not know, fails as `RunwayInvalidError` naming the runway path. Caches use TLS and at-rest encryption on
 port 6379 inside the security groups you pass; no secret is created or read.
 
+## Resources and workloads (ADR 0493)
+
+The root runway's `resources.<name>` and `workloads.<name>` plan and declare here too, sized per environment
+(`small` where unsized) and capped by `environments.<env>.limits.monthly`, else $150 in dev and $500 in staging; a plan
+over its cap is refused before anything is declared, and production only warns until it has a cap.
+
+| Runway fact                                     | Resource                                                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `resources.<name>` `kind: postgres`             | RDS (default; small is `db.t4g.micro`, single-AZ) or Aurora, encrypted and private, RDS Proxy with TLS               |
+| `resources.<name>` `kind: queue`, `topic`       | an SQS queue, with an SNS topic in front for `topic`                                                                 |
+| `resources.<name>` `kind: cache`, `bucket`      | a Valkey group sized by `size`, an S3 bucket                                                                         |
+| `workloads.<name>`                              | a Fargate task and service in the environment's cluster, discoverable at `<name>.<env>.workloads.<project>.internal` |
+| `workloads.<name>` `expose: public`             | an ALB, HTTPS only, admitting Cloudflare's ranges alone                                                              |
+| `workloads.<name>` `scale.<env>` with max > min | CPU target-tracking autoscaling                                                                                      |
+| member or workload `uses: [<name>]`             | the resource's security group admits it; it gets `<NAME>_URL`, `_HOST`, `_PORT`, `_USER`, `_PASSWORD`                |
+
+The deploy job calls `ensureDatabasePasswords` before the program (it reuses the password the job has, or generates
+one and writes it blind to Infisical at `<env>:/runtime/<resource>`), passes the result as `databasePasswords`, and
+calls `publishResourceSecrets` after `pulumi up`. Workloads read their secrets from SSM parameters the Infisical sync
+fills (`/<project>/<env>/workloads/<name>/<NAME>`, `/<project>/<env>/runtime/<resource>/<NAME>`). RDS Proxy logs in
+through a Secrets Manager copy of the password, read only by the proxy.
+
 ## Not here
 
-- The database server (`shared.database`, a dedicated `postgres` requirement), the VPC, the load balancer and the
-  compute: the database and network stacks, not this one.
+- The environment's shared database server (`shared.database`, a member's `postgres` requirement): Encore keeps its own
+  until STA-136 settles (ADR 0493, owner answer Q2). The VPC and the DNS records in Cloudflare for public workloads are
+  the network and Cloudflare stacks'.
 - Which environments compose this program: `stackra infra gen` decides it from `destinations.services`.
 - Topic subscriptions between members (a consumer's queue on a producer's events) come from the manifests, through
   gen; this package subscribes each queue to its own topic only.

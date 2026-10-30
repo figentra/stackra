@@ -18,6 +18,12 @@ and `awsRuntime`).
 
 - Every size and name comes from a runway; a new knob is a runway field first (the canonical
   `tools/schemas/runway-*.schema.json` and `@stackra/runway`), then a plan field here.
+- Resources and workloads (ADR 0493): a size is a catalogue entry (`POSTGRES_SIZES`, `WORKLOAD_SIZES`, `CACHE_SIZES`)
+  with a monthly estimate, never an inline number; the plan refuses a cost over the environment's cap before anything is
+  declared. A database password arrives as a Pulumi secret input and never lands in a name, tag or output; workload
+  secrets are SSM references only. A new resource kind needs its own ADR (Kafka, OpenSearch and SES are reserved).
+- Renaming a Pulumi resource replaces it on the next apply: keep logical names stable, and change one only with the
+  owner's yes.
 - `.` never imports `@pulumi/*` or `node:*`; the plan is plain data a test compares.
 - Test Pulumi code under `pulumi.runtime.setMocks` only. Never run `pulumi up`, `pulumi destroy` or a preview
   against a real account, and never call a cloud API.

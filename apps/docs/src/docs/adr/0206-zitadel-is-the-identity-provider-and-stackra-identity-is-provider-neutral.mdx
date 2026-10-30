@@ -1,6 +1,6 @@
 ---
 title: "0206 — ZITADEL is the identity provider; @stackra/identity is provider-neutral"
-description: "Accepted, amended by 0268, 0353, 0361, OS 0002, OS 0007 · 2026-10-20"
+description: "Accepted, amended by 0268, 0353, 0361, 0493, OS 0002, OS 0007 · 2026-10-20"
 ---
 
 <Note>
@@ -44,7 +44,7 @@ Better Auth was the identity choice (0051, 0093). The owner's identity answers o
 1. **One provider.** ZITADEL is the identity provider. Better Auth leaves the stack.
 2. **Provider-neutral client.** `@stackra/identity` is the OIDC client, the SDK and the contracts, with provider-neutral ids and claims mapping.
 3. **Control plane, not login.** The identity service is a control plane: the app registry, the tenant to ZITADEL org mapping, the IdP metadata, the identity events and the service identities. It never proxies a login.
-4. **Hosting.** ZITADEL Cloud serves SaaS. ZITADEL is self-hosted, unmodified, for on-prem and air-gap (AGPL is accepted). `stackra dev` runs a ZITADEL container.
+4. **Hosting.** ZITADEL Cloud serves SaaS. ZITADEL is self-hosted, unmodified, for on-prem and air-gap (AGPL is accepted). `stackra dev` runs a ZITADEL container. _Amended by [0493](/adr/0493-runway-resources-and-workloads-one-runway-provisions-the-product-runtime) (owner, 2026-10-30): a SaaS region that residency forces (KSA in-country) self-hosts ZITADEL as a runway workload; ZITADEL Cloud stays the default elsewhere._
 5. **One instance (I1).** Staff have one global account. Each tenant gets a ZITADEL org for its end customers.
 6. **Sign-in methods (I2).** All the sign-in methods of memory L605.
 7. **Login app (I3).** One login app of ours, on ZITADEL session APIs, serves every hostname through Cloudflare for SaaS, with the brand cascade.
