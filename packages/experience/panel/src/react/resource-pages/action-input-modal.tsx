@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `ActionInputModal`, the modal form of a record action whose input needs more than the record id: the
- *          action's label as title, its declared confirm copy, one field per input key drawn by `ResourceFormField`,
- *          validated by the action's input schema with the record id pre-filled; submit runs the action once per
- *          record with the same values, and a refusal keeps the form open with the server's field errors and only the
- *          refused records left.
+ * Purpose: `ActionInputModal`, the modal form of an action whose input has fields besides the record id: the action's
+ *          label as title, its declared confirm copy, one field per input key drawn by `ResourceFormField`, validated by
+ *          the action's input schema, the record id and the record's own values for those keys pre-filled; submit runs
+ *          the action once per record (or once without one) with the same values, and a refusal keeps the form open
+ *          with the server's field errors and only the refused records left.
  * Boundary: internal to the resource pages. Registers the input schema under the action ref so `@stackra/ui`'s schema
  *           form reads it. The modal is the confirmation, so the runner skips its own dialog. Focus trap, focus return
  *           and Escape are the ui `Modal`'s (React Aria); Enter in a field submits the form.
@@ -18,6 +18,7 @@ import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { actionLabelKey } from "#core/functions/action-label-key.function";
+import { valueAt } from "#core/functions/value-at.function";
 import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#react/resource-pages/action-input-modal.props";
@@ -35,6 +36,7 @@ export function ActionInputModal({
   action,
   idKey,
   ids,
+  record,
   keys,
   onClose,
 }: ActionInputModalProps): ReactElement {
@@ -47,9 +49,17 @@ export function ActionInputModal({
   const [serverErrors, setServerErrors] = useState<Readonly<Record<string, string>>>({});
   // The ref's input is its schema; the schema form reads schemas by class, so record it under the ref.
   useState(() => registerSchemas([[action, action.input]]));
+  // A key the record holds starts from its value (a drafted reply), so staff confirm rather than retype it.
+  const prefill = Object.fromEntries(
+    keys.flatMap((key) => {
+      const value = record === undefined ? undefined : valueAt(record, key);
+      return value === undefined || value === null ? [] : [[key, value]];
+    }),
+  );
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
     // The id field is not drawn; it is filled so the schema validates, and replaced per record on submit.
-    defaultValues: idKey === undefined || ids?.[0] === undefined ? {} : { [idKey]: ids[0] },
+    defaultValues:
+      idKey === undefined || ids?.[0] === undefined ? prefill : { ...prefill, [idKey]: ids[0] },
     serverErrors,
   });
   const ask = action.texts.confirm;

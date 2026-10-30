@@ -59,6 +59,7 @@ export function useResourceActions(
         readonly action: ActionRef;
         readonly idKey: string | undefined;
         readonly ids: readonly string[] | undefined;
+        readonly record: object | undefined;
         readonly keys: readonly string[];
       }
     | undefined
@@ -69,6 +70,7 @@ export function useResourceActions(
     action: ActionRef,
     ids: readonly string[] | undefined,
     id: string,
+    record?: object,
   ): ResourceAction => ({
     id,
     label: t(actionLabelKey(resource.key, action.key)),
@@ -78,7 +80,7 @@ export function useResourceActions(
       // (ADR 0307 rule 3).
       const keys = actionFormKeys(action.input, key);
       if (keys.length > 0) {
-        setPending({ action, idKey: key, ids, keys });
+        setPending({ action, idKey: key, ids, record, keys });
         return;
       }
       if (ids === undefined || key === undefined) {
@@ -104,6 +106,7 @@ export function useResourceActions(
           action={pending.action}
           idKey={pending.idKey}
           ids={pending.ids}
+          record={pending.record}
           keys={pending.keys}
           onClose={() => setPending(undefined)}
         />
@@ -130,7 +133,8 @@ export function useResourceActions(
         (node, index) => {
           if (node.kind === "create" && pages.create !== undefined)
             out.push(link("create", t(PANEL_KEYS.panel.resources.create), pages.create));
-          if (node.kind === "run") out.push(runner(node.action as ActionRef, ids, `run_${index}`));
+          if (node.kind === "run")
+            out.push(runner(node.action as ActionRef, ids, `run_${index}`, record));
         },
       );
       if (

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionInputModal`: it draws the action's label, its confirm copy and one field per key, starts
  *          the form with the record id, submits the values once per record without a second confirmation and closes;
- *          a refusal keeps it open with the server's field errors and retries only the refused records.
+ *          a refusal keeps it open with the server's field errors and retries only the refused records; the record's own
+ *          values pre-fill its keys.
  * Boundary: unit tier, jsdom; the action runner and the schema form are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -130,6 +131,26 @@ describe("ActionInputModal", () => {
     expect(spies.useSchemaForm.mock.calls[0]?.[1]).toMatchObject({
       defaultValues: { reviewId: "rev_1" },
     });
+  });
+
+  it("starts the form keys from the record's own values", () => {
+    render(
+      <ActionInputModal
+        resourceKey="reviews.review"
+        action={ModerateReviewAction}
+        idKey="reviewId"
+        ids={["rev_1"]}
+        record={{ id: "rev_1", note: "Thanks for the review!", decision: null, rating: 4 }}
+        keys={["decision", "note"]}
+        onClose={vi.fn()}
+      />,
+    );
+    // A null value and a key the form does not ask for start nothing.
+    expect(spies.useSchemaForm.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        defaultValues: { reviewId: "rev_1", note: "Thanks for the review!" },
+      }),
+    );
   });
 
   it("runs once per record with the same values, confirmed, then closes", async () => {
