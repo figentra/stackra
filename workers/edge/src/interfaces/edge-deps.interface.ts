@@ -20,7 +20,7 @@ export interface EdgeDeps {
   readonly keys: JsonWebKeys["find"];
   /** The fetch that reaches the origin. */
   readonly fetcher: typeof fetch;
-  /** Now. */
+  /** Returns the current time. */
   readonly now: () => Date;
   /** A new request id. */
   readonly requestId: () => string;

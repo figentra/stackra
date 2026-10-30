@@ -11,7 +11,7 @@ import { z } from "zod";
 
 /** What one run of the job did. */
 export class EraseDueAccountsOutput extends Schema {
-  /** Erasures queued. */
+  /** How many account erasures this run queued. */
   @Int({ min: 0 })
   started!: number;
 

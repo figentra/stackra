@@ -13,8 +13,10 @@ import type { SpanContext } from "#core/types/span-context.type";
 
 /** One ended span. */
 export interface FinishedSpan {
+  /** The span's operation name, as the tracer started it. */
   readonly name: string;
 
+  /** The span's trace id and span id. */
   readonly context: SpanContext;
 
   /** The parent's span id; none for a trace's root. */
@@ -23,10 +25,13 @@ export interface FinishedSpan {
   /** `server` for the first span of a continued inbound trace, else `internal`. */
   readonly kind: "server" | "internal";
 
+  /** When the span started, in epoch milliseconds. */
   readonly startMs: number;
 
+  /** When the span ended, in epoch milliseconds. */
   readonly endMs: number;
 
+  /** The attributes recorded on the span. */
   readonly attributes: TraceAttributes;
 
   /** The failed error's type (its `code`, else its class name); none when the span succeeded. */

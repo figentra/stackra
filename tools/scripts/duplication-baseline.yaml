@@ -321,7 +321,7 @@ members:
     src: 0
     tests: 3.56
   packages/security/identity:
-    src: 0.36
+    src: 0.63
     tests: 1.61
   packages/security/licensing:
     src: 0.9
@@ -372,6 +372,9 @@ members:
     src: 0
     tests: 0
   services/health:
+    src: 0
+    tests: 0
+  workers/edge:
     src: 0
     tests: 0
   workers/registry:

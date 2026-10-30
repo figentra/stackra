@@ -17,17 +17,17 @@ import type { TraceAttributes } from "#core/types/trace-attributes.type";
  * new NoopMetricsDriver().counter("orders.created", 1);
  */
 export class NoopMetricsDriver extends Metrics {
-  /** Records nothing. */
+  /** Drops the counter increment without recording it. */
   counter(_name: string, _value: number, _attributes?: TraceAttributes): void {
     return undefined;
   }
 
-  /** Records nothing. */
+  /** Drops the histogram sample without recording it. */
   histogram(_name: string, _value: number, _attributes?: TraceAttributes): void {
     return undefined;
   }
 
-  /** Records nothing. */
+  /** Drops the gauge reading without recording it. */
   gauge(_name: string, _value: number, _attributes?: TraceAttributes): void {
     return undefined;
   }

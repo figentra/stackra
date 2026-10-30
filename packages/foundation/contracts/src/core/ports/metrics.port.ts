@@ -14,7 +14,7 @@ import { Port } from "#core/bases/port.base";
 import type { TraceAttributes } from "#core/types/trace-attributes.type";
 
 /**
- * Records metrics.
+ * The port that records counters, histograms and gauges for the metrics exporter.
  *
  * @example
  * this.metrics.counter("orders.created", 1, { scopeId });

@@ -16,6 +16,6 @@ export interface AccountDeletionOptions {
   /** Schedules the caller's deletion; rejects `step_up_required` when the sign-in is too old. */
   readonly request: () => Promise<AccountDeletionState>;
 
-  /** Cancels it. */
+  /** Cancels the pending account deletion. */
   readonly cancel: () => Promise<AccountDeletionState>;
 }

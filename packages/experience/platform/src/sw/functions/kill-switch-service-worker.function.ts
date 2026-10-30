@@ -5,7 +5,7 @@
  *          every Cache Storage cache, unregisters itself and reloads each open tab onto the network.
  * Boundary: returns plain JavaScript text, nothing imported, so it is served as is without the app's build; writing it
  *           to the static output and retiring it again is the runbook's (runbooks/deploys, "Retire a service worker").
- * Runtime: any (the returned script runs in the worker)
+ * Runtime: worker
  * Governing contract: ADR 0325 (rule 18); ADR 0255.
  */
 

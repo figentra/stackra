@@ -68,13 +68,21 @@ components:
     row: 0
     col: 3
     size: *a1
+  - id: workers-edge
+    type: cloud
+    label: worker-edge
+    sublabel: worker
+    tag: "@figentra/worker-edge"
+    row: 1
+    col: 0
+    size: *a1
   - id: workers-registry
     type: cloud
     label: worker-registry
     sublabel: worker
     tag: "@figentra/worker-registry"
     row: 1
-    col: 0
+    col: 1
     size: *a1
   - id: workers-static
     type: cloud
@@ -82,7 +90,7 @@ components:
     sublabel: node
     tag: "@figentra/worker-static"
     row: 1
-    col: 1
+    col: 2
     size: *a1
   - id: workers-turbo-cache
     type: cloud
@@ -90,7 +98,7 @@ components:
     sublabel: worker
     tag: "@figentra/worker-turbo-cache"
     row: 1
-    col: 2
+    col: 3
     size: *a1
   - id: services-example
     type: backend
@@ -228,6 +236,7 @@ boundaries:
       - apps-docs
       - apps-mobile
       - apps-playground
+      - workers-edge
       - workers-registry
       - workers-static
       - workers-turbo-cache
@@ -265,6 +274,7 @@ cards:
       - "@figentra/docs"
       - "@figentra/mobile"
       - "@figentra/playground"
+      - "@figentra/worker-edge"
       - "@figentra/worker-registry"
       - "@figentra/worker-static"
       - "@figentra/worker-turbo-cache"

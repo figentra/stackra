@@ -10,7 +10,9 @@
 
 /** The library members the driver uses. */
 export type AppleAuthenticationModule = {
+  /** Whether Sign in with Apple is available on this device. */
   readonly isAvailableAsync: () => Promise<boolean>;
+  /** Opens the Apple sign-in sheet and resolves with the credential. */
   readonly signInAsync: (options: { requestedScopes: number[]; nonce: string }) => Promise<{
     user: string;
     identityToken: string | null;
@@ -18,5 +20,6 @@ export type AppleAuthenticationModule = {
     email: string | null;
     fullName: { givenName: string | null; familyName: string | null } | null;
   }>;
+  /** The scope constants the sign-in request names. */
   readonly AppleAuthenticationScope: { readonly FULL_NAME: number; readonly EMAIL: number };
 };

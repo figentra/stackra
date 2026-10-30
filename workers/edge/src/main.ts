@@ -17,6 +17,7 @@ import { readSettings } from "#src/settings/read-settings";
 /** The key source of this isolate, rebuilt only when the issuer or cache time changes. */
 let source: { readonly id: string; readonly keys: JsonWebKeys["find"] } | null = null;
 
+/** The Worker entry: builds `EdgeDeps` from the environment and hands each request to `handleRequest`. */
 export default {
   async fetch(request: Request, env: EdgeEnv): Promise<Response> {
     const settings = readSettings(env);
