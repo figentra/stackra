@@ -7,6 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0282 (decision 3); ADR 0022 (test placement).
  */
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -231,15 +232,36 @@ describe("check phases", () => {
     ]);
   });
 
-  it("spec runs the repository's gates when present and is skipped otherwise", async () => {
-    expect(await SPEC_PHASE.run(runIn())).toEqual({ findings: [], skipped: "not installed" });
+  it("spec runs in any repository with .agents/specs and is skipped without", async () => {
+    expect(await SPEC_PHASE.run(runIn())).toEqual({ findings: [], skipped: "no specs" });
     const root = mkdtempSync(join(tmpdir(), "phase-"));
-    mkdirSync(join(root, "tools/scripts"), { recursive: true });
-    writeFileSync(join(root, "tools/scripts/spec-gate.mjs"), "");
-    tool.outputs = [{ code: 1, stdout: "", stderr: "spec-gate: tasks.md has no lane\n" }];
-    const { findings } = await SPEC_PHASE.run(runIn(root));
+    mkdirSync(join(root, ".agents/specs/os-7-billing"), { recursive: true });
+    expect(await SPEC_PHASE.run(runIn(root))).toEqual({ findings: [] });
+    // A real repository: main, then a branch that adds a spec with an unknown Status.
+    const git = (...args: string[]): void => {
+      execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], {
+        cwd: root,
+        stdio: "ignore",
+      });
+    };
+    git("init", "-b", "main");
+    git("commit", "--allow-empty", "-m", "init");
+    git("checkout", "-b", "work");
+    writeFileSync(
+      join(root, ".agents/specs/os-7-billing/spec.md"),
+      "# Spec\n\n**Status**: Bogus\n",
+    );
+    git("add", ".");
+    git("commit", "-m", "docs: add spec");
+    const { findings } = await SPEC_PHASE.run({ ...runIn(root), base: "main" });
     expect(findings).toEqual([
-      expect.objectContaining({ rule: "spec-gate", message: "tasks.md has no lane", adr: "0198" }),
+      expect.objectContaining({
+        phase: "spec",
+        rule: "spec-gate",
+        path: ".agents/specs/os-7-billing",
+        message: expect.stringContaining("`**Status**` is not one of"),
+        adr: "0198",
+      }),
     ]);
   });
 });

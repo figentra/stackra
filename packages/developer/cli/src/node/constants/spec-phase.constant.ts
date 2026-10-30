@@ -1,28 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: `SPEC_PHASE`, phase 11 of `stackra check`: the repository's spec gates (`tools/scripts/spec-gate.mjs ci` and
- *          `spec-trace.mjs ci`, with `--base` when given), one finding per line they print. A repository without them
- *          reports "skipped (not installed)".
- * Boundary: runs the repository's own scripts: the spec workflow is Figentra-internal (it reads Linear branch names), so
- *           it stays in the repository and never moves into the CLI (ADR 0282 decision 4).
+ * Purpose: `SPEC_PHASE`, phase 11 of `stackra check`: the read-only spec checks (`specFindings`) of a repository that keeps
+ *          spec-kit specs in `.agents/specs`: the stage gate of every spec folder changed since the base (`--base`, else
+ *          `origin/main`), the foreign-status, bug-lane and lane gates, and the trace rules. A repository without
+ *          `.agents/specs` reports "skipped (no specs)".
+ * Boundary: the checks are published code in `@stackra/repo-checks`, so the phase runs in any repository; it reads
+ *           files and runs `git` through the functions it hands the checks. The `STACKRA_BRANCH` and
+ *           `SPEC_GATE_REQUIRE_READY=1` environment variables are read here, as the repository's scripts read them.
+ *           Only the Linear side effects of core's spec workflow stay in core's `tools/scripts`.
  * Runtime: node
- * Governing contract: ADR 0198 (spec states and traceability); ADR 0282 (decision 4).
+ * Governing contract: ADR 0198 (spec states and traceability); ADR 0282 (decisions 3 and 4, as amended).
  */
-import { existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import type { Finding } from "@stackra/repo-checks/node";
+import { SPECS_DIR, specFindings } from "@stackra/repo-checks/node";
 
-import { exitFinding } from "#node/functions/exit-finding.function";
-import { runCaptured } from "#node/functions/run-captured.function";
-import { toolFinding } from "#node/functions/tool-finding.function";
 import type { CheckPhase } from "#node/types/check-phase.type";
-
-/** The spec gates and where each lives in a repository. */
-const GATES = [
-  ["spec-gate", "tools/scripts/spec-gate.mjs"],
-  ["spec-trace", "tools/scripts/spec-trace.mjs"],
-] as const;
 
 /** The `spec` phase. */
 export const SPEC_PHASE: CheckPhase = {
@@ -30,26 +25,33 @@ export const SPEC_PHASE: CheckPhase = {
   tool: "spec",
   adr: "0198",
   async run({ root, base }) {
-    const present = GATES.filter(([, script]) => existsSync(join(root, script)));
-    if (present.length === 0) return { findings: [], skipped: "not installed" };
-    const findings: Finding[] = [];
-    for (const [rule, script] of present) {
-      const output = await runCaptured(
-        process.execPath,
-        [script, "ci", ...(base === undefined ? [] : [`--base=${base}`])],
-        root,
-      );
-      if (output === undefined || output.code === 0) continue;
-      const lines = output.stderr
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.startsWith(`${rule}:`));
-      if (lines.length === 0) findings.push(exitFinding({ ...SPEC_PHASE, tool: rule }, output));
-      for (const line of lines)
-        findings.push(
-          toolFinding(SPEC_PHASE, { rule, message: line.slice(rule.length + 1).trim() }),
-        );
-    }
-    return { findings };
+    if (!existsSync(join(root, SPECS_DIR))) return { findings: [], skipped: "no specs" };
+    const git = (args: readonly string[]): string | null => {
+      try {
+        return execFileSync("git", [...args], {
+          cwd: root,
+          encoding: "utf8",
+          maxBuffer: 64 << 20,
+          stdio: ["ignore", "pipe", "ignore"],
+        });
+      } catch {
+        return null;
+      }
+    };
+    const branch =
+      process.env["STACKRA_BRANCH"] || (git(["branch", "--show-current"]) ?? "").trim();
+    const findings = specFindings({
+      base: base ?? "origin/main",
+      branch,
+      requireReady: process.env["SPEC_GATE_REQUIRE_READY"] === "1",
+      git,
+      exists: (path) => existsSync(join(root, path)),
+      read: (path) =>
+        existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : undefined,
+      list: (path) => (existsSync(join(root, path)) ? readdirSync(join(root, path)) : []),
+    });
+    return {
+      findings: findings.map((finding) => ({ ...finding, adr: finding.adr ?? SPEC_PHASE.adr })),
+    };
   },
 };
