@@ -10,6 +10,8 @@
  */
 import { afterEach, vi } from "vitest";
 
+// The hook gets the tests' 30 s-class budget: under a loaded runner settling every lazy demo took past vitest's 10 s
+// hook default, the hook failed, cleanup never ran and the next test saw two pages.
 afterEach(async () => {
   await vi.dynamicImportSettled();
-});
+}, 60_000);
