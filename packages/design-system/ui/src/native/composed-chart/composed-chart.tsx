@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the native `ComposedChart` on Victory Native: some series as columns (rounded data ends, grouped) and the
- *          rest as 2px monotone lines over them, the quiet horizontal grid, category labels under the plot, and while
+ *          rest as dashed 2px monotone lines over them (an uncoloured line in `chart-4`), the quiet horizontal grid, category labels under the plot, and while
  *          scrubbed the `ChartCrosshair` (soft band, dashed guide, ringed dots, a selection tick per category) with a
  *          readout of every series' value above the plot.
  * Boundary: a new chart beside `CartesianFigure`, which it does not touch. Labels are Skia paragraphs (shaping and
@@ -11,7 +11,14 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; ADR 0060 (right-to-left); chart style
  *          spec (2026-10-28) section 6; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
-import { Skia, TextAlign } from "@shopify/react-native-skia";
+import {
+  DashPathEffect,
+  Group,
+  Line as SkiaLine,
+  Skia,
+  TextAlign,
+  vec,
+} from "@shopify/react-native-skia";
 import { useThemeColor } from "heroui-native";
 import { type ReactElement, type ReactNode, useMemo, useState } from "react";
 import { View } from "react-native";
@@ -27,7 +34,9 @@ import {
   useChartPressState,
 } from "victory-native";
 
+import { chartAnnotationTextOf } from "#core/functions/chart-annotation-text-of.function";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
+import { composedSeriesOf } from "#core/functions/composed-series-of.function";
 import { chartTableOf } from "#core/functions/chart-table-of.function";
 import { chartTextOf } from "#core/functions/chart-text-of.function";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
@@ -54,10 +63,11 @@ const Chart = CartesianChart as unknown as (props: {
 
 /** Columns and lines over one category axis. */
 export function ComposedChart(props: ComposedChartProps): ReactElement {
-  const { data, series, label, xKey, xFormat, valueFormat, height = 240, palette } = props;
+  const { data, label, xKey, xFormat, valueFormat, height = 240, palette } = props;
   const { locale, isRtl, words } = useChartLocale();
   const isReduced = useReducedMotion();
-  const lineKeys = new Set(props.lineKeys ?? series.slice(-1).map((item) => item.key));
+  const lineKeys = new Set(props.lineKeys ?? props.series.slice(-1).map((item) => item.key));
+  const series = composedSeriesOf(props.series, lineKeys);
   const paint = useChartPaint(series.map((item, index) => chartColorOf(item, index, palette)));
   const keys = series.map((item) => item.key);
   const rows = useMemo(() => {
@@ -105,13 +115,29 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
     words,
   });
   const row = isActive ? rows[pressed] : undefined;
+  const isLog = props.valueScale === "log";
+  const secondary = keys.filter((key) => props.secondaryKeys?.includes(key));
+  const primary = keys.filter((key) => !secondary.includes(key));
+  const isDual = secondary.length > 0 && primary.length > 0;
+  const valueLabels = props.showValueAxis
+    ? {
+        labelRenderer: labels,
+        formatYLabel: (figure: unknown) =>
+          typeof figure === "number"
+            ? formatChartNumber(figure, locale, { notation: "compact", ...valueFormat })
+            : String(figure),
+      }
+    : {};
+  const notes = (props.annotations ?? []).map((item) =>
+    chartAnnotationTextOf(item, locale, xFormat),
+  );
   const barIndexes = series
     .map((item, index) => (lineKeys.has(item.key) ? -1 : index))
     .filter((index) => index >= 0);
   return (
     <ChartFrame
       label={label}
-      spoken={chartTextOf(table, locale)}
+      spoken={[chartTextOf(table, locale), ...notes].join("; ")}
       legend={(props.showLegend ?? series.length > 1) ? series : []}
       className={props.className}
       readout={
@@ -150,7 +176,12 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
           {...(props.showTooltip === false ? {} : { chartPressState: state })}
           padding={{ top: 8, bottom: 4 }}
           domainPadding={{ left: 32, right: 32, top: 8 }}
-          domain={{ y: [0] }}
+          // A log scale has no zero; two axes each start at zero on their own.
+          {...(isLog
+            ? { axisScales: { yAxisScale: "log" } }
+            : isDual
+              ? {}
+              : { domain: { y: [0] } })}
           frame={{ lineWidth: 0 }}
           xAxis={{
             labelRenderer: labels,
@@ -161,11 +192,27 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
           yAxis={[
             {
               axisSide: isRtl ? "right" : "left",
+              ...valueLabels,
               labelColor: paint.muted,
               lineColor: paint.grid,
               lineWidth: props.showGrid === false ? 0 : 1,
               tickCount: 4,
+              ...(isDual ? { yKeys: primary, ...(isLog ? {} : { domain: [0] }) } : {}),
             },
+            // The second value axis at the reading end: labels only, the first axis' grid serves both.
+            ...(isDual
+              ? [
+                  {
+                    axisSide: isRtl ? "left" : "right",
+                    ...valueLabels,
+                    labelColor: paint.muted,
+                    lineWidth: 0,
+                    tickCount: 4,
+                    yKeys: secondary,
+                    ...(isLog ? {} : { domain: [0] }),
+                  },
+                ]
+              : []),
           ]}
         >
           {({ points, chartBounds }) => {
@@ -198,8 +245,35 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
                 </BarGroup>
               ) : null;
             const span = (chartBounds.right - chartBounds.left) / Math.max(1, rows.length);
+            // Annotations: a dashed guide through each marked category, its label centred at the top.
+            const guide = points[keys[0] ?? ""] ?? [];
+            const annotations = (props.annotations ?? []).map((annotation, index) => {
+              const x = guide[rows.findIndex((datum) => datum[xKey] === annotation.at)]?.x;
+              if (x === undefined) return null;
+              return (
+                // oxlint-disable-next-line react/no-array-index-key -- annotations carry no id and may share a category; the list is fixed per render
+                <Group key={`annotation-${index}`}>
+                  <SkiaLine
+                    p1={vec(x, chartBounds.top + 14)}
+                    p2={vec(x, chartBounds.bottom)}
+                    color={paint.muted}
+                    strokeWidth={1}
+                  >
+                    <DashPathEffect intervals={[3, 3]} />
+                  </SkiaLine>
+                  {labels.render({
+                    text: annotation.label,
+                    x: x - 48,
+                    y: chartBounds.top,
+                    width: 96,
+                    color: paint.muted,
+                  } as never)}
+                </Group>
+              );
+            });
             return (
               <>
+                {annotations}
                 {props.showTooltip === false ? null : (
                   <ChartCrosshair
                     state={state}
@@ -225,7 +299,10 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
                       strokeWidth={2}
                       curveType="monotoneX"
                       {...(animate ? { animate } : {})}
-                    />
+                    >
+                      {/* Dashed, so a line reads as an overlay on the columns, as on the web. */}
+                      <DashPathEffect intervals={[6, 4]} />
+                    </Line>
                   ) : null,
                 )}
               </>

@@ -73,6 +73,7 @@ vi.mock("#native/haptics/haptics", () => ({
 }));
 vi.mock("#native/icon/icon", () => ({ Icon: () => null }));
 vi.mock("#native/slot-icon/slot-icon", () => ({ SlotIcon: () => null }));
+vi.mock("#native/spinner/spinner", () => ({ Spinner: () => null }));
 vi.mock("#native/text/text", async () => {
   const { createElement } = await import("react");
   return {
@@ -131,13 +132,56 @@ describe("TreeView (native)", () => {
     expect(state.played).toEqual(["selection", "selection"]);
   });
 
+  it("carries a check down when checks propagate and reads a partly checked parent as mixed", () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <TreeView
+        items={CATEGORIES}
+        label="Menu"
+        selectionMode="multiple"
+        isSelectionPropagated
+        defaultExpandedKeys={["drinks"]}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    act(() => screen.getByRole("button", { name: "Drinks" }).click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["drinks", "hot", "cold"]);
+    act(() => screen.getByRole("button", { name: "Hot" }).click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["cold"]);
+    expect(screen.getByRole("button", { name: "Drinks" }).dataset["state"]).toContain('"mixed"');
+  });
+
+  it("loads a row's children the first time it opens, with a loading row meanwhile", async () => {
+    let resolve: ((rows: readonly TreeViewNode[]) => void) | undefined;
+    const onLoadChildren = vi.fn(
+      () =>
+        new Promise<readonly TreeViewNode[]>((done) => {
+          resolve = done;
+        }),
+    );
+    render(
+      <TreeView
+        items={[{ id: "sweets", label: "Sweets", hasChildren: true }]}
+        label="Menu"
+        onLoadChildren={onLoadChildren}
+      />,
+    );
+    act(() => screen.getByRole("button", { name: "Expand Sweets" }).click());
+    expect(onLoadChildren).toHaveBeenCalledWith("sweets");
+    expect(screen.getByText("Loading…")).toBeTruthy();
+    await act(async () => resolve?.([{ id: "kunafa", label: "Kunafa" }]));
+    expect(screen.getByText("Kunafa")).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
+  });
+
   it("activates a row without selection, and starts the chevron pointing left in right-to-left", () => {
     state.direction = "rtl";
     const onAction = vi.fn();
     render(<TreeView items={CATEGORIES} label="Menu" onAction={onAction} />);
     act(() => screen.getByRole("button", { name: "Food" }).click());
     expect(onAction).toHaveBeenCalledWith("food");
-    expect(state.styles.at(-1)).toEqual({ transform: [{ rotate: "180deg" }] });
+    // The Icon mirrors itself in right-to-left; the turn starts at 0 and opens the other way.
+    expect(state.styles.at(-1)).toEqual({ transform: [{ rotate: "0deg" }] });
   });
 
   it("selects one row at a time and clears it on a second press", () => {

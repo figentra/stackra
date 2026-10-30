@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the web `CandlestickChart` on Recharts: one candle per period, a wick from low to high and a body from open
- *          to close (a rise hollow in success, a fall filled in danger, so the direction never rests on colour), with
+ *          to close (a rise hollow in success, a fall filled with the danger soft-hover step in a solid danger outline,
+ *          so the direction never rests on colour; the pointed candle stands while the others dim), with
  *          volume bars along the bottom quarter, the quiet grid and price axis, a tooltip of the open, high, low,
  *          close and volume, and the data table.
  * Boundary: no style of its own. The periods run right to left in Arabic and the price axis sits on the reading start.
@@ -19,8 +20,10 @@ import { formatChartNumber } from "#core/functions/format-chart-number.function"
 import type { CandlestickChartProps } from "#react/candlestick-chart/candlestick-chart.props";
 import { CHART_PAINT } from "#react/chart/chart-paint.constant";
 import { ChartFrame } from "#react/chart/chart-frame";
+import { MARK_PAINT } from "#react/chart/mark-paint.constant";
 import { paintOf } from "#react/chart/paint-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
+import { usePointedIndex } from "#react/chart/use-pointed-index";
 import { ChartTooltip } from "#react/chart-tooltip/chart-tooltip";
 import { useUiText } from "#react/hooks/use-ui-text";
 
@@ -34,10 +37,18 @@ interface BarShape {
   readonly width?: number;
   readonly height?: number;
   readonly payload?: CandleRow;
+  readonly index?: number;
 }
 
 /** One candle drawn in the range bar's box: the wick through the middle and the body from open to close. */
-function Candle({ x = 0, y = 0, width = 0, height = 0, payload }: BarShape): ReactElement | null {
+function Candle({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  payload,
+  isDim = false,
+}: BarShape & { readonly isDim?: boolean }): ReactElement | null {
   if (!payload) return null;
   const { open, close, high, low } = payload;
   const span = high - low;
@@ -48,7 +59,7 @@ function Candle({ x = 0, y = 0, width = 0, height = 0, payload }: BarShape): Rea
   const top = at(Math.max(open, close));
   const centre = x + width / 2;
   return (
-    <g>
+    <g opacity={isDim ? MARK_PAINT.dimOpacity : 1}>
       <line x1={centre} x2={centre} y1={y} y2={y + height} stroke={color} strokeWidth={1.5} />
       <rect
         x={centre - body / 2}
@@ -56,7 +67,8 @@ function Candle({ x = 0, y = 0, width = 0, height = 0, payload }: BarShape): Rea
         width={body}
         height={Math.max(at(Math.min(open, close)) - top, 1.5)}
         rx={1.5}
-        fill={isRise ? CHART_PAINT.surface : color}
+        // A rise is hollow; a fall is filled with the danger soft-hover step, so its solid outline still reads.
+        fill={isRise ? CHART_PAINT.surface : paintOf("danger-soft-hover")}
         stroke={color}
         strokeWidth={1.5}
       />
@@ -104,6 +116,7 @@ export function CandlestickChart({
   };
   const maxVolume = Math.max(1, ...data.map((row) => row.volume ?? 0));
   const side = isRtl ? ("right" as const) : ("left" as const);
+  const { pointed, handlers } = usePointedIndex();
   return (
     <ChartFrame label={label} table={table} legend={[]} className={className}>
       <ComposedChart
@@ -116,6 +129,7 @@ export function CandlestickChart({
         barGap="-100%"
         role="img"
         aria-label={label}
+        {...handlers}
       >
         <CartesianGrid {...CHART_PAINT.grid} vertical={false} yAxisId="price" />
         <XAxis
@@ -184,7 +198,12 @@ export function CandlestickChart({
           yAxisId="price"
           dataKey="range"
           // oxlint-disable-next-line react/no-unstable-nested-components -- a render callback Recharts calls for each bar, not a component type
-          shape={(shape: unknown) => <Candle {...(shape as BarShape)} />}
+          shape={(shape: unknown) => (
+            <Candle
+              {...(shape as BarShape)}
+              isDim={pointed !== null && pointed !== (shape as BarShape).index}
+            />
+          )}
           isAnimationActive={!isReduced}
         />
       </ComposedChart>

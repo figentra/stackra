@@ -1,0 +1,68 @@
+{
+  "generatedFrom": {
+    "hash": "1b7ef85797e0c2b0",
+    "propsFiles": ["ui/src/native/gallery/gallery.props.ts"]
+  },
+  "importLine": "import { Gallery } from \"@stackra/ui/native\";",
+  "key": "free/gallery",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a picture's id when it is pressed, after the lightbox opens.",
+          "name": "onImagePress",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "Gallery",
+      "props": [
+        {
+          "description": "The pictures, in order.",
+          "name": "images",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly GalleryImage[]"
+        },
+        {
+          "description": "The gallery's accessible name, for example \"Product photos\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "grid",
+          "description": "`grid`: square tiles in rows. `masonry`: each picture at its own shape, in columns. Defaults to `grid`.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"grid\" | \"masonry\""
+        },
+        {
+          "description": "The number of columns; defaults to 3 (2 on a narrow web screen).",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True (the default): pressing a picture opens it in the Lightbox.",
+          "name": "hasLightbox",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

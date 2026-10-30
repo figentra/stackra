@@ -16,8 +16,12 @@ export interface ChartPaint {
   readonly foreground: string;
   /** The background colour behind the plot. */
   readonly surface: string;
+  /** The softest neutral held at 3:1 on the card; a context mark's outline. */
+  readonly fieldBorder: string;
   /** The grid and the radial track: the muted colour at 15%. */
   readonly grid: string;
   /** The block behind a pressed column: the foreground at 5%. */
   readonly cursorBlock: string;
+  /** 0 to 1: how lit a mark's top is, from the theme's material highlight; 0 keeps a flat brand flat. */
+  readonly lift: number;
 }

@@ -1,0 +1,68 @@
+{
+  "generatedFrom": {
+    "hash": "69938358ef23615b",
+    "heroDoc": "vendor/heroui/react/disclosure.json",
+    "propsFiles": ["ui/src/react/disclosure/disclosure.props.ts"]
+  },
+  "importLine": "import { Disclosure } from \"@stackra/ui/react\";",
+  "key": "free/disclosure",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the section opens or closes.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isExpanded: boolean) => void"
+        }
+      ],
+      "name": "Disclosure",
+      "props": [
+        {
+          "description": "The title that opens and closes the section; it names the button.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What shows while the section is open.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while open, for a controlled section; pair it with `onExpandedChange`.",
+          "name": "isExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to start open, for an uncontrolled section.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the title but refuse opening or closing.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

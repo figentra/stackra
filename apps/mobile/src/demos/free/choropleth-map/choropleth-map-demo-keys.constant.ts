@@ -11,7 +11,22 @@ import { keys } from "@stackra/i18n";
 export const CHOROPLETH_MAP_DEMO_KEYS = keys({
   demo_free: {
     choropleth_map: {
-      districts: ["label", "north", "east", "south", "west", "centre", "harbour"],
+      districts: [
+        "label",
+        "riyadh",
+        "makkah",
+        "madinah",
+        "eastern",
+        "qassim",
+        "hail",
+        "tabuk",
+        "northern_borders",
+        "jawf",
+        "jazan",
+        "najran",
+        "bahah",
+        "asir",
+      ],
     },
   },
 });

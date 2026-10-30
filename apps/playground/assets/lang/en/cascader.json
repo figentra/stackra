@@ -1,0 +1,44 @@
+{
+  "areas": {
+    "sa": "Saudi Arabia",
+    "riyadh": "Riyadh",
+    "olaya": "Al Olaya",
+    "malqa": "Al Malqa",
+    "hittin": "Hittin",
+    "jeddah": "Jeddah",
+    "rawdah": "Al Rawdah",
+    "hamra": "Al Hamra",
+    "eastern": "Eastern Province",
+    "dammam": "Dammam",
+    "khobar": "Al Khobar",
+    "ae": "United Arab Emirates",
+    "dubai": "Dubai",
+    "downtown": "Downtown",
+    "marina": "Dubai Marina",
+    "abu_dhabi": "Abu Dhabi",
+    "reem": "Al Reem Island"
+  },
+  "basics": {
+    "label": "Delivery area",
+    "description": "Same-day delivery covers the districts listed here."
+  },
+  "lazy": {
+    "label": "Product category",
+    "description": "Sub-categories load when you open them.",
+    "women": "Women",
+    "men": "Men",
+    "home": "Home",
+    "abayas": "Abayas",
+    "dresses": "Dresses",
+    "thobes": "Thobes",
+    "shoes": "Shoes",
+    "kitchen": "Kitchen",
+    "bedding": "Bedding",
+    "linen": "Linen sheets",
+    "silk": "Silk pillowcases"
+  },
+  "invalid": {
+    "label": "Ship to",
+    "error": "Choose the district the order ships to."
+  }
+}

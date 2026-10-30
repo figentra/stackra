@@ -1,0 +1,13 @@
+{
+  "basics": {
+    "invoice": "فاتورة-1042.pdf",
+    "stock": "مخزون-أكتوبر.xlsx",
+    "counter": "واجهة-المحل.png",
+    "opened": "فُتح {name}."
+  },
+  "upload_states": {
+    "menu": "قائمة-الشتاء.jpg",
+    "contract": "عقد-فرع-العليا.pdf",
+    "error": "انقطع الاتصال. حاول مرة أخرى."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "basics": {
+    "label": "Category",
+    "description": "Where the product shows in the store.",
+    "women": "Women",
+    "abayas": "Abayas",
+    "dresses": "Dresses",
+    "men": "Men",
+    "thobes": "Thobes",
+    "shemaghs": "Shemaghs",
+    "kids": "Kids"
+  },
+  "multiple": {
+    "label": "Branches",
+    "description": "The offer runs in these branches.",
+    "central": "Central region",
+    "olaya": "Olaya, Riyadh",
+    "malqa": "Al Malqa, Riyadh",
+    "western": "Western region",
+    "tahlia": "Tahlia, Jeddah",
+    "aziziyah": "Al Aziziyah, Makkah",
+    "online": "Online store"
+  },
+  "invalid": {
+    "label": "Department",
+    "error": "Choose the department this person works in.",
+    "finance": "Finance",
+    "payroll": "Payroll",
+    "accounts": "Accounts",
+    "sales": "Sales"
+  }
+}

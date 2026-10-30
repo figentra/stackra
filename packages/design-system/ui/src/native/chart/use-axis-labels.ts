@@ -13,16 +13,25 @@ import { createParagraphLabelRenderer } from "victory-native";
 /** The width allowed per character of an axis label at 10 points. */
 const LABEL_CHAR_WIDTH = 6.5;
 
-/** The tick label renderer in `color`. */
-export function useAxisLabels(color: string): ReturnType<typeof createParagraphLabelRenderer> {
+/**
+ * The tick label renderer in `color`.
+ * @param color - the labels' colour
+ * @param slotWidth - the room each label has, when the axis is crowded: a longer label ends in an ellipsis instead of
+ *   running into its neighbours
+ */
+export function useAxisLabels(
+  color: string,
+  slotWidth?: number,
+): ReturnType<typeof createParagraphLabelRenderer> {
   return useMemo(
     () =>
       createParagraphLabelRenderer({
-        paragraphStyle: { maxLines: 1, textAlign: TextAlign.Center },
+        paragraphStyle: { maxLines: 1, ellipsis: "…", textAlign: TextAlign.Center },
         // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
         textStyle: { fontSize: 10, color: Skia.Color(color) },
-        maxWidth: ({ text }) => text.length * LABEL_CHAR_WIDTH + 8,
+        maxWidth: ({ text }) =>
+          Math.min(text.length * LABEL_CHAR_WIDTH + 8, slotWidth ?? Number.POSITIVE_INFINITY),
       }),
-    [color],
+    [color, slotWidth],
   );
 }

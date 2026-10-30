@@ -3,7 +3,7 @@
  * Purpose: proves `listFormatOf` joins with Intl.ListFormat where the runtime has it, and with the locale's comma where
  *          it does not (Hermes), where the components that used Intl.ListFormat directly threw; and that the other
  *          Hermes gaps (Intl.Locale, Intl.RelativeTimeFormat, DateTimeFormat#formatRange) leave
- *          `updatedAgoOf` and `formatDateRange` working.
+ *          `recurrenceWeekdaysFor`, `updatedAgoOf` and `formatDateRange` working.
  * Boundary: pure; stubs the Intl global for the Hermes cases and restores it.
  * Runtime: node
  * Governing contract: ADR 0022 (test placement); STA-1371.
@@ -12,6 +12,7 @@ import { CalendarDate } from "@internationalized/date";
 
 import { formatDateRange } from "#core/functions/format-date-range.function";
 import { listFormatOf } from "#core/functions/list-format-of.function";
+import { recurrenceWeekdaysFor } from "#core/functions/recurrence-weekdays-for.function";
 import { updatedAgoOf } from "#core/functions/updated-ago-of.function";
 
 /** Intl as Hermes has it: no ListFormat, Locale, RelativeTimeFormat or DisplayNames. */
@@ -44,6 +45,7 @@ describe("listFormatOf", () => {
     const formatRange = Object.getOwnPropertyDescriptor(proto, "formatRange");
     Object.defineProperty(proto, "formatRange", { value: undefined, configurable: true });
     try {
+      expect(recurrenceWeekdaysFor("ar")).toHaveLength(7);
       const now = Date.UTC(2026, 9, 30, 12);
       expect(updatedAgoOf(now - 120_000, now, "en")).toMatch(/\d/);
       expect(native).toMatch(/^Sep\s1\s–\s30,\s2026$/);

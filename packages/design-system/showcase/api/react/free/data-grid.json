@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ac003c84d3402e43",
+    "hash": "a51b70db24f631d0",
     "propsFiles": [
       "ui/src/react/data-grid/data-grid-editor.props.ts",
       "ui/src/react/data-grid/data-grid.props.ts"
@@ -201,6 +201,13 @@
           "description": "The input's accessible name: the column and the row.",
           "name": "label",
           "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The id of the element that says why the draft is refused; given, the input is marked invalid and described by it.",
+          "name": "errorId",
+          "required": false,
           "source": "stackra",
           "type": "string"
         }

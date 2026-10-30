@@ -3,8 +3,8 @@
  * Purpose: the route-overlay route's own end-to-end checks: axe finds nothing (violations or incomplete) on the page
  *          and in each open overlay (modal, sheet, drawer, full screen) in light, dark, left-to-right and right-to-left;
  *          opening by keyboard moves focus into the overlay and Escape closes it and returns focus to the button that
- *          opened it; Tab stays inside; the in-memory route follows each open and close while the playground's own
- *          address bar never changes; the sheet sits on the bottom edge, the drawer on the reading-end edge in both
+ *          opened it; Tab stays inside; the in-memory route follows each open and close and is mirrored in the page URL
+ *          (Back closes, Forward and a deep link open); the sheet sits on the bottom edge, the drawer on the reading-end edge in both
  *          directions and a narrow window turns the drawer into a bottom sheet; the full-screen overlay fills the
  *          window; the locked overlay refuses Escape and a press outside until dismissal is allowed, and its close
  *          button always works; a `Link` opens an overlay on the client; in the live example Save completes the route
@@ -181,30 +181,43 @@ test("Tab and Shift+Tab stay inside the overlay", async ({ page }) => {
   await expect(dialog.locator(":focus")).toHaveCount(1);
 });
 
-test("the overlay is a child route: the playground's own address bar never changes", async ({
+test("the open overlay is mirrored in the page URL: Back closes it, Forward and a deep link open it", async ({
   page,
 }) => {
   await open(page, "light", "en");
   // Path and query only: the hash is the page's own scroll spy, which follows the section scrolled into view.
-  const address = () => page.url().split("#")[0];
+  const address = () => decodeURIComponent(page.url().split("#")[0] ?? "");
   const url = address();
   const dialog = await openOverlay(page, "Open modal", "Modal route");
-  expect(address()).toBe(url);
-  await page.keyboard.press("Escape");
+  expect(address()).toContain("overlay=example-route:/modal");
+  await page.goBack();
   await expect(dialog).toBeHidden();
   expect(address()).toBe(url);
+  await page.goForward();
+  await settled(page.getByRole("dialog", { name: "Modal route" }));
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Modal route" })).toBeHidden();
+  expect(address()).toBe(url);
+
+  // A shared link opens the overlay on load, and closing it replaces the entry with the page.
+  await page.goto("/route-overlay?scheme=light&locale=en&overlay=example-route:/drawer");
+  const drawer = await settled(page.getByRole("dialog", { name: "Drawer route" }));
+  await page.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
+  expect(address()).not.toContain("overlay=");
 });
 
 test("a Link opens an overlay on the client and closing returns to the page", async ({ page }) => {
   await open(page, "light", "en");
   let loads = 0;
   page.on("load", () => loads++);
-  await page.getByRole("link", { name: "Open the modal through a Link" }).click();
   // The hash is left out: focus returning to the Link scrolls the page, and the table of contents records the
   // section it lands on (`#usage`) by replaceState, which is no navigation.
   const pageAddress = () => page.url().split("#")[0];
   const url = pageAddress();
-  // The Link sits in the Usage example, whose router draws no route line: the dialog and the unchanged address show it.
+  await page.getByRole("link", { name: "Open the modal through a Link" }).click();
+  // The Link sits in the Usage example, whose router draws no route line: the dialog shows it, and closing steps the
+  // address back to the page.
   const dialog = await settled(page.getByRole("dialog", { name: "Modal route" }));
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();

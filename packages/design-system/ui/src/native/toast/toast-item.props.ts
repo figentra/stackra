@@ -31,6 +31,10 @@ export interface ToastItemProps {
   readonly variant?: ToastVariant | undefined;
   /** The one action beside the message. */
   readonly action?: ToastAction | undefined;
+  /** True while a promise toast's work runs: a spinner stands in for the icon. */
+  readonly isLoading?: boolean | undefined;
+  /** An undo toast's countdown, in milliseconds: the seconds left count down in a ring in place of the icon. */
+  readonly countdown?: number | undefined;
   /** The accessible name of the dismiss button. */
   readonly dismissLabel: string;
 }

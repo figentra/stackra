@@ -1,0 +1,13 @@
+{
+  "basics": {
+    "answer": "Order 2048 left our Riyadh warehouse this morning and arrives on Thursday. You can follow it from the tracking link in your email.",
+    "retried": "Asked again.",
+    "edited": "Editing your question."
+  },
+  "feedback": {
+    "answer": "The linen abaya runs true to size. If you are between two sizes, choose the larger one for a looser fit.",
+    "thanks_up": "Thanks, glad it helped.",
+    "thanks_down": "Thanks, we will use this to improve answers.",
+    "none": "Was this answer helpful?"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "db225d7d5f374a52",
+    "hash": "e4e4e70cc759ca96",
     "propsFiles": ["ui/src/react/swipeable-tabs/swipeable-tabs.props.ts"]
   },
   "importLine": "import { SwipeableTabs } from \"@stackra/ui/react\";",
@@ -8,6 +8,13 @@
   "parts": [
     {
       "events": [
+        {
+          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
+          "name": "onClose",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
         {
           "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
           "name": "onSelectionChange",
@@ -53,6 +60,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
+          "name": "overflow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"menu\" | \"scroll\""
         },
         {
           "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",

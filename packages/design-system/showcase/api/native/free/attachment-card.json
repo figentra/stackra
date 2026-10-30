@@ -1,0 +1,95 @@
+{
+  "generatedFrom": {
+    "hash": "1c0ef6afd33847f4",
+    "propsFiles": ["ui/src/native/attachment-card/attachment-card.props.ts"]
+  },
+  "importLine": "import { AttachmentCard } from \"@stackra/ui/native\";",
+  "key": "free/attachment-card",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the name is pressed, to open or preview the file; left out, the name is plain text.",
+          "name": "onOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called by the download button; left out, there is none.",
+          "name": "onDownload",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called by the retry button of a failed upload; left out, there is none.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called by the remove button; left out, there is none.",
+          "name": "onRemove",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "AttachmentCard",
+      "props": [
+        {
+          "description": "The file name, shown as given (never translated); it also names the card's actions.",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The size in bytes, written in the locale's digits and unit.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The MIME type, which picks the type mark; left out, the extension picks it.",
+          "name": "type",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "An image of the file (an image's own URL, a PDF's first page), drawn in place of the type mark.",
+          "name": "previewSrc",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How far an upload is, 0 to 100; given, the card shows the upload's bar in place of the type and size.",
+          "name": "progress",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Why the upload failed; given, the card shows it in the danger tone (an empty string says \"Upload failed\"), with a\nretry button when `onRetry` is set.",
+          "name": "error",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

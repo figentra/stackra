@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "8f6aa698ce27746d",
+    "propsFiles": ["ui/src/react/file-name/file-name.props.ts"]
+  },
+  "importLine": "import { FileName } from \"@stackra/ui/react\";",
+  "key": "free/file-name",
+  "parts": [
+    {
+      "name": "FileName",
+      "props": [
+        {
+          "description": "The file name as stored, for example \"فاتورة-1042.pdf\".",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

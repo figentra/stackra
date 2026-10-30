@@ -17,7 +17,7 @@ export const FREE_KPI: ComponentEntry = {
   exportName: "Kpi",
   parts: ["Kpi", "TrendChip"],
   hero: {},
-  examples: [{ id: "band", card: true }, { id: "tiles" }],
+  examples: [{ id: "band", card: true }, { id: "tiles" }, { id: "previous" }],
   related: ["free/widget-frame", "free/sparkline", "free/progress-bar"],
   tokens: ["color.success", "color.danger", "color.accent-soft"],
   keywords: ["kpi", "metric", "stat", "trend", "delta", "target", "scorecard"],

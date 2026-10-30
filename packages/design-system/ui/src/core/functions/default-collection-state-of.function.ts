@@ -36,6 +36,7 @@ export function defaultCollectionStateOf(
     aggregates,
     selection: [],
     isAllMatchingSelected: false,
+    excludedKeys: [],
     page: 0,
     pageSize: PAGE_SIZE,
     cursor: null,

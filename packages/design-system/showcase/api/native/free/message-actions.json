@@ -1,0 +1,74 @@
+{
+  "generatedFrom": {
+    "hash": "2adc093937166e13",
+    "propsFiles": ["ui/src/native/message-actions/message-actions.props.ts"]
+  },
+  "importLine": "import { MessageActions } from \"@stackra/ui/native\";",
+  "key": "free/message-actions",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the text once it is on the clipboard.",
+          "name": "onCopy",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        },
+        {
+          "description": "Called when Retry is pressed; set it to offer Retry.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when Edit is pressed; set it to offer Edit.",
+          "name": "onEdit",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the new rating, or null when a pressed thumb is pressed again; set it to offer the thumbs.",
+          "name": "onFeedbackChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(feedback: \"down\" | \"up\" | null) => void"
+        }
+      ],
+      "name": "MessageActions",
+      "props": [
+        {
+          "description": "The message's text; set it to offer Copy.",
+          "name": "copyValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rating given, or null for none; set it to control the thumbs (uncontrolled when left out).",
+          "name": "feedback",
+          "required": false,
+          "source": "stackra",
+          "type": "null | \"down\" | \"up\""
+        },
+        {
+          "description": "The row's accessible name. Defaults to the catalogue's \"Message actions\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the row.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

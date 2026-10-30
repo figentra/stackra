@@ -26,4 +26,6 @@ export interface DataViewCardsProps<TItem extends CollectionItem = CollectionIte
   readonly onItemPress?: ((item: TItem) => void) | undefined;
   /** `cards` (the default) or `list`. */
   readonly layout?: "cards" | "list" | undefined;
+  /** True to draw only the cards or rows in view (React Aria's Virtualizer), for thousands of rows. */
+  readonly isVirtualized?: boolean | undefined;
 }

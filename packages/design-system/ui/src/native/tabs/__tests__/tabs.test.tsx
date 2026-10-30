@@ -4,9 +4,10 @@
  *          is not disabled, `defaultSelectedKeys`, or the controlled `selectedKeys`), reports each press as a list of one
  *          id, draws a trigger and a label per item and a content per item with the tab list named by `label`, disables
  *          every trigger while the list is disabled, wraps a string content in Text, shows the empty state or a named
- *          busy spinner when there are no tabs, reads `orientation` as horizontal, passes the rest through, and refuses
+ *          busy spinner when there are no tabs, reads `orientation` as horizontal, draws a closable tab's close mark and its
+ *          screen-reader close action, passes the rest through, and refuses
  *          HeroUI's `value`, children and a selection mode.
- * Boundary: React Native does not render in vitest, so heroui-native, react-native and the Spinner and Text wrappers are
+ * Boundary: React Native does not render in vitest, so heroui-native, react-native, the Icon and the Spinner and Text wrappers are
  *          replaced by recording stand-ins that render plain DOM; what reaches HeroUI Native is checked, not its
  *          rendering.
  * Runtime: node
@@ -57,7 +58,24 @@ vi.mock("react-native", async () => {
       received.props["view"] = props;
       return createElement("div", { "data-testid": "view" }, props["children"] as ReactNode);
     },
+    Pressable: (props: Record<string, unknown>) => {
+      received.props["close"] = props;
+      return createElement(
+        "button",
+        {
+          type: "button",
+          "data-testid": "close",
+          onClick: () => (props["onPress"] as () => void)(),
+        },
+        props["children"] as ReactNode,
+      );
+    },
   };
+});
+
+vi.mock("#native/icon/icon", async () => {
+  const { createElement } = await import("react");
+  return { Icon: () => createElement("i") };
 });
 
 vi.mock("#native/spinner/spinner", async () => {
@@ -207,6 +225,27 @@ describe("Tabs (native)", () => {
     for (const name of ["orientation", "items", "label", "selectedKeys", "isDisabled"]) {
       expect(propsOf("root")).not.toHaveProperty(name);
     }
+  });
+
+  it("draws a close mark on a closable tab and gives the tab a screen-reader close action", () => {
+    const closed: string[] = [];
+    const { getAllByTestId } = render(
+      <Tabs
+        items={[{ id: "draft", label: "Draft", content: "x", isClosable: true }, ...ITEMS]}
+        onClose={(id) => closed.push(id)}
+      />,
+    );
+    expect(getAllByTestId("close")).toHaveLength(1);
+    expect(received.props["close"]?.["accessible"]).toBe(false);
+    act(() => getAllByTestId("close")[0]?.click());
+    const trigger = received.triggers.find((each) => each["value"] === "draft") ?? {};
+    expect(trigger["accessibilityActions"]).toEqual([{ name: "close", label: "Close Draft" }]);
+    act(() =>
+      (trigger["onAccessibilityAction"] as (event: unknown) => void)({
+        nativeEvent: { actionName: "close" },
+      }),
+    );
+    expect(closed).toEqual(["draft", "draft"]);
   });
 
   it("types: extends the contract and refuses HeroUI's value, children and a selection mode", () => {

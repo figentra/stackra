@@ -14,7 +14,10 @@ export interface CollectionSnapshot {
   readonly version: 1;
   /** The state, without the selection, page and cursor. */
   readonly state: Partial<
-    Omit<CollectionState, "selection" | "isAllMatchingSelected" | "page" | "cursor">
+    Omit<
+      CollectionState,
+      "selection" | "isAllMatchingSelected" | "excludedKeys" | "page" | "cursor"
+    >
   >;
   /** The saved views, in order. */
   readonly views: readonly CollectionView[];

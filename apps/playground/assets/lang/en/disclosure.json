@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "title": "Delivery details",
+    "body": "Delivered by Aramex in 2 to 4 working days. You get a tracking link by SMS once the order ships."
+  },
+  "states": {
+    "advanced": "Advanced settings",
+    "advanced_body": "Webhook URL, API version and retry policy.",
+    "locked": "Billing (owner only)",
+    "locked_body": "Only the workspace owner can change billing."
+  }
+}

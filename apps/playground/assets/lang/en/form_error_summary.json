@@ -1,0 +1,11 @@
+{
+  "form_name": "Delivery details",
+  "name": "Full name",
+  "name_error": "Enter your full name",
+  "email": "Email",
+  "email_error": "Enter an email address like name@example.com",
+  "phone": "Phone",
+  "phone_error": "Enter a phone number with at least 8 digits",
+  "submit": "Continue to payment",
+  "sent": "Details saved"
+}

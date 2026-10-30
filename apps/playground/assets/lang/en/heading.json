@@ -1,0 +1,7 @@
+{
+  "level": "Level {level} heading",
+  "drawn_as": "A level 3 heading drawn as h1",
+  "muted": "A muted level 4 heading",
+  "centred": "A centred level 4 heading",
+  "long": "A level 5 heading too long for its box is cut short with an ellipsis instead of wrapping"
+}

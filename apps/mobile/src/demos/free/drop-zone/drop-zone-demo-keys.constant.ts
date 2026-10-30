@@ -9,5 +9,10 @@ import { keys } from "@stackra/i18n";
 
 /** The demos' keys. */
 export const DROP_ZONE_DEMO_KEYS = keys({
-  demo_free: { drop_zone: { basics: ["label", "hint", "count"] } },
+  demo_free: {
+    drop_zone: {
+      basics: ["label", "hint", "count"],
+      previews: ["label", "hint"],
+    },
+  },
 });

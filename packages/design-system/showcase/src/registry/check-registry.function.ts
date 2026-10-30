@@ -34,7 +34,7 @@ const OSS_SOURCE =
   /^https:\/\/github\.com\/heroui-inc\/(heroui\/tree\/v3\/packages\/react|heroui-native\/tree\/main)\/src\/components\/[\w./-]+$/;
 
 /** Web routes that are the shell's own pages, not components. */
-const SHELL_ROUTES = new Set(["home", "components", "theme-studio"]);
+const SHELL_ROUTES = new Set(["home", "components", "docs", "theme-studio"]);
 
 /** Runs the registry gate. `errors` must be empty for the gate to pass. */
 export function checkRegistry(input: RegistryCheckInput): RegistryReport {

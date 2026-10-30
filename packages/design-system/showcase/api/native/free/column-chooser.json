@@ -1,7 +1,10 @@
 {
   "generatedFrom": {
-    "hash": "74549cc961fc07d3",
-    "propsFiles": ["ui/src/native/column-chooser/column-chooser.props.ts"]
+    "hash": "7329eff59bba608c",
+    "propsFiles": [
+      "ui/src/native/column-chooser/column-chooser.props.ts",
+      "ui/src/native/column-chooser/column-editor.props.ts"
+    ]
   },
   "importLine": "import { ColumnChooser } from \"@stackra/ui/native\";",
   "key": "free/column-chooser",
@@ -129,6 +132,32 @@
           "required": false,
           "source": "heroui",
           "type": "ViewPropsIOS"
+        }
+      ]
+    },
+    {
+      "name": "ColumnEditor",
+      "props": [
+        {
+          "description": "The engine whose columns are arranged (`useCollection`).",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The trigger's text and the editor's name. Defaults to the `ui` catalogue's \"Columns\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw the trigger as an icon button (its text stays its name).",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         }
       ]
     }

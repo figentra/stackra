@@ -22,4 +22,5 @@ export const FREE_CHOROPLETH_MAP: ComponentEntry = {
   tokens: ["color.chart-ramp-1", "color.chart-ramp-5", "color.surface"],
   keywords: ["map", "choropleth", "regions", "geography", "geojson"],
   status: "new",
+  advanced: true,
 };

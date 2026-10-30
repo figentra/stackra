@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "7afcbca99b0b18e7",
+    "hash": "e75ca1496c1e24db",
     "propsFiles": ["ui/src/react/carousel/carousel.props.ts"]
   },
   "importLine": "import { Carousel } from \"@stackra/ui/react\";",
@@ -45,6 +45,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "Image URLs, one per slide; given, a strip of thumbnails to press replaces the page dots.",
+          "name": "thumbnails",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
         },
         {
           "description": "",

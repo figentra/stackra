@@ -23,6 +23,7 @@ export function collectionSnapshotOf(
   const {
     selection: _selection,
     isAllMatchingSelected: _all,
+    excludedKeys: _excluded,
     page: _page,
     cursor: _cursor,
     ...kept

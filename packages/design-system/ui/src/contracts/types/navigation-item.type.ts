@@ -18,6 +18,8 @@ export interface NavigationItem extends CollectionItem {
   readonly label: string;
   /** Where the entry leads: an app path for the router, or an absolute URL. Left out, the entry only groups its `children`. */
   readonly href?: string | undefined;
+  /** A short line under the label, where there is room for one (a NavigationMenu panel). */
+  readonly description?: string | undefined;
   /** An icon drawn before the label: an icon name or any icon element. */
   readonly icon?: IconSlot | undefined;
   /** True for the entry the user is on; it is drawn selected and marked `aria-current="page"` (an ancestor is `true` too). */

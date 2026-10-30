@@ -67,6 +67,17 @@ const openDisplay = async (page: Page) => {
   return display;
 };
 
+/**
+ * Presses ⌘K (Ctrl+K) until the palette's dialog shows: on a loaded machine the first press can land before the shell
+ * has attached its key listener, and a press before the app is interactive is not one a person can make.
+ */
+const pressCommandK = async (page: Page) => {
+  await expect(async () => {
+    await page.keyboard.press("ControlOrMeta+k");
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1000 });
+  }).toPass();
+};
+
 /** The command palette's trigger in the top bar, whatever the locale names it. */
 const searchButton = (page: Page) =>
   page.getByRole("banner").getByRole("button", { name: /^(Search components|البحث في المكونات)/ });
@@ -82,6 +93,13 @@ const MEASURED_INSTEAD: Readonly<Record<string, { rule: string; markup: string }
   "/data-table": { rule: "color-contrast", markup: 'data-slot="money-value"' },
 };
 
+/**
+ * Routes whose axe scan alone outlasts the default budget on a loaded CI runner: the trace of /data-table (4 workers,
+ * Linux) shows the page loaded and settled in under 5 s and the analysis of its many tables taking about 26 s;
+ * /dashboard-grid's KPI tiles ran the scan past 30 s once in the Linux container at 6 workers.
+ */
+const SLOW_SCANS: ReadonlySet<string> = new Set(["/data-table", "/dashboard-grid"]);
+
 test("the route list is not empty", () => {
   expect(ROUTES).toContain("/foundations");
 });
@@ -90,6 +108,10 @@ for (const path of ROUTES)
   for (const scheme of SCHEMES)
     for (const { locale, dir } of LOCALES)
       test(`${path} in ${scheme}, ${dir}`, async ({ page }) => {
+        test.slow(
+          SLOW_SCANS.has(path),
+          "the axe analysis of this page alone takes most of the default budget",
+        );
         // Reduced motion: axe measures each page at rest, never a row or a value mid-fade (ADR 0329).
         await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
         await page.goto(`${path}?scheme=${scheme}&locale=${locale}`);
@@ -102,8 +124,9 @@ for (const path of ROUTES)
         await expect(html).toHaveClass(new RegExp(`\\b${scheme}\\b`));
         await expect(html).toHaveAttribute("dir", dir);
         await expect(html).toHaveAttribute("lang", locale);
-        // Every lazy demo mounted: one arriving mid-scan leaves heading-order unable to place its headings.
-        await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
+        // Every lazy demo mounted: one arriving mid-scan leaves heading-order unable to place its headings. A page of many
+        // demos fetches and mounts its chunks for longer than the default 5 s on a loaded runner (as the unit tests' 15 s).
+        await expect(page.locator("[data-demo-loading]")).toHaveCount(0, { timeout: 15_000 });
         // Every finite, time-based animation finished (a reduced-motion fade still runs): axe measures the page at
         // rest. Scroll-driven and endless ones (a shimmer) are left running.
         await expect
@@ -230,16 +253,16 @@ test("a client-side navigation titles the document and moves focus to the new h1
 }) => {
   await page.goto("/?scheme=light&locale=en");
   await page.getByRole("navigation", { name: "Site" }).getByRole("link", { name: "Docs" }).click();
-  await expect(page).toHaveURL(/\/foundations\?/);
+  await expect(page).toHaveURL(/\/docs\?/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await expect(page).toHaveTitle("Foundations · Stackra Design System");
+  await expect(page).toHaveTitle("Docs · Stackra Design System");
 });
 
 test("the command palette opens from the keyboard, filters, and Enter opens the match with focus on its h1", async ({
   page,
 }) => {
   await page.goto("/?scheme=light&locale=en");
-  await page.keyboard.press("ControlOrMeta+k");
+  await pressCommandK(page);
   const palette = page.getByRole("dialog", { name: "Search components" });
   await expect(palette).toBeVisible();
   await expect(palette.getByRole("combobox")).toBeFocused();
@@ -381,7 +404,7 @@ for (const scheme of SCHEMES)
       }) => {
         await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
         await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
-        await page.keyboard.press("ControlOrMeta+k");
+        await pressCommandK(page);
         // In Arabic the palette carries its Arabic name; it is the only dialog, so its role finds it.
         const palette = page.getByRole("dialog");
         await expect(palette).toBeVisible();

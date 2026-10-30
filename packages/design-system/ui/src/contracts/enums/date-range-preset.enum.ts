@@ -13,9 +13,13 @@ export const DateRangePreset = Object.freeze([
   "yesterday",
   "last_7_days",
   "last_30_days",
+  "last_90_days",
   "this_month",
   "last_month",
+  "this_quarter",
+  "last_quarter",
   "this_year",
+  "last_12_months",
 ] as const);
 
 /** One preset range. */

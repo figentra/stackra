@@ -32,6 +32,7 @@ import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { SortableListProps } from "#native/sortable-list/sortable-list.props";
+import type { SortableRowAction } from "#native/sortable-list/sortable-row-action.type";
 
 /** The scale of a picked-up row. */
 const LIFT = 1.02;
@@ -52,6 +53,7 @@ interface SortableRowProps {
   readonly isLocked: boolean;
   readonly drag: DragState;
   readonly onMove: (from: number, to: number) => void;
+  readonly extraActions: readonly SortableRowAction[];
   readonly children: ReactNode;
 }
 
@@ -63,6 +65,7 @@ function SortableRow({
   isLocked,
   drag,
   onMove,
+  extraActions,
   children,
 }: SortableRowProps): ReactElement {
   const t = useUiText();
@@ -140,6 +143,15 @@ function SortableRow({
       ? [{ name: "move_down", label: t(UI_KEYS.ui.sortable_list.move_down) }]
       : []),
   ];
+  const act = (actionName: string) => {
+    const extra = extraActions.find((action) => action.name === actionName);
+    if (extra) extra.onAction();
+    else if (!isLocked) onMove(index, actionName === "move_up" ? index - 1 : index + 1);
+  };
+  const allActions = [
+    ...(isLocked ? [] : actions),
+    ...extraActions.map(({ name, label: actionLabel }) => ({ name, label: actionLabel })),
+  ];
 
   return (
     <Animated.View
@@ -153,13 +165,13 @@ function SortableRow({
       className="flex-row items-center gap-3 bg-surface px-2 py-2"
       accessible
       accessibilityLabel={label}
-      {...(isLocked
+      {...(isLocked ? {} : { accessibilityHint: t(UI_KEYS.ui.sortable_list.hint) })}
+      {...(allActions.length === 0
         ? {}
         : {
-            accessibilityHint: t(UI_KEYS.ui.sortable_list.hint),
-            accessibilityActions: actions,
+            accessibilityActions: allActions,
             onAccessibilityAction: (event: { nativeEvent: { actionName: string } }) =>
-              onMove(index, event.nativeEvent.actionName === "move_up" ? index - 1 : index + 1),
+              act(event.nativeEvent.actionName),
           })}
     >
       {isLocked ? null : (
@@ -185,6 +197,7 @@ export function SortableList<TItem extends SortableListItem>({
   label,
   renderItem,
   isDisabled = false,
+  accessibilityActionsOf,
   ...rest
 }: SortableListProps<TItem>): ReactElement {
   const t = useUiText();
@@ -220,6 +233,7 @@ export function SortableList<TItem extends SortableListItem>({
           isLocked={isDisabled || (item.isDisabled ?? false)}
           drag={drag}
           onMove={move}
+          extraActions={accessibilityActionsOf?.(item) ?? []}
         >
           {renderItem ? (
             renderItem(item)

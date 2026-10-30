@@ -159,14 +159,21 @@ test("scrolling the box to its end loads five more rows, up to fifteen, naming o
   const box = live.getByTestId("list-scroll");
   const count = live.getByTestId("list-count");
   await expect(count).toHaveText("5 rows");
-  // The end marker is watched against the window, so the box must be on screen, as it is when a reader scrolls it.
-  await box.scrollIntoViewIfNeeded();
+  // The demos above mount lazily and push the box down the page: wait for all of them, so the box stays where it is
+  // scrolled into view.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0, { timeout: 15_000 });
 
   for (const next of [10, 15]) {
+    // The end marker is watched against the window, so the box must be on screen, as it is when a reader scrolls it.
+    await box.scrollIntoViewIfNeeded();
     await box.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
     await expect(count).toHaveText(`${next} rows`);
+    // The page has landed only once its rows are drawn and the spinner is gone: a scroll before that lands at the old
+    // end, above the new rows, so the end is not reached again (as for a reader, who scrolls on).
+    await expect(box.getByRole("listitem")).toHaveCount(next);
+    await expect(box.getByRole("status")).toHaveCount(0);
   }
   await expect(box.getByRole("listitem")).toHaveCount(15);
   await expect(box.getByRole("status")).toHaveCount(0);

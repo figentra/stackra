@@ -14,6 +14,7 @@ import { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
 import { readStored } from "#core/functions/read-stored.function";
 import { writeStored } from "#core/functions/write-stored.function";
 import { DrawerLayerContext } from "#react/drawer/drawer-layer-context";
+import { usePaneWidth } from "#react/hooks/use-pane-width";
 import type { SidebarState } from "#react/sidebar/sidebar-state.type";
 import type { SidebarStateProps } from "#react/sidebar/sidebar-state-props.type";
 import { useBreakpoint } from "#react/use-breakpoint/use-breakpoint";
@@ -60,14 +61,17 @@ export function useSidebarState(
       LayoutBreakpoint.indexOf(breakpoint) < LayoutBreakpoint.indexOf(collapseBelow));
 
   const collapsedKey = storageKey === undefined ? undefined : `${storageKey}:collapsed`;
-  const widthKey = storageKey === undefined ? undefined : `${storageKey}:width`;
   const [ownCollapsed, setOwnCollapsed] = useState(() => {
     const stored = readStored(collapsedKey);
     return stored === undefined ? defaultCollapsed : stored === "true";
   });
-  const [ownWidth, setOwnWidth] = useState(() => {
-    const stored = Number(readStored(widthKey));
-    return Number.isFinite(stored) && stored > 0 ? stored : defaultWidth;
+  const { width: currentWidth, setWidth } = usePaneWidth({
+    width,
+    defaultWidth,
+    minWidth,
+    maxWidth,
+    onWidthChange,
+    storageKey,
   });
   const [ownMobileOpen, setOwnMobileOpen] = useState(defaultMobileOpen);
   const [isPeeking, setPeeking] = useState(false);
@@ -76,11 +80,6 @@ export function useSidebarState(
 
   const collapsed = collapsible !== "none" && (isCollapsed ?? ownCollapsed);
   const mobileOpen = isMobileOpen ?? ownMobileOpen;
-  const clamp = useCallback(
-    (next: number) => Math.round(Math.min(maxWidth, Math.max(minWidth, next))),
-    [minWidth, maxWidth],
-  );
-  const currentWidth = clamp(width ?? ownWidth);
 
   const setCollapsed = useCallback(
     (next: boolean) => {
@@ -101,15 +100,6 @@ export function useSidebarState(
       onMobileOpenChange?.(next);
     },
     [onMobileOpenChange],
-  );
-  const setWidth = useCallback(
-    (next: number) => {
-      const value = clamp(next);
-      setOwnWidth(value);
-      writeStored(widthKey, String(value));
-      onWidthChange?.(value);
-    },
-    [clamp, widthKey, onWidthChange],
   );
   const toggle = useCallback(() => {
     if (isMobile) setMobileOpen(!mobileOpen);

@@ -1,0 +1,6 @@
+{
+  "online": "Online",
+  "in_store": "In store",
+  "phone": "Phone",
+  "hidden": "{count, plural, =0 {Every series shown} one {# series hidden} other {# series hidden}}"
+}

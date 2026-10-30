@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the web `HistogramChart` on Recharts: raw values counted into equal bins (`histogramBinsOf`), one touching
- *          column per bin labelled by its edges ("10–20"), with the shared quiet grid, axes, tooltip and data table.
+ *          column per bin labelled by its edges ("10–20"), lit softly from the top (flat in a flat brand), with the
+ *          shared quiet grid, axes, tooltip and data table.
  * Boundary: no style of its own: the colour is a `var(--chart-ramp-1)` presentation attribute. The bins run right to
  *           left in Arabic like every category axis; animation follows the motion setting.
  * Runtime: browser
@@ -9,14 +10,15 @@
  *          2.3.3; STA-1371.
  */
 import { useReducedMotion } from "motion/react";
-import type { ReactElement } from "react";
-import { Bar, BarChart as RechartsBarChart } from "recharts";
+import { type ReactElement, useId } from "react";
+import { Bar, BarChart as RechartsBarChart, Cell } from "recharts";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { histogramBinsOf } from "#core/functions/histogram-bins-of.function";
 import { cartesianParts } from "#react/chart/cartesian-parts";
 import { ChartFrame } from "#react/chart/chart-frame";
+import { MarkGradient } from "#react/chart/mark-gradient";
 import { paintOf } from "#react/chart/paint-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
 import type { HistogramChartProps } from "#react/histogram-chart/histogram-chart.props";
@@ -31,6 +33,7 @@ export function HistogramChart(props: HistogramChartProps): ReactElement {
   const { locale, isRtl } = useChartLocale();
   const t = useUiText();
   const isReduced = useReducedMotion() === true;
+  const id = useId().replaceAll(/[^\w-]/g, "");
   const edge = (value: number) =>
     formatChartNumber(value, locale, { maximumFractionDigits: 1, ...valueFormat });
   const rows = histogramBinsOf(values, { binCount: props.binCount, binWidth: props.binWidth }).map(
@@ -54,6 +57,9 @@ export function HistogramChart(props: HistogramChartProps): ReactElement {
         role="img"
         aria-label={label}
       >
+        <defs>
+          <MarkGradient id={id} color={paintOf(color)} />
+        </defs>
         {cartesianParts({
           xKey: "bin",
           showValueAxis: props.showValueAxis,
@@ -68,7 +74,11 @@ export function HistogramChart(props: HistogramChartProps): ReactElement {
           fill={paintOf(color)}
           radius={[2, 2, 0, 0]}
           isAnimationActive={!isReduced}
-        />
+        >
+          {rows.map((row) => (
+            <Cell key={row.bin} fill={`url(#${id})`} />
+          ))}
+        </Bar>
       </RechartsBarChart>
     </ChartFrame>
   );

@@ -38,6 +38,7 @@ export const FREE_POPOVER: ComponentEntry = {
     { id: "content", platforms: ["react"] },
     { id: "dismissal", platforms: ["react"] },
     { id: "live", platforms: ["react"] },
+    { id: "reposition", platforms: ["react"] },
     { id: "basics", platforms: ["native"] },
     { id: "arrow", platforms: ["native"] },
     { id: "controlled", platforms: ["native"] },

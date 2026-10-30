@@ -15,7 +15,12 @@ import type { KpiGroupProps } from "#react/kpi-group/kpi-group.props";
 /** A band of KPIs. */
 export function KpiGroup({ children, label, className }: KpiGroupProps): ReactElement {
   return (
-    <Card role="group" aria-label={label} className={["p-0", className].filter(Boolean).join(" ")}>
+    // A block, like Kpi's: a size container as the card's flex item is laid out again on every measuring pass.
+    <Card
+      role="group"
+      aria-label={label}
+      className={["block p-0", className].filter(Boolean).join(" ")}
+    >
       <div className="@container">
         <div className="grid grid-cols-2 gap-y-4 py-4 @xl:auto-cols-fr @xl:grid-flow-col @xl:grid-cols-none">
           {Children.map(Children.toArray(children), (child, index) => (

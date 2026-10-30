@@ -1,0 +1,68 @@
+{
+  "generatedFrom": {
+    "hash": "2448c9d38a39058b",
+    "propsFiles": ["ui/src/react/image-cropper/image-cropper.props.ts"]
+  },
+  "importLine": "import { ImageCropper } from \"@stackra/ui/react\";",
+  "key": "free/image-cropper",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the kept rectangle, in the image's pixels, after each move or zoom.",
+          "name": "onCropChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(crop: ImageCrop) => void"
+        }
+      ],
+      "name": "ImageCropper",
+      "props": [
+        {
+          "description": "The image to crop.",
+          "name": "src",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The cropper's accessible name, for example \"Crop your profile photo\"; defaults to the catalogue's \"Crop image\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The frame's width over its height. Defaults to 1, a square.",
+          "name": "aspectRatio",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "rect",
+          "description": "`rect`, or `round` for an avatar (the crop is still the square around the circle). Defaults to `rect`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"rect\" | \"round\""
+        },
+        {
+          "description": "The largest zoom, as a multiple of the image just covering the frame. Defaults to 3.",
+          "name": "maxZoom",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

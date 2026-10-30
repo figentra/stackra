@@ -43,5 +43,6 @@ export const Icons = Object.freeze({
   Trash: "trash",
   Truck: "truck",
   Type: "type",
+  Upload: "upload",
   User: "user",
 } as const satisfies Readonly<Record<string, IconName>>);

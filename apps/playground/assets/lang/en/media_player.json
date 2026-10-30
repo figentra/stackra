@@ -1,0 +1,12 @@
+{
+  "video": {
+    "label": "Test pattern clip",
+    "arabic": "العربية",
+    "english": "English"
+  },
+  "audio": {
+    "label": "Voice note from the warehouse",
+    "title": "Voice note: order 2048",
+    "ended": "Played to the end."
+  }
+}

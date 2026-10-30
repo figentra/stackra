@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "77dd958701abd2c7",
+    "hash": "1322d4877149e3b5",
     "heroDoc": "vendor/heroui/react/link.json",
     "propsFiles": ["ui/src/react/link/link.props.ts"]
   },
@@ -203,7 +203,7 @@
           "name": "render",
           "required": false,
           "source": "heroui",
-          "type": "(props: DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> | DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>, renderProps: LinkRenderProps) => ReactElement<unknown, string | JSXElementConstructor<any>>"
+          "type": "(props: DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> | DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement>, renderProps: LinkRenderProps) => ReactElement<unknown, string | JSXElementConstructor<any>>"
         },
         {
           "default": "\"_self\"",

@@ -1,0 +1,13 @@
+{
+  "orders_title": "Orders by weekday",
+  "orders_description": "Last four weeks, all branches",
+  "orders": "Orders",
+  "orders_footer": "Thursday and Friday bring in 44% of the week's orders",
+  "store_title": "Branch and online orders",
+  "store_description": "January to June 2026",
+  "branch": "Branch",
+  "online": "Online",
+  "returns_title": "Returns by month",
+  "returns_description": "Items returned in 2026",
+  "returns": "Returns"
+}

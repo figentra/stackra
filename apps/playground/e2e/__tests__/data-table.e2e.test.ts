@@ -62,6 +62,9 @@ const axe = expectNoAxeFindings;
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
     test(`axe finds nothing on the data table page in ${scheme}, ${locale}`, async ({ page }) => {
+      // The page's many tables make axe's analysis alone take about 26 s on a loaded Linux runner at 4 workers (the
+      // trace shows the page settled in under 5 s), as in playground.e2e's SLOW_SCANS.
+      test.slow(true, "the axe analysis of this page alone takes most of the default budget");
       await open(page, scheme, locale);
       const { violations, incomplete } = await new AxeBuilder({ page })
         .withTags(AXE_TAGS)

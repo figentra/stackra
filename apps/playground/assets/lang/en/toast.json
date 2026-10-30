@@ -43,5 +43,19 @@
     "center": "Centre",
     "end": "End",
     "full": "Full width"
+  },
+  "promise": {
+    "save": "Save the order",
+    "fail": "Save while offline",
+    "loading": "Saving order 1042…",
+    "success": "Order 1042 saved",
+    "error": "Could not save. Check your connection."
+  },
+  "undo": {
+    "delete": "Delete the order",
+    "deleted": "Order 1042 deleted",
+    "undone": "Order 1042 restored",
+    "committed": "Order 1042 deleted for good",
+    "waiting": "Nothing deleted yet"
   }
 }

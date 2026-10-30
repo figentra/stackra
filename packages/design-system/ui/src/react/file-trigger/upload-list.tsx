@@ -17,6 +17,7 @@ import { useLocale } from "react-aria-components";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatFileSize } from "#core/functions/format-file-size.function";
+import { FileName } from "#react/file-name/file-name";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
@@ -76,8 +77,8 @@ export function UploadList({
               {...(item.previewSrc ? { src: item.previewSrc } : {})}
             />
             <div className="grid min-w-0 flex-1">
-              <Text isTruncated dir="auto">
-                {item.name}
+              <Text isTruncated>
+                <FileName name={item.name} />
               </Text>
               <Text
                 type="small"

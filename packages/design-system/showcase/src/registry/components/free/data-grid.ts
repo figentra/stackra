@@ -21,9 +21,11 @@ export const FREE_DATA_GRID: ComponentEntry = {
     { id: "sheet", card: true },
     { id: "matrix" },
     { id: "column-tools", platforms: ["react"] },
+    { id: "column-editor", platforms: ["native"] },
+    { id: "virtual", platforms: ["react"] },
   ],
   related: ["free/data-table", "free/data-view", "free/save-bar"],
   tokens: ["color.surface", "color.border", "color.accent"],
-  keywords: ["spreadsheet", "excel", "grid", "bulk edit", "paste", "matrix"],
+  keywords: ["spreadsheet", "excel", "grid", "bulk edit", "paste", "matrix", "virtual scrolling"],
   status: "new",
 };

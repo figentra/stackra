@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the web `TreemapChart`: tiles sized by value in the shared squarified layout, painted in the palette with a
- *          2px surface gap, each naming itself and its value on a small surface label; the numbers are also a data
+ *          2px surface gap and lit softly from the top (flat in a flat brand), each naming itself and its value on a
+ *          small surface label; the pointed tile stands while the others dim. The numbers are also a data
  *          table for assistive technology.
  * Boundary: HTML tiles placed with logical `inset-inline-start`, so Arabic starts at the right; labels are real text.
  * Runtime: browser
@@ -17,6 +18,7 @@ import { sortChartItems } from "#core/functions/sort-chart-items.function";
 import { treemapLayoutOf } from "#core/functions/treemap-layout-of.function";
 import { ChartFrame } from "#react/chart/chart-frame";
 import { paintOf } from "#react/chart/paint-of.function";
+import { topLitOf } from "#react/chart/top-lit-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
 import type { TreemapChartProps } from "#react/treemap-chart/treemap-chart.props";
 
@@ -50,7 +52,13 @@ export function TreemapChart({
   };
   return (
     <ChartFrame label={label} table={table} legend={[]} palette={palette} className={className}>
-      <div ref={box} role="img" aria-label={label} className="relative w-full" style={{ height }}>
+      <div
+        ref={box}
+        role="img"
+        aria-label={label}
+        className="group/treemap relative w-full"
+        style={{ height }}
+      >
         {treemapLayoutOf(
           sortChartItems(
             items,
@@ -61,25 +69,33 @@ export function TreemapChart({
           ),
           aspect,
           sort !== undefined,
-        ).map((tile) => (
-          <div
-            key={tile.item.key}
-            aria-hidden
-            className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5"
-            style={{
-              insetInlineStart: `${tile.x}%`,
-              top: `${tile.y}%`,
-              width: `${tile.width}%`,
-              height: `${tile.height}%`,
-              backgroundColor: paintOf(chartColorOf(tile.item, items.indexOf(tile.item), palette)),
-            }}
-          >
-            <span className="inline-flex max-w-full flex-col rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5 py-0.5 text-xs">
-              <span className="truncate text-muted">{tile.item.label}</span>
-              <span className="truncate font-semibold tabular-nums">{value(tile.item.value)}</span>
-            </span>
-          </div>
-        ))}
+        ).map((tile) => {
+          const color = paintOf(chartColorOf(tile.item, items.indexOf(tile.item), palette));
+          return (
+            <div
+              key={tile.item.key}
+              aria-hidden
+              // The pointed tile stands while the others dim.
+              className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5 transition-opacity duration-200 group-hover/treemap:opacity-45 hover:opacity-100 motion-reduce:transition-none"
+              style={{
+                insetInlineStart: `${tile.x}%`,
+                top: `${tile.y}%`,
+                width: `${tile.width}%`,
+                height: `${tile.height}%`,
+                backgroundColor: color,
+                backgroundImage: `linear-gradient(${topLitOf(color)}, ${color})`,
+              }}
+            >
+              <span className="inline-flex max-w-full flex-col rounded-[var(--radius-control-inner)] bg-surface px-1.5 py-0.5 text-xs">
+                <span className="truncate text-muted">{tile.item.label}</span>
+                {/* A value wraps rather than truncates: a cut figure would misread. */}
+                <span className="font-semibold leading-tight tabular-nums">
+                  {value(tile.item.value)}
+                </span>
+              </span>
+            </div>
+          );
+        })}
       </div>
     </ChartFrame>
   );

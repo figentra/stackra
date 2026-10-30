@@ -142,6 +142,19 @@
         "tone": "The kind of message. Defaults to `default`; `danger` and `warning` are announced at once."
       }
     },
+    "angle_slider": {
+      "AngleSlider": {
+        "className": "Styles the outer element.",
+        "defaultValue": "The starting angle, for an uncontrolled slider; defaults to 0.",
+        "hasMarks": "True to draw ticks at 0, 90, 180 and 270 degrees.",
+        "isDisabled": "True to show the angle but refuse changes.",
+        "label": "The slider's visible name, for example \"Gradient angle\".",
+        "onChange": "Called with each new angle, 0 to 359.",
+        "size": "The dial's width and height in pixels (points on native); defaults to 160.",
+        "step": "The degrees one arrow key or drag stop moves; defaults to 1. Shift and Page Up/Down move 15 steps.",
+        "value": "The angle in degrees, for a controlled slider."
+      }
+    },
     "app_header": {
       "AppHeader": {
         "endContent": "A node at the logical end of the bar, after its main content.",
@@ -175,6 +188,7 @@
     },
     "area_chart": {
       "AreaChart": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "className": "Classes for the figure, such as a width or margin.",
         "curve": "How the edge joins its points; `monotone` by default.",
         "data": "The rows, in reading order.",
@@ -183,6 +197,7 @@
         "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -191,9 +206,33 @@
         "showTooltip": "Shows the values of the pointed or pressed row; on by default.",
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
+      }
+    },
+    "aspect_ratio": {
+      "AspectRatio": {
+        "children": "The media, which fills the box: an image, a video or a map.",
+        "className": "Styles the root.",
+        "ratio": "Width divided by height, for example `16 / 9`, `4 / 3` or `1`. Defaults to 1."
+      }
+    },
+    "attachment_card": {
+      "AttachmentCard": {
+        "className": "Styles the root.",
+        "error": "Why the upload failed; given, the card shows it in the danger tone (an empty string says \"Upload failed\"), with a\nretry button when `onRetry` is set.",
+        "name": "The file name, shown as given (never translated); it also names the card's actions.",
+        "onDownload": "Called by the download button; left out, there is none.",
+        "onOpen": "Called when the name is pressed, to open or preview the file; left out, the name is plain text.",
+        "onRemove": "Called by the remove button; left out, there is none.",
+        "onRetry": "Called by the retry button of a failed upload; left out, there is none.",
+        "previewSrc": "An image of the file (an image's own URL, a PDF's first page), drawn in place of the type mark.",
+        "progress": "How far an upload is, 0 to 100; given, the card shows the upload's bar in place of the type and size.",
+        "size": "The size in bytes, written in the locale's digits and unit.",
+        "type": "The MIME type, which picks the type mark; left out, the extension picks it."
       }
     },
     "avatar": {
@@ -231,6 +270,16 @@
         "variant": "The background behind the fallback: neutral or the tone's soft colour. Defaults to `default`."
       }
     },
+    "back_to_top": {
+      "BackToTop": {
+        "className": "Styles the button's wrapper, for example to move it above a bottom bar.",
+        "focusTargetId": "The id of the element that takes focus once at the top, for example the skip link's target or the page's `h1`.\nLeft out, the scrolling element (or the body) does.",
+        "label": "The button's accessible name. Defaults to the catalogue's \"Back to top\".",
+        "offsetY": "How far it is scrolled now, from its `onScroll` (`contentOffset.y`).",
+        "scrollRef": "The scrolling element to watch and scroll; left out, the window. The button is then fixed to the viewport.",
+        "threshold": "How far down, in pixels, before the button shows. Defaults to 400."
+      }
+    },
     "badge": {
       "Badge": {
         "Anchor": {
@@ -259,14 +308,17 @@
     },
     "bar_chart": {
       "BarChart": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "className": "Classes for the figure, such as a width or margin.",
         "data": "The rows, in reading order.",
+        "emphasis": "Which column carries the colour while the rest stand back in its soft tone: `latest` (the default for one\nunstacked series), `none` (the default for several, which keep their own colours) or an index.",
         "height": "The plot's height in pixels; 240 by default.",
         "isNormalized": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
         "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
         "orientation": "`vertical` columns stand on the category axis (the default); `horizontal` bars lie along it.",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -276,7 +328,9 @@
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "sort": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
       }
@@ -289,6 +343,16 @@
         "max": "The value of a full bar; defaults to the largest value.",
         "sort": "`descending` (the default) ranks the rows by value; `none` keeps the order given.",
         "valueFormat": "How values are written, for example a currency."
+      }
+    },
+    "barcode": {
+      "Barcode": {
+        "className": "Styles the root.",
+        "format": "The symbology. Defaults to `code128`.",
+        "height": "The bars' height in pixels. Defaults to 64; each module is 2 pixels wide.",
+        "label": "The accessible name. Defaults to the value (with its check digit for EAN-13).",
+        "showText": "False to hide the human-readable text under the bars. Defaults to true.",
+        "value": "What to encode: printable ASCII for `code128`; 12 or 13 digits for `ean13` (a 13th must be the check digit)."
       }
     },
     "bidi": {
@@ -498,17 +562,43 @@
         "label": "The carousel's accessible name, such as \"Featured products\".",
         "onIndexChange": "Called with the index of the slide in view.",
         "showArrows": "Shows the previous and next buttons; on by default.",
-        "showDots": "Shows the page dots; on by default."
+        "showDots": "Shows the page dots; on by default.",
+        "thumbnails": "Image URLs, one per slide; given, a strip of thumbnails to press replaces the page dots."
+      }
+    },
+    "cascader": {
+      "Cascader": {
+        "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
+        "aria-label": "The field's name for assistive technology when it has no visible label.",
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "items": "The top rows; each row's `children` are the next level.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "onLoadChildren": "Loads the rows under a row marked `hasChildren` the first time it is opened.",
+        "placeholder": "The text of the empty field; defaults to the catalogue's \"Choose\".",
+        "value": "The current value, for a controlled field; pair it with `onChange`.",
+        "variant": "`primary` on the page, `secondary` inside a card or surface. Defaults to `primary`."
       }
     },
     "chart": {
       "CartesianFigure": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "data": "The rows, in reading order.",
+        "emphasis": "Bar charts: the column that carries the colour, the rest in its soft tone (see `BarChartContractProps`).",
         "height": "The plot's height in pixels; 240 by default.",
         "isNormalized": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
         "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -518,7 +608,9 @@
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "sort": "Bar charts: the categories' order.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
       },
@@ -542,12 +634,14 @@
         "title": "The pressed row name, shown as the heading."
       },
       "HorizontalBars": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "data": "The rows, in reading order.",
         "height": "The plot's height in pixels; 240 by default.",
         "isNormalized": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
         "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -557,7 +651,9 @@
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "sort": "The categories' order.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
       },
@@ -998,6 +1094,7 @@
     },
     "composed_chart": {
       "ComposedChart": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "data": "The rows, in reading order.",
         "height": "The plot's height in pixels; 240 by default.",
         "isNormalized": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
@@ -1005,6 +1102,7 @@
         "lineKeys": "The keys of the series drawn as lines; by default the last series is the line and the rest are bars.",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -1013,7 +1111,9 @@
         "showTooltip": "Shows the values of the pointed or pressed row; on by default.",
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
       }
@@ -1025,8 +1125,9 @@
     },
     "context_menu": {
       "ContextMenu": {
-        "children": "The area that answers a right-click: a row, a card, a canvas.",
-        "isDisabled": "True to let the browser's own menu open instead.",
+        "children": "The area that answers a right-click or a long press: a row, a card, a canvas.",
+        "className": "Styles the area.",
+        "isDisabled": "True to open no menu: on web the browser's own menu opens instead.",
         "label": "The menu's accessible name, such as \"Order actions\".",
         "onAction": "Called with the id of the chosen action, after its own `onPress`.",
         "sections": "The actions, in groups."
@@ -1086,6 +1187,19 @@
         "triggerRef": "The ref for the element which the popover positions itself with respect to.\n\nWhen used within a trigger component such as DialogTrigger, MenuTrigger, Select, etc.,\nthis is set automatically. It is only required when used standalone.",
         "variant": "`help` draws a question mark for how-to help, `info` an \"i\" for background facts. Defaults to `help`.",
         "width": "Content width sizing strategy\n- 'content-fit': Auto-size to content width (default)\n- 'trigger': Match trigger width exactly\n- 'full': 100% width\n- number: Fixed width in pixels"
+      }
+    },
+    "conversation_list": {
+      "ConversationList": {
+        "className": "Styles the list.",
+        "conversations": "The past conversations, in any order; the list groups them by day and puts pinned ones first.",
+        "label": "The list's accessible name. Defaults to the catalogue's \"Conversations\".",
+        "now": "\"Now\", for a fixed point in a test or a demo; defaults to the moment the list mounted.",
+        "onDelete": "Called with the id when Delete is chosen; the menu offers it only when set.",
+        "onPinChange": "Called with the id and the new state when Pin or Unpin is chosen; the menu offers it only when set.",
+        "onRename": "Called with the id when Rename is chosen; the menu offers it only when set.",
+        "onSelect": "Called with a conversation's id when it is chosen.",
+        "selectedId": "The id of the conversation that is open, drawn selected."
       }
     },
     "copy_button": {
@@ -1194,11 +1308,25 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "dashboard_grid": {
+      "DashboardGrid": {
+        "className": "Classes for the grid, such as a gap or margin.",
+        "defaultLayout": "The starting layout when uncontrolled, and the full set of tiles a saved layout is reconciled with.",
+        "isEditing": "Shows each tile's drag handle, move and size controls (web; native lists the tiles by name to reorder). Off by default.",
+        "label": "The grid's accessible name, such as \"Sales overview\".",
+        "layout": "The layout, when the caller owns it.",
+        "layoutPort": "Where an uncontrolled grid loads and saves the reader's layout.",
+        "onLayoutChange": "Called with the whole new layout after each move or resize.",
+        "renderTile": "Draws the tile with this id, usually a `WidgetFrame`.",
+        "tileLabel": "The tile's name, read by the move and size controls and their announcements."
+      }
+    },
     "data_grid": {
       "DataGrid": {
         "Editor": {
           "column": "The column, which picks the input.",
           "draft": "The text being edited.",
+          "errorId": "The id of the element that says why the draft is refused; given, the input is marked invalid and described by it.",
           "label": "The input's accessible name: the column and the row.",
           "onCancel": "Drops the draft.",
           "onCommit": "Commits the draft (or `draft`, when a select hands its choice straight over) and moves on.",
@@ -1230,6 +1358,14 @@
       }
     },
     "data_table": {
+      "CollectionRowPanel": {
+        "children": "The page beside the panel: the table or the view.",
+        "item": "The row open in the panel, or `null` when it is shut.",
+        "label": "The records' name (\"Orders\"); the panel is named \"<label> details\".",
+        "onClose": "Called when the panel is closed (its close button, Escape in the drawer).",
+        "renderPanel": "What the panel shows for the open row.",
+        "title": "The panel's heading for the open row, usually its row header text."
+      },
       "ColumnMenu": {
         "collection": "The engine the menu changes.",
         "column": "The column, as drawn.",
@@ -1237,21 +1373,35 @@
         "onStartResize": "Starts a keyboard resize of the column; left out, there is no \"Resize column\"."
       },
       "DataTable": {
+        "CellEditor": {
+          "anchor": "The cell drawn under the editor; the editor covers its box.",
+          "column": "The cell's typed column: its kind picks the DataGrid editor, its rules validate the value.",
+          "label": "The input's accessible name: the column and the row.",
+          "locale": "The locale the limits of an error are written in.",
+          "onCancel": "Called when the edit is dropped (Escape).",
+          "onCommit": "Called with a valid value; the editor closes.",
+          "row": "The row, read by the column's own rule."
+        },
         "aggregates": "The aggregate of each numeric column, by column id: a heading row per group and a total row at the end show it.",
         "bulkActions": "The actions on the selection, drawn by the bulk bar while rows are selected (`selectionMode` `multiple`).",
         "bulkActionsLabel": "The spoken name of the bulk bar. Defaults to the table's `label` and the word \"actions\".",
         "collection": "The collection engine to draw from (`useCollection`), as DataView passes it: the columns as arranged, the sort\nkeys, the selection, the density, the group and the totals are its, and every change goes back to it. Left out,\nthe table runs its own engine over `columns`, controlled by `query`, `selectedKeys`, `groupBy`, `aggregates` and\n`hiddenColumns` as before.",
         "collectionKey": "The key the table's own engine keeps the user's column layout under (left out, nothing persists).",
         "columns": "The columns, in reading order.",
+        "defaultExpandedKeys": "The ids of the rows expanded at first.",
         "defaultSelectedKeys": "The ids selected at the start, for an uncontrolled collection.",
         "density": "How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing.",
+        "editableColumns": "The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and\ntheir rules (required, range, the app's own) validate the value. A read-only one is not edited.",
         "emptyState": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
         "error": "The thrown value of a failed fetch. Given, the table shows an `ErrorState` in place of the rows.",
         "errorKind": "What kind of failure `error` is, so the state's wording and icon fit. Defaults to `unexpected`.",
+        "expandedKeys": "The ids of the expanded rows, for a controlled expansion.",
         "filterBar": "What is drawn above the rows, usually a `FilterBar` given the same `query`; the table does not import it.",
         "filteredEmptyState": "What the table shows in place of its own \"no results\" state when the query narrows the records and none match.\nLeft out, an `EmptyState` with the `no-results` reason and a button that clears the filters.",
         "groupBy": "The id of a column to group the rows by: the rows on screen are gathered under a heading row per value of that\ncolumn (in the order the values first appear), which carries the group's count and aggregates.",
         "hasColumnTools": "True to give each header the column tools: a menu (sort, add to sort, filter, pin, hide, group, summary, resize,\nmove), a resize handle and drag to reorder.",
+        "hasContextMenu": "False to leave the browser's own menu on a right-click; by default a row's right-click (or Shift+F10) opens its actions.",
+        "hasHoverActions": "True to draw the row actions that have an icon as buttons revealed on hover or keyboard focus, beside the row\nmenu, which still lists them all.",
         "hasMore": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
         "hasPrevious": "Whether an earlier page exists, which the app knows from its cursor history. Defaults to false.",
         "headingLevel": "The level of the empty and error states' titles, so the page keeps one outline. Defaults to 3.",
@@ -1262,23 +1412,30 @@
         "isLoading": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
         "isMessageShown": "Whether the error's message is shown, as for `ErrorState`: by default outside production only, because a server\nmessage is an internal. An app whose error carries text written for the user sets it to true.",
         "isStickyHeader": "True to keep the header in view while the rows scroll; the table then scrolls inside `maxHeight`.",
+        "isVirtualized": "Web: true to draw only the rows in view (the Table's virtual scrolling), for thousands of rows: the header and\nthe start pins stay stuck, group and detail rows scroll with the rest, and the rows scroll inside `maxHeight`.",
         "items": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
         "label": "The spoken name of the table, for example \"Orders\"; a table without one is anonymous to assistive technology.",
         "loadingLabel": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
         "maxHeight": "The height the rows scroll inside when the header is sticky, as a CSS length. Defaults to `24rem`.",
         "mode": "`pager` shows previous and next; `load-more` shows one button that adds the next page. Defaults to `pager`.",
         "onAllMatchingSelectedChange": "Called with true when the user chooses all matching records and with false when they go back to the rows shown.",
+        "onCellEdit": "Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself).",
         "onColumnMove": "Web: given, headers can be dragged to reorder the columns; called with the column and its new index.",
         "onColumnResize": "Web: called with a column's new width, in CSS pixels, when a resize ends.",
+        "onExpandedChange": "Called with the ids of the expanded rows after a row or \"expand all\" is pressed.",
         "onFilterColumn": "Called by a column menu's \"Filter by this column\"; left out, the menu has no such item.",
         "onNext": "Called when the user asks for the next page (the `pager` form) or for more items (the `load-more` form).",
         "onPrevious": "Called when the user asks for the previous page; the `load-more` form has no previous button.",
         "onQueryChange": "Called with the whole next query each time the user changes any part of it.",
+        "onReorder": "Given, each row gets a drag handle (pointer, keyboard and screen reader, through React Aria's drag and drop) and a\ndrop calls this with the rows shown in their new order (group and total rows left out). Nothing moves until the\napp passes the rows back; reordering a sorted view is the app's call.",
         "onRetry": "Called by the error state's retry button; left out, the error state has no button.",
+        "onRowOpen": "Called when a row is opened: a press on the row (Enter from the keyboard).",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "paginationLabel": "The spoken name of the pagination landmark. Defaults to the table's `label` and the word \"pagination\".",
         "query": "The query in force: the search text, the applied filters and the sort.",
         "renderCell": "The content of one cell. Left out, a cell shows the text of the row's property named by the column's `id`; give it\nto draw a badge, a date or a link, and give the app's own text for each value, as the table adds none.",
+        "renderRowDetail": "Given, each row gets a disclosure button and an expanded row shows this under it across every column.",
+        "renderRowPanel": "Given, an opened row shows this in a resizable side panel beside the table (a drawer on a small screen).",
         "retryLabel": "The text of the retry button. Defaults to the `ui` catalogue's word in the active locale.",
         "rowActions": "The actions of one row, listed in the row's menu in a last column. The handler of each closes over the row.\nLeft out, there is no actions column.",
         "scrollEnabled": "Whether the rows scroll on their own (the default). Pass `false` when the table sits inside a page's own\n`ScrollView`, so the rows lay out in the page and React Native does not warn about nested lists.",
@@ -1299,33 +1456,56 @@
         "label": "The records' name, for the list's accessible name."
       },
       "DataView": {
+        "Board": {
+          "board": "The field, the card and the move.",
+          "collection": "The engine whose rows are drawn.",
+          "isVirtualized": "True to draw only the cards in view in each column.",
+          "label": "The records' name; each column's list is named \"{label}: {column}\".",
+          "onItemPress": "Called when a card is opened (a press, or Enter on it).",
+          "renderCell": "The content of a value; left out, the column's text."
+        },
         "Cards": {
           "collection": "The engine whose rows are drawn.",
           "fields": "What a card shows.",
+          "isVirtualized": "True to draw only the cards or rows in view (React Aria's Virtualizer), for thousands of rows.",
           "label": "The records' name, the grid's accessible name.",
           "layout": "`cards` (the default) or `list`.",
           "onItemPress": "Called when a card is pressed.",
           "renderCell": "The content of a value; left out, the column's text."
         },
+        "board": "Given, the view switcher offers the Board: cards in columns by one field, moved by drag or from a menu.",
         "bulkActions": "The actions on the selection, in the bulk bar.",
         "cards": "What a card shows.",
+        "cardsBelow": "The DataView's own width, in CSS pixels, under which the table view is drawn as cards (the engine's layout stays\n`table`, so a wider frame shows the table again). Defaults to 600; `null` keeps the table at any width.",
         "collection": "The engine every view draws from (`useCollection`).",
+        "defaultExpandedKeys": "The ids of the rows expanded at first.",
+        "editableColumns": "The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and\ntheir rules (required, range, the app's own) validate the value. A read-only one is not edited.",
         "emptyState": "What shows when there are no rows at all.",
+        "expandedKeys": "The ids of the expanded rows, for a controlled expansion.",
         "exportOptions": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",
         "gridColumns": "Web: the typed columns of the grid view; given, the grid is offered.",
+        "hasContextMenu": "False to leave the browser's own menu on a right-click; by default a row's right-click (or Shift+F10) opens its actions.",
         "hasFullscreen": "False to leave out the full-screen button. Defaults to true on web.",
+        "hasHoverActions": "True to draw the row actions that have an icon as buttons revealed on hover or keyboard focus, beside the row\nmenu, which still lists them all.",
         "id": "Used to reference react managed views from native code.",
         "importOptions": "The import dialog's options; given, the toolbar has Import.",
+        "isVirtualized": "True to draw only the rows, cards or board cards in view (React Aria's Virtualizer), for 10,000 rows and more.",
         "label": "The name of the records, for example \"Orders\": the table's name and the toolbar's.",
         "layouts": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is\ngiven (web); native offers list and cards.",
         "list": "What a list row shows.",
+        "onCellEdit": "Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself).",
+        "onExpandedChange": "Called with the ids of the expanded rows after a row or \"expand all\" is pressed.",
         "onGridSave": "Web: saves the grid view's edited cells.",
         "onItemPress": "Called when a list row or a card is pressed, for example to open the record.",
         "onRefresh": "Fetches the rows again; defaults to the engine's own refresh in server mode, and no Refresh otherwise.",
+        "onReorder": "Given, each row gets a drag handle (pointer, keyboard and screen reader, through React Aria's drag and drop) and a\ndrop calls this with the rows shown in their new order (group and total rows left out). Nothing moves until the\napp passes the rows back; reordering a sorted view is the app's call.",
+        "onRowOpen": "Called when a row is opened: a press on the row (Enter from the keyboard).",
         "onShareView": "Shares a saved view; given, the views menu has \"Share view\".",
         "phoneLayout": "The view a phone opens on when the engine was never switched: `list` (the default) or `cards`.",
         "renderCell": "The content of a table cell; left out, the column's text.",
         "renderLayout": "Draws a view the component does not (the board of wave 4), or replaces one, by layout.",
+        "renderRowDetail": "Given, each row gets a disclosure button and an expanded row shows this under it across every column.",
+        "renderRowPanel": "Given, an opened row shows this in a resizable side panel beside the table (a drawer on a small screen).",
         "rowActions": "The actions of one row, in the table's row menu.",
         "selectionMode": "How many rows can be selected in the table. Defaults to `none`, or `multiple` with `bulkActions`.",
         "testID": "Used to locate this view in end-to-end tests."
@@ -1594,6 +1774,17 @@
         "onDecisionsChange": "Called with the new decisions when the reviewer accepts or rejects a change."
       }
     },
+    "disclosure": {
+      "Disclosure": {
+        "children": "What shows while the section is open.",
+        "className": "Styles the root.",
+        "defaultExpanded": "True to start open, for an uncontrolled section.",
+        "isDisabled": "True to show the title but refuse opening or closing.",
+        "isExpanded": "True while open, for a controlled section; pair it with `onExpandedChange`.",
+        "onExpandedChange": "Called with the new state each time the section opens or closes.",
+        "title": "The title that opens and closes the section; it names the button."
+      }
+    },
     "donut_chart": {
       "DonutChart": {
         "centerLabel": "The word under the total in the hole, such as \"Visitors\"; no total is shown without it.",
@@ -1730,16 +1921,68 @@
     "drop_zone": {
       "DropZone": {
         "acceptedFileTypes": "The MIME types or extensions accepted; all when empty.",
+        "allowsCamera": "True to add a \"Take a photo\" button beside the file button (the camera on a phone, the webcam picker on web).",
         "allowsMultiple": "True to take more than one file.",
+        "allowsPaste": "Web: true to take files pasted anywhere on the page (a copied screenshot), not only while the zone has focus;\na paste into a text field is left to that field. Native has no file clipboard and ignores it.",
         "className": "Styles the root.",
         "description": "A line under it, for example the accepted types and size.",
         "isDisabled": "True to refuse drops and picks.",
         "label": "The headline in the zone; defaults to the `ui` catalogue's phrase.",
-        "onSelect": "Called with the files dropped or picked."
+        "onFilesChange": "With `showPreviews`, called with every file the zone now holds, after a file is taken or removed.",
+        "onSelect": "Called with the files dropped or picked.",
+        "showPreviews": "True to keep the files taken and list them under the zone, an image as its thumbnail, each with a remove button."
       }
     },
     "dropdown": {
-      "DropdownItem": {
+      "Dropdown": {
+        "Trigger": {
+          "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+          "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+          "aria-describedby": "Identifies the element (or elements) that describes the object.",
+          "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "aria-disabled": "Indicates whether the element is disabled to users of assistive technology.",
+          "aria-expanded": "Indicates whether the element, or another grouping element it controls, is currently expanded\nor collapsed.",
+          "aria-haspopup": "Indicates the availability and type of interactive popup element, such as menu or dialog, that\ncan be triggered by an element.",
+          "aria-label": "Defines a string value that labels the current element.",
+          "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+          "aria-pressed": "Indicates the current \"pressed\" state of toggle buttons.",
+          "autoFocus": "Whether the element should receive focus on render.",
+          "children": "The children of the component. A function may be provided to alter the children based on\ncomponent state.",
+          "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "excludeFromTabOrder": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+          "form": "The `<form>` element to associate the button with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#form).",
+          "formAction": "The URL that processes the information submitted by the button.\nOverrides the action attribute of the button's form owner.",
+          "formEncType": "Indicates how to encode the form data that is submitted.",
+          "formMethod": "Indicates the HTTP method used to submit the form.",
+          "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
+          "formTarget": "Overrides the target attribute of the button's form owner.",
+          "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "isDisabled": "Whether the button is disabled.",
+          "isPending": "Whether the button is in a pending state. This disables press and hover events\nwhile retaining focusability, and announces the pending state to screen readers.",
+          "name": "Submitted as a pair with the button's value as part of the form data.",
+          "onBlur": "Handler that is called when the element loses focus.",
+          "onClick": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "onFocus": "Handler that is called when the element receives focus.",
+          "onFocusChange": "Handler that is called when the element's focus status changes.",
+          "onHoverChange": "Handler that is called when the hover state changes.",
+          "onHoverEnd": "Handler that is called when a hover interaction ends.",
+          "onHoverStart": "Handler that is called when a hover interaction starts.",
+          "onKeyDown": "Handler that is called when a key is pressed.",
+          "onKeyUp": "Handler that is called when a key is released.",
+          "onPress": "Handler that is called when the press is released over the target.",
+          "onPressChange": "Handler that is called when the press state changes.",
+          "onPressEnd": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "onPressStart": "Handler that is called when a press interaction starts.",
+          "onPressUp": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
+          "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "type": "The behavior of the button when used in an HTML form.",
+          "value": "The value associated with the button's name when it's submitted with the form data.",
+          "variant": "Draws the trigger as a Button of this variant. Left out, the trigger has no look of its own, for a trigger that\nis a row or a card drawn by its children and `className`."
+        },
         "aria-label": "An accessibility label for this item.",
         "children": "The label of the item.",
         "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
@@ -2050,6 +2293,12 @@
         "textProps": "Additional props to pass to the Text component when children is a string"
       }
     },
+    "file_name": {
+      "FileName": {
+        "className": "Styles the root.",
+        "name": "The file name as stored, for example \"فاتورة-1042.pdf\"."
+      }
+    },
     "file_trigger": {
       "FileTrigger": {
         "acceptedFileTypes": "The MIME types (`image/*`, `application/pdf`) or extensions (`.csv`) the picker offers; all when empty.",
@@ -2169,6 +2418,31 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "floating_panel": {
+      "FloatingPanel": {
+        "children": "The panel's content, which scrolls when it is taller than the panel.",
+        "className": "Styles the panel.",
+        "defaultHeight": "The starting height in pixels. Defaults to 420.",
+        "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+        "defaultWidth": "The starting width in pixels. Defaults to 360.",
+        "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+        "minHeight": "The shortest the panel resizes to, in pixels. Defaults to 160.",
+        "minWidth": "The narrowest the panel resizes to, in pixels. Defaults to 240.",
+        "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+        "title": "The panel's title in its header; it names the panel."
+      }
+    },
+    "footer": {
+      "Footer": {
+        "brand": "The brand block at the start: a logo, a line about the shop, social links.",
+        "className": "Styles the root.",
+        "copyright": "The copyright line, for example \"© 2026 Dukkan\".",
+        "groups": "The link columns.",
+        "label": "The links' navigation landmark name. Defaults to the catalogue's \"Footer\".",
+        "legalLinks": "Privacy, terms and the like, in the bottom row.",
+        "localeSwitcher": "A locale or currency switcher at the end of the bottom row."
+      }
+    },
     "form": {
       "Form": {
         "action": "The URL to submit the form data to.",
@@ -2198,6 +2472,15 @@
         "testID": "Used to locate this view in end-to-end tests.",
         "validationBehavior": "Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime.",
         "validationErrors": "Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field."
+      }
+    },
+    "form_error_summary": {
+      "FormErrorSummary": {
+        "className": "Classes for the box, such as a margin.",
+        "errors": "The errors, in the form's order. Left out on the web inside a schema `Form`, the form's own field errors are listed.",
+        "onSelectError": "Called with the field's id after its link is followed (web), or instead of following it (native).",
+        "submitCount": "Bump it after each failed submit to move focus to the summary again (a schema form's own count is read).",
+        "title": "The heading; \"There are 3 problems\" in the reader's language by default."
       }
     },
     "form_field": {
@@ -2235,6 +2518,17 @@
         "sort": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default.",
         "stages": "The steps, from the widest (first) to the narrowest.",
         "valueFormat": "How values are written; plain numbers in the locale by default."
+      }
+    },
+    "gallery": {
+      "Gallery": {
+        "className": "Styles the list.",
+        "columns": "The number of columns; defaults to 3 (2 on a narrow web screen).",
+        "hasLightbox": "True (the default): pressing a picture opens it in the Lightbox.",
+        "images": "The pictures, in order.",
+        "label": "The gallery's accessible name, for example \"Product photos\".",
+        "layout": "`grid`: square tiles in rows. `masonry`: each picture at its own shape, in columns. Defaults to `grid`.",
+        "onImagePress": "Called with a picture's id when it is pressed, after the lightbox opens."
       }
     },
     "gauge_chart": {
@@ -2384,6 +2678,17 @@
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
         "variant": "The emphasis and colour of the button. Defaults to `primary`."
+      }
+    },
+    "image_cropper": {
+      "ImageCropper": {
+        "aspectRatio": "The frame's width over its height. Defaults to 1, a square.",
+        "className": "Styles the root.",
+        "label": "The cropper's accessible name, for example \"Crop your profile photo\"; defaults to the catalogue's \"Crop image\".",
+        "maxZoom": "The largest zoom, as a multiple of the image just covering the frame. Defaults to 3.",
+        "onCropChange": "Called with the kept rectangle, in the image's pixels, after each move or zoom.",
+        "shape": "`rect`, or `round` for an avatar (the crop is still the square around the circle). Defaults to `rect`.",
+        "src": "The image to crop."
       }
     },
     "import_dialog": {
@@ -2577,6 +2882,7 @@
         "label": "What the figure counts, shown above it.",
         "onPress": "The drill-down: the whole tile becomes a button that opens the detail.",
         "pressLabel": "The drill-down button's description (\"Open Revenue\" by default); its name is what the tile shows.",
+        "previousValue": "The previous period's figure: a muted \"Previous period\" line under the figure, formatted like it, and, when\n`trend` is left out and `value` is a number, the trend worked out from the two.",
         "sparkline": "The recent values, oldest first, drawn as an area sparkline under the figure.",
         "target": "The goal for a numeric `value`: a bar shows how far along it is.",
         "trend": "The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`.",
@@ -2610,6 +2916,34 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "layout": {
+      "Cluster": {
+        "align": "How items of different heights line up: `center` (the default), `start`, `end` or `baseline`.",
+        "children": "The items, in reading order.",
+        "gap": "The space between items, across and down. Defaults to `sm` (8px).",
+        "id": "Used to reference react managed views from native code.",
+        "justify": "Where each line's items sit: `start` (the default), `center`, `end` or `between` (spread to both ends).",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "testID": "Used to locate this view in end-to-end tests."
+      },
+      "Grid": {
+        "children": "The cells, in reading order.",
+        "columns": "A fixed number of columns. Left out, `minItemWidth` decides; with neither, two columns.",
+        "gap": "The space between cells. Defaults to `md` (16px).",
+        "id": "Used to reference react managed views from native code.",
+        "minItemWidth": "The narrowest a cell may be, in pixels: the grid fits as many columns as this allows, at least one.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "testID": "Used to locate this view in end-to-end tests."
+      },
+      "Stack": {
+        "align": "How each block sits across the column: `stretch` (full width, the default), `start`, `center` or `end`.",
+        "children": "The blocks, from top to bottom.",
+        "gap": "The space between blocks. Defaults to `md` (16px).",
+        "id": "Used to reference react managed views from native code.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "testID": "Used to locate this view in end-to-end tests."
+      }
+    },
     "leave_confirmation": {
       "LeaveConfirmation": {
         "description": "What leaving costs, read out with the dialog, for example \"Your edits to this page will be lost.\".",
@@ -2620,8 +2954,22 @@
         "when": "True while there is unsaved work; false means leaving costs nothing and `confirmLeave` never asks."
       }
     },
+    "lightbox": {
+      "Lightbox": {
+        "className": "Styles the dialog.",
+        "defaultIndex": "The position shown first, for an uncontrolled lightbox. Defaults to 0.",
+        "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+        "images": "The pictures, in order.",
+        "index": "The position of the picture in view, for a controlled lightbox; pair it with `onIndexChange`.",
+        "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+        "label": "The viewer's accessible name, for example \"Product photos\"; defaults to the catalogue's \"Image viewer\".",
+        "onIndexChange": "Called with the new position each time another picture comes into view.",
+        "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app."
+      }
+    },
     "line_chart": {
       "LineChart": {
+        "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
         "className": "Classes for the figure, such as a width or margin.",
         "curve": "How the line joins its points; `monotone` by default.",
         "data": "The rows, in reading order.",
@@ -2630,6 +2978,7 @@
         "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
         "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
         "references": "Target lines and threshold bands on the value axis, drawn behind the series.",
+        "secondaryKeys": "The keys of the series read against a second value axis at the reading end (the left in Arabic), for two measures\nof different size on one chart (orders and revenue). Vertical charts only; references stay on the first axis.",
         "series": "The series drawn, in legend order.",
         "showBrush": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
         "showComparison": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
@@ -2639,7 +2988,9 @@
         "showTooltip": "Shows the values of the pointed or pressed row; on by default.",
         "showValueAxis": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
         "stacked": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+        "syncId": "Charts that share a `syncId` point at the same row together: pointing one moves the others' crosshair and tooltip\n(web; native reads one chart at a time and ignores it).",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueScale": "The value axis' scale: `linear` (the default) or `log` for values that span several powers of ten. On a log scale\na value of zero or below is not drawn; use it on lines and unstacked charts.",
         "xFormat": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
         "xKey": "The key of each row's category: a month name, an ISO date."
       }
@@ -2720,9 +3071,11 @@
         "id": "Used to reference react managed views from native code.",
         "isAnimated": "The rows fade in and rise into place as one block when the list mounts, inside the list's surface (`Reveal`, ADR 0329). Defaults\nto on; off, or under reduced motion, they show at once.",
         "isLoading": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+        "isVirtualized": "Web: true to draw only the rows in view (React Aria's Virtualizer over HeroUI's ListBox), for thousands of rows;\nthe rows then scroll inside `maxHeight`, are reached with the arrow keys, and a pressable row is actioned with\nEnter or a press.",
         "items": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
         "label": "The spoken name of the list, for example \"Recent orders\".",
         "loadingLabel": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+        "maxHeight": "Web: the height a virtualised list scrolls within (any CSS length). Defaults to `32rem`.",
         "onLoadMore": "Called when the end of the list is reached and `hasMore` is true, never while `isLoading`.",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
@@ -2770,8 +3123,111 @@
         "value": "The active locale."
       }
     },
+    "marquee": {
+      "Marquee": {
+        "children": "The items, in reading order, for example brand logos or short announcements.",
+        "className": "Styles the root.",
+        "label": "What the strip is, for screen readers, for example \"Brands we carry\".",
+        "speed": "Speed in pixels per second. Defaults to 40."
+      }
+    },
+    "masked_field": {
+      "MaskedField": {
+        "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
+        "aria-label": "The field's name for assistive technology when it has no visible `label`.",
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isFullWidth": "True to fill the parent's width, false to size to the content. Defaults to true.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "mask": "The pattern: `9` takes a digit, `a` a letter, `A` a letter written upper case, `*` a letter or digit, and every\nother character is written as is, for example `999 999 9999` or `AA99 9999 9999 9999 9999 9999`. Digits show in\nthe customer's digits and are read in Latin or Arabic-Indic.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "placeholder": "Hint text drawn inside the empty input. It never replaces the label: it is gone once the user types.",
+        "value": "The current value, for a controlled field; pair it with `onChange`.",
+        "variant": "The look of the field: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`."
+      }
+    },
+    "media_player": {
+      "MediaPlayer": {
+        "className": "Styles the outer element.",
+        "kind": "`video` (the default) or `audio`.",
+        "label": "The player's accessible name, for example the video's title.",
+        "onEnded": "Called once the file plays to its end.",
+        "playbackRates": "The speeds the speed menu offers; defaults to 0.5, 1, 1.25, 1.5 and 2.",
+        "poster": "A still shown before a video plays.",
+        "src": "The file's address.",
+        "tracks": "Captions files; with any, a captions button appears and shows the one in the reader's language, else the first."
+      },
+      "MediaRange": {
+        "buffered": "How far the file is loaded, drawn behind the fill; leave it out for none.",
+        "className": "Styles the track.",
+        "label": "The accessible name.",
+        "max": "The end of the range (the length in seconds, or 1 for the volume).",
+        "onChange": "Called with the new position.",
+        "step": "What one arrow key moves. Page Up and Page Down move ten times as far.",
+        "value": "The position, 0 to `max`.",
+        "valueText": "What a screen reader says for the value, for example \"0:12 of 1:05\"."
+      }
+    },
+    "mention_input": {
+      "MentionInput": {
+        "accessibilityLabel": "The box's name for assistive technology when it has no string `label`.",
+        "aria-label": "The box's name for assistive technology when it has no visible `label`.",
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "maxSuggestions": "How many people the list shows at most. Defaults to 6.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "onMentionsChange": "Called with the ids of the people the text mentions, in the order they first appear, each time the text changes.",
+        "people": "The people who can be mentioned; the list shows those whose name starts with what follows the `@`.",
+        "placeholder": "Hint text inside the empty box.",
+        "rows": "The number of lines the box shows. Defaults to 3.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
     "menu": {
       "Menu": {
+        "Body": {
+          "aria-describedby": "Identifies the element (or elements) that describes the object.",
+          "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "aria-label": "Defines a string value that labels the current element.",
+          "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+          "autoFocus": "Where the focus should be set.",
+          "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "defaultSelectedKeys": "The initial selected keys in the collection (uncontrolled).",
+          "dependencies": "Values that should invalidate the item cache when using dynamic collections.",
+          "disabledKeys": "The item keys that are disabled. These items cannot be selected, focused, or otherwise\ninteracted with.",
+          "disallowEmptySelection": "Whether the collection allows empty selection.",
+          "escapeKeyBehavior": "Whether pressing the escape key should clear selection in the menu or not.\n\nMost experiences should not modify this option as it eliminates a keyboard user's ability to\neasily clear selection. Only use if the escape key is being handled externally or should not\ntrigger selection clearing contextually.",
+          "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "items": "Item objects in the collection.",
+          "onAction": "Called with the key of every action chosen.",
+          "onClose": "Handler that is called when the menu should close after selecting an item.",
+          "onSelectedChange": "Called with the new chosen keys.",
+          "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "renderEmptyState": "Provides content to display when there are no items in the menu.",
+          "sections": "The groups of actions, in order, with a divider between them.",
+          "selected": "The chosen keys across all sections.",
+          "selectionMode": "`none`, `single` (one per section) or `multiple`.",
+          "shouldCloseOnSelect": "Whether the menu should close when the menu item is selected.",
+          "shouldFocusWrap": "Whether keyboard navigation is circular.",
+          "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state."
+        },
         "align": "Where along that side it lines up with the trigger. Defaults to `center`.",
         "animation": "Animation configuration for menu root",
         "children": "The element that opens the menu, usually a `Button` or `IconButton`; it must be pressable and named.",
@@ -2791,6 +3247,36 @@
         "testID": "Used to locate this view in end-to-end tests.",
         "trigger": "The type of interaction that triggers the menu",
         "value": "The keys of the chosen actions, for a controlled menu; pair it with `onChange`."
+      }
+    },
+    "menubar": {
+      "Menubar": {
+        "aria-label": "The bar's accessible name. Defaults to the catalogue's \"Application menu\".",
+        "className": "Styles the bar.",
+        "defaultValue": "The keys checked at the start, for an uncontrolled menubar.",
+        "menus": "The menus, in order on the bar.",
+        "onAction": "Called with the key of every action chosen, after the action's own `onPress`.",
+        "onChange": "Called with the new list of checked keys each time a checkable action changes.",
+        "value": "The keys of the checked actions across all menus, for a controlled menubar; pair it with `onChange`."
+      }
+    },
+    "message_actions": {
+      "MessageActions": {
+        "className": "Styles the row.",
+        "copyValue": "The message's text; set it to offer Copy.",
+        "feedback": "The rating given, or null for none; set it to control the thumbs (uncontrolled when left out).",
+        "label": "The row's accessible name. Defaults to the catalogue's \"Message actions\".",
+        "onCopy": "Called with the text once it is on the clipboard.",
+        "onEdit": "Called when Edit is pressed; set it to offer Edit.",
+        "onFeedbackChange": "Called with the new rating, or null when a pressed thumb is pressed again; set it to offer the thumbs.",
+        "onRetry": "Called when Retry is pressed; set it to offer Retry."
+      }
+    },
+    "message_scroller": {
+      "MessageScroller": {
+        "children": "The messages, oldest first, one child each: the jump button counts the children added since the person left.",
+        "className": "Styles the scrolling region; give it a height (or a flex parent) so it can scroll.",
+        "label": "The region's accessible name. Defaults to the catalogue's \"Conversation\"."
       }
     },
     "meter": {
@@ -2915,6 +3401,19 @@
         "label": "The visible label (`Developer mode`); it is the switch's accessible name.",
         "mode": "The current mode, for a controlled switch; pair it with `onModeChange`.",
         "onModeChange": "Called with the new mode each time the viewer switches."
+      }
+    },
+    "model_picker": {
+      "ModelPicker": {
+        "className": "Styles the field.",
+        "defaultValue": "The model picked at first, for an uncontrolled picker.",
+        "isDisabled": "True to show the picker but refuse changes.",
+        "isFullWidth": "True to fill the parent's width instead of the content's.",
+        "isLabelVisible": "False to hide the label (it still names the field), for a compact picker in a composer. Defaults to true.",
+        "label": "The field's name. Defaults to the catalogue's \"Model\".",
+        "models": "The models offered, grouped by provider in the list.",
+        "onChange": "Called with the id of the model the person picks.",
+        "value": "The picked model's id, for a controlled picker; `null` means none is picked."
       }
     },
     "money_field": {
@@ -3152,6 +3651,14 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "navigation_menu": {
+      "NavigationMenu": {
+        "className": "Styles the `nav`.",
+        "columns": "The panel's columns: 1 (the default) or 2, for a mega menu of many links.",
+        "items": "The top-level entries, in order. An entry with `children` is a button that opens a panel of its children's links\n(with their `description` and `icon`); any other entry is a link.",
+        "label": "The landmark's name; defaults to the catalogue's \"Main navigation\". Name it when a page has two."
+      }
+    },
     "notifications_panel": {
       "NotificationRow": {
         "dismissLabel": "The accessible name of the dismiss button.",
@@ -3347,6 +3854,16 @@
         "title": "What the region is about, in a few words. Required: it is the heading a screen reader jumps to."
       }
     },
+    "page_indicator": {
+      "PageIndicator": {
+        "className": "Styles the root.",
+        "count": "How many pages there are.",
+        "getPageLabel": "Names a page's dot from its 1-based number and the count. Defaults to the catalogue's \"Page 2 of 5\".",
+        "index": "The current page, from 0.",
+        "label": "The group's name. Defaults to the catalogue's \"Pages\".",
+        "onChange": "Called with a page's index when its dot is pressed; left out, the dots are display only."
+      }
+    },
     "page_skeleton": {
       "PageSkeleton": {
         "animation": "Animation configuration",
@@ -3451,6 +3968,19 @@
         "variant": "The look of the field. Defaults to `primary`."
       }
     },
+    "period_picker": {
+      "PeriodPicker": {
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled picker; the last 30 days with no comparison by default.",
+        "isDisabled": "Refuses changes and shows the disabled style.",
+        "label": "The group's accessible name; \"Period\" by default.",
+        "onChange": "Called with the whole new value each time the period, the comparison or its mode changes.",
+        "presets": "The presets offered, in order, before \"Custom range\"; a dashboard set by default.",
+        "showComparison": "Offers the compare switch and its mode; on by default.",
+        "today": "The day the presets count from; today by default.",
+        "value": "The current value, for a controlled picker; pair it with `onChange`."
+      }
+    },
     "permissions_matrix": {
       "PermissionsMatrix": {
         "defaultValue": "The grants at first (uncontrolled).",
@@ -3498,6 +4028,39 @@
         "showTooltip": "Shows the values of the pointed or pressed row; on by default.",
         "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
         "valueKey": "The key of each row's value."
+      }
+    },
+    "polar_chart": {
+      "PolarChart": {
+        "className": "Classes for the figure, such as a width or margin.",
+        "data": "The rows, in reading order.",
+        "height": "The plot's height in pixels; 240 by default.",
+        "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+        "palette": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+        "series": "The series drawn, in legend order.",
+        "showLegend": "Shows the legend under the plot; on by default when there are two series or more.",
+        "showTooltip": "Shows the values of the pointed or pressed row; on by default.",
+        "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "xFormat": "Writes the sector name as a date in the locale; names are shown as given without it.",
+        "xKey": "The key of each row's sector name, such as a month or a weekday."
+      }
+    },
+    "popconfirm": {
+      "Popconfirm": {
+        "align": "Where along that side it lines up with the trigger. Defaults to `center`.",
+        "cancelLabel": "The cancel button's words. Defaults to the catalogue's \"Cancel\".",
+        "className": "Styles the popover's content.",
+        "confirmLabel": "The confirm button's words, for example \"Delete\". Defaults to the catalogue's \"Confirm\".",
+        "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+        "description": "One line on what confirming does, read out with the question.",
+        "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+        "onCancel": "Called when the question is refused: the cancel button, Escape or a press outside.",
+        "onConfirm": "Called on confirm. Return a promise to keep the question open with the confirm button pending until it settles:\nit closes when the promise resolves and stays open (to retry or cancel) when it rejects.",
+        "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+        "placement": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+        "title": "The question, worded as a decision (\"Delete this draft?\"); it names the popover.",
+        "tone": "`danger` for a destructive confirm: the confirm button is red and focus starts on cancel. Defaults to `default`,\nwhere focus starts on confirm.",
+        "trigger": "The pressable that asks the question, usually a Button or IconButton with its own name."
       }
     },
     "popover": {
@@ -3710,9 +4273,19 @@
         "valueLabel": "The spoken text of the value, for example \"3 of 12 files\", in place of the percentage. Left out, the percentage\nin the reader's locale is spoken. It is the shown text too when a bar's value is visible."
       }
     },
+    "prompt_suggestions": {
+      "PromptSuggestions": {
+        "className": "Styles the set.",
+        "isDisabled": "True to show them but refuse choosing, for example while an answer is being written.",
+        "label": "The set's accessible name. Defaults to the catalogue's \"Suggested prompts\".",
+        "layout": "`wrap` (the default) flows them onto more lines; `scroll` keeps one line that scrolls sideways.",
+        "onSelect": "Called with the suggestion chosen.",
+        "suggestions": "The suggestions, in order."
+      }
+    },
     "property_list": {
       "PropertyList": {
-        "columns": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one.",
+        "columns": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one. `auto` follows the\nlist's own width (a container query on web): one column when narrow, two from 28rem, three from 48rem.",
         "copiedLabel": "Spoken, and on web also drawn as a check, after a value is copied, for example \"Copied\". Defaults to the `ui` catalogue's word in the active locale, so a copy is never silent.",
         "emptyValue": "What shows in place of an empty value. Defaults to an en dash; pass words (\"Not set\") when a dash would not say enough.",
         "id": "Used to reference react managed views from native code.",
@@ -3758,6 +4331,18 @@
         "step": "How much one press changes the count. Defaults to 1.",
         "testID": "Used to locate this view in end-to-end tests.",
         "value": "The count, for a controlled stepper; pair it with `onChange`."
+      }
+    },
+    "questionnaire_card": {
+      "QuestionnaireCard": {
+        "className": "Styles the card.",
+        "defaultAnswers": "Answers to start from, for example the ones given last time.",
+        "description": "A muted line under the title.",
+        "isSubmitting": "True while the answers are being sent: the send button shows a spinner and refuses presses.",
+        "onSubmit": "Called with the answers when the person sends them from the summary.",
+        "questions": "The questions, asked in this order, one per step; a summary of the answers follows the last.",
+        "submitLabel": "The send button's words. Defaults to the catalogue's \"Send answers\".",
+        "title": "The card's title, for example \"A few questions before I draft the offer\"."
       }
     },
     "radar_chart": {
@@ -3853,6 +4438,7 @@
         "className": "Classes for the figure, such as a width or margin.",
         "color": "The bars' colour; the first step of the accent ramp by default.",
         "data": "The rows, in reading order.",
+        "emphasis": "Which bar carries the colour while the rest stand back in its soft tone: `none` (the default), `latest` or an index.",
         "fromKey": "The key of each row's low end.",
         "height": "The plot's height in pixels; 240 by default.",
         "label": "The chart's accessible name and the data table's caption, such as \"Daily temperature range\".",
@@ -3909,6 +4495,18 @@
         "isSelected": "True when the user has reacted; set it to control the state (the count is then shown as given).",
         "label": "The emoji's name, read with the count (for example \"thumbs up\").",
         "onChange": "Called with the new state when pressed."
+      }
+    },
+    "recurrence_editor": {
+      "RecurrenceEditor": {
+        "calendar": "The calendar months count in: `islamic-umalqura` makes \"every month on the 1st\" the Hijri 1st (RFC 7529 `RSCALE`)\nand writes month names and the end date in Hijri. Defaults to `gregory`; a rule that names its own wins.",
+        "className": "Styles the root.",
+        "defaultValue": "The rule at the start, for an uncontrolled editor. Defaults to every week on the start day's weekday.",
+        "isDisabled": "True to show the rule but refuse changes.",
+        "label": "The group's name, for example \"Repeat\"; defaults to the catalogue's.",
+        "onChange": "Called with the new `RRULE` text on every change.",
+        "startDate": "The first day (the event's `DTSTART`): it picks the default weekday, day of month and month. Defaults to today.",
+        "value": "The rule, for example `FREQ=WEEKLY;BYDAY=SU,WE`, for a controlled editor; pair it with `onChange`."
       }
     },
     "result": {
@@ -4347,6 +4945,28 @@
         "variant": "The surface level of the card; `transparent` drops the background and shadow. Defaults to `default`."
       }
     },
+    "share_button": {
+      "ShareButton": {
+        "className": "Styles the button.",
+        "isDisabled": "True to show the button but refuse sharing.",
+        "isIconOnly": "True to draw only the share icon, named by `label`.",
+        "label": "The button's words and accessible name. Defaults to the catalogue's \"Share\".",
+        "onShare": "Called once something was shared: `shared` through the system share sheet, `copied` when the browser has none and\nthe link was copied instead (web only). Never called when the person closes the sheet.",
+        "size": "The button's size. Defaults to `md`.",
+        "text": "A line shared with the link, for example \"Look at this abaya\".",
+        "title": "The title the share sheet shows, for example the product's name.",
+        "url": "The link to share, for example a product page.",
+        "variant": "The button's emphasis. Defaults to `secondary`, or `ghost` when icon only."
+      }
+    },
+    "shimmer": {
+      "Shimmer": {
+        "children": "The words of the text kind, and the loading region's name for the block kind. Defaults to \"Thinking…\".",
+        "className": "Styles the text or the block of lines.",
+        "kind": "`text` (the default) shimmers the words; `block` draws placeholder lines.",
+        "lines": "How many placeholder lines the block kind draws; defaults to 3."
+      }
+    },
     "side_panel": {
       "SidePanel": {
         "Body": {
@@ -4707,6 +5327,7 @@
     "sortable_list": {
       "SortableList": {
         "UNSTABLE_focusOnEntry": "Which item in the collection to focus when tabbing into the collection. Overrides default\nroving tab index like behavior.",
+        "accessibilityActionsOf": "More screen-reader actions for a row, beside \"Move up\" and \"Move down\": a row is one element to VoiceOver and\nTalkBack, so a control drawn inside it (a checkbox, a button) is reached through one of these.",
         "aria-describedby": "Identifies the element (or elements) that describes the object.",
         "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
         "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
@@ -4803,12 +5424,17 @@
     "split_view": {
       "SplitView": {
         "id": "Used to reference react managed views from native code.",
+        "isResizable": "True to draw a resize strip between the panes when they sit side by side (pointer and keyboard).",
         "isSecondaryShown": "On a phone, true to show the detail pane in place of the list. Ignored when both fit.",
+        "maxPrimaryWidth": "The widest list pane a resize reaches, in pixels. Defaults to 560.",
+        "minPrimaryWidth": "The narrowest list pane a resize reaches, in pixels. Defaults to 240.",
+        "onPrimaryWidthChange": "Called with the list pane's new width in pixels after each resize.",
         "primary": "The list pane, at the reading start.",
         "primaryLabel": "The landmark name of the list pane, for example \"Orders\".",
         "primaryWidth": "The list pane's width when side by side, in points or CSS pixels. Defaults to 320.",
         "secondary": "The detail pane, at the reading end.",
         "secondaryLabel": "The landmark name of the detail pane, for example \"Order details\".",
+        "storageKey": "A local-storage key the resized width is kept under, so it survives a reload.",
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
@@ -4830,6 +5456,7 @@
         "label": "What the figure counts, shown above it.",
         "onPress": "The drill-down: the whole tile becomes a button that opens the detail.",
         "pressLabel": "The drill-down button's description (\"Open Revenue\" by default); its name is what the tile shows.",
+        "previousValue": "The previous period's figure: a muted \"Previous period\" line under the figure, formatted like it, and, when\n`trend` is left out and `value` is a number, the trend worked out from the two.",
         "sparkline": "The recent values, oldest first, drawn as an area sparkline under the figure.",
         "target": "The goal for a numeric `value`: a bar shows how far along it is.",
         "trend": "The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`.",
@@ -4941,8 +5568,10 @@
         "keyboardActivation": "Whether tabs are activated automatically on focus or manually.",
         "label": "The spoken name of the tab list, for example \"Order sections\"; name it when a page holds more than one.",
         "loadingLabel": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+        "onClose": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "orientation": "The axis the tabs run along. Defaults to `horizontal`; native has no vertical tabs and reads it as horizontal.",
+        "overflow": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
         "selectedKeys": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
@@ -5032,12 +5661,15 @@
         "columns": "The columns, in reading order.",
         "defaultSelectedKeys": "The ids selected at the start, for an uncontrolled collection.",
         "density": "How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing.",
+        "disabledKeys": "Web: the ids of rows that cannot be selected or dragged (summary and detail rows); their content stays live.",
         "emptyState": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+        "fixedColumns": "Web: the ids of columns that never move: they draw no drag grip and take no drop (a DataTable's tool columns).",
         "hasMore": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
         "id": "Used to reference react managed views from native code.",
         "isColumnResizable": "Web: true to give each header a resize handle (pointer, and the keyboard through the column menu's \"Resize\"); the\ncolumns then take their `width`, `minWidth` and `maxWidth`, and the table scrolls sideways past its width.",
         "isLoading": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
         "isStickyHeader": "True to keep the header in view while the rows scroll; the table then scrolls inside `maxHeight`.",
+        "isVirtualized": "Web: true to draw only the rows in view (React Aria's Virtualizer), for thousands of rows. The header stays\nstuck, the start pins stay stuck, rows take the density's height (measured when `renderRowSpan` is given) and\nthe scroll area is `maxHeight` tall. A column pinned to the end scrolls with the rest.",
         "items": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
         "label": "The spoken name of the table, for example \"Orders\"; a table without one is anonymous to assistive technology.",
         "loadingLabel": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
@@ -5045,10 +5677,14 @@
         "onColumnMove": "Web: given, headers can be dragged to reorder the columns; called with the column and its new index.",
         "onColumnResize": "Web: called with a column's new width, in CSS pixels, when a resize ends.",
         "onLoadMore": "Called when the end of the rows is reached while `hasMore` is true and nothing is loading.",
+        "onReorder": "Web: given, each row gets a drag handle in a leading column (pointer, or the keyboard and a screen reader through\nReact Aria's drag and drop) and a drop calls this with every row in the new order. Controlled: nothing moves\nuntil the app passes the rows back.",
+        "onRowAction": "Web: called with a row's id when the row is actioned: a press with no selection mode, or Enter on the row.",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "onSortChange": "Called with the sort a press on a sortable header asks for; the app fetches the rows in that order.",
         "renderCell": "The content of one cell. Left out, a cell shows the text of the row's property named by the column's `id`; give it\nto draw a badge, a date or a link, and give the app's own text for each value, as the table adds none.",
         "renderColumnMenu": "Web: what sits at the end of a header, usually the column's menu. `startResize` starts a keyboard resize of the\ncolumn (arrows, then Enter or Escape) when the table is resizable.",
+        "renderHeader": "Web: a header's content in place of its label, when this returns a node (the label stays its name).",
+        "renderRowSpan": "Web: a row drawn as one cell across every column (an expanded row's detail) when this returns a node.",
         "rowClassName": "Web: extra classes of one row, for example a sticky total row.",
         "selectedKeys": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
         "selectionMode": "What a press or Space does: nothing, select one item, or toggle several. Defaults to `none`.",
@@ -5076,8 +5712,10 @@
         "keyboardActivation": "Whether tabs are activated automatically on focus or manually.",
         "label": "The spoken name of the tab list, for example \"Order sections\"; name it when a page holds more than one.",
         "loadingLabel": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+        "onClose": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "orientation": "The axis the tabs run along. Defaults to `horizontal`; native has no vertical tabs and reads it as horizontal.",
+        "overflow": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.",
         "selectedKeys": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
@@ -5144,6 +5782,21 @@
         "placeholder": "Hint text in the empty input; it never replaces the label.",
         "validate": "Checks one tag; return the words to show for a bad one, or nothing to accept it.",
         "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
+    "task_tray": {
+      "TaskTray": {
+        "className": "Styles the root.",
+        "defaultCollapsed": "Folded at the start, for an uncontrolled tray. Defaults to false.",
+        "isCollapsed": "True to fold the list to the header, for a controlled tray; pair it with `onCollapsedChange`.",
+        "label": "The tray's name; defaults to the catalogue's \"Background tasks\".",
+        "onCancel": "Called with a queued or running task's id when its cancel button is pressed; no cancel button without it.",
+        "onClear": "Called when \"Clear finished\" is pressed; the button shows while a task has finished.",
+        "onCollapsedChange": "Called with the new folded state when the header's toggle is pressed.",
+        "onDismiss": "Called with a finished task's id (done, failed or canceled) when its remove button is pressed.",
+        "onRetry": "Called with a failed task's id when its retry button is pressed; no retry button without it.",
+        "placement": "`docked` (the default) pins it to the bottom end corner of the screen; `inline` leaves it in the flow.",
+        "tasks": "The tasks, newest first. The tray draws nothing while this is empty."
       }
     },
     "text": {
@@ -5382,6 +6035,18 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "time_clock": {
+      "TimeClock": {
+        "className": "Styles the outer element.",
+        "defaultValue": "The starting time, for an uncontrolled clock; defaults to 12:00.",
+        "hourCycle": "12 hours with AM and PM, or 24 hours on two rings; defaults to the locale's.",
+        "isDisabled": "True to show the time but refuse changes.",
+        "label": "The clock's name, for example \"Pickup time\".",
+        "minuteStep": "The minutes the minute hand snaps to, for example 5 or 15; defaults to 1.",
+        "onChange": "Called with each new time.",
+        "value": "The time, for a controlled clock."
+      }
+    },
     "time_field": {
       "TimeField": {
         "accessibilityLabel": "The field's accessible name when the label is not a string.",
@@ -5521,12 +6186,17 @@
         "variant": "The look of every toast: `alert`, `bar`, `flip-bar` or `bubble`. Defaults to `alert`.",
         "width": "The width of the toast; numbers are pixels."
       },
+      "UndoCountdown": {
+        "duration": "How long the ring takes to empty, in milliseconds: the toast's timeout."
+      },
       "toast": {
         "action": "The one action beside the message.",
         "avatar": "The person the toast is about, drawn in place of the icon.",
+        "countdown": "An undo toast's countdown, in milliseconds: the seconds left count down in a ring in place of the icon.",
         "description": "A second line under the message.",
         "dismissLabel": "The accessible name of the dismiss button.",
         "icon": "The caller's icon, or `false` for none; left out, the tone's icon is drawn.",
+        "isLoading": "True while a promise toast's work runs: a spinner stands in for the icon.",
         "title": "The message the toast shows, as its first line.",
         "toast": "The queued toast to draw, with its content as `toast()` stored it.",
         "tone": "The tone of the message.",
@@ -5598,6 +6268,61 @@
         "trigger": "How the tooltip is triggered"
       }
     },
+    "tracker_strip": {
+      "TrackerStrip": {
+        "cells": "The periods, oldest first.",
+        "className": "Classes for the figure, such as a width or margin.",
+        "endLabel": "The caption under the last cell, such as \"Today\".",
+        "height": "The cells' height in pixels; 32 by default.",
+        "label": "The strip's accessible name, such as \"API, last 30 days\".",
+        "startLabel": "The caption under the first cell, such as \"30 days ago\".",
+        "summary": "The line at the header's end, such as \"99.98% uptime\"; worked out from the cells by default."
+      }
+    },
+    "transfer_list": {
+      "TransferList": {
+        "availableLabel": "The available list's title. Defaults to the catalogue's \"Available\".",
+        "chosenLabel": "The chosen list's title. Defaults to the catalogue's \"Chosen\".",
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "items": "Every item, chosen or not; a disabled item stays where it is.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
+    "tree_select": {
+      "TreeSelect": {
+        "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
+        "aria-label": "The field's name for assistive technology when it has no visible `label`.",
+        "className": "Styles the root.",
+        "defaultExpandedKeys": "The ids expanded when the list first opens.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "isSelectionPropagated": "With `multiple`: ticking a row ticks every row under it, and a partly ticked row shows a dash. Defaults to true.",
+        "items": "The rows to choose from.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "onLoadChildren": "Loads the rows under a row marked `hasChildren`, as on TreeView.",
+        "placeholder": "The text of the empty field; defaults to the catalogue's \"Choose\".",
+        "selectionMode": "`single` (the default) closes on a choice; `multiple` ticks rows and stays open.",
+        "value": "The current value, for a controlled field; pair it with `onChange`.",
+        "variant": "The look of the trigger: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`."
+      }
+    },
     "tree_view": {
       "TreeView": {
         "aria-describedby": "Identifies the element (or elements) that describes the object.",
@@ -5614,11 +6339,14 @@
         "escapeKeyBehavior": "Whether pressing the escape key should clear selection in the grid list or not.\n\nMost experiences should not modify this option as it eliminates a keyboard user's ability to\neasily clear selection. Only use if the escape key is being handled externally or should not\ntrigger selection clearing contextually.",
         "expandedKeys": "The ids of the expanded rows, for a controlled tree; pair it with `onExpandedChange`.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isSelectionPropagated": "True with `selectionMode=\"multiple\"`: checking a row checks every row under it, a row is checked once all its\nrows are, and a row with only some of its rows checked shows a dash. The selection holds every checked id.",
         "items": "The top-level rows, in order.",
         "keyboardNavigationBehavior": "Whether keyboard navigation to focusable elements within grid list items is\nvia the left/right arrow keys or the tab key.",
         "label": "The accessible name of the tree, for example \"Chart of accounts\".",
         "onAction": "Called with a row's id when it is activated (pressed, or Enter on web).",
         "onExpandedChange": "Called with the ids now expanded each time a row opens or closes.",
+        "onLoadChildren": "Loads the children of a row marked `hasChildren` the first time it is expanded. A spinner row shows while the\npromise is pending and the tree keeps the rows it resolves to; a rejection closes the row so it can be tried again.",
+        "onMove": "Called when rows are dragged (or moved from the keyboard) to a new place: before or after a row, or inside it.\nGiven, rows can be dragged on web; the tree does not move them itself, so update `items` (`moveTreeNodes` does\nit). Native has no dragging and ignores it.",
         "onSelectionChange": "Called with the ids now selected each time the selection changes, in the order the items are in.",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
         "renderEmptyState": "Provides content to display when there are no items in the list.",
@@ -5653,6 +6381,7 @@
     "turnstile": {
       "Turnstile": {
         "name": "The name the token is posted under; Cloudflare's own `cf-turnstile-response` when left out.",
+        "onError": "Called with Cloudflare's error code when the challenge fails (a refused visitor, a network error); the form then\nhas no token, so the server refuses the post.",
         "siteKey": "The site key; the app's `VITE_TURNSTILE_SITE_KEY` when left out."
       }
     },
@@ -5689,6 +6418,33 @@
         "id": "Used to reference react managed views from native code.",
         "isFocusable": "Whether the element should become visible on focus, for example skip links.",
         "testID": "Used to locate this view in end-to-end tests."
+      }
+    },
+    "voice_input": {
+      "VoiceInput": {
+        "className": "Styles the row that holds the button, the level and the status.",
+        "isDisabled": "True to show the button but refuse presses.",
+        "isStatusVisible": "False to hide the status line beside the button (it is still announced). Defaults to true.",
+        "label": "The button's name while idle. Defaults to the catalogue's \"Start recording\".",
+        "onRecord": "Called with each finished recording. While a returned promise runs the input shows \"Processing\", for example\nwhile the app transcribes; a rejection shows the error state.",
+        "onStateChange": "Called each time the state changes.",
+        "recorder": "The recorder. Defaults to the MediaRecorder driver on web and the mock driver on native.",
+        "size": "The button's size. Defaults to `md`."
+      }
+    },
+    "waffle_chart": {
+      "WaffleChart": {
+        "className": "Classes for the figure, such as a width or margin.",
+        "columns": "Squares per row; 10 by default.",
+        "data": "The rows, in reading order.",
+        "label": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+        "nameKey": "The key of each row's part name, matched to a series' `key`.",
+        "palette": "The colours parts take by position: the `categorical` set by default, since a waffle tells parts apart by colour.",
+        "rows": "Rows of squares; 10 by default.",
+        "series": "The series drawn, in legend order.",
+        "showLegend": "Shows the legend under the plot; on by default when there are two series or more.",
+        "valueFormat": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+        "valueKey": "The key of each row's value."
       }
     },
     "waterfall_chart": {

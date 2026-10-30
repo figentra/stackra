@@ -26,6 +26,29 @@ describe("Dropdown (web)", () => {
     Reflect.deleteProperty(Element.prototype, "scrollTo");
   });
 
+  it("draws the trigger as a Button only when given a variant", () => {
+    render(
+      <>
+        <Dropdown>
+          <Dropdown.Trigger variant="secondary">Language</Dropdown.Trigger>
+          <Dropdown.Menu aria-label="Languages">
+            <Dropdown.Item id="en">English</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+        <Dropdown>
+          <Dropdown.Trigger className="row">Account</Dropdown.Trigger>
+          <Dropdown.Menu aria-label="Account">
+            <Dropdown.Item id="out">Sign out</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "Language" }).className).toMatch(/button--secondary/);
+    const plain = screen.getByRole("button", { name: "Account" }).className;
+    expect(plain).toMatch(/\brow\b/);
+    expect(plain).not.toMatch(/button--/);
+  });
+
   it("opens the menu and reports the chosen item", async () => {
     const onAction = vi.fn();
     render(

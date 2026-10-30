@@ -12,7 +12,7 @@ export const FREE_CONTEXT_MENU: ComponentEntry = {
   slug: "context-menu",
   tier: "free",
   category: "overlays",
-  platforms: ["react"],
+  platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "ContextMenu",
   parts: ["ContextMenu"],
@@ -20,6 +20,6 @@ export const FREE_CONTEXT_MENU: ComponentEntry = {
   examples: [{ id: "rows", card: true }],
   related: ["free/menu", "free/action-menu", "free/table"],
   tokens: ["color.overlay", "shadow.overlay", "radius.lg"],
-  keywords: ["context menu", "right click", "shortcut menu", "shift f10"],
+  keywords: ["context menu", "right click", "long press", "shortcut menu", "shift f10"],
   status: "new",
 };
