@@ -1,0 +1,155 @@
+---
+title: "Test infrastructure (the testbed)"
+description: "The shared test boxes every builder session uses: how jobs run, the disk guard, replacing a box, rebuilding the image, secrets, the fallback, cost, and the migration from the old ci-box fleet."
+icon: "server"
+---
+
+<Note>
+  Status: written, not applied (STA-1626). The design is [ADR
+  0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical).
+  The code is `@stackra/infra-testbed` and `stackra testbed`. Nothing is applied until the owner
+  says so. Until the migration below finishes, `ci-box` and the eight old boxes stay in service.
+</Note>
+
+Builder sessions never run heavy checks on the Mac. Only oxfmt and oxlint run there. Install, build, gen, typecheck,
+tests, e2e and integration tests all run on the testbed: identical EC2 boxes, built from one image, in one region
+(eu-west-1).
+
+## The shape
+
+| Part      | What it is                                                                                                              |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Image     | One Dockerfile for the job toolchain (mise, Node, pnpm, Encore, Playwright, Infisical) and one EC2 Image Builder AMI    |
+| Groups    | `heavy`: on-demand `c7i.2xlarge`, 2 to 6 boxes. `light`: spot `c7i`/`c6i`/`m7i.2xlarge`, 1 to 4 boxes                   |
+| Disks     | 40 GB root (OS and images); 200 GB XFS data volume at `/data` (jobs, seeds, pnpm store, turbo cache, Docker)            |
+| Slots     | One heavy and one light job per box. Heavy: `encore test`, `playwright`, `e2e`, `act `, `build`. Everything else: light |
+| Jobs      | A fresh container per job, workspace `/data/jobs/<id>`, read-only pnpm store, optional Postgres; all deleted after      |
+| Secrets   | Fetched per job from Infisical by the instance role (identity `figentra-ci-boxes`). There is no token file              |
+| Box agent | `testbed-agent` on every box: health, slots, the disk guard and the idle check                                          |
+
+## Running work
+
+```bash
+stackra testbed run "<session> <what>" <project-dir> "<command>"
+```
+
+The command picks a free slot of the right kind and syncs the directory. Only the diff is uploaded: the box clones its
+last copy of the project first. Then it runs the command in a fresh container and returns its exit code. The other
+verbs:
+
+| Verb                             | Does                                                                       |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `stackra testbed status`         | each box: heavy and light slot, disk use, health, image age, load          |
+| `stackra testbed unlock --box N` | stops a stuck job on one box (its container and the containers it started) |
+| `stackra testbed ip\|ssh\|sync`  | one box, by number from `status` or by instance id                         |
+| `stackra testbed scale`          | shows each group's desired count and raises it by one                      |
+| `stackra testbed image`          | the current AMI and its age                                                |
+
+- **"every box busy, waiting"** means every slot of that kind is taken. After two minutes the command adds a box (up
+  to the group's maximum) and keeps waiting. Do not start a second copy of the job.
+- A command that calls `ci-box` or `stackra testbed` is refused. Run it from the Mac instead.
+- A job runs for at most 3 hours.
+
+## The disk guard
+
+`testbed-agent guard` runs every five minutes and before every job.
+
+| `/data` use                           | What happens                                                                                                      |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| under 70%                             | normal                                                                                                            |
+| 70% or more                           | cleanup: finished job folders, stopped containers, dangling images, seeds unused for 7 days, turbo cache to 20 GB |
+| 85% or more (or `/` under 10 GB free) | the box refuses new jobs and reports unhealthy. Once its jobs finish, the group replaces it                       |
+
+Nobody frees disk by hand. A box that keeps filling up points to a job that writes outside its workspace: find it
+in `status` and fix the job.
+
+## Replacing a box
+
+Replace, don't repair. A box that is unhealthy or acting oddly:
+
+1. Run `stackra testbed status` and note the box's instance id.
+2. Wait until its slots are free. A running job holds scale-in protection.
+3. The owner, or the tester with the owner's yes, marks it unhealthy:
+
+```bash
+aws autoscaling set-instance-health --instance-id <id> --health-status Unhealthy --profile academorix --region eu-west-1
+```
+
+The group starts a new box from the current image within about five minutes. Never SSH in to patch packages, edit
+configs or install tools: the next box would not have the change. Change the image instead.
+
+## Rebuilding the image
+
+The image rebuilds every Sunday at 03:00 UTC. It also gets a new recipe version whenever the Dockerfile, the host
+components or the toolchain pins change. A failed build keeps the last good AMI.
+
+To roll out a new image, the owner starts an instance refresh. Boxes running a job wait, because the refresh skips
+protected boxes until they are free:
+
+```bash
+aws autoscaling start-instance-refresh --auto-scaling-group-name stackra-testbed-heavy --profile academorix --region eu-west-1
+```
+
+Repeat with `stackra-testbed-light`.
+
+## Secrets
+
+- Each box authenticates to Infisical by AWS IAM auth, as the machine identity `figentra-ci-boxes`. That is the
+  free plan's fourth identity, read-only on `figentra-ci-gate`.
+- At job start the agent gets a token that lives for the job's timeout. The container runs the command under
+  `infisical run`. No value touches a disk, a log or a command line.
+- Which project paths a job may read is `secretGrants` in `@stackra/infra-testbed`, reviewed like code. The identity's
+  permissions in Infisical are the real limit.
+- `ci-box put-env` and `~/.ci-env` are retired. A missing token is fixed in Infisical, by the owner. To rotate the
+  identity's auth, see [Token rotation](/runbooks/token-rotation).
+
+## When no box is healthy
+
+`stackra testbed run --preset <verify|e2e|integration> --ref <ref>` dispatches `testbed-fallback.yml`. It runs that
+preset for a pushed ref on a GitHub-hosted runner. A plain command, or work in an unpushed worktree, waits for a box
+instead. Nothing falls back to the Mac.
+
+## Cost
+
+Prices read on 2026-10-30 for eu-west-1:
+
+- on-demand `c7i.2xlarge`: $0.383 an hour (about $280 a month always on);
+- spot: about $0.215 an hour;
+- gp3: $0.088 per GB-month (about $21 a month for one box's two disks).
+
+At the minimums (2 heavy, 1 light) the testbed costs about $780 a month, and up to about $1,100 with daytime
+scale-ups. The old fleet ran about $1,900 a month. Boxes above the minimum end themselves after 60 idle minutes.
+
+## Migration from the old fleet
+
+The tester keeps using the eight old boxes until the new pool has passed the same work. Every step is a separate owner
+yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626-testbed/plan.md)).
+
+<Steps>
+  <Step title="Infisical">
+    The owner creates `figentra-ci-boxes` with AWS IAM auth, bound to the testbed instance role,
+    read-only on `figentra-ci-gate`.
+  </Step>
+  <Step title="Stand up beside">
+    `pulumi up` of `@stackra/infra-testbed` in eu-west-1: the image pipeline, the first AMI, `heavy`
+    minimum 1, `light` minimum 0.
+  </Step>
+  <Step title="Canary">
+    The tester runs the same jobs on both fleets for a day (core verify, playground e2e, an
+    integration suite, one Academorix job) and compares the results.
+  </Step>
+  <Step title="Switch">
+    `ci-box` becomes the shim (`tools/scripts/ci-box-shim.sh`): new boxes first, old boxes only when
+    the new pool has no healthy box. The minimums go to 2 and 1.
+  </Step>
+  <Step title="Drain">
+    One old region a day (us-east-1, eu-west-2, eu-central-1, eu-west-1): remove it from the shim's
+    fallback, wait for free slots, stop the boxes.
+  </Step>
+  <Step title="Retire">
+    After a week stopped and unused, terminate the old boxes and their disks, delete the emptied
+    `academorix-ci` security groups, and delete the shim's fallback with every `~/.ci-env`.
+  </Step>
+</Steps>
+
+Rollback before the last step: the shim still names the old boxes, and `aws ec2 start-instances` brings them back.

@@ -1,0 +1,101 @@
+# Stackra file contract:
+# Purpose: the testbed's fallback (ADR 0484 decision 11): when no testbed box is healthy, `stackra testbed run
+#          --preset <name> --ref <ref>` dispatches this workflow to run one named preset (verify, e2e, integration) on
+#          a GitHub-hosted runner for a pushed ref. Inputs are a preset name and a ref, never a command. Advisory only,
+#          never a required check (ADR 0166 CI2).
+# Secrets: HEROUI_AUTH_TOKEN, UNIWIND_AUTH_TOKEN and the /ci/turbo values from Infisical through GitHub OIDC, as the
+#          Quality Gate reads them (ADR 0310, STA-1393). No repository secret.
+# Owner: release-operations
+
+name: Testbed fallback
+
+on:
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: The preset to run (verify, e2e or integration)
+        type: choice
+        options: [verify, e2e, integration]
+        required: true
+
+# One run per preset and ref; a newer dispatch waits instead of cancelling.
+concurrency:
+  group: testbed-fallback-${{ inputs.preset }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  run:
+    name: Testbed fallback (${{ inputs.preset }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write # Infisical OIDC for the licence and turbo tokens only
+    env:
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: HeroUI Pro token (Infisical OIDC)
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: HEROUI_AUTH_TOKEN
+          export-type: env
+
+      - name: Uniwind Pro token (Infisical OIDC)
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: UNIWIND_AUTH_TOKEN
+          export-type: env
+
+      - name: Turborepo remote cache (Infisical OIDC)
+        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/turbo
+          export-type: env
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify
+        if: inputs.preset == 'verify'
+        run: pnpm verify
+
+      - name: Integration tests
+        if: inputs.preset == 'integration'
+        run: pnpm test:int
+
+      - name: Playground e2e
+        if: inputs.preset == 'e2e'
+        run: |
+          pnpm --filter @figentra/playground exec playwright install --with-deps chromium
+          pnpm --filter @figentra/playground test:e2e

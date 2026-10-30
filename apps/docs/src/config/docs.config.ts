@@ -142,6 +142,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/renovate",
             "runbooks/deploys",
             "runbooks/monitoring",
+            "runbooks/test-infrastructure",
             "runbooks/runway",
             "runbooks/upgrade",
             "runbooks/fresh-machine",
