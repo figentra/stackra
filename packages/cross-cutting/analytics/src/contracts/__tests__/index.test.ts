@@ -66,6 +66,12 @@ describe("@stackra/analytics/contracts", () => {
       readonly screen?: { readonly name: string };
       readonly locale?: string;
       readonly appVersion?: string;
+      readonly device?: {
+        readonly os: string;
+        readonly osVersion?: string;
+        readonly build?: string;
+        readonly type?: string;
+      };
       readonly region?: string;
     }>();
   });
