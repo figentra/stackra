@@ -4,11 +4,15 @@
 
 **Created**: 2026-10-30
 
-**Status**: Approved by the owner on 2026-10-30 (ADRs 0490, 0491, 0492 accepted; owner questions 1 to 5 answered yes). Building lane by lane.
+**Status**: Clarified
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
 **Linear**: STA-1629 (umbrella); lanes STA-1630 to STA-1638
+
+**Clarifications status**: complete
+
+The owner approved the ADRs and the spec on 2026-10-30; the answers are under Owner questions.
 
 **Input**: the leader's brief of 2026-10-30 and the owner's message of the same day (Python narrow, reranker and
 hybrid search with Arabic, speech behind a port, one runtime and gateway, everything day one).
@@ -32,21 +36,34 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 
 ## Impact
 
+- **Apps touched**: none in core (the console, mobile and till placements are OS lines' work, D05)
+- **Services touched**: none in core; OS `ai` (STA-705) hosts the runtime and gateway; OS services that mount panel,
+  settings and experience carry their migrations; Commerce owns the shopper agent, its cards, `checkout.prepare`
+  and the order timeline
 - **Packages touched**: `@stackra/ai` (+ `./react`, `./native`), `@stackra/gen`, `@stackra/mcp`, `@stackra/panel`,
   `@stackra/settings`, `@stackra/experience`, `@stackra/ui`, `@stackra-pro/ui-pro` (three components leave),
   `@stackra/search`, `@stackra/reports` (`Forecaster` port), `@stackra/infra-tools` (images, catalogue, GPU capacity),
-  `@stackra/runway` (edge routes), a new Expo module package `@stackra/native-audio` (ADR 0478).
-- **Services**: none in core. OS `ai` (STA-705) hosts the runtime and gateway; OS services that mount panel,
-  settings and experience carry their migrations; Commerce owns the shopper agent, its cards, `checkout.prepare`
-  and the order timeline.
+  `@stackra/integrations` (speech providers), `@stackra/runway` (edge routes), a new Expo module package
+  `@stackra/native-audio` (ADR 0478)
+- **Cross-service events**: none new in core; Commerce's order, payment and fulfilment integration events feed its
+  `order_timeline` projection (ADR 0491 d3); the payments module emits the payer-confirmed event the approval gate reads
 - **Tenancy and data**: new tenant-owned tables `panel.dashboard_layouts`, `settings.user_settings` (if not covered
   by `stored_settings` at user scope; lane 3 decides from the code), `experience.tour_progress`, `search.synonyms`;
-  all `BelongsToTenant`, forced RLS. Run store gains a client-tool park reason.
-- **Secrets**: names only — reranker/embedder tokens reuse `search.embedder.tokenSecret`'s pattern; WhatsApp
-  (`META_APP_SECRET`, existing). No value read.
-- **ADR needed**: yes — 0490, 0491, 0492 (this spec's gate).
-- **New dependencies (owner approval)**: `@ai-sdk/react` (`catalog:ai`); `expo-audio` (`catalog:mobile`) for
-  `@stackra/native-audio`. Images (not npm): text-embeddings-inference, StatsForecast, implicit, faster-whisper.
+  all `BelongsToTenant`, forced RLS; the run store gains a client-tool park reason
+- **Secrets**: names only; reranker and embedder tokens follow `search.embedder.tokenSecret`; speech provider keys
+  through Connection credential references; WhatsApp `META_APP_SECRET` (existing); no value read
+- **ADR needed**: yes; 0490, 0491, 0492, accepted by the owner on 2026-10-30
+- **New dependencies**: `@ai-sdk/react` (`catalog:ai`) and `expo-audio` (`catalog:mobile`), approved by the owner on
+  2026-10-30; `@aws-sdk/client-transcribe-streaming` pending; images (not npm): text-embeddings-inference,
+  StatsForecast, implicit, faster-whisper
+- **Deploy modes**: SaaS (Figentra's regional ai service and tools stack), white-label managed and self-hosted use
+  the same ports and drivers; the tools-stack images run wherever the root runway's tools stack runs
+- **Licence tier**: free (all AI code is free, ADR 0155 decision 3); Commerce's shopper agent is product code
+- **Docs to update**: ADRs 0490 to 0492 (done), `.agents/rules/ai-tools.md` (done), each touched package's README and
+  AGENTS.md, the infra-tools "Pinned images" section, the search guide page for reranking and Arabic
+- **Lane**: full
+- **Change risk**: R3 (new AI surfaces over tenant data, payment approvals, outbound HTTP to model, search and speech
+  providers, GPU infrastructure)
 
 ## Requirements
 
@@ -178,3 +195,9 @@ GCC speech provider; lane 8 builds `tools-speech` either way and the region map 
 - SC-004: no `.py` file outside the tools-stack images; no Python service exists.
 - SC-005: every new public symbol has a docblocked file, a test beside it and a barrel entry; the tester's gate is
   green per lane commit.
+
+## Status history
+
+- 2026-10-30 Draft, waiting for the owner on ADRs 0490 to 0492 and six questions.
+- 2026-10-30 → Clarified: owner accepted the ADRs and the spec, answered questions 1 to 5, chose all three speech
+  providers (question 6); Impact questionnaire completed from those answers.
