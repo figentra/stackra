@@ -38,6 +38,11 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `./node`      | `EraseAnalyticsPersonListener`                                                                     | after `SubjectErased`, deletes the subject's person and events at the vendor            |
 | `./react`     | `useAnalytics`                                                                                     | the client of the nearest container                                                     |
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds  |
+| `.`           | `RelayAnalyticsDriver`                                                                             | the `relay` driver: one batch to the analytics service, with the consent snapshot       |
+| `./native`    | `RelayAnalyticsDriver`                                                                             | the `relay` driver for React Native: buffered like PostHog's, stamps `context.device`   |
+| `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/analytics/batches`, the ingest path under the public API origin                       |
+| `./node`      | `IngestAnalyticsBatchAction`, `IngestAnalyticsBatchInput`, `IngestAnalyticsBatchOutput`            | the analytics service's ingest endpoint (`analytics_batch.ingest`)                      |
+| `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L0 permission         |
 | `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event     |
 | `./testing`   | `AnalyticsFake`                                                                                    | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`        |
 
@@ -57,18 +62,18 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 
 Every `AnalyticsDelivery` a driver receives carries:
 
-| Field         | Holds                                                                                              |
-| ------------- | -------------------------------------------------------------------------------------------------- |
-| `eventId`     | `evt_` and 26 time-ordered Crockford base32 characters; every destination dedups on it             |
-| `name`        | the locked event name, such as `lead.submitted`                                                    |
-| `properties`  | the schema-declared fields minus `denyProperties`                                                  |
-| `occurredAt`  | the capture time, ISO 8601                                                                         |
-| `anonymousId` | `anon_...`, made after consent; kept by the identity driver only while consent holds               |
-| `kind`        | `track` (also when absent), `identify` or `group`                                                  |
-| `userId`      | the signed-in user's public id once the host calls `identify`                                      |
-| `groups`      | group type to id, once the host calls `group` (for example `scope` to the scope's public id)       |
-| `sessionId`   | `ses_...`, made after consent, one per launch                                                      |
-| `context`     | `AnalyticsContext`: `library`, and when known `page.path` (no query), `screen`, `locale`, `region` |
+| Field         | Holds                                                                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eventId`     | `evt_` and 26 time-ordered Crockford base32 characters; every destination dedups on it                                                                          |
+| `name`        | the locked event name, such as `lead.submitted`                                                                                                                 |
+| `properties`  | the schema-declared fields minus `denyProperties`                                                                                                               |
+| `occurredAt`  | the capture time, ISO 8601                                                                                                                                      |
+| `anonymousId` | `anon_...`, made after consent; kept by the identity driver only while consent holds                                                                            |
+| `kind`        | `track` (also when absent), `identify` or `group`                                                                                                               |
+| `userId`      | the signed-in user's public id once the host calls `identify`                                                                                                   |
+| `groups`      | group type to id, once the host calls `group` (for example `scope` to the scope's public id)                                                                    |
+| `sessionId`   | `ses_...`, made after consent, one per launch                                                                                                                   |
+| `context`     | `AnalyticsContext`: `library`, and when known `page.path` (no query), `screen`, `locale`, `appVersion`, `device` (`os`, `osVersion`, `build`, `type`), `region` |
 
 A driver sends these ids and never makes its own.
 
@@ -196,6 +201,27 @@ origin) wins over it. The driver posts to `<origin>/batch/` with plain `fetch`, 
 events carry `$process_person_profile: true`. On a phone, take the driver
 from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or when `AppState` goes to `background`.
 
+## The relay (ADR 0483)
+
+Figentra's apps send product analytics only to the product's analytics service. Set `driver: "relay"` and
+`ingestOrigin` to the public API origin. The client keeps every rule above (consent, queue, lanes, retries, sampling,
+offline); the relay posts the envelope deliveries unchanged to `<ingestOrigin>/analytics/batches` with the
+`Stackra-Consent` header of a snapshot asked for the batch's anonymous id (`consentSnapshotHeaders` over
+`ConsentLedger.snapshotRequest`). The app holds no vendor key, SDK or host. On a phone take it from `./native`: it
+buffers like the native PostHog driver and stamps `context.device` with the OS and its version.
+
+The analytics service mounts `IngestAnalyticsBatchAction` and `FanOutAnalyticsListener` (`./node`) and configures its
+region's destinations (`driver`, `drivers`, `destinations`), for example PostHog EU and GA4 from
+`@stackra-pro/analytics-destinations`. The action reads the pipeline's verified snapshot (`ctx.consent()`): an
+unverified one publishes nothing; a delivery whose `anonymousId` and `userId` are not the snapshot's subject is dropped;
+`denyProperties` are stripped again; each destination whose category is granted gets one `analytics.batch.accepted.v1`
+with what its `include` and `exclude` allow. It answers `{ accepted, dropped }`, never an error for a refusal. The
+listener sends each event to its destination's driver, so a vendor that is down retries alone. Nothing but the
+envelope travels on: no request address, user agent or header, and PostHog's GeoIP is off for a server send.
+
+What the vendor SDKs gave and the relay does not: session replay, heatmaps, surveys, SDK feature flags, automatic
+device properties beyond `context.device`, and any advertising id (no `AD_ID`, no ATT prompt).
+
 ## Auto-capture
 
 With `autocapturePageviews` on, the app shell calls `useAutocapture(useLocation().pathname)` on the web, which tracks
@@ -235,7 +261,8 @@ ADR 0189 decision 2) reaches the vendor through `EraseAnalyticsPersonListener` (
 
 ## Not here yet
 
-Nothing sets `context.screen`, `appVersion` or `region` in the envelope yet. @stackra/navigation does not call the
+Nothing sets `context.screen`, `appVersion` or `region` in the envelope yet; only the native relay sets `device`. The
+`ga4` destination is Pro (`@stackra-pro/analytics-destinations`), not built yet. @stackra/navigation does not call the
 auto-capture hooks yet: the app shell calls them. The container-backed `AnalyticsDriverLookup` that hands named
 instances to the client is not built yet, so only the `default` destination sends in a host today. Hashing the user
 id per destination belongs to the destination drivers (stackra-412).

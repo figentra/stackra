@@ -166,7 +166,10 @@ export class AnalyticsOptions extends Schema {
   /** A vendor driver runs without cookies until consent is granted. */
   cookieless = true;
 
-  /** The origin a vendor driver sends to, such as a reverse proxy on the site's own origin; empty means its host. */
+  /**
+   * The origin a vendor driver sends to, such as a reverse proxy on the site's own origin; empty means its host. For
+   * the `relay` driver, the product's public API origin, where the ingest and consent endpoints are (ADR 0483).
+   */
   ingestOrigin = "";
 
   /** Property names removed from every event before it leaves the device. */

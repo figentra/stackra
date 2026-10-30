@@ -124,6 +124,32 @@ describe("PosthogAnalyticsDriver", () => {
     expect(second.properties).not.toHaveProperty("$pathname");
   });
 
+  // @covers sta-1624:FR-007
+  it("maps the coarse device context and turns GeoIP off on a server", async () => {
+    const fetch = answer();
+    await new PosthogAnalyticsDriver(config).send([
+      {
+        ...delivery("a.one"),
+        context: {
+          library: { name: "@stackra/analytics" },
+          appVersion: "1.4.0",
+          device: { os: "ios", osVersion: "18.0", build: "42", type: "phone" },
+        },
+      },
+      delivery("a.two"),
+    ]);
+    const [first, second] = request(fetch).body.batch;
+    expect(first.properties).toMatchObject({
+      $app_version: "1.4.0",
+      $os: "ios",
+      $os_version: "18.0",
+      $app_build: "42",
+      $device_type: "phone",
+      $geoip_disable: true,
+    });
+    expect(second.properties).not.toHaveProperty("$os");
+  });
+
   it("sends an identified visitor's events as the user, with groups and a person profile", async () => {
     const fetch = answer();
     await new PosthogAnalyticsDriver(config).send([
