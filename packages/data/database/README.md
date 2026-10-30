@@ -785,6 +785,11 @@ const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2
   through `@electric-sql/pglite-pgvector`, `ltree`, `pg_trgm`, `citext`, `pgcrypto`; not `postgis` yet) and applies the member's compiled migrations from
   `.stackra/migrations` under the working directory; a member with none gets the schema created from the registered
   entities.
+- **Snapshot.** A member with compiled migrations runs initdb, the extensions and the migrations once per migrations
+  set and machine: the data directory is dumped to a file under the OS temp folder (keyed by a hash of the migrations,
+  the PGlite build and the extensions; written under a temporary name and renamed), and every driver instance starts
+  its own fresh PGlite from it (`loadDataDir`). A missing or unreadable file means a fresh build. A member with no
+  migrations still creates its schema from the registered entities on each instance.
 - **Which database.** `DATABASE_TESTING_PLUGIN` connects a fresh memory database on every compile unless another one is
   connected: `usePostgres()` (connected before the module compiles) or a driver the container built for the module
   wins. The memory database an earlier module left is closed.

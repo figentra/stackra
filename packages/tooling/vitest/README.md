@@ -21,6 +21,10 @@ export default mergeConfig(
 | `./coverage`          | `withCoverage`, the shared coverage gate                        |
 | `./int`               | `intTier`, the integration tier (`test:int`) of a member        |
 
+The base preset sets `pool: "forks"`, `maxWorkers` at half the CPUs (`STACKRA_TEST_MAX_WORKERS` overrides it),
+`testTimeout` 30 s and `hookTimeout` 60 s, because service tests boot a PGlite (3 to 4 s of CPU each). `intTier` keeps
+`fileParallelism: false`.
+
 The `.` entry adds the role presets, one per member role (they are what `stackra gen` writes into each member's
 `.stackra/vitest.config.ts`):
 
