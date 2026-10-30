@@ -4,7 +4,8 @@
  *          Uniwind's `--color-<name>` variables so a brand or scheme change repaints: the accent ramp
  *          (`chart-ramp-<n>`, a theme's own step if it defines one, else derived from the accent with `chartRampOf`),
  *          the categorical and status colours, the muted ticks, a grid and track of the muted colour at 15%, the bar
- *          cursor's foreground at 5%, and the surface for rings and slice gaps.
+ *          cursor's foreground at 5%, the surface for rings and slice gaps, and the marks' top light from the
+ *          material highlight share.
  * Boundary: a React hook over `useCSSVariable` (what heroui-native's useThemeColor reads) and Skia's colour parser;
  *           no colour is written here, only derived from the theme.
  * Runtime: react-native
@@ -21,7 +22,7 @@ import type { ChartPaint } from "#native/chart/chart-paint.type";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 
 /** The roles the chrome reads, then the five ramp overrides a theme may define. */
-const ROLES = ["muted", "foreground", "surface", "accent"] as const;
+const ROLES = ["muted", "foreground", "surface", "accent", "field-border"] as const;
 const RAMP = [
   "chart-ramp-1",
   "chart-ramp-2",
@@ -33,11 +34,14 @@ const RAMP = [
 /** The theme values of `colors` and the chart chrome. */
 export function useChartPaint(colors: readonly ChartColor[]): ChartPaint {
   const names = [...ROLES, ...RAMP, ...colors].map((name) => `--color-${name}`);
-  const values = useCSSVariable(names).map((value) =>
-    value === undefined ? undefined : String(value),
-  );
+  const [share, ...read] = useCSSVariable(["--material-highlight-share", ...names]);
+  const values = read.map((value) => (value === undefined ? undefined : String(value)));
+  // The theme's native CSS writes the share per scheme (renderNativeCss), so a flat brand (0) draws flat; a stylesheet
+  // generated before it did leaves it unset, which lights the marks as the Stackra theme does.
+  const lift = share === undefined ? 1 : Math.min(1, Math.max(0, Number(share) * 10 || 0));
   const scheme = use(DesignSystemContext)?.resolvedColorScheme === "dark" ? "dark" : "light";
-  const [muted = "", foreground = "", surface = "", accent = ""] = values as string[];
+  const [muted = "", foreground = "", surface = "", accent = "", fieldBorder = ""] =
+    values as string[];
   // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
   const [red = 0, green = 0, blue = 0] = Skia.Color(accent || "transparent");
   const derived = chartRampOf([red * 255, green * 255, blue * 255], scheme);
@@ -53,7 +57,9 @@ export function useChartPaint(colors: readonly ChartColor[]): ChartPaint {
     muted,
     foreground,
     surface,
+    fieldBorder,
     grid: alphaOf(muted, 0.15),
     cursorBlock: alphaOf(foreground, 0.05),
+    lift,
   };
 }

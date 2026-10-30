@@ -52,6 +52,7 @@ import { RtlPanel } from "#src/components/doc-page/rtl-panel";
 import { TokenTable } from "#src/components/doc-page/token-table";
 import { SHELL_KEYS } from "#src/components/playground-shell/shell-keys.constant";
 import { StatusChip } from "#src/components/status-chip";
+import { SHOWCASE_KEYS } from "#src/constants/showcase-keys.constant";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { DEMOS, demoPath } from "#src/demos";
 
@@ -159,6 +160,11 @@ export function ComponentPage({ tier, slug, lead }: ComponentPageProps) {
           chips={
             <>
               <StatusChip status={entry.status} showStable />
+              {entry.advanced ? (
+                <Chip size="sm" variant="soft">
+                  {t(SHOWCASE_KEYS.showcase.ui.advanced)}
+                </Chip>
+              ) : null}
               {entry.platforms.length === 1 && entry.platforms[0] ? (
                 <Chip size="sm" variant="soft">
                   {t(K.platform_only[entry.platforms[0]])}

@@ -1,0 +1,10 @@
+{
+  "email": "Email",
+  "send": "Send reset link",
+  "sent": "Posted with a token of {length} characters.",
+  "not_sent": "Nothing posted yet",
+  "test_key": "Uses Cloudflare's test key that always passes.",
+  "blocked_key": "Uses Cloudflare's test key that always refuses, so the form never gets a token.",
+  "waiting": "Waiting for Cloudflare…",
+  "refused": "Cloudflare refused the visitor (error {code}); the form has no token."
+}

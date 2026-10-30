@@ -53,7 +53,7 @@ async function expectNoAxeFindings(page: Page): Promise<void> {
 }
 
 /** A computed colour as `#rrggbb`, drawn on a canvas so any CSS colour form (oklch, `var()`) reads. */
-const painted = (locator: Locator, property: "backgroundColor" | "fill" | "color") =>
+const painted = (locator: Locator, property: "backgroundColor" | "fill" | "color" | "stopColor") =>
   locator.evaluate((element, name) => {
     const context = document.createElement("canvas").getContext("2d");
     if (!context) throw new Error("no 2d canvas");
@@ -108,12 +108,24 @@ for (const scheme of SCHEMES)
     const background = await painted(card, "backgroundColor");
     const bars = example(page, "usage").locator(".recharts-bar-rectangle path");
     await expect(bars.first()).toBeVisible();
-    const fills = new Set<string>();
-    for (let index = 0; index < (await bars.count()); index += 1)
-      fills.add(await painted(bars.nth(index), "fill"));
+    // A column is lit from the top: its fill points at a gradient, so a series is measured at each of its stops.
+    const fills = new Map<string, string[]>();
+    for (let index = 0; index < (await bars.count()); index += 1) {
+      const bar = bars.nth(index);
+      const fill = await bar.evaluate((element) => getComputedStyle(element).fill);
+      const gradient = /url\("?#([^")]+)"?\)/.exec(fill)?.[1];
+      const stops = gradient ? await page.locator(`[id="${gradient}"] stop`).all() : [];
+      fills.set(
+        fill,
+        gradient
+          ? await Promise.all(stops.map((stop) => painted(stop, "stopColor")))
+          : [await painted(bar, "fill")],
+      );
+    }
     expect(fills.size).toBe(2);
-    for (const fill of fills)
-      expect(contrastRatio(fill, background), fill).toBeGreaterThanOrEqual(3);
+    for (const [fill, colors] of fills)
+      for (const color of colors)
+        expect(contrastRatio(color, background), `${fill} ${color}`).toBeGreaterThanOrEqual(3);
   });
 
 for (const scheme of SCHEMES)

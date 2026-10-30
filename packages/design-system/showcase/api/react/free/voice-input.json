@@ -1,0 +1,75 @@
+{
+  "generatedFrom": {
+    "hash": "2ade85b59e2d0314",
+    "propsFiles": ["ui/src/react/voice-input/voice-input.props.ts"]
+  },
+  "importLine": "import { VoiceInput } from \"@stackra/ui/react\";",
+  "key": "free/voice-input",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each finished recording. While a returned promise runs the input shows \"Processing\", for example\nwhile the app transcribes; a rejection shows the error state.",
+          "name": "onRecord",
+          "required": false,
+          "source": "stackra",
+          "type": "(recording: VoiceRecording) => void | Promise<void>"
+        },
+        {
+          "description": "Called each time the state changes.",
+          "name": "onStateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(state: \"error\" | \"idle\" | \"requesting\" | \"listening\" | \"processing\" | \"denied\") => void"
+        }
+      ],
+      "name": "VoiceInput",
+      "props": [
+        {
+          "description": "The recorder. Defaults to the MediaRecorder driver on web and the mock driver on native.",
+          "name": "recorder",
+          "required": false,
+          "source": "stackra",
+          "type": "VoiceRecorderPort"
+        },
+        {
+          "description": "The button's name while idle. Defaults to the catalogue's \"Start recording\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "False to hide the status line beside the button (it is still announced). Defaults to true.",
+          "name": "isStatusVisible",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the button but refuse presses.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "md",
+          "description": "The button's size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Styles the row that holds the button, the level and the status.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

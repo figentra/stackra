@@ -1,0 +1,9 @@
+{
+  "basics": {
+    "label": "Note on the order",
+    "placeholder": "Type @ to mention someone",
+    "description": "People you mention are told.",
+    "mentioned": "Will be told: {names}",
+    "nobody": "Nobody mentioned yet."
+  }
+}

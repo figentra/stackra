@@ -1,0 +1,75 @@
+{
+  "generatedFrom": {
+    "hash": "685c8269aedac0fc",
+    "propsFiles": ["ui/src/native/recurrence-editor/recurrence-editor.props.ts"]
+  },
+  "importLine": "import { RecurrenceEditor } from \"@stackra/ui/native\";",
+  "key": "free/recurrence-editor",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new `RRULE` text on every change.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "RecurrenceEditor",
+      "props": [
+        {
+          "description": "The rule, for example `FREQ=WEEKLY;BYDAY=SU,WE`, for a controlled editor; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rule at the start, for an uncontrolled editor. Defaults to every week on the start day's weekday.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The first day (the event's `DTSTART`): it picks the default weekday, day of month and month. Defaults to today.",
+          "name": "startDate",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "default": "gregory",
+          "description": "The calendar months count in: `islamic-umalqura` makes \"every month on the 1st\" the Hijri 1st (RFC 7529 `RSCALE`)\nand writes month names and the end date in Hijri. Defaults to `gregory`; a rule that names its own wins.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The group's name, for example \"Repeat\"; defaults to the catalogue's.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the rule but refuse changes.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

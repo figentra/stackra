@@ -4,7 +4,8 @@
  *          `isSelected`, `onChange` with the new state, `defaultValue` held in state because HeroUI Native's field is
  *          controlled only) and draws the label, description and error message with the switch at the row's end in one
  *          pressable row; every other ControlField prop passes through.
- * Boundary: no styling of its own beyond the row's layout and the off track, which takes the theme's field edge. Documented adaptations, where HeroUI Native has no
+ * Boundary: no styling of its own beyond the row's layout and the switch's state colours (an edged muted track and a
+ *          muted thumb when off, the accent when on). Documented adaptations, where HeroUI Native has no
  *          equivalent: `isReadOnly` refuses the press (React Native has no read-only state to announce); `name` is
  *          accepted for a form adapter but native has no form to submit. The row is the one accessible `switch` and
  *          the inner control is hidden from VoiceOver and TalkBack, so it is not read twice.
@@ -48,8 +49,16 @@ export function Switch({
   ...rest
 }: SwitchProps): ReactElement {
   const [held, setHeld] = useState(defaultValue);
-  // HeroUI Native's off track is `default`, about 1.3:1 on the dark page; the field edge holds 3:1 in both schemes.
-  const [edge, accent] = useThemeColor(["field-border", "accent"] as const);
+  // Off is HeroUI Native's muted `default` track edged in the field border (3:1 on the page in both schemes) with a
+  // `muted` thumb; on is the accent track with the `accent-foreground` thumb. The thumb's fill tells them apart, so the
+  // state never rests on its position: in right to left the off thumb rests at the right, where English puts on.
+  const [track, edge, accent, thumbOff, thumbOn] = useThemeColor([
+    "default",
+    "field-border",
+    "accent",
+    "muted",
+    "accent-foreground",
+  ] as const);
   const isSelected = value ?? held;
   // The name only keys a web form's submission and a form adapter's binding; there is nothing to submit on native.
   void name;
@@ -85,7 +94,12 @@ export function Switch({
           // The row takes every press, so the switch and the row always agree on what the next state is.
           pointerEvents="none"
         >
-          <HeroSwitch animation={{ backgroundColor: { value: [edge, accent] } }} />
+          <HeroSwitch
+            animation={{ backgroundColor: { value: [track, accent] } }}
+            style={{ borderWidth: 1, borderColor: isSelected ? accent : edge }}
+          >
+            <HeroSwitch.Thumb animation={{ backgroundColor: { value: [thumbOff, thumbOn] } }} />
+          </HeroSwitch>
         </ControlField.Indicator>
       </View>
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}

@@ -15,7 +15,8 @@
  *          `font-display` and `font-display-arabic` classes), each the first family of its stack, since React Native
  *          takes one family name; the native Text adds them to headings (STA-1386).
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
- *          The other fonts, spacing, motion and material are web-only. Font weight is left to HeroUI Native's `font-*`
+ *          The other fonts, spacing, motion and material are web-only, bar the material highlight share
+ *          (`--material-highlight-share`, per variant), which the native charts read to light their marks. Font weight is left to HeroUI Native's `font-*`
  *          classes, because with custom fonts a weight selects a family there.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI Native and Uniwind on native); ADR 0340
@@ -66,6 +67,8 @@ export function renderNativeCss(theme: Theme): string {
       `    @variant ${mode} {`,
       ...ColorRole.map((role) => `      --${role}: ${theme.colors[role][mode]};`),
       ...SHADOWS.map((shadow) => `      --${shadow}-shadow: ${theme.shadows[shadow][mode]};`),
+      // The charts light their marks' tops by it, so a flat brand (0) draws flat on native too.
+      `      --material-highlight-share: ${theme.materials.highlight[mode]};`,
       ...Object.entries(theme.palette).map(([name, token]) => `      --${name}: ${token[mode]};`),
       ...Object.entries(syntaxColours(theme, mode)).map(
         ([role, hex]) => `      --syntax-${role}: ${hex};`,

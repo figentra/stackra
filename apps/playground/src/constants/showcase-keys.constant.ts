@@ -32,6 +32,7 @@ export const SHOWCASE_KEYS = keys({
     platform_only: ["react", "native"],
     status: ["new", "updated", "preview", "planned", "beta", "stable"],
     ui: [
+      "advanced",
       "all",
       "components",
       "count_components",

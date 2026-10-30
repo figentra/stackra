@@ -15,8 +15,11 @@ import type { PropertyListItem } from "#contracts/types/property-list-item.type"
 export interface PropertyListContractProps<TItem extends PropertyListItem = PropertyListItem> {
   /** The rows, in order. */
   readonly items: readonly TItem[];
-  /** How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one. */
-  readonly columns?: 1 | 2 | undefined;
+  /**
+   * How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one. `auto` follows the
+   * list's own width (a container query on web): one column when narrow, two from 28rem, three from 48rem.
+   */
+  readonly columns?: 1 | 2 | "auto" | undefined;
   /** What shows in place of an empty value. Defaults to an en dash; pass words ("Not set") when a dash would not say enough. */
   readonly emptyValue?: ReactNode;
   /** Spoken, and on web also drawn as a check, after a value is copied, for example "Copied". Defaults to the `ui` catalogue's word in the active locale, so a copy is never silent. */

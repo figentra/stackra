@@ -198,16 +198,27 @@ const glassButtonRules = () => [
 /**
  * The selection controls in the theme's tokens. HeroUI draws the radio's ring and dot and the switch's track and thumb
  * with `rounded-lg`, which a small `--radius` turns into the checkbox's square; a radio and a switch stay round in
- * every brand, so they take `--radius-full`. The switch's off track is HeroUI's `default` fill, about 1.3:1 on the
- * dark page; it takes `field-border`, the field edge held at 3:1 against the page and the surface. Two classes each,
- * so they also win over HeroUI's size rules (`.switch--sm .switch__thumb`).
+ * every brand, so they take `--radius-full`. Two classes each, so they also win over HeroUI's size rules
+ * (`.switch--sm .switch__thumb`). An off switch keeps HeroUI's muted `default` track, edged in `field-border` (3:1
+ * against the page and the surface), with a `muted` thumb: a light off track with HeroUI's white thumb read as on in
+ * dark mode, and in right to left, where the off thumb rests at the right, the state showed by position alone. On
+ * stays the accent track with the `accent-foreground` thumb, so the thumb's fill tells the two apart (WCAG 1.4.1).
  */
+/** A switch that is off: React Aria marks the root `data-selected`, HeroUI's own rules also read `aria-checked`. */
+const OFF_SWITCH = '.switch:not([data-selected="true"], [aria-checked="true"])';
+
 const selectionControlRules = () => [
   inRule(
     ".radio .radio__control,\n  .radio .radio__indicator,\n  .radio .radio__indicator::before,\n  .switch .switch__control,\n  .switch .switch__thumb",
     ["    border-radius: var(--radius-full);"],
   ),
-  inRule(".switch", ["    --switch-control-bg: var(--field-border);"]),
+  inRule(OFF_SWITCH + " .switch__control", [
+    "    outline: var(--field-border-width) solid var(--field-border);",
+    "    outline-offset: calc(-1 * var(--field-border-width));",
+  ]),
+  inRule(OFF_SWITCH + ':not([data-disabled="true"]) .switch__thumb', [
+    "    background-color: var(--muted);",
+  ]),
   // A selected toggle button is the solid accent: HeroUI's soft accent sits about 1:1 from the unselected `default`
   // fill, so the pick showed by its icon colour alone; the solid accent stands 3:1 from it (SC 1.4.11).
   inRule(".toggle-button", [

@@ -40,7 +40,7 @@ export function DocHero({
       id="header"
       className={`grid gap-6 scroll-mt-24 ${demo ? "lg:grid-cols-[minmax(0,1fr)_clamp(22rem,44%,36rem)] lg:items-center" : ""}`}
     >
-      <div className="grid min-w-0 gap-3">
+      <div className="doc-hero-text grid min-w-0 gap-3">
         <div className="doc-rise flex flex-wrap items-start justify-between gap-3" style={step(0)}>
           <Text type="small" tone="muted" className="font-medium">
             {eyebrow}

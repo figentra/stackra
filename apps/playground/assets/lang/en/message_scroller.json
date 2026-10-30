@@ -1,0 +1,16 @@
+{
+  "streaming": {
+    "question": "Where is my order 2048?",
+    "answer": "Your order left our Riyadh warehouse this morning. It is with the courier now and arrives on Thursday between 2 and 6 pm. You will get a text message one hour before delivery, and you can change the time from the tracking page if you are not home.",
+    "ask": "Ask again",
+    "earlier_1": "Hi! How can I help with your order today?",
+    "earlier_2": "I want to check on a delivery.",
+    "earlier_3": "Of course. Which order is it?"
+  },
+  "new_count": {
+    "receive": "Receive a message",
+    "incoming": "Update: the courier is 10 minutes away.",
+    "first": "Your order is packed and ready.",
+    "hint": "Scroll up, then receive a message."
+  }
+}

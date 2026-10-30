@@ -1,0 +1,14 @@
+{
+  "basics": {
+    "title": "Order 2048 receipt",
+    "text": "Here is the receipt for order 2048.",
+    "shared": "Shared.",
+    "copied": "The link is on the clipboard."
+  },
+  "icon_only": {
+    "product": "Linen abaya",
+    "price": "SAR 420",
+    "label": "Share Linen abaya",
+    "text": "Look at this abaya"
+  }
+}

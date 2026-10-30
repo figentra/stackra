@@ -37,9 +37,22 @@ describe("Turnstile (web)", () => {
     expect(api.render.mock.calls[0]?.[1]).toEqual({
       sitekey: "0x4AAA",
       "response-field-name": "captchaToken",
+      "error-callback": expect.any(Function),
     });
     first.unmount();
     expect(api.remove).toHaveBeenCalledWith("widget-1");
+  });
+
+  it("hands a failed challenge to onError and marks it handled", async () => {
+    const onError = vi.fn();
+    api.render.mockClear();
+    render(<Turnstile siteKey="2x00000000000000000000AB" onError={onError} />);
+    await waitFor(() => expect(api.render).toHaveBeenCalledOnce());
+    const options = api.render.mock.calls[0]?.[1] as {
+      readonly "error-callback": (code: string) => unknown;
+    };
+    expect(options["error-callback"]("600010")).toBe(true);
+    expect(onError).toHaveBeenCalledWith("600010");
   });
 
   it("draws nothing without a site key", () => {

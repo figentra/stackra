@@ -17,9 +17,13 @@ export const FREE_DROP_ZONE: ComponentEntry = {
   exportName: "DropZone",
   parts: ["DropZone"],
   hero: {},
-  examples: [{ id: "basics", card: true }],
-  related: ["free/file-trigger"],
+  examples: [
+    { id: "basics", card: true },
+    { id: "paste", platforms: ["react"] },
+    { id: "previews" },
+  ],
+  related: ["free/file-trigger", "free/attachment-card"],
   tokens: ["color.accent-soft", "radius.surface"],
-  keywords: ["upload", "files", "drag", "drop"],
+  keywords: ["upload", "files", "drag", "drop", "paste", "camera", "preview"],
   status: "new",
 };

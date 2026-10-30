@@ -15,7 +15,10 @@ export interface CollectionView {
   readonly label: string;
   /** The columns, sort, filter, search, group, totals, density and layout the view applies. */
   readonly state: Partial<
-    Omit<CollectionState, "selection" | "isAllMatchingSelected" | "page" | "cursor" | "viewId">
+    Omit<
+      CollectionState,
+      "selection" | "isAllMatchingSelected" | "excludedKeys" | "page" | "cursor" | "viewId"
+    >
   >;
   /** True when the view was shared with others; the app decides what sharing means. */
   readonly isShared?: boolean | undefined;

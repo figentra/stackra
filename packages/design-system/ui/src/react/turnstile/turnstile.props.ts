@@ -12,4 +12,9 @@ export interface TurnstileProps {
   readonly name?: string | undefined;
   /** The site key; the app's `VITE_TURNSTILE_SITE_KEY` when left out. */
   readonly siteKey?: string | undefined;
+  /**
+   * Called with Cloudflare's error code when the challenge fails (a refused visitor, a network error); the form then
+   * has no token, so the server refuses the post.
+   */
+  readonly onError?: ((code: string) => void) | undefined;
 }

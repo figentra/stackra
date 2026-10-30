@@ -12,6 +12,7 @@ export const COMPOSED_CHART_DEMO_KEYS = keys({
   demo_free: {
     composed_chart: {
       revenue_target: ["label", "revenue", "target"],
+      dual_axis: ["label", "visitors", "orders"],
     },
   },
 });

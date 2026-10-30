@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `Stat`: one headline figure with its label above and an optional badge beside it, for a dashboard
  *          tile or a widget (`<Stat label="Points" value={1200} badge="Gold" />`), drawn with the design system's
- *          `Text` and `Chip`; with the KPI extras a trend chip, an area sparkline, a target bar and a drill-down.
+ *          `Text` and `Chip`; with the KPI extras a trend chip, the previous period's figure (the trend worked out from it
+ *          when none is given), an area sparkline, a target bar and a drill-down.
  * Boundary: no HeroUI component of its own (HeroUI v3 has no stat); the label is read before the figure. A number is
  *           formatted in the `DesignSystemProvider`'s locale and the i18n digits setting (`useNumerals`), or the
  *           browser's without one. A drill-down makes the whole tile one button; a number counts up with
@@ -17,6 +18,7 @@ import { type ReactElement, use, useId } from "react";
 import { Button as AriaButton } from "react-aria-components";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { changeOf } from "#core/functions/change-of.function";
 import { Chip } from "#react/chip/chip";
 import { DesignSystemContext } from "#react/design-system-provider/design-system-context";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -33,6 +35,7 @@ export function Stat({
   value,
   badge,
   trend,
+  previousValue,
   better,
   comparison,
   sparkline,
@@ -47,20 +50,29 @@ export function Stat({
   const hintId = useId();
   const format = (figure: number) => formatNumber(figure, locale, undefined, numerals);
   const name = typeof label === "string" ? label : "";
+  const change = trend ?? changeOf(value, previousValue);
   const body = (
-    <div className="flex flex-col gap-1 text-start">
+    // A container, so the figure steps down a size in a narrow tile instead of running past its edge. A container
+    // takes no width from its content, so it fills its slot: in a row it would otherwise shrink to nothing and the
+    // figure run out of it.
+    <div className="@container flex w-full flex-col gap-1 text-start">
       <Text type="small" tone="muted">
         {label}
       </Text>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-3xl font-semibold tabular-nums">
+        <span className="text-xl font-semibold tabular-nums @[8rem]:text-2xl @[10rem]:text-3xl">
           {typeof value === "number" ? <NumberTicker value={value} /> : value}
         </span>
         {badge ? <Chip size="sm">{badge}</Chip> : null}
-        {trend === undefined ? null : (
-          <TrendChip value={trend} better={better} comparison={comparison} />
+        {change === undefined ? null : (
+          <TrendChip value={change} better={better} comparison={comparison} />
         )}
       </div>
+      {previousValue === undefined ? null : (
+        <Text type="small" tone="muted" className="tabular-nums">
+          {t(UI_KEYS.ui.stat.previous, { value: format(previousValue) })}
+        </Text>
+      )}
       {sparkline && sparkline.length > 1 ? (
         <Sparkline
           data={sparkline}

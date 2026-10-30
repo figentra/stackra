@@ -547,8 +547,12 @@ html[data-motion="none"] *::after {
   .switch .switch__thumb {
     border-radius: var(--radius-full);
   }
-  .switch {
-    --switch-control-bg: var(--field-border);
+  .switch:not([data-selected="true"], [aria-checked="true"]) .switch__control {
+    outline: var(--field-border-width) solid var(--field-border);
+    outline-offset: calc(-1 * var(--field-border-width));
+  }
+  .switch:not([data-selected="true"], [aria-checked="true"]):not([data-disabled="true"]) .switch__thumb {
+    background-color: var(--muted);
   }
   .toggle-button {
     --toggle-button-bg-selected: var(--accent);

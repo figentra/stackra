@@ -29,4 +29,15 @@ describe("Stat (web)", () => {
     expect(screen.getByText("−40")).toBeTruthy();
     expect(container.textContent).toBe("Redeemed−40");
   });
+
+  it("works the trend out from the previous period and writes it under the figure", () => {
+    render(<Stat label="Revenue" value={1200} previousValue={1000} />);
+    expect(screen.getByText("+20%")).toBeTruthy();
+    expect(screen.getByText("Previous period: 1,000")).toBeTruthy();
+  });
+
+  it("keeps a given trend over the worked-out one", () => {
+    render(<Stat label="Revenue" value={1200} previousValue={1000} trend={0.05} />);
+    expect(screen.getByText("+5%")).toBeTruthy();
+  });
 });

@@ -17,8 +17,15 @@ export const FREE_LINE_CHART: ComponentEntry = {
   exportName: "LineChart",
   parts: ["LineChart"],
   hero: {},
-  examples: [{ id: "multiple", card: true }, { id: "dots" }, { id: "linear" }],
+  examples: [
+    { id: "multiple", card: true },
+    { id: "dots" },
+    { id: "linear" },
+    { id: "annotations" },
+    { id: "log-scale" },
+    { id: "synced" },
+  ],
   related: ["free/area-chart", "free/bar-chart", "free/sparkline"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
-  keywords: ["line", "trend", "time series"],
+  keywords: ["line", "trend", "time series", "annotation", "log scale", "synced crosshair"],
 };

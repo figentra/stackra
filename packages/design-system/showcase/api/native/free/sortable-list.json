@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "fbf98f7581defde4",
+    "hash": "8141778aa083a475",
     "propsFiles": ["ui/src/native/sortable-list/sortable-list.props.ts"]
   },
   "importLine": "import { SortableList } from \"@stackra/ui/native\";",
@@ -46,6 +46,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "More screen-reader actions for a row, beside \"Move up\" and \"Move down\": a row is one element to VoiceOver and\nTalkBack, so a control drawn inside it (a checkbox, a button) is reached through one of these.",
+          "name": "accessibilityActionsOf",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => readonly SortableRowAction[]"
         },
         {
           "description": "Used to reference react managed views from native code.",

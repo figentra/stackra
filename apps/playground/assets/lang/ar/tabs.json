@@ -1,19 +1,63 @@
 {
   "sections": {
-    "overview": { "label": "نظرة عامة", "content": "ملخص الطلب ووجهة شحنه." },
-    "items": { "label": "العناصر", "content": "منتجات الطلب، سطر لكل منتج." },
-    "history": { "label": "السجل", "content": "كل تغيير على الطلب، الأحدث أولًا." }
+    "overview": {
+      "label": "نظرة عامة",
+      "content": "ملخص الطلب ووجهة شحنه."
+    },
+    "items": {
+      "label": "العناصر",
+      "content": "منتجات الطلب، سطر لكل منتج."
+    },
+    "history": {
+      "label": "السجل",
+      "content": "كل تغيير على الطلب، الأحدث أولًا."
+    }
   },
-  "basics": { "label": "أقسام الطلب" },
-  "variants": { "primary": "تبويبات أساسية", "secondary": "تبويبات ثانوية" },
-  "orientation": { "horizontal": "تبويبات أفقية", "vertical": "تبويبات عمودية" },
-  "states": { "disabled_tab": "تبويب واحد معطل", "disabled_list": "تبويبات معطلة" },
-  "empty": { "message": "لا أقسام بعد.", "loading": "جارٍ تحميل الأقسام" },
+  "basics": {
+    "label": "أقسام الطلب"
+  },
+  "variants": {
+    "primary": "تبويبات أساسية",
+    "secondary": "تبويبات ثانوية"
+  },
+  "orientation": {
+    "horizontal": "تبويبات أفقية",
+    "vertical": "تبويبات عمودية"
+  },
+  "states": {
+    "disabled_tab": "تبويب واحد معطل",
+    "disabled_list": "تبويبات معطلة"
+  },
+  "empty": {
+    "message": "لا أقسام بعد.",
+    "loading": "جارٍ تحميل الأقسام"
+  },
   "live": {
     "label": "تبويبات مُتحكَّم بها",
     "show_history": "عرض السجل",
     "show_overview": "عرض النظرة العامة",
     "selected": "المحدد: {keys}",
     "none": "لا شيء"
+  },
+  "closable": {
+    "label": "العروض المفتوحة",
+    "add": "عرض جديد",
+    "draft": "مسودة {n}",
+    "orders": "الطلبات",
+    "returns": "المرتجعات",
+    "customers": "العملاء",
+    "empty": "أغلقت كل العروض. أضف عرضًا جديدًا."
+  },
+  "overflow": {
+    "label": "التقارير",
+    "sales": "المبيعات",
+    "orders": "الطلبات",
+    "returns": "المرتجعات",
+    "customers": "العملاء",
+    "inventory": "المخزون",
+    "payouts": "المدفوعات",
+    "taxes": "الضرائب",
+    "shipping": "الشحن",
+    "content": "تقرير {report} لهذا الشهر."
   }
 }

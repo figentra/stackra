@@ -66,7 +66,9 @@ for (const scheme of SCHEMES)
 
 test("every list is a navigation landmark with its own name", async ({ page }) => {
   await open(page, "light", "en");
-  // The demos load lazily: wait for the last example's list before reading the names.
+  // The demos load lazily, each in its own Suspense and in no set order: wait until every one has mounted (the last
+  // example's list can mount before the others).
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
   await expect(page.locator("section#example-live nav").first()).toBeVisible();
   const names = await page.locator("main nav").evaluateAll((navs) =>
     navs

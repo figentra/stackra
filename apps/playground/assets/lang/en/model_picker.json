@@ -1,0 +1,20 @@
+{
+  "basics": {
+    "swift": "Short replies and quick edits",
+    "deep": "Plans, analysis and long documents",
+    "vision": "Reads receipts, shelves and screenshots",
+    "atlas": "Our largest model for hard problems",
+    "business": "On the Business plan",
+    "fast": "Fast",
+    "reasoning": "Reasoning",
+    "vision_tag": "Vision",
+    "arabic": "Arabic",
+    "picked": "Replies come from {name}."
+  },
+  "compact": {
+    "label": "Assistant model",
+    "message": "Message the assistant",
+    "placeholder": "Ask about today's orders",
+    "send": "Send"
+  }
+}

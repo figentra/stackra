@@ -35,6 +35,17 @@
     "scale": "Scale",
     "for_a_company_with_audit": "For a company, with audit and support.",
     "legacy": "Legacy",
-    "no_longer_sold": "No longer sold."
-  }
+    "no_longer_sold": "No longer sold.",
+    "africa": "Africa",
+    "europe": "Europe",
+    "middle_east": "Middle East",
+    "cairo": "Cairo",
+    "lagos": "Lagos",
+    "paris": "Paris",
+    "berlin": "Berlin",
+    "riyadh": "Riyadh",
+    "dubai": "Dubai"
+  },
+  "sections_label": "Office",
+  "sections_placeholder": "Choose an office"
 }

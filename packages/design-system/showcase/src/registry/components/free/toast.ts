@@ -35,6 +35,8 @@ export const FREE_TOAST: ComponentEntry = {
     { id: "tones", card: true },
     { id: "options", platforms: ["react"] },
     { id: "control", platforms: ["react"] },
+    { id: "promise" },
+    { id: "undo" },
     { id: "detail", platforms: ["native"] },
     { id: "action", platforms: ["native"] },
     { id: "duration", platforms: ["native"] },

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web `ColumnEditorPanel` beyond the popover: the drag handle reorders columns from the keyboard;
+ * Purpose: proves the web `ColumnEditorPanel` beyond the popover: the drag handle reorders one column from the keyboard
+ *          with every column shown, and a row's own Show checkbox hides and shows only that column;
  *          the rename button toggles the row's editor; pin to end and back to none, a typed width, clearing it, and
  *          the wrap switch all reach the engine; a pinned column shows its pin. Also proves the plain `ColumnChooser`:
  *          ticking a box reports the hidden columns, never the row header.
@@ -35,7 +36,7 @@ function Harness() {
         {collection.columns
           .map(
             (column) =>
-              `${column.label}${column.pin ? `-${column.pin}` : ""}${column.width ? `-${column.width}` : ""}${column.wrap ? "-wrap" : ""}`,
+              `${column.label}${column.pin ? `-${column.pin}` : ""}${column.width ? `-${column.width}` : ""}${column.wrap ? "-wrap" : ""}${column.isHidden ? "-hidden" : ""}`,
           )
           .join(",")}
       </output>
@@ -46,15 +47,18 @@ function Harness() {
 const readout = () => screen.getByTestId("columns").textContent;
 
 describe("ColumnEditorPanel (web)", () => {
-  // Only with the other columns hidden: the grid's selection is the shown set, and React Aria drags every selected
-  // row, so with all shown a drag moves them all and the order stays (a reported bug, STA-1371).
-  it("reorders a lone shown column from the keyboard by its drag handle", () => {
+  // A drag moves only the row it lifts: visibility is no longer the grid's selection, which React Aria would drag
+  // whole (the reported bug: one drag moved every shown column, or nothing with all shown; STA-1371).
+  it("reorders one column from the keyboard by its drag handle while every column is shown", () => {
     vi.useFakeTimers();
     try {
       render(<Harness />);
       expect(screen.getByRole("grid", { name: "Fields" })).toBeTruthy();
-      fireEvent.click(screen.getByRole("checkbox", { name: /^Show Customer/ }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /^Show Total/ }));
+      expect(
+        screen
+          .getAllByRole("checkbox", { name: /^Show / })
+          .every((box) => (box as HTMLInputElement).checked),
+      ).toBe(true);
       const handle = screen.getByRole("button", { name: "Reorder Order" });
       act(() => handle.focus());
       fireEvent.keyDown(handle, { key: "Enter" });
@@ -69,6 +73,19 @@ describe("ColumnEditorPanel (web)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("hides and shows a column by its own Show checkbox, leaving the others and the order alone", () => {
+    render(<Harness />);
+    const customer = screen.getByRole("checkbox", { name: /^Show Customer/ });
+    fireEvent.click(customer);
+    expect((customer as HTMLInputElement).checked).toBe(false);
+    expect(readout()).toBe("Order,Customer-hidden,Total");
+    fireEvent.click(customer);
+    expect(readout()).toBe("Order,Customer,Total");
+    expect(
+      screen.getByRole("grid", { name: "Fields" }).getAttribute("aria-multiselectable"),
+    ).toBeNull();
   });
 
   it("toggles a row's editor and sets pin, width and wrap", () => {

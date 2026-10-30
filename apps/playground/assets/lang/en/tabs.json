@@ -1,19 +1,63 @@
 {
   "sections": {
-    "overview": { "label": "Overview", "content": "A summary of the order and where it ships." },
-    "items": { "label": "Items", "content": "The products on the order, one line each." },
-    "history": { "label": "History", "content": "Every change to the order, newest first." }
+    "overview": {
+      "label": "Overview",
+      "content": "A summary of the order and where it ships."
+    },
+    "items": {
+      "label": "Items",
+      "content": "The products on the order, one line each."
+    },
+    "history": {
+      "label": "History",
+      "content": "Every change to the order, newest first."
+    }
   },
-  "basics": { "label": "Order sections" },
-  "variants": { "primary": "Primary tabs", "secondary": "Secondary tabs" },
-  "orientation": { "horizontal": "Horizontal tabs", "vertical": "Vertical tabs" },
-  "states": { "disabled_tab": "One disabled tab", "disabled_list": "Disabled tabs" },
-  "empty": { "message": "No sections yet.", "loading": "Loading sections" },
+  "basics": {
+    "label": "Order sections"
+  },
+  "variants": {
+    "primary": "Primary tabs",
+    "secondary": "Secondary tabs"
+  },
+  "orientation": {
+    "horizontal": "Horizontal tabs",
+    "vertical": "Vertical tabs"
+  },
+  "states": {
+    "disabled_tab": "One disabled tab",
+    "disabled_list": "Disabled tabs"
+  },
+  "empty": {
+    "message": "No sections yet.",
+    "loading": "Loading sections"
+  },
   "live": {
     "label": "Controlled tabs",
     "show_history": "Show history",
     "show_overview": "Show overview",
     "selected": "Selected: {keys}",
     "none": "none"
+  },
+  "closable": {
+    "label": "Open views",
+    "add": "New view",
+    "draft": "Draft {n}",
+    "orders": "Orders",
+    "returns": "Returns",
+    "customers": "Customers",
+    "empty": "Every view is closed. Add a new one."
+  },
+  "overflow": {
+    "label": "Reports",
+    "sales": "Sales",
+    "orders": "Orders",
+    "returns": "Returns",
+    "customers": "Customers",
+    "inventory": "Inventory",
+    "payouts": "Payouts",
+    "taxes": "Taxes",
+    "shipping": "Shipping",
+    "content": "The {report} report for this month."
   }
 }

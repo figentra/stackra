@@ -35,6 +35,7 @@ export { materialModeVariables } from "#core/functions/material-mode-variables.f
 export { mergeTheme } from "#core/functions/merge-theme.function";
 export { motionTiming } from "#core/functions/motion-timing.function";
 export { oklchToHex } from "#core/functions/oklch-to-hex.function";
+export { oklabToSrgb } from "#core/functions/oklab-to-srgb.function";
 export { srgbToOklab } from "#core/functions/srgb-to-oklab.function";
 export { parseThemeJson } from "#core/functions/parse-theme-json.function";
 export { renderNativeCss } from "#core/functions/render-native-css.function";

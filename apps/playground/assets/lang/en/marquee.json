@@ -1,0 +1,18 @@
+{
+  "brands": {
+    "label": "Brands we carry",
+    "brand_1": "Dukkan",
+    "brand_2": "Jute & Co.",
+    "brand_3": "Organza",
+    "brand_4": "Sadu Weaves",
+    "brand_5": "Najd Linen",
+    "brand_6": "Qahwa House"
+  },
+  "announcements": {
+    "label": "Shop announcements",
+    "item_1": "Free delivery on orders over SAR 200",
+    "item_2": "The Eid collection is here",
+    "item_3": "Returns within 14 days",
+    "item_4": "Pay in 4 instalments at checkout"
+  }
+}

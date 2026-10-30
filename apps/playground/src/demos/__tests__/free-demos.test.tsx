@@ -6,7 +6,8 @@
  *          catalogue (plurals included), not from code.
  * Boundary: jsdom with real HeroUI inside a memory router, the DesignSystemProvider and the playground's icons (some
  *           demos read the location or the scheme). `matchMedia`, `ResizeObserver` and `IntersectionObserver` are
- *           stubbed because jsdom has none. Words are read without an i18n provider, so they are English.
+ *           stubbed because jsdom has none. Words are read without an i18n provider, so they are English. The
+ *           ten-thousand-row virtualised demos are left out of the render check: jsdom lays nothing out.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) sections 4 and 10 (WP6a acceptance); ADR 0403 (catalogue
  *                     completeness); ADR 0022 (test placement).
@@ -109,11 +110,21 @@ describe("web free demos", () => {
     expect(missing).toEqual([]);
   });
 
-  it.each(Object.entries(DEMOS))("renders %s", (_, module) => {
-    const Demo = module.default;
-    const { container } = renderDemo(Demo);
-    expect(container.firstChild).not.toBeNull();
-  });
+  // Ten thousand virtualised rows need a real layout (jsdom measures every box as 0 by 0, so React Aria's
+  // Virtualizer cannot window them); the Table's own test and the playground's screenshots cover them.
+  const NEEDS_LAYOUT = new Set([
+    "../free/data-table/virtual.tsx",
+    "../free/data-view/scale.tsx",
+    "../free/list/virtual.tsx",
+  ]);
+  it.each(Object.entries(DEMOS).filter(([key]) => !NEEDS_LAYOUT.has(key)))(
+    "renders %s",
+    (_, module) => {
+      const Demo = module.default;
+      const { container } = renderDemo(Demo);
+      expect(container.firstChild).not.toBeNull();
+    },
+  );
 
   it("has an Arabic message with the same arguments for every free demo key", () => {
     expect(SLUGS.length).toBeGreaterThan(60);

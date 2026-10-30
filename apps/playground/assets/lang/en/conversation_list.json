@@ -1,0 +1,30 @@
+{
+  "support_history": {
+    "label": "Support conversations",
+    "return_title": "Return for order 2048",
+    "return_preview": "Your return label is ready to print.",
+    "delivery_title": "Delivery to Jeddah",
+    "delivery_preview": "It arrives on Thursday between 2 and 6 pm.",
+    "sizes_title": "Linen abaya sizes",
+    "sizes_preview": "The M fits a chest of 96 cm.",
+    "gift_title": "Gift card balance",
+    "gift_preview": "You have SAR 150 left.",
+    "address_title": "Change of address",
+    "address_preview": "Done: the new address is saved.",
+    "refund_title": "Refund for order 2051",
+    "refund_preview": "The refund reaches your card within 5 days."
+  },
+  "actions": {
+    "return_title": "Return for order 2048",
+    "return_preview": "Your return label is ready to print.",
+    "delivery_title": "Delivery to Jeddah",
+    "delivery_preview": "It arrives on Thursday between 2 and 6 pm.",
+    "refund_title": "Refund for order 2051",
+    "refund_preview": "The refund reaches your card within 5 days.",
+    "renamed": "Return label question",
+    "pinned": "Pinned.",
+    "unpinned": "Unpinned.",
+    "renamed_done": "Renamed.",
+    "deleted": "Deleted."
+  }
+}

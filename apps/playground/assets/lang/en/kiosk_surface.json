@@ -1,0 +1,12 @@
+{
+  "welcome": "Welcome. Touch the screen to start your order.",
+  "start": "Start order",
+  "basket": "{count, plural, =0 {Your basket is empty} one {# item in your basket} other {# items in your basket}}",
+  "resets": "{count, plural, =0 {No resets yet} one {Reset once after 8 seconds idle} other {Reset # times after 8 seconds idle}}",
+  "add": "Add a coffee",
+  "added": "Coffee added. {count} in your basket.",
+  "pay": "Pay",
+  "high_contrast": "High contrast",
+  "area_idle": "Kiosk preview: idle reset",
+  "area_reach": "Kiosk preview: seated reach"
+}

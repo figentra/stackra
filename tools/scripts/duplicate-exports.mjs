@@ -70,6 +70,18 @@ export const ALLOWED = Object.freeze({
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/identity's enum names the same providers",
   WidgetSize:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/panel's enum has the same sizes",
+  BarcodeFormat:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the formats its Barcode draws; @stackra/platform's type names what a device scanner reads",
+  CODE128_PATTERNS:
+    "@stackra/ui depends on no helper package (ADR 0302 keeps it to config, contracts, i18n, icons, tokens and validation), so its Barcode keeps the Code 128 table beside @stackra/support's",
+  RecurrenceRule:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the rule its recurrence editor takes; @stackra/calendar's is the domain one",
+  parseRrule:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its recurrence editor reads RRULE text itself; @stackra/calendar's parser is the domain one",
+  changeOf:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its Stat computes its own change; @stackra/panel's is the panel widget's",
+  periodOf:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its period picker resolves its own period; @stackra/actions' is the action input's",
 });
 
 /** The names stackra-225 (STA-1383) renames or gives one home: its issue list plus gap-analysis row 22. */

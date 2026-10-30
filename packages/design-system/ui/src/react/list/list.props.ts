@@ -15,4 +15,16 @@ import type { ListItemData } from "#contracts/types/list-item-data.type";
  * the surface, the empty state and the loading spinner, so `aria-busy` is set from `isLoading`, never by the caller.
  */
 export type ListProps<TItem extends ListItemData = ListItemData> = ListContractProps<TItem> &
-  Omit<ComponentPropsWithRef<"div">, keyof ListContractProps | "children" | "aria-busy">;
+  Omit<
+    ComponentPropsWithRef<"div">,
+    keyof ListContractProps | "children" | "aria-busy" | "isVirtualized" | "maxHeight"
+  > & {
+    /**
+     * Web: true to draw only the rows in view (React Aria's Virtualizer over HeroUI's ListBox), for thousands of rows;
+     * the rows then scroll inside `maxHeight`, are reached with the arrow keys, and a pressable row is actioned with
+     * Enter or a press.
+     */
+    readonly isVirtualized?: boolean | undefined;
+    /** Web: the height a virtualised list scrolls within (any CSS length). Defaults to `32rem`. */
+    readonly maxHeight?: string | undefined;
+  };

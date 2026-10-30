@@ -52,5 +52,6 @@ export const ComponentEntrySchema = z.strictObject({
   haptics: z.array(z.strictObject({ event: z.string(), style: z.enum(HapticStyle) })).optional(),
   keywords: z.array(z.string().min(1)),
   status: z.enum(ComponentStatus).optional(),
+  advanced: z.literal(true).optional(),
   a11y: z.array(z.string()).optional(),
 });

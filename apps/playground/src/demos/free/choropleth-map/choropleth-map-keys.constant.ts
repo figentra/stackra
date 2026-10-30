@@ -9,5 +9,20 @@ import { keys } from "@stackra/i18n";
 
 /** The choropleth_map namespace's keys. */
 export const CHOROPLETH_MAP_KEYS = keys({
-  choropleth_map: ["label", "north", "east", "south", "west", "centre", "harbour"],
+  choropleth_map: [
+    "label",
+    "riyadh",
+    "makkah",
+    "madinah",
+    "eastern",
+    "qassim",
+    "hail",
+    "tabuk",
+    "northern_borders",
+    "jawf",
+    "jazan",
+    "najran",
+    "bahah",
+    "asir",
+  ],
 });

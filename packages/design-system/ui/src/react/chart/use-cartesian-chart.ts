@@ -10,6 +10,7 @@
 import type { CartesianChartContractProps } from "#contracts/types/cartesian-chart-contract-props.type";
 import type { ChartDatum } from "#contracts/types/chart-datum.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { chartAnnotationTextOf } from "#core/functions/chart-annotation-text-of.function";
 import { chartReferenceTextOf } from "#core/functions/chart-reference-text-of.function";
 import { chartTableOf } from "#core/functions/chart-table-of.function";
 import type { ChartFrameProps } from "#react/chart/chart-frame.props";
@@ -63,9 +64,10 @@ export function useCartesianChart(
       onToggle: toggle,
       hiddenKeys: hidden,
       showComparison: compared.length > 0,
-      notes: (props.references ?? []).map((item) =>
-        chartReferenceTextOf(item, locale, valueFormat),
-      ),
+      notes: [
+        ...(props.references ?? []).map((item) => chartReferenceTextOf(item, locale, valueFormat)),
+        ...(props.annotations ?? []).map((item) => chartAnnotationTextOf(item, locale, xFormat)),
+      ],
     },
   };
 }

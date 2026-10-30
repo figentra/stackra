@@ -1,0 +1,14 @@
+{
+  "uptime_title": "API uptime",
+  "uptime_description": "The last 90 days, one cell a day. Point at a day, or focus the strip and use the arrow keys.",
+  "api": "Public API",
+  "dashboard": "Dashboard",
+  "payments": "Payments",
+  "days_ago": "{count} days ago",
+  "today": "Today",
+  "slow_checkout": "Slow checkout for 40 minutes",
+  "outage": "Card payments failed for 18 minutes",
+  "maintenance": "Planned maintenance",
+  "services_title": "System status",
+  "services_description": "Each service over the last 30 days"
+}

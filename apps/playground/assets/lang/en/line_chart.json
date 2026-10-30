@@ -14,5 +14,14 @@
   "linear_title": "Desktop visitors, straight segments",
   "month": "Month",
   "target": "Target",
-  "previous": "{series}, previous period"
+  "previous": "{series}, previous period",
+  "annotations_title": "Visitors with launch and outage",
+  "annotations_description": "Notes pinned to the months they happened in",
+  "launch": "Launch",
+  "outage": "Outage",
+  "log_title": "Sign-ups, log scale",
+  "log_description": "Growth across four powers of ten, on a log axis",
+  "signups": "Sign-ups",
+  "synced_title": "Visitors and sign-ups, pointed together",
+  "synced_description": "Point at either chart: both show the same month"
 }

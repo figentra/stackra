@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2b8070526a5038ac",
+    "hash": "79a77b4bf5633403",
     "propsFiles": ["ui/src/react/stat/stat.props.ts"]
   },
   "importLine": "import { Stat } from \"@stackra/ui/react\";",
@@ -42,6 +42,13 @@
         {
           "description": "The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`.",
           "name": "trend",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The previous period's figure: a muted \"Previous period\" line under the figure, formatted like it, and, when\n`trend` is left out and `value` is a number, the trend worked out from the two.",
+          "name": "previousValue",
           "required": false,
           "source": "stackra",
           "type": "number"

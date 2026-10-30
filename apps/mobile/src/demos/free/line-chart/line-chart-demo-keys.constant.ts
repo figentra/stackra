@@ -23,6 +23,8 @@ export const LINE_CHART_DEMO_KEYS = keys({
       ],
       dots: ["desktop", "label"],
       linear: ["desktop", "label"],
+      annotations: ["label", "visitors", "target", "launch", "outage"],
+      log_scale: ["label", "signups"],
     },
   },
 });

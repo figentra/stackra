@@ -117,4 +117,28 @@ describe("SortableList (native)", () => {
     ]);
     expect(state.announced).toEqual(["Greet the guest moved to position 2 of 3"]);
   });
+
+  it("adds the caller's row actions, also on a locked row, and runs them", () => {
+    const onAction = vi.fn();
+    const onReorder = vi.fn();
+    render(
+      <SortableList
+        items={STEPS}
+        onReorder={onReorder}
+        label="Service steps"
+        accessibilityActionsOf={(item) => [
+          { name: "toggle", label: `Hide ${item.label}`, onAction },
+        ]}
+      />,
+    );
+    expect(actionsOf("Take the order")).toEqual(["move_up", "move_down", "toggle"]);
+    expect(actionsOf("Take payment")).toEqual(["toggle"]);
+    const act = rowOf("Take payment")["onAccessibilityAction"] as (event: {
+      nativeEvent: { actionName: string };
+    }) => void;
+    act({ nativeEvent: { actionName: "toggle" } });
+    act({ nativeEvent: { actionName: "move_up" } });
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
 });

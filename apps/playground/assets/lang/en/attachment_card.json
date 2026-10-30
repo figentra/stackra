@@ -1,0 +1,13 @@
+{
+  "basics": {
+    "invoice": "invoice-1042.pdf",
+    "stock": "stock-october.xlsx",
+    "counter": "front-counter.png",
+    "opened": "Opened {name}."
+  },
+  "upload_states": {
+    "menu": "winter-menu.jpg",
+    "contract": "lease-olaya-branch.pdf",
+    "error": "The connection dropped. Try again."
+  }
+}

@@ -131,9 +131,34 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [
       { keys: ["←", "→"], action: "move" },
       { keys: ["Home", "End"], action: "first_last" },
+      { keys: ["Delete"], action: "close" },
     ],
     anatomy: ["list", "tab", "indicator", "panel"],
     alternatives: ["free/mode-switch", "free/accordion"],
+    rules: TWO,
+  },
+  "free/disclosure": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "expand_collapse" },
+      { keys: ["Tab"], action: "move_focus" },
+    ],
+    anatomy: ["trigger", "indicator", "panel"],
+    alternatives: ["free/accordion", "free/popover"],
+    rules: TWO,
+  },
+  "free/navigation-menu": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "open" },
+      { keys: ["Tab"], action: "move_focus" },
+      DISMISS,
+    ],
+    anatomy: ["list", "trigger", "panel", "label", "description"],
+    alternatives: ["free/navigation-list", "free/menu"],
+    rules: TWO,
+  },
+  "free/layout": {
+    anatomy: ["item"],
+    alternatives: ["free/two-column-layout", "free/single-column-layout"],
     rules: TWO,
   },
   "free/accordion": {
@@ -149,7 +174,13 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, DISMISS],
     anatomy: ["backdrop", "dialog", "title", "body", "close"],
     alternatives: ["free/drawer", "free/alert-dialog", "free/popover"],
-    rules: TWO,
+    rules: { do: 3, dont: 3 },
+  },
+  "free/alert-dialog": {
+    keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, ACTIVATE[0], DISMISS],
+    anatomy: ["backdrop", "dialog", "icon", "title", "body", "actions"],
+    alternatives: ["free/modal", "free/use-confirmation", "free/toast"],
+    rules: { do: 3, dont: 3 },
   },
   "free/drawer": {
     keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, DISMISS],
@@ -161,7 +192,7 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [ACTIVATE[0], DISMISS],
     anatomy: ["trigger", "arrow", "content"],
     alternatives: ["free/tooltip", "free/modal"],
-    rules: TWO,
+    rules: { do: 3, dont: 2 },
   },
   "free/tooltip": {
     keyboard: [
@@ -190,6 +221,24 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     ],
     anatomy: ["region", "icon", "title", "description", "action", "close"],
     alternatives: ["free/alert", "free/system-banner"],
+    rules: TWO,
+  },
+  "free/task-tray": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["region", "header", "list", "row", "indicator", "actions"],
+    alternatives: ["free/toast", "free/progress-bar"],
+    rules: TWO,
+  },
+  "free/recurrence-editor": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["label", "input", "trigger", "item", "option_label", "description"],
+    alternatives: ["free/date-picker", "free/calendar"],
     rules: TWO,
   },
   "free/alert": {
@@ -282,6 +331,45 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     alternatives: ["free/multi-select", "free/tag-group"],
     rules: TWO,
   },
+  "free/masked-field": {
+    keyboard: [{ keys: ["Tab"], action: "move_focus" }],
+    anatomy: ["label", "input", "description", "error"],
+    alternatives: ["free/text-field", "free/phone-field"],
+    rules: TWO,
+  },
+  "free/mention-input": {
+    keyboard: [
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["Enter", "Tab"], action: "choose" },
+      DISMISS,
+    ],
+    anatomy: ["label", "input", "listbox", "item"],
+    alternatives: ["free/text-area", "free/tag-input"],
+    rules: TWO,
+  },
+  "free/tree-select": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "open" },
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["←", "→"], action: "expand_collapse" },
+      { keys: ["Space"], action: "toggle" },
+      DISMISS,
+    ],
+    anatomy: ["label", "trigger", "value", "indicator", "popover", "row"],
+    alternatives: ["free/select", "free/multi-select"],
+    rules: TWO,
+  },
+  "free/tree-view": {
+    keyboard: [
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["←", "→"], action: "expand_collapse" },
+      { keys: ["Space"], action: "toggle" },
+      { keys: ["Enter"], action: "activate" },
+    ],
+    anatomy: ["row", "indicator", "check", "icon", "label", "description"],
+    alternatives: ["free/accordion", "free/list"],
+    rules: TWO,
+  },
   "free/timeline": {
     anatomy: ["header", "icon", "title", "description"],
     alternatives: ["free/comment-thread"],
@@ -325,6 +413,36 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     alternatives: ["free/carousel", "free/drawer"],
     rules: TWO,
   },
+  "free/lightbox": {
+    keyboard: [
+      { keys: ["←", "→"], action: "move" },
+      { keys: ["Home", "End"], action: "first_last" },
+      { keys: ["Tab"], action: "move_focus" },
+      DISMISS,
+    ],
+    anatomy: ["backdrop", "dialog", "image", "close", "arrow", "label"],
+    alternatives: ["free/gallery", "free/carousel"],
+    rules: TWO,
+  },
+  "free/gallery": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "open" },
+    ],
+    anatomy: ["list", "item", "image"],
+    alternatives: ["free/carousel", "free/lightbox"],
+    rules: TWO,
+  },
+  "free/image-cropper": {
+    keyboard: [
+      { keys: ["↑", "↓", "←", "→"], action: "move" },
+      { keys: ["Shift"], action: "step_large" },
+      { keys: ["+", "-"], action: "step" },
+    ],
+    anatomy: ["container", "image", "thumb", "track", "description"],
+    alternatives: ["free/drop-zone", "free/thumbnail"],
+    rules: TWO,
+  },
   "free/truncate": {
     keyboard: [{ keys: ["Space", "Enter"], action: "expand_collapse" }],
     anatomy: ["text", "action"],
@@ -360,6 +478,21 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     alternatives: ["free/copy-button", "free/link"],
     rules: TWO,
   },
+  "free/attachment-card": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["container", "icon", "name", "description", "actions"],
+    alternatives: ["free/drop-zone", "free/file-trigger"],
+    rules: TWO,
+  },
+  "free/share-button": {
+    keyboard: ACTIVATE,
+    anatomy: ["container", "start_icon", "label"],
+    alternatives: ["free/copy-button", "free/button"],
+    rules: TWO,
+  },
   "free/listbox": {
     keyboard: [
       { keys: ["↑", "↓"], action: "move" },
@@ -377,6 +510,222 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     ],
     anatomy: ["container", "item", "icon", "label", "dot"],
     alternatives: ["free/sidebar", "free/tabs"],
+    rules: TWO,
+  },
+  "free/polar-chart": {
+    anatomy: ["image", "fill", "label"],
+    alternatives: ["free/radar-chart", "free/bar-chart"],
+    rules: TWO,
+  },
+  "free/waffle-chart": {
+    anatomy: ["image", "cell", "value"],
+    alternatives: ["free/pie-chart", "free/stacked-meter"],
+    rules: TWO,
+  },
+  "free/marquee": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "toggle" },
+    ],
+    anatomy: ["container", "content", "action"],
+    alternatives: ["free/carousel", "free/system-banner"],
+    rules: TWO,
+  },
+  "free/barcode": {
+    anatomy: ["image", "label"],
+    alternatives: ["free/qr-code", "free/copy-button"],
+    rules: TWO,
+  },
+  "free/aspect-ratio": {
+    anatomy: ["container", "content"],
+    alternatives: ["free/thumbnail", "free/layout"],
+    rules: TWO,
+  },
+  "free/page-indicator": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["container", "dot"],
+    alternatives: ["free/pagination", "free/stepper"],
+    rules: TWO,
+  },
+  "free/back-to-top": {
+    keyboard: ACTIVATE,
+    anatomy: ["action", "icon"],
+    alternatives: ["free/fab", "free/toc-rail"],
+    rules: TWO,
+  },
+  "free/footer": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Enter"], action: "follow" },
+    ],
+    anatomy: ["container", "section", "list", "row"],
+    alternatives: ["free/navigation-menu", "free/sidebar"],
+    rules: TWO,
+  },
+  "free/questionnaire-card": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["Space"], action: "toggle" },
+      { keys: ["Enter"], action: "activate" },
+    ],
+    anatomy: ["header", "title", "track", "body", "footer", "actions"],
+    alternatives: ["free/stepper", "free/radio-group"],
+    rules: TWO,
+  },
+  "free/model-picker": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "open" },
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["Enter"], action: "choose" },
+      DISMISS,
+    ],
+    anatomy: ["label", "trigger", "value", "popover", "section", "item", "check"],
+    alternatives: ["free/select", "free/chip"],
+    rules: TWO,
+  },
+  "free/voice-input": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "toggle" },
+      { keys: ["Esc"], action: "cancel" },
+    ],
+    anatomy: ["action", "icon", "fill", "text"],
+    alternatives: ["free/icon-button", "free/text-area"],
+    rules: TWO,
+  },
+  "free/conversation-list": {
+    keyboard: [
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["Space", "Enter"], action: "select_row" },
+      { keys: ["→"], action: "row_action" },
+    ],
+    anatomy: ["section", "header", "row", "title", "description", "action"],
+    alternatives: ["free/listbox", "free/navigation-list"],
+    rules: TWO,
+  },
+  "free/message-actions": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["←", "→"], action: "move" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["toolbar", "action", "icon"],
+    alternatives: ["free/reaction-button", "free/copy-button"],
+    rules: TWO,
+  },
+  "free/message-scroller": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["region", "content", "action"],
+    alternatives: ["free/scroll-area"],
+    rules: TWO,
+  },
+  "free/prompt-suggestions": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["container", "item", "icon", "title", "description"],
+    alternatives: ["free/chip", "free/button"],
+    rules: TWO,
+  },
+  "free/shimmer": {
+    anatomy: ["text", "fill"],
+    alternatives: ["free/skeleton"],
+    rules: TWO,
+  },
+  "free/media-player": {
+    keyboard: [
+      { keys: ["Space", "K"], action: "play_pause" },
+      { keys: ["←", "→"], action: "seek" },
+      { keys: ["↑", "↓"], action: "volume" },
+      { keys: ["M"], action: "mute" },
+      { keys: ["F"], action: "fullscreen" },
+    ],
+    anatomy: ["media", "track", "fill", "thumb", "toolbar", "action", "value"],
+    alternatives: ["free/lightbox", "free/attachment-card"],
+    rules: TWO,
+  },
+  "free/time-clock": {
+    keyboard: [
+      { keys: ["↑", "↓"], action: "step" },
+      { keys: ["PageUp", "PageDown"], action: "step_large" },
+      { keys: ["Enter", "Tab"], action: "next_view" },
+      { keys: ["Shift+Tab"], action: "previous_view" },
+    ],
+    anatomy: ["label", "value", "ring", "hand", "thumb"],
+    alternatives: ["free/time-field", "free/wheel-picker"],
+    rules: TWO,
+  },
+  "free/angle-slider": {
+    keyboard: [
+      { keys: ["←", "→"], action: "step" },
+      { keys: ["PageUp", "PageDown"], action: "step_large" },
+      { keys: ["Home", "End"], action: "min_max" },
+    ],
+    anatomy: ["label", "track", "hand", "thumb", "value"],
+    alternatives: ["free/slider", "free/number-field"],
+    rules: TWO,
+  },
+  "free/popconfirm": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "open" },
+      { keys: ["Tab"], action: "move_focus" },
+      DISMISS,
+    ],
+    anatomy: ["trigger", "popover", "arrow", "title", "description", "actions"],
+    alternatives: ["free/alert-dialog", "free/popover"],
+    rules: TWO,
+  },
+  "free/menubar": {
+    keyboard: [
+      { keys: ["←", "→"], action: "move" },
+      { keys: ["Home", "End"], action: "first_last" },
+      { keys: ["↓", "Enter"], action: "open" },
+      { keys: ["↑", "↓"], action: "move" },
+      DISMISS,
+    ],
+    anatomy: ["container", "trigger", "popover", "section", "item"],
+    alternatives: ["free/menu", "free/app-header"],
+    rules: TWO,
+  },
+  "free/floating-panel": {
+    keyboard: [
+      { keys: ["←", "→", "↑", "↓"], action: "move" },
+      { keys: ["Shift", "←", "→", "↑", "↓"], action: "step_large" },
+      { keys: ["←", "→", "↑", "↓"], action: "resize" },
+      DISMISS,
+    ],
+    anatomy: ["container", "header", "handle", "title", "actions", "body"],
+    alternatives: ["free/side-panel", "free/drawer"],
+    rules: TWO,
+  },
+  "free/cascader": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "open" },
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["←", "→"], action: "expand_collapse" },
+      { keys: ["Enter"], action: "choose" },
+      DISMISS,
+    ],
+    anatomy: ["label", "trigger", "value", "popover", "listbox", "item"],
+    alternatives: ["free/tree-select", "free/select"],
+    rules: TWO,
+  },
+  "free/transfer-list": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["↑", "↓"], action: "move" },
+      { keys: ["Space"], action: "toggle" },
+      { keys: ["Enter"], action: "activate" },
+    ],
+    anatomy: ["label", "header", "input", "listbox", "check", "actions"],
+    alternatives: ["free/multi-select", "free/checkbox-group"],
     rules: TWO,
   },
 };

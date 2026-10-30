@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the native `Carousel`: a paging horizontal scroll of full-width slides with previous and next buttons and
- *          page dots; each slide is announced as "Slide 2 of 5".
+ *          page dots, or a strip of `thumbnails` to press; each slide is announced as "Slide 2 of 5".
  * Boundary: never auto-advances. Paging is the platform's; scrolling animates only without Reduce Motion.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0060 (right-to-left); WCAG 2.2 SC 2.2.2; STA-1371.
  */
 import { type ReactElement, useRef, useState } from "react";
 import {
+  Image,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -20,6 +21,7 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { CarouselProps } from "#native/carousel/carousel.props";
 import { IconButton } from "#native/icon-button/icon-button";
+import { PageIndicator } from "#native/page-indicator/page-indicator";
 
 /** K: the carousel's words. */
 const K = UI_KEYS.ui.carousel;
@@ -30,6 +32,7 @@ export function Carousel({
   label,
   showDots = true,
   showArrows = true,
+  thumbnails,
   onIndexChange,
   className,
 }: CarouselProps): ReactElement {
@@ -77,7 +80,7 @@ export function Carousel({
           </View>
         ))}
       </ScrollView>
-      {showArrows || showDots ? (
+      {showArrows || showDots || thumbnails?.length ? (
         <View className="flex-row items-center justify-between">
           {showArrows ? (
             <IconButton
@@ -91,8 +94,14 @@ export function Carousel({
           ) : (
             <View />
           )}
-          {showDots ? (
-            <View accessibilityLabel={t(K.pages)} className="flex-row items-center gap-1.5">
+          {thumbnails?.length ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              accessibilityLabel={t(K.pages)}
+              className="mx-2 flex-1"
+              contentContainerClassName="items-center gap-2 p-1"
+            >
               {children.map((_, position) => (
                 <Pressable
                   // oxlint-disable-next-line react/no-array-index-key -- slides are anonymous children; the carousel pages by position
@@ -100,15 +109,30 @@ export function Carousel({
                   accessibilityRole="button"
                   accessibilityLabel={t(K.slide, { index: position + 1, count })}
                   accessibilityState={{ selected: position === index }}
-                  hitSlop={8}
                   onPress={() => goTo(position)}
                   className={[
-                    "h-2 rounded-[var(--radius-pill)]",
-                    position === index ? "w-5 bg-foreground" : "w-2 bg-default",
+                    "size-14 overflow-hidden rounded-[var(--radius-control)] bg-default",
+                    position === index ? "border-2 border-accent" : "opacity-60",
                   ].join(" ")}
-                />
+                >
+                  {thumbnails[position] ? (
+                    <Image
+                      source={{ uri: thumbnails[position] }}
+                      resizeMode="cover"
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  ) : null}
+                </Pressable>
               ))}
-            </View>
+            </ScrollView>
+          ) : showDots ? (
+            <PageIndicator
+              count={count}
+              index={index}
+              onChange={goTo}
+              label={t(K.pages)}
+              getPageLabel={(page, total) => t(K.slide, { index: page, count: total })}
+            />
           ) : null}
           {showArrows ? (
             <IconButton

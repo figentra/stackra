@@ -11,7 +11,9 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
+import { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
 import { DataGrid } from "#native/data-grid/data-grid";
+import { useCollection } from "#react/hooks/use-collection";
 
 type Props = Record<string, unknown> & { readonly children?: ReactNode };
 
@@ -25,14 +27,7 @@ vi.mock("react-native", async () => {
         { "aria-label": props["accessibilityLabel"], onClick: props["onPress"] },
         props.children,
       ),
-    FlatList: (
-      props: Props & { data: { id: string }[]; renderItem: (info: { item: unknown }) => ReactNode },
-    ) =>
-      h(
-        "div",
-        null,
-        props.data.map((item) => h("div", { key: item.id }, props.renderItem({ item }))),
-      ),
+    ScrollView: (props: Props) => h("div", null, props.children),
   };
 });
 vi.mock("#native/text/text", () => ({
@@ -55,6 +50,9 @@ vi.mock("#native/icon-button/icon-button", () => ({
     ),
 }));
 vi.mock("#native/checkbox/checkbox", () => ({ Checkbox: () => null }));
+vi.mock("#native/icon/icon", () => ({
+  Icon: (props: Props) => createElement("i", null, props["name"] as string),
+}));
 vi.mock("#native/select/select", () => ({ Select: () => null }));
 vi.mock("#native/switch/switch", () => ({ Switch: () => null }));
 vi.mock("#native/text-field/text-field", () => ({
@@ -108,6 +106,27 @@ const ROWS = [
   { id: "b", name: "Mocha", qty: 2 },
 ];
 
+/** The rows' names, in drawn order. */
+const names = () =>
+  screen
+    .getAllByRole("button", { name: /^ui::data_grid\.edit_row/u })
+    .map((button) => button.getAttribute("aria-label"));
+
+/** A grid on a collection whose Qty column is hidden. */
+function Harness() {
+  const collection = useCollection({
+    columns: COLUMNS.map(collectionColumnOfGrid),
+    items: ROWS,
+    initialState: {
+      columns: [
+        { id: "name", pin: "start" },
+        { id: "qty", isHidden: true },
+      ],
+    },
+  });
+  return <DataGrid label="Menu" columns={COLUMNS} rows={ROWS} collection={collection} />;
+}
+
 describe("DataGrid (native)", () => {
   it("quick-edits a row, bulk-edits selected rows and saves", async () => {
     const onSave = vi.fn();
@@ -127,5 +146,28 @@ describe("DataGrid (native)", () => {
 
     await act(async () => fireEvent.click(screen.getByText("save")));
     expect(onSave).toHaveBeenCalledWith({ a: { qty: 5 }, b: { qty: 9 } });
+  });
+
+  it("sorts by a header press, edits one cell from its own press, and errors with the shared words", () => {
+    const columns = [...COLUMNS, { id: "note", label: "Note" }];
+    render(<DataGrid label="Menu" columns={columns} rows={ROWS} />);
+    expect(names()).toEqual(["ui::data_grid.edit_row(Latte)", "ui::data_grid.edit_row(Mocha)"]);
+    fireEvent.click(screen.getByRole("button", { name: "ui::table.sort_by Qty" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "ui::table.sort_by Qty, ui::table.ascending" }),
+    );
+    expect(names()).toEqual(["ui::data_grid.edit_row(Mocha)", "ui::data_grid.edit_row(Latte)"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Qty: 1" }));
+    expect(screen.queryByRole("textbox", { name: "Note" })).toBeNull();
+    fireEvent.change(screen.getByRole("textbox", { name: "Qty" }), { target: { value: "x" } });
+    fireEvent.click(screen.getByText("ui::data_grid.done"));
+    expect(screen.getByRole("button", { name: /^Qty: x, ui::data_grid\./u })).toBeTruthy();
+  });
+
+  it("follows the columns of a collection it is given", () => {
+    render(<Harness />);
+    expect(screen.queryByRole("button", { name: "ui::table.sort_by Qty" })).toBeNull();
+    expect(screen.getByRole("button", { name: "ui::table.sort_by Name" })).toBeTruthy();
   });
 });

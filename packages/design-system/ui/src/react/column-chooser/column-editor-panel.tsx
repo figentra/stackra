@@ -5,8 +5,9 @@
  *          hide, and opened (press the row) to rename it, pin it to the start or end or unpin it, set its width or fit it
  *          to its content, and wrap or truncate its text; "Reset columns" puts them all back as defined.
  * Boundary: every change goes to the `useCollection` engine it is given, so the table, grid and list follow at once.
- *           The list is React Aria's `GridList` with its drag and drop (and its spoken announcements) and its checkbox
- *           selection for visibility; the row header cannot be hidden. The settings of the opened column sit under the
+ *           The list is React Aria's `GridList` with its drag and drop (and its spoken announcements) and no
+ *           selection, so a drag moves only the row it lifts; each row's own "Show" checkbox sets its visibility, and
+ *           the row header cannot be hidden. The settings of the opened column sit under the
  *           list, outside the grid, so its fields take every key. The drop line and the lifted row follow SortableList;
  *           the row settles with `motion`'s layout spring, still under prefers-reduced-motion.
  * Runtime: browser
@@ -91,19 +92,9 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
         <GridList
           aria-label={name}
           items={columns}
-          selectionMode="multiple"
-          selectionBehavior="toggle"
-          disallowEmptySelection={false}
-          selectedKeys={
-            new Set(columns.filter((column) => !column.isHidden).map((column) => column.id))
-          }
-          onSelectionChange={(keys) => {
-            const shown =
-              keys === "all" ? columns.map((column) => column.id) : [...keys].map(String);
-            for (const column of columns)
-              if (column.canHide && column.isHidden === shown.includes(column.id))
-                collection.updateColumn(column.id, { isHidden: !shown.includes(column.id) });
-          }}
+          // No grid selection: React Aria drags every selected row, so visibility is each row's own checkbox and a
+          // drag moves only the row it lifts.
+          selectionMode="none"
           onAction={(key) => setOpenId(openId === String(key) ? null : String(key))}
           dragAndDropHooks={dragAndDropHooks}
           className="flex max-h-72 flex-col overflow-auto rounded-[var(--radius-container)] border border-separator"
@@ -134,7 +125,8 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
                   <Icon name="grip-vertical" size="sm" />
                 </AriaButton>
                 <HeroCheckbox
-                  slot="selection"
+                  isSelected={!column.isHidden}
+                  onChange={(isShown) => collection.updateColumn(column.id, { isHidden: !isShown })}
                   isDisabled={!column.canHide}
                   aria-label={t(K.show_column, { label: column.label })}
                 >

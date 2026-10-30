@@ -1,0 +1,10 @@
+{
+  "container": {
+    "title": "Order history",
+    "order": "Order {number}",
+    "status": "Delivered"
+  },
+  "window": {
+    "hint": "Scroll this page down: the button appears at the bottom corner and brings you back here."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "storefront": {
+    "brand": "Dukkan",
+    "nav": "Dukkan links",
+    "tagline": "Linen and cotton made in Riyadh.",
+    "shop": "Shop",
+    "new_in": "New in",
+    "abayas": "Abayas",
+    "home": "Home linen",
+    "help": "Help",
+    "shipping": "Shipping",
+    "returns": "Returns",
+    "contact": "Contact us",
+    "company": "Company",
+    "about": "Our story",
+    "careers": "Careers",
+    "instagram": "Instagram",
+    "copyright": "© 2026 Dukkan. All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "locale": "Language"
+  },
+  "minimal": {
+    "copyright": "© 2026 Dukkan",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  }
+}

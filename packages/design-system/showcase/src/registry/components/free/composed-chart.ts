@@ -17,7 +17,7 @@ export const FREE_COMPOSED_CHART: ComponentEntry = {
   exportName: "ComposedChart",
   parts: ["ComposedChart"],
   hero: {},
-  examples: [{ id: "revenue-target", card: true }],
+  examples: [{ id: "revenue-target", card: true }, { id: "dual-axis" }],
   related: ["free/bar-chart", "free/line-chart", "free/area-chart"],
   tokens: ["color.chart-ramp-1", "color.chart-ramp-2", "color.muted"],
   keywords: ["composed", "combo", "bar and line", "mixed chart", "target"],

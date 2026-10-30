@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "Tabbladen"
   },
+  "tabs": {
+    "more": "Meer",
+    "more_label": "Meer tabbladen",
+    "close": "{tab} sluiten"
+  },
+  "navigation_menu": {
+    "label": "Hoofdnavigatie"
+  },
   "entity_picker": {
     "search": "Zoeken",
     "close": "Sluiten"
@@ -101,6 +109,9 @@
     "close": "Paneel sluiten",
     "resize": "Breedte van het paneel wijzigen"
   },
+  "split_view": {
+    "resize": "Breedte van de deelvensters wijzigen"
+  },
   "data_table": {
     "loading": "Laden",
     "actions_column": "Acties",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "{label} uitklappen",
-    "collapse": "{label} inklappen"
+    "collapse": "{label} inklappen",
+    "loading": "Laden…"
+  },
+  "tree_select": {
+    "placeholder": "Kiezen",
+    "count": "{count, plural, one {# gekozen} other {# gekozen}}"
+  },
+  "mention_input": {
+    "people": "Personen om te noemen"
   },
   "sortable_list": {
     "handle": "{label} verplaatsen",
@@ -196,6 +215,51 @@
     "complete": "Helemaal klaar",
     "show": "Taken tonen",
     "hide": "Taken verbergen"
+  },
+  "recurrence_editor": {
+    "label": "Herhalen",
+    "every": "Herhalen elke",
+    "unit": "{unit, select, daily {{count, plural, one {dag} other {dagen}}} weekly {{count, plural, one {week} other {weken}}} monthly {{count, plural, one {maand} other {maanden}}} other {{count, plural, one {jaar} other {jaar}}}}",
+    "weekdays": "Op",
+    "monthly": "Elke maand",
+    "ends": "Eindigt",
+    "never": "Nooit",
+    "until_label": "Op een datum",
+    "count_label": "Na een aantal keer",
+    "end_date": "Einddatum",
+    "occurrences": "Keer",
+    "summary": "Herhaalt",
+    "every_unit": "{unit, select, daily {{interval, plural, one {Elke dag} other {Elke {n} dagen}}} weekly {{interval, plural, one {Elke week} other {Elke {n} weken}}} monthly {{interval, plural, one {Elke maand} other {Elke {n} maanden}}} other {{interval, plural, one {Elk jaar} other {Elke {n} jaar}}}}",
+    "on_days": "{rule} op {days}",
+    "on_day": "{rule} op dag {day}",
+    "on_last_day": "{rule} op de laatste dag",
+    "on_nth": "{rule} op de {nth, select, 1 {eerste} 2 {tweede} 3 {derde} 4 {vierde} other {laatste}} {weekday}",
+    "on_date": "{rule} op {date}",
+    "until": "{rule}, tot {date}",
+    "times": "{rule}, {count, plural, one {één keer} other {{n} keer}}",
+    "hijri": "{rule}, in de islamitische kalender",
+    "day_option": "Op dag {day}",
+    "last_day_option": "Op de laatste dag",
+    "nth_option": "Op de {nth, select, 1 {eerste} 2 {tweede} 3 {derde} 4 {vierde} other {laatste}} {weekday}"
+  },
+  "task_tray": {
+    "label": "Achtergrondtaken",
+    "running": "{count, plural, one {{n} taak bezig} other {{n} taken bezig}}",
+    "finished": "{count, plural, one {{n} taak klaar} other {{n} taken klaar}}",
+    "failed": "{count, plural, one {{n} mislukt} other {{n} mislukt}}",
+    "show": "Taken tonen",
+    "hide": "Taken verbergen",
+    "clear": "Klare taken wissen",
+    "cancel": "{name} annuleren",
+    "retry": "{name} opnieuw proberen",
+    "dismiss": "{name} verwijderen",
+    "queued": "Wacht",
+    "done": "Klaar",
+    "error": "Mislukt",
+    "canceled": "Geannuleerd"
+  },
+  "toast": {
+    "undo": "Ongedaan maken"
   },
   "inline_loading": {
     "loading": "Laden…",
@@ -458,7 +522,24 @@
     "previous_page": "Vorige pagina",
     "next_page": "Volgende pagina",
     "page_of": "Pagina {page, number} van {count, number}",
-    "load_more": "Meer laden"
+    "load_more": "Meer laden",
+    "row_handle": "{name} slepen",
+    "reorder_column": "Volgorde",
+    "details_column": "Details",
+    "expand_row": "Details van {name} tonen",
+    "collapse_row": "Details van {name} verbergen",
+    "expand_all": "Alle details tonen",
+    "collapse_all": "Alle details verbergen",
+    "row_detail": "Details van {name}",
+    "edit_cell": "{column} van {name} bewerken",
+    "open_row": "{name} openen",
+    "row_panel": "{label}: details",
+    "board_column": "{label}: {column}",
+    "board_empty": "Hier staat nog niets",
+    "board_count": "{count, plural, one {# kaart} other {# kaarten}}",
+    "move_to": "Verplaatsen naar",
+    "move_card": "{name} verplaatsen",
+    "card_moved": "{name} verplaatst naar {column}"
   },
   "number_pad": {
     "delete": "Wissen",
@@ -491,7 +572,8 @@
     "sort_value_desc": "Grootste eerst",
     "sort_value_asc": "Kleinste eerst",
     "sort_label": "Op naam",
-    "compare": "Vergelijken met vorige periode"
+    "compare": "Vergelijken met vorige periode",
+    "svg": "SVG downloaden"
   },
   "trend_chip": {
     "up": "Omhoog {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "Doel {value}",
-    "drill_down": "{label} openen"
+    "drill_down": "{label} openen",
+    "previous": "Vorige periode: {value}"
   },
   "funnel_chart": {
     "conversion": "{value} van de vorige stap"
@@ -529,6 +612,25 @@
     "next": "Volgende dia",
     "slide": "Dia {index} van {count}",
     "pages": "Kies een dia"
+  },
+  "lightbox": {
+    "label": "Afbeeldingsviewer",
+    "previous": "Vorige afbeelding",
+    "next": "Volgende afbeelding",
+    "close": "Sluiten",
+    "counter": "{index} van {count}",
+    "zoom_in": "Inzoomen",
+    "zoom_out": "Uitzoomen"
+  },
+  "gallery": {
+    "open": "{name} openen"
+  },
+  "image_cropper": {
+    "label": "Afbeelding bijsnijden",
+    "zoom": "Zoom",
+    "hint": "Sleep de afbeelding of verplaats haar met de pijltjestoetsen. Plus en min zoomen.",
+    "hint_touch": "Sleep de afbeelding om haar te verplaatsen en zoom met de schuifregelaar.",
+    "loading": "Afbeelding laden"
   },
   "command_palette": {
     "label": "Opdrachtenpalet",
@@ -617,7 +719,11 @@
     "last_30_days": "Afgelopen 30 dagen",
     "this_month": "Deze maand",
     "last_month": "Vorige maand",
-    "this_year": "Dit jaar"
+    "this_year": "Dit jaar",
+    "last_90_days": "Laatste 90 dagen",
+    "this_quarter": "Dit kwartaal",
+    "last_quarter": "Vorig kwartaal",
+    "last_12_months": "Laatste 12 maanden"
   },
   "year_picker": {
     "label": "Kies een jaar"
@@ -666,7 +772,22 @@
     "label": "Zet bestanden hier neer",
     "browse": "Bestanden kiezen",
     "label_one": "Zet hier een bestand neer",
-    "browse_one": "Kies een bestand"
+    "browse_one": "Kies een bestand",
+    "paste_hint": "Je kunt ook een bestand of schermafbeelding plakken",
+    "taken": "Gekozen bestanden"
+  },
+  "attachment_card": {
+    "remove": "{name} verwijderen",
+    "download": "{name} downloaden",
+    "open": "{name} openen",
+    "uploading": "Bezig met uploaden",
+    "failed": "Uploaden mislukt",
+    "retry": "{name} opnieuw proberen"
+  },
+  "share_button": {
+    "share": "Delen",
+    "copied": "Link gekopieerd",
+    "copy_link": "Link kopiëren"
   },
   "color_picker": {
     "label": "Kleur",
@@ -775,5 +896,175 @@
     "in_7_days": "Over 7 dagen",
     "start_of_month": "Begin van de maand",
     "end_of_month": "Einde van de maand"
+  },
+  "period_picker": {
+    "label": "Periode",
+    "preset": "Bereik",
+    "custom": "Aangepast bereik",
+    "dates": "Datums",
+    "compare": "Vergelijken met vorige periode",
+    "mode": "Vergelijken met",
+    "previous": "Vorige periode",
+    "year": "Zelfde periode vorig jaar",
+    "versus": "vs {range}"
+  },
+  "tracker_strip": {
+    "up": "Operationeel",
+    "degraded": "Verminderd",
+    "down": "Storing",
+    "none": "Geen gegevens",
+    "uptime": "{value} beschikbaarheid",
+    "cell": "{label}: {status}"
+  },
+  "dashboard_grid": {
+    "handle": "{label} slepen",
+    "earlier": "{label} naar voren",
+    "later": "{label} naar achteren",
+    "size": "Grootte van {label} wijzigen, nu {size}",
+    "size_small": "Klein",
+    "size_medium": "Middel",
+    "size_large": "Groot",
+    "size_full": "Volle breedte",
+    "moved": "{label} verplaatst naar positie {position, number} van {count, number}",
+    "resized": "{label} is nu {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, one {Er is # probleem} other {Er zijn # problemen}}"
+  },
+  "marquee": {
+    "pause": "Scrollen pauzeren",
+    "play": "Scrollen hervatten"
+  },
+  "barcode": {
+    "invalid": "Deze barcode kan niet worden getekend: controleer de waarde."
+  },
+  "page_indicator": {
+    "pages": "Pagina's",
+    "page": "Pagina {index} van {count}"
+  },
+  "back_to_top": {
+    "label": "Terug naar boven"
+  },
+  "footer": {
+    "label": "Voettekst"
+  },
+  "waffle_chart": {
+    "share": "Aandeel"
+  },
+  "questionnaire_card": {
+    "from_assistant": "Vragen van je assistent",
+    "progress": "Vraag {current} van {total}",
+    "back": "Terug",
+    "next": "Volgende",
+    "skip": "Overslaan",
+    "review": "Antwoorden bekijken",
+    "submit": "Antwoorden versturen",
+    "summary": "Je antwoorden",
+    "edit": "Bewerken",
+    "edit_answer": "Antwoord bewerken: {question}",
+    "other": "Anders",
+    "other_label": "Je antwoord",
+    "skipped": "Overgeslagen"
+  },
+  "model_picker": {
+    "label": "Model",
+    "placeholder": "Kies een model",
+    "context": "{size} context",
+    "new": "Nieuw",
+    "beta": "Bèta",
+    "unavailable": "Niet beschikbaar"
+  },
+  "voice_input": {
+    "start": "Opname starten",
+    "stop": "Opname stoppen",
+    "idle": "Druk op de microfoon om te spreken",
+    "requesting": "Wachten op toegang tot de microfoon…",
+    "listening": "Luistert…",
+    "cancel_hint": "Esc om te annuleren",
+    "processing": "Verwerken…",
+    "denied": "Toegang tot de microfoon is geblokkeerd. Sta die toe in de instellingen en probeer het opnieuw.",
+    "error": "Opnemen mislukt. Probeer het opnieuw.",
+    "cancelled": "Opname geannuleerd"
+  },
+  "popconfirm": {
+    "confirm": "Bevestigen",
+    "cancel": "Annuleren"
+  },
+  "menubar": {
+    "label": "Toepassingsmenu"
+  },
+  "floating_panel": {
+    "move": "Paneel verplaatsen",
+    "move_hint": "Verplaats het met de pijltjestoetsen; houd Shift ingedrukt voor grotere stappen.",
+    "resize": "Paneelgrootte wijzigen",
+    "resize_hint": "Wijzig de grootte met de pijltjestoetsen; houd Shift ingedrukt voor grotere stappen.",
+    "minimise": "Minimaliseren",
+    "restore": "Herstellen",
+    "close": "Sluiten"
+  },
+  "cascader": {
+    "placeholder": "Kiezen",
+    "back": "Terug",
+    "loading": "Laden…",
+    "empty": "Niets hier"
+  },
+  "transfer_list": {
+    "available": "Beschikbaar",
+    "chosen": "Gekozen",
+    "filter": "{list} filteren",
+    "add": "Aangevinkte toevoegen",
+    "remove": "Aangevinkte verwijderen",
+    "add_all": "Alles toevoegen",
+    "remove_all": "Alles verwijderen",
+    "empty": "Niets hier",
+    "moved": "{count, plural, one {# item verplaatst} other {# items verplaatst}}"
+  },
+  "media_player": {
+    "play": "Afspelen",
+    "pause": "Pauzeren",
+    "mute": "Dempen",
+    "unmute": "Dempen opheffen",
+    "volume": "Volume",
+    "seek": "Zoeken",
+    "time_of": "{elapsed} van {duration}",
+    "speed": "Afspeelsnelheid",
+    "normal_speed": "Normaal",
+    "captions": "Ondertiteling",
+    "fullscreen": "Volledig scherm",
+    "exit_fullscreen": "Volledig scherm sluiten"
+  },
+  "conversation_list": {
+    "label": "Gesprekken",
+    "pinned": "Vastgezet",
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "previous_7_days": "Afgelopen 7 dagen",
+    "older": "Ouder",
+    "actions": "Acties voor {title}",
+    "pin": "Vastzetten",
+    "unpin": "Losmaken",
+    "rename": "Naam wijzigen",
+    "delete": "Verwijderen",
+    "empty_title": "Nog geen gesprekken",
+    "empty_description": "Je chats met de assistent verschijnen hier."
+  },
+  "message_actions": {
+    "label": "Berichtacties",
+    "copy": "Bericht kopiëren",
+    "retry": "Opnieuw proberen",
+    "edit": "Bewerken",
+    "good": "Goed antwoord",
+    "bad": "Slecht antwoord"
+  },
+  "message_scroller": {
+    "label": "Gesprek",
+    "new_messages": "Nieuwe berichten",
+    "new_messages_count": "{count, plural, one {# nieuw bericht} other {# nieuwe berichten}}"
+  },
+  "prompt_suggestions": {
+    "label": "Voorgestelde vragen"
+  },
+  "shimmer": {
+    "thinking": "Denkt na…"
   }
 }

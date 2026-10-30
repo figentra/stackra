@@ -15,6 +15,7 @@ import { CalendarDate } from "@internationalized/date";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
+import { DateRangePreset } from "#contracts/enums/date-range-preset.enum";
 import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { DateRangePicker } from "#native/date-range-picker/date-range-picker";
 import type { DateRangePickerProps } from "#native/date-range-picker/date-range-picker.props";
@@ -95,7 +96,8 @@ describe("DateRangePicker (native)", () => {
     expect(state.views.find((view) => view["accessibilityRole"] === "radiogroup")).toMatchObject({
       accessibilityLabel: "ui::date_range_picker.presets",
     });
-    expect(screen.getAllByRole("button")).toHaveLength(7);
+    // One button per preset.
+    expect(screen.getAllByRole("button")).toHaveLength(DateRangePreset.length);
     expect(propsOf("calendar")["value"]).toBeNull();
   });
 

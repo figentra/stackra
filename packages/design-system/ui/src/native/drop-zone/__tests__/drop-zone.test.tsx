@@ -36,6 +36,7 @@ vi.mock("#native/text/text", async () => {
   };
 });
 vi.mock("#native/icon/icon", () => ({ Icon: () => null }));
+vi.mock("#native/file-trigger/upload-list", () => ({ UploadList: () => null }));
 vi.mock("#native/file-trigger/file-trigger", async () => {
   const { createElement } = await import("react");
   return {

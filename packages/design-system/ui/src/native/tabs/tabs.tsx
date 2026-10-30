@@ -12,22 +12,26 @@
  *           in for the whole component, or a named busy spinner while `isLoading`; once tabs exist, `isLoading`
  *           changes nothing. At the `full` motion level the indicator moves on the shared `SPRING` physics (a light
  *           overshoot) in place of HeroUI Native's stiff default; below it the provider's reduced-motion setting stills
- *           it.
+ *           it. A closable tab (with `onClose`) draws a close mark after its label, and a screen reader reaches the same close as
+ *           the tab's "Close Orders" action; `overflow` is accepted and read as `scroll`.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0313 (decisions 1, 2, 5 and 7);
- *          owner decision 6 of STA-350 (thin wrappers).
+ *          owner decision 6 of STA-350 (thin wrappers); STA-1371 (wave C).
  */
 import { Tabs as HeroTabs } from "heroui-native";
 import { useState, type ReactElement } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { NAVIGATION_KEYS } from "#core/constants/navigation-keys.constant";
 import { SPRING } from "#core/constants/spring.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useMotion } from "#native/design-system-provider/use-motion";
 import { haptics } from "#native/haptics/haptics";
+import { Icon } from "#native/icon/icon";
 import { Spinner } from "#native/spinner/spinner";
 import { Text } from "#native/text/text";
 import type { TabsProps } from "#native/tabs/tabs.props";
+import { useUiText } from "#react/hooks/use-ui-text";
 
 /** The indicator's movement on the shared spring. */
 const SPRING_ANIMATION = {
@@ -53,9 +57,13 @@ export function Tabs({
   orientation: _orientation,
   variant,
   isDisabled,
+  // Native tabs always scroll.
+  overflow: _overflow,
+  onClose,
   ...rest
 }: TabsProps): ReactElement {
   const motion = useMotion();
+  const t = useUiText();
   const first = items.find((item) => !item.isDisabled)?.id ?? items[0]?.id ?? "";
   const [own, setOwn] = useState<string>(defaultSelectedKeys?.[0] ?? first);
   const value = selectedKeys === undefined ? own : (selectedKeys[0] ?? first);
@@ -82,15 +90,38 @@ export function Tabs({
       <HeroTabs.List {...(label === undefined ? {} : { accessibilityLabel: label })}>
         <HeroTabs.ScrollView>
           <HeroTabs.Indicator {...(motion === "full" ? { animation: SPRING_ANIMATION } : {})} />
-          {items.map((item) => (
-            <HeroTabs.Trigger
-              key={item.id}
-              value={item.id}
-              isDisabled={Boolean(isDisabled || item.isDisabled)}
-            >
-              <HeroTabs.Label>{item.label}</HeroTabs.Label>
-            </HeroTabs.Trigger>
-          ))}
+          {items.map((item) => {
+            const close =
+              item.isClosable && onClose && !isDisabled
+                ? t(NAVIGATION_KEYS.ui.tabs.close, { tab: item.label })
+                : undefined;
+            return (
+              <HeroTabs.Trigger
+                key={item.id}
+                value={item.id}
+                isDisabled={Boolean(isDisabled || item.isDisabled)}
+                {...(close
+                  ? {
+                      accessibilityActions: [{ name: "close", label: close }],
+                      onAccessibilityAction: (event: { nativeEvent: { actionName: string } }) =>
+                        event.nativeEvent.actionName === "close" ? onClose?.(item.id) : undefined,
+                    }
+                  : {})}
+              >
+                <HeroTabs.Label>{item.label}</HeroTabs.Label>
+                {close ? (
+                  <Pressable
+                    accessible={false}
+                    hitSlop={8}
+                    className="ms-1 rounded-[var(--radius-pill)] p-0.5"
+                    onPress={() => onClose?.(item.id)}
+                  >
+                    <Icon name="x" size="sm" />
+                  </Pressable>
+                ) : null}
+              </HeroTabs.Trigger>
+            );
+          })}
         </HeroTabs.ScrollView>
       </HeroTabs.List>
       {items.map((item) => (

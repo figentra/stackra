@@ -17,7 +17,10 @@ export const FREE_ADDRESS_FIELD: ComponentEntry = {
   exportName: "AddressField",
   parts: ["AddressField"],
   hero: {},
-  examples: [{ id: "basics", card: true }],
+  examples: [
+    { id: "basics", card: true },
+    { id: "container", platforms: ["react"] },
+  ],
   related: ["free/country-select", "free/form-section"],
   tokens: ["radius.field"],
   keywords: ["address", "shipping", "delivery", "postal"],

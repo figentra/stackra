@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves page discovery pairs each route whose path names a registry entry with its page by folder, orders
+ * Purpose: proves page discovery pairs each route whose path names a registry entry with its page by folder (a loaded
+ *          module or a lazy loader, called only when the page renders), orders
  *          the pages as the registry does (category, then tier, then slug), skips a route with no entry
  *          (the index), refuses a wrong path and a missing page, and that the real route folders each map to an
  *          entry.
@@ -15,6 +16,8 @@ import "#src/__tests__/stub-browser-apis";
 
 import { Route } from "@stackra/navigation";
 import { bySlug, type ComponentEntry } from "@stackra/showcase";
+import { render, screen } from "@testing-library/react";
+import { Suspense } from "react";
 
 import { discoverPages, PLAYGROUND_PAGES } from "#src/components/playground-pages";
 
@@ -90,6 +93,19 @@ describe("discoverPages", () => {
     expect(pages[1]?.route).toMatchObject({ path: "/aaa", ownsMain: true });
     expect(pages[0]?.route).not.toHaveProperty("ownsMain");
     expect(pages[0]?.element.type).toBeTypeOf("function");
+  });
+
+  it("takes a lazy page loader and renders its component once loaded", async () => {
+    const load = vi.fn(async () => ({ Page: () => <p>alpha page</p> }));
+    const [found] = discoverPages(
+      { "../../routes/alpha/alpha.route.ts": route("/alpha") },
+      { "../../routes/alpha/alpha.tsx": load },
+      REGISTRY,
+    );
+    expect(load).not.toHaveBeenCalled();
+    render(<Suspense fallback={null}>{found?.element}</Suspense>);
+    expect(await screen.findByText("alpha page")).toBeTruthy();
+    expect(load).toHaveBeenCalledTimes(1);
   });
 
   it("skips a route whose path names no entry, as the index route does", () => {

@@ -108,8 +108,8 @@ export function StudioPreview({ theme, scheme, view, fonts }: StudioPreviewProps
         </div>
       </div>
       {/* `mx-auto` on a `w-max` row centres it while it fits and, unlike `justify-center`, lets it scroll from its
-          start edge once it does not. */}
-      <div className="overflow-x-auto overscroll-x-contain border-t border-separator bg-background px-4 py-2">
+          start edge once it does not; `edge-fade-x` fades an edge it scrolls under. */}
+      <div className="edge-fade-x overflow-x-auto overscroll-x-contain border-t border-separator bg-background px-4 py-2">
         <SegmentedControl
           label={t(K.templates)}
           size="sm"

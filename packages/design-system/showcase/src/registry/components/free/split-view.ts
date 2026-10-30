@@ -18,7 +18,10 @@ export const FREE_SPLIT_VIEW: ComponentEntry = {
   exportName: "SplitView",
   parts: ["SplitView"],
   hero: {},
-  examples: [{ id: "basics", card: true }],
+  examples: [
+    { id: "basics", card: true },
+    { id: "resizable", platforms: ["react"] },
+  ],
   related: ["free/two-column-layout", "free/list"],
   tokens: ["color.border", "color.surface"],
   keywords: ["master detail", "list detail", "tablet", "two panes"],

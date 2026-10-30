@@ -1,0 +1,33 @@
+{
+  "basics": {
+    "draft": "Summer sale banner",
+    "edited": "Draft · edited 2 hours ago",
+    "trigger": "Delete draft",
+    "title": "Delete this draft?",
+    "description": "The banner and its schedule are removed for everyone.",
+    "confirm": "Delete",
+    "cancel": "Keep it",
+    "deleted": "Draft deleted.",
+    "restore": "Restore"
+  },
+  "async_confirm": {
+    "order": "Order 2048",
+    "amount": "Paid · SAR 420",
+    "trigger": "Refund",
+    "title": "Refund SAR 420?",
+    "description": "The money goes back to the customer's card in 3 to 5 days.",
+    "confirm": "Refund",
+    "refunded": "Refunded · SAR 420"
+  },
+  "row_action": {
+    "heading": "Featured products",
+    "delete": "Delete {name}",
+    "title": "Remove {name} from featured?",
+    "confirm": "Remove",
+    "empty": "No featured products.",
+    "abaya": "Linen abaya",
+    "thobe": "Cotton thobe",
+    "shemagh": "Red shemagh",
+    "price": "SAR {price}"
+  }
+}

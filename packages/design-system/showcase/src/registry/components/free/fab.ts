@@ -18,7 +18,11 @@ export const FREE_FAB: ComponentEntry = {
   exportName: "Fab",
   parts: ["Fab"],
   hero: {},
-  examples: [{ id: "basics", card: true }, { id: "speed-dial" }],
+  examples: [
+    { id: "basics", card: true },
+    { id: "speed-dial" },
+    { id: "toast", platforms: ["react"] },
+  ],
   related: ["free/button", "free/icon-button", "free/action-menu"],
   tokens: ["color.accent", "radius.full", "motion.duration"],
   haptics: [{ event: "press", style: "impact" }],
