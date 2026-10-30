@@ -10,10 +10,11 @@
 export type InputKind =
   | {
       /**
-       * Text, a number, a switch, any JSON value (`z.json()`, `unknown`) edited as JSON text, or `missing` when the
+       * Text, a number, a switch, a calendar day (`z.iso.date()`, `YYYY-MM-DD`), an instant (`Date`, the ISO 8601
+       * codec, `z.iso.datetime()`), any JSON value (`z.json()`, `unknown`) edited as JSON text, or `missing` when the
        * schema has no such path (drawn as text).
        */
-      readonly kind: "text" | "number" | "boolean" | "json" | "missing";
+      readonly kind: "text" | "number" | "boolean" | "date" | "datetime" | "json" | "missing";
     }
   | {
       /** A choice of the enum's codes. */

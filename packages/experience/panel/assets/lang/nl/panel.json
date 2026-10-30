@@ -46,7 +46,11 @@
     "remove_item": "Item {number} verwijderen",
     "invalid_json": "Dit is geen geldige JSON.",
     "record_key": "Sleutel {number}",
-    "record_value": "Waarde {number}"
+    "record_value": "Waarde {number}",
+    "date_part": "Datum",
+    "hour": "Uur",
+    "minute": "Minuut",
+    "time_zone": "Tijden in {zone}."
   },
   "plan_catalogue": {
     "history": "Versies",

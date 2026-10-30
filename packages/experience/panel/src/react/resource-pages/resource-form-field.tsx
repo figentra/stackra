@@ -4,7 +4,9 @@
  *          by its input type (switch, number, select of the enum's codes by their labels, text, an object's keys as a titled group, a
  *          list as rows to add and remove, a `currency` as a pick of ISO 4217 codes, a `…Minor` or money object's
  *          `minor` amount in major units of the currency beside it in the form, else of the record's, a JSON value as
- *          JSON text that submits the parsed value, a map of string keys as key and value rows), a picker over an options query, a grid of fields, and the steps of a set as
+ *          JSON text that submits the parsed value, a map of string keys as key and value rows, a calendar day as a date
+ *          picker held as `YYYY-MM-DD`, an instant as a day, hour and minute in the viewer's time zone held as a UTC ISO
+ *          string), a picker over an options query, a grid of fields, and the steps of a set as
  *          titled sections.
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
  *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
@@ -13,6 +15,7 @@
  * Runtime: browser
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
  */
+import { CalendarDate, parseDate } from "@internationalized/date";
 import type { QueryRef } from "@stackra/clients";
 import { useQuery } from "@stackra/clients/react";
 import { Enum } from "@stackra/contracts";
@@ -20,6 +23,7 @@ import { useTranslation } from "@stackra/i18n/react";
 import { useSchemaField } from "@stackra/ui/form";
 import {
   Button,
+  DatePicker,
   Field,
   FormSection,
   NumberField,
@@ -298,6 +302,110 @@ function RecordField({
   );
 }
 
+/** The calendar day of a `YYYY-MM-DD` value, or null for anything else. */
+function dayOf(value: unknown): CalendarDate | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  try {
+    return parseDate(value);
+  } catch {
+    return null;
+  }
+}
+
+/** The instant a Date or an ISO 8601 string holds, or undefined. */
+function instantOf(value: unknown): Date | undefined {
+  const instant =
+    value instanceof Date ? value : typeof value === "string" ? new Date(value) : undefined;
+  return instant === undefined || Number.isNaN(instant.getTime()) ? undefined : instant;
+}
+
+/** A calendar day, held as `YYYY-MM-DD`: no time and no time zone. */
+function DateInput({
+  name,
+  label,
+}: {
+  readonly name: string;
+  readonly label: string;
+}): ReactElement {
+  const field = useSchemaField<string | null | undefined>(name);
+  return (
+    <DatePicker
+      label={label}
+      value={dayOf(field.value)}
+      onChange={(day) => field.onChange?.(day === null ? undefined : day.toString())}
+      onBlur={field.onBlur}
+      isInvalid={field.isInvalid}
+      errorMessage={field.errorMessage}
+    />
+  );
+}
+
+/**
+ * An instant, entered as a day, an hour and a minute in the viewer's own time zone (named under the title) and held as
+ * the UTC ISO 8601 string (`2026-11-01T06:30:00.000Z`) every instant schema accepts.
+ */
+function DateTimeInput({
+  name,
+  label,
+}: {
+  readonly name: string;
+  readonly label: string;
+}): ReactElement {
+  const { t } = useTranslation();
+  const field = useSchemaField<Date | string | null | undefined>(name);
+  // The parts live here: a day without its time yet is not an instant.
+  const [parts, setParts] = useState(() => {
+    const instant = instantOf(field.value);
+    return {
+      day:
+        instant === undefined
+          ? null
+          : new CalendarDate(instant.getFullYear(), instant.getMonth() + 1, instant.getDate()),
+      hour: instant?.getHours() ?? null,
+      minute: instant?.getMinutes() ?? null,
+    };
+  });
+  const change = (next: typeof parts) => {
+    setParts(next);
+    const { day, hour, minute } = next;
+    // `new Date(y, m, d, h, min)` reads the parts in the viewer's time zone; an empty time is the start of the day.
+    field.onChange?.(
+      day === null
+        ? undefined
+        : new Date(day.year, day.month - 1, day.day, hour ?? 0, minute ?? 0).toISOString(),
+    );
+  };
+  const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return (
+    <FormSection title={label} description={t(PANEL_KEYS.panel.resources.time_zone, { zone })}>
+      <div className="flex items-end gap-2">
+        <DatePicker
+          label={t(PANEL_KEYS.panel.resources.date_part)}
+          value={parts.day}
+          onChange={(day) => change({ ...parts, day })}
+          onBlur={field.onBlur}
+          isInvalid={field.isInvalid}
+          errorMessage={field.errorMessage}
+        />
+        <NumberField
+          label={t(PANEL_KEYS.panel.resources.hour)}
+          minValue={0}
+          maxValue={23}
+          value={parts.hour}
+          onChange={(hour) => change({ ...parts, hour: Number.isNaN(hour) ? null : hour })}
+        />
+        <NumberField
+          label={t(PANEL_KEYS.panel.resources.minute)}
+          minValue={0}
+          maxValue={59}
+          value={parts.minute}
+          onChange={(minute) => change({ ...parts, minute: Number.isNaN(minute) ? null : minute })}
+        />
+      </div>
+    </FormSection>
+  );
+}
+
 /** The scale of `currency`, or undefined when it is not a currency code (the field then stays in minor units). */
 function scaleOf(currency: string | undefined): number | undefined {
   if (currency === undefined) return undefined;
@@ -387,6 +495,8 @@ export function ResourceFormField({
     );
   if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} />;
   if (kind.kind === "json") return <JsonField name={node.key} label={label} />;
+  if (kind.kind === "date") return <DateInput name={node.key} label={label} />;
+  if (kind.kind === "datetime") return <DateTimeInput name={node.key} label={label} />;
   if (kind.kind === "number" && isMinorKey(node.key)) {
     // A currency beside it in the input (a MoneyAmount, a list row's `priceMinor` and `currency`) is the form's own.
     const beside = currencyBeside(node.key);

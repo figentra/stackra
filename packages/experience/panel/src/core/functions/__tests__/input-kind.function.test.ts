@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `inputKind`: a boolean, a number, an enum (with its codes), text, an object (its keys), a
- *          list (of objects or values), a map of string keys and any JSON value, through the optional, nullable and
- *          default wrappers, a nested path and a list item's numeric segment; an unknown path is missing.
+ *          list (of objects or values), a map of string keys, a calendar day, an instant and any JSON value, through
+ *          the optional, nullable and default wrappers, a nested path and a list item's numeric segment; an unknown
+ *          path is missing.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307.
  */
 import { describe, expect, it } from "@stackra/testing";
+import { isoDateTime } from "@stackra/validation";
 import { z } from "zod";
 
 import { inputKind } from "#core/functions/input-kind.function";
@@ -24,6 +26,11 @@ const input = z.object({
   evidence: z.unknown().optional(),
   fieldMap: z.record(z.string(), z.string()),
   weights: z.record(z.string(), z.number()).optional(),
+  validOn: z.iso.date(),
+  startsAt: isoDateTime(),
+  endsAt: isoDateTime().optional(),
+  sentAt: z.iso.datetime(),
+  seenAt: z.date(),
 });
 
 describe("inputKind", () => {
@@ -52,6 +59,12 @@ describe("inputKind", () => {
   it("reads a map of string keys with text or number values", () => {
     expect(inputKind(input, "fieldMap")).toEqual({ kind: "record", value: "text" });
     expect(inputKind(input, "weights")).toEqual({ kind: "record", value: "number" });
+  });
+
+  it("tells a calendar day from an instant", () => {
+    expect(inputKind(input, "validOn")).toEqual({ kind: "date" });
+    for (const path of ["startsAt", "endsAt", "sentAt", "seenAt"])
+      expect(inputKind(input, path), path).toEqual({ kind: "datetime" });
   });
 
   it("answers missing for a path the schema does not have", () => {

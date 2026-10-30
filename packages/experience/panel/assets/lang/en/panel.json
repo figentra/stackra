@@ -46,7 +46,11 @@
     "remove_item": "Remove item {number}",
     "invalid_json": "This is not valid JSON.",
     "record_key": "Key {number}",
-    "record_value": "Value {number}"
+    "record_value": "Value {number}",
+    "date_part": "Date",
+    "hour": "Hour",
+    "minute": "Minute",
+    "time_zone": "Times are in {zone}."
   },
   "plan_catalogue": {
     "history": "Versions",

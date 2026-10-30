@@ -46,7 +46,11 @@
     "remove_item": "إزالة العنصر {number}",
     "invalid_json": "هذا ليس JSON صالحًا.",
     "record_key": "المفتاح {number}",
-    "record_value": "القيمة {number}"
+    "record_value": "القيمة {number}",
+    "date_part": "التاريخ",
+    "hour": "الساعة",
+    "minute": "الدقيقة",
+    "time_zone": "الأوقات بتوقيت {zone}."
   },
   "plan_catalogue": {
     "history": "الإصدارات",

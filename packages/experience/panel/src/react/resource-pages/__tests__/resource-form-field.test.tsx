@@ -6,13 +6,15 @@
  *          major units of the record's currency, or in minor units without one; a money object or a list row's
  *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes; a JSON value is
  *          edited as text that submits the parsed value and refuses text that does not parse; a map is edited as key and
- *          value rows.
+ *          value rows; a calendar day is held as `YYYY-MM-DD` and an instant, entered in the viewer's time zone, as
+ *          UTC ISO.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
  */
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
+import { isoDateTime } from "@stackra/validation";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
@@ -44,6 +46,7 @@ vi.mock("@stackra/ui/form", () => ({
 }));
 vi.mock("@stackra/ui/react", async () => {
   const { createElement } = await import("react");
+  const { parseDate } = await import("@internationalized/date");
   type FieldProps = { readonly name: string; readonly label: string };
   const field = (kind: string) => (props: FieldProps) =>
     createElement("label", null, `${kind}:${props.name}:${props.label}`);
@@ -61,15 +64,43 @@ vi.mock("@stackra/ui/react", async () => {
       ComboBox: field("combo"),
     },
     NumberField: (props: {
-      readonly name: string;
+      readonly name?: string;
+      readonly label?: string;
       readonly value: number | null;
-      readonly formatOptions: { readonly currency: string };
+      readonly formatOptions?: { readonly currency: string };
       readonly onChange: (value: number) => void;
     }) =>
+      props.formatOptions === undefined
+        ? createElement(
+            "label",
+            null,
+            props.label,
+            createElement("input", {
+              type: "number",
+              value: props.value ?? "",
+              onChange: (event: { readonly target: { readonly value: string } }) =>
+                props.onChange(event.target.value === "" ? Number.NaN : Number(event.target.value)),
+            }),
+          )
+        : createElement(
+            "button",
+            { type: "button", onClick: () => props.onChange(130.5) },
+            `money:${props.name}:${props.value}:${props.formatOptions.currency}`,
+          ),
+    DatePicker: (props: {
+      readonly label: string;
+      readonly value: { readonly toString: () => string } | null;
+      readonly onChange: (value: unknown) => void;
+    }) =>
       createElement(
-        "button",
-        { type: "button", onClick: () => props.onChange(130.5) },
-        `money:${props.name}:${props.value}:${props.formatOptions.currency}`,
+        "label",
+        null,
+        props.label,
+        createElement("input", {
+          value: props.value?.toString() ?? "",
+          onChange: (event: { readonly target: { readonly value: string } }) =>
+            props.onChange(event.target.value === "" ? null : parseDate(event.target.value)),
+        }),
       ),
     TextField: (props: {
       readonly label: string;
@@ -104,8 +135,18 @@ vi.mock("@stackra/ui/react", async () => {
         }),
         props.isInvalid === true ? props.errorMessage : null,
       ),
-    FormSection: (props: { readonly title: string; readonly children?: ReactNode }) =>
-      createElement("fieldset", null, createElement("legend", null, props.title), props.children),
+    FormSection: (props: {
+      readonly title: string;
+      readonly description?: string;
+      readonly children?: ReactNode;
+    }) =>
+      createElement(
+        "fieldset",
+        null,
+        createElement("legend", null, props.title),
+        props.description,
+        props.children,
+      ),
     Button: (props: { readonly onPress?: () => void; readonly children?: ReactNode }) =>
       createElement("button", { type: "button", onClick: props.onPress }, props.children),
   };
@@ -123,6 +164,8 @@ const BuyLabelInput = z.object({
   lines: z.array(z.object({ sku: z.string(), priceMinor: z.number().int(), currency: z.string() })),
   condition: z.json(),
   fieldMap: z.record(z.string(), z.string()),
+  validOn: z.iso.date(),
+  startsAt: isoDateTime(),
 });
 
 /** Draws the field of `key`, as the buy-label action's modal does over `record`. */
@@ -256,5 +299,33 @@ describe("ResourceFormField objects and lists", () => {
     expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { ean: "ITEM_NO", qty: "QTY" });
     fireEvent.click(screen.getByText('panel::resources.remove_item {"number":1}'));
     expect(spies.onChange).toHaveBeenLastCalledWith("fieldMap", { qty: "QTY" });
+  });
+
+  it("holds a calendar day as YYYY-MM-DD, with no time zone", () => {
+    spies.lists = { validOn: "2026-11-01" };
+    draw("validOn");
+    const picker = screen.getByLabelText("shipping::resources.shipment.fields.valid_on");
+    expect((picker as HTMLInputElement).value).toBe("2026-11-01");
+    fireEvent.change(picker, { target: { value: "2026-12-24" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("validOn", "2026-12-24");
+    fireEvent.change(picker, { target: { value: "" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("validOn", undefined);
+  });
+
+  it("enters an instant as a day, hour and minute in the viewer's time zone and holds it as UTC ISO", () => {
+    spies.lists = { startsAt: new Date(2026, 10, 1, 9, 30).toISOString() };
+    draw("startsAt");
+    expect(screen.getByText(/^panel::resources\.time_zone /)).toBeTruthy();
+    const day = screen.getByLabelText("panel::resources.date_part") as HTMLInputElement;
+    const hour = screen.getByLabelText("panel::resources.hour") as HTMLInputElement;
+    const minute = screen.getByLabelText("panel::resources.minute") as HTMLInputElement;
+    expect([day.value, hour.value, minute.value]).toEqual(["2026-11-01", "9", "30"]);
+    fireEvent.change(minute, { target: { value: "45" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith(
+      "startsAt",
+      new Date(2026, 10, 1, 9, 45).toISOString(),
+    );
+    fireEvent.change(day, { target: { value: "" } });
+    expect(spies.onChange).toHaveBeenLastCalledWith("startsAt", undefined);
   });
 });

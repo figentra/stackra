@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `inputKind(schema, path)`, which control a form field draws from the input schema at `path`: a switch, a
- *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, a map of key and value
- *          rows, any JSON value, or text; the optional,
- *          nullable and default wrappers are looked through, and a numeric segment of the path is a list's item
- *          (`parcels.0.weight`).
- * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, valueType, entries) only, never parses. A path the
- *           schema does not have is `missing`, which a form draws as text. Web and native forms share it.
+ *          number, a calendar day, an instant, a choice of the enum's codes, a group of an object's keys, a list of
+ *          rows, a map of key and value rows, any JSON value, or text; the optional, nullable and default wrappers are
+ *          looked through, and a numeric segment of the path is a list's item (`parcels.0.weight`).
+ * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, valueType, out, format, entries) only,
+ *           never parses. A path the schema does not have is `missing`, which a form draws as text. Web and native
+ *           forms share it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
  */
@@ -21,6 +21,8 @@ interface Def {
   readonly shape?: Readonly<Record<string, ZodType>>;
   readonly element?: ZodType;
   readonly valueType?: ZodType;
+  readonly out?: ZodType;
+  readonly format?: string;
   readonly entries?: Readonly<Record<string, string>>;
 }
 
@@ -51,6 +53,14 @@ export function inputKind(schema: ZodType | undefined, path: string): InputKind 
   if (current === undefined) return { kind: "missing" };
   const def = defOf(current);
   if (def.type === "boolean") return { kind: "boolean" };
+  // An instant: a Date, the house ISO 8601 codec (`isoDateTime()`, a pipe out to a Date) or an ISO datetime string.
+  if (
+    def.type === "date" ||
+    (def.type === "pipe" && defOf(def.out).type === "date") ||
+    (def.type === "string" && def.format === "datetime")
+  )
+    return { kind: "datetime" };
+  if (def.type === "string" && def.format === "date") return { kind: "date" };
   // `json()` is zod's lazy JSON union; `unknown` and `any` take any JSON value too.
   if (def.type === "lazy" || def.type === "unknown" || def.type === "any") return { kind: "json" };
   if (def.type === "number" || def.type === "int" || def.type === "bigint")
