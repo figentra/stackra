@@ -19,10 +19,11 @@ import * as pulumi from "@pulumi/pulumi";
 
 import { resourceName } from "#core/functions/resource-name.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
+import { RESOURCE_SECRETS_SETTINGS } from "#node/constants/resource-secrets-settings.constant";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
 
 /** The admin user every database is created with; services get their own roles (ADR 0238 decision 3). */
-const ADMIN_USER = "stackra_admin";
+const ADMIN_USER = RESOURCE_SECRETS_SETTINGS.adminUser;
 
 /** The Postgres port. */
 const PORT = 5432;

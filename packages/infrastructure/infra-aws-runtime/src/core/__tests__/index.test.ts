@@ -18,7 +18,9 @@ describe("@stackra/infra-aws-runtime", () => {
       "AwsRuntimeHealthIndicatorDriver",
       "InfraAwsRuntimeConfig",
       "InfraAwsRuntimeConfig$",
+      "consumerVariables",
       "planForMembers",
+      "resourceVariables",
       "runtimeNetwork",
       "runtimePlan",
     ]);
