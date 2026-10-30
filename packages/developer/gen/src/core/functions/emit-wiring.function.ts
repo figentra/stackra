@@ -366,9 +366,11 @@ export function emitWiring(ir: MemberIR): string {
       continue;
     const type = ref({ name: entry.class, from: packageSpecifier(name, entry["file"]) });
     const key = dependencyKeys.get(manifest.member) ?? manifest.member;
-    const edges = entry.dependsOn.map((edge) => JSON.stringify(dependencyKeys.get(edge) ?? edge));
+    const dependencyEdges = entry.dependsOn.map((edge) =>
+      JSON.stringify(dependencyKeys.get(edge) ?? edge),
+    );
     moduleLines.push(
-      `    ${key === manifest.member ? key : JSON.stringify(key)}: { exports: [], dependsOn: ${list(edges)}, ` +
+      `    ${key === manifest.member ? key : JSON.stringify(key)}: { exports: [], dependsOn: ${list(dependencyEdges)}, ` +
         `from: ${JSON.stringify(name)}, type: ${type} },`,
     );
   }
