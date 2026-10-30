@@ -293,6 +293,26 @@
         "$ref": "#/$defs/environment"
       }
     },
+    "resources": {
+      "type": "object",
+      "description": "Managed resources the product's runtime needs, by name, provisioned per environment in the product's account (ADR 0493).",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/resource"
+      }
+    },
+    "workloads": {
+      "type": "object",
+      "description": "Container workloads (ECS Fargate) for servers no managed option fits, by name (ADR 0493 d5).",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/workload"
+      }
+    },
     "targets": {
       "type": "object",
       "description": "Provider shape per destination, selected by `environments.<env>.destinations.*`.",
@@ -647,6 +667,18 @@
           "type": "string",
           "description": "Preview only: which data a preview gets.",
           "examples": ["synthetic"]
+        },
+        "limits": {
+          "type": "object",
+          "description": "The plan's monthly estimate cap in US dollars; with none the plan only warns (ADR 0493 d3).",
+          "additionalProperties": false,
+          "required": ["monthly"],
+          "properties": {
+            "monthly": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
         },
         "shared": {
           "type": "object",
@@ -1156,6 +1188,127 @@
         },
         "whiteLabel": {
           "$ref": "#/$defs/whiteLabel"
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "description": "One managed resource. kafka, opensearch and ses are reserved kinds (ADR 0493 d5).",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["postgres", "queue", "topic", "cache", "bucket"]
+        },
+        "engine": {
+          "enum": ["rds", "aurora"],
+          "description": "Postgres only; RDS by default (ADR 0238)."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?$",
+          "description": "Postgres only: the major version.",
+          "examples": ["17"]
+        },
+        "size": {
+          "type": "object",
+          "description": "A size per environment; an environment not named runs small (ADR 0493 d3).",
+          "propertyNames": {
+            "$ref": "#/$defs/envName"
+          },
+          "additionalProperties": {
+            "enum": ["small", "medium", "large"]
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "description": "One container workload; reason is required (ADR 0493 d5).",
+      "additionalProperties": false,
+      "required": ["image", "port", "health", "reason"],
+      "properties": {
+        "image": {
+          "type": "string",
+          "pattern": "^[^\\s@]+@sha256:[a-f0-9]{64}$",
+          "description": "The image pinned by digest."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "health": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "expose": {
+          "enum": ["internal", "public"],
+          "description": "public puts an ALB behind Cloudflare in front; internal is service discovery only."
+        },
+        "uses": {
+          "type": "array",
+          "description": "The resources it uses, by name.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          }
+        },
+        "env": {
+          "type": "object",
+          "description": "Public values only; a secret goes in secrets.",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/secretName"
+          },
+          "uniqueItems": true
+        },
+        "size": {
+          "type": "object",
+          "description": "A size per environment; an environment not named runs small (ADR 0493 d3).",
+          "propertyNames": {
+            "$ref": "#/$defs/envName"
+          },
+          "additionalProperties": {
+            "enum": ["small", "medium", "large"]
+          }
+        },
+        "scale": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/envName"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["min", "max"],
+            "properties": {
+              "min": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
