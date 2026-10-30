@@ -67,7 +67,7 @@ and never prints or passes a secret value. Defaults: AWS profile `academorix`, r
   `build`; else light), rsyncs `<dir>` into the box's job directory and runs the command there under the slot's lock.
   A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
   waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
-  no box is healthy; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
+  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
   never runs on the Mac.
 - `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
   are by launch time.

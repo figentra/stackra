@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `runTestbed` with fake processes: the nested-call refusal, a light job on a free box,
- *          another box on exit 75, a light job retried once after a lost box, `--no-wait`, the fallback dispatch, and
+ *          another box on exit 75, a light job retried once after a lost box, `--on-demand`, `--no-wait`, the fallback dispatch, and
  *          that the fallback input is the preset and the ref only.
  * Boundary: test only; nothing starts a process or reaches the network, the claim folder is a throwaway directory.
  * Runtime: node (vitest)
@@ -91,6 +91,7 @@ const request = (overrides: Partial<TestbedRequest>): TestbedRequest => ({
   preset: undefined,
   ref: undefined,
   noWait: false,
+  onDemand: false,
   settings: { profile: "p", region: "r", key: "/k", user: "ubuntu" },
   ...overrides,
 });
@@ -114,6 +115,12 @@ describe("runTestbed run", () => {
     expect(streams[0]).toContain("--exclude node_modules");
     expect(streams[1]).toContain("testbed-agent job run");
     expect(streams[1]).toContain(" light 'me work' 'app' -- 'pnpm lint'");
+  });
+
+  it("runs a light command in the heavy (on-demand) slot with --on-demand", async () => {
+    const { deps, streams } = fake({ boxes: instances(["i-1", "heavy", "2026-10-30T00:00:00Z"]) });
+    expect(await runTestbed(request({ onDemand: true }), deps, captureIo().io)).toBe(0);
+    expect(streams[1]).toContain(" heavy 'me work' 'app' -- 'pnpm lint'");
   });
 
   it("picks another box when the first answers 75", async () => {

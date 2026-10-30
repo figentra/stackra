@@ -17,15 +17,15 @@ tests, e2e and integration tests all run on the testbed: identical EC2 boxes, bu
 
 ## The shape
 
-| Part      | What it is                                                                                                              |
-| --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Image     | One Dockerfile for the job toolchain (mise, Node, pnpm, Encore, Playwright, Infisical) and one EC2 Image Builder AMI    |
-| Groups    | `heavy`: on-demand `c7i.2xlarge`, 2 to 6 boxes. `light`: spot `c7i`/`c6i`/`m7i.2xlarge`, 1 to 4 boxes                   |
-| Disks     | 40 GB root (OS and images); 200 GB XFS data volume at `/data` (jobs, seeds, pnpm store, turbo cache, Docker)            |
-| Slots     | One heavy and one light job per box. Heavy: `encore test`, `playwright`, `e2e`, `act `, `build`. Everything else: light |
-| Jobs      | A fresh container per job, workspace `/data/jobs/<id>`, read-only pnpm store, optional Postgres; all deleted after      |
-| Secrets   | Fetched per job from Infisical by the instance role (the shared gate identity). There is no token file                  |
-| Box agent | `testbed-agent` on every box: health, slots, the disk guard and the idle check                                          |
+| Part      | What it is                                                                                                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Image     | One Dockerfile for the job toolchain (mise, Node, pnpm, Encore, Playwright, Infisical) and one EC2 Image Builder AMI                                                                                                      |
+| Groups    | `heavy`: on-demand `c7i.2xlarge`, 2 to 6 boxes. `light`: spot `c7i`/`c6i`/`m7i.2xlarge`, 1 to 4 boxes                                                                                                                     |
+| Disks     | 40 GB root (OS and images); 200 GB XFS data volume at `/data` (jobs, seeds, pnpm store, turbo cache, Docker)                                                                                                              |
+| Slots     | One heavy and one light job per box. Heavy: `encore test`, `playwright`, `e2e`, `act `, `build`, or `--on-demand`. Everything else: light. A light box with a spot reclaim or rebalance notice refuses new jobs (exit 75) |
+| Jobs      | A fresh container per job, workspace `/data/jobs/<id>`, read-only pnpm store, optional Postgres; all deleted after                                                                                                        |
+| Secrets   | Fetched per job from Infisical by the instance role (the shared gate identity). There is no token file                                                                                                                    |
+| Box agent | `testbed-agent` on every box: health, slots, the disk guard and the idle check                                                                                                                                            |
 
 ## Running work
 

@@ -34,6 +34,9 @@ export type TestbedRequest = {
   /** `--no-wait`: with no healthy box, exit 75 instead of waiting. */
   readonly noWait: boolean;
 
+  /** `--on-demand`: run in the heavy (on-demand) slot whatever the command, so spot never interrupts it. */
+  readonly onDemand: boolean;
+
   /** Where and as whom the boxes are reached. */
   readonly settings: TestbedSettings;
 };

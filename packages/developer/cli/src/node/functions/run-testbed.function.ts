@@ -298,7 +298,7 @@ export async function runTestbed(
       say("the command must not call ci-box or stackra testbed; run it from the Mac instead");
       return 2;
     }
-    const slot = classifyTestbedCommand(command);
+    const slot = request.onDemand ? "heavy" : classifyTestbedCommand(command);
     const directory = resolve(request.cwd, dir);
     const project = testbedProject(directory);
     const skip = new Set<string>();
