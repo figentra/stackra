@@ -8,7 +8,8 @@
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
  *           Integration's `requestBody` asks. A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
- *           resolve to an https origin. A `GET`, `HEAD`, `PUT` or `DELETE`
+ *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
+ *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
  *           deduplicates on. A 4xx is `ProviderRefusedError`; spent retries, or a bucket full past the longest wait,
  *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
@@ -118,8 +119,14 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     if (declared.baseUrl === undefined)
       throw new TypeError(`${name} declares no baseUrl, so it has no API to call`);
     const base = resolve(declared.baseUrl).replace(/\/+$/, "");
-    if (base !== declared.baseUrl.replace(/\/+$/, "") && new URL(base).protocol !== "https:")
-      throw new TypeError(`${name}'s baseUrl must resolve to an https origin`);
+    if (base !== declared.baseUrl.replace(/\/+$/, "")) {
+      // http is allowed only on the private tools namespace until TLS there (STA-1653)
+      const { protocol, hostname } = URL.canParse(base) ? new URL(base) : new URL("x:");
+      if (protocol !== "https:" && !(protocol === "http:" && hostname.endsWith(".internal")))
+        throw new TypeError(
+          `${name}'s baseUrl must resolve to an https origin (http only on an .internal host)`,
+        );
+    }
     const url = new URL(`${base}/${path.replace(/^\/+/, "")}`);
     for (const [key, value] of Object.entries(query ?? {}))
       url.searchParams.set(key, String(value));

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin, authenticates by
+ * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin (a resolved base URL is https, or http only on an `.internal` host), authenticates by
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
  *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
  *          call's own, sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
@@ -370,6 +370,29 @@ describe("managedClient", () => {
     const fetchMock = stubFetch(() => json({}));
     await clientOf(new RegionalIntegration()).get("/ping");
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe("https://gcc.inbox.example/api/ping");
+  });
+
+  it("takes a whole-URL placeholder, with http only on an .internal host", async () => {
+    class ToolsIntegration extends Integration({
+      ...BASE,
+      provider: "tools",
+      baseUrl: "{endpoint}",
+      auth: { type: AuthType.None },
+    }) {
+      endpoint = "http://x.internal:8080";
+    }
+    const fetchMock = stubFetch(() => json({}));
+    await clientOf(new ToolsIntegration()).get("/ping");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("http://x.internal:8080/ping");
+    for (const endpoint of ["http://example.com", "http://x.internal.evil.com", "not a url"]) {
+      const bad = new ToolsIntegration();
+      bad.endpoint = endpoint;
+      await expect(clientOf(bad).get("/ping")).rejects.toThrow(/must resolve to an https origin/);
+    }
+    const secure = new ToolsIntegration();
+    secure.endpoint = "https://tools.example";
+    await clientOf(secure).get("/ping");
+    expect(String(fetchMock.mock.calls[1]?.[0])).toBe("https://tools.example/ping");
   });
 
   it("explains a call to an integration without a base URL", async () => {

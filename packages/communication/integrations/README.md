@@ -503,7 +503,9 @@ the OS integrations service (owner decision R3-8). The Chatwoot Integration and 
 ## A per-region base URL
 
 `baseUrl: "https://{host}"` (Chatwoot's `{chatwootHost}`) fills the host from the credential set (connection first, then the Integration's
-`@Secret`), so each region's deployment talks to its own instance. It must start with `https://`.
+`@Secret`), so each region's deployment talks to its own instance. It must start with `https://`. A `baseUrl` that is exactly one placeholder, `"{toolsUrl}"`, takes the whole URL
+from the credential set; the resolved URL is https, or http only when its host ends with `.internal` (the private tools
+namespace, until TLS there, STA-1653).
 
 ## Form bodies
 

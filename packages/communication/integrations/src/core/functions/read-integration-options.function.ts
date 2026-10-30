@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: `readIntegrationOptions`, the check `Integration({ ... })` runs when a class is declared: a provider code,
  *          a known category, known levels, a complete `auth` for its type, an http(s) base URL (or an https one with
- *          placeholders), lowercase extra headers and OAuth token headers, known roles and connector kinds, well-formed
+ *          placeholders, or one `{field}` that is the whole URL), lowercase extra headers and OAuth token headers, known roles and connector kinds, well-formed
  *          rate limits, retries, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
  * Boundary: internal. A mistake here is the author's, so it throws a `TypeError` or `RangeError` on import, never a
  *           refusal. Placeholders are not resolved here: gen fails one that names no field
- *           (`integration_placeholder_unknown`), and the managed client refuses it at call time.
+ *           (`integration_placeholder_unknown`), and the managed client refuses it at call time (https, or http only on an `.internal` host).
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2); STA-793 (headers, token placement);
  *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s.
@@ -47,12 +47,13 @@ function isHttpUrl(value: unknown): boolean {
   return ["http:", "https:"].includes(new URL(value).protocol);
 }
 
-/** Whether `value` is an https URL once each `{field}` placeholder is filled (a per-region host). */
+/** Whether `value` is exactly one `{field}` (the whole URL comes from the credential set), or an https URL once each placeholder is filled (a per-region host). */
 const isPlaceholderUrl = (value: unknown): boolean =>
   isText(value) &&
-  /\{[A-Za-z_$][\w$]*\}/.test(value) &&
-  value.startsWith("https://") &&
-  isHttpUrl(value.replaceAll(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"));
+  (/^\{[A-Za-z_$][\w$]*\}$/.test(value) ||
+    (/\{[A-Za-z_$][\w$]*\}/.test(value) &&
+      value.startsWith("https://") &&
+      isHttpUrl(value.replaceAll(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"))));
 
 /** Whether `value` is a lowercase HTTP header name. */
 const isHeaderName = (value: unknown): boolean =>
@@ -203,7 +204,7 @@ export function readIntegrationOptions(
       isHttpUrl(options.baseUrl) ||
       isPlaceholderUrl(options.baseUrl),
     "baseUrl",
-    "needs an http or https URL, or an https URL with {field} placeholders",
+    "needs an http or https URL, an https URL with {field} placeholders, or one {field} for the whole URL",
   );
   ensure(
     options.roles === undefined ||
