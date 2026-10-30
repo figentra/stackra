@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `actionFormKeys`: the record id alone, or only optional extras, opens no form; a required
- *          extra opens a form over every key but the id; a schema without a shape opens none.
+ * Purpose: unit tests of `actionFormKeys`: the record id alone opens no form; any other key, optional ones included,
+ *          opens a form over every key but the id; a schema without a shape opens none.
  * Boundary: unit tier; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 3).
@@ -16,13 +16,13 @@ describe("actionFormKeys", () => {
     expect(actionFormKeys(z.object({ reviewId: z.string() }), "reviewId")).toEqual([]);
   });
 
-  it("opens no form when the other fields are optional or defaulted", () => {
+  it("asks for optional and defaulted fields too, so the action still confirms", () => {
     const input = z.object({
-      reviewId: z.string(),
+      runId: z.string(),
+      dryRun: z.boolean().default(false),
       note: z.string().optional(),
-      notify: z.boolean().default(true),
     });
-    expect(actionFormKeys(input, "reviewId")).toEqual([]);
+    expect(actionFormKeys(input, "runId")).toEqual(["dryRun", "note"]);
   });
 
   it("asks for every key but the id once one of them is required", () => {

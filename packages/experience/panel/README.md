@@ -225,8 +225,9 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
 - **Actions**: placed actions follow ADR 0307 rule 3 (`placementsAt`): a record action on the row, View and Edit, and in
   the bulk bar with `.bulk()` (one run per selected record); an action without a record in the list header. View and
   edit links, the create link and delete (`operations.delete`) are derived. Every run goes through `useActionRunner`.
-  A record action whose input has a required field besides the record id opens a modal form over that input (one for
-  a whole bulk selection), with the id pre-filled, the declared confirm copy and the server's field errors.
+  An action whose input has any field besides the record id (optional ones included) opens a modal form over that
+  input (one for a whole bulk selection, once for a List header action), with the id pre-filled, the declared confirm
+  copy and the server's field errors.
 - **Values**: a flag shows as a localised yes or no; an enum code shows its label `<module>::enums.<model>_<field>.<code>`
   (else `<module>::enums.<field>.<code>`, else the code). An enum whose label the convention misses, such as one another
   module declares, is named on its column or entry: `c.from("mode").labels(I18n.commerce_packs.enums.provider_mode)`.
