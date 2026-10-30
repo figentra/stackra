@@ -194,6 +194,31 @@ function importable(ir: MemberIR, from: string): boolean {
 }
 
 /**
+ * The services the declared packages' manifests list (`services`), by `<package>#<class>`: their constructor tokens,
+ * so a host binds one it injects (STA-1686). A service with a token the member cannot import is left out, as a driver
+ * candidate's tokens are; a manifest that predates `services` contributes nothing.
+ */
+function dependencyServices(ir: MemberIR): Map<string, readonly TokenRef[]> {
+  const services = new Map<string, readonly TokenRef[]>();
+  for (const { package: name, manifest } of ir.dependencies) {
+    if (manifest.kind === "app" || !Array.isArray(manifest["services"])) continue;
+    for (const entry of manifest["services"] as unknown[]) {
+      const { class: type, deps } = (entry ?? {}) as Record<string, unknown>;
+      if (typeof type !== "string") continue;
+      const tokens = (Array.isArray(deps) ? deps : [])
+        .map(tokenOf)
+        .filter((dep): dep is TokenRef => dep !== undefined);
+      const reachable = tokens.every(
+        (dep) =>
+          importable(ir, dep.class.from) && (dep.of === undefined || importable(ir, dep.of.from)),
+      );
+      if (reachable) services.set(`${name}#${type}`, tokens);
+    }
+  }
+  return services;
+}
+
+/**
  * The driver tables the declared packages' manifests record, by port key: each candidate's class, entry and tokens
  * (`classes`) and the config that selects one. The manifest is the one source (gen's AGENTS.md); a package whose
  * manifest predates `classes` contributes nothing. A candidate with a token from a library the member does not
@@ -553,6 +578,7 @@ export function emitWiring(ir: MemberIR): string {
     if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
   const added = new Set<string>();
+  const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
     for (const next of link(dep)) used.push({ module, dep: next });
@@ -564,7 +590,8 @@ export function emitWiring(ir: MemberIR): string {
               candidate.factory.name === factory.name && candidate.factory.from === factory.from,
           )?.deps
         : dep.named === undefined
-          ? platformDeps(dep.class)
+          ? (platformDeps(dep.class) ??
+            packageServices.get(`${packageOf(dep.class.from)}#${dep.class.name}`))
           : undefined;
     const key = `${factory?.name ?? ""}:${dep.class.from}#${dep.class.name}`;
     if (deps === undefined || added.has(key)) continue;

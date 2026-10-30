@@ -861,6 +861,17 @@ export function buildManifest(ir: MemberIR): {
       };
     drivers.set(key, entry);
   }
+  // A published package's services with their constructor tokens, so a host's wiring binds one it injects
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686).
+  const services: Entry[] = published
+    ? ir.classes
+        .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
+        .map((declared) => ({
+          class: declared.name,
+          from: packageSpecifier(ir.package, declared.file),
+          ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+        }))
+    : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const schema = declared.options["schema"];
     const shape = isClassValue(schema) ? shapeNamed(schema.$class) : undefined;
@@ -1067,6 +1078,7 @@ export function buildManifest(ir: MemberIR): {
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
     ...(configs.length > 0 ? { config: configs } : {}),
+    ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),

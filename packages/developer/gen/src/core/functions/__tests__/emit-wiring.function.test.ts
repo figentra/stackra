@@ -21,6 +21,7 @@
 import { Lifetime, named } from "@stackra/container";
 import { describe, expect, it } from "@stackra/testing";
 
+import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
@@ -156,6 +157,43 @@ describe("emitWiring", () => {
       '    loyalty_kit: { exports: [], dependsOn: [], from: "@acme/loyalty-kit", type: LoyaltyKitModule },',
     );
     expect(content).toContain('import { LoyaltyKitModule } from "@acme/loyalty-kit/node";');
+  });
+
+  it("binds a package service the member injects, from the package's manifest (STA-1686)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    expect(kit["services"]).toEqual([
+      {
+        class: "LoyaltyService",
+        from: "@acme/loyalty-kit",
+        deps: [{ class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit/contracts" } }],
+      },
+    ]);
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          name: "RewardsService",
+          kind: "service",
+          module: "orders",
+          file: "src/modules/orders/services/rewards.service.ts",
+          importPath: "#modules/orders/services/rewards.service",
+          options: {},
+          deps: [{ class: { name: "LoyaltyService", from: "@acme/loyalty-kit" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "orders", kind: "service", provide: LoyaltyService, deps: \[LoyaltyLedger\] \},/,
+    );
+    expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
   });
 
   it("adds the bindings no class declares", () => {
