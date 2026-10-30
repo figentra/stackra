@@ -8,7 +8,7 @@
  * Boundary: internal. Strict at its top and in `shared` and `defaults.service`, as the canonical schema is; the
  *           provider facts inside stay open, and the commands that read them check their own part.
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289,
+ * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289,
  *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region); ADR 0400 (`cloud`, `dedicated`); STA-863 (the
  *                     repository index table, redundancy challenge item 5).
  */
@@ -52,6 +52,8 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     .regex(/^[0-9]+[hd]$/, "Expected a duration such as 12h or 7d")
     .optional(),
   data: z.string().optional(),
+  // ADR 0493 decision 3: the plan's monthly estimate cap in US dollars; no cap only warns.
+  limits: z.strictObject({ monthly: z.number().positive() }).optional(),
   shared: z
     .strictObject({
       network: OPEN_OBJECT_SCHEMA.optional(),

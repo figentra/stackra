@@ -7,11 +7,12 @@
  *           canonical `tools/schemas/runway-service.schema.json` accepts. Strict at the top: `member`, `deployable`,
  *           `isolate`, `group`, `cpu`, `memory` and `instances` fail (root facts).
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decisions 1 and 5, and its 2026-10-23 note: `health`), ADR 0173, ADR 0190.
+ * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decisions 1 and 5, and its 2026-10-23 note: `health`), ADR 0173, ADR 0190.
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
+import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { REQUIREMENT_SCHEMA } from "#core/constants/requirement-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { SERVICE_ENVIRONMENT_SCHEMA } from "#core/constants/service-environment-schema.constant";
@@ -22,6 +23,8 @@ export const SERVICE_RUNWAY_SCHEMA = z.strictObject({
   $schema: z.string().optional(),
   version: z.literal(3),
   requires: z.record(z.string(), REQUIREMENT_SCHEMA).optional(),
+  // ADR 0493 decision 1: the root runway's resources this member uses, by name.
+  uses: z.array(KEY_SCHEMA).optional(),
   secrets: SECRET_NAMES_SCHEMA.optional(),
   health: z
     .strictObject({

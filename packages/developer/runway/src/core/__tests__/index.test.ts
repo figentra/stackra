@@ -42,6 +42,8 @@ describe("@stackra/runway", () => {
       "PreviewDatabaseBrancher",
       "PreviewDatabaseSource",
       "RequirementEngine",
+      "ResourceKind",
+      "ResourceSize",
       "RunwayCloud",
       "RunwayConfig",
       "RunwayConfig$",

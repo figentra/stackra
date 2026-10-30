@@ -20,6 +20,11 @@
     "requires": {
       "$ref": "#/$defs/requires"
     },
+    "uses": {
+      "type": "array",
+      "description": "The root runway's resources this member uses, by name (ADR 0493).",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" }
+    },
     "secrets": {
       "type": "array",
       "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in Infisical (ADR 0173).",
