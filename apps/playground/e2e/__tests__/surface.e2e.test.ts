@@ -10,6 +10,7 @@
 // @covers sta-350:FR-032 sta-350:P-019 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -18,7 +19,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/surface?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Surface" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Surface", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour property as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -67,7 +70,7 @@ for (const scheme of SCHEMES)
 for (const scheme of SCHEMES)
   test(`every level paints the theme's surface colour in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
-    const surfaces = page.getByRole("region", { name: "Levels" }).locator('[data-slot="surface"]');
+    const surfaces = page.getByRole("region", { name: "Usage" }).locator('[data-slot="surface"]');
     await expect(surfaces).toHaveCount(4);
     const expected = ["surface", "surface-secondary", "surface-tertiary"];
     for (const [index, variable] of expected.entries()) {

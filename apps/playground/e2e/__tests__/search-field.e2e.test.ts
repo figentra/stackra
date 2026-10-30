@@ -13,6 +13,8 @@
 // @covers sta-350:FR-074 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/search-field?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Search field" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Search field", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -45,7 +49,7 @@ test("each field is named, and the description and the error are tied to its inp
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   await expect(basics.getByRole("searchbox", { name: "Search products" })).toBeVisible();
   await expect(basics.getByRole("searchbox", { name: "Search the help centre" })).toBeVisible();
   const described = basics.getByRole("searchbox", { name: "Search orders" });
@@ -61,7 +65,7 @@ test("typing and Escape work from the keyboard alone, and the clear button empti
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   const input = basics.getByRole("searchbox", { name: "Search products" });
   await input.focus();
   await expect(input).toBeFocused();
@@ -116,10 +120,8 @@ test("a disabled field cannot be focused, and a read-only one cannot be typed in
 for (const locale of LOCALES)
   test(`the search icon sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const group = page
-      .getByRole("region", { name: "Basics" })
-      .locator('[data-slot="search-field-group"]')
-      .first();
+    // By id and place: the words speak the page's locale.
+    const group = example(page, "usage").locator('[data-slot="search-field-group"]').first();
     const groupBox = await group.boundingBox();
     const iconBox = await group.locator('[data-slot="search-field-search-icon"]').boundingBox();
     if (!groupBox || !iconBox) throw new Error("a box is missing");

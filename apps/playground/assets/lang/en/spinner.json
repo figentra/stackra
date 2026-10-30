@@ -1,0 +1,9 @@
+{
+  "size_label": "Loading, {size}",
+  "tone_label": "Loading, {tone}",
+  "results": "Loading results…",
+  "slow": "Slower",
+  "load": "Load orders",
+  "loading": "Loading orders",
+  "loaded": "Orders loaded"
+}

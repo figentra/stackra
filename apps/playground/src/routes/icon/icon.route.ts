@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the icon route of @figentra/playground: its path, title and category. The page it renders is `icon.tsx`
+ * Purpose: the icon route of @figentra/playground: its path. The page it renders is `icon.tsx`
  *          beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Icon page, at `/icon`. */
-export class IconRoute extends Route({ path: "/icon" }) {
-  /** The page title. */
-  static readonly title = "Icon";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Foundations";
-}
+export class IconRoute extends Route({ path: "/icon" }) {}

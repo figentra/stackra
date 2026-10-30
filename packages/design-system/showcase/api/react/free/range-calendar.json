@@ -1,0 +1,89 @@
+{
+  "generatedFrom": {
+    "hash": "154333de2f52256a",
+    "heroDoc": "vendor/heroui/react/range-calendar.json",
+    "propsFiles": ["ui/src/react/range-calendar/range-calendar.props.ts"]
+  },
+  "importLine": "import { RangeCalendar } from \"@stackra/ui/react\";",
+  "key": "free/range-calendar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each complete range: both ends set, the start never after the end.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: DateRangeValue) => void"
+        }
+      ],
+      "name": "RangeCalendar",
+      "props": [
+        {
+          "description": "The range, for a controlled calendar.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "DateRangeValue | null"
+        },
+        {
+          "description": "The starting range, for an uncontrolled calendar.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "DateRangeValue | null"
+        },
+        {
+          "description": "The earliest day that can be picked.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The latest day that can be picked.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "Whether a day is refused, for example a closed day.",
+          "name": "isDateUnavailable",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => boolean"
+        },
+        {
+          "description": "The calendar the grid is shown in; defaults to `gregory`. The value stays Gregorian.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The spoken name of the calendar.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the calendar.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,137 @@
+{
+  "generatedFrom": {
+    "hash": "46d30fe016ac9ed6",
+    "propsFiles": ["ui/src/react/error-page/error-page.props.ts"]
+  },
+  "importLine": "import { ErrorPage } from \"@stackra/ui/react\";",
+  "key": "free/error-page",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Tries again. Given, a retry button is drawn first among the actions; while the returned promise is pending the\nbutton shows a spinner and refuses presses, so a slow reload is not sent twice.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void | Promise<unknown>"
+        }
+      ],
+      "name": "ErrorPage",
+      "props": [
+        {
+          "description": "Which failure: `forbidden`, `not-found`, `server-error` or `offline`.",
+          "name": "preset",
+          "required": true,
+          "source": "stackra",
+          "type": "\"forbidden\" | \"not-found\" | \"server-error\" | \"offline\""
+        },
+        {
+          "description": "The heading, in place of the preset's own.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The thrown value; its message shows as details outside production, as `ErrorState` decides.",
+          "name": "error",
+          "required": false,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "description": "Whether the error's message is shown; see `ErrorStateContractProps.isMessageShown`.",
+          "name": "isMessageShown",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The retry button's label; defaults to the catalogue's \"Try again\".",
+          "name": "retryLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "One or two sentences: why it is so, and what to do next.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon in place of the reason's or kind's own, or `false` for none.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6, so the page keeps one outline wherever this sits.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

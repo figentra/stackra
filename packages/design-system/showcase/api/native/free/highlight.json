@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "c7685f87012f1a47",
+    "propsFiles": ["ui/src/native/highlight/highlight.props.ts"]
+  },
+  "importLine": "import { Highlight } from \"@stackra/ui/native\";",
+  "key": "free/highlight",
+  "parts": [
+    {
+      "name": "Highlight",
+      "props": [
+        {
+          "description": "The text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The search, or several terms; empty highlights nothing.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "string | readonly string[]"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

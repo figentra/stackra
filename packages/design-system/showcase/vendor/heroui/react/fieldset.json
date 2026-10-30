@@ -1,0 +1,107 @@
+{
+  "slug": "fieldset",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/fieldset.mdx",
+  "parts": [
+    {
+      "name": "Fieldset",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind CSS classes applied to the root element."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Fieldset content (legend, groups, descriptions, actions)."
+        },
+        {
+          "name": "nativeProps",
+          "type": "React.HTMLAttributes<HTMLFieldSetElement>",
+          "default": "Supports native fieldset attributes and events.",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "Fieldset.Legend",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes for the legend element."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Legend content, usually plain text."
+        },
+        {
+          "name": "nativeProps",
+          "type": "React.HTMLAttributes<HTMLLegendElement>",
+          "description": "Native legend attributes."
+        }
+      ]
+    },
+    {
+      "name": "Fieldset.Group",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Layout and spacing classes for grouped fields."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Form controls to group inside the fieldset."
+        },
+        {
+          "name": "nativeProps",
+          "type": "React.HTMLAttributes<HTMLDivElement>",
+          "description": "Native div attributes."
+        }
+      ]
+    },
+    {
+      "name": "Fieldset.Actions",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes to align action buttons or text."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Action buttons or helper text."
+        },
+        {
+          "name": "nativeProps",
+          "type": "React.HTMLAttributes<HTMLDivElement>",
+          "description": "Native div attributes."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".fieldset",
+      "description": "Root container"
+    },
+    {
+      "name": ".fieldset__legend",
+      "description": "Legend element"
+    },
+    {
+      "name": ".fieldset__field_group",
+      "description": "Wrapper for grouped fields"
+    },
+    {
+      "name": ".fieldset__actions",
+      "description": "Action bar below the fields"
+    }
+  ]
+}

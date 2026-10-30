@@ -1,0 +1,31 @@
+{
+  "basics_label": "تنقل أساسي",
+  "home": "الرئيسية",
+  "orders": "الطلبات",
+  "customers": "العملاء",
+  "inbox": "البريد الوارد",
+  "current_label": "تنقل مع الصفحة الحالية",
+  "holding_label": "تنقل يحتوي الصفحة الحالية",
+  "groups_label": "تنقل مجمّع",
+  "settings": "الإعدادات",
+  "profile": "الملف الشخصي",
+  "billing": "الفوترة",
+  "returns": "المرتجعات",
+  "shipments": "الشحنات",
+  "badges_label": "تنقل مع شارات",
+  "states_label": "تنقل مع عنصر معطل",
+  "archive": "الأرشيف",
+  "run_report": "تشغيل التقرير",
+  "press_count": "{count, plural, zero {لم يُضغط بعد.} one {ضُغط مرة واحدة.} two {ضُغط مرتين.} few {ضُغط # مرات.} many {ضُغط # مرة.} other {ضُغط # مرة.}}",
+  "shortcuts_label": "تنقل مع اختصارات",
+  "compact_label": "تنقل مضغوط",
+  "arabic_label": "قائمة التنقل",
+  "arabic_home": "الرئيسية",
+  "arabic_orders": "الطلبات",
+  "arabic_customers": "العملاء",
+  "live_label": "تنقل تفاعلي",
+  "current_page": "الصفحة الحالية: {name}",
+  "sample": {
+    "new": "جديد"
+  }
+}

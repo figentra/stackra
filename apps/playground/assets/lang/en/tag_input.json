@@ -1,0 +1,16 @@
+{
+  "basics": {
+    "label": "Customer tags",
+    "hint": "Press Enter or a comma, or paste a list.",
+    "placeholder": "Add a tag"
+  },
+  "emails": {
+    "label": "Invite by email",
+    "placeholder": "name@company.com",
+    "invalid": "“{tag}” is not an email address."
+  },
+  "arabic": {
+    "label": "مدن التوصيل",
+    "hint": "اضغط Enter أو فاصلة، أو الصق قائمة."
+  }
+}

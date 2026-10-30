@@ -1,0 +1,21 @@
+{
+  "receipts": "Print receipts automatically",
+  "receipts_hint": "After every completed sale.",
+  "sounds": "Sale sounds",
+  "sounds_hint": "A short chime when a payment goes through.",
+  "offline": "Offline sales",
+  "offline_hint": "Keep selling without internet; sync when back online.",
+  "tips": "Tipping",
+  "tips_hint": "Ask customers for a tip before they pay.",
+  "tip_default": "Default tip (%)",
+  "tip_custom": "Allow a custom amount",
+  "taxes": "Taxes",
+  "taxes_hint": "VAT 15%, prices include tax.",
+  "payments": "Payment methods",
+  "payments_hint": "Cash, cards, mada and Apple Pay.",
+  "staff": "Staff and permissions",
+  "staff_hint": "6 cashiers, 2 managers.",
+  "manage": "Manage",
+  "manage_label": "Manage {setting}",
+  "list": "Terminal settings"
+}

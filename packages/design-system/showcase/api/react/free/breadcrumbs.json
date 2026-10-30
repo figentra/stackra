@@ -1,0 +1,164 @@
+{
+  "generatedFrom": {
+    "hash": "8bc91a0e7c92fcc2",
+    "heroDoc": "vendor/heroui/react/breadcrumbs.json",
+    "propsFiles": ["ui/src/react/breadcrumbs/breadcrumbs.props.ts"]
+  },
+  "importLine": "import { Breadcrumbs } from \"@stackra/ui/react\";",
+  "key": "free/breadcrumbs",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Handler that is called when a breadcrumb is clicked.",
+          "name": "onAction",
+          "required": false,
+          "source": "react-aria",
+          "type": "(key: Key) => void"
+        }
+      ],
+      "extends": "Breadcrumbs",
+      "name": "Breadcrumbs",
+      "props": [
+        {
+          "description": "The trail from the root to the current page, in order; the last item is the current page.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly BreadcrumbItem[]"
+        },
+        {
+          "description": "The spoken name of the trail's landmark. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Extra classes for the list; a string only, because HeroUI merges it into its own slot class.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "false",
+          "description": "Whether all breadcrumb links are disabled",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"ol\", undefined>"
+        },
+        {
+          "default": "chevron-right icon",
+          "description": "Custom separator between breadcrumb items",
+          "name": "separator",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Values that should invalidate the item cache when using dynamic collections.",
+          "name": "dependencies",
+          "required": false,
+          "source": "react-aria",
+          "type": "readonly any[]"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLOListElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base breadcrumbs container",
+      "name": ".breadcrumbs"
+    },
+    {
+      "description": "Individual breadcrumb item wrapper",
+      "name": ".breadcrumbs__item"
+    },
+    {
+      "description": "Breadcrumb link element",
+      "name": ".breadcrumbs__link"
+    },
+    {
+      "description": "Separator icon between items",
+      "name": ".breadcrumbs__separator"
+    },
+    {
+      "description": "Current page indicator (not a link)",
+      "name": ".breadcrumbs__link[data-current=\"true\"]"
+    }
+  ]
+}

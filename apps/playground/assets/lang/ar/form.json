@@ -1,0 +1,23 @@
+{
+  "label_default": "تسمية افتراضية",
+  "label_required": "تسمية مطلوبة",
+  "label_invalid": "تسمية غير صالحة",
+  "label_disabled": "تسمية معطلة",
+  "display_name": "الاسم المعروض",
+  "display_name_hint": "يظهر على الفواتير. يمكنك تغييره لاحقًا.",
+  "invalid_field": "حقل غير صالح",
+  "invalid_message": "أدخل قيمة قبل المتابعة.",
+  "valid_field": "حقل صالح",
+  "valid_note": "رسالة الخطأ مركّبة مع isInvalid بقيمة false: لا يُرسم شيء.",
+  "form_name": "التواصل",
+  "email": "البريد الإلكتروني",
+  "email_hint": "نرد على هذا العنوان.",
+  "email_error": "أدخل عنوان بريد إلكتروني، مثل name@example.com.",
+  "notes": "ملاحظات",
+  "notes_hint": "اختياري. Enter يضيف سطرًا.",
+  "submit": "إرسال",
+  "mod_enter": "الإرسال بـ Cmd أو Ctrl مع Enter",
+  "not_sent": "لم يُرسل شيء بعد.",
+  "refused": "لم يُرسل: البريد الإلكتروني غير صالح.",
+  "sent": "{count, plural, zero {لم يُرسل إلى {email}.} one {أُرسل مرة واحدة إلى {email}.} two {أُرسل مرتين إلى {email}.} few {أُرسل # مرات إلى {email}.} many {أُرسل # مرة إلى {email}.} other {أُرسل # مرة إلى {email}.}}"
+}

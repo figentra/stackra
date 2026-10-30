@@ -1,0 +1,17 @@
+{
+  "colors_note": "Each role with its hex and the pair the brand kit’s contrast report checks it in, with the ratio for this scheme.",
+  "groups": {
+    "surfaces": "Surfaces",
+    "content": "Content",
+    "status": "Status",
+    "fields": "Fields",
+    "controls": "Controls",
+    "utility": "Utility"
+  },
+  "no_pair": "No pair in the contrast report",
+  "latin_sample": "Build once, theme anywhere.",
+  "arabic_sample": "ابنِ مرة واحدة وطبّق أي سمة.",
+  "name": "Name",
+  "duration": "Duration",
+  "easing": "Easing"
+}

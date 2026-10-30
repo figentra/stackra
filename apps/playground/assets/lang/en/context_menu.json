@@ -1,0 +1,11 @@
+{
+  "label": "Order actions",
+  "hint": "Right-click an order, or focus it and press Shift+F10.",
+  "open": "Open",
+  "duplicate": "Duplicate",
+  "archive": "Archive",
+  "delete": "Delete",
+  "chosen": "Chosen: {action}",
+  "actions": "Actions",
+  "danger": "Danger zone"
+}

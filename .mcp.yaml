@@ -30,24 +30,6 @@ mcpServers:
   heroui-native:
     command: npx
     args: [-y, "@heroui/native-mcp@latest"]
-  heroui-pro:
-    command: ./tools/scripts/mcp.sh
-    args:
-      - npx
-      - -y
-      - mcp-remote@latest
-      - https://mcp.heroui.pro/mcp
-      - --header
-      - x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN
-  heroui-native-pro:
-    command: ./tools/scripts/mcp.sh
-    args:
-      - npx
-      - -y
-      - mcp-remote@latest
-      - https://native-mcp.heroui.pro/mcp
-      - --header
-      - x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN
   uniwind:
     type: http
     url: https://docs.uniwind.dev/mcp

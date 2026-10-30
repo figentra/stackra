@@ -1,0 +1,24 @@
+{
+  "all": "All edges, the default",
+  "top": "Top only",
+  "bottom": "Bottom only",
+  "sides": "Sides only",
+  "none": "No edges, as under a navigator’s header and tab bar",
+  "scrolls": "Scrolls, the default",
+  "holds": "Holds its content, not scrollable",
+  "scroll_switch": "Scrolls",
+  "edges_group": "Edges kept clear",
+  "press": "Press me",
+  "pressed": "{count, plural, =0 {Not pressed yet.} one {Pressed once.} other {Pressed # times.}}",
+  "settings": "Scrolling is {is_scrollable, select, true {on} other {off}}. {edges, select, none {No edges are kept clear.} other {Kept clear: {edges}.}}",
+  "line": "Order line {index}",
+  "card": "The screen’s content",
+  "arabic_card": "محتوى الشاشة",
+  "arabic_line": "بند الطلب {index}",
+  "arabic_press": "اضغط هنا",
+  "sample": {
+    "top": "Top",
+    "bottom": "Bottom",
+    "sides": "Sides"
+  }
+}

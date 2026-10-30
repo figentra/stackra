@@ -1,0 +1,13 @@
+{
+  "payment": {
+    "label": "Pay invoice INV-2207, SAR 3,450",
+    "hint": "Scan with your banking app to pay."
+  },
+  "wifi": {
+    "label": "Join the Majlis-Guest Wi-Fi"
+  },
+  "arabic": {
+    "label": "ادفع الفاتورة INV-2207 بمبلغ 3٬450 ريالًا",
+    "hint": "امسح الرمز بتطبيق البنك للدفع."
+  }
+}

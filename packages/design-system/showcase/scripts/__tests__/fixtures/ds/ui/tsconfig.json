@@ -1,0 +1,2 @@
+// Fixture package for the gen-api test: strict TypeScript, nothing else.
+{ "compilerOptions": { "strict": true, "noEmit": true, "skipLibCheck": true } }

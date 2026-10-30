@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/i18n, which has several public files, until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `I18nConfig` lives in the `src/config/` entry folder;
- *           `I18nOptions`, `intlLocale`, `checkI18nOptions`, `Catalogue` and the key-tree types stay internal;
+ *           `I18nOptions`, `checkI18nOptions`, `Catalogue` and the key-tree types stay internal;
  *           `Messages` is public as `loadMessages`' result (STA-1309).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
@@ -21,7 +21,11 @@ export { countryName } from "#core/functions/country-name.function";
 export { formatAddress } from "#core/functions/format-address.function";
 export { formatLength } from "#core/functions/format-length.function";
 export { formatQuantity } from "#core/functions/format-quantity.function";
+export { dateTimeFormatIn } from "#core/functions/date-time-format-in.function";
+export { formatDateTime } from "#core/functions/format-date-time.function";
 export { formatMessage } from "#core/functions/format-message.function";
+export { formatNumber } from "#core/functions/format-number.function";
+export { intlLocale } from "#core/functions/intl-locale.function";
 export { keys } from "#core/functions/keys.function";
 export { loadMessages } from "#core/functions/load-messages.function";
 export { localeFormat } from "#core/functions/locale-format.function";
@@ -29,13 +33,18 @@ export { matchDeviceLocale } from "#core/functions/match-device-locale.function"
 export { mergeCatalogues } from "#core/functions/merge-catalogues.function";
 export { nativeSwitcherMode } from "#core/functions/native-switcher-mode.function";
 export { normalizeArabic } from "#core/functions/normalize-arabic.function";
+export { numberFormatIn } from "#core/functions/number-format-in.function";
+export { numeralsOf } from "#core/functions/numerals-of.function";
 export { regionFormat } from "#core/functions/region-format.function";
 export { startingLocale } from "#core/functions/starting-locale.function";
 export { withDigits } from "#core/functions/with-digits.function";
+export { withNumerals } from "#core/functions/with-numerals.function";
+export type { DateTimeFormatIn } from "#core/types/date-time-format-in.type";
 export type { DeviceRegion } from "#core/types/device-region.type";
 export type { I18nKey } from "#core/types/i18n-key.type";
 export type { LoadCatalogue } from "#core/types/load-catalogue.type";
 export type { LocaleFormat } from "#core/types/locale-format.type";
 export type { Messages } from "#core/types/messages.type";
+export type { NumberFormatIn } from "#core/types/number-format-in.type";
 export type { RegionFormat } from "#core/types/region-format.type";
 export type { StartingLocaleInput } from "#core/types/starting-locale-input.type";

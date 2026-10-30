@@ -1,0 +1,102 @@
+{
+  "slug": "button",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(buttons)/button.mdx",
+  "parts": [
+    {
+      "name": "Button",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'danger-soft'",
+          "default": "'primary'",
+          "description": "Visual variant of the button"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of the button"
+        },
+        {
+          "name": "isIconOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the button displays an icon only (square aspect ratio)"
+        },
+        {
+          "name": "feedbackVariant",
+          "type": "'scale-highlight' | 'scale-ripple' | 'scale' | 'none'",
+          "default": "'scale-highlight'",
+          "description": "Determines which feedback effects are rendered"
+        },
+        {
+          "name": "animation",
+          "type": "ButtonAnimation",
+          "description": "Animation configuration (shape depends on `feedbackVariant`)"
+        }
+      ],
+      "animation": [
+        {
+          "name": "scale",
+          "type": "PressableFeedbackScaleAnimation",
+          "description": "Scale animation config (`false` to disable)"
+        },
+        {
+          "name": "highlight",
+          "type": "PressableFeedbackHighlightAnimation",
+          "description": "Highlight overlay config (`false` to disable)"
+        },
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Control animation state while keeping config (runtime toggle)"
+        }
+      ]
+    },
+    {
+      "name": "Button.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered as label"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useButton",
+      "signature": "useButton()",
+      "returns": [
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "description": "Size of the button"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'danger-soft'",
+          "description": "Visual variant of the button"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the button is disabled"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

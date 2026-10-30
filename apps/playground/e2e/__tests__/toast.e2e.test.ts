@@ -17,6 +17,8 @@
 // @covers sta-350:FR-116 sta-350:SC-002 sta-350:SC-010
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -34,18 +36,26 @@ const TONES = [
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/toast?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Toast" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Toast", locale) }),
+  ).toBeVisible();
+  // The page's one ToastProvider is mounted by the lazily loaded control example: a toast shown before it is lost.
+  await expect(example(page, "control").getByRole("switch")).toBeAttached();
 };
 
 /** The toast region and the toasts in it: found by data-slot, since the region is a portal outside `main`. */
 const regionOf = (page: Page) => page.locator('[data-slot="toast-region"]');
 const toastsOf = (page: Page) => page.locator('[data-slot="toast"]');
 
+// By position, in the order of TONES: the Usage buttons are named in the page's locale.
 const showTone = (page: Page, tone: string) =>
-  page
-    .getByRole("region", { name: "Tones" })
-    .getByRole("button", { name: `Show ${tone} toast` })
+  example(page, "usage")
+    .getByRole("button")
+    .nth(TONES.findIndex((entry) => entry.tone === tone))
     .click();
+
+/** "Dismiss all toasts", the second button of the control example, by position for the same reason. */
+const dismissAll = (page: Page) => example(page, "control").getByRole("button").nth(1);
 
 const analyze = async (page: Page, include?: string) => {
   const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
@@ -69,14 +79,20 @@ for (const scheme of SCHEMES)
 
     test(`axe finds nothing on each tone's toast in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
-      for (const { tone, message } of TONES) {
+      for (const { tone } of TONES) {
         await showTone(page, tone);
-        await expect(toastsOf(page).filter({ hasText: message })).toBeVisible();
+        await expect(toastsOf(page)).toHaveCount(1);
+        await expect(toastsOf(page).first()).toBeVisible();
+        // At rest: under reduced motion a toast still fades in, and axe measured a title mid-fade.
+        await expect
+          .poll(() =>
+            toastsOf(page)
+              .first()
+              .evaluate((element) => getComputedStyle(element).opacity),
+          )
+          .toBe("1");
         await analyze(page, '[data-slot="toast-region"]');
-        await page
-          .getByRole("region", { name: "Position and control" })
-          .getByRole("button", { name: "Dismiss all toasts" })
-          .click();
+        await dismissAll(page).click();
         await expect(toastsOf(page)).toHaveCount(0);
       }
     });
@@ -140,9 +156,7 @@ test("the keyboard reaches a toast with Alt and T, dismisses it and gives focus 
   page,
 }) => {
   await open(page, "light", "en");
-  const trigger = page
-    .getByRole("region", { name: "Options" })
-    .getByRole("button", { name: "Stays until dismissed" });
+  const trigger = example(page, "options").getByRole("button", { name: "Stays until dismissed" });
   await trigger.focus();
   await page.keyboard.press("Enter");
   await expect(toastsOf(page).filter({ hasText: "Upload paused" })).toBeVisible();
@@ -164,10 +178,7 @@ test("the keyboard reaches a toast with Alt and T, dismisses it and gives focus 
 
 test("an action runs once and closes its toast", async ({ page }) => {
   await open(page, "light", "en");
-  await page
-    .getByRole("region", { name: "Options" })
-    .getByRole("button", { name: "With an action" })
-    .click();
+  await example(page, "options").getByRole("button", { name: "With an action" }).click();
   const deleted = toastsOf(page).filter({ hasText: "Order deleted" });
   await expect(deleted).toBeVisible();
   await page.getByRole("button", { name: "Undo" }).click();
@@ -181,10 +192,7 @@ test("a toast leaves by itself after its timeout and one with a timeout of 0 sta
 }) => {
   await open(page, "light", "en");
   await showTone(page, "default");
-  await page
-    .getByRole("region", { name: "Options" })
-    .getByRole("button", { name: "Stays until dismissed" })
-    .click();
+  await example(page, "options").getByRole("button", { name: "Stays until dismissed" }).click();
   const fleeting = toastsOf(page).filter({ hasText: "Draft autosaved" });
   const staying = toastsOf(page).filter({ hasText: "Upload paused" });
   await expect(fleeting).toBeVisible();
@@ -192,11 +200,12 @@ test("a toast leaves by itself after its timeout and one with a timeout of 0 sta
   await expect(staying).toBeVisible();
 });
 
-test("three toasts stack and Dismiss all closes them", async ({ page }) => {
+test("four toasts stack and Dismiss all closes them", async ({ page }) => {
   await open(page, "light", "en");
-  const control = page.getByRole("region", { name: "Position and control" });
-  await control.getByRole("button", { name: "Show three toasts" }).click();
-  await expect(toastsOf(page)).toHaveCount(3);
+  const control = example(page, "control");
+  // The motion wave's control demo stacks four: saved, syncing, offline and a mention with an avatar.
+  await control.getByRole("button", { name: "Show four toasts" }).click();
+  await expect(toastsOf(page)).toHaveCount(4);
   await control.getByRole("button", { name: "Dismiss all toasts" }).click();
   await expect(toastsOf(page)).toHaveCount(0);
 });
@@ -221,10 +230,7 @@ for (const locale of LOCALES)
     expect(Math.abs(middle.x - viewport.width / 2)).toBeLessThan(2);
 
     // From the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on it is refused.
-    await page
-      .getByRole("region", { name: "Position and control" })
-      .getByRole("switch", { name: "Show toasts at the top" })
-      .focus();
+    await example(page, "control").getByRole("switch").focus();
     await page.keyboard.press("Space");
     await expect(regionOf(page)).toHaveClass(/toast-region--top/);
     middle = await middleOf();

@@ -1,0 +1,33 @@
+{
+  "captions": {
+    "off": "متوقف",
+    "on": "مفعّل",
+    "disabled": "معطل",
+    "disabled_on": "معطل ومفعّل",
+    "read_only": "للقراءة فقط",
+    "required": "مطلوب",
+    "description": "مع وصف",
+    "invalid": "غير صالح، مع رسالة"
+  },
+  "labels": {
+    "off": "وضع الطيران",
+    "on": "Wi-Fi",
+    "disabled": "بلوتوث",
+    "disabled_on": "خدمات الموقع",
+    "read_only": "النسخ الاحتياطي السحابي",
+    "required": "السماح للتطبيق بالعمل في الخلفية",
+    "description": "الإشعارات",
+    "invalid": "مشاركة ملفي الشخصي"
+  },
+  "description_text": "تلقَّ تنبيهًا عند شحن الطلب.",
+  "error_text": "فعّل هذا للمتابعة.",
+  "unnamed_name": "كتم كل الأصوات",
+  "settings": "الإعدادات",
+  "summary": "المفعّل: {names}",
+  "none": "لا شيء",
+  "sample": {
+    "sync_over_mobile_data": "المزامنة عبر بيانات الجوال",
+    "dark_theme": "السمة الداكنة",
+    "beta_features": "الميزات التجريبية"
+  }
+}

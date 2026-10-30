@@ -1,0 +1,10 @@
+{
+  "default": "Close",
+  "custom": "Dismiss with a custom icon",
+  "disabled": "Close (disabled)",
+  "notice_title": "Your changes were saved",
+  "notice_body": "You can close this notice at any time.",
+  "dismiss": "Dismiss notice",
+  "show_again": "Show again",
+  "hidden": "The notice is hidden."
+}

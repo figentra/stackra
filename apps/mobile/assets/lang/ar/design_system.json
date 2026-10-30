@@ -1,0 +1,52 @@
+{
+  "eyebrow": "ساحة التجربة",
+  "product": "نظام التصميم",
+  "title": "نظام تصميم Stackra",
+  "intro": "كل المكونات حية، بالوضعين الفاتح والداكن وباللغتين الإنجليزية والعربية. مبني على HeroUI ومرسوم برموز Stackra.",
+  "browse": "تصفح المكونات",
+  "search": "بحث",
+  "search_placeholder": "ابحث في المكونات والفئات…",
+  "results": "{count, plural, zero {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
+  "empty": "لا شيء يطابق «{query}».",
+  "stats": {
+    "pages": "{count, plural, zero {لا صفحات} one {صفحة واحدة} two {صفحتان} few {# صفحات} many {# صفحة} other {# صفحة}}",
+    "categories": "{count, plural, zero {لا فئات} one {فئة واحدة} two {فئتان} few {# فئات} many {# فئة} other {# فئة}}",
+    "schemes": "فاتح وداكن",
+    "directions": "من اليسار ومن اليمين"
+  },
+  "sections": {
+    "showcase": "قيد الاستخدام",
+    "showcase_note": "ثلاثة مشاهد صغيرة مبنية من مكونات النظام وحدها. جربها.",
+    "components": "المكونات",
+    "components_note": "كل الصفحات مجمعة حسب الفئة."
+  },
+  "showcase": {
+    "invite": {
+      "title": "دعوة فريقك",
+      "description": "يصلهم بريد برابط صالح لسبعة أيام.",
+      "email": "بريد العمل",
+      "placeholder": "name@company.com",
+      "admin": "منحهم صلاحية المسؤول",
+      "send": "إرسال الدعوة",
+      "sent": "أُرسلت الدعوة إلى {email}.",
+      "sent_anyone": "أُرسلت الدعوة إلى زميلك."
+    },
+    "deploys": {
+      "title": "عمليات النشر",
+      "description": "آخر ثلاثة إصدارات من وحدة التحكم.",
+      "released": "{version} · {at, date, medium}",
+      "live": "منشور",
+      "building": "قيد البناء",
+      "failed": "فشل"
+    },
+    "filters": {
+      "title": "تصفية الطلبات",
+      "description": "ضيّق القائمة، فيتبعها العدد والإجمالي.",
+      "search": "البحث في الطلبات",
+      "paid": "المدفوعة فقط",
+      "shipped": "المشحونة",
+      "reset": "إعادة تعيين",
+      "count": "{count, plural, zero {لا طلبات} one {طلب واحد} two {طلبان} few {# طلبات} many {# طلبًا} other {# طلب}} · {total, number, ::currency/USD}"
+    }
+  }
+}

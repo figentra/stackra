@@ -35,6 +35,7 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
+import { haptics } from "#native/haptics/haptics";
 import { IconButton } from "#native/icon-button/icon-button";
 import type { NumberFieldProps } from "#native/number-field/number-field.props";
 
@@ -127,8 +128,12 @@ export function NumberField({
 
   const stepBy = (direction: 1 | -1) => {
     setDraft(null);
-    if (base === null) return report(settle((direction > 0 ? minValue : maxValue) ?? 0));
-    report(settle(base + direction * increment));
+    const next = settle(
+      base === null ? ((direction > 0 ? minValue : maxValue) ?? 0) : base + direction * increment,
+    );
+    // A hard stop when the step lands on a bound, after the press's own tap.
+    if (next === minValue || next === maxValue) haptics.play("rigid");
+    report(next);
   };
 
   const hasFractions =

@@ -1,0 +1,11 @@
+{
+  "label": "In this guide",
+  "setup": "Set up the store",
+  "setup_text": "Add your branches, opening hours and the currencies you accept.",
+  "menu": "Build the menu",
+  "menu_text": "Group products into categories and set a price for each size.",
+  "modifiers": "Add-ons",
+  "modifiers_text": "Extra shots, milk choices and syrups, priced once.",
+  "payments": "Take payments",
+  "payments_text": "Connect a card reader and turn on Apple Pay and mada."
+}

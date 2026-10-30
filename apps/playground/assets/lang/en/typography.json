@@ -1,0 +1,12 @@
+{
+  "latin_sample": "Build once, theme anywhere.",
+  "arabic_sample": "ابنِ مرة واحدة وطبّق أي سمة.",
+  "long_sample": "A long sentence shows what alignment and truncation do when it does not fit on one line.",
+  "level": "Level {level}",
+  "inline_before": "A sentence with ",
+  "inline_text": "inline text",
+  "inline_after": " drawn through render.",
+  "small": "Small and muted: the secondary line of a list.",
+  "next_tone": "Next tone",
+  "state": "{presses, plural, one {Tone {tone}, pressed # time.} other {Tone {tone}, pressed # times.}}"
+}

@@ -1,0 +1,317 @@
+{
+  "slug": "dialog",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(overlays)/dialog.mdx",
+  "parts": [
+    {
+      "name": "Dialog",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Dialog content and trigger elements"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled open state of the dialog"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial open state when uncontrolled"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(value: boolean) => void",
+          "description": "Callback when open state changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Trigger element content"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "description": "Render as child element without wrapper"
+        },
+        {
+          "name": "...TouchableOpacityProps",
+          "type": "TouchableOpacityProps",
+          "description": "All standard React Native TouchableOpacity props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Portal",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Portal content (overlay and dialog)"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true on iOS, uses View instead of FullWindowOverlay. Enables element inspector; overlay won't appear above native modals"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for portal container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for portal container"
+        },
+        {
+          "name": "hostName",
+          "type": "string",
+          "description": "Optional portal host name for specific container"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount when closed for animation purposes"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Overlay",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom overlay content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for overlay"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles for overlay container"
+        },
+        {
+          "name": "animation",
+          "type": "DialogOverlayAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "isCloseOnPress",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether pressing overlay closes dialog"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount when closed for animation purposes"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number, number]",
+          "default": "[0, 1, 0]",
+          "description": "Opacity values [idle, open, close] (progress-based, for dialog presentation)"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeIn.duration(200)",
+          "description": "Custom entering animation (for popover presentation)"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeOut.duration(150)",
+          "description": "Custom exiting animation (for popover presentation)"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Dialog content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for content container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for content container"
+        },
+        {
+          "name": "animation",
+          "type": "DialogContentAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isSwipeable",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the dialog content can be swiped to dismiss"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount when closed for animation purposes"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe with `scale: 0.96→1` and `opacity: 0→1` (200ms, easing: `Easing.out(Easing.ease)`)",
+          "description": "Custom entering animation"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe with `scale: 1→0.96` and `opacity: 1→0` (150ms, easing: `Easing.in(Easing.ease)`)",
+          "description": "Custom exiting animation"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Title content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for title"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for description"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useDialog",
+      "signature": "useDialog()",
+      "returns": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Current open state"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(value: boolean) => void",
+          "description": "Function to change open state"
+        }
+      ]
+    },
+    {
+      "name": "useDialogAnimation",
+      "signature": "useDialogAnimation()",
+      "returns": [
+        {
+          "name": "progress",
+          "type": "SharedValue<number>",
+          "description": "Animation progress (0=idle, 1=open, 2=close)"
+        },
+        {
+          "name": "isDragging",
+          "type": "SharedValue<boolean>",
+          "description": "Whether dialog is being dragged"
+        },
+        {
+          "name": "isGestureReleaseAnimationRunning",
+          "type": "SharedValue<boolean>",
+          "description": "Whether gesture release animation is running"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

@@ -4,11 +4,14 @@
  *          `:root`; the colour roles, palette and shadows go on `:root, [data-theme="light"]` and
  *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours. A
  *          `@layer components` block restyles HeroUI's Typography classes in the theme's type scale and draws the glass
- *          material's classes (`.material`, `.material-thin`, `.material-thick`). The material's levels sit in the colour
+ *          material's classes (`.material`, `.material-thin`, `.material-thick`, and `.material-bar` for a sticky top
+ *          bar: the theme's own background tinted glass with foreground text). The material's levels sit in the colour
  *          blocks, its modes on `[data-material]` (solid, frosted, glass, liquid), and it turns solid under reduced
  *          transparency, more contrast or no backdrop filter (ADR 0320). HeroUI's skeleton motion follows the reading
- *          direction and stops under reduced motion. The headings take their face from the type styles, which name the
- *          display stacks (`--font-display`, `--font-display-arabic`), so a brand's display faces reach them (STA-1386).
+ *          direction and stops under reduced motion. The radio and the switch are drawn round, the switch's off track
+ *          on the field edge colour; HeroUI's controls, overlays, cards and chips take the radius roles. The headings
+ *          take their face from the type styles, which name the display stacks (`--font-display`,
+ *          `--font-display-arabic`), so a brand's display faces reach them (STA-1386).
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
  *          The properties come from `themeVariables`, HeroUI's before Stackra's in each block.
  * Runtime: isomorphic
@@ -17,6 +20,7 @@
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import { MaterialMode } from "#contracts/enums/material-mode.enum";
 import type { Theme } from "#contracts/types/theme.type";
+import { CHART_RAMP } from "#core/constants/chart-ramp.constant";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 import { materialModeVariables } from "#core/functions/material-mode-variables.function";
 import { themeVariables } from "#core/functions/theme-variables.function";
@@ -73,7 +77,7 @@ function componentsLayer(theme: Theme): string {
   const weights = WEIGHT_MODIFIERS.map(([name, weight]) =>
     inRule(`.typography--weight-${name}`, [`    font-weight: ${weight};`]),
   );
-  return `@layer components {\n${[...rules, ...weights, ...materialRules(), ...glassButtonRules()].join("\n")}\n}`;
+  return `@layer components {\n${[...rules, ...weights, ...materialRules(), ...glassButtonRules(), ...selectionControlRules(), ...radiusRoleRules()].join("\n")}\n}`;
 }
 
 /** The selectors of every skeleton animation, which HeroUI v3 never stops under reduced motion. */
@@ -96,11 +100,36 @@ const materialRule = (selector: string, name: MaterialLevel, shadow: string) =>
     `    box-shadow: inset 0 1px 0 var(--material-highlight), inset 0 14px 24px -18px var(--material-sheen-color), var(--${shadow}-shadow);`,
   ]);
 
+/**
+ * The least share of the theme's background in a bar's glass. Whatever scrolls under the bar shows through only as a
+ * blurred tenth, so foreground text keeps a contrast near its own on the background in every brand theme and scheme
+ * (owner decision 2026-10-28: the bars follow the theme).
+ */
+const BAR_SHARE = 0.88;
+
+/**
+ * The bar material: a sticky top bar's glass, the theme's own background at `BAR_SHARE` (or more, where the mode's
+ * floor is higher: solid in the solid mode, so under reduced transparency, more contrast and no backdrop filter too)
+ * with the thick level's blur, and foreground text. A browser without `color-mix()` paints the background solid.
+ */
+const barRules = () => [
+  inRule(".material-bar", [
+    "    background-color: var(--background);",
+    "    color: var(--foreground);",
+  ]),
+  `  @supports (color: color-mix(in oklch, white, black)) {\n${inRule(".material-bar", [
+    `    background-color: color-mix(in oklch, var(--background) calc(max(var(--material-fill-floor), ${BAR_SHARE}) * 100%), transparent);`,
+    "    -webkit-backdrop-filter: var(--material-thick-filter);",
+    "    backdrop-filter: var(--material-thick-filter);",
+  ]).replaceAll(/^/gm, "  ")}\n  }`,
+];
+
 /** The material classes, one per level, for the components layer; `.material` is the regular level. */
 const materialRules = () => [
   materialRule(".material,\n  .material-regular", "regular", "overlay"),
   materialRule(".material-thin", "thin", "surface"),
   materialRule(".material-thick", "thick", "overlay"),
+  ...barRules(),
 ];
 
 /**
@@ -135,10 +164,13 @@ const glassTint = (share: number) =>
 /**
  * HeroUI's quiet button variants on the control fill (ADR 0319), through HeroUI's own variant properties
  * (`--button-bg`, `-hover`, `-pressed`): secondary, tertiary and outline sit on glass; ghost turns glass under the
- * pointer and the press. The primary and danger variants stay solid. No box-shadow is set, so HeroUI's focus ring
+ * pointer and the press. The primary and danger variants stay solid, inside the same transparent 1px border. No box-shadow is set, so HeroUI's focus ring
  * (a ring box-shadow) stays whole; the material's fallbacks make the glass solid where it must be.
  */
 const glassButtonRules = () => [
+  // Every variant draws a 1px border, transparent on the solid ones, so a solid and an outlined button of one size
+  // have the same box (a Cancel beside an Apply), with no box-shadow to clash with the focus ring.
+  inRule(".button", ["    border: 1px solid transparent;"]),
   inRule(".button--secondary,\n  .button--tertiary,\n  .button--outline", [
     "    --button-bg: var(--material-control-fill);",
     `    --button-bg-hover: ${glassTint(8)};`,
@@ -163,6 +195,80 @@ const glassButtonRules = () => [
   ]),
 ];
 
+/**
+ * The selection controls in the theme's tokens. HeroUI draws the radio's ring and dot and the switch's track and thumb
+ * with `rounded-lg`, which a small `--radius` turns into the checkbox's square; a radio and a switch stay round in
+ * every brand, so they take `--radius-full`. The switch's off track is HeroUI's `default` fill, about 1.3:1 on the
+ * dark page; it takes `field-border`, the field edge held at 3:1 against the page and the surface. Two classes each,
+ * so they also win over HeroUI's size rules (`.switch--sm .switch__thumb`).
+ */
+const selectionControlRules = () => [
+  inRule(
+    ".radio .radio__control,\n  .radio .radio__indicator,\n  .radio .radio__indicator::before,\n  .switch .switch__control,\n  .switch .switch__thumb",
+    ["    border-radius: var(--radius-full);"],
+  ),
+  inRule(".switch", ["    --switch-control-bg: var(--field-border);"]),
+  // A selected toggle button is the solid accent: HeroUI's soft accent sits about 1:1 from the unselected `default`
+  // fill, so the pick showed by its icon colour alone; the solid accent stands 3:1 from it (SC 1.4.11).
+  inRule(".toggle-button", [
+    "    --toggle-button-bg-selected: var(--accent);",
+    "    --toggle-button-bg-selected-hover: var(--accent-hover);",
+    "    --toggle-button-bg-selected-pressed: var(--accent-hover);",
+    "    --toggle-button-fg-selected: var(--accent-foreground);",
+  ]),
+  // A field's help and error text take their direction from their own first letter, as `dir="auto"` would: an English
+  // sentence in a right-to-left page keeps its full stop at its end, and Arabic text stays right to left.
+  inRule('[data-slot="description"],\n  [data-slot="field-error"]', [
+    "    unicode-bidi: plaintext;",
+  ]),
+];
+
+/** An element nested in one of `role`'s radius with `inset` of padding between them: the outer radius less it. */
+const nested = (role: "control" | "container", inset: string) =>
+  `max(0px, calc(var(--radius-${role}) - ${inset}))`;
+
+/**
+ * HeroUI's controls on the theme's radius roles (`--radius-control`, `--radius-container`, `--radius-pill`). HeroUI
+ * rounds fields by `--field-radius` but buttons, toggle buttons and tabs at 3x `--radius`, menus' rows at 2x and its
+ * overlays at 3x, so a search field, a button and a segmented control beside it drew three different corners. A button,
+ * a toggle button and a tab list now match the field; a tab and a menu row sit inside their padded parent at its
+ * radius less the padding; overlays and cards are containers; a chip is a pill. The attached group's selectors repeat
+ * HeroUI's, so they win by order in the same layer.
+ */
+const radiusRoleRules = () => [
+  inRule(".button,\n  .toggle-button,\n  .tabs__list-container", [
+    "    border-radius: var(--radius-control);",
+  ]),
+  inRule(".toggle-button-group--horizontal .toggle-button:first-child", [
+    "    border-start-start-radius: var(--radius-control);",
+    "    border-end-start-radius: var(--radius-control);",
+  ]),
+  inRule(".toggle-button-group--horizontal .toggle-button:last-child", [
+    "    border-start-end-radius: var(--radius-control);",
+    "    border-end-end-radius: var(--radius-control);",
+  ]),
+  inRule(".toggle-button-group--vertical .toggle-button:first-child", [
+    "    border-start-start-radius: var(--radius-control);",
+    "    border-start-end-radius: var(--radius-control);",
+  ]),
+  inRule(".toggle-button-group--vertical .toggle-button:last-child", [
+    "    border-end-start-radius: var(--radius-control);",
+    "    border-end-end-radius: var(--radius-control);",
+  ]),
+  // The tab list's padding is `p-1`.
+  inRule(".tabs__tab,\n  .tabs__indicator", ["    border-radius: var(--radius-control-inner);"]),
+  inRule(".popover,\n  .select__popover,\n  .dropdown__popover,\n  .combo-box__popover,\n  .card", [
+    "    border-radius: var(--radius-container);",
+  ]),
+  // A menu and a list box pad their rows by `p-1`.
+  inRule(".menu-item,\n  .list-box-item", [
+    `    border-radius: ${nested("container", "0.25rem")};`,
+  ]),
+  inRule(".chip", ["    border-radius: var(--radius-pill);"]),
+  // A key cap sits inside a control (the search button), a hair in from its edge.
+  inRule(".kbd", [`    border-radius: ${nested("control", "0.125rem")};`]),
+];
+
 /** The fallbacks: solid where transparency is unwanted or unsupported, a stronger edge for more contrast. */
 function materialFallbacks(): string {
   const solid = declarations(materialModeVariables("solid"))("    ").join("\n");
@@ -177,9 +283,36 @@ function materialFallbacks(): string {
 
 /**
  * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer (bar the
- * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
+ * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, every
+ * transition and animation ends at once under `<html data-motion="none">`, and `:lang(ar)` documents take
  * the Arabic font stack.
  */
+/**
+ * The default chart palette of one scheme: `--chart-ramp-<n>` as a relative colour of `var(--accent)`, the accent's
+ * lightness clamped as the centre so every step fits the scheme's bounds, then stepped (CHART_RAMP), so the ramp follows any accent set later, a brand's or the theme studio's. A step
+ * the theme's palette names itself is left to the palette.
+ */
+function chartRamp(theme: Theme, mode: "light" | "dark"): Record<string, string> {
+  const [low, high] = CHART_RAMP.bounds[mode];
+  const first = CHART_RAMP.steps[0];
+  const last = CHART_RAMP.steps[4];
+  // A band narrower than the steps' reach scales them to fit, spread evenly; the centre is then the band's middle.
+  const scale = Math.min(1, (high - low) / (last - first));
+  const centre = `clamp(${round(low - first * scale)}, l, ${round(high - last * scale)})`;
+  return Object.fromEntries(
+    CHART_RAMP.steps.flatMap((step, index) => {
+      const name = `chart-ramp-${index + 1}`;
+      if (name in theme.palette) return [];
+      const move = round(Math.abs(step * scale));
+      const lightness = step === 0 ? centre : `calc(${centre} ${step < 0 ? "-" : "+"} ${move})`;
+      return [[`--${name}`, `oklch(from var(--accent) ${lightness} c h)`]];
+    }),
+  );
+}
+
+/** A bound as CSS writes it, free of floating-point dust. */
+const round = (value: number) => Number(value.toFixed(3));
+
 export function renderWebCss(theme: Theme): string {
   const { heroui, stackra } = themeVariables(theme);
   const motion = Object.keys(theme.motion);
@@ -187,8 +320,14 @@ export function renderWebCss(theme: Theme): string {
   return `${[
     `/* Generated by @stackra/tokens from the "${theme.name}" theme: change the theme, not this file. */`,
     block(":root", declarations(heroui.root, stackra.root)()),
-    block(':root,\n[data-theme="light"]', declarations(heroui.light, stackra.light)()),
-    block('.dark,\n[data-theme="dark"]', declarations(heroui.dark, stackra.dark)()),
+    block(
+      ':root,\n[data-theme="light"]',
+      declarations(heroui.light, stackra.light, chartRamp(theme, "light"))(),
+    ),
+    block(
+      '.dark,\n[data-theme="dark"]',
+      declarations(heroui.dark, stackra.dark, chartRamp(theme, "dark"))(),
+    ),
     ...MaterialMode.map((mode) =>
       block(`[data-material="${mode}"]`, declarations(materialModeVariables(mode))()),
     ),
@@ -201,6 +340,22 @@ export function renderWebCss(theme: Theme): string {
     `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
       .map((name) => `    --duration-${name}: 0ms;`)
       .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
+    // The provider's `motion="none"` (`<html data-motion="none">`): every transition and animation ends at once, so
+    // exit and enter events still fire and nothing is left mid-way.
+    block('html[data-motion="none"]', [
+      ...motion.map((name) => `  --duration-${name}: 0ms;`),
+      "  scroll-behavior: auto;",
+    ]),
+    block(
+      'html[data-motion="none"] *,\nhtml[data-motion="none"] *::before,\nhtml[data-motion="none"] *::after',
+      [
+        "  animation-duration: 0s !important;",
+        "  animation-delay: 0s !important;",
+        "  animation-iteration-count: 1 !important;",
+        "  transition-duration: 0s !important;",
+        "  transition-delay: 0s !important;",
+      ],
+    ),
     block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
     componentsLayer(theme),
     materialFallbacks(),

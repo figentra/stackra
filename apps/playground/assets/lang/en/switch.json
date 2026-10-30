@@ -1,0 +1,33 @@
+{
+  "captions": {
+    "off": "Off",
+    "on": "On",
+    "disabled": "Disabled",
+    "disabled_on": "Disabled and on",
+    "read_only": "Read-only",
+    "required": "Required",
+    "description": "With a description",
+    "invalid": "Invalid, with a message"
+  },
+  "labels": {
+    "off": "Airplane mode",
+    "on": "Wi-Fi",
+    "disabled": "Bluetooth",
+    "disabled_on": "Location services",
+    "read_only": "Cloud backup",
+    "required": "Allow the app to run in the background",
+    "description": "Notifications",
+    "invalid": "Share my profile"
+  },
+  "description_text": "Get an alert when an order ships.",
+  "error_text": "Turn this on to continue.",
+  "unnamed_name": "Mute all sounds",
+  "settings": "Settings",
+  "summary": "On: {names}",
+  "none": "nothing",
+  "sample": {
+    "sync_over_mobile_data": "Sync over mobile data",
+    "dark_theme": "Dark theme",
+    "beta_features": "Beta features"
+  }
+}

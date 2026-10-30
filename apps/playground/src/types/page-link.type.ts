@@ -1,23 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: what the shell's navigation and the index page need to link a playground page: its path, title, the
- *          category it is listed under, and whether it draws its own `main`. Every route class carries the first three
- *          as statics.
+ * Purpose: what the shell needs of a playground page: its path, the registry entry it renders (the title, category,
+ *          tier and status all come from there) and whether it draws its own `main`. A route class carries only its
+ *          path and `ownsMain`; everything else is read from `@stackra/showcase` by the path.
  * Boundary: types only.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14).
+ * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14, rule R7 as amended by the showcase redesign spec
+ *          section 2.2).
  */
-
-import type { PageCategory } from "#src/enums/page-category.enum";
+import type { ComponentEntry } from "@stackra/showcase";
 
 /** A page the playground links to. */
 export interface PageLink {
   /** The URL path, `/<route folder>`. */
   readonly path: string;
-  /** The page title, which is also its h1. */
-  readonly title: string;
-  /** The category the page is listed under, in the navigation and on the index. */
-  readonly category: PageCategory;
-  /** Whether the page draws its own `main` landmark (an app-layout demo would); the shell then adds none, so a page has one. */
+  /** The registry entry the page renders. */
+  readonly entry: ComponentEntry;
+  /** Whether the page draws its own `main` landmark (an app-shell page may); the shell then adds none, so a page has one. */
   readonly ownsMain?: boolean;
 }

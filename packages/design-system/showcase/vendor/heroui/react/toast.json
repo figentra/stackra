@@ -1,0 +1,248 @@
+{
+  "slug": "toast",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(overlays)/toast.mdx",
+  "parts": [
+    {
+      "name": "Toast.Provider",
+      "props": [
+        {
+          "name": "placement",
+          "type": "\"top start\" | \"top\" | \"top end\" | \"bottom start\" | \"bottom\" | \"bottom end\"",
+          "default": "\"bottom\"",
+          "description": "Placement of the toast region"
+        },
+        {
+          "name": "gap",
+          "type": "number",
+          "default": "12",
+          "description": "The gap between toasts in pixels"
+        },
+        {
+          "name": "maxVisibleToasts",
+          "type": "number",
+          "default": "3",
+          "description": "Maximum number of toasts to display at once"
+        },
+        {
+          "name": "scaleFactor",
+          "type": "number",
+          "default": "0.05",
+          "description": "Scale factor for stacked toasts (0-1)"
+        },
+        {
+          "name": "width",
+          "type": "number | string",
+          "default": "460",
+          "description": "Width of the toast in pixels or CSS value"
+        },
+        {
+          "name": "queue",
+          "type": "ToastQueue<T>",
+          "description": "Custom toast queue instance"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | ((props: {toast: QueuedToast<T>}) => ReactNode)",
+          "description": "Custom render function or children"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast",
+      "props": [
+        {
+          "name": "toast",
+          "type": "QueuedToast<T>",
+          "description": "Toast data from queue (required)"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Visual variant of the toast"
+        },
+        {
+          "name": "placement",
+          "type": "ToastVariants[\"placement\"]",
+          "description": "Placement (inherited from Provider)"
+        },
+        {
+          "name": "scaleFactor",
+          "type": "number",
+          "description": "Scale factor (inherited from Provider)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Toast content (ToastContent, ToastIndicator, etc.)"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content (typically ToastTitle and ToastDescription)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Indicator",
+      "props": [
+        {
+          "name": "variant",
+          "type": "ToastVariants[\"variant\"]",
+          "description": "Variant for default icon"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator icon (defaults to variant icon)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Title text"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Description text"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast.ActionButton",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Action button content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "All `Button` props",
+          "type": "-",
+          "description": "Accepts all Button component props"
+        }
+      ]
+    },
+    {
+      "name": "Toast.CloseButton",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "All `CloseButton` props",
+          "type": "-",
+          "description": "Accepts all CloseButton component props"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".toast",
+      "description": "Base toast container"
+    },
+    {
+      "name": ".toast__region",
+      "description": "Toast region container"
+    },
+    {
+      "name": ".toast__content",
+      "description": "Content wrapper for title and description"
+    },
+    {
+      "name": ".toast__indicator",
+      "description": "Icon/indicator container"
+    },
+    {
+      "name": ".toast__title",
+      "description": "Toast title text"
+    },
+    {
+      "name": ".toast__description",
+      "description": "Toast description text"
+    },
+    {
+      "name": ".toast__action",
+      "description": "Action button container"
+    },
+    {
+      "name": ".toast__close",
+      "description": "Close button container"
+    },
+    {
+      "name": ".toast--default",
+      "description": "Default gray variant"
+    },
+    {
+      "name": ".toast--accent",
+      "description": "Accent blue variant"
+    },
+    {
+      "name": ".toast--success",
+      "description": "Success green variant"
+    },
+    {
+      "name": ".toast--warning",
+      "description": "Warning yellow/orange variant"
+    },
+    {
+      "name": ".toast--danger",
+      "description": "Danger red variant"
+    }
+  ]
+}

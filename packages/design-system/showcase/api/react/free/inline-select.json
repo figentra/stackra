@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "26d325036e186c2a",
+    "propsFiles": ["ui/src/react/inline-select/inline-select.props.ts"]
+  },
+  "importLine": "import { InlineSelect } from \"@stackra/ui/react\";",
+  "key": "free/inline-select",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the key chosen.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "InlineSelect",
+      "props": [
+        {
+          "description": "The choices.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SelectItem[]"
+        },
+        {
+          "description": "The spoken name of the control; it is not drawn, the sentence around it is.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chosen key, for a controlled select.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting key, for an uncontrolled select; defaults to the first choice.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the trigger.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

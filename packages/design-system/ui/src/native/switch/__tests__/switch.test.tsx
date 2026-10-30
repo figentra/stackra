@@ -32,6 +32,8 @@ vi.mock("heroui-native", async () => {
     Label: record("label"),
     Description: record("description"),
     FieldError: record("field-error"),
+    Switch: record("switch"),
+    useThemeColor: (names: readonly string[]) => names.map((name) => `color:${name}`),
   };
 });
 
@@ -125,6 +127,13 @@ describe("Switch (native)", () => {
     received.props = {};
     render(<Switch label="A" />);
     expect("isRequired" in propsOf("control-field")).toBe(false);
+  });
+
+  it("draws the off track in the field edge colour and the on track in the accent", () => {
+    render(<Switch label="A" />);
+    expect(propsOf("switch")["animation"]).toEqual({
+      backgroundColor: { value: ["color:field-border", "color:accent"] },
+    });
   });
 
   it("refuses HeroUI Native's names for what the contract names", () => {

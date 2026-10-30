@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the single-column-layout route of @figentra/playground: its path, title and category. The page it renders
+ * Purpose: the single-column-layout route of @figentra/playground: its path. The page it renders
  *          is `single-column-layout.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The SingleColumnLayout page, at `/single-column-layout`. */
-export class SingleColumnLayoutRoute extends Route({ path: "/single-column-layout" }) {
-  /** The page title. */
-  static readonly title = "Single column layout";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Layout";
-}
+export class SingleColumnLayoutRoute extends Route({ path: "/single-column-layout" }) {}

@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "08e59230ac85f3b1",
+    "propsFiles": ["ui/src/native/mode-switch/mode-switch.props.ts"]
+  },
+  "importLine": "import { ModeSwitch } from \"@stackra/ui/native\";",
+  "key": "free/mode-switch",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new mode each time the viewer switches.",
+          "name": "onModeChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(mode: \"normal\" | \"developer\") => void"
+        }
+      ],
+      "name": "ModeSwitch",
+      "props": [
+        {
+          "description": "The visible label (`Developer mode`); it is the switch's accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the switch.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The current mode, for a controlled switch; pair it with `onModeChange`.",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"normal\" | \"developer\""
+        },
+        {
+          "description": "The starting mode, for an uncontrolled switch; `normal` when left out.",
+          "name": "defaultMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"normal\" | \"developer\""
+        },
+        {
+          "description": "True to refuse switching.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

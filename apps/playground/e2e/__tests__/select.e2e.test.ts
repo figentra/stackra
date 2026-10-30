@@ -14,6 +14,8 @@
 // @covers sta-350:FR-081 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/select?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Select" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Select", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -46,7 +50,7 @@ test("each field is named, and the description and the error are tied to its tri
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   await expect(basics.getByRole("button", { name: /Order status/ })).toBeVisible();
   await expect(basics.getByRole("button", { name: /Sort orders by/ })).toBeVisible();
   await expect(basics.getByRole("button", { name: /Shipping method/ })).toHaveAccessibleDescription(
@@ -132,7 +136,7 @@ test("a disabled field cannot be focused, and a read-only one keeps focus but ne
 test("the list is at least as wide as its trigger", async ({ page }) => {
   await open(page, "light", "en");
   const trigger = page
-    .getByRole("region", { name: "Basics" })
+    .getByRole("region", { name: "Usage" })
     .getByRole("button", { name: /Order status/ });
   await trigger.click();
   const triggerBox = await trigger.boundingBox();
@@ -146,10 +150,8 @@ test("the list is at least as wide as its trigger", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the chevron sits at the reading-end side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const trigger = page
-      .getByRole("region", { name: "Basics" })
-      .locator('[data-slot="select-trigger"]')
-      .first();
+    // By id and place: the words speak the page's locale.
+    const trigger = example(page, "usage").locator('[data-slot="select-trigger"]').first();
     const triggerBox = await trigger.boundingBox();
     const chevron = await trigger.locator('[data-slot="select-default-indicator"]').boundingBox();
     if (!triggerBox || !chevron) throw new Error("a box is missing");

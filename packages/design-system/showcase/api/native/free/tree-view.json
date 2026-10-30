@@ -1,0 +1,181 @@
+{
+  "generatedFrom": {
+    "hash": "f925b71d9b04f4de",
+    "propsFiles": ["ui/src/native/tree-view/tree-view.props.ts"]
+  },
+  "importLine": "import { TreeView } from \"@stackra/ui/native\";",
+  "key": "free/tree-view",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the ids now expanded each time a row opens or closes.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Called with a row's id when it is activated (pressed, or Enter on web).",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "name": "TreeView",
+      "props": [
+        {
+          "description": "The top-level rows, in order.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TreeViewNode[]"
+        },
+        {
+          "description": "The accessible name of the tree, for example \"Chart of accounts\".",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The ids of the expanded rows, for a controlled tree; pair it with `onExpandedChange`.",
+          "name": "expandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids expanded at the start, for an uncontrolled tree.",
+          "name": "defaultExpandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "default": "none",
+          "description": "What a press or Space does: nothing, select one item, or toggle several. Defaults to `none`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

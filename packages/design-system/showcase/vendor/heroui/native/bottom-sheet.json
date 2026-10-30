@@ -1,0 +1,288 @@
+{
+  "slug": "bottom-sheet",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(overlays)/bottom-sheet.mdx",
+  "parts": [
+    {
+      "name": "BottomSheet",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Bottom sheet content and trigger elements"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled open state of the bottom sheet"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial open state when uncontrolled"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(value: boolean) => void",
+          "description": "Callback when open state changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Trigger element content"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "description": "Render as child element without wrapper"
+        },
+        {
+          "name": "...TouchableOpacityProps",
+          "type": "TouchableOpacityProps",
+          "description": "All standard React Native TouchableOpacity props are supported"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Portal",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Portal content (overlay and bottom sheet)"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true on iOS, uses View instead of FullWindowOverlay. Enables element inspector; overlay won't appear above native modals"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for portal container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for portal container"
+        },
+        {
+          "name": "hostName",
+          "type": "string",
+          "description": "Optional portal host name for specific container"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount when closed for animation purposes"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Overlay",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom overlay content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for overlay"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles for overlay container"
+        },
+        {
+          "name": "animation",
+          "type": "Omit<PopupOverlayAnimation, 'entering' | 'exiting'>",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "isCloseOnPress",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether pressing overlay closes bottom sheet"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Bottom sheet content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for bottom sheet container"
+        },
+        {
+          "name": "containerClassName",
+          "type": "string",
+          "description": "Additional CSS classes for container"
+        },
+        {
+          "name": "contentContainerClassName",
+          "type": "string",
+          "description": "Additional CSS classes for content container"
+        },
+        {
+          "name": "backgroundClassName",
+          "type": "string",
+          "description": "Additional CSS classes for background"
+        },
+        {
+          "name": "handleClassName",
+          "type": "string",
+          "description": "Additional CSS classes for handle"
+        },
+        {
+          "name": "handleIndicatorClassName",
+          "type": "string",
+          "description": "Additional CSS classes for handle indicator"
+        },
+        {
+          "name": "contentContainerProps",
+          "type": "Omit<BottomSheetViewProps, 'children'>",
+          "description": "Props for the content container"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationDisabled",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "...GorhomBottomSheetProps",
+          "type": "Partial<GorhomBottomSheetProps>",
+          "description": "All [@gorhom/bottom-sheet props](https://gorhom.dev/react-native-bottom-sheet/props) are supported"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Title content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for title"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "BottomSheet.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for description"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useBottomSheet",
+      "signature": "useBottomSheet()",
+      "returns": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Current open state"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(value: boolean) => void",
+          "description": "Function to change open state"
+        }
+      ]
+    },
+    {
+      "name": "useBottomSheetAnimation",
+      "signature": "useBottomSheetAnimation()",
+      "returns": [
+        {
+          "name": "progress",
+          "type": "SharedValue<number>",
+          "description": "Animation progress (0=idle, 1=open, 2=close)"
+        }
+      ]
+    },
+    {
+      "name": "useBottomSheetAwareHandlers",
+      "signature": "useBottomSheetAwareHandlers()",
+      "returns": [
+        {
+          "name": "onFocus",
+          "type": "(e: FocusEvent) => void",
+          "description": "Focus handler that notifies the bottom sheet about the keyboard target"
+        },
+        {
+          "name": "onBlur",
+          "type": "(e: BlurEvent) => void",
+          "description": "Blur handler that conditionally clears the keyboard target in the bottom sheet state"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

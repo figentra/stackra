@@ -1,0 +1,19 @@
+{
+  "basics": {
+    "label": "Discount",
+    "hint": "Applied to every item in the cart."
+  },
+  "input": {
+    "label": "Monthly ad budget",
+    "hint": "Drag, or type an exact amount."
+  },
+  "vertical": {
+    "label": "Showroom cooling",
+    "cool": "Cool",
+    "warm": "Warm"
+  },
+  "arabic": {
+    "label": "نسبة الخصم",
+    "hint": "تُطبَّق على كل المنتجات في السلة."
+  }
+}

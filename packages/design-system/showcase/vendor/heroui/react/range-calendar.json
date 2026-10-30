@@ -1,0 +1,207 @@
+{
+  "slug": "range-calendar",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(date-and-time)/range-calendar.mdx",
+  "parts": [
+    {
+      "name": "RangeCalendar",
+      "props": [
+        {
+          "name": "value",
+          "type": "RangeValue<DateValue> | null",
+          "description": "Controlled selected range."
+        },
+        {
+          "name": "defaultValue",
+          "type": "RangeValue<DateValue> | null",
+          "description": "Initial selected range (uncontrolled)."
+        },
+        {
+          "name": "onChange",
+          "type": "(value: RangeValue<DateValue>) => void",
+          "description": "Called when selection changes."
+        },
+        {
+          "name": "focusedValue",
+          "type": "DateValue",
+          "description": "Controlled focused date."
+        },
+        {
+          "name": "onFocusChange",
+          "type": "(value: DateValue) => void",
+          "description": "Called when focus moves to another date."
+        },
+        {
+          "name": "minValue",
+          "type": "DateValue",
+          "default": "Calendar-aware `1900-01-01`",
+          "description": "Earliest selectable date."
+        },
+        {
+          "name": "maxValue",
+          "type": "DateValue",
+          "default": "Calendar-aware `2099-12-31`",
+          "description": "Latest selectable date."
+        },
+        {
+          "name": "isDateUnavailable",
+          "type": "(date: DateValue) => boolean",
+          "description": "Marks dates as unavailable."
+        },
+        {
+          "name": "allowsNonContiguousRanges",
+          "type": "boolean",
+          "default": "false",
+          "description": "Allows ranges that span unavailable dates."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables interaction and selection."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Keeps content readable but prevents selection changes."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Marks the calendar as invalid for validation UI."
+        },
+        {
+          "name": "visibleDuration",
+          "type": "{months?: number}",
+          "default": "{months: 1}",
+          "description": "Number of visible months."
+        },
+        {
+          "name": "defaultYearPickerOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial open state of internal year picker."
+        },
+        {
+          "name": "isYearPickerOpen",
+          "type": "boolean",
+          "description": "Controlled year picker open state."
+        },
+        {
+          "name": "onYearPickerOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Called when year picker open state changes."
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.Cell Render",
+      "props": [
+        {
+          "name": "formattedDate",
+          "type": "string",
+          "description": "Localized day label for the cell."
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the date is selected."
+        },
+        {
+          "name": "isSelectionStart",
+          "type": "boolean",
+          "description": "Whether the date is the start of the selected range."
+        },
+        {
+          "name": "isSelectionEnd",
+          "type": "boolean",
+          "description": "Whether the date is the end of the selected range."
+        },
+        {
+          "name": "isUnavailable",
+          "type": "boolean",
+          "description": "Whether the date is unavailable."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the cell is disabled."
+        },
+        {
+          "name": "isOutsideMonth",
+          "type": "boolean",
+          "description": "Whether the date belongs to adjacent month."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".range-calendar",
+      "description": "Root container."
+    },
+    {
+      "name": ".range-calendar__header",
+      "description": "Header row containing nav buttons and heading."
+    },
+    {
+      "name": ".range-calendar__heading",
+      "description": "Current month label."
+    },
+    {
+      "name": ".range-calendar__nav-button",
+      "description": "Previous/next navigation controls."
+    },
+    {
+      "name": ".range-calendar__grid",
+      "description": "Main day grid."
+    },
+    {
+      "name": ".range-calendar__grid-header",
+      "description": "Weekday header row wrapper."
+    },
+    {
+      "name": ".range-calendar__grid-body",
+      "description": "Date rows wrapper."
+    },
+    {
+      "name": ".range-calendar__header-cell",
+      "description": "Weekday header cell."
+    },
+    {
+      "name": ".range-calendar__cell",
+      "description": "Interactive day cell wrapper."
+    },
+    {
+      "name": ".range-calendar__cell-button",
+      "description": "Interactive day button inside each cell."
+    },
+    {
+      "name": ".range-calendar__cell-indicator",
+      "description": "Dot indicator inside a day cell."
+    },
+    {
+      "name": ".calendar-year-picker__trigger",
+      "description": "Year picker toggle button."
+    },
+    {
+      "name": ".calendar-year-picker__trigger-heading",
+      "description": "Heading text inside year picker trigger."
+    },
+    {
+      "name": ".calendar-year-picker__trigger-indicator",
+      "description": "Indicator icon inside year picker trigger."
+    },
+    {
+      "name": ".calendar-year-picker__year-grid",
+      "description": "Overlay grid of selectable years."
+    },
+    {
+      "name": ".calendar-year-picker__year-cell",
+      "description": "Individual year option."
+    }
+  ]
+}

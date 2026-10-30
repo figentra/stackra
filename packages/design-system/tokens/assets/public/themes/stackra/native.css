@@ -3,6 +3,7 @@
 @theme {
   --radius: 0.25rem;
   --field-radius: var(--radius);
+  --field-border-width: 1px;
   --font-display: "Geist";
   --font-display-arabic: "IBM Plex Sans Arabic";
 }
@@ -42,6 +43,19 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-function: var(--syntax-function);
+  --color-syntax-type: var(--syntax-type);
+  --color-syntax-variable: var(--syntax-variable);
+  --color-syntax-comment: var(--syntax-comment);
+  --color-syntax-punctuation: var(--syntax-punctuation);
+  --color-syntax-tag: var(--syntax-tag);
+  --color-syntax-attribute: var(--syntax-attribute);
+  --color-syntax-operator: var(--syntax-operator);
+  --color-syntax-inserted: var(--syntax-inserted);
+  --color-syntax-deleted: var(--syntax-deleted);
 }
 
 @layer theme {
@@ -111,11 +125,24 @@
       --banner-staging-foreground: oklch(1 0 0);
       --banner-acting-as: oklch(0.5 0.17 350);
       --banner-acting-as-foreground: oklch(1 0 0);
-      --chart-1: oklch(0.55 0.12 248);
-      --chart-2: oklch(0.6 0.1 185);
-      --chart-3: oklch(0.52 0.16 300);
-      --chart-4: oklch(0.62 0.15 55);
-      --chart-5: oklch(0.55 0.17 355);
+      --chart-1: oklch(0.5 0.13 252);
+      --chart-2: oklch(0.64 0.11 185);
+      --chart-3: oklch(0.4 0.15 300);
+      --chart-4: oklch(0.65 0.15 55);
+      --chart-5: oklch(0.54 0.18 355);
+      --syntax-keyword: #005FBC;
+      --syntax-string: #006F2B;
+      --syntax-number: #A14400;
+      --syntax-function: #7347AF;
+      --syntax-type: #006A72;
+      --syntax-variable: #1263A6;
+      --syntax-comment: #616157;
+      --syntax-punctuation: #4E4D47;
+      --syntax-tag: #AF3433;
+      --syntax-attribute: #865500;
+      --syntax-operator: #9B424D;
+      --syntax-inserted: #006F19;
+      --syntax-deleted: #B02A2D;
     }
 
     @variant dark {
@@ -183,11 +210,24 @@
       --banner-staging-foreground: oklch(0.158 0.005 248);
       --banner-acting-as: oklch(0.72 0.15 350);
       --banner-acting-as-foreground: oklch(0.158 0.005 248);
-      --chart-1: oklch(0.72 0.11 248);
-      --chart-2: oklch(0.78 0.11 185);
-      --chart-3: oklch(0.7 0.14 300);
-      --chart-4: oklch(0.78 0.14 60);
-      --chart-5: oklch(0.72 0.15 355);
+      --chart-1: oklch(0.7 0.12 252);
+      --chart-2: oklch(0.86 0.11 185);
+      --chart-3: oklch(0.6 0.17 300);
+      --chart-4: oklch(0.8 0.14 60);
+      --chart-5: oklch(0.68 0.17 355);
+      --syntax-keyword: #61C2FF;
+      --syntax-string: #7CDD93;
+      --syntax-number: #FFA85D;
+      --syntax-function: #CEA4FF;
+      --syntax-type: #4CDBE3;
+      --syntax-variable: #80CAFF;
+      --syntax-comment: #9399A2;
+      --syntax-punctuation: #B3B8BE;
+      --syntax-tag: #FF8A82;
+      --syntax-attribute: #F7C15F;
+      --syntax-operator: #FF9DA5;
+      --syntax-inserted: #81DD85;
+      --syntax-deleted: #FF877F;
     }
   }
 }

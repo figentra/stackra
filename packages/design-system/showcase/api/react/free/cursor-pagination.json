@@ -1,0 +1,154 @@
+{
+  "generatedFrom": {
+    "hash": "cda9966c8adb9222",
+    "propsFiles": ["ui/src/react/cursor-pagination/cursor-pagination.props.ts"]
+  },
+  "importLine": "import { CursorPagination } from \"@stackra/ui/react\";",
+  "key": "free/cursor-pagination",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user asks for the next page (the `pager` form) or for more items (the `load-more` form).",
+          "name": "onNext",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the user asks for the previous page; the `load-more` form has no previous button.",
+          "name": "onPrevious",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "CursorPagination",
+      "props": [
+        {
+          "description": "Whether the server has a page after this one: its `hasMore`. Without it the next button is disabled.",
+          "name": "hasMore",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether an earlier page exists, which the app knows from its cursor history. Defaults to false.",
+          "name": "hasPrevious",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "pager",
+          "description": "`pager` shows previous and next; `load-more` shows one button that adds the next page. Defaults to `pager`.",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"pager\" | \"load-more\""
+        },
+        {
+          "description": "How many items are shown now, never a total: it is announced politely when it changes. Left out, no count shows.",
+          "name": "count",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True while a page loads: the button that was pressed shows a spinner and presses are refused.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "md",
+          "description": "The height and text size of the buttons. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The spoken name of the pagination landmark. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text of the previous button. Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "previousLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text of the next button. Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "nextLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text of the load-more button. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "loadMoreLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the count as a sentence, for example \"Showing 20 orders\". Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "countLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(count: number) => string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

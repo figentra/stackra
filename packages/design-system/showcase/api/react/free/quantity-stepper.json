@@ -1,0 +1,153 @@
+{
+  "generatedFrom": {
+    "hash": "a8b79ff050eaa6d4",
+    "propsFiles": ["ui/src/react/quantity-stepper/quantity-stepper.props.ts"]
+  },
+  "importLine": "import { QuantityStepper } from \"@stackra/ui/react\";",
+  "key": "free/quantity-stepper",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new count.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: number) => void"
+        },
+        {
+          "description": "Called when minus is pressed at the minimum; with it the minus shows a remove mark there.",
+          "name": "onRemove",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "QuantityStepper",
+      "props": [
+        {
+          "description": "The count, for a controlled stepper; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "minValue",
+          "description": "The count at the start, for an uncontrolled stepper. Defaults to `minValue`.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The lowest count. Defaults to 0.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The highest count. No limit when left out.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How much one press changes the count. Defaults to 1.",
+          "name": "step",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The spoken name, for example \"Quantity of flat white\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name of plus. Defaults to the catalogue's \"Increase\".",
+          "name": "incrementLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name of minus. Defaults to the catalogue's \"Decrease\".",
+          "name": "decrementLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name of minus while it removes. Defaults to the catalogue's \"Remove\".",
+          "name": "removeLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "The size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to refuse both buttons.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

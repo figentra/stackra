@@ -352,6 +352,43 @@ and `isKeyboardDismissDisabled` govern how it closes; `placement` is a reading-d
 - `ProgressBar` and `ProgressCircle` take a required `label`; no `value` means indeterminate. Native draws both itself with
   `react-native-reanimated` and, for the ring, `react-native-svg`.
 
+## Charts
+
+Stackra draws its own charts (STA-1371): Recharts on web, Victory Native and Skia on native, one contract in
+`src/contracts` (`ChartContractProps` and its per-chart extensions). HeroUI Pro's charts are not used.
+
+```tsx
+<BarChart
+  data={[{ month: "2026-01-01", desktop: 186, mobile: 80 }]}
+  series={[
+    { key: "desktop", label: t(K.desktop) },
+    { key: "mobile", label: t(K.mobile), color: "chart-2" },
+  ]}
+  xKey="month"
+  xFormat={{ month: "short" }}
+  valueFormat={{ notation: "compact" }}
+  label={t(K.visitors)}
+/>
+```
+
+- `AreaChart`, `BarChart` (`orientation` vertical or horizontal; grouped, or `stacked`), `LineChart`, `PieChart`,
+  `DonutChart` (the total and `centerLabel` in the hole), `RadarChart`, `RadialBarChart` and `Sparkline`; on web also
+  `ChartTooltip` and `ChartLegend`, which every chart draws itself and which serve a chart composed from Recharts.
+- A series is `{ key, label, color? }`; `color` is a theme colour name (`chart-1` to `chart-5`, `accent`, `success`,
+  `warning`, `danger`), `chart-<n>` by position when left out. Colours are read from the theme's own custom properties
+  (`var(--chart-<n>)` as SVG attributes on web, `--color-chart-<n>` through Uniwind on native), so brands, dark mode and
+  the theme studio repaint a chart. The web writes no `<style>` tag and no `dangerouslySetInnerHTML`, so a strict
+  `style-src` needs no allowance for the charts themselves (Recharts still sizes its wrapper through the DOM style API).
+- Values and categories are written in the provider's locale and numerals (`xFormat` makes a category a date, read in
+  UTC); `valueFormat` takes `Intl.NumberFormatOptions`.
+- The category axis runs in the reading direction and the value axis sits on its start; pies, radars and rings are not
+  mirrored. Animation stops under reduced motion.
+- `label` is required: the plot is an image of that name, focusable on web (arrow keys move the tooltip), and its
+  numbers are also a captioned data table (web) or the spoken value (native). A sparkline speaks its values after its
+  label.
+- `recharts` (web) and `victory-native` with `@shopify/react-native-skia` (native) are optional peers: an app that draws
+  a chart installs them.
+
 ## Data primitives
 
 Wave 5 follows the vocabulary of ADR 0313: `items` (each with a string `id`), `selectionMode` with `selectedKeys` and

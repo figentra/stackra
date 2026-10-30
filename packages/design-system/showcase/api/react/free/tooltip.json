@@ -1,0 +1,135 @@
+{
+  "generatedFrom": {
+    "hash": "6535ffe7b5189677",
+    "heroDoc": "vendor/heroui/react/tooltip.json",
+    "propsFiles": ["ui/src/react/tooltip/tooltip.props.ts"]
+  },
+  "importLine": "import { Tooltip } from \"@stackra/ui/react\";",
+  "key": "free/tooltip",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "Tooltip",
+      "name": "Tooltip",
+      "props": [
+        {
+          "description": "The element the tooltip describes: one focusable, pressable element such as a Button or an IconButton. On web the\ntooltip shows on hover and on keyboard focus; on native it becomes the element's accessibility hint.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "What the tooltip says: one short phrase, the sort a hover label carries, set in the app's language.",
+          "name": "content",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw an arrow from the tooltip to the element. Web only; native draws no tooltip. Defaults to false.",
+          "name": "hasArrow",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "default": "500",
+          "description": "Delay in milliseconds before hiding tooltip",
+          "name": "closeDelay",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "1500",
+          "description": "Delay in milliseconds before showing tooltip",
+          "name": "delay",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "false",
+          "description": "Whether the tooltip is disabled",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "false",
+          "description": "Whether to let React Aria skip the enter and exit animations while its global warmup timer is\nactive, i.e. when moving quickly from one tooltip to another.",
+          "name": "shouldSkipAnimation",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "'hover'",
+          "description": "How the tooltip is triggered",
+          "name": "trigger",
+          "required": false,
+          "source": "heroui",
+          "type": "\"focus\" | \"hover\""
+        },
+        {
+          "default": "true",
+          "description": "Whether the tooltip should close when the trigger is pressed.",
+          "name": "shouldCloseOnPress",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base tooltip styles with animations",
+      "name": ".tooltip"
+    },
+    {
+      "description": "Trigger element styles",
+      "name": ".tooltip__trigger"
+    }
+  ]
+}

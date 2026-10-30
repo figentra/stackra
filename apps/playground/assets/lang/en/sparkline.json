@@ -1,0 +1,21 @@
+{
+  "desktop": "Desktop",
+  "mobile": "Mobile",
+  "visitors": "Visitors",
+  "months_description": "January to June 2026",
+  "trend": "Up 5.2% this month",
+  "chrome": "Chrome",
+  "safari": "Safari",
+  "firefox": "Firefox",
+  "edge": "Edge",
+  "other": "Other",
+  "line": "Revenue, last 12 weeks, line",
+  "area": "Revenue, last 12 weeks, area",
+  "bar": "Orders, last 12 weeks, bars",
+  "line_caption": "Line",
+  "area_caption": "Area",
+  "bar_caption": "Bar",
+  "stat_label": "Revenue",
+  "stat_badge": "+12%",
+  "stat_trend": "Revenue, last 12 weeks"
+}

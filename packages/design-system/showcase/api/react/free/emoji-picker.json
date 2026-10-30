@@ -1,0 +1,46 @@
+{
+  "generatedFrom": {
+    "hash": "b5045b90524de20f",
+    "propsFiles": ["ui/src/react/emoji-picker/emoji-picker.props.ts"]
+  },
+  "importLine": "import { EmojiPicker } from \"@stackra/ui/react\";",
+  "key": "free/emoji-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the emoji picked.",
+          "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(emoji: string) => void"
+        }
+      ],
+      "name": "EmojiPicker",
+      "props": [
+        {
+          "description": "Emoji shown first under \"Recent\", newest first.",
+          "name": "recent",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The spoken name of the grid; defaults to the `ui` catalogue's phrase.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

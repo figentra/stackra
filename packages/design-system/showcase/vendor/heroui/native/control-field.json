@@ -1,0 +1,122 @@
+{
+  "slug": "control-field",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/control-field.mdx",
+  "parts": [
+    {
+      "name": "ControlField",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: ControlFieldRenderProps) => React.ReactNode)",
+          "description": "Content to render inside the form control, or a render function"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the control is selected/checked"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the form control is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the form control is invalid"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the form control is required"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom class name for the root element"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "(isSelected: boolean) => void",
+          "description": "Callback when selection state changes"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ControlField.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Control component to render (Switch, Checkbox, Radio)"
+        },
+        {
+          "name": "variant",
+          "type": "'checkbox' | 'radio' | 'switch'",
+          "default": "'switch'",
+          "description": "Variant of the control to render when no children provided"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom class name for the indicator element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useControlField",
+      "signature": "useControlField()",
+      "returns": [
+        {
+          "name": "isSelected",
+          "type": "boolean | undefined",
+          "description": "Whether the control is selected/checked"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "((isSelected: boolean) => void) | undefined",
+          "description": "Callback when selection state changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the form control is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the form control is invalid"
+        },
+        {
+          "name": "isPressed",
+          "type": "SharedValue<boolean>",
+          "description": "Reanimated shared value indicating press state"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

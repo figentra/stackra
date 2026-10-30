@@ -14,8 +14,9 @@ const LENGTH = /^(-?[\d.]+)(px|rem)$/;
 
 /** A web variable's value as Uniwind's runtime takes it, or `undefined` for one it cannot read. */
 function nativeValue(name: string, value: string): string | number | undefined {
-  // Shadows hold oklch inside a list, which only Uniwind's build converts; a `var()` is resolved by the built styles.
-  if (name.endsWith("-shadow") || value.startsWith("var(")) return undefined;
+  // Shadows hold oklch inside a list, which only Uniwind's build converts; a value that refers to another variable
+  // (`var()`, or a `color-mix()` over one) is resolved by the built styles.
+  if (name.endsWith("-shadow") || value.includes("var(")) return undefined;
   const length = LENGTH.exec(value);
   // Uniwind's build turns lengths into px numbers, and its runtime takes values as given.
   if (length) return Number(length[1]) * (length[2] === "rem" ? 16 : 1);
@@ -31,11 +32,15 @@ const native = (variables: Readonly<Record<string, string>>) =>
     }),
   );
 
-/** The HeroUI variables of `theme` for each of Uniwind's themes: the mode-independent ones and the mode's. */
+/**
+ * The variables of `theme` for each of Uniwind's themes: HeroUI's roles and Stackra's palette steps, mode-independent
+ * and the mode's. The palette carries the accent's hover, pressed and soft steps, which HeroUI's soft and secondary
+ * controls read; without it a new accent left them in the built theme's colour.
+ */
 export function uniwindVariables(theme: Theme): UniwindVariables {
-  const { heroui } = themeVariables(theme);
+  const { heroui, stackra } = themeVariables(theme);
   return {
-    light: native({ ...heroui.root, ...heroui.light }),
-    dark: native({ ...heroui.root, ...heroui.dark }),
+    light: native({ ...stackra.light, ...heroui.root, ...heroui.light }),
+    dark: native({ ...stackra.dark, ...heroui.root, ...heroui.dark }),
   };
 }

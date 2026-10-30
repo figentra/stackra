@@ -1,0 +1,448 @@
+{
+  "generatedFrom": {
+    "hash": "648f4082eb6f9b1f",
+    "propsFiles": [
+      "ui/src/react/data-table/column-menu.props.ts",
+      "ui/src/react/data-table/data-table.props.ts"
+    ]
+  },
+  "importLine": "import { DataTable } from \"@stackra/ui/react\";",
+  "key": "free/data-table",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called by the error state's retry button; left out, the error state has no button.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called by a column menu's \"Filter by this column\"; left out, the menu has no such item.",
+          "name": "onFilterColumn",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string) => void"
+        },
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Web: called with a column's new width, in CSS pixels, when a resize ends.",
+          "name": "onColumnResize",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, width: number) => void"
+        },
+        {
+          "description": "Web: given, headers can be dragged to reorder the columns; called with the column and its new index.",
+          "name": "onColumnMove",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, toIndex: number) => void"
+        },
+        {
+          "description": "Called with the whole next query each time the user changes any part of it.",
+          "name": "onQueryChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(query: ResourceQuery) => void"
+        },
+        {
+          "description": "Called with true when the user chooses all matching records and with false when they go back to the rows shown.",
+          "name": "onAllMatchingSelectedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isAllMatchingSelected: boolean) => void"
+        },
+        {
+          "description": "Called when the user asks for the next page (the `pager` form) or for more items (the `load-more` form).",
+          "name": "onNext",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the user asks for the previous page; the `load-more` form has no previous button.",
+          "name": "onPrevious",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "DataTable",
+      "props": [
+        {
+          "description": "The actions of one row, listed in the row's menu in a last column. The handler of each closes over the row.\nLeft out, there is no actions column.",
+          "name": "rowActions",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => readonly ResourceAction[]"
+        },
+        {
+          "description": "The actions on the selection, drawn by the bulk bar while rows are selected (`selectionMode` `multiple`).",
+          "name": "bulkActions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ResourceAction[]"
+        },
+        {
+          "description": "What is drawn above the rows, usually a `FilterBar` given the same `query`; the table does not import it.",
+          "name": "filterBar",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the table shows in place of its own \"no results\" state when the query narrows the records and none match.\nLeft out, an `EmptyState` with the `no-results` reason and a button that clears the filters.",
+          "name": "filteredEmptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The thrown value of a failed fetch. Given, the table shows an `ErrorState` in place of the rows.",
+          "name": "error",
+          "required": false,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "default": "unexpected",
+          "description": "What kind of failure `error` is, so the state's wording and icon fit. Defaults to `unexpected`.",
+          "name": "errorKind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"unauthenticated\" | \"forbidden\" | \"not-found\" | \"unexpected\""
+        },
+        {
+          "description": "Whether the error's message is shown, as for `ErrorState`: by default outside production only, because a server\nmessage is an internal. An app whose error carries text written for the user sets it to true.",
+          "name": "isMessageShown",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The text of the retry button. Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "retryLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The level of the empty and error states' titles, so the page keeps one outline. Defaults to 3.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "The spoken name of the pagination landmark. Defaults to the table's `label` and the word \"pagination\".",
+          "name": "paginationLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the bulk bar. Defaults to the table's `label` and the word \"actions\".",
+          "name": "bulkActionsLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The id of a column to group the rows by: the rows on screen are gathered under a heading row per value of that\ncolumn (in the order the values first appear), which carries the group's count and aggregates.",
+          "name": "groupBy",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The aggregate of each numeric column, by column id: a heading row per group and a total row at the end show it.",
+          "name": "aggregates",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, \"max\" | \"min\" | \"count\" | \"sum\" | \"avg\">>"
+        },
+        {
+          "description": "The ids of the columns not drawn, usually from a `ColumnChooser`; the row-header column is always drawn.",
+          "name": "hiddenColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The collection engine to draw from (`useCollection`), as DataView passes it: the columns as arranged, the sort\nkeys, the selection, the density, the group and the totals are its, and every change goes back to it. Left out,\nthe table runs its own engine over `columns`, controlled by `query`, `selectedKeys`, `groupBy`, `aggregates` and\n`hiddenColumns` as before.",
+          "name": "collection",
+          "required": false,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The key the table's own engine keeps the user's column layout under (left out, nothing persists).",
+          "name": "collectionKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to give each header the column tools: a menu (sort, add to sort, filter, pin, hide, group, summary, resize,\nmove), a resize handle and drag to reorder.",
+          "name": "hasColumnTools",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TItem[]"
+        },
+        {
+          "default": "primary",
+          "description": "The look of the table. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "The spoken name of the table, for example \"Orders\"; a table without one is anonymous to assistive technology.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "none",
+          "description": "What a press or Space does: nothing, select one item, or toggle several. Defaults to `none`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The columns, in reading order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TableColumn[]"
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "24rem",
+          "description": "The height the rows scroll inside when the header is sticky, as a CSS length. Defaults to `24rem`.",
+          "name": "maxHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
+          "name": "hasMore",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing.",
+          "name": "density",
+          "required": false,
+          "source": "stackra",
+          "type": "\"compact\" | \"normal\" | \"roomy\""
+        },
+        {
+          "description": "The content of one cell. Left out, a cell shows the text of the row's property named by the column's `id`; give it\nto draw a badge, a date or a link, and give the app's own text for each value, as the table adds none.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "True to keep the header in view while the rows scroll; the table then scrolls inside `maxHeight`.",
+          "name": "isStickyHeader",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Web: true to give each header a resize handle (pointer, and the keyboard through the column menu's \"Resize\"); the\ncolumns then take their `width`, `minWidth` and `maxWidth`, and the table scrolls sideways past its width.",
+          "name": "isColumnResizable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The query in force: the search text, the applied filters and the sort.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "ResourceQuery"
+        },
+        {
+          "description": "How many records match the query across all pages, when the server says. Left out, \"select all\" is not offered.",
+          "name": "totalCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True when the user chose every matching record; the bar then reads `totalCount` as the selected count.",
+          "name": "isAllMatchingSelected",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "pager",
+          "description": "`pager` shows previous and next; `load-more` shows one button that adds the next page. Defaults to `pager`.",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"pager\" | \"load-more\""
+        },
+        {
+          "description": "Whether an earlier page exists, which the app knows from its cursor history. Defaults to false.",
+          "name": "hasPrevious",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "ColumnEditor",
+      "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Starts a keyboard resize of the column; left out, there is no \"Resize column\".",
+          "name": "onStartResize",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called by \"Filter by this column\"; left out, there is no such item.",
+          "name": "onFilterColumn",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string) => void"
+        }
+      ],
+      "name": "ColumnMenu",
+      "props": [
+        {
+          "description": "The column, as drawn.",
+          "name": "column",
+          "required": true,
+          "source": "stackra",
+          "type": "ResolvedCollectionColumn"
+        },
+        {
+          "description": "The engine the menu changes.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        }
+      ]
+    },
+    {
+      "name": "SavedViews",
+      "props": []
+    },
+    {
+      "name": "SavedViewsMenu",
+      "props": []
+    },
+    {
+      "name": "ColumnChooser",
+      "props": []
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,31 @@
+{
+  "all": "Every part",
+  "title_only": "Title only",
+  "logo": "A logo as the title",
+  "no_actions": "Search and user menu",
+  "long": "A long title shortens",
+  "long_title": "Acme Wholesale Distribution and Fulfilment Services International",
+  "brand": "Acme",
+  "open_navigation": "Open navigation",
+  "search_label": "Search orders",
+  "search_placeholder": "Search orders",
+  "notifications": "Notifications, {unread} unread",
+  "account_label": "Account menu",
+  "profile": "Profile",
+  "settings": "Settings",
+  "sign_out": "Sign out",
+  "search_status": "{query, select, none {No search yet.} other {Searching for “{query}”.}}",
+  "unread_status": "{unread, plural, one {# unread notification.} other {# unread notifications.}}",
+  "action_status": "{action, select, none {No account action chosen.} other {Account action chosen: {action}.}}",
+  "arabic_brand": "أكمي",
+  "arabic_open_navigation": "فتح التنقل",
+  "arabic_search_label": "البحث في الطلبات",
+  "arabic_notifications": "الإشعارات",
+  "arabic_account_label": "قائمة الحساب",
+  "arabic_profile": "الملف الشخصي",
+  "arabic_sign_out": "تسجيل الخروج",
+  "sample": {
+    "account": "Account",
+    "session": "Session"
+  }
+}

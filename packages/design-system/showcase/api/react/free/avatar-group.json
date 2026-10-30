@@ -1,0 +1,135 @@
+{
+  "generatedFrom": {
+    "hash": "e50d346cce17b1d4",
+    "propsFiles": ["ui/src/react/avatar-group/avatar-group.props.ts"]
+  },
+  "importLine": "import { AvatarGroup } from \"@stackra/ui/react\";",
+  "key": "free/avatar-group",
+  "parts": [
+    {
+      "name": "AvatarGroup",
+      "props": [
+        {
+          "description": "The people, in the order they stack (the first on the inline-start side).",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly AvatarGroupItem[]"
+        },
+        {
+          "description": "How many avatars show before a \"+N\" count stands for the rest. Defaults to 4.",
+          "name": "max",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The group's accessible name, for example \"Assigned staff\".",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "default",
+          "description": "The background behind the fallback: neutral or the tone's soft colour. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"soft\""
+        },
+        {
+          "default": "md",
+          "description": "The diameter and the text size of the initials. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The colour role of the initials and fallback icon. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "circle",
+          "description": "A circle for people, a rounded square for organisations. Defaults to `circle`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"circle\" | \"square\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "\"clip\"",
+          "description": "How stacked avatars overlap visually.\n- `\"clip\"` — crescent mask (transparent seam; no box-shadow)\n- `\"ring\"` — solid box-shadow outline via `--background`\nHas no effect when `isGrid` is true.",
+          "name": "overlap",
+          "required": false,
+          "source": "heroui",
+          "type": "\"clip\" | \"ring\""
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<keyof IntrinsicElements, undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDivElement | null> | ((instance: HTMLElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLElement | null> | ((instance: HTMLSpanElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLSpanElement | null> | ((instance: SVGSymbolElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGSymbolElement | null> | ((instance: HTMLObjectElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLObjectElement | null> | ((instance: HTMLMapElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLMapElement | null> | ((instance: SVGFilterElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFilterElement | null> | ((instance: HTMLStyleElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLStyleElement | null> | ((instance: HTMLAnchorElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLAnchorElement | null> | ((instance: HTMLAreaElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLAreaElement | null> | ((instance: HTMLAudioElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLAudioElement | null> | ((instance: HTMLBaseElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLBaseElement | null> | ((instance: HTMLQuoteElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLQuoteElement | null> | ((instance: HTMLBodyElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLBodyElement | null> | ((instance: HTMLBRElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLBRElement | null> | ((instance: HTMLButtonElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLButtonElement | null> | ((instance: HTMLCanvasElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLCanvasElement | null> | ((instance: HTMLTableColElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableColElement | null> | ((instance: HTMLDataElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDataElement | null> | ((instance: HTMLDataListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDataListElement | null> | ((instance: HTMLModElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLModElement | null> | ((instance: HTMLDetailsElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDetailsElement | null> | ((instance: HTMLDialogElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDialogElement | null> | ((instance: HTMLDListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDListElement | null> | ((instance: HTMLEmbedElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLEmbedElement | null> | ((instance: HTMLFieldSetElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLFieldSetElement | null> | ((instance: HTMLFormElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLFormElement | null> | ((instance: HTMLHeadingElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLHeadingElement | null> | ((instance: HTMLHeadElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLHeadElement | null> | ((instance: HTMLHRElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLHRElement | null> | ((instance: HTMLHtmlElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLHtmlElement | null> | ((instance: HTMLIFrameElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLIFrameElement | null> | ((instance: HTMLImageElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLImageElement | null> | ((instance: HTMLInputElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLInputElement | null> | ((instance: HTMLLabelElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLLabelElement | null> | ((instance: HTMLLegendElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLLegendElement | null> | ((instance: HTMLLIElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLLIElement | null> | ((instance: HTMLLinkElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLLinkElement | null> | ((instance: HTMLMetaElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLMetaElement | null> | ((instance: HTMLMeterElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLMeterElement | null> | ((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLOListElement | null> | ((instance: HTMLOptGroupElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLOptGroupElement | null> | ((instance: HTMLOptionElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLOptionElement | null> | ((instance: HTMLOutputElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLOutputElement | null> | ((instance: HTMLParagraphElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLParagraphElement | null> | ((instance: HTMLParamElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLParamElement | null> | ((instance: HTMLPreElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLPreElement | null> | ((instance: HTMLProgressElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLProgressElement | null> | ((instance: HTMLSlotElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLSlotElement | null> | ((instance: HTMLScriptElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLScriptElement | null> | ((instance: HTMLSelectElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLSelectElement | null> | ((instance: HTMLSourceElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLSourceElement | null> | ((instance: HTMLTableElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableElement | null> | ((instance: HTMLTemplateElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTemplateElement | null> | ((instance: HTMLTableSectionElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableSectionElement | null> | ((instance: HTMLTableDataCellElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableDataCellElement | null> | ((instance: HTMLTextAreaElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTextAreaElement | null> | ((instance: HTMLTableHeaderCellElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableHeaderCellElement | null> | ((instance: HTMLTimeElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTimeElement | null> | ((instance: HTMLTitleElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTitleElement | null> | ((instance: HTMLTableRowElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTableRowElement | null> | ((instance: HTMLTrackElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLTrackElement | null> | ((instance: HTMLUListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLUListElement | null> | ((instance: HTMLVideoElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLVideoElement | null> | ((instance: HTMLWebViewElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLWebViewElement | null> | ((instance: SVGSVGElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGSVGElement | null> | ((instance: SVGElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGElement | null> | ((instance: SVGCircleElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGCircleElement | null> | ((instance: SVGClipPathElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGClipPathElement | null> | ((instance: SVGDefsElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGDefsElement | null> | ((instance: SVGDescElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGDescElement | null> | ((instance: SVGEllipseElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGEllipseElement | null> | ((instance: SVGFEBlendElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEBlendElement | null> | ((instance: SVGFEColorMatrixElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEColorMatrixElement | null> | ((instance: SVGFEComponentTransferElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEComponentTransferElement | null> | ((instance: SVGFECompositeElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFECompositeElement | null> | ((instance: SVGFEConvolveMatrixElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEConvolveMatrixElement | null> | ((instance: SVGFEDiffuseLightingElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEDiffuseLightingElement | null> | ((instance: SVGFEDisplacementMapElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEDisplacementMapElement | null> | ((instance: SVGFEDistantLightElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEDistantLightElement | null> | ((instance: SVGFEDropShadowElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEDropShadowElement | null> | ((instance: SVGFEFloodElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEFloodElement | null> | ((instance: SVGFEFuncAElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEFuncAElement | null> | ((instance: SVGFEFuncBElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEFuncBElement | null> | ((instance: SVGFEFuncGElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEFuncGElement | null> | ((instance: SVGFEFuncRElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEFuncRElement | null> | ((instance: SVGFEGaussianBlurElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEGaussianBlurElement | null> | ((instance: SVGFEImageElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEImageElement | null> | ((instance: SVGFEMergeElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEMergeElement | null> | ((instance: SVGFEMergeNodeElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEMergeNodeElement | null> | ((instance: SVGFEMorphologyElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEMorphologyElement | null> | ((instance: SVGFEOffsetElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEOffsetElement | null> | ((instance: SVGFEPointLightElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFEPointLightElement | null> | ((instance: SVGFESpecularLightingElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFESpecularLightingElement | null> | ((instance: SVGFESpotLightElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFESpotLightElement | null> | ((instance: SVGFETileElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFETileElement | null> | ((instance: SVGFETurbulenceElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGFETurbulenceElement | null> | ((instance: SVGForeignObjectElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGForeignObjectElement | null> | ((instance: SVGGElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGGElement | null> | ((instance: SVGImageElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGImageElement | null> | ((instance: SVGLineElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGLineElement | null> | ((instance: SVGLinearGradientElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGLinearGradientElement | null> | ((instance: SVGMarkerElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGMarkerElement | null> | ((instance: SVGMaskElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGMaskElement | null> | ((instance: SVGMetadataElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGMetadataElement | null> | ((instance: SVGPathElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGPathElement | null> | ((instance: SVGPatternElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGPatternElement | null> | ((instance: SVGPolygonElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGPolygonElement | null> | ((instance: SVGPolylineElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGPolylineElement | null> | ((instance: SVGRadialGradientElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGRadialGradientElement | null> | ((instance: SVGRectElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGRectElement | null> | ((instance: SVGSetElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGSetElement | null> | ((instance: SVGStopElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGStopElement | null> | ((instance: SVGSwitchElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGSwitchElement | null> | ((instance: SVGTextElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGTextElement | null> | ((instance: SVGTextPathElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGTextPathElement | null> | ((instance: SVGTSpanElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGTSpanElement | null> | ((instance: SVGUseElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGUseElement | null> | ((instance: SVGViewElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<SVGViewElement | null> | null"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

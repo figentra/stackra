@@ -1,0 +1,92 @@
+{
+  "slug": "input-group",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/input-group.mdx",
+  "parts": [
+    {
+      "name": "InputGroup",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the input group"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire input group and its children are disabled"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration for input group"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "InputGroup.Prefix",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render inside the prefix"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "isDecorative",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true, touches pass through to the Input and content is hidden from screen readers"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "InputGroup.Suffix",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render inside the suffix"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "isDecorative",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true, touches pass through to the Input and content is hidden from screen readers"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

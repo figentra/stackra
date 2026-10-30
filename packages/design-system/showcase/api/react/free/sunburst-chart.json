@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "be06c8acca2de754",
+    "propsFiles": ["ui/src/react/sunburst-chart/sunburst-chart.props.ts"]
+  },
+  "importLine": "import { SunburstChart } from \"@stackra/ui/react\";",
+  "key": "free/sunburst-chart",
+  "parts": [
+    {
+      "name": "SunburstChart",
+      "props": [
+        {
+          "description": "The top slices, each with its nested slices.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SunburstItem[]"
+        },
+        {
+          "description": "The chart's accessible name, such as \"Revenue by category and product\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`accent` steps (the default) or the `categorical` set, by top slice.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The chart's width and height in pixels; 260 by default.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The word under the total in the middle, such as \"Revenue\"; no total without it.",
+          "name": "centerLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

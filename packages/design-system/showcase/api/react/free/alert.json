@@ -1,0 +1,146 @@
+{
+  "generatedFrom": {
+    "hash": "0e7f4b2f1b0a47ac",
+    "heroDoc": "vendor/heroui/react/alert.json",
+    "propsFiles": ["ui/src/react/alert/alert.props.ts"]
+  },
+  "importLine": "import { Alert } from \"@stackra/ui/react\";",
+  "key": "free/alert",
+  "parts": [
+    {
+      "extends": "Alert",
+      "name": "Alert",
+      "props": [
+        {
+          "description": "What happened, in the app's language and a few words. Required: it is the first thing a screen reader says.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Detail under the title: what to do next, or why.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The kind of message. Defaults to `default`; `danger` and `warning` are announced at once.",
+          "name": "tone",
+          "replaces": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An icon in place of the tone's own, or `false` for none. Left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base alert container",
+      "name": ".alert"
+    },
+    {
+      "description": "Icon/indicator container",
+      "name": ".alert__indicator"
+    },
+    {
+      "description": "Content wrapper for title and description",
+      "name": ".alert__content"
+    },
+    {
+      "description": "Alert title text",
+      "name": ".alert__title"
+    },
+    {
+      "description": "Alert description text",
+      "name": ".alert__description"
+    },
+    {
+      "description": "Default gray status",
+      "name": ".alert--default"
+    },
+    {
+      "description": "Accent blue status",
+      "name": ".alert--accent"
+    },
+    {
+      "description": "Success green status",
+      "name": ".alert--success"
+    },
+    {
+      "description": "Warning yellow/orange status",
+      "name": ".alert--warning"
+    },
+    {
+      "description": "Danger red status",
+      "name": ".alert--danger"
+    }
+  ]
+}

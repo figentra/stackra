@@ -4,7 +4,10 @@
  *          overlay and content around the caller's parts, with the contract's names: `isDefaultOpen` is `defaultOpen`,
  *          the overlay's `isCloseOnPress` and the content's `isSwipeable` are both `isDismissable`, and `size` and
  *          `position` become classes on the content and the portal. Every other HeroUI Native content prop passes
- *          through.
+ *          through. `motion` picks the entrance, on Reanimated's layout animations: `slide-up` rises from the bottom
+ *          edge, `stick-top` drops from the top flush with it, `slide-side` slides in a full-height panel from the
+ *          inline-end side (the left in right-to-left). At the `reduced` and `none` motion levels the provider's
+ *          `ReducedMotionConfig` stills them.
  * Boundary: no styling beyond those classes; the look is HeroUI Native's. Header, Body and Footer are the adapted
  *           forms in `modal-section`; Title and Close are HeroUI Native's, with the contract's props. A string child
  *           of those sections is wrapped in `Text`. The Android back button is the phone's Escape key: with
@@ -19,7 +22,19 @@
 /* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
    root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import { Dialog } from "heroui-native";
-import type { ReactElement } from "react";
+import { use, type ReactElement } from "react";
+import {
+  SlideInDown,
+  SlideInLeft,
+  SlideInRight,
+  SlideInUp,
+  SlideOutDown,
+  SlideOutLeft,
+  SlideOutRight,
+  SlideOutUp,
+} from "react-native-reanimated";
+
+import type { OverlayMotion } from "#contracts/enums/overlay-motion.enum";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { BackButtonBlock } from "#native/modal/back-button-block";
@@ -29,6 +44,7 @@ import { ModalFooter } from "#native/modal/modal-footer";
 import { ModalHeader } from "#native/modal/modal-header";
 import { ModalTitle } from "#native/modal/modal-title";
 import type { ModalProps } from "#native/modal/modal.props";
+import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 
 /** The dialog's width by `size`: a cap and centring, or the whole screen. */
 const SIZE_CLASS_NAME = {
@@ -46,6 +62,25 @@ const POSITION_CLASS_NAME = {
   bottom: "justify-end",
 } as const;
 
+/** The portal's and the content's classes of each motion. */
+const MOTION_CLASS_NAME: Readonly<Record<OverlayMotion, { portal: string; content: string }>> = {
+  "slide-up": { portal: "justify-end", content: "" },
+  "stick-top": { portal: "justify-start p-0", content: "rounded-t-none" },
+  "slide-side": { portal: "items-end p-0", content: "h-full w-4/5 max-w-sm rounded-e-none" },
+};
+
+/**
+ * The entrance and exit of each motion. The side panel comes from the inline end: the right in left-to-right, the
+ * left in right-to-left, as Reanimated's slides are physical.
+ */
+function motionAnimation(motion: OverlayMotion, isRtl: boolean) {
+  if (motion === "slide-up") return { entering: SlideInDown, exiting: SlideOutDown };
+  if (motion === "stick-top") return { entering: SlideInUp, exiting: SlideOutUp };
+  return isRtl
+    ? { entering: SlideInLeft, exiting: SlideOutLeft }
+    : { entering: SlideInRight, exiting: SlideOutRight };
+}
+
 /** The modal root: HeroUI Native's dialog parts in one, holding the caller's parts. */
 function ModalRoot({
   children,
@@ -57,12 +92,18 @@ function ModalRoot({
   isKeyboardDismissDisabled = false,
   size = "md",
   position = "auto",
+  motion,
   label,
   className,
   ...rest
 }: ModalProps): ReactElement {
+  const isRtl = use(DesignSystemContext)?.direction === "rtl";
+  const motionClassName = motion ? MOTION_CLASS_NAME[motion] : undefined;
   // A full-screen dialog drops the portal's padding along with its radius.
-  const portalClassName = [POSITION_CLASS_NAME[position], size === "full" ? "p-0" : ""]
+  const portalClassName = [
+    motionClassName?.portal ?? POSITION_CLASS_NAME[position],
+    size === "full" ? "p-0" : "",
+  ]
     .filter(Boolean)
     .join(" ");
   return (
@@ -74,8 +115,11 @@ function ModalRoot({
       <Dialog.Portal className={portalClassName} unstable_accessibilityContainerViewIsModal>
         <Dialog.Overlay isCloseOnPress={isDismissable} />
         <Dialog.Content
+          {...(motion ? { animation: motionAnimation(motion, isRtl) } : {})}
           {...rest}
-          className={[SIZE_CLASS_NAME[size], className].filter(Boolean).join(" ")}
+          className={[SIZE_CLASS_NAME[size], motionClassName?.content, className]
+            .filter(Boolean)
+            .join(" ")}
           isSwipeable={isDismissable}
           {...(label ? { accessibilityLabel: label } : {})}
         >

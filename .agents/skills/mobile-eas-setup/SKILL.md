@@ -28,7 +28,7 @@ steps (store accounts, keys, the first Play upload) are in `apps/docs/src/docs/r
    builds, never build on every push.
 7. **Variables**: build-time configuration is EAS environment variables, not `env` in `eas.json`. Names are written
    here and in the runbook; a human sets values. `EXPO_PUBLIC_*` is inlined into the bundle and is public: never a
-   secret. Licence tokens (HeroUI Pro, Uniwind Pro, when installed) are **secret** variables in every environment, or
+   secret. Licence tokens (Uniwind Pro, when installed) are **secret** variables in every environment, or
    installs silently get stubs.
 8. **`.easignore`** replaces `.gitignore` entirely for uploads: copy `.gitignore`, then add `.claude/`, `.agents/`,
    `.notes/`, agent worktrees, `apps/docs`, `apps/console`, and every `node_modules`. Keep `packages/**` the app needs.

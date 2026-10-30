@@ -1,0 +1,107 @@
+{
+  "generatedFrom": {
+    "hash": "0dfa96af10a83e9c",
+    "propsFiles": [
+      "ui/src/native/item-card/item-card-group.props.ts",
+      "ui/src/native/item-card/item-card.props.ts"
+    ]
+  },
+  "importLine": "import { ItemCard } from \"@stackra/ui/native\";",
+  "key": "free/item-card",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the card is pressed; without it the card is not a button. A pressable card shows a chevron.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "ItemCard",
+      "props": [
+        {
+          "description": "The title, the card's accessible name.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A second, muted line.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "What sits at the inline end, for example a value or a Chip.",
+          "name": "end",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to refuse presses and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the card.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ItemCardGroup",
+      "props": []
+    },
+    {
+      "name": "ItemCard.Group",
+      "props": [
+        {
+          "description": "The heading over the group; it names the group's list.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the group, for example a footnote.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The ItemCards (or SettingsCells).",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Styles the group.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

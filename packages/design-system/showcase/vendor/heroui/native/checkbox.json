@@ -1,0 +1,240 @@
+{
+  "slug": "checkbox",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/checkbox.mdx",
+  "parts": [
+    {
+      "name": "Checkbox",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: CheckboxRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Child elements or render function to customize the checkbox"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the checkbox is currently selected"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "(isSelected: boolean) => void",
+          "default": "undefined",
+          "description": "Callback fired when the checkbox selection state changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is disabled and cannot be interacted with"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is invalid (shows danger color)"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "'primary'",
+          "description": "Variant style for the checkbox"
+        },
+        {
+          "name": "hitSlop",
+          "type": "number",
+          "default": "6",
+          "description": "Hit slop for the pressable area"
+        },
+        {
+          "name": "animation",
+          "type": "CheckboxRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported (except disabled)"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the checkbox is selected"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the checkbox is invalid"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the checkbox is disabled"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[1, 0.96]",
+          "description": "Scale values [unpressed, pressed]"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 150 }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    },
+    {
+      "name": "Checkbox.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: CheckboxRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Content or render function for the checkbox indicator"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes for the indicator"
+        },
+        {
+          "name": "iconProps",
+          "type": "CheckboxIndicatorIconProps",
+          "default": "undefined",
+          "description": "Custom props for the default animated check icon"
+        },
+        {
+          "name": "animation",
+          "type": "CheckboxIndicatorAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...AnimatedViewProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All standard React Native Animated View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 1]",
+          "description": "Opacity values [unselected, selected]"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 100 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "borderRadius.value",
+          "type": "[number, number]",
+          "default": "[8, 0]",
+          "description": "Border radius values [unselected, selected]"
+        },
+        {
+          "name": "borderRadius.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 50 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "translateX.value",
+          "type": "[number, number]",
+          "default": "[-4, 0]",
+          "description": "TranslateX values [unselected, selected]"
+        },
+        {
+          "name": "translateX.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 100 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[0.8, 1]",
+          "description": "Scale values [unselected, selected]"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 100 }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useCheckbox",
+      "signature": "useCheckbox(): UseCheckboxReturn",
+      "returns": [
+        {
+          "name": "isSelected",
+          "type": "boolean | undefined",
+          "description": "Whether the checkbox is currently selected"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "((isSelected: boolean) => void) | undefined",
+          "description": "Callback function to change the checkbox selection state"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the checkbox is disabled and cannot be interacted with"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the checkbox is invalid (shows danger color)"
+        },
+        {
+          "name": "nativeID",
+          "type": "string | undefined",
+          "description": "Native ID for the checkbox element"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

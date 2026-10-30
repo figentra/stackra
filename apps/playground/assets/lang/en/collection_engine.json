@@ -1,0 +1,10 @@
+{
+  "search": "Search the orders",
+  "sort_total": "Largest total first",
+  "sort_customer": "By customer",
+  "previous": "Previous",
+  "next": "Next",
+  "page": "Page {page, number} of {count, number}",
+  "rows": "Orders, drawn by the demo",
+  "query": "The query a server would receive"
+}

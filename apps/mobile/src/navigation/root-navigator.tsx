@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ItemScreen } from "../screens/item-screen";
 import { ShareInboxScreen } from "../screens/share-inbox-screen";
 import { glassHeader } from "./header-options";
+import { useBarHeader } from "./use-bar-header";
 import { TabNavigator } from "./tab-navigator";
 import type { RootStackParamList } from "./root-stack-param-list.type";
 
@@ -17,8 +18,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /** The root stack: the tab shell (header hidden), the item detail and the share inbox, typed by `RootStackParamList`. */
 export function RootNavigator() {
+  const bars = useBarHeader();
   return (
-    <Stack.Navigator screenOptions={glassHeader}>
+    <Stack.Navigator screenOptions={{ ...glassHeader, ...bars }}>
       <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
       <Stack.Screen
         name="Item"

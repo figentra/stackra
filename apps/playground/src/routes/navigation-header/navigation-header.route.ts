@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the navigation header route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the navigation header route of @figentra/playground: its path. The page it renders is
  *          `navigation-header.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The NavigationHeader page, at `/navigation-header`. */
-export class NavigationHeaderRoute extends Route({ path: "/navigation-header" }) {
-  /** The page title. */
-  static readonly title = "Navigation header";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Navigation";
-}
+export class NavigationHeaderRoute extends Route({ path: "/navigation-header" }) {}

@@ -1,0 +1,11 @@
+{
+  "basics": {
+    "label": "Report period",
+    "hint": "Pick a quick range or two days on the calendar.",
+    "button": "Choose the report period"
+  },
+  "hijri": {
+    "label": "Campaign dates",
+    "button": "Choose the campaign dates"
+  }
+}

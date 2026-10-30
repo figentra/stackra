@@ -1,0 +1,513 @@
+{
+  "generatedFrom": {
+    "hash": "eba1c6ed74cbfc10",
+    "propsFiles": [
+      "ui/src/native/chart/cartesian-figure.props.ts",
+      "ui/src/native/chart/chart-frame.props.ts",
+      "ui/src/native/chart/chart-readout.props.ts",
+      "ui/src/native/chart/horizontal-bars.props.ts",
+      "ui/src/native/chart/pie-figure.props.ts"
+    ]
+  },
+  "importLine": "import { CartesianFigure } from \"@stackra/ui/native\";",
+  "key": "free/chart",
+  "parts": [
+    {
+      "name": "CartesianFigure",
+      "props": [
+        {
+          "description": "The key of each row's category: a month name, an ISO date.",
+          "name": "xKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
+          "name": "xFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+          "name": "stacked",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
+          "name": "isNormalized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws the horizontal grid lines; on by default.",
+          "name": "showGrid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
+          "name": "showValueAxis",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Target lines and threshold bands on the value axis, drawn behind the series.",
+          "name": "references",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChartReference[]"
+        },
+        {
+          "description": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
+          "name": "showBrush",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "kind",
+          "required": true,
+          "source": "stackra",
+          "type": "\"area\" | \"line\" | \"bar\""
+        },
+        {
+          "description": "",
+          "name": "curve",
+          "required": false,
+          "source": "stackra",
+          "type": "\"monotone\" | \"natural\" | \"linear\" | \"step\""
+        },
+        {
+          "description": "",
+          "name": "showDots",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Bar charts: the categories' order.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Makes each legend entry a toggle that hides or shows its series.",
+          "name": "onToggle",
+          "required": false,
+          "source": "stackra",
+          "type": "(key: string) => void"
+        }
+      ],
+      "name": "ChartFrame",
+      "props": [
+        {
+          "description": "The chart's accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chart's numbers read aloud after the name.",
+          "name": "spoken",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The legend's series; no legend when empty.",
+          "name": "legend",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The palette the legend colours its swatches from, as the chart does.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The series hidden from the plot.",
+          "name": "hiddenKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Adds the dashed \"Previous period\" legend entry.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The pressed row's readout, above the plot.",
+          "name": "readout",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The plot.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    },
+    {
+      "name": "ChartReadout",
+      "props": [
+        {
+          "description": "",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly { readonly label: string; readonly value: string; readonly color: string; }[]"
+        },
+        {
+          "description": "An 8px round dot (the default) or a 4×12 rounded bar, for line series.",
+          "name": "indicator",
+          "required": false,
+          "source": "stackra",
+          "type": "\"line\" | \"dot\""
+        }
+      ]
+    },
+    {
+      "name": "HorizontalBars",
+      "props": [
+        {
+          "description": "The key of each row's category: a month name, an ISO date.",
+          "name": "xKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the category as a date in the locale (`{ month: \"short\" }`); categories are shown as given without it.",
+          "name": "xFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "Stacks the series on one another; side by side (bars) or overlapping (areas, lines) by default.",
+          "name": "stacked",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "With `stacked`, stacks each category to 100%: every series is drawn as its share of the category's total and the\nvalue axis reads in percent (area and bar charts). The tooltip and data table keep the real values.",
+          "name": "isNormalized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws the horizontal grid lines; on by default.",
+          "name": "showGrid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws the value axis; off by default, since the tooltip and the data table carry the values.",
+          "name": "showValueAxis",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Target lines and threshold bands on the value axis, drawn behind the series.",
+          "name": "references",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChartReference[]"
+        },
+        {
+          "description": "Draws each series' `compareKey` values as a dashed twin: the previous period beside this one. Off by default.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Adds a brush under the plot to zoom into a span of the categories (web line, area and composed charts; native\nreads every row and ignores it). Off by default.",
+          "name": "showBrush",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The categories' order.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        }
+      ]
+    },
+    {
+      "name": "PieFigure",
+      "props": [
+        {
+          "description": "The word under the total in the hole, such as \"Visitors\"; no total is shown without it.",
+          "name": "centerLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's slice name, matched to a series' `key`.",
+          "name": "nameKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's value.",
+          "name": "valueKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "isDonut",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

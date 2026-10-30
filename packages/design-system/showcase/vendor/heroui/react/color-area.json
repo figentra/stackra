@@ -1,0 +1,106 @@
+{
+  "slug": "color-area",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-area.mdx",
+  "parts": [
+    {
+      "name": "ColorArea",
+      "props": [
+        {
+          "name": "value",
+          "type": "string | Color",
+          "description": "The current color value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | Color",
+          "description": "The default color value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(color: Color) => void",
+          "description": "Handler called when the color changes while dragging"
+        },
+        {
+          "name": "onChangeEnd",
+          "type": "(color: Color) => void",
+          "description": "Handler called when the user stops dragging"
+        },
+        {
+          "name": "xChannel",
+          "type": "ColorChannel",
+          "default": "\"saturation\"",
+          "description": "Color channel for the horizontal axis"
+        },
+        {
+          "name": "yChannel",
+          "type": "ColorChannel",
+          "default": "\"brightness\"",
+          "description": "Color channel for the vertical axis"
+        },
+        {
+          "name": "colorSpace",
+          "type": "ColorSpace",
+          "description": "The color space for the channels"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the color area is disabled"
+        },
+        {
+          "name": "showDots",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to show the dot grid overlay"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorAreaRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ColorArea.Thumb",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties | ((renderProps) => CSSProperties)",
+          "description": "Inline styles or render props function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorThumbRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-area",
+      "description": "Base styles with gradient background and inner shadow"
+    },
+    {
+      "name": ".color-area--show-dots",
+      "description": "Adds dot grid overlay for precision picking"
+    },
+    {
+      "name": ".color-area__thumb",
+      "description": "Draggable thumb indicator"
+    }
+  ]
+}

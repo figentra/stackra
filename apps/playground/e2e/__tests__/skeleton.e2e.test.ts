@@ -12,6 +12,7 @@
 // @covers sta-350:FR-045 sta-350:FR-046 sta-350:P-033 sta-350:SC-002 sta-350:SC-006
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,7 +26,9 @@ const open = async (
 ) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion });
   await page.goto(`/skeleton?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Skeleton" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Skeleton", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)

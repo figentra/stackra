@@ -1,0 +1,287 @@
+{
+  "generatedFrom": {
+    "hash": "ed7f93eb78169089",
+    "heroDoc": "vendor/heroui/react/radio-group.json",
+    "propsFiles": ["ui/src/react/radio-group/radio-group.props.ts"]
+  },
+  "importLine": "import { RadioGroup } from \"@stackra/ui/react\";",
+  "key": "free/radio-group",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        }
+      ],
+      "extends": "RadioGroup",
+      "name": "RadioGroup",
+      "props": [
+        {
+          "description": "The radios, in the order they are drawn; the group's value is the `value` of the one chosen.",
+          "name": "options",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChoiceOption[]"
+        },
+        {
+          "default": "vertical",
+          "description": "`vertical` stacks the options, `horizontal` puts them in a wrapping row under the label. Defaults to `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "Lays the options out in this many equal columns, under the label (the label, description and error never take a\ncell). Left out, the options stack (or wrap in a row, with `orientation=\"horizontal\"`).",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The look of every radio in the group; left out, each runtime picks the one that suits where it sits.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", RadioGroupRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element that provides an error message for the object.",
+          "name": "aria-errormessage",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-RadioGroup'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<RadioGroupRenderProps>"
+        },
+        {
+          "description": "The `<form>` element to associate the input with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#form).",
+          "name": "form",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<RadioGroupRenderProps>"
+        },
+        {
+          "description": "A function that returns an error message if a given value is invalid.\nValidation errors are displayed to the user when the form is submitted\nif `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid`\nprop instead.",
+          "name": "validate",
+          "required": false,
+          "source": "react-aria",
+          "type": "(value: string) => true | ValidationError | null"
+        },
+        {
+          "default": "'native'",
+          "description": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
+          "name": "validationBehavior",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"native\" | \"aria\""
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base radio group container",
+      "name": ".radio-group"
+    },
+    {
+      "description": "Individual radio item",
+      "name": ".radio"
+    },
+    {
+      "description": "Radio control (circular button)",
+      "name": ".radio__control"
+    },
+    {
+      "description": "Radio indicator (inner dot)",
+      "name": ".radio__indicator"
+    },
+    {
+      "description": "Radio content wrapper",
+      "name": ".radio__content"
+    },
+    {
+      "description": "Disabled radio state",
+      "name": ".radio--disabled"
+    }
+  ]
+}

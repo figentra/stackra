@@ -1,0 +1,26 @@
+{
+  "open": "Export orders",
+  "csv": "CSV",
+  "xlsx": "Excel",
+  "pdf": "PDF",
+  "last_export": "Exported {count, plural, one {# order} other {# orders}} as {format}.",
+  "failed_once": "Export the shift report",
+  "orders": {
+    "description": "Orders from every branch, as the table shows them.",
+    "number": "Order number",
+    "customer": "Customer",
+    "branch": "Branch",
+    "total": "Total",
+    "status": "Status",
+    "paid_at": "Paid at"
+  },
+  "products": {
+    "open": "Export the catalogue",
+    "description": "Large exports are built on the server and emailed when ready.",
+    "sku": "SKU",
+    "name": "Name (English)",
+    "name_ar": "Name (Arabic)",
+    "price": "Price",
+    "stock": "Stock on hand"
+  }
+}

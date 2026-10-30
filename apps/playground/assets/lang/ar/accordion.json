@@ -1,0 +1,15 @@
+{
+  "variant": "أكورديون {variant}",
+  "open": "المفتوح: {keys, select, none {لا شيء} other {{keys}}}",
+  "expand_all": "توسيع الكل",
+  "collapse_all": "طي الكل",
+  "docs_link": "اقرأ سياسة الإرجاع",
+  "sample": {
+    "how_long_does_shipping_take": "كم يستغرق الشحن؟",
+    "orders_ship_within_two_working": "تُشحن الطلبات خلال يومي عمل.",
+    "can_i_return_an_order": "هل يمكنني إرجاع طلب؟",
+    "yes_within_thirty_days_and": "نعم، خلال ثلاثين يومًا ودون رسوم.",
+    "is_there_a_warranty": "هل يوجد ضمان؟",
+    "every_product_has_a_two": "لكل منتج ضمان لمدة سنتين."
+  }
+}

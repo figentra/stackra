@@ -1,0 +1,24 @@
+{
+  "show_error": "عرض خطأ الدفع",
+  "show_saved": "عرض تأكيد الحفظ",
+  "retry": "إعادة المحاولة",
+  "dismiss": "إغلاق",
+  "upgrade": "ترقية الخطة",
+  "manage": "إدارة الملفات",
+  "sample": {
+    "your_trial_is_active": "فترتك التجريبية فعّالة",
+    "you_have_14_days_left": "بقي لديك 14 يومًا لتجربة كل الميزات.",
+    "a_new_version_is_available": "يتوفر إصدار جديد",
+    "reload_the_page_to_get": "أعد تحميل الصفحة للحصول على آخر التغييرات.",
+    "changes_saved": "حُفظت التغييرات",
+    "your_profile_is_up_to": "ملفك الشخصي محدّث.",
+    "storage_is_almost_full": "مساحة التخزين ممتلئة تقريبًا",
+    "delete_files_or_upgrade_to": "احذف ملفات أو رقِّ خطتك لمواصلة الرفع.",
+    "payment_failed": "فشل الدفع",
+    "your_card_was_declined_check": "رُفضت بطاقتك. تحقق من البيانات وأعد المحاولة.",
+    "title_only": "عنوان فقط",
+    "with_actions": "مع إجراءات",
+    "an_icon_of_your_own": "أيقونة خاصة بك",
+    "no_icon": "دون أيقونة"
+  }
+}

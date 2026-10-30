@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "label": "Sales channels",
+    "hint": "Pick every channel you sell on.",
+    "store": "In store",
+    "store_line": "Point of sale and kiosks",
+    "online": "Online",
+    "online_line": "Your web shop",
+    "apps": "Delivery apps",
+    "apps_line": "Coming soon"
+  }
+}

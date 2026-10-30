@@ -15,6 +15,8 @@
 // @covers sta-350:FR-151 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +25,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/error-state?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Error state" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Error state", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -50,9 +54,12 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      const live = page.getByRole("region", { name: "Try it" });
-      await live.getByRole("button", { name: "Try again" }).click();
-      await expect(live.getByRole("heading", { level: 3, name: "Orders loaded" })).toBeVisible();
+      const live = example(page, "live");
+      // The demo speaks the page's language (`assets/lang/<locale>/error_state.json`).
+      const words: readonly [string, string] =
+        locale === "en" ? ["Try again", "Orders loaded"] : ["إعادة المحاولة", "حُمّلت الطلبات"];
+      await live.getByRole("button", { name: words[0] }).click();
+      await expect(live.getByRole("heading", { level: 3, name: words[1] })).toBeVisible();
       await expectAxeClean(page);
     });
   }
@@ -61,7 +68,7 @@ test("every kind is an assertive alert with a level-3 heading, and none skips an
   page,
 }) => {
   await open(page, "light", "en");
-  const kinds = page.getByRole("region", { name: "Kinds" });
+  const kinds = example(page, "usage");
   const alerts = kinds.getByRole("alert");
   await expect(alerts).toHaveCount(4);
   for (const alert of await alerts.all())
@@ -81,7 +88,7 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const states = page.getByRole("main").locator("[data-kind]");
+    const states = page.locator("#usage, #examples").locator("[data-kind]");
     await expect(states).toHaveCount(4 + 4 + 1);
     for (const state of await states.all()) {
       const well = state.locator('[data-slot="state-icon"]');
@@ -106,13 +113,15 @@ test("the error's message is shown, and its stack is not in the production build
   await open(page, "light", "en");
   const details = page.locator('[data-slot="error-state-details"]').first();
   await expect(details).toContainText("The order service did not answer in time");
-  await expect(page.locator("pre")).toHaveCount(0);
+  // The examples only: the import block above them is a code `pre` of its own.
+  await expect(page.locator("#usage, #examples").locator("pre")).toHaveCount(0);
 });
 
 test("every action reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = page.getByRole("main").locator("[data-kind]").getByRole("button");
-  expect(await buttons.count()).toBeGreaterThan(0);
+  const buttons = page.locator("#usage, #examples").locator("[data-kind]").getByRole("button");
+  // The demos load lazily: wait for the first before counting.
+  await expect(buttons.first()).toBeVisible();
   for (const button of await buttons.all()) {
     const box = await button.boundingBox();
     if (!box) throw new Error("a button has no box");
@@ -123,8 +132,7 @@ test("every action reaches 24 px", async ({ page }) => {
 
 test("the retry order is the retry button first, then the further action", async ({ page }) => {
   await open(page, "light", "en");
-  const state = page
-    .getByRole("region", { name: "Parts" })
+  const state = example(page, "parts")
     .locator("[data-kind]")
     .filter({ hasText: "Contact support" });
   await expect(state.getByRole("button")).toHaveText(["Try again", "Contact support"]);
@@ -134,7 +142,7 @@ test("the live sample fails, loads, recovers and breaks again from the keyboard,
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   const demo = live.getByRole("group", { name: "Orders demo" });
   await expect(demo.getByRole("alert")).toContainText("Something went wrong");
 

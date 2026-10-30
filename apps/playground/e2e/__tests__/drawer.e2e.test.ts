@@ -21,6 +21,8 @@
 // @covers sta-350:FR-101 sta-350:SC-008 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -29,7 +31,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/drawer?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Drawer" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Drawer", locale) }),
+  ).toBeVisible();
 };
 
 /** Waits until the open drawer has finished entering, so axe and the boxes see its final state. */
@@ -44,9 +48,23 @@ const settled = async (page: Page) => {
   return dialog;
 };
 
+/** The placement example's triggers, in their order there. */
+const PLACEMENT_TRIGGERS = [
+  "Open from start",
+  "Open from end",
+  "Open from top",
+  "Open from bottom",
+];
+
 /** Presses the trigger with the pointer and waits for the drawer. */
 const openDrawer = async (page: Page, trigger: string) => {
-  await page.getByRole("button", { name: trigger, exact: true }).click();
+  // A placement trigger is found by place, as its name speaks the page's locale.
+  const index = PLACEMENT_TRIGGERS.indexOf(trigger);
+  await (
+    index >= 0
+      ? example(page, "placement").getByRole("listitem").nth(index).getByRole("button")
+      : page.getByRole("button", { name: trigger, exact: true })
+  ).click();
   return settled(page);
 };
 
@@ -175,13 +193,15 @@ for (const locale of LOCALES)
     ] as const) {
       const dialog = await openDrawer(page, trigger);
       const box = await boxOf(dialog);
-      if (edge === "left") expect(box.x, trigger).toBeCloseTo(0, 0);
-      else if (edge === "right") expect(box.x + box.width, trigger).toBeCloseTo(viewport.width, 0);
-      else if (edge === "top") expect(box.y, trigger).toBeCloseTo(0, 0);
-      else expect(box.y + box.height, trigger).toBeCloseTo(viewport.height, 0);
+      // The drawer floats 8 px clear of every edge (`inset`, the default).
+      if (edge === "left") expect(box.x, trigger).toBeCloseTo(8, 0);
+      else if (edge === "right")
+        expect(box.x + box.width, trigger).toBeCloseTo(viewport.width - 8, 0);
+      else if (edge === "top") expect(box.y, trigger).toBeCloseTo(8, 0);
+      else expect(box.y + box.height, trigger).toBeCloseTo(viewport.height - 8, 0);
       if (edge === "left" || edge === "right")
-        expect(box.height, trigger).toBeCloseTo(viewport.height, 0);
-      else expect(box.width, trigger).toBeCloseTo(viewport.width, 0);
+        expect(box.height, trigger).toBeCloseTo(viewport.height - 16, 0);
+      else expect(box.width, trigger).toBeCloseTo(viewport.width - 16, 0);
       // The drag handle belongs to the bottom edge alone.
       await expect(page.locator('[data-slot="drawer-handle"]')).toHaveCount(
         edge === "bottom" ? 1 : 0,
@@ -254,6 +274,7 @@ test("with Escape off the key leaves the drawer open, and a press outside and Cl
   await page.mouse.click(6, 6);
   await expect(dialog).toBeHidden();
   await openDrawer(page, "Open with Escape off");
+  // Escape is off, so the close draws the mark and keeps its plain name.
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).toBeHidden();
 });
@@ -279,7 +300,7 @@ test("the live example keeps the setting on Apply, returns focus to its button, 
 }) => {
   await open(page, "light", "en");
   const openSettings = page.getByRole("button", { name: "Open settings", exact: true });
-  const status = page.getByRole("status");
+  const status = example(page, "live").getByRole("status");
   await expect(status).toHaveText("Notifications: on");
   await openSettings.focus();
   await page.keyboard.press("Enter");
@@ -311,8 +332,9 @@ for (const locale of LOCALES)
     await open(page, "light", locale);
     const dialog = await openDrawer(page, "Open from end");
     const box = await boxOf(dialog);
-    const close = await boxOf(dialog.getByRole("button", { name: "Close", exact: true }));
-    const cancel = await boxOf(dialog.getByRole("button", { name: "Cancel", exact: true }));
+    // By slot: the buttons' names speak the page's locale.
+    const close = await boxOf(dialog.locator('[data-slot="drawer-close-trigger"]'));
+    const cancel = await boxOf(dialog.locator('[data-slot="button"]').first());
     const middle = box.x + box.width / 2;
     for (const [name, part] of [
       ["close button", close],
@@ -327,7 +349,7 @@ for (const locale of LOCALES)
 test("every close and footer button is at least 24 by 24 pixels", async ({ page }) => {
   await open(page, "light", "en");
   const dialog = await openDrawer(page, "Open from end");
-  for (const name of ["Close", "Cancel"]) {
+  for (const name of ["Close, Esc", "Cancel"]) {
     const box = await boxOf(dialog.getByRole("button", { name, exact: true }));
     expect(box.width, name).toBeGreaterThanOrEqual(24);
     expect(box.height, name).toBeGreaterThanOrEqual(24);

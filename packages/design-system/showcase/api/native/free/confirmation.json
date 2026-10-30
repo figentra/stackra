@@ -1,0 +1,23 @@
+{
+  "generatedFrom": {
+    "hash": "7c9eab1bff9b69c2",
+    "propsFiles": ["ui/src/native/confirmation/confirmation-provider.props.ts"]
+  },
+  "importLine": "import { ConfirmationProvider } from \"@stackra/ui/native\";",
+  "key": "free/confirmation",
+  "parts": [
+    {
+      "name": "ConfirmationProvider",
+      "props": [
+        {
+          "description": "The app the provider wraps; any component below it can call `useConfirmation()`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the spinner route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the spinner route of @figentra/playground: its path. The page it renders is
  *          `spinner.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Spinner page, at `/spinner`. */
-export class SpinnerRoute extends Route({ path: "/spinner" }) {
-  /** The page title. */
-  static readonly title = "Spinner";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Feedback and status";
-}
+export class SpinnerRoute extends Route({ path: "/spinner" }) {}

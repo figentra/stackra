@@ -1,0 +1,101 @@
+{
+  "generatedFrom": {
+    "hash": "3938c947c7b033f2",
+    "propsFiles": ["ui/src/react/screen/screen.props.ts"]
+  },
+  "importLine": "import { Screen } from \"@stackra/ui/react\";",
+  "key": "free/screen",
+  "parts": [
+    {
+      "name": "Screen",
+      "props": [
+        {
+          "description": "What the screen shows.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the content scrolls inside the screen; false when the screen only holds it. Defaults to true.",
+          "name": "isScrollable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to lift a focused field above the on-screen keyboard. Native only; web ignores it. Defaults to true.",
+          "name": "isKeyboardAvoiding",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The edges kept clear of the system's own parts. Defaults to all three; pass `[]` under a navigator's header and tab bar.",
+          "name": "edges",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"top\" | \"bottom\" | \"sides\")[]"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True when the screen sits inside another page: its root is a `div`, not a second `main` landmark.",
+          "name": "isEmbedded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

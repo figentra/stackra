@@ -66,9 +66,7 @@ export function Breadcrumbs({
                 {item.label}
               </Text>
             )}
-            {isCurrent ? null : (
-              <Icon name="chevron-right" size="sm" tone="muted" isMirroredInRtl />
-            )}
+            {isCurrent ? null : <Icon name="chevron-right" size="sm" tone="muted" />}
           </Fragment>
         );
       })}

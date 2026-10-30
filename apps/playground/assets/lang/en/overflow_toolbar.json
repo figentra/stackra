@@ -1,0 +1,13 @@
+{
+  "label": "Order actions",
+  "more": "More order actions",
+  "refund": "Refund",
+  "print_receipt": "Print receipt",
+  "email_receipt": "Email receipt",
+  "split_bill": "Split bill",
+  "void": "Void order",
+  "chosen": "Chosen: {action}",
+  "nothing_chosen": "Nothing chosen yet",
+  "narrower": "Narrower",
+  "wider": "Wider"
+}

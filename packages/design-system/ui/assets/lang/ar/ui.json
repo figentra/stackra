@@ -88,7 +88,18 @@
   },
   "sidebar": {
     "collapse": "طي الشريط الجانبي",
-    "expand": "توسيع الشريط الجانبي"
+    "expand": "توسيع الشريط الجانبي",
+    "open": "فتح التنقل",
+    "resize": "تغيير عرض الشريط الجانبي",
+    "search": "تصفية التنقل",
+    "no_results": "لا توجد صفحات مطابقة",
+    "loading": "جارٍ تحميل التنقل",
+    "sub_toggle": "الصفحات ضمن {label}"
+  },
+  "side_panel": {
+    "expand": "توسيع اللوحة",
+    "close": "إغلاق اللوحة",
+    "resize": "تغيير عرض اللوحة"
   },
   "data_table": {
     "loading": "جارٍ التحميل",
@@ -107,5 +118,662 @@
   },
   "search_field": {
     "clear": "مسح البحث"
+  },
+  "overflow_list": {
+    "more": "+{count, number} أخرى",
+    "less": "عرض أقل"
+  },
+  "tree_view": {
+    "expand": "توسيع {label}",
+    "collapse": "طيّ {label}"
+  },
+  "sortable_list": {
+    "handle": "إعادة ترتيب {label}",
+    "move_up": "نقل إلى الأعلى",
+    "move_down": "نقل إلى الأسفل",
+    "moved": "نُقل {label} إلى الموضع {position, number} من {count, number}",
+    "hint": "اسحب المقبض، أو استخدم الإجراءات لنقل هذا الصف."
+  },
+  "filter_panel": {
+    "applied": "عوامل التصفية المطبقة",
+    "views": "طرق العرض المحفوظة",
+    "sort": "ترتيب",
+    "order": "اتجاه الترتيب",
+    "results": "{count, plural, =0 {لا توجد نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجةً} other {# نتيجة}}",
+    "facet_option": "{label} ({count, number})"
+  },
+  "notifications_panel": {
+    "label": "الإشعارات",
+    "label_unread": "الإشعارات، {count, plural, zero {لا شيء غير مقروء} one {إشعار واحد غير مقروء} two {إشعاران غير مقروءين} few {# إشعارات غير مقروءة} many {# إشعارًا غير مقروء} other {# إشعار غير مقروء}}",
+    "title": "الإشعارات",
+    "mark_all_read": "تعليم الكل كمقروء",
+    "dismiss": "إخفاء الإشعار",
+    "empty": "لا توجد إشعارات جديدة",
+    "unread": "غير مقروء"
+  },
+  "system_banner": {
+    "dismiss": "إخفاء الرسالة"
+  },
+  "route_progress": {
+    "label": "جارٍ تحميل الصفحة"
+  },
+  "copy_button": {
+    "copy": "نسخ",
+    "copied": "تم النسخ"
+  },
+  "file_trigger": {
+    "files": "اختيار ملفات",
+    "photos": "اختيار صور",
+    "camera": "التقاط صورة"
+  },
+  "upload_list": {
+    "label": "الملفات المرفوعة",
+    "queued": "في الانتظار",
+    "uploading": "جارٍ رفع {name}",
+    "done": "تم الرفع",
+    "failed": "تعذّر الرفع",
+    "retry": "إعادة محاولة رفع {name}",
+    "remove": "إزالة {name}",
+    "preview": "معاينة {name}",
+    "preview_hint": "اضغط مطوّلًا للمعاينة"
+  },
+  "avatar_group": {
+    "more": "{count, plural, other {+#}}",
+    "more_label": "{count, plural, zero {لا أحد غيرهم} one {شخص آخر} two {شخصان آخران} few {# أشخاص آخرين} many {# شخصًا آخر} other {# شخص آخر}}",
+    "summary": "{label}: {names}"
+  },
+  "save_bar": {
+    "label": "تغييرات غير محفوظة",
+    "message": "لديك تغييرات غير محفوظة",
+    "save": "حفظ",
+    "discard": "تجاهل",
+    "saving": "جارٍ الحفظ…",
+    "saved": "حُفظت كل التغييرات",
+    "failed": "تعذّر الحفظ"
+  },
+  "setup_guide": {
+    "progress": "المهام المكتملة: {done} من {total}",
+    "complete": "اكتمل الإعداد",
+    "show": "إظهار المهام",
+    "hide": "إخفاء المهام"
+  },
+  "inline_loading": {
+    "loading": "جارٍ التحميل…",
+    "success": "تمّ",
+    "error": "تعذّر الإكمال"
+  },
+  "date_label": {
+    "due_soon": "يستحق قريبًا",
+    "overdue": "متأخر",
+    "expiring_soon": "ينتهي قريبًا",
+    "expired": "منتهي",
+    "with_state": "{state} · {when}",
+    "with_date": "{label}، {date}"
+  },
+  "permissions_matrix": {
+    "permission": "الصلاحية",
+    "all_for_role": "كل صلاحيات {role}",
+    "group_for_role": "كل صلاحيات {group} لدور {role}",
+    "cell": "{permission} لدور {role}",
+    "cell_state": "{permission} لدور {role}: {state}",
+    "allowed": "مسموح",
+    "denied": "غير مسموح",
+    "summary": "{count} من {total}"
+  },
+  "money_field": {
+    "currency": "العملة"
+  },
+  "password_field": {
+    "show": "إظهار كلمة المرور",
+    "hide": "إخفاء كلمة المرور",
+    "caps_lock": "مفتاح الأحرف الكبيرة مفعّل"
+  },
+  "multi_select": {
+    "remove": "إزالة {label}",
+    "search": "بحث",
+    "close": "تم",
+    "no_matches": "لا توجد نتائج مطابقة"
+  },
+  "inline_edit": {
+    "edit": "تعديل",
+    "save": "حفظ",
+    "cancel": "إلغاء"
+  },
+  "export_dialog": {
+    "title": "تصدير",
+    "format": "التنسيق",
+    "columns": "الأعمدة",
+    "scope": "الصفوف",
+    "delivery": "طريقة الاستلام",
+    "scope_selection": "{count, plural, zero {الصفوف المحددة (لا شيء)} one {الصف المحدد (#)} two {الصفان المحددان (#)} few {الصفوف المحددة (#)} many {الصفوف المحددة (#)} other {الصفوف المحددة (#)}}",
+    "scope_filtered": "{count, plural, zero {الصفوف المطابقة للتصفية (لا شيء)} other {الصفوف المطابقة للتصفية (#)}}",
+    "scope_all": "{count, plural, other {كل الصفوف (#)}}",
+    "download": "تنزيل ملف",
+    "email": "إرسال بالبريد الإلكتروني",
+    "email_to": "إرساله إلى {email}",
+    "cancel": "إلغاء",
+    "export": "تصدير",
+    "done": "تم",
+    "done_download": "الملف المُصدَّر جاهز ويجري تنزيله.",
+    "done_email": "الملف المُصدَّر في طريقه إلى بريدك الوارد.",
+    "failed": "تعذّر التصدير. حاول مرة أخرى.",
+    "no_columns": "اختر عمودًا واحدًا على الأقل.",
+    "close": "إغلاق",
+    "preparing": "نجهّز الملف"
+  },
+  "error_page": {
+    "retry": "حاول مرة أخرى",
+    "forbidden": {
+      "title": "لا تملك صلاحية الوصول إلى هذه الصفحة",
+      "description": "اطلب من أحد مسؤولي مساحة العمل منحك الصلاحية."
+    },
+    "not_found": {
+      "title": "هذه الصفحة غير موجودة",
+      "description": "ربما يكون الرابط قديمًا، أو نُقلت الصفحة أو حُذفت."
+    },
+    "server_error": {
+      "title": "حدث خطأ من جهتنا",
+      "description": "أُبلغنا بالمشكلة. حاول مرة أخرى بعد قليل."
+    },
+    "offline": {
+      "title": "أنت غير متصل بالإنترنت",
+      "description": "تحقّق من اتصال الشبكة، ثم حاول مرة أخرى."
+    }
+  },
+  "fullscreen_bar": {
+    "exit": "الخروج من ملء الشاشة",
+    "reveal": "إظهار شريط ملء الشاشة",
+    "reveal_locked": "إظهار شريط ملء الشاشة (اضغط مطولًا)"
+  },
+  "coach_mark": {
+    "progress": "الخطوة {current} من {total}",
+    "back": "السابق",
+    "next": "التالي",
+    "done": "تم",
+    "skip": "تخطي الجولة"
+  },
+  "chart": {
+    "category": "الفئة",
+    "value": "القيمة",
+    "previous": "{series}، الفترة السابقة",
+    "previous_period": "الفترة السابقة",
+    "series": "البيانات المعروضة",
+    "zoom": "نطاق التكبير",
+    "bin": "النطاق",
+    "count": "العدد",
+    "minimum": "الحد الأدنى",
+    "lower_quartile": "الربيع الأدنى",
+    "median": "الوسيط",
+    "upper_quartile": "الربيع الأعلى",
+    "maximum": "الحد الأعلى",
+    "outliers": "قيم متطرفة",
+    "low": "الأدنى",
+    "high": "الأعلى",
+    "target": "الهدف",
+    "less": "أقل",
+    "more": "أكثر",
+    "cell": "{row}، {column}: {value}",
+    "open": "الافتتاح",
+    "close": "الإغلاق",
+    "volume": "حجم التداول",
+    "change": "التغيّر",
+    "total": "الإجمالي",
+    "of_target": "{value} من {target}",
+    "date": "التاريخ",
+    "group": "المجموعة",
+    "from": "من",
+    "to": "إلى",
+    "task": "المهمة",
+    "lane": "المسار",
+    "start": "البداية",
+    "end": "النهاية",
+    "today": "اليوم",
+    "region": "المنطقة",
+    "no_data": "لا بيانات"
+  },
+  "data_grid": {
+    "changes": "{count, plural, zero {لا تغييرات} one {تغيير واحد لم يُحفظ} two {تغييران لم يُحفظا} few {# تغييرات لم تُحفظ} many {# تغييرًا لم يُحفظ} other {# تغيير لم يُحفظ}}",
+    "errors": "{count, plural, zero {كل الخلايا سليمة} one {خلية واحدة تحتاج تصحيحًا} two {خليتان تحتاجان تصحيحًا} few {# خلايا تحتاج تصحيحًا} many {# خليةً تحتاج تصحيحًا} other {# خلية تحتاج تصحيحًا}}",
+    "undo": "تراجع",
+    "redo": "إعادة",
+    "total": "الإجمالي",
+    "required": "مطلوب",
+    "type": "قيمة غير صالحة",
+    "min": "لا يقل عن {limit}",
+    "max": "لا يزيد على {limit}",
+    "edit": "تعديل",
+    "edit_row": "تعديل {name}",
+    "bulk_edit": "{count, plural, one {تعديل صف واحد} two {تعديل صفّين} few {تعديل # صفوف} many {تعديل # صفًّا} other {تعديل # صف}}",
+    "bulk_edit_title": "عدّل الصفوف المحددة دفعة واحدة",
+    "bulk_column": "الحقل",
+    "bulk_value": "القيمة الجديدة",
+    "apply": "تطبيق",
+    "cancel": "إلغاء",
+    "done": "تم",
+    "select": "تحديد",
+    "selected": "{count, plural, zero {لم يُحدَّد شيء} one {صف واحد محدد} two {صفّان محددان} few {# صفوف محددة} many {# صفًّا محددًا} other {# صف محدد}}",
+    "fill_handle": "مقبض التعبئة",
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "data_table_tools": {
+    "columns": "الأعمدة",
+    "views": "طرق العرض",
+    "save_view": "احفظ طريقة العرض",
+    "group_count": "{count, plural, one {صف واحد} two {صفّان} few {# صفوف} many {# صفًّا} other {# صف}}",
+    "total": "الإجمالي",
+    "aggregate_sum": "المجموع",
+    "aggregate_avg": "المتوسط",
+    "aggregate_min": "الأدنى",
+    "aggregate_max": "الأعلى",
+    "aggregate_count": "العدد"
+  },
+  "collection": {
+    "sort_rank": "الترتيب {rank, number}",
+    "column_menu": "خيارات {label}",
+    "sort_ascending": "رتّب تصاعديًا",
+    "sort_descending": "رتّب تنازليًا",
+    "add_sort": "أضِف إلى الترتيب",
+    "clear_sort": "أزِل من الترتيب",
+    "filter_column": "صفِّ حسب هذا العمود",
+    "pin_start": "ثبّت في البداية",
+    "pin_end": "ثبّت في النهاية",
+    "unpin": "ألغِ التثبيت",
+    "hide_column": "أخفِ العمود",
+    "group_by_column": "جمّع حسب هذا العمود",
+    "ungroup": "أوقف التجميع",
+    "summary": "الملخّص",
+    "summary_none": "بلا ملخّص",
+    "resize_column": "غيّر عرض العمود",
+    "resize_handle": "غيّر عرض {label}",
+    "move_start": "انقل نحو البداية",
+    "move_end": "انقل نحو النهاية",
+    "column_moved": "نُقل {label} إلى الموضع {position, number} من {count, number}",
+    "editor_title": "رتّب الأعمدة",
+    "editor_hint": "اسحب لإعادة الترتيب، وغيّر الأسماء، وثبّت الأعمدة، واضبط عرضها، وأخفِ ما لا تحتاجه.",
+    "show_column": "أظهِر {label}",
+    "rename_column": "غيّر اسم {label}",
+    "column_name": "اسم العمود",
+    "pin": "التثبيت",
+    "pin_none": "غير مثبّت",
+    "width": "العرض",
+    "width_auto": "تلقائي",
+    "fit_width": "طابِق المحتوى",
+    "wrap": "التفاف النص",
+    "reset_columns": "أعِد الأعمدة كما كانت",
+    "density": "كثافة الصفوف",
+    "density_compact": "متقاربة",
+    "density_normal": "عادية",
+    "density_roomy": "مريحة",
+    "toolbar": "أدوات {label}",
+    "search": "ابحث في {label}",
+    "filter": "التصفية",
+    "filter_count": "{count, plural, =0 {التصفية} one {التصفية، قاعدة واحدة} two {التصفية، قاعدتان} few {التصفية، # قواعد} many {التصفية، # قاعدة} other {التصفية، # قاعدة}}",
+    "filter_title": "صفِّ {label}",
+    "add_group": "أضِف مجموعة",
+    "remove_group": "احذف المجموعة",
+    "group_match": "المجموعة {index, number}",
+    "clear_filters": "امسح التصفية",
+    "remove_filter": "أزِل التصفية: {text}",
+    "sort": "الترتيب",
+    "sort_count": "{count, plural, =0 {الترتيب} one {الترتيب، مفتاح واحد} two {الترتيب، مفتاحان} few {الترتيب، # مفاتيح} many {الترتيب، # مفتاحًا} other {الترتيب، # مفتاح}}",
+    "sort_title": "رتّب {label}",
+    "add_sort_key": "أضِف مفتاح ترتيب",
+    "remove_sort": "أزِل {label} من الترتيب",
+    "sort_direction": "اتجاه ترتيب {label}",
+    "sort_empty": "بلا ترتيب: تبقى الصفوف بترتيب مصدرها.",
+    "group": "التجميع",
+    "group_by": "جمّع حسب",
+    "group_none": "بلا تجميع",
+    "layout": "اعرض كـ",
+    "layout_table": "جدول",
+    "layout_grid": "شبكة",
+    "layout_list": "قائمة",
+    "layout_cards": "بطاقات",
+    "layout_board": "لوحة",
+    "views": "طرق العرض",
+    "all_records": "كل السجلات",
+    "view_menu": "إجراءات طريقة العرض",
+    "save_view": "احفظ التغييرات في طريقة العرض",
+    "save_view_as": "احفظ كطريقة عرض جديدة",
+    "rename_view": "غيّر اسم طريقة العرض",
+    "share_view": "شارك طريقة العرض",
+    "set_default": "اجعلها الافتراضية",
+    "unset_default": "ألغِ جعلها الافتراضية",
+    "delete_view": "احذف طريقة العرض",
+    "view_name": "اسم طريقة العرض",
+    "default_view": "{label} (الافتراضية)",
+    "shared_view": "{label} (مشتركة)",
+    "save": "احفظ",
+    "cancel": "إلغاء",
+    "export": "صدّر",
+    "import": "استورد",
+    "refresh": "حدّث",
+    "fullscreen": "ملء الشاشة",
+    "exit_fullscreen": "اخرج من ملء الشاشة",
+    "more_tools": "أدوات أخرى",
+    "results": "{count, plural, =0 {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
+    "options": "البحث والتصفية والترتيب",
+    "done": "تم",
+    "previous_page": "الصفحة السابقة",
+    "next_page": "الصفحة التالية",
+    "page_of": "الصفحة {page, number} من {count, number}",
+    "load_more": "حمّل المزيد"
+  },
+  "number_pad": {
+    "delete": "حذف",
+    "decimal": "فاصلة عشرية"
+  },
+  "quantity_stepper": {
+    "remove": "إزالة"
+  },
+  "social_sign_in": {
+    "continue_with": "تابع عبر {provider}"
+  },
+  "widget_frame": {
+    "loading": "جارٍ التحميل",
+    "empty": "لا بيانات في هذه الفترة بعد",
+    "error": "تعذّر تحميل هذه الأداة",
+    "retry": "أعد المحاولة",
+    "refreshing": "جارٍ التحديث",
+    "updated": "حُدِّث {time}",
+    "refresh": "تحديث",
+    "more": "خيارات أخرى",
+    "csv": "تنزيل ملف CSV",
+    "png": "تنزيل صورة PNG",
+    "table": "اعرضها جدولًا",
+    "chart": "اعرضها رسمًا بيانيًا",
+    "fullscreen": "ملء الشاشة",
+    "close": "إغلاق",
+    "link": "نسخ الرابط",
+    "link_copied": "نُسخ الرابط",
+    "sort": "ترتيب",
+    "sort_value_desc": "الأكبر أولًا",
+    "sort_value_asc": "الأصغر أولًا",
+    "sort_label": "حسب الاسم",
+    "compare": "قارن بالفترة السابقة"
+  },
+  "trend_chip": {
+    "up": "ارتفاع {value}",
+    "down": "انخفاض {value}",
+    "flat": "دون تغيير"
+  },
+  "stat": {
+    "target": "الهدف {value}",
+    "drill_down": "افتح {label}"
+  },
+  "funnel_chart": {
+    "conversion": "{value} من المرحلة السابقة"
+  },
+  "stacked_meter": {
+    "free": "متاح",
+    "total": "{used} من {max}"
+  },
+  "code_block": {
+    "code": "الشيفرة",
+    "show_all": "عرض الأسطر كلها ({count})",
+    "show_less": "عرض أسطر أقل",
+    "wrap": "التفاف الأسطر الطويلة",
+    "files": "الملفات"
+  },
+  "json_viewer": {
+    "expand": "توسيع",
+    "collapse": "طيّ"
+  },
+  "toc_rail": {
+    "label": "في هذه الصفحة",
+    "open": "افتح محتويات الصفحة"
+  },
+  "carousel": {
+    "previous": "الشريحة السابقة",
+    "next": "الشريحة التالية",
+    "slide": "الشريحة {index} من {count}",
+    "pages": "اختر شريحة"
+  },
+  "command_palette": {
+    "label": "لوحة الأوامر",
+    "placeholder": "ابحث عن أمر",
+    "empty": "لا أوامر مطابقة"
+  },
+  "import_flow": {
+    "mapping": "طابِق الأعمدة",
+    "column": "العمود في الملف",
+    "field": "الحقل",
+    "skip": "تجاهل هذا العمود",
+    "sample": "مثال: {value}",
+    "required_missing": "طابِق الحقول المطلوبة أولًا: {fields}",
+    "check": "افحص الملف",
+    "import": "استيراد",
+    "back": "عدّل المطابقة",
+    "created": "سيُنشأ",
+    "updated": "سيُحدَّث",
+    "failed": "مرفوض",
+    "issues": "مشكلات وُجدت",
+    "row": "الصف {row}",
+    "no_issues": "لا مشكلات"
+  },
+  "rule_builder": {
+    "match": "الشروط الواجب تحققها",
+    "match_all": "كلّها",
+    "match_any": "أيٌّ منها",
+    "add": "أضف شرطًا",
+    "remove": "احذف الشرط",
+    "field": "الحقل",
+    "operator": "المقارنة",
+    "value": "القيمة",
+    "empty": "لا شروط بعد: كل شيء يطابق"
+  },
+  "rule_operator": {
+    "equals": "يساوي",
+    "not_equals": "لا يساوي",
+    "contains": "يحتوي",
+    "not_contains": "لا يحتوي",
+    "greater": "أكبر من",
+    "less": "أقل من",
+    "is_empty": "فارغ",
+    "is_not_empty": "غير فارغ"
+  },
+  "comment_thread": {
+    "reply": "ردّ",
+    "send": "أرسل",
+    "resolve": "أنهِ النقاش",
+    "reopen": "أعد فتح النقاش",
+    "resolved": "محلول",
+    "people": "أشخاص للإشارة"
+  },
+  "diff_review": {
+    "before": "قبل",
+    "after": "بعد",
+    "accept": "اقبل",
+    "reject": "ارفض",
+    "accept_all": "اقبل الكل",
+    "apply": "طبّق التغييرات",
+    "pending": "{count} بانتظار المراجعة",
+    "not_set": "غير محدد",
+    "accepted": "مقبول",
+    "rejected": "مرفوض"
+  },
+  "wheel": {
+    "day": "اليوم",
+    "month": "الشهر",
+    "year": "السنة",
+    "hour": "الساعة",
+    "minute": "الدقيقة",
+    "period": "صباحًا أو مساءً"
+  },
+  "time_picker": {
+    "open": "اختر الوقت"
+  },
+  "date_time_picker": {
+    "date": "التاريخ",
+    "time": "الوقت"
+  },
+  "date_range_picker": {
+    "calendar": "اختر الفترة",
+    "presets": "فترات جاهزة",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "last_7_days": "الأيام السبعة الأخيرة",
+    "last_30_days": "الأيام الثلاثون الأخيرة",
+    "this_month": "هذا الشهر",
+    "last_month": "الشهر الماضي",
+    "this_year": "هذا العام"
+  },
+  "year_picker": {
+    "label": "اختر السنة"
+  },
+  "emoji_picker": {
+    "label": "الرموز التعبيرية",
+    "search": "ابحث عن رمز",
+    "recent": "استخدمتها مؤخرًا",
+    "no_matches": "لا رموز تطابق بحثك.",
+    "smileys": "وجوه",
+    "people": "أشخاص وإيماءات",
+    "nature": "طبيعة",
+    "food": "طعام وشراب",
+    "activities": "أنشطة",
+    "travel": "سفر وأماكن",
+    "objects": "أشياء",
+    "symbols": "رموز"
+  },
+  "reaction_button": {
+    "label": "{emoji}: {count}"
+  },
+  "otp_input": {
+    "label": "رمز التحقق",
+    "digit": "الخانة {index} من {total}"
+  },
+  "phone_field": {
+    "country": "رمز الدولة",
+    "number": "رقم الجوال",
+    "empty": "لا توجد دولة بهذا الاسم.",
+    "selected": "{country}، {code}",
+    "close": "إغلاق"
+  },
+  "country_select": {
+    "label": "الدولة",
+    "search": "ابحث عن دولة"
+  },
+  "address_field": {
+    "line1": "العنوان",
+    "line2": "المبنى أو الوحدة (اختياري)",
+    "city": "المدينة",
+    "region": "المنطقة",
+    "postal_code": "الرمز البريدي",
+    "country": "الدولة"
+  },
+  "drop_zone": {
+    "label": "أفلِت ملفاتك هنا",
+    "browse": "اختر ملفات",
+    "label_one": "أفلِت ملفًا هنا",
+    "browse_one": "اختر ملفًا"
+  },
+  "color_picker": {
+    "label": "اللون",
+    "hex": "الرمز السداسي",
+    "hue": "درجة اللون",
+    "swatches": "ألوان جاهزة"
+  },
+  "locale_switcher": {
+    "label": "اللغة"
+  },
+  "range_calendar": {
+    "previous": "الشهر السابق",
+    "next": "الشهر التالي"
+  },
+  "drawer": {
+    "resize": "تغيير ارتفاع اللوحة",
+    "back": "رجوع",
+    "expand": "توسيع اللوحة",
+    "close_escape": "{label}، Esc"
+  },
+  "import_dialog": {
+    "title": "استيراد",
+    "close": "إغلاق",
+    "step_of": "الخطوة {step} من {total}",
+    "step_upload": "ارفع الملف",
+    "step_match": "طابِق الأعمدة",
+    "step_review": "راجِع التغييرات",
+    "step_import": "الاستيراد",
+    "upload_label": "أفلِت ملف CSV أو Excel هنا",
+    "upload_hint": "ورقة واحدة، وأسماء الأعمدة في الصف الأول.",
+    "template": "نزّل القالب",
+    "reading": "نقرأ الملف",
+    "read_failed": "تعذّرت قراءة الملف. تأكّد أنه بصيغة CSV أو Excel، ثم حاول مرة أخرى.",
+    "file_rows": "{count, plural, zero {بلا صفوف} one {صف واحد} two {صفّان} few {# صفوف} many {# صفًا} other {# صف}}",
+    "check_failed": "تعذّر فحص الملف. حاول مرة أخرى.",
+    "skipped": "سيُتجاوز",
+    "download_errors": "نزّل قائمة الأخطاء",
+    "error_row": "الصف",
+    "error_field": "الحقل",
+    "error_message": "المشكلة",
+    "importing": "نستورد الصفوف",
+    "done_title": "اكتمل الاستيراد",
+    "import_failed": "تعذّر الاستيراد. حاول مرة أخرى.",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "next": "متابعة",
+    "retry": "حاول مرة أخرى",
+    "done": "تم",
+    "done_created": "أُنشئ",
+    "done_updated": "حُدِّث",
+    "done_skipped": "تُخطّي",
+    "done_failed": "لم يُستورد"
+  },
+  "pagination": {
+    "label": "التنقل بين الصفحات",
+    "previous": "الصفحة السابقة",
+    "next": "الصفحة التالية",
+    "page": "الصفحة {page}",
+    "more": "صفحات أخرى",
+    "per_page": "عدد الصفوف في الصفحة",
+    "jump": "انتقل إلى صفحة",
+    "go": "انتقال",
+    "summary": "{from}–{to} من {total}"
+  },
+  "tag_input": {
+    "remove": "إزالة {tag}",
+    "duplicate": "«{tag}» مضاف مسبقًا.",
+    "max": "يمكنك إضافة {max} وسوم كحد أقصى.",
+    "count": "{count} من {max}"
+  },
+  "stepper": {
+    "label": "مراحل التقدّم",
+    "step_of": "الخطوة {step} من {total}",
+    "complete": "مكتملة",
+    "error": "تحتاج إلى مراجعة",
+    "optional": "اختيارية"
+  },
+  "timeline": {
+    "label": "النشاط",
+    "today": "اليوم",
+    "yesterday": "أمس"
+  },
+  "loading_overlay": {
+    "loading": "جارٍ التحميل…"
+  },
+  "truncate": {
+    "more": "عرض المزيد",
+    "less": "عرض أقل"
+  },
+  "countdown": {
+    "left": "باقٍ {time}",
+    "elapsed": "مضى {time}",
+    "done": "انتهى الوقت"
+  },
+  "multi_select_more": {
+    "select_all": "تحديد الكل",
+    "clear_all": "مسح الكل",
+    "more": "+{count}",
+    "more_label": "{count} أخرى: {labels}"
+  },
+  "date_presets": {
+    "label": "تواريخ سريعة",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "tomorrow": "غدًا",
+    "in_7_days": "بعد 7 أيام",
+    "start_of_month": "بداية الشهر",
+    "end_of_month": "نهاية الشهر"
   }
 }

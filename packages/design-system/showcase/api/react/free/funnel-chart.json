@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "ec9643841013b1a3",
+    "propsFiles": ["ui/src/react/funnel-chart/funnel-chart.props.ts"]
+  },
+  "importLine": "import { FunnelChart } from \"@stackra/ui/react\";",
+  "key": "free/funnel-chart",
+  "parts": [
+    {
+      "name": "FunnelChart",
+      "props": [
+        {
+          "description": "The steps, from the widest (first) to the narrowest.",
+          "name": "stages",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly FunnelStage[]"
+        },
+        {
+          "description": "The chart's accessible name, such as \"Checkout funnel, October\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The bars' colour; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "Shows each step's share of the step before; on by default.",
+          "name": "showConversion",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

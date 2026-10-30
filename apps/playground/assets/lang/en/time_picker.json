@@ -1,0 +1,7 @@
+{
+  "basics": {
+    "label": "Reminder",
+    "button": "Choose the reminder time",
+    "chosen": "Reminder at {hour}:{minute}"
+  }
+}

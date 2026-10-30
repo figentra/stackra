@@ -1,0 +1,23 @@
+{
+  "primary": "Primary field",
+  "secondary": "Secondary field",
+  "label_only": "Label only",
+  "with_placeholder": "With a placeholder",
+  "placeholder": "Ada Lovelace",
+  "with_description": "With a description",
+  "description": "As it appears on your invoices.",
+  "required": "Required field",
+  "invalid": "Invalid field",
+  "invalid_message": "Enter a name of at least two letters.",
+  "disabled": "Disabled field",
+  "read_only": "Read-only field",
+  "kept": "Kept value",
+  "kind_label": "Kind: {kind}",
+  "full": "Full width",
+  "content": "Content width",
+  "live_label": "Work email",
+  "live_description": "We use it to send the invoice.",
+  "live_error": "Enter an email address with an at sign.",
+  "live_empty": "Nothing typed yet.",
+  "live_typed": "{count, plural, one {You typed # character: {text}} other {You typed # characters: {text}}}"
+}

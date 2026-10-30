@@ -13,6 +13,7 @@ import { CloseButton as HeroCloseButton, cn } from "heroui-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useGlassButton } from "#native/glass/use-glass-button";
+import { withHaptic } from "#native/haptics/with-haptic.function";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
 import type { CloseButtonProps } from "#native/close-button/close-button.props";
 
@@ -34,7 +35,7 @@ export function CloseButton({
       {...rest}
       {...omitUndefined({
         isDisabled,
-        onPress,
+        onPress: withHaptic("impact", onPress),
         className: cn(glass?.className, className) || undefined,
       })}
       accessibilityLabel={label}

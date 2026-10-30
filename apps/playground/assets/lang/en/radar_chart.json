@@ -1,0 +1,14 @@
+{
+  "desktop": "Desktop",
+  "mobile": "Mobile",
+  "visitors": "Visitors",
+  "months_description": "January to June 2026",
+  "trend": "Up 5.2% this month",
+  "chrome": "Chrome",
+  "safari": "Safari",
+  "firefox": "Firefox",
+  "edge": "Edge",
+  "other": "Other",
+  "single_title": "Desktop visitors by month",
+  "multiple_title": "Visitors by device and month"
+}

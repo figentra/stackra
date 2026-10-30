@@ -35,6 +35,7 @@ describe("STACKRA_PLUGIN", () => {
       "no-enum",
       "no-hash-private",
       "no-kind-decorator",
+      "no-literal-radius",
       "no-parameter-decorator",
       "no-raw-key-literal",
       "no-tenant-vocabulary",

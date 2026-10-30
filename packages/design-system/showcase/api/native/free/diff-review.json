@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "45c1d8804bf084e9",
+    "propsFiles": ["ui/src/native/diff-review/diff-review.props.ts"]
+  },
+  "importLine": "import { DiffReview } from \"@stackra/ui/native\";",
+  "key": "free/diff-review",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "",
+          "name": "onDecisionsChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(decisions: Readonly<Record<string, \"accepted\" | \"rejected\">>) => void"
+        },
+        {
+          "description": "Called with the decisions when the reviewer applies them.",
+          "name": "onApply",
+          "required": false,
+          "source": "stackra",
+          "type": "(decisions: Readonly<Record<string, \"accepted\" | \"rejected\">>) => void"
+        }
+      ],
+      "name": "DiffReview",
+      "props": [
+        {
+          "description": "",
+          "name": "changes",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly DiffChange[]"
+        },
+        {
+          "description": "",
+          "name": "decisions",
+          "required": true,
+          "source": "stackra",
+          "type": "Readonly<Record<string, \"accepted\" | \"rejected\">>"
+        },
+        {
+          "description": "The review's accessible name, such as \"Changes from the supplier feed\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

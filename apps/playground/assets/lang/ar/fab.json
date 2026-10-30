@@ -1,0 +1,17 @@
+{
+  "new_order": "طلب جديد",
+  "scan": "امسح رمزًا شريطيًا",
+  "note": "أضف ملاحظة",
+  "photo": "التقط صورة",
+  "create": "إنشاء",
+  "chosen": "اخترت: {action}",
+  "nothing_chosen": "لم تختر شيئًا بعد",
+  "area": "الطلبات",
+  "order_title": "طلب جديد رقم {number}",
+  "customer": "العميل",
+  "customer_value": "سارة الحداد",
+  "cancel": "إلغاء",
+  "close": "إغلاق",
+  "created": "أُنشئ الطلب رقم {number}",
+  "nothing_yet": "لا طلبات بعد. اضغط «طلب جديد»."
+}

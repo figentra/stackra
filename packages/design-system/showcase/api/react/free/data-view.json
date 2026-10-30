@@ -1,0 +1,301 @@
+{
+  "generatedFrom": {
+    "hash": "c56ba3ad39fe563b",
+    "propsFiles": [
+      "ui/src/react/data-view/collection-filter-editor.props.ts",
+      "ui/src/react/data-view/collection-sort-editor.props.ts",
+      "ui/src/react/data-view/data-view-cards.props.ts",
+      "ui/src/react/data-view/data-view.props.ts"
+    ]
+  },
+  "importLine": "import { DataView } from \"@stackra/ui/react\";",
+  "key": "free/data-view",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when a list row or a card is pressed, for example to open the record.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        },
+        {
+          "description": "Web: saves the grid view's edited cells.",
+          "name": "onGridSave",
+          "required": false,
+          "source": "stackra",
+          "type": "(changes: Readonly<Record<string, Readonly<Record<string, DataGridValue>>>>) => void | Promise<void>"
+        },
+        {
+          "description": "Shares a saved view; given, the views menu has \"Share view\".",
+          "name": "onShareView",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: CollectionView) => void"
+        },
+        {
+          "description": "Fetches the rows again; defaults to the engine's own refresh in server mode, and no Refresh otherwise.",
+          "name": "onRefresh",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "DataView",
+      "props": [
+        {
+          "description": "The name of the records, for example \"Orders\": the table's name and the toolbar's.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "none",
+          "description": "How many rows can be selected in the table. Defaults to `none`, or `multiple` with `bulkActions`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "What a list row shows.",
+          "name": "list",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewFields<TItem>"
+        },
+        {
+          "description": "The engine every view draws from (`useCollection`).",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The content of a table cell; left out, the column's text.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "What shows when there are no rows at all.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The actions of one row, in the table's row menu.",
+          "name": "rowActions",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => readonly ResourceAction[]"
+        },
+        {
+          "description": "The actions on the selection, in the bulk bar.",
+          "name": "bulkActions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ResourceAction[]"
+        },
+        {
+          "description": "What a card shows.",
+          "name": "cards",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewFields<TItem>"
+        },
+        {
+          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is\ngiven (web); native offers list and cards.",
+          "name": "layouts",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"table\" | \"list\" | \"grid\" | \"cards\" | \"board\")[]"
+        },
+        {
+          "description": "The view a phone opens on when the engine was never switched: `list` (the default) or `cards`.",
+          "name": "phoneLayout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"list\" | \"cards\""
+        },
+        {
+          "description": "Web: the typed columns of the grid view; given, the grid is offered.",
+          "name": "gridColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly DataGridColumn[]"
+        },
+        {
+          "description": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",
+          "name": "exportOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "Omit<ExportDialogContractProps, \"trigger\" | \"counts\"> & Partial<Pick<ExportDialogContractProps, \"counts\">>"
+        },
+        {
+          "description": "False to leave out the full-screen button. Defaults to true on web.",
+          "name": "hasFullscreen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws a view the component does not (the board of wave 4), or replaces one, by layout.",
+          "name": "renderLayout",
+          "required": false,
+          "source": "stackra",
+          "type": "Partial<Record<\"table\" | \"list\" | \"grid\" | \"cards\" | \"board\", () => ReactNode>>"
+        },
+        {
+          "description": "",
+          "name": "importOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "Omit<ImportDialogProps, \"trigger\">"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "CollectionFilterEditor",
+      "props": [
+        {
+          "description": "The engine whose rule tree is edited.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The records' name, for the builder's accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CollectionSortEditor",
+      "props": [
+        {
+          "description": "The engine whose sort keys are edited.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The records' name, for the list's accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "DataViewCards",
+      "props": []
+    },
+    {
+      "name": "SavedViewsMenu",
+      "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Called when a card is pressed.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        }
+      ],
+      "name": "DataView.Cards",
+      "props": [
+        {
+          "description": "The engine whose rows are drawn.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The records' name, the grid's accessible name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What a card shows.",
+          "name": "fields",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewFields<TItem>"
+        },
+        {
+          "description": "The content of a value; left out, the column's text.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "`cards` (the default) or `list`.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"list\" | \"cards\""
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

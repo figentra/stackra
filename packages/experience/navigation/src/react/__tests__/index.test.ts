@@ -20,6 +20,7 @@ describe("@stackra/navigation/react", () => {
       "Link",
       "NavLink",
       "Outlet",
+      "ROUTE_OVERLAY_MAX_DEPTH",
       "ReactRouterProvider",
       "RootErrorBoundary",
       "RouteForm",

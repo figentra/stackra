@@ -1,0 +1,14 @@
+{
+  "size": "Size {size}",
+  "variant_column": "Variant",
+  "start": "Verified",
+  "end": "Next",
+  "both": "Approved",
+  "sentence_prefix": "This order is",
+  "sentence_suffix": "and ships tomorrow.",
+  "sentence_chip": "On track",
+  "categories": "Categories",
+  "next_variant": "Next variant",
+  "next_tone": "Next tone",
+  "current": "{variant}, {tone}"
+}

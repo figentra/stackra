@@ -1,0 +1,88 @@
+{
+  "generatedFrom": {
+    "hash": "2cdbffb7d481d58b",
+    "propsFiles": ["ui/src/native/calendar/calendar.props.ts"]
+  },
+  "importLine": "import { Calendar } from \"@stackra/ui/native\";",
+  "key": "free/calendar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each day picked.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: CalendarDate) => void"
+        }
+      ],
+      "name": "Calendar",
+      "props": [
+        {
+          "description": "The chosen day, for a controlled calendar; `null` for none.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The starting day, for an uncontrolled calendar.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The earliest day that can be picked.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The latest day that can be picked.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "Whether a day is refused, for example a closed day.",
+          "name": "isDateUnavailable",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => boolean"
+        },
+        {
+          "description": "The calendar the grid is shown in; defaults to `gregory`. The value stays Gregorian.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The spoken name of the calendar.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

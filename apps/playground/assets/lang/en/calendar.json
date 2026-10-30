@@ -1,0 +1,11 @@
+{
+  "basics": {
+    "label": "Delivery day"
+  },
+  "hijri": {
+    "label": "Appointment day"
+  },
+  "arabic": {
+    "label": "يوم الموعد"
+  }
+}

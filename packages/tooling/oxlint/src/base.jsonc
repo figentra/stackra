@@ -122,6 +122,8 @@
     "stackra/no-enum": "error",
     "stackra/no-hash-private": "error",
     "stackra/no-kind-decorator": "error",
+    // shortcut: warn while the showcase redesign clears the 228 existing radius literals; error once they reach zero.
+    "stackra/no-literal-radius": "warn",
     "stackra/no-parameter-decorator": "error",
     "stackra/no-raw-key-literal": "error",
     "stackra/no-tenant-vocabulary": "error",
@@ -198,6 +200,13 @@
       // come from, so no constant exists yet. Product code stays under R-56.
       "files": ["**/__tests__/**"],
       "rules": { "stackra/no-raw-key-literal": "off" },
+    },
+    {
+      // Radii come from --radius-* tokens through @stackra/ui (ADR 0302); the guard covers the apps and the design
+      // system, the code that draws surfaces. Everywhere else a `rounded-*` string is plain data.
+      "files": ["**/*"],
+      "excludeFiles": ["**/apps/**", "**/packages/design-system/**"],
+      "rules": { "stackra/no-literal-radius": "off" },
     },
     {
       // B-1, B-2: a test sorts or reverses the array it just built, to get the order an assertion compares;

@@ -1,0 +1,15 @@
+{
+  "brand": "Acme",
+  "workspace": "Workspace",
+  "navigation": "Workspace navigation",
+  "account": "Account navigation",
+  "items": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "customers": "Customers",
+    "reports": "Reports",
+    "reports_overview": "Overview",
+    "reports_revenue": "Revenue",
+    "settings": "Settings"
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the colour utility each text tone adds on top of HeroUI Typography's `color`: none for `default` and
- *          `muted` (HeroUI draws those), `text-<role>` for the status tones, the route HeroUI Native's docs prescribe.
+ *          `muted` (HeroUI draws those), `text-<role>` for the status tones (the accent's text role, `accent-soft-foreground`, for `accent`), the route HeroUI Native's docs prescribe.
  *          The one tone-to-class map of the kit: Link reuses it (and writes its own `text-link` for `default`).
  * Boundary: data only. The class names are written out in full so Tailwind and Uniwind find them when they scan
  *          this package (`@source`); never build them from a template.
@@ -14,7 +14,8 @@ import type { TextTone } from "#contracts/enums/text-tone.enum";
 export const TONE_CLASS_NAME = Object.freeze({
   default: "",
   muted: "",
-  accent: "text-accent",
+  // The accent as text is its soft label: a light accent (amber) is under 2:1 on the page, its soft label 4.5:1 or more.
+  accent: "text-accent-soft-foreground",
   success: "text-success",
   warning: "text-warning",
   danger: "text-danger",

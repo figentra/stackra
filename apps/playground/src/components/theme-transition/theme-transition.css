@@ -1,0 +1,14 @@
+/* Uniwind Pro's View Transition presets (`data-uniwind-transition` on <html>), the same the mobile app plays. */
+@import "uniwind/view-transition";
+
+/* HeroUI's base layer sets `view-transition-name: none` on :root, which leaves no root snapshot to animate; a change in
+   flight names it again, and holds the colour transitions so the new snapshot is the finished theme. */
+:root[data-uniwind-transition] {
+  view-transition-name: root;
+
+  & *,
+  & *::before,
+  & *::after {
+    transition: none !important;
+  }
+}

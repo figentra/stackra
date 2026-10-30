@@ -1,0 +1,187 @@
+{
+  "generatedFrom": {
+    "hash": "4e21585893dcd507",
+    "propsFiles": [
+      "ui/src/react/chart/chart-frame.props.ts",
+      "ui/src/react/chart/pie-figure.props.ts"
+    ]
+  },
+  "importLine": "import { ChartFrame } from \"@stackra/ui/react\";",
+  "key": "free/chart",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Makes each legend entry a toggle that hides or shows its series.",
+          "name": "onToggle",
+          "required": false,
+          "source": "stackra",
+          "type": "(key: string) => void"
+        }
+      ],
+      "name": "ChartFrame",
+      "props": [
+        {
+          "description": "The data table's caption, the chart's name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chart's numbers as text.",
+          "name": "table",
+          "required": true,
+          "source": "stackra",
+          "type": "ChartTable"
+        },
+        {
+          "description": "The legend's series; no legend when empty.",
+          "name": "legend",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The legend's palette.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The series hidden from the plot.",
+          "name": "hiddenKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Adds the dashed \"Previous period\" legend entry.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Lines read after the data table, such as each reference line's label and value.",
+          "name": "notes",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The plot.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    },
+    {
+      "name": "PieFigure",
+      "props": [
+        {
+          "description": "The word under the total in the hole, such as \"Visitors\"; no total is shown without it.",
+          "name": "centerLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's slice name, matched to a series' `key`.",
+          "name": "nameKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's value.",
+          "name": "valueKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "isDonut",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

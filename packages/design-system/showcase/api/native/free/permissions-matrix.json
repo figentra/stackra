@@ -1,0 +1,156 @@
+{
+  "generatedFrom": {
+    "hash": "812402a010feb440",
+    "propsFiles": ["ui/src/native/permissions-matrix/permissions-matrix.props.ts"]
+  },
+  "importLine": "import { PermissionsMatrix } from \"@stackra/ui/native\";",
+  "key": "free/permissions-matrix",
+  "parts": [
+    {
+      "name": "PermissionsMatrix",
+      "props": [
+        {
+          "description": "The matrix's accessible name, such as \"Store roles\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns: one per role.",
+          "name": "roles",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PermissionRole[]"
+        },
+        {
+          "description": "The rows, in titled groups.",
+          "name": "groups",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PermissionGroup[]"
+        },
+        {
+          "description": "The grants shown (controlled).",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, readonly string[]>>"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Style",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

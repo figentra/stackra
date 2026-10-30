@@ -79,7 +79,7 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
           buttonVariants({ variant: "ghost" }),
           // HeroUI's button is a fixed-height pill that never wraps; a row is neither, so `md:h-auto` also resets the
           // desktop height, which a plain `h-auto` leaves in place. 40 px is well over the 24 px target size.
-          "h-auto min-h-10 w-full justify-start gap-3 whitespace-normal rounded-xl px-3 py-2 text-start md:h-auto",
+          "h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2 text-start md:h-auto",
           // The current entry: a filled track, bold text and a bar at the start; the bar keeps it apart without colour.
           "data-[current=true]:font-semibold data-[current=true]:[--button-bg-hover:var(--default-hover)] data-[current=true]:[--button-bg-pressed:var(--default-hover)] data-[current=true]:[--button-bg:var(--default)]",
         ) ?? ""

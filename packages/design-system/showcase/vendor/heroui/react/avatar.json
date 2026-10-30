@@ -1,0 +1,156 @@
+{
+  "slug": "avatar",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(media)/avatar.mdx",
+  "parts": [
+    {
+      "name": "Avatar",
+      "props": [
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Avatar size"
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "default": "'default'",
+          "description": "Fallback color theme"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'soft'",
+          "default": "'default'",
+          "description": "Visual style variant"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Image",
+      "props": [
+        {
+          "name": "src",
+          "type": "string",
+          "description": "Image source URL"
+        },
+        {
+          "name": "srcSet",
+          "type": "string",
+          "description": "The image `srcset` attribute for responsive images"
+        },
+        {
+          "name": "sizes",
+          "type": "string",
+          "description": "The image `sizes` attribute for responsive images"
+        },
+        {
+          "name": "alt",
+          "type": "string",
+          "description": "Alternative text for the image"
+        },
+        {
+          "name": "onLoad",
+          "type": "(event: SyntheticEvent<HTMLImageElement>) => void",
+          "description": "Callback when the image loads successfully"
+        },
+        {
+          "name": "onError",
+          "type": "(event: SyntheticEvent<HTMLImageElement>) => void",
+          "description": "Callback when there's an error loading the image"
+        },
+        {
+          "name": "crossOrigin",
+          "type": "'anonymous' | 'use-credentials'",
+          "description": "CORS setting for the image request"
+        },
+        {
+          "name": "loading",
+          "type": "'eager' | 'lazy'",
+          "description": "Native lazy loading attribute"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Fallback",
+      "props": [
+        {
+          "name": "delayMs",
+          "type": "number",
+          "description": "Delay before showing fallback (prevents flash)"
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "description": "Override color from parent"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".avatar",
+      "description": "Base container with default size (size-10)"
+    },
+    {
+      "name": ".avatar__image",
+      "description": "Image element with aspect-square sizing"
+    },
+    {
+      "name": ".avatar__fallback",
+      "description": "Fallback container with centered content"
+    },
+    {
+      "name": ".avatar--sm",
+      "description": "Small avatar (size-8)"
+    },
+    {
+      "name": ".avatar--md",
+      "description": "Medium avatar (default, no additional styles)"
+    },
+    {
+      "name": ".avatar--lg",
+      "description": "Large avatar (size-12)"
+    },
+    {
+      "name": ".avatar--soft",
+      "description": "Soft variant with lighter background"
+    },
+    {
+      "name": ".avatar__fallback--default",
+      "description": "Default text color"
+    },
+    {
+      "name": ".avatar__fallback--accent",
+      "description": "Accent text color"
+    },
+    {
+      "name": ".avatar__fallback--success",
+      "description": "Success text color"
+    },
+    {
+      "name": ".avatar__fallback--warning",
+      "description": "Warning text color"
+    },
+    {
+      "name": ".avatar__fallback--danger",
+      "description": "Danger text color"
+    }
+  ]
+}

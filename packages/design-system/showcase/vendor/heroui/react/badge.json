@@ -1,0 +1,191 @@
+{
+  "slug": "badge",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(data-display)/badge.mdx",
+  "parts": [
+    {
+      "name": "Badge",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to display inside the badge (text, number, or icon). When omitted, renders as a dot."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the root element"
+        },
+        {
+          "name": "color",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Color variant of the badge"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\" | \"soft\"",
+          "default": "\"primary\"",
+          "description": "Visual style variant"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the badge"
+        },
+        {
+          "name": "placement",
+          "type": "\"top-right\" | \"top-left\" | \"bottom-right\" | \"bottom-left\"",
+          "default": "\"top-right\"",
+          "description": "Position of the badge relative to its anchor"
+        }
+      ]
+    },
+    {
+      "name": "Badge.Anchor",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The element to anchor the badge to, plus the Badge itself"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the anchor wrapper"
+        }
+      ]
+    },
+    {
+      "name": "Badge.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Label text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the label slot"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".badge",
+      "description": "Base badge container styles"
+    },
+    {
+      "name": ".badge__label",
+      "description": "Label text slot styles"
+    },
+    {
+      "name": ".badge-anchor",
+      "description": "Positioning wrapper for the anchored element"
+    },
+    {
+      "name": ".badge--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".badge--danger",
+      "description": "Danger color variant"
+    },
+    {
+      "name": ".badge--default",
+      "description": "Default color variant"
+    },
+    {
+      "name": ".badge--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".badge--warning",
+      "description": "Warning color variant"
+    },
+    {
+      "name": ".badge--primary",
+      "description": "Primary variant with filled background"
+    },
+    {
+      "name": ".badge--secondary",
+      "description": "Secondary variant with default background"
+    },
+    {
+      "name": ".badge--soft",
+      "description": "Soft variant with lighter background"
+    },
+    {
+      "name": ".badge--sm",
+      "description": "Small size"
+    },
+    {
+      "name": ".badge--md",
+      "description": "Medium size (default)"
+    },
+    {
+      "name": ".badge--lg",
+      "description": "Large size"
+    },
+    {
+      "name": ".badge--top-right",
+      "description": "Position at top-right corner (default)"
+    },
+    {
+      "name": ".badge--top-left",
+      "description": "Position at top-left corner"
+    },
+    {
+      "name": ".badge--bottom-right",
+      "description": "Position at bottom-right corner"
+    },
+    {
+      "name": ".badge--bottom-left",
+      "description": "Position at bottom-left corner"
+    },
+    {
+      "name": ".badge--primary.badge--accent",
+      "description": "Primary accent with filled background"
+    },
+    {
+      "name": ".badge--primary.badge--default",
+      "description": "Primary default with filled background"
+    },
+    {
+      "name": ".badge--primary.badge--success",
+      "description": "Primary success with filled background"
+    },
+    {
+      "name": ".badge--primary.badge--warning",
+      "description": "Primary warning with filled background"
+    },
+    {
+      "name": ".badge--primary.badge--danger",
+      "description": "Primary danger with filled background"
+    },
+    {
+      "name": ".badge--soft.badge--accent",
+      "description": "Soft accent with lighter background"
+    },
+    {
+      "name": ".badge--soft.badge--default",
+      "description": "Soft default with lighter background"
+    },
+    {
+      "name": ".badge--soft.badge--success",
+      "description": "Soft success with lighter background"
+    },
+    {
+      "name": ".badge--soft.badge--warning",
+      "description": "Soft warning with lighter background"
+    },
+    {
+      "name": ".badge--soft.badge--danger",
+      "description": "Soft danger with lighter background"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "basics": {
+    "label": "Appointment",
+    "hint": "The day and the time the customer arrives.",
+    "button": "Choose the appointment day"
+  }
+}

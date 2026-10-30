@@ -1,0 +1,60 @@
+{
+  "slug": "input",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/input.mdx",
+  "parts": [
+    {
+      "name": "Input",
+      "props": [
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the input is in an invalid state (overrides context)"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "'primary'",
+          "description": "Variant style for the input"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom class name for the input"
+        },
+        {
+          "name": "selectionColorClassName",
+          "type": "string",
+          "default": "\"accent-accent\"",
+          "description": "Custom className for the selection color"
+        },
+        {
+          "name": "placeholderColorClassName",
+          "type": "string",
+          "default": "\"field-placeholder\"",
+          "description": "Custom className for the placeholder text color"
+        },
+        {
+          "name": "isBottomSheetAware",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the input automatically handles keyboard state when rendered inside a BottomSheet. Set to `false` to disable"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRoot",
+          "default": "undefined",
+          "description": "Animation configuration for the input"
+        },
+        {
+          "name": "...TextInputProps",
+          "type": "TextInputProps",
+          "description": "All standard React Native TextInput props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

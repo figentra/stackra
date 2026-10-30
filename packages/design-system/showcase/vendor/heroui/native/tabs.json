@@ -1,0 +1,394 @@
+{
+  "slug": "tabs",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(navigation)/tabs.mdx",
+  "parts": [
+    {
+      "name": "Tabs",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside tabs"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Currently active tab value"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "'primary'",
+          "description": "Visual variant of the tabs"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the container"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "description": "Callback when the active tab changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.List",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the list"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.ScrollView",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the scroll view"
+        },
+        {
+          "name": "scrollAlign",
+          "type": "'start' | 'center' | 'end' | 'none'",
+          "default": "'center'",
+          "description": "Scroll alignment variant for the selected item"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the scroll view"
+        },
+        {
+          "name": "contentContainerClassName",
+          "type": "string",
+          "description": "Additional CSS classes for the content container"
+        },
+        {
+          "name": "...ScrollViewProps",
+          "type": "ScrollViewProps",
+          "description": "All standard React Native ScrollView props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: TabsTriggerRenderProps) => React.ReactNode)",
+          "description": "Children elements to be rendered inside the trigger, or a render function"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The unique value identifying this tab"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the trigger is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether this trigger is currently selected"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the trigger"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the trigger is disabled"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Text content to be rendered as label"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom indicator content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "TabsIndicatorAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "width.type",
+          "type": "'spring' | 'timing'",
+          "default": "'spring'",
+          "description": "Type of animation to use"
+        },
+        {
+          "name": "width.config",
+          "type": "WithSpringConfig | WithTimingConfig",
+          "default": "`{ stiffness: 1200, damping: 120 }` (spring) or `{ duration: 200 }` (timing)",
+          "description": "Reanimated animation configuration"
+        },
+        {
+          "name": "height.type",
+          "type": "'spring' | 'timing'",
+          "default": "'spring'",
+          "description": "Type of animation to use"
+        },
+        {
+          "name": "height.config",
+          "type": "WithSpringConfig | WithTimingConfig",
+          "default": "`{ stiffness: 1200, damping: 120 }` (spring) or `{ duration: 200 }` (timing)",
+          "description": "Reanimated animation configuration"
+        },
+        {
+          "name": "translateX.type",
+          "type": "'spring' | 'timing'",
+          "default": "'spring'",
+          "description": "Type of animation to use"
+        },
+        {
+          "name": "translateX.config",
+          "type": "WithSpringConfig | WithTimingConfig",
+          "default": "`{ stiffness: 1200, damping: 120 }` (spring) or `{ duration: 200 }` (timing)",
+          "description": "Reanimated animation configuration"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Separator",
+      "props": [
+        {
+          "name": "betweenValues",
+          "type": "string[]",
+          "description": "Array of tab values between which the separator should be visible. The separator shows when the current tab value is NOT in this array"
+        },
+        {
+          "name": "isAlwaysVisible",
+          "type": "boolean",
+          "default": "false",
+          "description": "If true, opacity is always 1 regardless of the current tab value"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "TabsSeparatorAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom separator content"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 1]",
+          "description": "Opacity values [hidden, visible]"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 200 }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the content"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the tab this content belongs to"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useTabs",
+      "signature": "useTabs(): UseTabsReturn",
+      "returns": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Currently active tab value"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "description": "Callback function to change the active tab"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Unique identifier for the tabs instance"
+        }
+      ]
+    },
+    {
+      "name": "useTabsMeasurements",
+      "signature": "useTabsMeasurements(): UseTabsMeasurementsReturn",
+      "returns": [
+        {
+          "name": "measurements",
+          "type": "Record<string, ItemMeasurements>",
+          "description": "Record of measurements for each tab trigger"
+        },
+        {
+          "name": "setMeasurements",
+          "type": "(key: string, measurements: ItemMeasurements) => void",
+          "description": "Function to update measurements for a tab trigger"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "description": "Visual variant of the tabs"
+        }
+      ]
+    },
+    {
+      "name": "useTabsTrigger",
+      "signature": "useTabsTrigger(): UseTabsTriggerReturn",
+      "returns": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of this trigger"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Unique identifier for this trigger"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether this trigger is currently selected"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

@@ -24,7 +24,11 @@ describe("themeVariables", () => {
       expect(heroui.dark[`--${role}`]).toBe(STACKRA_THEME.colors[role].dark);
     }
     expect(heroui.dark["--overlay-shadow"]).toBe(STACKRA_THEME.shadows.overlay.dark);
-    expect(heroui.root).toEqual({ "--radius": "0.25rem", "--field-radius": "var(--radius)" });
+    expect(heroui.root).toEqual({
+      "--radius": "0.25rem",
+      "--field-radius": "var(--radius)",
+      "--field-border-width": "1px",
+    });
   });
 
   it("gives Stackra its additions, none of HeroUI's", () => {

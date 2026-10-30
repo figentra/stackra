@@ -1,0 +1,154 @@
+{
+  "slug": "spinner",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(feedback)/spinner.mdx",
+  "parts": [
+    {
+      "name": "Spinner",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Content to render inside the spinner"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of the spinner"
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'success' | 'warning' | 'danger' | string",
+          "default": "'default'",
+          "description": "Color theme of the spinner"
+        },
+        {
+          "name": "isLoading",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the spinner is loading"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the spinner"
+        },
+        {
+          "name": "animation",
+          "type": "SpinnerRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeIn`<br/>`.duration(200)`<br/>`.easing(Easing.out(Easing.ease))`",
+          "description": "Custom entering animation"
+        },
+        {
+          "name": "exiting.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeOut`<br/>`.duration(100)`",
+          "description": "Custom exiting animation"
+        }
+      ]
+    },
+    {
+      "name": "Spinner.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Content to render inside the indicator"
+        },
+        {
+          "name": "iconProps",
+          "type": "SpinnerIconProps",
+          "default": "undefined",
+          "description": "Props for the default icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the indicator element"
+        },
+        {
+          "name": "animation",
+          "type": "SpinnerIndicatorAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "rotation.speed",
+          "type": "number",
+          "default": "1.1",
+          "description": "Rotation speed multiplier"
+        },
+        {
+          "name": "rotation.easing",
+          "type": "WithTimingConfig['easing']",
+          "default": "Easing.linear",
+          "description": "Animation easing configuration"
+        }
+      ]
+    },
+    {
+      "name": "SpinnerIconProps",
+      "props": [
+        {
+          "name": "width",
+          "type": "number | string",
+          "default": "24",
+          "description": "Width of the icon"
+        },
+        {
+          "name": "height",
+          "type": "number | string",
+          "default": "24",
+          "description": "Height of the icon"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "default": "'currentColor'",
+          "description": "Color of the icon"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

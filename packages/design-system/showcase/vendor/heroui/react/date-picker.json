@@ -1,0 +1,98 @@
+{
+  "slug": "date-picker",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(date-and-time)/date-picker.mdx",
+  "parts": [
+    {
+      "name": "DatePicker",
+      "props": [
+        {
+          "name": "value",
+          "type": "DateValue | null",
+          "description": "Controlled selected date value."
+        },
+        {
+          "name": "defaultValue",
+          "type": "DateValue | null",
+          "description": "Default selected value in uncontrolled mode."
+        },
+        {
+          "name": "onChange",
+          "type": "(value: DateValue | null) => void",
+          "description": "Called when selected date changes."
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled popover open state."
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial popover open state."
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Called when popover open state changes."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables date selection and trigger interactions."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Marks the field as invalid for validation state."
+        },
+        {
+          "name": "minValue",
+          "type": "DateValue",
+          "description": "Minimum selectable date."
+        },
+        {
+          "name": "maxValue",
+          "type": "DateValue",
+          "description": "Maximum selectable date."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Name used for HTML form submission."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | (values: DatePickerRenderProps) => ReactNode",
+          "description": "Composed content or render function."
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, DatePickerRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".date-picker",
+      "description": "Root wrapper."
+    },
+    {
+      "name": ".date-picker__trigger",
+      "description": "Trigger part that opens the popover."
+    },
+    {
+      "name": ".date-picker__trigger-indicator",
+      "description": "Default/custom indicator slot."
+    },
+    {
+      "name": ".date-picker__popover",
+      "description": "Popover content wrapper."
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "slug": "alert",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(feedback)/alert.mdx",
+  "parts": [
+    {
+      "name": "Alert",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to render inside the alert"
+        },
+        {
+          "name": "status",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "default": "'default'",
+          "description": "Status controlling the icon and color treatment"
+        },
+        {
+          "name": "id",
+          "type": "string | number",
+          "description": "Unique identifier for the alert. Auto-generated when not provided"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles applied to the root container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom children to render instead of the default status icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "iconProps",
+          "type": "AlertIconProps",
+          "description": "Props passed to the default status icon (size and color overrides)"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements (typically Alert.Title and Alert.Description)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Title text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useAlert",
+      "signature": "useAlert()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

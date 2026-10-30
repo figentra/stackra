@@ -1,0 +1,10 @@
+{
+  "temperature_title": "Riyadh temperature range",
+  "temperature_description": "Average daily low and high, 2025",
+  "prices_title": "Price range by plan",
+  "prices_description": "Lowest and highest monthly price paid",
+  "starter": "Starter",
+  "growth": "Growth",
+  "business": "Business",
+  "enterprise": "Enterprise"
+}

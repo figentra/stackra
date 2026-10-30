@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "ee511b68734adec5",
+    "propsFiles": ["ui/src/native/histogram-chart/histogram-chart.props.ts"]
+  },
+  "importLine": "import { HistogramChart } from \"@stackra/ui/native\";",
+  "key": "free/histogram-chart",
+  "parts": [
+    {
+      "name": "HistogramChart",
+      "props": [
+        {
+          "description": "The raw values, such as each order's total; non-numbers are left out.",
+          "name": "values",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly number[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Order totals, October\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many bins; Sturges' rule (1 + log2 of the count) by default.",
+          "name": "binCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The width of each bin, in the values' unit; it wins over `binCount`.",
+          "name": "binWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How the bin edges are written, such as `{ style: \"currency\", currency: \"SAR\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The bars' colour; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Draws the count axis; off by default, since the tooltip and the data table carry the counts.",
+          "name": "showValueAxis",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the pointed or pressed bin's count; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

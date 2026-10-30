@@ -85,7 +85,7 @@ export function CursorPagination({
                 setPressed("previous");
                 onPrevious?.();
               }}
-              startIcon={<Icon name="chevron-left" isMirroredInRtl />}
+              startIcon={<Icon name="chevron-left" />}
             >
               {previousLabel}
             </Button>
@@ -98,7 +98,7 @@ export function CursorPagination({
                 setPressed("next");
                 onNext?.();
               }}
-              endIcon={<Icon name="chevron-right" isMirroredInRtl />}
+              endIcon={<Icon name="chevron-right" />}
             >
               {nextLabel}
             </Button>

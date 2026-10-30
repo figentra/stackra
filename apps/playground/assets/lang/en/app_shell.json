@@ -1,0 +1,22 @@
+{
+  "frame_label": "Frame navigation",
+  "breakpoint_label": "Breakpoint navigation",
+  "arabic_label": "تنقل الإطار العربي",
+  "live_label": "Live navigation",
+  "state": "Drawer: {is_open, select, true {open} other {closed}}",
+  "open_navigation": "Open navigation",
+  "brand": "Acme",
+  "heading": "Orders",
+  "body": "The page sits in the shell’s main region.",
+  "heading_bare": "Dashboard",
+  "home": "Home",
+  "orders": "Orders",
+  "customers": "Customers",
+  "inbox": "Inbox",
+  "arabic_brand": "أكمي",
+  "arabic_heading": "الطلبات",
+  "arabic_body": "الصفحة داخل منطقة الإطار الرئيسية.",
+  "arabic_home": "الرئيسية",
+  "arabic_orders": "الطلبات",
+  "arabic_customers": "العملاء"
+}

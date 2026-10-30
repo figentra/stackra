@@ -1,0 +1,83 @@
+{
+  "generatedFrom": {
+    "hash": "df6f42389844c2b6",
+    "propsFiles": ["ui/src/react/bidi/bidi.props.ts"]
+  },
+  "importLine": "import { Bidi } from \"@stackra/ui/react\";",
+  "key": "free/bidi",
+  "parts": [
+    {
+      "name": "Bidi",
+      "props": [
+        {
+          "description": "The text to isolate, or the block's content: a SKU, a phone number, an e-mail, a Latin name in Arabic text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The direction of the content; `auto` (the default) takes it from the first strong letter.",
+          "name": "dir",
+          "required": false,
+          "source": "stackra",
+          "type": "\"auto\" | \"ltr\" | \"rtl\""
+        },
+        {
+          "description": "True for a block that sets the direction of everything inside it (arrow keys and placement too); false (the\ndefault) for an inline run that only stops its own direction leaking into the sentence around it.",
+          "name": "isBlock",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "useDirection",
+      "props": []
+    }
+  ],
+  "platform": "react"
+}

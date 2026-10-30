@@ -1,0 +1,431 @@
+{
+  "generatedFrom": {
+    "hash": "c134a7f6cecd8217",
+    "heroDoc": "vendor/heroui/react/switch.json",
+    "propsFiles": ["ui/src/react/switch/switch.props.ts"]
+  },
+  "importLine": "import { Switch } from \"@stackra/ui/react\";",
+  "key": "free/switch",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: boolean) => void"
+        },
+        {
+          "description": "Handler called when the switch is pressed",
+          "name": "onPress",
+          "required": false,
+          "source": "heroui",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "name": "onClick",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: MouseEvent<FocusableElement, MouseEvent>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a key is pressed.",
+          "name": "onKeyDown",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is released.",
+          "name": "onKeyUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the press state changes.",
+          "name": "onPressChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isPressed: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "name": "onPressEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction starts.",
+          "name": "onPressStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "name": "onPressUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        }
+      ],
+      "extends": "Switch",
+      "name": "Switch",
+      "props": [
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", SwitchFieldRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+          "name": "aria-controls",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element that provides an error message for the object.",
+          "name": "aria-errormessage",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the element should receive focus on render.",
+          "name": "autoFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "'react-aria-SwitchField'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<SwitchFieldRenderProps>"
+        },
+        {
+          "description": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+          "name": "excludeFromTabOrder",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "The `<form>` element to associate the input with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#form).",
+          "name": "form",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "A ref for the HTML input element.",
+          "name": "inputRef",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLInputElement | null>"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<SwitchFieldRenderProps>"
+        },
+        {
+          "description": "A function that returns an error message if a given value is invalid.\nValidation errors are displayed to the user when the form is submitted\nif `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid`\nprop instead.",
+          "name": "validate",
+          "required": false,
+          "source": "react-aria",
+          "type": "(value: boolean) => true | ValidationError | null"
+        },
+        {
+          "default": "'native'",
+          "description": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
+          "name": "validationBehavior",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"native\" | \"aria\""
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ],
+      "renderProps": [
+        {
+          "description": "Whether the switch is currently on",
+          "name": "isSelected",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is hovered",
+          "name": "isHovered",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is currently pressed",
+          "name": "isPressed",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is focused",
+          "name": "isFocused",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is keyboard focused",
+          "name": "isFocusVisible",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is disabled",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the switch is read only",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "State of the switch.",
+          "name": "state",
+          "required": false,
+          "source": "heroui",
+          "type": "-"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base switch container",
+      "name": ".switch"
+    },
+    {
+      "description": "Optional content container",
+      "name": ".switch__content"
+    },
+    {
+      "description": "Switch control track",
+      "name": ".switch__control"
+    },
+    {
+      "description": "Switch thumb that moves",
+      "name": ".switch__thumb"
+    },
+    {
+      "description": "Optional icon inside the thumb",
+      "name": ".switch__icon"
+    },
+    {
+      "description": "Small size variant",
+      "name": ".switch--sm"
+    },
+    {
+      "description": "Medium size variant (default)",
+      "name": ".switch--md"
+    },
+    {
+      "description": "Large size variant",
+      "name": ".switch--lg"
+    },
+    {
+      "description": "Switch group container",
+      "name": ".switch-group"
+    },
+    {
+      "description": "Container for switch items",
+      "name": ".switch-group__items"
+    },
+    {
+      "description": "Horizontal layout",
+      "name": ".switch-group--horizontal"
+    },
+    {
+      "description": "Vertical layout (default)",
+      "name": ".switch-group--vertical"
+    }
+  ]
+}

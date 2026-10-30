@@ -4,8 +4,9 @@
  *          its colour, no `value` to `isIndeterminate`, `label` to the accessible name, drawn as a visible label when
  *          `isLabelVisible` is set, and the value text when `isValueVisible` is set) and passes every other HeroUI
  *          prop through unchanged.
- * Boundary: no styling of its own; the track, fill, the indeterminate sweep and its reduced-motion rule are HeroUI's,
- *          themed by `@stackra/tokens`. Separate from Spinner: this is the bar, with a value or a sweep.
+ * Boundary: no styling of its own but one class: the track, fill, the indeterminate sweep and its reduced-motion rule
+ *          are HeroUI's, themed by `@stackra/tokens`; the sweep is mirrored in right-to-left, since HeroUI's runs left to
+ *          right whatever the direction. Separate from Spinner: this is the bar, with a value or a sweep.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 4.1.2.
@@ -31,11 +32,20 @@ export function ProgressBar({
   valueLabel,
   isLabelVisible,
   isValueVisible,
+  style,
   ...rest
 }: ProgressBarProps): ReactElement {
   return (
     <HeroProgressBar
       {...rest}
+      // A bar has no content width of its own, so in a shrink-to-fit parent (a centred frame, a flex row) it collapsed
+      // to a sliver; like the native `<progress>` it keeps a 10rem floor and still fills any wider parent. Inline, not a
+      // utility class, so it holds wherever the app's Tailwind does not scan this package.
+      style={
+        typeof style === "function"
+          ? (state) => ({ minInlineSize: "10rem", ...style(state) })
+          : { minInlineSize: "10rem", ...style }
+      }
       {...omitUndefined({ value, minValue, maxValue, size, valueLabel })}
       color={tone}
       isIndeterminate={value === undefined}
@@ -45,7 +55,9 @@ export function ProgressBar({
       {isLabelVisible ? <Label>{label}</Label> : null}
       {isValueVisible && value !== undefined ? <HeroProgressBar.Output /> : null}
       <HeroProgressBar.Track>
-        <HeroProgressBar.Fill />
+        {/* HeroUI's sweep is a physical `translateX` from the left; mirrored in right-to-left it runs from the inline
+            start in the reading direction (the fill itself is placed with `start-0`, so a value grows from the right). */}
+        <HeroProgressBar.Fill className="rtl:[scale:-1_1]" />
       </HeroProgressBar.Track>
     </HeroProgressBar>
   );

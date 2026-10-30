@@ -15,6 +15,8 @@
 // @covers sta-350:FR-111 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +25,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/tooltip?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Tooltip" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Tooltip", locale) }),
+  ).toBeVisible();
 };
 
 /** A box that must exist. */
@@ -35,7 +39,15 @@ const boxOf = async (locator: Locator) => {
 
 /** Waits for the open and close animations to finish, so a box or a colour is measured at rest. */
 const settled = (page: Page) =>
-  page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        // Time-based ones only: a scroll-driven fade (the nav edges) runs as long as its scroller can scroll.
+        .filter((animation) => animation.timeline === document.timeline)
+        .map((animation) => animation.finished),
+    ),
+  );
 
 /** Centres the element in the viewport, so a tooltip has room on every side and is never flipped or shifted. */
 const centre = (element: Locator) =>
@@ -200,9 +212,11 @@ for (const locale of LOCALES)
       page,
     }) => {
       await open(page, "light", locale);
-      const button = page
-        .getByRole("region", { name: "Placement" })
-        .getByRole("button", { name: side, exact: true });
+      // By position: the Arabic page translates the labels, and the sides keep their order.
+      const button = example(page, "usage")
+        .getByRole("listitem")
+        .nth(SIDES.indexOf(side))
+        .getByRole("button");
       await centre(button);
       await hover(page, button);
       await expect(tooltip(page)).toBeVisible();
@@ -235,9 +249,11 @@ for (const locale of LOCALES)
       page,
     }) => {
       await open(page, "light", locale);
-      const button = page
-        .getByRole("region", { name: "Alignment" })
-        .getByRole("button", { name: `Align ${align}` });
+      // By position (start, centre, end): the Arabic page translates the labels.
+      const button = example(page, "alignment")
+        .getByRole("listitem")
+        .nth(align === "start" ? 0 : 2)
+        .getByRole("button");
       await centre(button);
       await hover(page, button);
       await expect(tooltip(page)).toBeVisible();

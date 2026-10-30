@@ -12,6 +12,8 @@
 // @covers sta-350:FR-040 sta-350:P-026 sta-350:P-027 sta-350:P-028 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -29,7 +31,9 @@ const CORNERS = [
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/badge?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Badge" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Badge", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed background as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -80,6 +84,10 @@ for (const scheme of SCHEMES)
     page,
   }) => {
     await open(page, scheme, "en");
+    // The demos load lazily: wait for the last example's badge before reading them all.
+    await expect(
+      page.locator('section#example-control [data-slot="badge"]').first(),
+    ).toBeAttached();
     const labels = await page
       .locator('[data-slot="badge"]:has([data-slot="badge-label"])')
       .evaluateAll((badges) => {
@@ -132,7 +140,8 @@ for (const scheme of SCHEMES)
 for (const locale of LOCALES)
   test(`each corner sits on the reading side of its anchor in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const items = page.getByRole("region", { name: "Corners" }).getByRole("listitem");
+    // By id: the section's heading speaks the page's locale.
+    const items = example(page, "corners").getByRole("listitem");
     await expect(items).toHaveCount(CORNERS.length);
     for (const [index, corner] of CORNERS.entries()) {
       const item = items.nth(index);
@@ -160,9 +169,7 @@ test("unlabelled badges are hidden and labelled ones are spoken through their la
       await expect(badge).toHaveAttribute("aria-hidden", "true");
     }
   }
-  const labelled = page
-    .getByRole("region", { name: "Variants and tones" })
-    .getByText("danger soft: 5 new");
+  const labelled = page.getByRole("region", { name: "Usage" }).getByText("danger soft: 5 new");
   await expect(labelled).toHaveClass(/sr-only/);
   await expect(page.getByRole("button", { name: "Notifications, 3 unread" })).toBeVisible();
 });

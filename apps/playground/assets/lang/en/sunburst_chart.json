@@ -1,0 +1,14 @@
+{
+  "label": "Revenue by category and product, this quarter",
+  "revenue": "Revenue",
+  "drinks": "Drinks",
+  "coffee": "Coffee",
+  "tea": "Tea",
+  "juice": "Juice",
+  "food": "Food",
+  "bakery": "Bakery",
+  "sandwiches": "Sandwiches",
+  "retail": "Retail",
+  "beans": "Beans to go",
+  "merch": "Merchandise"
+}

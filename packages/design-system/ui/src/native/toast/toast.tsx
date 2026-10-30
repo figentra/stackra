@@ -32,7 +32,7 @@ let shown = 0;
  * @returns the id of the toast, for `toast.close`
  */
 function show(message: string, options: ToastContractProps = {}): string {
-  const { tone = "default", icon, description, action, onClose } = options;
+  const { tone = "default", icon, avatar, description, action, onClose } = options;
   // An action needs time to be reached, so it lengthens the default; the caller's own timeout, 0 included, wins.
   const timeout = options.timeout ?? (action === undefined ? undefined : TOAST_ACTION_TIMEOUT);
   shown += 1;
@@ -47,8 +47,10 @@ function show(message: string, options: ToastContractProps = {}): string {
         title={message}
         description={description}
         icon={icon}
+        avatar={avatar}
         action={action}
         dismissLabel={toastBridge.dismissLabel()}
+        variant={toastBridge.variant()}
       />
     ),
     ...omitUndefined({

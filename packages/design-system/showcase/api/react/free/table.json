@@ -1,0 +1,302 @@
+{
+  "generatedFrom": {
+    "hash": "a17e70839416a27d",
+    "heroDoc": "vendor/heroui/react/table.json",
+    "propsFiles": ["ui/src/react/table/table.props.ts"]
+  },
+  "importLine": "import { Table } from \"@stackra/ui/react\";",
+  "key": "free/table",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the sort a press on a sortable header asks for; the app fetches the rows in that order.",
+          "name": "onSortChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(sort: SortDescriptor) => void"
+        },
+        {
+          "description": "Called when the end of the rows is reached while `hasMore` is true and nothing is loading.",
+          "name": "onLoadMore",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Web: called with a column's new width, in CSS pixels, when a resize ends.",
+          "name": "onColumnResize",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, width: number) => void"
+        },
+        {
+          "description": "Web: given, headers can be dragged to reorder the columns; called with the column and its new index.",
+          "name": "onColumnMove",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, toIndex: number) => void"
+        },
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "extends": "Table",
+      "name": "Table",
+      "props": [
+        {
+          "description": "The spoken name of the table, for example \"Orders\"; a table without one is anonymous to assistive technology.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns, in reading order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TableColumn[]"
+        },
+        {
+          "description": "The content of one cell. Left out, a cell shows the text of the row's property named by the column's `id`; give it\nto draw a badge, a date or a link, and give the app's own text for each value, as the table adds none.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "default": "primary",
+          "description": "The look of the table. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "The sort in force, for a controlled table: the rows arrive sorted, and this only marks the header.",
+          "name": "sortDescriptor",
+          "required": false,
+          "source": "stackra",
+          "type": "SortDescriptor"
+        },
+        {
+          "description": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
+          "name": "hasMore",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the header in view while the rows scroll; the table then scrolls inside `maxHeight`.",
+          "name": "isStickyHeader",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "24rem",
+          "description": "The height the rows scroll inside when the header is sticky, as a CSS length. Defaults to `24rem`.",
+          "name": "maxHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Every sort key, most significant first, for a multi-sort: the first marks its header as `sortDescriptor` does and\nthe others show their rank. Given, it wins over `sortDescriptor`.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SortDescriptor[]"
+        },
+        {
+          "description": "How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing.",
+          "name": "density",
+          "required": false,
+          "source": "stackra",
+          "type": "\"compact\" | \"normal\" | \"roomy\""
+        },
+        {
+          "description": "Web: true to give each header a resize handle (pointer, and the keyboard through the column menu's \"Resize\"); the\ncolumns then take their `width`, `minWidth` and `maxWidth`, and the table scrolls sideways past its width.",
+          "name": "isColumnResizable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Web: what sits at the end of a header, usually the column's menu. `startResize` starts a keyboard resize of the\ncolumn (arrows, then Enter or Escape) when the table is resizable.",
+          "name": "renderColumnMenu",
+          "required": false,
+          "source": "stackra",
+          "type": "(column: TableColumn, tools: { readonly startResize: () => void; }) => ReactNode"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TItem[]"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "none",
+          "description": "What a press or Space does: nothing, select one item, or toggle several. Defaults to `none`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Web: extra classes of one row, for example a sticky total row.",
+          "name": "rowClassName",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => string | undefined"
+        },
+        {
+          "description": "Additional CSS classes for the root container",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Root container (named `table-root` instead of `table` because `table` is a built-in Tailwind CSS utility class for `display: table`)",
+      "name": ".table-root"
+    },
+    {
+      "description": "Horizontal scroll wrapper with custom scrollbar",
+      "name": ".table__scroll-container"
+    },
+    {
+      "description": "The `<table>` element",
+      "name": ".table__content"
+    },
+    {
+      "description": "Header row (`<thead>`)",
+      "name": ".table__header"
+    },
+    {
+      "description": "Column header cell (`<th>`)",
+      "name": ".table__column"
+    },
+    {
+      "description": "Body section (`<tbody>`)",
+      "name": ".table__body"
+    },
+    {
+      "description": "Row element (`<tr>`)",
+      "name": ".table__row"
+    },
+    {
+      "description": "Data cell (`<td>`)",
+      "name": ".table__cell"
+    },
+    {
+      "description": "Footer container (outside table)",
+      "name": ".table__footer"
+    },
+    {
+      "description": "Drag handle for column resizing",
+      "name": ".table__column-resizer"
+    },
+    {
+      "description": "Wrapper enabling column resizing",
+      "name": ".table__resizable-container"
+    },
+    {
+      "description": "Sentinel row for infinite scrolling",
+      "name": ".table__load-more"
+    },
+    {
+      "description": "Styled container for the loading indicator",
+      "name": ".table__load-more-content"
+    },
+    {
+      "description": "Gray background container with card-style body (default)",
+      "name": ".table-root--primary"
+    },
+    {
+      "description": "No background, standalone rounded headers",
+      "name": ".table-root--secondary"
+    }
+  ]
+}

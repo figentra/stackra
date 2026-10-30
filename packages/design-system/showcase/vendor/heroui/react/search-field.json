@@ -1,0 +1,88 @@
+{
+  "slug": "search-field",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/search-field.mdx",
+  "parts": [
+    {
+      "name": "SearchFieldRenderProps",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the field is disabled."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the field is currently invalid."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the field is read-only."
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the field is currently focused (DEPRECATED - use `isFocusWithin`)."
+        },
+        {
+          "name": "isFocusWithin",
+          "type": "boolean",
+          "description": "Whether any child element is focused."
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether focus is visible (keyboard navigation)."
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Current value."
+        },
+        {
+          "name": "isEmpty",
+          "type": "boolean",
+          "description": "Whether the field is empty."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".search-field",
+      "description": "Root container with minimal styling (`flex flex-col gap-1`)"
+    },
+    {
+      "name": ".search-field__group",
+      "description": "Container for search icon, input, and clear button with border and background styling"
+    },
+    {
+      "name": ".search-field__input",
+      "description": "The search input field"
+    },
+    {
+      "name": ".search-field__search-icon",
+      "description": "The search icon displayed on the left"
+    },
+    {
+      "name": ".search-field__clear-button",
+      "description": "Button to clear the search field"
+    },
+    {
+      "name": ".search-field--primary",
+      "description": "Primary variant with shadow (default)"
+    },
+    {
+      "name": ".search-field--secondary",
+      "description": "Secondary variant without shadow, suitable for use in surfaces"
+    }
+  ]
+}

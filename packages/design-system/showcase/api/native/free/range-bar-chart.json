@@ -1,0 +1,107 @@
+{
+  "generatedFrom": {
+    "hash": "ab818327e45c6f64",
+    "propsFiles": ["ui/src/native/range-bar-chart/range-bar-chart.props.ts"]
+  },
+  "importLine": "import { RangeBarChart } from \"@stackra/ui/native\";",
+  "key": "free/range-bar-chart",
+  "parts": [
+    {
+      "name": "RangeBarChart",
+      "props": [
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The key of each row's category.",
+          "name": "xKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's low end.",
+          "name": "fromKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's high end.",
+          "name": "toKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Daily temperature range\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the category as a date in the locale (`{ month: \"short\" }`); as given without it.",
+          "name": "xFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "How values are written.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`vertical` bars stand on the category axis (the default); `horizontal` bars lie along it.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The bars' colour; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Draws the value axis; on by default, since a floating bar is read against it.",
+          "name": "showValueAxis",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the pointed or pressed row's range; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

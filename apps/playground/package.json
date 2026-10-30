@@ -40,7 +40,10 @@
     ]
   },
   "scripts": {
+    "brand:pull": "node ../../tools/scripts/brand-pull.mjs",
+    "predev": "pnpm brand:pull",
     "dev": "vite --port 3710 --strictPort",
+    "prebuild": "pnpm brand:pull",
     "build": "vite build",
     "preview": "vite preview --port 3710 --strictPort",
     "typecheck": "tsc --noEmit",
@@ -56,17 +59,25 @@
     "@heroui/styles": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
     "@stackra/app": "workspace:*",
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/navigation": "workspace:*",
+    "@stackra/showcase": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
     "motion": "catalog:frontend",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "react-hook-form": "catalog:frontend",
-    "react-router": "catalog:frontend"
+    "react-router": "catalog:frontend",
+    "recharts": "catalog:frontend",
+    "remark-breaks": "catalog:frontend",
+    "remark-gfm": "catalog:frontend",
+    "streamdown": "catalog:frontend",
+    "uniwind": "catalog:uniwind-pro"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:e2e",

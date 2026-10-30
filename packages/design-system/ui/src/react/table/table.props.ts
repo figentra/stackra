@@ -17,4 +17,7 @@ import type { TableContractProps } from "#contracts/types/table-contract-props.t
  * children are refused.
  */
 export type TableProps<TItem extends CollectionItem = CollectionItem> = TableContractProps<TItem> &
-  Omit<ComponentPropsWithoutRef<"div">, keyof TableContractProps | "children">;
+  Omit<ComponentPropsWithoutRef<"div">, keyof TableContractProps | "children"> & {
+    /** Web: extra classes of one row, for example a sticky total row. */
+    readonly rowClassName?: ((item: TItem) => string | undefined) | undefined;
+  };

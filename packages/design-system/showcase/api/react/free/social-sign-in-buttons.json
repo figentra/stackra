@@ -1,0 +1,103 @@
+{
+  "generatedFrom": {
+    "hash": "2e1b1f90f3779e1c",
+    "propsFiles": ["ui/src/react/social-sign-in-buttons/social-sign-in-buttons.props.ts"]
+  },
+  "importLine": "import { SocialSignInButtons } from \"@stackra/ui/react\";",
+  "key": "free/social-sign-in-buttons",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the provider's id when its button is pressed.",
+          "name": "onSignIn",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "SocialSignInButtons",
+      "props": [
+        {
+          "description": "The providers, in the order shown.",
+          "name": "providers",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SocialProvider[]"
+        },
+        {
+          "default": "vertical",
+          "description": "`vertical` stacks full-width buttons with words; `horizontal` is a row of mark-only buttons. Defaults to `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The provider whose sign-in runs: its button shows a spinner and every button refuses presses.",
+          "name": "pendingId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The words of a button. Defaults to the catalogue's \"Continue with {provider}\".",
+          "name": "labelOf",
+          "required": false,
+          "source": "stackra",
+          "type": "(provider: SocialProvider) => string"
+        },
+        {
+          "description": "True to refuse every button.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

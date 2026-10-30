@@ -1,0 +1,127 @@
+{
+  "slug": "progress-circle",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/progress-circle.mdx",
+  "parts": [
+    {
+      "name": "ProgressCircle",
+      "props": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": "0",
+          "description": "The current value"
+        },
+        {
+          "name": "minValue",
+          "type": "number",
+          "default": "0",
+          "description": "The minimum value"
+        },
+        {
+          "name": "maxValue",
+          "type": "number",
+          "default": "100",
+          "description": "The maximum value"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether progress is indeterminate"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the circle"
+        },
+        {
+          "name": "color",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"accent\"",
+          "description": "Color of the progress arc"
+        },
+        {
+          "name": "formatOptions",
+          "type": "Intl.NumberFormatOptions",
+          "default": "{style: 'percent'}",
+          "description": "Number format for the value display"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | (values: ProgressBarRenderProps) => ReactNode",
+          "description": "Content or render prop"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "percentage",
+          "type": "number",
+          "description": "The percentage of the progress (0-100)"
+        },
+        {
+          "name": "valueText",
+          "type": "string",
+          "description": "The formatted value text"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "description": "Whether progress is indeterminate"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".progress-circle",
+      "description": "Base container"
+    },
+    {
+      "name": ".progress-circle__track",
+      "description": "SVG element"
+    },
+    {
+      "name": ".progress-circle__track-circle",
+      "description": "Background circle"
+    },
+    {
+      "name": ".progress-circle__fill-circle",
+      "description": "Progress arc"
+    },
+    {
+      "name": ".progress-circle--sm",
+      "description": "Small size variant"
+    },
+    {
+      "name": ".progress-circle--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".progress-circle--lg",
+      "description": "Large size variant"
+    },
+    {
+      "name": ".progress-circle--default",
+      "description": "Default color variant"
+    },
+    {
+      "name": ".progress-circle--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".progress-circle--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".progress-circle--warning",
+      "description": "Warning color variant"
+    },
+    {
+      "name": ".progress-circle--danger",
+      "description": "Danger color variant"
+    }
+  ]
+}

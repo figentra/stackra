@@ -1,0 +1,72 @@
+{
+  "generatedFrom": {
+    "hash": "16c91e4230c4d9bb",
+    "propsFiles": ["ui/src/react/candlestick-chart/candlestick-chart.props.ts"]
+  },
+  "importLine": "import { CandlestickChart } from \"@stackra/ui/react\";",
+  "key": "free/candlestick-chart",
+  "parts": [
+    {
+      "name": "CandlestickChart",
+      "props": [
+        {
+          "description": "The periods, oldest first.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly CandleDatum[]"
+        },
+        {
+          "description": "The chart's accessible name, such as \"Share price, last 30 days\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes each period as a date in the locale (`{ month: \"short\", day: \"numeric\" }`); as given without it.",
+          "name": "xFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "How prices are written, such as `{ style: \"currency\", currency: \"SAR\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "Draws the volume bars; on by default when any period has a volume.",
+          "name": "showVolume",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The plot's height in pixels; 280 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the pointed or pressed period's prices; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

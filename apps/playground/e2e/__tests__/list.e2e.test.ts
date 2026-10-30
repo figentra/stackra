@@ -14,6 +14,8 @@
 // @covers sta-350:FR-130 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/list?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "List" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("List", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -46,7 +50,8 @@ test("a plain list is a named list of items, and a selecting one a named list bo
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  // The demo itself, not its preview pane's toggles and code button.
+  const basics = page.getByRole("region", { name: "Usage" }).locator('[data-slot="surface"]');
   const list = basics.getByRole("list", { name: "Recent orders" });
   await expect(list.getByRole("listitem")).toHaveCount(3);
   await expect(basics.getByRole("listbox")).toHaveCount(0);
@@ -170,11 +175,9 @@ test("scrolling the box to its end loads five more rows, up to fifteen, naming o
 for (const locale of LOCALES)
   test(`the chevron sits at the reading-end side of the title in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const row = page
-      .getByRole("region", { name: "Pressable rows" })
-      .getByRole("button", { name: /Profile/ })
-      .first();
-    const title = await row.getByText("Profile").first().boundingBox();
+    // By place: the row's words speak the page's locale; Profile is the first pressable row.
+    const row = example(page, "press").getByRole("listitem").first().getByRole("button");
+    const title = await row.locator("span.grid > span").first().boundingBox();
     const chevron = await row.locator("svg").last().boundingBox();
     if (!title || !chevron) throw new Error("a box is missing");
     // English reads left to right, so the end is on the right; Arabic reads the other way.

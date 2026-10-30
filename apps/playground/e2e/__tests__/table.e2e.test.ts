@@ -15,6 +15,8 @@
 // @covers sta-350:FR-123 sta-350:FR-125 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +25,11 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/table?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Table" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Table", locale) }),
+  ).toBeVisible();
+  // Every lazy demo mounted: one arriving mid-scan leaves heading-order unable to place its headings.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
 };
 
 /** The visible box of a selection checkbox inside a row or the header: the input itself is visually hidden. */
@@ -51,7 +57,7 @@ for (const scheme of SCHEMES)
 
 test("each grid is named by its label and has a header per column", async ({ page }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = example(page, "usage");
   const grid = basics.getByRole("grid", { name: "Orders, primary variant" });
   await expect(grid).toBeVisible();
   await expect(grid.getByRole("columnheader")).toHaveText([
@@ -67,7 +73,7 @@ test("each grid is named by its label and has a header per column", async ({ pag
 
 test("a press on a sortable header sorts by it and marks aria-sort", async ({ page }) => {
   await open(page, "light", "en");
-  const sorting = page.getByRole("region", { name: "Sorting" });
+  const sorting = example(page, "sorting");
   const grid = sorting.getByRole("grid", { name: "Orders, sorted by the server" });
   await expect(sorting.getByText("Sorted by: total, descending")).toBeVisible();
   expect(await rowHeaders(grid)).toEqual(["#1018", "#1013", "#1008", "#1003", "#1020", "#1015"]);
@@ -100,7 +106,7 @@ test("a sortable header sorts from the keyboard with Enter and Space, and a plai
   page,
 }) => {
   await open(page, "light", "en");
-  const sorting = page.getByRole("region", { name: "Sorting" });
+  const sorting = example(page, "sorting");
   const grid = sorting.getByRole("grid", { name: "Orders, sorted by the server" });
   await grid.getByRole("columnheader", { name: "Order" }).focus();
   await page.keyboard.press("Enter");
@@ -117,7 +123,7 @@ test("several rows are selected by their boxes and by Space, and select-all sele
   page,
 }) => {
   await open(page, "light", "en");
-  const selection = page.getByRole("region", { name: "Selection" });
+  const selection = example(page, "selection");
   const grid = selection.getByRole("grid", { name: "Orders, several selected" });
   const selected = selection.getByTestId("table-selected-multiple");
   await expect(selected).toHaveText("Selected: ord-1002");
@@ -142,7 +148,7 @@ test("one row is selected by a press or Space, and the selection replaces the la
   page,
 }) => {
   await open(page, "light", "en");
-  const selection = page.getByRole("region", { name: "Selection" });
+  const selection = example(page, "selection");
   const grid = selection.getByRole("grid", { name: "Orders, one selected" });
   const selected = selection.getByTestId("table-selected-single");
   await expect(grid.getByRole("checkbox")).toHaveCount(0);
@@ -168,7 +174,7 @@ test("one row is selected by a press or Space, and the selection replaces the la
 
 test("a sticky header stays at the top of its scroller while the rows scroll", async ({ page }) => {
   await open(page, "light", "en");
-  const sticky = page.getByRole("region", { name: "Sticky header" });
+  const sticky = example(page, "sticky");
   const scroller = sticky.locator('[data-slot="table-scroll-container"]');
   const header = sticky.getByRole("columnheader").first();
   await scroller.evaluate((element) => {
@@ -185,7 +191,7 @@ test("an empty table says why, and a load is announced once through one status",
   page,
 }) => {
   await open(page, "light", "en");
-  const states = page.getByRole("region", { name: "States" });
+  const states = example(page, "states");
   // With no rows the grid gives way to a group of the same name, which holds the message.
   await expect(states.getByRole("grid", { name: "Orders, empty" })).toHaveCount(0);
   await expect(
@@ -211,7 +217,7 @@ test("the live table loads its next page at the end of the rows, and stops at th
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   const loaded = live.getByTestId("table-live-loaded");
   const scroller = live.locator('[data-slot="table-scroll-container"]');
   const toEnd = () =>
@@ -234,7 +240,7 @@ test("the live table sorts from its first page, keeps its selection and resets",
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   const grid = live.getByRole("grid", { name: "Orders, live" });
   await boxIn(grid.getByRole("row", { name: /#1002/ })).click();
   await expect(live.getByTestId("table-live-selected")).toHaveText("Selected: ord-1002");
@@ -252,9 +258,7 @@ test("the live table sorts from its first page, keeps its selection and resets",
 
 test("a row's checkbox target is at least 24 px square", async ({ page }) => {
   await open(page, "light", "en");
-  const grid = page
-    .getByRole("region", { name: "Selection" })
-    .getByRole("grid", { name: "Orders, several selected" });
+  const grid = example(page, "selection").getByRole("grid", { name: "Orders, several selected" });
   const box = await boxIn(grid.getByRole("row", { name: /#1001/ })).boundingBox();
   if (!box) throw new Error("no box for the checkbox");
   expect(box.width).toBeGreaterThanOrEqual(24);
@@ -264,9 +268,11 @@ test("a row's checkbox target is at least 24 px square", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the first column sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const headers = page
-      .getByRole("region", { name: "Basics" })
-      .getByRole("grid", { name: "Orders, primary variant" })
+    // The demo speaks the page's language (`assets/lang/<locale>/table.json`).
+    const headers = example(page, "usage")
+      .getByRole("grid", {
+        name: locale === "en" ? "Orders, primary variant" : "الطلبات، النمط الأساسي",
+      })
       .getByRole("columnheader");
     const first = await headers.nth(0).boundingBox();
     const second = await headers.nth(1).boundingBox();

@@ -21,6 +21,13 @@ import { useDesignSystem } from "#native/design-system-provider/use-design-syste
 import { Icon } from "#native/icon/icon";
 import type { AvatarProps } from "#native/avatar/avatar.props";
 
+/** The initials stay on one line and shrink to the circle rather than truncate. */
+const INITIALS_TEXT = Object.freeze({
+  numberOfLines: 1,
+  adjustsFontSizeToFit: true,
+  minimumFontScale: 0.5,
+} as const);
+
 /** The props of a decorative avatar: hidden from VoiceOver and TalkBack alike, with no name for HeroUI to invent. */
 const HIDDEN = Object.freeze({
   accessible: false,
@@ -70,7 +77,11 @@ export function Avatar({
     >
       {src ? <HeroAvatar.Image source={{ uri: src }} /> : null}
       {/* The fallback's own container is fully round, so it takes the square class too. */}
-      <HeroAvatar.Fallback {...(isSquare ? { className: AVATAR_SQUARE_CLASS_NAME } : {})}>
+      <HeroAvatar.Fallback
+        {...(isSquare ? { className: AVATAR_SQUARE_CLASS_NAME } : {})}
+        // One line that shrinks to fit: iOS truncates a clipped label to an ellipsis, which hid the initials.
+        textProps={INITIALS_TEXT}
+      >
         {text !== undefined ? (
           text
         ) : (

@@ -1,0 +1,18 @@
+{
+  "label": "Search components",
+  "results": "Results",
+  "recent": "Recent",
+  "actions": "Quick actions",
+  "best": "Best matches",
+  "count": "{count, plural, =0 {No results} one {# result} other {# results}}",
+  "empty_hint": "Try a component, a prop such as isLoading, a category such as Selection, or an action such as Dark.",
+  "component": "Component",
+  "section": "Section",
+  "category": "Category",
+  "action": "Action",
+  "open": "Open",
+  "run": "Run",
+  "move": "move",
+  "close": "close",
+  "platform": "Platform"
+}

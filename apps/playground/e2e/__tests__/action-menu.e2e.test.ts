@@ -18,6 +18,8 @@
 // @covers sta-350:FR-109 sta-350:SC-009
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -28,11 +30,14 @@ const TOLERANCE = 3;
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/action-menu?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Action menu" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Action menu", locale) }),
+  ).toBeVisible();
 };
 
-/** A section by its heading id: CSS, because role queries find nothing while a menu is open. */
-const sectionOf = (page: Page, id: string) => page.locator(`section[aria-labelledby="${id}"]`);
+/** An example's section by its old heading id (`action-menu-<example>`): CSS, because role queries find nothing while a menu is open. */
+const sectionOf = (page: Page, id: string) =>
+  example(page, id === "action-menu-basics" ? "usage" : id.slice("action-menu-".length));
 
 /** An action menu's button by its accessible name, found by CSS. */
 const buttonIn = (page: Page, id: string, label: string) =>
@@ -58,6 +63,14 @@ const boxOf = async (locator: Locator) => {
 };
 
 const BASICS = "Actions for order 1001";
+/** The demos speak the page's locale: the Arabic of each English label a test in both directions reads. */
+const ARABIC: Record<string, string> = {
+  [BASICS]: "إجراءات الطلب 1001",
+  "Actions, default placement": "الإجراءات، الموضع الافتراضي",
+  "Actions, above": "الإجراءات، في الأعلى",
+};
+const say = (locale: string, english: string) =>
+  locale === "ar" ? (ARABIC[english] ?? english) : english;
 
 /**
  * Hides the page behind the overlay while it is scanned, and shows it again. Axe reads the elements under a see-through
@@ -89,7 +102,7 @@ for (const scheme of SCHEMES)
 
     test(`axe finds nothing in the open menu in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
-      await openMenu(page, buttonIn(page, "action-menu-basics", BASICS));
+      await openMenu(page, buttonIn(page, "action-menu-basics", say(locale, BASICS)));
       await setPageHidden(page, true);
       const { violations, incomplete } = await new AxeBuilder({ page })
         .include('[role="menu"]')
@@ -125,7 +138,10 @@ test("every variant is present in every size, and every button is at least 24 px
   page,
 }) => {
   await open(page, "light", "en");
-  const buttons = sectionOf(page, "action-menu-variants").locator("button");
+  // The demo's buttons only, not the example pane's own toggles and code button.
+  const buttons = sectionOf(page, "action-menu-variants").locator(
+    'button[aria-label^="Actions, "]',
+  );
   await expect(buttons).toHaveCount(21);
   for (const button of await buttons.all()) {
     const box = await boxOf(button);
@@ -196,7 +212,7 @@ for (const locale of LOCALES)
     const placement = "action-menu-placement";
     const isLtr = locale === "en";
 
-    const first = buttonIn(page, placement, "Actions, default placement");
+    const first = buttonIn(page, placement, say(locale, "Actions, default placement"));
     await first.evaluate((element) => element.scrollIntoView({ block: "center" }));
     let menu = await openMenu(page, first);
     let t = await boxOf(first);
@@ -208,7 +224,7 @@ for (const locale of LOCALES)
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden();
 
-    const second = buttonIn(page, placement, "Actions, above");
+    const second = buttonIn(page, placement, say(locale, "Actions, above"));
     await second.evaluate((element) => element.scrollIntoView({ block: "center" }));
     menu = await openMenu(page, second);
     t = await boxOf(second);

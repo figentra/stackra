@@ -278,8 +278,10 @@ describe("Button (native)", () => {
       hitSlop: 9,
       testID: "found",
       onLongPress,
-      onPress,
     });
+    // The press reaches HeroUI Native wrapped in its haptic tap, and still calls the caller's handler.
+    (propsOf("button")["onPress"] as () => void)();
+    expect(onPress).toHaveBeenCalledOnce();
   });
 
   it("extends its contract and refuses the names the contract owns", () => {

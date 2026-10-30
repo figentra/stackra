@@ -14,7 +14,9 @@
  *           of our own: the stack's pop is the animation. The sheet needs the app's `HeroUINativeProvider`,
  *           GestureHandlerRootView and the `@gorhom/bottom-sheet` peer, as `Drawer` does; verify the sheet over a
  *           native modal on a device. Strings the caller passes as `title`, `children` or `footer` are wrapped in
- *           `Text` by the kit's sections.
+ *           `Text` by the kit's sections. Stacking: a sheet or drawer screen pushed from another overlay's page is a
+ *           sheet stacked over it (each layer is its own screen, so the stack's Back walks down the layers); there is
+ *           no breadcrumb on a phone, and `trailLabel` is web-only.
  * Runtime: react-native
  * Governing contract: ADR 0317 (decisions 2, 8 and 9); ADR 0312; ADR 0165 (HeroUI Native on native); WCAG 2.2
  *          SC 2.1.2, 2.4.3 and 4.1.2.

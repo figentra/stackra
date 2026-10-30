@@ -1,0 +1,24 @@
+{
+  "open": "Display settings",
+  "title": "Display",
+  "description": "Every page follows the colour scheme and the language, so each component can be checked in each combination.",
+  "color_scheme": "Colour scheme",
+  "language": "Language and direction",
+  "haptics": "Haptics",
+  "brand": "Brand",
+  "digits": "Digits",
+  "scheme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "tabs": {
+    "home": "Home",
+    "settings": "Settings",
+    "search": "Search"
+  },
+  "numerals": {
+    "latn": "Latin (012)",
+    "arab": "Arabic-Indic (٠١٢)"
+  }
+}

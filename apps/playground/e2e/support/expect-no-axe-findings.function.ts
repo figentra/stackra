@@ -12,8 +12,10 @@ import { expect, type Page } from "@playwright/test";
 
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
-/** Scans the page as it is now, and fails on any axe violation or any check axe leaves for review. */
+/** Scans the page once its lazy demos have mounted, and fails on any axe violation or any check axe leaves for review. */
 export async function expectNoAxeFindings(page: Page): Promise<void> {
+  // Every lazy demo mounted first: one arriving mid-scan leaves heading-order unable to place its headings.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
   const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   const report = (results: typeof violations) =>
     results.map(

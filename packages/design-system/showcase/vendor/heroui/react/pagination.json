@@ -1,0 +1,201 @@
+{
+  "slug": "pagination",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/pagination.mdx",
+  "parts": [
+    {
+      "name": "Pagination",
+      "props": [
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the pagination items"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Pagination parts (Summary, Content)"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Summary",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Summary content (e.g., \"Showing 1-10 of 120\")"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Content",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Pagination items"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Item",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Item content (Link, Previous, Next, or Ellipsis)"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Link",
+      "props": [
+        {
+          "name": "isActive",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this is the current page"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the link is disabled"
+        },
+        {
+          "name": "onPress",
+          "type": "(e: PressEvent) => void",
+          "description": "Press handler (from React Aria)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Page number content"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Previous / Pagination.Next",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the button is disabled"
+        },
+        {
+          "name": "onPress",
+          "type": "(e: PressEvent) => void",
+          "description": "Press handler (from React Aria)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Button content (compose with PreviousIcon/NextIcon)"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.PreviousIcon / Pagination.NextIcon",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "Default chevron SVG",
+          "description": "Custom icon to replace the default chevron"
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Ellipsis",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".pagination",
+      "description": "Root navigation container with flex layout"
+    },
+    {
+      "name": ".pagination__summary",
+      "description": "Left-side info text container"
+    },
+    {
+      "name": ".pagination__content",
+      "description": "Container for pagination items"
+    },
+    {
+      "name": ".pagination__item",
+      "description": "Individual item wrapper"
+    },
+    {
+      "name": ".pagination__link",
+      "description": "Page number button (ghost button style)"
+    },
+    {
+      "name": ".pagination__link--nav",
+      "description": "Navigation button modifier (Previous/Next)"
+    },
+    {
+      "name": ".pagination__ellipsis",
+      "description": "Ellipsis indicator"
+    },
+    {
+      "name": ".pagination--sm",
+      "description": "Small size variant"
+    },
+    {
+      "name": ".pagination--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".pagination--lg",
+      "description": "Large size variant"
+    }
+  ],
+  "a11y": "The Pagination component is built on [React Aria's Button](https://react-spectrum.adobe.com/react-aria/Button.html) primitive for all interactive elements, providing:\n\n- Semantic `<nav>` element with `aria-label=\"pagination\"` and `role=\"navigation\"`\n- Active page indicated via `aria-current=\"page\"` on the current link\n- Keyboard navigation via Tab key through all interactive elements\n- Press events handled across mouse, touch, and keyboard interactions via React Aria\n- Focus ring on keyboard navigation via `:focus-visible`\n- Ellipsis marked with `aria-hidden=\"true\"` to avoid screen reader confusion\n- Disabled states properly communicated to assistive technology via `isDisabled`\n\n> **Note:** Pagination buttons use `onPress` instead of `onClick`. The `onPress` handler from React Aria normalizes press behavior across pointer types and provides accessibility improvements out of the box."
+}

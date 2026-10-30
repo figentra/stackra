@@ -1,0 +1,309 @@
+{
+  "generatedFrom": {
+    "hash": "3b6b82606e08fb55",
+    "propsFiles": [
+      "ui/src/react/wheel-picker/wheel-date-picker.props.ts",
+      "ui/src/react/wheel-picker/wheel-picker.props.ts",
+      "ui/src/react/wheel-picker/wheel-time-picker.props.ts"
+    ]
+  },
+  "importLine": "import { WheelPicker } from \"@stackra/ui/react\";",
+  "key": "free/wheel-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with every column's key each time a wheel settles on a new choice.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: Readonly<Record<string, string>>) => void"
+        }
+      ],
+      "name": "WheelPicker",
+      "props": [
+        {
+          "description": "The wheels, from the reading start.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly WheelPickerColumn[]"
+        },
+        {
+          "description": "The centred key of each column, by column key, for a controlled picker.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string>>"
+        },
+        {
+          "description": "The starting keys, for an uncontrolled picker; a column without one starts on its first choice.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string>>"
+        },
+        {
+          "description": "How many rows show at once, odd; defaults to 5.",
+          "name": "visibleCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The spoken name of the whole picker.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new day. A day past the end of the new month is moved to its last day.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: CalendarDate) => void"
+        }
+      ],
+      "name": "WheelDatePicker",
+      "props": [
+        {
+          "description": "The day, for a controlled picker.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The starting day, for an uncontrolled picker; defaults to today.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The first year on the year wheel; defaults to 100 years before this one.",
+          "name": "minYear",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The last year on the year wheel; defaults to 10 years after this one.",
+          "name": "maxYear",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The spoken name of the picker.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new time.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: TimeValue) => void"
+        }
+      ],
+      "name": "WheelTimePicker",
+      "props": [
+        {
+          "description": "The time, for a controlled picker.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "TimeValue"
+        },
+        {
+          "description": "The starting time, for an uncontrolled picker; defaults to midnight.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "TimeValue"
+        },
+        {
+          "description": "The step of the minute wheel, for example 5 or 15; defaults to 1.",
+          "name": "minuteStep",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "12 or 24 hours; defaults to the locale's.",
+          "name": "hourCycle",
+          "required": false,
+          "source": "stackra",
+          "type": "12 | 24"
+        },
+        {
+          "description": "The spoken name of the picker.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

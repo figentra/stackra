@@ -19,6 +19,8 @@
 // @covers sta-350:FR-195 sta-350:FR-196 sta-350:FR-197 sta-350:SC-013
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -27,21 +29,31 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/filter-bar?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Filter bar" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Filter bar", locale) }),
+  ).toBeVisible();
 };
 
-/** A section by its heading id: CSS, because role queries find nothing while an overlay is open. */
-const sectionOf = (page: Page, id: string) => page.locator(`section[aria-labelledby="${id}"]`);
+/** The names the Arabic tests look for: the page translates its demos. */
+const ARABIC: Record<string, string> = {
+  "Search the live orders, filters": "البحث في الطلبات التفاعلية، عوامل التصفية",
+  "Add filter": "إضافة عامل تصفية",
+  Status: "الحالة",
+};
+
+/** A name in the page's language. */
+const inLocale = (page: Page, name: string) =>
+  new URL(page.url()).searchParams.get("locale") === "ar" ? (ARABIC[name] ?? name) : name;
 
 /** The live section's bar, found by its landmark name. */
 const liveBar = (page: Page) =>
-  sectionOf(page, "filter-bar-live").getByRole("search", {
-    name: "Search the live orders, filters",
+  example(page, "live").getByRole("search", {
+    name: inLocale(page, "Search the live orders, filters"),
   });
 
 /** The number of orders the live list shows, from the page's own polite count. */
 const matching = (page: Page) =>
-  sectionOf(page, "filter-bar-live").locator('[role="status"]', { hasText: /match/ });
+  example(page, "live").locator('[role="status"]', { hasText: /match/ });
 
 /**
  * Centres an element in the window, then focuses it. React Aria closes an open list or menu on a scroll, and a field
@@ -54,17 +66,23 @@ const focusInView = async (locator: Locator) => {
 
 /** Opens the add-filter menu of a bar with the keyboard and chooses a filter, returning its open editor. */
 const addFilter = async (page: Page, bar: Locator, label: string) => {
-  const add = bar.getByRole("button", { name: "Add filter" });
+  const add = bar.getByRole("button", { name: inLocale(page, "Add filter") });
   await focusInView(add);
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
-  await menu.getByRole("menuitem", { name: label }).click();
-  const dialog = page.getByRole("dialog", { name: label });
+  await menu.getByRole("menuitem", { name: inLocale(page, label) }).click();
+  const dialog = page.getByRole("dialog", { name: inLocale(page, label) });
   await expect(dialog).toBeVisible();
   // Let the open animation finish, so a box or a colour is measured at rest.
   await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+    Promise.all(
+      document
+        .getAnimations()
+        // Time-based ones only: a scroll-driven fade (the nav edges) runs as long as its scroller can scroll.
+        .filter((animation) => animation.timeline === document.timeline)
+        .map((animation) => animation.finished),
+    ),
   );
   return dialog;
 };
@@ -119,7 +137,7 @@ test("the add-filter menu opens from the keyboard and lists only the filters not
   page,
 }) => {
   await open(page, "light", "en");
-  const applied = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const applied = example(page, "states").getByRole("search", {
     name: "Search the applied orders, filters",
   });
   const add = applied.getByRole("button", { name: "Add filter" });
@@ -137,7 +155,7 @@ test("the add-filter menu opens from the keyboard and lists only the filters not
 
 test("a disabled filter is listed and refused", async ({ page }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the orders with a disabled filter, filters",
   });
   await bar.getByRole("button", { name: "Add filter" }).click();
@@ -151,7 +169,7 @@ test("a disabled filter is listed and refused", async ({ page }) => {
 
 test("a bar with every filter applied has its add button disabled", async ({ page }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the orders with every filter applied, filters",
   });
   await expect(bar.getByRole("button", { name: "Add filter" })).toBeDisabled();
@@ -162,7 +180,7 @@ test("a chosen filter opens a named dialog that takes focus, and a choice is app
   page,
 }) => {
   await open(page, "light", "en");
-  const live = sectionOf(page, "filter-bar-live");
+  const live = example(page, "live");
   const dialog = await addFilter(page, liveBar(page), "Status");
   await expect(dialog.getByRole("heading", { level: 2, name: "Status" })).toBeVisible();
   await expect(page.locator('[role="dialog"]:focus, [role="dialog"] :focus')).toHaveCount(1);
@@ -185,7 +203,7 @@ test("a chip opens its editor with its value, and Escape gives focus back to the
   page,
 }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the applied orders, filters",
   });
   const chip = bar.getByRole("button", { name: "Status: Paid" });
@@ -203,7 +221,7 @@ test("a filter of each kind narrows the live list: text, a number range and a da
   page,
 }) => {
   await open(page, "light", "en");
-  const live = sectionOf(page, "filter-bar-live");
+  const live = example(page, "live");
 
   const text = await addFilter(page, liveBar(page), "Customer");
   await text.getByRole("textbox", { name: "Customer" }).fill("grace");
@@ -248,16 +266,16 @@ test("a filter left empty loses its chip and focus goes to the add button", asyn
 
 test("the remove button removes a filter and moves focus to the add button", async ({ page }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the applied orders, filters",
   });
   await bar.getByRole("button", { name: "Remove filter Status" }).focus();
   await page.keyboard.press("Enter");
   await expect(bar.getByRole("group", { name: "Status" })).toHaveCount(0);
   await expect(bar.getByRole("button", { name: "Add filter" })).toBeFocused();
-  await expect(
-    sectionOf(page, "filter-bar-states").getByTestId("filter-bar-applied-query"),
-  ).toHaveText("Query: region=eu,us; total=20..");
+  await expect(example(page, "states").getByTestId("filter-bar-applied-query")).toHaveText(
+    "Query: region=eu,us; total=20..",
+  );
 });
 
 test("clear-all appears only while something narrows, and empties search and filters", async ({
@@ -279,7 +297,7 @@ test("clear-all appears only while something narrows, and empties search and fil
 
 test("the count of applied filters is read out politely", async ({ page }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the applied orders, filters",
   });
   await expect(bar.locator('[role="status"]')).toHaveText("3 filters applied");
@@ -289,7 +307,7 @@ test("the count of applied filters is read out politely", async ({ page }) => {
 
 test("every press target of the bar is at least 24 px square", async ({ page }) => {
   await open(page, "light", "en");
-  const bar = sectionOf(page, "filter-bar-states").getByRole("search", {
+  const bar = example(page, "states").getByRole("search", {
     name: "Search the applied orders, filters",
   });
   const targets = [
@@ -321,7 +339,7 @@ for (const locale of LOCALES)
     await open(page, "light", locale);
     const bar = liveBar(page);
     const search = await bar.getByRole("searchbox").boundingBox();
-    const add = await bar.getByRole("button", { name: "Add filter" }).boundingBox();
+    const add = await bar.getByRole("button", { name: inLocale(page, "Add filter") }).boundingBox();
     if (!search || !add) throw new Error("a box is missing");
     expect(search.x < add.x, locale).toBe(locale === "en");
   });

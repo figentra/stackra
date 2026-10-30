@@ -1,0 +1,215 @@
+{
+  "generatedFrom": {
+    "hash": "3da1b1ea162174c3",
+    "propsFiles": [
+      "ui/src/react/save-bar/save-bar.props.ts",
+      "ui/src/react/save-bar/save-status.props.ts"
+    ]
+  },
+  "importLine": "import { SaveBar } from \"@stackra/ui/react\";",
+  "key": "free/save-bar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user presses Save; a returned promise keeps the button busy until it settles.",
+          "name": "onSave",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void | Promise<void>"
+        },
+        {
+          "description": "Called when the user presses Discard; the app restores the saved values.",
+          "name": "onDiscard",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "SaveBar",
+      "props": [
+        {
+          "description": "True while the form has unsaved changes; the bar slides in then and out once it is false again.",
+          "name": "isDirty",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while a save runs that the bar did not start (a form library's submit); Save shows busy.",
+          "name": "isSaving",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse Save, for example while the form is invalid; Discard stays available.",
+          "name": "isSaveDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Change it to call the user's eye to the bar: it shakes (and plays a warning haptic on native), for example when\nLeaveConfirmation blocked a navigation while the form was dirty. Reduced motion skips the shake.",
+          "name": "attentionKey",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The message, for example \"Unsaved product changes\". Defaults to the `ui` catalogue's \"Unsaved changes\".",
+          "name": "message",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text of the save button. Defaults to the `ui` catalogue's \"Save\".",
+          "name": "saveLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text of the discard button. Defaults to the `ui` catalogue's \"Discard\".",
+          "name": "discardLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the bar. Defaults to the `ui` catalogue's \"Unsaved changes\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Extra content between the message and the buttons, usually a `SaveStatus`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SaveStatus",
+      "props": [
+        {
+          "description": "Where the autosave is; `idle` draws nothing.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "\"idle\" | \"saving\" | \"saved\" | \"failed\""
+        },
+        {
+          "description": "The text while saving. Defaults to the `ui` catalogue's \"Saving\".",
+          "name": "savingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text once saved, for example \"Saved at 14:05\". Defaults to the `ui` catalogue's \"All changes saved\".",
+          "name": "savedLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text when the save failed. Defaults to the `ui` catalogue's \"Couldn't save\".",
+          "name": "failedLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,45 @@
+{
+  "captions": {
+    "disabled": "معطل",
+    "option_disabled": "خيار واحد معطل",
+    "read_only": "للقراءة فقط",
+    "required": "مطلوب",
+    "invalid": "غير صالح، مع رسالة"
+  },
+  "group_labels": {
+    "vertical": "سرعة الشحن",
+    "horizontal": "المقاس",
+    "disabled": "دورة الفوترة",
+    "option_disabled": "طريقة الدفع",
+    "read_only": "خطتك",
+    "required": "نوع الحساب",
+    "invalid": "نافذة التوصيل",
+    "live": "الفاكهة",
+    "primary": "مجموعة أساسية",
+    "secondary": "مجموعة ثانوية"
+  },
+  "vertical_description": "الأسعار شاملة الضريبة.",
+  "invalid_description": "اختر الوقت المناسب لك.",
+  "invalid_error": "اختر نافذة توصيل للمتابعة.",
+  "chosen": "المختار: {key}",
+  "pick_apple": "اختيار التفاح",
+  "pick_pear": "اختيار الكمثرى",
+  "sample": {
+    "standard": "عادي",
+    "delivered_in_5_to_7": "يصل خلال 5 إلى 7 أيام.",
+    "express": "سريع",
+    "delivered_in_2_to_3": "يصل خلال 2 إلى 3 أيام.",
+    "overnight": "خلال ليلة",
+    "small": "صغير",
+    "medium": "متوسط",
+    "large": "كبير",
+    "apple": "تفاح",
+    "pear": "كمثرى",
+    "plum": "برقوق",
+    "monthly": "شهري",
+    "yearly": "سنوي",
+    "card": "بطاقة",
+    "bank_transfer": "تحويل بنكي",
+    "cheque": "شيك"
+  }
+}

@@ -105,7 +105,9 @@ describe("IconButton (native)", () => {
   it("forwards the variant, the size and the press", () => {
     const onPress = vi.fn();
     render(<IconButton icon={icon} label="Delete" variant="danger" size="lg" onPress={onPress} />);
-    expect(propsOf("button")).toMatchObject({ variant: "danger", size: "lg", onPress });
+    expect(propsOf("button")).toMatchObject({ variant: "danger", size: "lg" });
+    (propsOf("button")["onPress"] as () => void)();
+    expect(onPress).toHaveBeenCalledOnce();
   });
 
   it("draws on the glass of its variant, as the Button does", () => {

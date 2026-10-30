@@ -1,0 +1,116 @@
+{
+  "generatedFrom": {
+    "hash": "b58e163b05f7f64b",
+    "propsFiles": ["ui/src/react/permissions-matrix/permissions-matrix.props.ts"]
+  },
+  "importLine": "import { PermissionsMatrix } from \"@stackra/ui/react\";",
+  "key": "free/permissions-matrix",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new grants after a cell or a bulk toggle.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(grants: Readonly<Record<string, readonly string[]>>) => void"
+        }
+      ],
+      "name": "PermissionsMatrix",
+      "props": [
+        {
+          "description": "The matrix's accessible name, such as \"Store roles\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns: one per role.",
+          "name": "roles",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PermissionRole[]"
+        },
+        {
+          "description": "The rows, in titled groups.",
+          "name": "groups",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PermissionGroup[]"
+        },
+        {
+          "description": "The grants shown (controlled).",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, readonly string[]>>"
+        },
+        {
+          "description": "The grants at first (uncontrolled).",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, readonly string[]>>"
+        },
+        {
+          "description": "True to show the grants as allowed or not, with no checkboxes.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to skip the ripple a bulk toggle sends down its column or group.",
+          "name": "isAnimated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

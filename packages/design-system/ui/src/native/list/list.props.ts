@@ -12,4 +12,10 @@ import type { ListItemData } from "#contracts/types/list-item-data.type";
 
 /** Props of the native List: the shared contract plus the props of its root `View`, passed through unchanged. */
 export type ListProps<TItem extends ListItemData = ListItemData> = ListContractProps<TItem> &
-  Omit<ViewProps, keyof ListContractProps | "children" | "accessibilityLabel">;
+  Omit<ViewProps, keyof ListContractProps | "children" | "accessibilityLabel"> & {
+    /**
+     * `false` for a list inside a page that scrolls the same way: the page scrolls it, and React Native nests no
+     * virtualized list in a plain `ScrollView`. Defaults to `true`, the list scrolling on its own.
+     */
+    scrollEnabled?: boolean;
+  };

@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "4fd3ef2ce86814e2",
+    "propsFiles": ["ui/src/native/feedback-icon/feedback-icon.props.ts"]
+  },
+  "importLine": "import { FeedbackIcon } from \"@stackra/ui/native\";",
+  "key": "free/feedback-icon",
+  "parts": [
+    {
+      "name": "FeedbackIcon",
+      "props": [
+        {
+          "description": "The tone of the message, which picks the default icon and its colour.",
+          "name": "tone",
+          "required": true,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "The caller's icon: a name or an element. Left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

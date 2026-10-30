@@ -4,6 +4,16 @@ description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
 
 <Note>
+  Amended 2026-10-28 (owner decision, STA-1371): the digits of decision 2 are a per-customer setting.
+  `I18nConfig.numerals` is the default (`latn`, Latin 0-9); a customer, tenant or user switches to
+  `arab` (Arabic-Indic ٠-٩) through `I18nProvider`'s `numerals`, taken where `scopeChoosesNumerals`
+  allows. Every shared formatter writes the setting on every engine (Hermes on iOS ignores the
+  `-u-nu-` keyword): `formatMessage` numbers, plurals and dates, `formatNumber`, `formatDateTime`,
+  `useNumber`, `useMoney`, `useDateTime`, the date labels and the charts of `@stackra/ui`. No screen
+  forces Arabic-Indic digits because its text is Arabic. Decisions 1, 3 and 4 stand.
+</Note>
+
+<Note>
   Amended 2026-10-24 (STA-456): the calendars of decision 3 are named. The calendar systems are
   `gregory` (default) and `islamic-umalqura`, chosen per user (decision 3 makes Hijri optional; this
   names the two systems), and a dual display shows both. `@stackra/i18n` formats dates in the chosen

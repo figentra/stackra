@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native `Stat` shows its label before the figure, formats a number in the provider's locale,
- *          shows a string as given, and draws the badge only when it has one.
+ *          shows a string as given, draws the badge only when it has one, and adds the trend, target and drill-down.
  * Boundary: React Native does not render in vitest, so react-native, the native Text and Chip are replaced by plain
  *           DOM stand-ins; the order and text of what reaches them is checked.
  * Runtime: node
@@ -20,6 +20,28 @@ vi.mock("react-native", async () => {
   return {
     View: (props: Record<string, unknown>) =>
       createElement("div", null, props["children"] as ReactNode),
+    Pressable: (props: Record<string, unknown>) =>
+      createElement(
+        "button",
+        { type: "button", "aria-label": props["accessibilityLabel"], onClick: props["onPress"] },
+        props["children"] as ReactNode,
+      ),
+  };
+});
+
+// The KPI extras draw through Skia and Reanimated, which do not load in vitest; stand-ins record what they get.
+vi.mock("#native/sparkline/sparkline", () => ({ Sparkline: () => null }));
+vi.mock("#native/kpi/trend-chip", async () => {
+  const { createElement } = await import("react");
+  return {
+    TrendChip: (props: Record<string, unknown>) => createElement("i", null, String(props["value"])),
+  };
+});
+vi.mock("#native/progress-bar/progress-bar", async () => {
+  const { createElement } = await import("react");
+  return {
+    ProgressBar: (props: Record<string, unknown>) =>
+      createElement("progress", null, props["label"] as ReactNode),
   };
 });
 
@@ -42,7 +64,7 @@ vi.mock("#native/chip/chip", async () => {
 describe("Stat (native)", () => {
   it("shows the label before the figure, formatted in the provider's locale", () => {
     const { container } = render(
-      <DesignSystemContext value={{ locale: "de-DE" } as DesignSystemState}>
+      <DesignSystemContext value={{ locale: "de-DE", resolvedMotion: "none" } as DesignSystemState}>
         <Stat label="Points" value={12_500} badge="Gold" />
       </DesignSystemContext>,
     );
@@ -53,5 +75,15 @@ describe("Stat (native)", () => {
     const { container } = render(<Stat label="Redeemed" value="−40" badge={undefined} />);
     expect(container.textContent).toBe("Redeemed−40");
     expect(container.querySelector("em")).toBeNull();
+  });
+
+  it("adds the trend, the target and a drill-down button", async () => {
+    const { fireEvent, screen } = await import("@testing-library/react");
+    const onPress = vi.fn();
+    render(<Stat label="Revenue" value={800} trend={0.1} target={1000} onPress={onPress} />);
+    expect(screen.getByText("0.1")).toBeTruthy();
+    expect(screen.getByText("Target 1,000")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Open Revenue" }));
+    expect(onPress).toHaveBeenCalledOnce();
   });
 });

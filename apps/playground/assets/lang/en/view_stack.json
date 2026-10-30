@@ -1,0 +1,16 @@
+{
+  "transition_label": "Transition",
+  "transitions": {
+    "push": "Push",
+    "push_parallax": "Push with parallax",
+    "from_top": "From the top",
+    "fade": "Fade",
+    "none": "None"
+  },
+  "orders": "Orders",
+  "order": "Order {number}",
+  "open": "Open order {number}",
+  "back": "Orders",
+  "status": "Out for delivery, arriving by 6 pm.",
+  "total": "Total"
+}

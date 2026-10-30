@@ -1,0 +1,110 @@
+{
+  "generatedFrom": {
+    "hash": "9c47582d52ed8664",
+    "propsFiles": ["ui/src/react/export-dialog/export-dialog.props.ts"]
+  },
+  "importLine": "import { ExportDialog } from \"@stackra/ui/react\";",
+  "key": "free/export-dialog",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Runs the export. While its promise is pending the export button shows a spinner and a progress bar runs above\nthe footer; when it resolves the button turns into a done tick and the dialog closes; when it rejects the dialog\nstays open with an error. Call `progress` with the share done, from 0 to 1, to fill the bar; never called, the bar\nstays indeterminate.",
+          "name": "onExport",
+          "required": true,
+          "source": "stackra",
+          "type": "(request: ExportRequest, progress: (fraction: number) => void) => void | Promise<unknown>"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "ExportDialog",
+      "props": [
+        {
+          "description": "The file formats (CSV, Excel, PDF); the first is chosen unless `defaultValue` says otherwise.",
+          "name": "formats",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChoiceOption[]"
+        },
+        {
+          "description": "The columns the user may leave out, all ticked at first. Left out, there is no column picker.",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChoiceOption[]"
+        },
+        {
+          "description": "The row count of each scope on offer; a scope without a count is not offered, and one with 0 rows is disabled.\nThe narrowest scope with rows is chosen first, so a selection is exported when there is one.",
+          "name": "counts",
+          "required": true,
+          "source": "stackra",
+          "type": "Readonly<Partial<Record<\"all\" | \"selection\" | \"filtered\", number>>>"
+        },
+        {
+          "default": "[\"download\"]",
+          "description": "The deliveries on offer; with one, there is no picker. Defaults to `[\"download\"]`.",
+          "name": "deliveries",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"download\" | \"email\")[]"
+        },
+        {
+          "description": "The address an emailed export goes to, shown beside the email choice.",
+          "name": "email",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting choices.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "Partial<ExportRequest>"
+        },
+        {
+          "description": "The element that opens the dialog; left out, the app opens it through `isOpen`.",
+          "name": "trigger",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The dialog's title; defaults to the catalogue's \"Export\".",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "One sentence under the title: what is being exported.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,81 @@
+/**
+ * Stackra file contract:
+ * Purpose: `COLLECTION_ICONS`, the drawings of the icons the collection family (DataTable's column menu, the column
+ *          editor, DataView's toolbar and views menu) draws on its own, so they show without the app registering them.
+ * Boundary: a registry of named re-exports, merged under the app's own by `IconRegistryProvider`.
+ * Runtime: browser
+ * Governing contract: ADR 0303 (decision 10); data-collection plan (owner, 2026-10-29).
+ */
+import { defineIconRegistry } from "@stackra/icons";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Bookmark,
+  BookmarkPlus,
+  Columns3,
+  Download,
+  EyeOff,
+  Group,
+  GripVertical,
+  LayoutGrid,
+  List,
+  ListFilter,
+  Maximize2,
+  Minimize2,
+  MoveHorizontal,
+  Pencil,
+  Pin,
+  PinOff,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Rows3,
+  Share2,
+  Sheet,
+  Sigma,
+  SquareKanban,
+  Star,
+  Table2,
+  TextWrap,
+  Trash,
+  Upload,
+  X,
+} from "@stackra/icons/react/lucide-icons";
+
+/** The icons the collection family draws on its own. */
+export const COLLECTION_ICONS = defineIconRegistry({
+  "arrow-down": ArrowDown,
+  "arrow-up": ArrowUp,
+  "arrow-up-down": ArrowUpDown,
+  bookmark: Bookmark,
+  "bookmark-plus": BookmarkPlus,
+  "columns-3": Columns3,
+  download: Download,
+  "eye-off": EyeOff,
+  group: Group,
+  "grip-vertical": GripVertical,
+  "layout-grid": LayoutGrid,
+  list: List,
+  "list-filter": ListFilter,
+  "maximize-2": Maximize2,
+  "minimize-2": Minimize2,
+  "move-horizontal": MoveHorizontal,
+  pencil: Pencil,
+  pin: Pin,
+  "pin-off": PinOff,
+  plus: Plus,
+  "refresh-cw": RefreshCw,
+  "rotate-ccw": RotateCcw,
+  "rows-3": Rows3,
+  "share-2": Share2,
+  sheet: Sheet,
+  sigma: Sigma,
+  "square-kanban": SquareKanban,
+  star: Star,
+  "table-2": Table2,
+  "text-wrap": TextWrap,
+  trash: Trash,
+  upload: Upload,
+  x: X,
+});

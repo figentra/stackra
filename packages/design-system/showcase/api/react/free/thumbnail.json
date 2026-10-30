@@ -1,0 +1,116 @@
+{
+  "generatedFrom": {
+    "hash": "844aecc220fcbdfe",
+    "propsFiles": ["ui/src/react/thumbnail/thumbnail.props.ts"]
+  },
+  "importLine": "import { Thumbnail } from \"@stackra/ui/react\";",
+  "key": "free/thumbnail",
+  "parts": [
+    {
+      "name": "Thumbnail",
+      "props": [
+        {
+          "description": "The image URL; the fallback icon shows while it is missing or after it fails to load.",
+          "name": "src",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A tiny image (a few pixels wide) drawn blurred until `src` loads, then faded out.",
+          "name": "placeholderSrc",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name; without it the thumbnail is decorative and hidden from assistive technology.",
+          "name": "alt",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "The width: `sm` 40, `md` 64, `lg` 96 points. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Width over height. Defaults to 1, a square.",
+          "name": "aspectRatio",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "cover",
+          "description": "`cover` crops to fill the box, `contain` letterboxes the whole image. Defaults to `cover`.",
+          "name": "fit",
+          "required": false,
+          "source": "stackra",
+          "type": "\"cover\" | \"contain\""
+        },
+        {
+          "description": "The icon drawn with no image or a broken one. Defaults to the image icon, or the broken-image icon after an error.",
+          "name": "fallback",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

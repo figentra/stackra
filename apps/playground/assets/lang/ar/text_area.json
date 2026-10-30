@@ -1,0 +1,23 @@
+{
+  "primary": "منطقة أساسية",
+  "secondary": "منطقة ثانوية",
+  "label_only": "تسمية فقط",
+  "with_placeholder": "مع نص إرشادي",
+  "placeholder": "أخبرنا بما حدث",
+  "with_description": "مع وصف",
+  "description": "أضف رقم الطلب إن كان لديك.",
+  "two_lines": "سطران",
+  "six_lines": "ستة أسطر",
+  "required": "منطقة مطلوبة",
+  "invalid": "منطقة غير صالحة",
+  "invalid_message": "اكتب عشرة أحرف على الأقل.",
+  "disabled": "منطقة معطلة",
+  "read_only": "منطقة للقراءة فقط",
+  "kept": "قيمة محفوظة",
+  "full": "منطقة بعرض كامل",
+  "content": "منطقة بعرض المحتوى",
+  "live_label": "الرسالة",
+  "live_description": "اجعلها قصيرة.",
+  "live_error": "الرسالة تتجاوز 40 حرفًا.",
+  "live_count": "{count} من 40 حرفًا"
+}

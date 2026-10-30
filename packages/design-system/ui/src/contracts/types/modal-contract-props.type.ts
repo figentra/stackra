@@ -12,6 +12,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 
+import type { OverlayMotion } from "#contracts/enums/overlay-motion.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { OverlayContractProps } from "#contracts/types/overlay-contract-props.type";
 
@@ -34,6 +35,11 @@ export interface ModalContractProps extends OverlayContractProps {
    * on a narrow web screen). It is `position` and not `placement`, which ADR 0312 keeps for `Placement`.
    */
   readonly position?: "auto" | "top" | "center" | "bottom" | undefined;
+  /**
+   * How the dialog enters: `slide-up`, `stick-top` (flush with the top) or `slide-side` (from the inline-end side, full
+   * height). Left out, it keeps the runtime's own entrance. A reduced motion level fades it instead.
+   */
+  readonly motion?: OverlayMotion | undefined;
   /** The accessible name for a modal that has no `Modal.Title`; with a title, the title names it. */
   readonly label?: string | undefined;
 }

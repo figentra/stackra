@@ -1,0 +1,261 @@
+{
+  "slug": "slider",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(controls)/slider.mdx",
+  "parts": [
+    {
+      "name": "Slider",
+      "props": [
+        {
+          "name": "value",
+          "type": "number | number[]",
+          "description": "The current value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "number | number[]",
+          "description": "The default value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: number | number[]) => void",
+          "description": "Handler called when the value changes"
+        },
+        {
+          "name": "onChangeEnd",
+          "type": "(value: number | number[]) => void",
+          "description": "Handler called when dragging ends"
+        },
+        {
+          "name": "minValue",
+          "type": "number",
+          "default": "0",
+          "description": "The slider's minimum value"
+        },
+        {
+          "name": "maxValue",
+          "type": "number",
+          "default": "100",
+          "description": "The slider's maximum value"
+        },
+        {
+          "name": "step",
+          "type": "number",
+          "default": "1",
+          "description": "The slider's step value"
+        },
+        {
+          "name": "formatOptions",
+          "type": "Intl.NumberFormatOptions",
+          "description": "The display format of the value label"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "description": "The orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the slider is disabled"
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label for the slider"
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "ID of element that labels the slider"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Slider content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Slider.Output",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Output content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderOutputRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Slider.Track",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Track content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderTrackRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Slider.Fill",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties",
+          "description": "Inline styles"
+        }
+      ]
+    },
+    {
+      "name": "Slider.Thumb",
+      "props": [
+        {
+          "name": "index",
+          "type": "number",
+          "default": "0",
+          "description": "Index of the thumb within the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether this thumb is disabled"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input element, used when submitting an HTML form"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Thumb content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderThumbRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "state",
+          "type": "SliderState",
+          "description": "The state of the slider"
+        },
+        {
+          "name": "values",
+          "type": "number[]",
+          "description": "Values managed by the slider by thumb index"
+        },
+        {
+          "name": "getThumbValueLabel",
+          "type": "(index: number) => string",
+          "description": "Returns the string label for the specified thumb's value"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "description": "The orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the slider is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".slider",
+      "description": "Base slider container"
+    },
+    {
+      "name": ".slider__output",
+      "description": "Output element displaying current value(s)"
+    },
+    {
+      "name": ".slider-track",
+      "description": "Track element containing fill and thumbs"
+    },
+    {
+      "name": ".slider-fill",
+      "description": "Fill element showing selected range"
+    },
+    {
+      "name": ".slider-thumb",
+      "description": "Individual thumb element"
+    },
+    {
+      "name": ".slider[data-disabled=\"true\"]",
+      "description": "Disabled slider state"
+    },
+    {
+      "name": ".slider[data-orientation=\"vertical\"]",
+      "description": "Vertical orientation"
+    },
+    {
+      "name": ".slider-thumb[data-dragging=\"true\"]",
+      "description": "Thumb being dragged"
+    },
+    {
+      "name": ".slider-thumb[data-focus-visible=\"true\"]",
+      "description": "Thumb keyboard focused"
+    },
+    {
+      "name": ".slider-thumb[data-disabled=\"true\"]",
+      "description": "Disabled thumb state"
+    },
+    {
+      "name": ".slider-track[data-fill-start=\"true\"]",
+      "description": "Fill starts at beginning"
+    },
+    {
+      "name": ".slider-track[data-fill-end=\"true\"]",
+      "description": "Fill ends at end"
+    }
+  ],
+  "a11y": "The Slider component implements the ARIA slider pattern and provides:\n\n- Full keyboard navigation support (Arrow keys, Home, End, Page Up/Down)\n- Screen reader announcements for value changes\n- Proper focus management\n- Support for disabled states\n- HTML form integration via hidden input elements\n- Internationalization support with locale-aware value formatting\n- Right-to-left (RTL) language support\n\nFor more information, see the [React Aria Slider documentation](https://react-spectrum.adobe.com/react-aria/Slider.html)."
+}

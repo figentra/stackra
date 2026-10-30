@@ -1,0 +1,31 @@
+{
+  "size_class": "Size class: {size}",
+  "breakpoint": "Breakpoint: {breakpoint}",
+  "base": "base",
+  "resize": "Resize the window to see it change.",
+  "filters": "Filters",
+  "close": "Close",
+  "results": "{count, plural, one {# product} other {# products}}",
+  "products": "Products",
+  "size": {
+    "phone": "Phone",
+    "tablet": "Tablet",
+    "desktop": "Desktop"
+  },
+  "category": {
+    "beverages": "Beverages",
+    "bakery": "Bakery",
+    "dairy": "Dairy",
+    "snacks": "Snacks"
+  },
+  "product": {
+    "coffee": "Arabic coffee",
+    "croissant": "Croissant",
+    "laban": "Laban",
+    "dates": "Sukkari dates",
+    "tea": "Karak tea",
+    "cheese": "White cheese",
+    "juice": "Orange juice",
+    "maamoul": "Maamoul"
+  }
+}

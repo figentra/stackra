@@ -22,6 +22,7 @@ import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useGlassButton } from "#native/glass/use-glass-button";
+import { withHaptic } from "#native/haptics/with-haptic.function";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
 import type { ButtonProps } from "#native/button/button.props";
 
@@ -83,7 +84,7 @@ export function Button({
       isDisabled={isDisabled}
       {...blocksPress}
       {...omitUndefined({
-        onPress,
+        onPress: withHaptic("impact", onPress),
         className: cn(isFullWidth && "w-full", glass?.className, className) || undefined,
       })}
       {...(label ? { accessibilityLabel: label } : {})}

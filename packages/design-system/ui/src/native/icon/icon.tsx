@@ -17,6 +17,7 @@ import type { LucideProps } from "lucide-react-native";
 import type { ComponentType, ReactElement } from "react";
 
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
 import { UI_ICONS } from "#native/icon/ui-icons.constant";
 import type { IconProps } from "#native/icon/icon.props";
@@ -64,7 +65,9 @@ export function Icon({
       {...(tone ? { color: toneColor } : {})}
       {...rest}
       {...name}
-      style={isMirroredInRtl && isRtl ? [style, MIRRORED_STYLE] : style}
+      style={
+        (isMirroredInRtl ?? isDirectionalIcon(iconName)) && isRtl ? [style, MIRRORED_STYLE] : style
+      }
     />
   );
 }

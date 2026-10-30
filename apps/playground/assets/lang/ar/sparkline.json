@@ -1,0 +1,21 @@
+{
+  "desktop": "سطح المكتب",
+  "mobile": "الجوال",
+  "visitors": "الزوار",
+  "months_description": "يناير إلى يونيو 2026",
+  "trend": "ارتفاع 5.2% هذا الشهر",
+  "chrome": "Chrome",
+  "safari": "Safari",
+  "firefox": "Firefox",
+  "edge": "Edge",
+  "other": "أخرى",
+  "line": "الإيرادات، آخر 12 أسبوعًا، خط",
+  "area": "الإيرادات، آخر 12 أسبوعًا، مساحة",
+  "bar": "الطلبات، آخر 12 أسبوعًا، أعمدة",
+  "line_caption": "خط",
+  "area_caption": "مساحة",
+  "bar_caption": "أعمدة",
+  "stat_label": "الإيرادات",
+  "stat_badge": "+12%",
+  "stat_trend": "الإيرادات، آخر 12 أسبوعًا"
+}

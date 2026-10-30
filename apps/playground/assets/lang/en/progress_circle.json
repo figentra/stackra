@@ -1,0 +1,12 @@
+{
+  "size_label": "Sync, {size}",
+  "tone_label": "Sync, {tone}",
+  "value_label": "Sync at {value} per cent",
+  "indeterminate_label": "Preparing sync",
+  "beside_label": "Syncing contacts",
+  "beside_text": "6 of 8 contacts",
+  "action_label": "Sync progress",
+  "advance": "Advance by 10%",
+  "reset": "Reset",
+  "complete": "Sync complete"
+}

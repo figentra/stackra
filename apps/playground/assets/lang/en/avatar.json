@@ -1,0 +1,18 @@
+{
+  "shape": "Shape {shape}",
+  "with_image": "Image",
+  "variant": "Variant {variant}",
+  "loaded": "Loaded image",
+  "broken": "Broken image",
+  "organisation": "Organisation",
+  "anonymous": "No name",
+  "accessible_name": "Accessible name",
+  "standalone": "Ada Lovelace",
+  "row": "Ada Lovelace, administrator",
+  "row_name": "Ada Lovelace",
+  "row_role": "Administrator",
+  "next_name": "Next name",
+  "image_on": "Show image",
+  "image_off": "Hide image",
+  "current": "Current avatar"
+}

@@ -1,0 +1,14 @@
+{
+  "inherits": "inherits the text colour",
+  "favourites": "Favourites",
+  "rated": "Rated",
+  "mirrored": "Mirrored in right-to-left",
+  "never_mirrored": "Never mirrored",
+  "alias": "orders, an alias of shopping-cart",
+  "raw_element": "A raw element, as an icon slot of a button takes it",
+  "thin_stroke": "strokeWidth 1.5",
+  "with_class": "className",
+  "next_size": "Next size",
+  "next_tone": "Next tone",
+  "state": "{presses, plural, one {Size {size}, tone {tone}, pressed # time.} other {Size {size}, tone {tone}, pressed # times.}}"
+}

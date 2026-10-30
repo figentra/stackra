@@ -18,6 +18,7 @@ import { Description, FieldError, Label, TagGroup as HeroTagGroup } from "heroui
 import { useState, type ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { haptics } from "#native/haptics/haptics";
 import { Text } from "#native/text/text";
 import type { TagGroupProps } from "#native/tag-group/tag-group.props";
 
@@ -58,6 +59,7 @@ export function TagGroup({
       selectedKeys={selected}
       onSelectionChange={(keys) => {
         const next = [...keys].map(String);
+        haptics.play("selection");
         setOwn(next);
         onChange?.(next);
       }}

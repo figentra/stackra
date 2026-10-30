@@ -1,0 +1,88 @@
+{
+  "slug": "close-button",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(buttons)/close-button.mdx",
+  "parts": [
+    {
+      "name": "CloseButton",
+      "props": [
+        {
+          "name": "variant",
+          "type": "\"default\"",
+          "default": "\"default\"",
+          "description": "Visual variant of the button"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | function",
+          "default": "<CloseIcon />",
+          "description": "Content to display (defaults to close icon)"
+        },
+        {
+          "name": "onPress",
+          "type": "() => void",
+          "description": "Handler called when the button is pressed"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the button is disabled"
+        }
+      ]
+    },
+    {
+      "name": "React Aria Button",
+      "props": [
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessible label for screen readers"
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "ID of element that labels the button"
+        },
+        {
+          "name": "aria-describedby",
+          "type": "string",
+          "description": "ID of element that describes the button"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the button is hovered"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the button is pressed"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the button is focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the button is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".close-button",
+      "description": "Base component styles"
+    },
+    {
+      "name": ".close-button--default",
+      "description": "Default variant"
+    }
+  ]
+}

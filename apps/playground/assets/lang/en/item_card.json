@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "title": "Account",
+    "footnote": "Changes apply to every branch.",
+    "profile": "Profile",
+    "profile_line": "Name, photo and contact details",
+    "plan": "Plan",
+    "plan_value": "Growth",
+    "security": "Security",
+    "pressed": "Opened: {item}"
+  }
+}

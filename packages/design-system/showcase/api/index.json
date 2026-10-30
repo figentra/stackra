@@ -1,0 +1,1397 @@
+{
+  "free/accordion": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 30,
+    "react": true
+  },
+  "free/account-connection": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 32,
+    "react": true
+  },
+  "free/action-menu": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 28,
+    "react": true
+  },
+  "free/address-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/ai-mark": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/alert": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/alert-dialog": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 31,
+    "react": true
+  },
+  "free/app-header": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/app-shell": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/area-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/avatar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 25,
+    "react": true
+  },
+  "free/avatar-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/badge": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 37,
+    "react": true
+  },
+  "free/bar-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/bar-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/bidi": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/box-plot-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/breadcrumbs": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 17,
+    "react": true
+  },
+  "free/bulk-action-bar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 26,
+    "react": true
+  },
+  "free/bullet-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
+  "free/button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 52,
+    "react": true
+  },
+  "free/button-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/calendar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/calendar-heatmap": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
+  "free/candlestick-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/card": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 32,
+    "react": true
+  },
+  "free/carousel": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/chart": {
+    "native": true,
+    "partsCount": 5,
+    "propsCount": 67,
+    "react": true
+  },
+  "free/chart-crosshair": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7
+  },
+  "free/chart-legend": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/chart-tooltip": {
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/checkbox": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 44,
+    "react": true
+  },
+  "free/checkbox-button-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/checkbox-field": {
+    "partsCount": 1,
+    "propsCount": 44,
+    "react": true
+  },
+  "free/checkbox-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 33,
+    "react": true
+  },
+  "free/chip": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 24,
+    "react": true
+  },
+  "free/choropleth-map": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
+  "free/close-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 48,
+    "react": true
+  },
+  "free/coach-mark": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
+  "free/code-block": {
+    "native": true,
+    "partsCount": 3,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/color-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 13,
+    "react": true
+  },
+  "free/column-chooser": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 17,
+    "react": true
+  },
+  "free/combo-box": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 56,
+    "react": true
+  },
+  "free/command-palette": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/comment-thread": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/composed-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/confirmation": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 1,
+    "react": true
+  },
+  "free/context-menu": {
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/contextual-help": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 43,
+    "react": true
+  },
+  "free/copy-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 48,
+    "react": true
+  },
+  "free/countdown": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/country-select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/cursor-pagination": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 26,
+    "react": true
+  },
+  "free/data-grid": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 32,
+    "react": true
+  },
+  "free/data-table": {
+    "native": true,
+    "partsCount": 6,
+    "propsCount": 61,
+    "react": true
+  },
+  "free/data-view": {
+    "native": true,
+    "partsCount": 6,
+    "propsCount": 36,
+    "react": true
+  },
+  "free/date-field": {
+    "native": true,
+    "partsCount": 3,
+    "propsCount": 52,
+    "react": true
+  },
+  "free/date-label": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 29,
+    "react": true
+  },
+  "free/date-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 53,
+    "react": true
+  },
+  "free/date-range-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 24,
+    "react": true
+  },
+  "free/date-time-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 50,
+    "react": true
+  },
+  "free/description": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/diff-review": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/donut-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 12,
+    "react": true
+  },
+  "free/drawer": {
+    "native": true,
+    "partsCount": 9,
+    "propsCount": 103,
+    "react": true
+  },
+  "free/drop-zone": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/dropdown": {
+    "partsCount": 1,
+    "propsCount": 36,
+    "react": true
+  },
+  "free/emoji-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/empty-state": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/entity-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 51,
+    "react": true
+  },
+  "free/environment-banner": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/error-page": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/error-state": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/export-dialog": {
+    "partsCount": 1,
+    "propsCount": 13,
+    "react": true
+  },
+  "free/fab": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 27,
+    "react": true
+  },
+  "free/feedback-icon": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 2,
+    "react": true
+  },
+  "free/field": {
+    "partsCount": 3,
+    "propsCount": 96,
+    "react": true
+  },
+  "free/field-error": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/file-trigger": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 65,
+    "react": true
+  },
+  "free/filter-bar": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/filter-panel": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/flip-card": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/form": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 28,
+    "react": true
+  },
+  "free/form-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 2,
+    "react": true
+  },
+  "free/form-section": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/fullscreen-bar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/funnel-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/gauge-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/heading": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/heatmap-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
+  "free/highlight": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 3,
+    "react": true
+  },
+  "free/histogram-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/holo-card": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/hover-card": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/icon": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 36,
+    "react": true
+  },
+  "free/icon-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 49,
+    "react": true
+  },
+  "free/import-dialog": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 12,
+    "react": true
+  },
+  "free/import-flow": {
+    "native": true,
+    "partsCount": 3,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/inline-edit": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/inline-loading": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/inline-select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/input-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 61,
+    "react": true
+  },
+  "free/item-card": {
+    "native": true,
+    "partsCount": 3,
+    "propsCount": 11,
+    "react": true
+  },
+  "free/kiosk-surface": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/kpi": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 17,
+    "react": true
+  },
+  "free/kpi-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 3,
+    "react": true
+  },
+  "free/label": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/leave-confirmation": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/line-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/link": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 42,
+    "react": true
+  },
+  "free/list": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 51,
+    "react": true
+  },
+  "free/listbox": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/loading-overlay": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/locale-switcher": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
+  "free/menu": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 29,
+    "react": true
+  },
+  "free/meter": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/modal": {
+    "native": true,
+    "partsCount": 4,
+    "propsCount": 84,
+    "react": true
+  },
+  "free/mode-switch": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/money-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 56,
+    "react": true
+  },
+  "free/morph-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 51,
+    "react": true
+  },
+  "free/morph-tabs": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/multi-select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 51,
+    "react": true
+  },
+  "free/native-select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/navigation-header": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/navigation-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 15,
+    "react": true
+  },
+  "free/notifications-panel": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/number-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 53,
+    "react": true
+  },
+  "free/number-pad": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 25,
+    "react": true
+  },
+  "free/number-ticker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/number-value": {
+    "native": true,
+    "partsCount": 4,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/otp-input": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/overflow-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/overflow-toolbar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/page-header": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/page-skeleton": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/pagination": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 13,
+    "react": true
+  },
+  "free/password-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 65,
+    "react": true
+  },
+  "free/permissions-matrix": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/phone-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 15,
+    "react": true
+  },
+  "free/pie-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
+    "react": true
+  },
+  "free/popover": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 41,
+    "react": true
+  },
+  "free/press-feedback": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 47,
+    "react": true
+  },
+  "free/progress-bar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/progress-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 53,
+    "react": true
+  },
+  "free/progress-circle": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/property-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/pull-to-refresh": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20
+  },
+  "free/qr-code": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
+  "free/quantity-stepper": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 27,
+    "react": true
+  },
+  "free/radar-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 11,
+    "react": true
+  },
+  "free/radial-bar-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 13,
+    "react": true
+  },
+  "free/radio-button-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/radio-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 34,
+    "react": true
+  },
+  "free/range-bar-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 13,
+    "react": true
+  },
+  "free/range-calendar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/range-slider": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/reaction-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/result": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/reveal": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/route-progress": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
+  "free/router-provider": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 2
+  },
+  "free/rule-builder": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/sankey-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/save-bar": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 42,
+    "react": true
+  },
+  "free/saved-views": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/scatter-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/screen": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/scroll-area": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/search-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 63,
+    "react": true
+  },
+  "free/section": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 28,
+    "react": true
+  },
+  "free/segmented-control": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 30,
+    "react": true
+  },
+  "free/select": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 49,
+    "react": true
+  },
+  "free/separator": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/setting-row": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/settings-cell": {
+    "native": true,
+    "partsCount": 5,
+    "propsCount": 49,
+    "react": true
+  },
+  "free/setup-guide": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 29,
+    "react": true
+  },
+  "free/side-panel": {
+    "native": true,
+    "partsCount": 8,
+    "propsCount": 82,
+    "react": true
+  },
+  "free/sidebar": {
+    "native": true,
+    "partsCount": 14,
+    "propsCount": 270,
+    "react": true
+  },
+  "free/single-column-layout": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/skeleton": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/skeleton-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/slide-to-confirm": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/slider": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/slot-icon": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 1,
+    "react": true
+  },
+  "free/social-sign-in-buttons": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/sortable-list": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 33,
+    "react": true
+  },
+  "free/sparkline": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/spinner": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
+  "free/split-button": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 34,
+    "react": true
+  },
+  "free/split-view": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/stacked-meter": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/stat": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
+  "free/state-layout": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/status-badge": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 21,
+    "react": true
+  },
+  "free/status-indicator": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18,
+    "react": true
+  },
+  "free/stepper": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
+  "free/sunburst-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/surface": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/swipeable-row": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18
+  },
+  "free/swipeable-tabs": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 28,
+    "react": true
+  },
+  "free/switch": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 43,
+    "react": true
+  },
+  "free/system-banner": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 24,
+    "react": true
+  },
+  "free/tab-bar": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 15,
+    "react": true
+  },
+  "free/table": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 42,
+    "react": true
+  },
+  "free/tabs": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 28,
+    "react": true
+  },
+  "free/tag-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 35,
+    "react": true
+  },
+  "free/tag-input": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/text": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 17,
+    "react": true
+  },
+  "free/text-area": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 59,
+    "react": true
+  },
+  "free/text-area-field": {
+    "partsCount": 1,
+    "propsCount": 59,
+    "react": true
+  },
+  "free/text-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 59,
+    "react": true
+  },
+  "free/text-reveal": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 3,
+    "react": true
+  },
+  "free/theme-bars": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 2
+  },
+  "free/thumbnail": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 20,
+    "react": true
+  },
+  "free/time-field": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 41,
+    "react": true
+  },
+  "free/time-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 46,
+    "react": true
+  },
+  "free/timeline": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/timeline-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/toast": {
+    "native": true,
+    "partsCount": 4,
+    "propsCount": 23,
+    "react": true
+  },
+  "free/toc-rail": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
+  "free/toggle-button": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 30
+  },
+  "free/toggle-button-group": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 23
+  },
+  "free/tooltip": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 14,
+    "react": true
+  },
+  "free/tree-view": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 30,
+    "react": true
+  },
+  "free/treemap-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
+  "free/truncate": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
+  "free/turnstile": {
+    "partsCount": 1,
+    "propsCount": 2,
+    "react": true
+  },
+  "free/two-column-layout": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
+  "free/use-breakpoint": {
+    "native": true,
+    "partsCount": 0,
+    "propsCount": 0,
+    "react": true
+  },
+  "free/view-stack": {
+    "native": true,
+    "partsCount": 4,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/visually-hidden": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
+  "free/waterfall-chart": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
+    "react": true
+  },
+  "free/wheel-picker": {
+    "native": true,
+    "partsCount": 3,
+    "propsCount": 39,
+    "react": true
+  },
+  "free/widget-frame": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 22,
+    "react": true
+  },
+  "free/year-picker": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  }
+}

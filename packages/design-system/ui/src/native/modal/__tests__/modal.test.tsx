@@ -66,6 +66,20 @@ vi.mock("react-native", async () => {
   };
 });
 
+vi.mock("react-native-reanimated", () => {
+  const names = [
+    "SlideInDown",
+    "SlideInUp",
+    "SlideInLeft",
+    "SlideInRight",
+    "SlideOutDown",
+    "SlideOutUp",
+  ];
+  return Object.fromEntries(
+    [...names, "SlideOutLeft", "SlideOutRight"].map((name) => [name, name]),
+  );
+});
+
 vi.mock("#native/text/text", async () => {
   const { createElement } = await import("react");
   return {
@@ -235,5 +249,36 @@ describe("Modal (native)", () => {
     expectTypeOf<ModalProps>().not.toHaveProperty("isDefaultOpen");
     expectTypeOf<ModalProps>().not.toHaveProperty("isSwipeable");
     expectTypeOf<ModalProps>().not.toHaveProperty("placement");
+  });
+
+  it("enters by its motion: up from the bottom, flush from the top, or from the inline end", () => {
+    render(
+      <Modal motion="slide-up" isOpen>
+        body
+      </Modal>,
+    );
+    expect(propsOf("content")["animation"]).toEqual({
+      entering: "SlideInDown",
+      exiting: "SlideOutDown",
+    });
+    render(
+      <Modal motion="stick-top" isOpen>
+        body
+      </Modal>,
+    );
+    expect(propsOf("content")["animation"]).toEqual({
+      entering: "SlideInUp",
+      exiting: "SlideOutUp",
+    });
+    expect(String(propsOf("content")["className"])).toContain("rounded-t-none");
+    render(
+      <Modal motion="slide-side" isOpen>
+        body
+      </Modal>,
+    );
+    expect(propsOf("content")["animation"]).toEqual({
+      entering: "SlideInRight",
+      exiting: "SlideOutRight",
+    });
   });
 });

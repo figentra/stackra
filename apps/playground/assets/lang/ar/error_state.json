@@ -1,0 +1,27 @@
+{
+  "region_name": "عرض الطلبات",
+  "retry": "إعادة المحاولة",
+  "sign_in": "تسجيل الدخول",
+  "go_back": "رجوع",
+  "contact_support": "التواصل مع الدعم",
+  "loading_orders": "جارٍ تحميل الطلبات",
+  "recovered": "حُمّلت الطلبات",
+  "recovered_note": "عادت القائمة. أفسدها مجددًا لترى الفشل مرة أخرى.",
+  "break_again": "إفسادها مجددًا",
+  "sample": {
+    "sign_in_to_continue": "سجّل الدخول للمتابعة",
+    "your_session_ended_sign_in": "انتهت جلستك. سجّل الدخول مجددًا لعرض هذه الصفحة.",
+    "you_do_not_have_access": "ليس لديك صلاحية الوصول",
+    "ask_an_administrator_to_give": "اطلب من المسؤول منحك صلاحية الوصول إلى هذه الصفحة.",
+    "we_could_not_find_that": "لم نعثر على هذه الصفحة",
+    "the_link_may_be_old": "قد يكون الرابط قديمًا، أو نُقلت الصفحة.",
+    "something_went_wrong": "حدث خطأ ما",
+    "we_could_not_load_this": "تعذّر تحميل هذه الصفحة. أعد المحاولة بعد لحظات.",
+    "with_the_error_s_details": "مع تفاصيل الخطأ",
+    "a_retry_and_a_further": "إعادة محاولة وإجراء إضافي",
+    "an_icon_of_your_own": "أيقونة خاصة بك",
+    "this_page_is_locked": "هذه الصفحة مقفلة",
+    "an_administrator_has_paused_access": "أوقف المسؤول الوصول مؤقتًا ريثما تُراجع البيانات.",
+    "no_icon": "دون أيقونة"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "e1ec4c3240f2bcc0",
+    "propsFiles": ["ui/src/native/chart-crosshair/chart-crosshair.props.ts"]
+  },
+  "importLine": "import { ChartCrosshair } from \"@stackra/ui/native\";",
+  "key": "free/chart-crosshair",
+  "parts": [
+    {
+      "name": "ChartCrosshair",
+      "props": [
+        {
+          "description": "The chart's press state (`useChartPressState`).",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "ChartPressState<{ x: string | number; y: Record<string, number>; }>"
+        },
+        {
+          "description": "The plot area Victory hands its children.",
+          "name": "bounds",
+          "required": true,
+          "source": "stackra",
+          "type": "ChartBounds"
+        },
+        {
+          "description": "Series that get a ringed dot at the scrubbed point, with their colours.",
+          "name": "dots",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly { readonly key: string; readonly color: string; }[]"
+        },
+        {
+          "description": "The width of the soft band behind the category; 0 draws only the dashed guide.",
+          "name": "bandWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The guide's colour (the muted text colour).",
+          "name": "guideColor",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The band's colour (the foreground, drawn at 5%).",
+          "name": "bandColor",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The ring around each dot (the surface colour).",
+          "name": "ringColor",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,0 +1,82 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "figentra-pay",
+  "changes": {
+    "colors": {
+      "accent": {
+        "light": "oklch(0.38 0.12 255)",
+        "dark": "oklch(0.74 0.10 250)",
+        "hexLight": "#064180",
+        "hexDark": "#79B0E8"
+      },
+      "accent-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "focus": {
+        "light": "oklch(0.38 0.12 255)",
+        "dark": "oklch(0.74 0.10 250)",
+        "hexLight": "#064180",
+        "hexDark": "#79B0E8"
+      },
+      "link": {
+        "light": "oklch(0.38 0.12 255)",
+        "dark": "oklch(0.74 0.10 250)",
+        "hexLight": "#064180",
+        "hexDark": "#79B0E8"
+      }
+    },
+    "palette": {
+      "accent-hover": {
+        "light": "oklch(0.33 0.10 255)",
+        "dark": "oklch(0.83 0.07 250)",
+        "hexLight": "#073567",
+        "hexDark": "#A5CCF4"
+      },
+      "accent-pressed": {
+        "light": "oklch(0.29 0.085 255)",
+        "dark": "oklch(0.68 0.10 250)",
+        "hexLight": "#072B54",
+        "hexDark": "#679DD4"
+      },
+      "accent-soft": {
+        "light": "oklch(0.955 0.022 250)",
+        "dark": "oklch(0.24 0.06 255)",
+        "hexLight": "#E5F2FF",
+        "hexDark": "#091F3B"
+      },
+      "accent-soft-foreground": {
+        "light": "oklch(0.33 0.10 255)",
+        "dark": "oklch(0.83 0.07 250)",
+        "hexLight": "#073567",
+        "hexDark": "#A5CCF4"
+      },
+      "vault": {
+        "light": "oklch(0.74 0.10 250)",
+        "dark": "oklch(0.74 0.10 250)",
+        "hexLight": "#79B0E8",
+        "hexDark": "#79B0E8"
+      },
+      "vault-deep": {
+        "light": "oklch(0.38 0.12 255)",
+        "dark": "oklch(0.38 0.12 255)",
+        "hexLight": "#064180",
+        "hexDark": "#064180"
+      },
+      "chart-1": {
+        "light": "oklch(0.46 0.12 255)",
+        "dark": "oklch(0.74 0.10 250)",
+        "hexLight": "#225899",
+        "hexDark": "#79B0E8"
+      }
+    },
+    "fontFamily": {
+      "display": "\"Barlow\", ui-sans-serif, system-ui, sans-serif",
+      "displayArabic": "\"Tajawal\", \"Barlow\", system-ui, sans-serif"
+    }
+  }
+}

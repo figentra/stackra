@@ -1,0 +1,17 @@
+{
+  "new_order": "New order",
+  "scan": "Scan a barcode",
+  "note": "Add a note",
+  "photo": "Take a photo",
+  "create": "Create",
+  "chosen": "Chosen: {action}",
+  "nothing_chosen": "Nothing chosen yet",
+  "area": "Orders",
+  "order_title": "New order #{number}",
+  "customer": "Customer",
+  "customer_value": "Sara Haddad",
+  "cancel": "Cancel",
+  "close": "Close",
+  "created": "Order #{number} created",
+  "nothing_yet": "No orders yet. Press New order."
+}

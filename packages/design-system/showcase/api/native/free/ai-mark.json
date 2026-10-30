@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "78b56dd80b39bd9a",
+    "propsFiles": ["ui/src/native/ai-mark/ai-mark.props.ts"]
+  },
+  "importLine": "import { AiMark } from \"@stackra/ui/native\";",
+  "key": "free/ai-mark",
+  "parts": [
+    {
+      "name": "AiMark",
+      "props": [
+        {
+          "description": "What the mark says: the agent can run it, an agent changed it, or AI generated it.",
+          "name": "kind",
+          "required": true,
+          "source": "stackra",
+          "type": "\"capable\" | \"changed\" | \"generated\""
+        },
+        {
+          "description": "What the mark means, in the app's language (`Your assistant can do this`); read by screen readers.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the label beside the mark; required on content shown to consumers.",
+          "name": "isLabelVisible",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The mark's size; `sm` when left out.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

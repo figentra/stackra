@@ -1,0 +1,16 @@
+{
+  "transition_label": "الانتقال",
+  "transitions": {
+    "push": "دفع",
+    "push_parallax": "دفع بعمق",
+    "from_top": "من الأعلى",
+    "fade": "تلاشٍ",
+    "none": "بلا حركة"
+  },
+  "orders": "الطلبات",
+  "order": "الطلب {number}",
+  "open": "افتح الطلب {number}",
+  "back": "الطلبات",
+  "status": "في الطريق إليك، يصل قبل السادسة مساءً.",
+  "total": "الإجمالي"
+}

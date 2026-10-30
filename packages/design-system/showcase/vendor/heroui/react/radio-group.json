@@ -1,0 +1,208 @@
+{
+  "slug": "radio-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/radio-group.mdx",
+  "parts": [
+    {
+      "name": "RadioGroup",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The current value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "description": "The default value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: string) => void",
+          "description": "Handler called when the value changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio group is disabled"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio group is required"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio group is read only"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio group is in an invalid state"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the radio group, used when submitting an HTML form"
+        },
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'vertical'",
+          "description": "The orientation of the radio group"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: RadioGroupRenderProps) => React.ReactNode",
+          "description": "Radio group content or render prop"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, RadioGroupRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Radio",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the radio button"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio button is disabled"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the radio button, used when submitting an HTML form"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: RadioRenderProps) => React.ReactNode",
+          "description": "Radio content or render prop"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, RadioRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the radio is currently selected"
+        },
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the radio is hovered"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the radio is currently pressed"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the radio is focused"
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether the radio is keyboard focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the radio is disabled"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the radio is read only"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the radio is in an invalid state"
+        }
+      ]
+    },
+    {
+      "name": "Radio.Control",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The content to render inside the control wrapper (typically Radio.Indicator)"
+        }
+      ]
+    },
+    {
+      "name": "Radio.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: RadioRenderProps) => React.ReactNode",
+          "description": "Optional content or render prop that receives the current radio state."
+        }
+      ]
+    },
+    {
+      "name": "Radio.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The content to render inside the content wrapper (typically Label and Description)"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".radio-group",
+      "description": "Base radio group container"
+    },
+    {
+      "name": ".radio",
+      "description": "Individual radio item"
+    },
+    {
+      "name": ".radio__control",
+      "description": "Radio control (circular button)"
+    },
+    {
+      "name": ".radio__indicator",
+      "description": "Radio indicator (inner dot)"
+    },
+    {
+      "name": ".radio__content",
+      "description": "Radio content wrapper"
+    },
+    {
+      "name": ".radio--disabled",
+      "description": "Disabled radio state"
+    }
+  ]
+}

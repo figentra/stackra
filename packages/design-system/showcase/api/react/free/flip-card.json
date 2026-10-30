@@ -1,0 +1,117 @@
+{
+  "generatedFrom": {
+    "hash": "1b6846984bb650a5",
+    "propsFiles": ["ui/src/react/flip-card/flip-card.props.ts"]
+  },
+  "importLine": "import { FlipCard } from \"@stackra/ui/react\";",
+  "key": "free/flip-card",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new side each time the card turns.",
+          "name": "onFlipChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isFlipped: boolean) => void"
+        }
+      ],
+      "name": "FlipCard",
+      "props": [
+        {
+          "description": "The face shown first.",
+          "name": "front",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The face shown after the turn.",
+          "name": "back",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The side showing, for a controlled card: true for the back. Pair it with `onFlipChange`.",
+          "name": "isFlipped",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side showing at the start, for an uncontrolled card.",
+          "name": "defaultFlipped",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The accessible name of the card's turn action, for example \"Show details\".",
+          "name": "flipLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "horizontal",
+          "description": "The axis it turns around: `horizontal` turns like a page (around the vertical axis). Defaults to `horizontal`.",
+          "name": "axis",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "True to show the card without letting it turn on a press (the app turns it).",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

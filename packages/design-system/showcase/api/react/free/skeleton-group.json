@@ -1,0 +1,93 @@
+{
+  "generatedFrom": {
+    "hash": "fe97e4e3ff4cfc2f",
+    "propsFiles": ["ui/src/react/skeleton-group/skeleton-group.props.ts"]
+  },
+  "importLine": "import { SkeletonGroup } from \"@stackra/ui/react\";",
+  "key": "free/skeleton-group",
+  "parts": [
+    {
+      "name": "SkeletonGroup",
+      "props": [
+        {
+          "description": "The layout of the region: Skeletons, each holding its loaded content, and any wrapper elements around them.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The spoken text naming what loads, for example \"Loading orders\"; it is read only while the region loads.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while the content loads, showing the placeholder; defaults to true, or to the enclosing group's value.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How the placeholder moves while loading; defaults to `shimmer`, or to the enclosing group's animation.",
+          "name": "animationType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"shimmer\" | \"pulse\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

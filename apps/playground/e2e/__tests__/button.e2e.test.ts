@@ -11,6 +11,8 @@
 // @covers sta-350:FR-022 sta-350:FR-024 sta-350:FR-027 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -19,7 +21,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Button" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Button", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -73,7 +77,9 @@ test("a loading button keeps focus, refuses presses and keeps its name", async (
 for (const locale of LOCALES)
   test(`the start icon sits at the inline start in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const button = page.getByRole("button", { name: "Add", exact: true });
+    // The demo speaks the page's locale: Add is the first sample of the Icons example (waited for, as it loads lazily).
+    const button = example(page, "icons").getByRole("listitem").first().getByRole("button");
+    await expect(button).toBeVisible();
     const [icon, box] = await Promise.all([
       button.locator("svg").boundingBox(),
       button.boundingBox(),

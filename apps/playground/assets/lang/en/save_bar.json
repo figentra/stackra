@@ -1,0 +1,10 @@
+{
+  "product_name": "Product name",
+  "sample_product": "Flat white",
+  "message": "Unsaved changes to this menu item",
+  "note": "Order note",
+  "fail_next": "Make the next save fail",
+  "leave": "Leave this page",
+  "blocked": "Save or discard your changes before leaving.",
+  "left": "You left the page."
+}

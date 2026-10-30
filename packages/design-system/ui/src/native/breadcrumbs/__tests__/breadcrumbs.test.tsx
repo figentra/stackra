@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 
 import type { BreadcrumbItem } from "#contracts/types/breadcrumb-item.type";
 import { Breadcrumbs } from "#native/breadcrumbs/breadcrumbs";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 
 vi.mock("react-native", () => ({
   View: ({
@@ -38,7 +39,10 @@ vi.mock("#native/icon/icon", () => ({
       data-testid="chevron"
       data-name={String(props["name"])}
       data-tone={String(props["tone"])}
-      data-mirrored={String(props["isMirroredInRtl"] === true)}
+      data-mirrored={String(
+        (props["isMirroredInRtl"] as boolean | undefined) ??
+          isDirectionalIcon(String(props["name"])),
+      )}
     />
   ),
 }));

@@ -1,0 +1,354 @@
+{
+  "generatedFrom": {
+    "hash": "d8e9c5c5bcdff4a0",
+    "heroDoc": "vendor/heroui/react/popover.json",
+    "propsFiles": ["ui/src/react/contextual-help/contextual-help.props.ts"]
+  },
+  "importLine": "import { ContextualHelp } from \"@stackra/ui/react\";",
+  "key": "free/contextual-help",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when the target element and all descendants lose focus.",
+          "name": "onBlurWithin",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the target element or a descendant receives focus.",
+          "name": "onFocusWithin",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the the focus within state changes.",
+          "name": "onFocusWithinChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocusWithin: boolean) => void"
+        }
+      ],
+      "extends": "Popover",
+      "name": "ContextualHelp",
+      "props": [
+        {
+          "description": "The accessible name of the button, which says what the help is about, for example \"About tax-inclusive prices\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The help: text, or text with a link. Plain text is wrapped for the runtime.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The popover's heading; without it the popover is named by `label`.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "help",
+          "description": "`help` draws a question mark for how-to help, `info` an \"i\" for background facts. Defaults to `help`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"info\" | \"help\""
+        },
+        {
+          "default": "sm",
+          "description": "The size of the button. Defaults to `sm`, so it sits beside a label.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "True, the default, to close the overlay on a press outside it (the backdrop on a modal, a drawer and a dialog).\nSet false for a step the user must finish, and give the content its own close control.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the Escape key from closing the overlay. It is for a flow with unsaved work or a nested overlay\nopen, so set it only with `isDismissable` false or a close control in reach. Native has no Escape key, so it\nstays unread there unless a component's own page says it maps to the Android back button.",
+          "name": "isKeyboardDismissDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to draw an arrow from the content to its trigger. Defaults to false.",
+          "name": "hasArrow",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "0",
+          "description": "The minimum distance the arrow's edge should be from the edge of the overlay element.",
+          "name": "arrowBoundaryOffset",
+          "required": false,
+          "source": "react-aria",
+          "type": "number"
+        },
+        {
+          "description": "A ref for the popover arrow element.",
+          "name": "arrowRef",
+          "required": false,
+          "source": "react-aria",
+          "type": "RefObject<Element | null>"
+        },
+        {
+          "default": "document.body",
+          "description": "Element that that serves as the positioning boundary.",
+          "name": "boundaryElement",
+          "required": false,
+          "source": "react-aria",
+          "type": "Element"
+        },
+        {
+          "default": "'react-aria-Popover'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<PopoverRenderProps>"
+        },
+        {
+          "default": "12",
+          "description": "The placement padding that should be applied between the element and its\nsurrounding container.",
+          "name": "containerPadding",
+          "required": false,
+          "source": "react-aria",
+          "type": "number"
+        },
+        {
+          "default": "0",
+          "description": "The additional offset applied along the cross axis between the element and its\nanchor element.",
+          "name": "crossOffset",
+          "required": false,
+          "source": "react-aria",
+          "type": "number"
+        },
+        {
+          "default": "target.getBoundingClientRect()",
+          "description": "Overrides the target element's bounding rectangle. Useful for positioning relative to\na specific point such as the mouse cursor (e.g. context menus) or text selection.",
+          "name": "getTargetRect",
+          "required": false,
+          "source": "react-aria",
+          "type": "(target: Element) => DOMRect | null"
+        },
+        {
+          "description": "Whether the popover is currently performing an entry animation.",
+          "name": "isEntering",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the popover is currently performing an exit animation.",
+          "name": "isExiting",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "The maxHeight specified for the overlay element.\nBy default, it will take all space up to the current viewport height.",
+          "name": "maxHeight",
+          "required": false,
+          "source": "react-aria",
+          "type": "number"
+        },
+        {
+          "default": "8",
+          "description": "The additional offset applied along the main axis between the element and its\nanchor element.",
+          "name": "offset",
+          "required": false,
+          "source": "react-aria",
+          "type": "number"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"div\", PopoverRenderProps>"
+        },
+        {
+          "default": "overlayRef",
+          "description": "A ref for the scrollable region within the overlay.",
+          "name": "scrollRef",
+          "required": false,
+          "source": "react-aria",
+          "type": "RefObject<Element | null>"
+        },
+        {
+          "default": "true",
+          "description": "Whether the element should flip its orientation (e.g. top to bottom or left to right) when\nthere is insufficient room for it to render completely.",
+          "name": "shouldFlip",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the popover should appear and disappear without an entry or exit animation. This is\nused by components such as PreviewTrigger to skip animations when quickly swapping between\noverlays.",
+          "name": "shouldSkipAnimation",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "true",
+          "description": "Whether the overlay should update its position automatically.",
+          "name": "shouldUpdatePosition",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<PopoverRenderProps>"
+        },
+        {
+          "description": "The ref for the element which the popover positions itself with respect to.\n\nWhen used within a trigger component such as DialogTrigger, MenuTrigger, Select, etc.,\nthis is set automatically. It is only required when used standalone.",
+          "name": "triggerRef",
+          "required": false,
+          "source": "react-aria",
+          "type": "RefObject<Element | null>"
+        },
+        {
+          "default": "document.body",
+          "deprecated": "- Use a parent UNSAFE_PortalProvider to set your portal container instead.",
+          "description": "The container element in which the overlay portal will be placed. This may have unknown\nbehavior depending on where it is portalled to.",
+          "name": "UNSTABLE_portalContainer",
+          "required": false,
+          "source": "react-aria",
+          "type": "Element"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base popover container styles",
+      "name": ".popover"
+    },
+    {
+      "description": "Dialog content wrapper",
+      "name": ".popover__dialog"
+    },
+    {
+      "description": "Heading text styles",
+      "name": ".popover__heading"
+    },
+    {
+      "description": "Trigger element styles",
+      "name": ".popover__trigger"
+    }
+  ]
+}

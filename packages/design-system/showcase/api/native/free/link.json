@@ -1,0 +1,250 @@
+{
+  "generatedFrom": {
+    "hash": "ba899a5ac086357b",
+    "heroDoc": "vendor/heroui/native/link-button.json",
+    "propsFiles": ["ui/src/native/link/link.props.ts"]
+  },
+  "importLine": "import { Link } from \"@stackra/ui/native\";",
+  "key": "free/link",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the link is activated, before the link follows `href`.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "Link",
+      "props": [
+        {
+          "description": "The text (or content) of the link; a link without text needs `label`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Where the link goes: an app path (`/orders/ord_1`) for the router, or an absolute URL (`https:`, `mailto:`).",
+          "name": "href",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Whether the link is inert: not focusable, not pressable, announced as disabled. Defaults to false.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the link leaves the app: a new tab on web, the system browser on native, with the external mark.",
+          "name": "isExternal",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The semantic colour of the link text. Defaults to `default`, the theme's link colour.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "When the underline shows: `always` (default; required inside running text) or `hover` (standalone links).",
+          "name": "underline",
+          "required": false,
+          "source": "stackra",
+          "type": "\"always\" | \"hover\""
+        },
+        {
+          "description": "The accessible name when the visible content is not text (an icon-only link), or must be more specific.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What assistive technology hears for an external link. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "externalLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Animation configuration for scale and highlight feedback",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "AnimationRoot<{ scale?: PressableFeedbackScaleAnimation; highlight?: PressableFeedbackHighlightAnimation; }>"
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges press behavior and animated scale onto the single child (Slot pattern).\nThe child must be one React element. Uses `Animated.createAnimatedComponent(Slot.Pressable)` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the button surface.\n- `undefined` (default): renders `Button.Background` for the `secondary`\n  and `tertiary` variants when the active library theme registers\n  default background content (e.g. `glass`); otherwise no layer\n- custom node: replaces the default layer entirely\n- `null`: removes the background layer",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'scale-highlight'",
+          "description": "Feedback variant that renders Scale + Highlight compound parts",
+          "name": "feedbackVariant",
+          "required": false,
+          "source": "heroui",
+          "type": "\"scale-highlight\""
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "false",
+          "description": "Whether the button displays an icon only (needed for correct layout)",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "'md'",
+          "description": "Size of the button",
+          "name": "size",
+          "required": false,
+          "source": "heroui",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Either view styles or a function that receives a boolean reflecting whether\nthe component is currently pressed and returns view styles.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...PressableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

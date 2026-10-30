@@ -1,0 +1,159 @@
+{
+  "generatedFrom": {
+    "hash": "cfea328ae5fef3b9",
+    "propsFiles": ["ui/src/native/progress-circle/progress-circle.props.ts"]
+  },
+  "importLine": "import { ProgressCircle } from \"@stackra/ui/native\";",
+  "key": "free/progress-circle",
+  "parts": [
+    {
+      "name": "ProgressCircle",
+      "props": [
+        {
+          "description": "How far along it is, from `minValue` to `maxValue`; a number outside the range is held to its nearest end. Left\nout, the indicator is indeterminate: the work is under way and its end is unknown.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The value that means nothing done yet. Defaults to 0.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The value that means done. Defaults to 100.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "md",
+          "description": "The thickness of a bar, or the diameter of a circle. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "accent",
+          "description": "The colour role of the fill; `default` is the foreground colour. Defaults to `accent`, as in HeroUI.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "The accessible name, for example \"Uploading invoices\". Required: an unnamed progress bar is a barrier for a screen\nreader user. A bar can also show it, see `isLabelVisible`.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken text of the value, for example \"3 of 12 files\", in place of the percentage. Left out, the percentage\nin the reader's locale is spoken. It is the shown text too when a bar's value is visible.",
+          "name": "valueLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

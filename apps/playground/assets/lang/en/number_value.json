@@ -1,0 +1,17 @@
+{
+  "summary": {
+    "revenue": "Revenue, October",
+    "orders": "Orders",
+    "growth": "Growth on September",
+    "export": "Export file"
+  },
+  "compact": {
+    "note": "Compact figures for a dashboard tile"
+  },
+  "arabic": {
+    "revenue": "الإيرادات، أكتوبر",
+    "orders": "الطلبات",
+    "growth": "النمو عن سبتمبر",
+    "export": "ملف التصدير"
+  }
+}

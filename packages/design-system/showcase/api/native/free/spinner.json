@@ -1,0 +1,181 @@
+{
+  "generatedFrom": {
+    "hash": "4c2e4c9494d3ebe6",
+    "heroDoc": "vendor/heroui/native/spinner.json",
+    "propsFiles": ["ui/src/native/spinner/spinner.props.ts"]
+  },
+  "importLine": "import { Spinner } from \"@stackra/ui/native\";",
+  "key": "free/spinner",
+  "parts": [
+    {
+      "animation": [
+        {
+          "description": "Disable animations while customizing properties",
+          "name": "state",
+          "required": false,
+          "source": "heroui",
+          "type": "'disabled' | 'disable-all' | boolean"
+        },
+        {
+          "default": "`FadeIn`<br/>`.duration(200)`<br/>`.easing(Easing.out(Easing.ease))`",
+          "description": "Custom entering animation",
+          "name": "entering.value",
+          "required": false,
+          "source": "heroui",
+          "type": "EntryOrExitLayoutType"
+        },
+        {
+          "default": "`FadeOut`<br/>`.duration(100)`",
+          "description": "Custom exiting animation",
+          "name": "exiting.value",
+          "required": false,
+          "source": "heroui",
+          "type": "EntryOrExitLayoutType"
+        }
+      ],
+      "extends": "Spinner",
+      "name": "Spinner",
+      "props": [
+        {
+          "default": "md",
+          "description": "The diameter: `sm` 16, `md` 24 or `lg` 32 pixels on both runtimes. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "accent",
+          "description": "The colour role it spins in; `default` is the foreground colour. Defaults to `accent`, as in HeroUI.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+        },
+        {
+          "description": "The spoken name, for example \"Loading orders\". Given, the spinner is announced as a status; left out, it is\nhidden from screen readers, so text beside it must say what is loading.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "SpinnerRootAnimation"
+        },
+        {
+          "default": "undefined",
+          "description": "Custom class name for the spinner",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

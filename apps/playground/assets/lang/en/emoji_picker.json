@@ -1,0 +1,7 @@
+{
+  "basics": {
+    "label": "Choose a reaction",
+    "chosen": "You picked {emoji}",
+    "none": "Nothing picked yet."
+  }
+}

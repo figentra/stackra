@@ -15,6 +15,7 @@
 // @covers sta-350:FR-173 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -24,7 +25,9 @@ const open = async (page: Page, scheme: string, locale: string, width = 1280) =>
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/single-column-layout?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Single column layout" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Single column layout", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -46,8 +49,9 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** A sample's box, by its `data-sample`. */
-const sample = (page: Page, name: string) => page.locator(`[data-sample="${name}"]`);
+/** A sample's box, by its `data-sample`, in the examples (the Stackra section draws the usage demo again, hidden). */
+const sample = (page: Page, name: string) =>
+  page.locator("#usage, #examples").locator(`[data-sample="${name}"]`);
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES) {
@@ -62,7 +66,10 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await page.getByRole("button", { name: "Add a section" }).click();
+      // The demo speaks the page's language (`assets/lang/<locale>/single_column_layout.json`).
+      await page
+        .getByRole("button", { name: locale === "en" ? "Add a section" : "إضافة قسم" })
+        .click();
       await expect(sample(page, "live").getByRole("heading", { level: 3 })).toHaveCount(3);
       await expectAxeClean(page);
     });
@@ -79,8 +86,9 @@ test("the stacked sections share one column, in order, with the layout's gap bet
   page,
 }) => {
   await open(page, "light", "en");
+  // The demos load lazily: wait for the sections before reading them.
+  await expect(sample(page, "stacked").getByRole("region")).toHaveCount(3);
   const regions = await sample(page, "stacked").getByRole("region").all();
-  expect(regions).toHaveLength(3);
   const boxes = [] as { x: number; y: number; width: number; height: number }[];
   for (const region of regions) boxes.push(await boxOf(region));
   for (let index = 1; index < boxes.length; index += 1) {
@@ -97,7 +105,7 @@ test("the child wider than the column scrolls inside it and can be scrolled from
   page,
 }) => {
   await open(page, "light", "en");
-  const scroller = page.locator('[data-sample="wide-scroller"]');
+  const scroller = sample(page, "wide-scroller");
   const metrics = await scroller.evaluate((element) => ({
     scrollWidth: element.scrollWidth,
     clientWidth: element.clientWidth,
@@ -135,14 +143,14 @@ test("the live layout's buttons add sections from the keyboard and the page repo
 }) => {
   await open(page, "light", "en");
   const live = sample(page, "live");
-  await expect(page.locator('[data-sample="live-status"]')).toHaveText("2 sections.");
+  await expect(sample(page, "live-status")).toHaveText("2 sections.");
   const add = page.getByRole("button", { name: "Add a section" });
   await add.focus();
   await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
   await expect(live.getByRole("heading", { level: 3 })).toHaveCount(4);
-  await expect(page.locator('[data-sample="live-status"]')).toHaveText("4 sections.");
+  await expect(sample(page, "live-status")).toHaveText("4 sections.");
   await expect(add).toBeFocused();
   await page.getByRole("button", { name: "Remove a section" }).click();
-  await expect(page.locator('[data-sample="live-status"]')).toHaveText("3 sections.");
+  await expect(sample(page, "live-status")).toHaveText("3 sections.");
 });

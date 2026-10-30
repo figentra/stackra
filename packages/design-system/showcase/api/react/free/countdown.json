@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "b282d666ce57f9da",
+    "propsFiles": ["ui/src/react/countdown/countdown.props.ts"]
+  },
+  "importLine": "import { Countdown } from \"@stackra/ui/react\";",
+  "key": "free/countdown",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called once when a countdown reaches zero.",
+          "name": "onComplete",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "Countdown",
+      "props": [
+        {
+          "description": "`countdown` (the default) to `to`, or `stopwatch` from `from`.",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"countdown\" | \"stopwatch\""
+        },
+        {
+          "description": "The moment a countdown ends.",
+          "name": "to",
+          "required": false,
+          "source": "stackra",
+          "type": "string | Date"
+        },
+        {
+          "description": "The moment a stopwatch counts from; defaults to when it first shows.",
+          "name": "from",
+          "required": false,
+          "source": "stackra",
+          "type": "string | Date"
+        },
+        {
+          "description": "False to stop the clock where it is. Defaults to true.",
+          "name": "isRunning",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What is being timed, for example \"Offer ends in\"; the timer's spoken name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,400 @@
+{
+  "generatedFrom": {
+    "hash": "f27b214741ac7a15",
+    "propsFiles": [
+      "ui/src/native/date-field/date-field.props.ts",
+      "ui/src/native/date-field/date-input-picker.props.ts",
+      "ui/src/native/date-field/date-input.props.ts"
+    ]
+  },
+  "importLine": "import { DateField } from \"@stackra/ui/native\";",
+  "key": "free/date-field",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: CalendarDate | null) => void"
+        }
+      ],
+      "name": "DateField",
+      "props": [
+        {
+          "default": "primary",
+          "description": "The look of the field: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to fill the parent's width, false to size to the content. Defaults to true.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The earliest day the field accepts; an earlier one is invalid and the calendar refuses it.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The latest day the field accepts; a later one is invalid and the calendar refuses it.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "Whether a day is refused, for example a closed day; such a day shows as unavailable and is invalid when typed.",
+          "name": "isDateUnavailable",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => boolean"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The field's accessible name when the label is not a string.",
+          "name": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root, as on web.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "A test ID forwarded to the native view.\nNote: on Android dialog presentation, the test ID is not forwarded.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...DateTimePickerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "DateTimePickerProps"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: CalendarDate | null) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "DateInput",
+      "props": [
+        {
+          "description": "The spoken name of the button that opens the calendar, for example \"Choose the due date\". Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "calendarButtonLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The calendar the day is shown in: `islamic-umalqura` for the Hijri calendar a Saudi market pack sets. Defaults to\n`gregory`. The value stays a Gregorian `CalendarDate` either way.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "One-day shortcuts beside the calendar (Today, Yesterday, Tomorrow, …); left out, none. Pass `DatePreset` for all.",
+          "name": "presets",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"today\" | \"yesterday\" | \"tomorrow\" | \"in_7_days\" | \"start_of_month\" | \"end_of_month\")[]"
+        },
+        {
+          "description": "The day the presets count from; defaults to today.",
+          "name": "today",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "default": "primary",
+          "description": "The look of the field: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to fill the parent's width, false to size to the content. Defaults to true.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The earliest day the field accepts; an earlier one is invalid and the calendar refuses it.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The latest day the field accepts; a later one is invalid and the calendar refuses it.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "Whether a day is refused, for example a closed day; such a day shows as unavailable and is invalid when typed.",
+          "name": "isDateUnavailable",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => boolean"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The input's accessible name when the label is not a string.",
+          "name": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root, as on web.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "A test ID forwarded to the native view.\nNote: on Android dialog presentation, the test ID is not forwarded.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...DateTimePickerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "DateTimePickerProps"
+        }
+      ]
+    },
+    {
+      "name": "DateInputPicker",
+      "props": [
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "A test ID forwarded to the native view.\nNote: on Android dialog presentation, the test ID is not forwarded.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...DateTimePickerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "DateTimePickerProps"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

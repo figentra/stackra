@@ -1,0 +1,148 @@
+{
+  "generatedFrom": {
+    "hash": "2f0333b708da3e92",
+    "propsFiles": [
+      "ui/src/react/number-value/bytes-value.props.ts",
+      "ui/src/react/number-value/money-value.props.ts",
+      "ui/src/react/number-value/number-value.props.ts",
+      "ui/src/react/number-value/percent-value.props.ts"
+    ]
+  },
+  "importLine": "import { NumberValue } from \"@stackra/ui/react\";",
+  "key": "free/number-value",
+  "parts": [
+    {
+      "name": "NumberValue",
+      "props": [
+        {
+          "description": "The number.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How it is written: grouping, fraction digits, compact notation, a unit.",
+          "name": "options",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "PercentValue",
+      "props": [
+        {
+          "description": "The share, where 1 is 100%.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The most fraction digits; defaults to 0.",
+          "name": "fractionDigits",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True to always show the sign, for a change such as \"+4%\".",
+          "name": "showSign",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "BytesValue",
+      "props": [
+        {
+          "description": "The size, in bytes.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "`decimal` steps by 1000 (the default, as storage is sold); `binary` by 1024 (as memory is).",
+          "name": "base",
+          "required": false,
+          "source": "stackra",
+          "type": "\"binary\" | \"decimal\""
+        },
+        {
+          "description": "The most fraction digits; defaults to 1.",
+          "name": "fractionDigits",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MoneyValue",
+      "props": [
+        {
+          "description": "The amount, in major units.",
+          "name": "amount",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The ISO 4217 code, such as \"SAR\" or \"AED\".",
+          "name": "currency",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`symbol` (the default), `narrowSymbol`, `code` or `name`.",
+          "name": "currencyDisplay",
+          "required": false,
+          "source": "stackra",
+          "type": "\"symbol\" | \"code\" | \"name\" | \"narrowSymbol\""
+        },
+        {
+          "description": "True for a compact amount, such as \"SAR 1.2M\".",
+          "name": "isCompact",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -10,7 +10,7 @@
 // @vitest-environment jsdom
 // @covers sta-350:FR-052 sta-350:FR-012 sta-350:FR-013 sta-350:FR-014 sta-350:P-008 sta-350:P-009 sta-350:P-013
 import { defineIconRegistry } from "@stackra/icons";
-import type { IconComponent, IconComponentProps } from "@stackra/icons/contracts";
+import type { IconComponent, IconComponentProps, IconName } from "@stackra/icons/contracts";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { render as renderBare, screen } from "@testing-library/react";
 import { ChevronRight, Search, ShoppingCart, type LucideIcon } from "lucide-react";
@@ -49,10 +49,10 @@ const svgOf = (container: HTMLElement) => {
 };
 
 /** The `transform` an icon draws under a locale, with or without the mirror flag. */
-const view = (locale: string, isMirroredInRtl: boolean) => {
+const view = (locale: string, isMirroredInRtl?: boolean, name: IconName = "chevron-right") => {
   const { container, unmount } = render(
     <I18nProvider locale={locale}>
-      <Icon name="chevron-right" isMirroredInRtl={isMirroredInRtl} />
+      <Icon name={name} isMirroredInRtl={isMirroredInRtl} />
     </I18nProvider>,
   );
   const transform = svgOf(container).style.transform;
@@ -105,6 +105,12 @@ describe("Icon (web)", () => {
     expect(view("ar", true)).toBe("scaleX(-1)");
     expect(view("en", true)).toBe("");
     expect(view("ar", false)).toBe("");
+  });
+
+  it("mirrors a directional icon by default and leaves a symmetric one alone", () => {
+    expect(view("ar")).toBe("scaleX(-1)");
+    expect(view("en")).toBe("");
+    expect(view("ar", undefined, "search")).toBe("");
   });
 
   it("keeps the caller's style and puts the mirror after it", () => {

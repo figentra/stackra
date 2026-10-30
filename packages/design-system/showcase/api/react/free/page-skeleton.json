@@ -1,0 +1,87 @@
+{
+  "generatedFrom": {
+    "hash": "ccbf720317f715e3",
+    "propsFiles": ["ui/src/react/page-skeleton/page-skeleton.props.ts"]
+  },
+  "importLine": "import { PageSkeleton } from \"@stackra/ui/react\";",
+  "key": "free/page-skeleton",
+  "parts": [
+    {
+      "name": "PageSkeleton",
+      "props": [
+        {
+          "default": "page",
+          "description": "The shape of the page being loaded: `page`, `table`, `section` or `form`. Defaults to `page`.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"form\" | \"section\" | \"table\" | \"page\""
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\". Required: it is read once while the page loads.",
+          "name": "loadingLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How the placeholder moves while loading; defaults to `shimmer`, or to the enclosing group's animation.",
+          "name": "animationType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"shimmer\" | \"pulse\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

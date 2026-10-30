@@ -14,6 +14,8 @@
 // @covers sta-350:FR-151 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -30,7 +32,9 @@ const open = async (
 ) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion });
   await page.goto(`/page-skeleton?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Page skeleton" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Page skeleton", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -59,9 +63,14 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      const live = page.getByRole("region", { name: "Loading to content" });
-      await live.getByRole("button", { name: "Reload orders" }).click();
-      await expect(live.getByRole("status")).toHaveText("Loading orders");
+      const live = example(page, "live");
+      // The demo speaks the page's language (`assets/lang/<locale>/page_skeleton.json`).
+      const words: readonly [string, string] =
+        locale === "en"
+          ? ["Reload orders", "Loading orders"]
+          : ["إعادة تحميل الطلبات", "جارٍ تحميل الطلبات"];
+      await live.getByRole("button", { name: words[0] }).click();
+      await expect(live.getByRole("status")).toHaveText(words[1]);
       await expectAxeClean(page);
     });
   }
@@ -69,16 +78,14 @@ for (const scheme of SCHEMES)
 for (const [layout, count] of Object.entries(BONES))
   test(`the ${layout} layout draws ${count} bones`, async ({ page }) => {
     await open(page, "light", "en");
-    const skeleton = page
-      .getByRole("region", { name: "Layouts" })
-      .locator(`[data-layout="${layout}"]`);
+    const skeleton = example(page, "usage").locator(`[data-layout="${layout}"]`);
     await expect(skeleton.locator(".skeleton")).toHaveCount(count);
   });
 
 for (const locale of LOCALES)
   test(`every bone sits inside its skeleton in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const skeletons = page.getByRole("region", { name: "Layouts" }).locator("[data-layout]");
+    const skeletons = example(page, "usage").locator("[data-layout]");
     for (const skeleton of await skeletons.all()) {
       const rootBox = await skeleton.boundingBox();
       if (!rootBox) throw new Error("a skeleton has no box");
@@ -96,9 +103,7 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const bones = page
-      .getByRole("region", { name: "Layouts" })
-      .locator('[data-layout="page"] .skeleton');
+    const bones = example(page, "usage").locator('[data-layout="page"] .skeleton');
     const title = await bones.nth(0).boundingBox();
     const action = await bones.nth(1).boundingBox();
     if (!title || !action) throw new Error("a bone has no box");
@@ -107,7 +112,7 @@ for (const locale of LOCALES)
 
 test("every skeleton is named once by one status, and its bones say nothing", async ({ page }) => {
   await open(page, "light", "en");
-  const layouts = page.getByRole("region", { name: "Layouts" });
+  const layouts = example(page, "usage");
   await expect(layouts.getByRole("status")).toHaveCount(4);
   for (const layout of Object.keys(BONES))
     await expect(layouts.locator(`[data-layout="${layout}"]`).getByRole("status")).toHaveText(
@@ -133,7 +138,7 @@ test("the live sample goes from a named table skeleton back to its content, the 
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Loading to content" });
+  const live = example(page, "live");
   const demo = live.getByRole("group", { name: "Orders demo" });
   const reload = live.getByRole("button", { name: "Reload orders" });
   await expect(demo.getByRole("listitem")).toHaveCount(4);

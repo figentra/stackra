@@ -1,0 +1,240 @@
+{
+  "slug": "slider",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(controls)/slider.mdx",
+  "parts": [
+    {
+      "name": "Slider",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the slider"
+        },
+        {
+          "name": "value",
+          "type": "number | number[]",
+          "description": "Current slider value (controlled mode)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "number | number[]",
+          "default": "0",
+          "description": "Default slider value (uncontrolled mode)"
+        },
+        {
+          "name": "minValue",
+          "type": "number",
+          "default": "0",
+          "description": "Minimum value of the slider"
+        },
+        {
+          "name": "maxValue",
+          "type": "number",
+          "default": "100",
+          "description": "Maximum value of the slider"
+        },
+        {
+          "name": "step",
+          "type": "number",
+          "default": "1",
+          "description": "Step increment for the slider"
+        },
+        {
+          "name": "formatOptions",
+          "type": "Intl.NumberFormatOptions",
+          "description": "Number format options for value label formatting"
+        },
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'horizontal'",
+          "description": "Orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the slider is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration for the slider"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: number | number[]) => void",
+          "description": "Callback fired when the slider value changes during interaction"
+        },
+        {
+          "name": "onChangeEnd",
+          "type": "(value: number | number[]) => void",
+          "description": "Callback fired when an interaction completes (drag end or tap)"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "state",
+          "type": "SliderState",
+          "description": "Current slider state"
+        },
+        {
+          "name": "orientation",
+          "type": "SliderOrientation",
+          "description": "Orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the slider is disabled"
+        }
+      ]
+    },
+    {
+      "name": "Slider.Output",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: SliderRenderProps) => React.ReactNode)",
+          "description": "Custom content or render function receiving slider state. Defaults to formatted value label"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Slider.Track",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: SliderRenderProps) => React.ReactNode)",
+          "description": "Content or render function receiving slider state for dynamic thumb rendering"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "hitSlop",
+          "type": "number",
+          "default": "8",
+          "description": "Extra touch area around the track"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Slider.Fill",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Slider.Thumb",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom thumb content. Defaults to an animated knob"
+        },
+        {
+          "name": "index",
+          "type": "number",
+          "default": "0",
+          "description": "Index of this thumb within the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether this individual thumb is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the thumb container"
+        },
+        {
+          "name": "classNames",
+          "type": "ElementSlots<ThumbSlots>",
+          "description": "Additional CSS classes for thumb slots"
+        },
+        {
+          "name": "styles",
+          "type": "Partial<Record<ThumbSlots, ViewStyle>>",
+          "description": "Inline styles for thumb slots"
+        },
+        {
+          "name": "hitSlop",
+          "type": "number",
+          "default": "12",
+          "description": "Extra touch area around the thumb"
+        },
+        {
+          "name": "animation",
+          "type": "SliderThumbAnimation",
+          "description": "Animation configuration for the thumb knob"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[1, 0.9]",
+          "description": "Scale values [idle, dragging]"
+        },
+        {
+          "name": "scale.springConfig",
+          "type": "WithSpringConfig",
+          "default": "{ damping: 15, stiffness: 200, mass: 0.5 }",
+          "description": "Spring animation configuration for scale effect"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useSlider",
+      "signature": "useSlider()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

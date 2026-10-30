@@ -1,0 +1,58 @@
+{
+  "generatedFrom": {
+    "hash": "f712189a510af7db",
+    "propsFiles": ["ui/src/native/timeline-chart/timeline-chart.props.ts"]
+  },
+  "importLine": "import { TimelineChart } from \"@stackra/ui/native\";",
+  "key": "free/timeline-chart",
+  "parts": [
+    {
+      "name": "TimelineChart",
+      "props": [
+        {
+          "description": "The lanes, top to bottom.",
+          "name": "rows",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TimelineRow[]"
+        },
+        {
+          "description": "The tasks; a lane may hold several, side by side in time.",
+          "name": "tasks",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TimelineTask[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Launch plan, Q4\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Draws a dashed \"Today\" line on this ISO date when it falls in the span.",
+          "name": "today",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How the task dates are written in the table and the readout; `{ day: \"numeric\", month: \"short\" }` by default.",
+          "name": "dateFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "DateTimeFormatOptions"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

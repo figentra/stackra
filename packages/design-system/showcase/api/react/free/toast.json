@@ -1,0 +1,206 @@
+{
+  "generatedFrom": {
+    "hash": "97bb9d2867752003",
+    "heroDoc": "vendor/heroui/react/toast.json",
+    "propsFiles": [
+      "ui/src/react/toast/toast-item.props.ts",
+      "ui/src/react/toast/toast-provider.props.ts"
+    ]
+  },
+  "importLine": "import { toast } from \"@stackra/ui/react\";",
+  "key": "free/toast",
+  "parts": [
+    {
+      "name": "toast",
+      "props": [
+        {
+          "description": "The queued toast to draw, with its content as `toast()` stored it.",
+          "name": "toast",
+          "required": true,
+          "source": "stackra",
+          "type": "QueuedToast<ToastContentValue>"
+        },
+        {
+          "description": "The accessible name of the dismiss button.",
+          "name": "dismissLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "alert",
+          "description": "The look the provider gives every toast. Defaults to `alert`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"alert\" | \"bar\" | \"flip-bar\" | \"bubble\""
+        }
+      ]
+    },
+    {
+      "name": "toast.Item",
+      "props": []
+    },
+    {
+      "name": "toast.Provider",
+      "props": []
+    },
+    {
+      "name": "ToastProvider",
+      "props": [
+        {
+          "description": "The accessible name of every toast's dismiss button in the app's language, for example \"Dismiss notification\".",
+          "name": "dismissLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "bottom",
+          "description": "The screen edge toasts appear against. Defaults to `bottom`.",
+          "name": "position",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that edge: the inline `start`, the `center`, the inline `end` or `full` width. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\" | \"full\""
+        },
+        {
+          "default": "alert",
+          "description": "The look of every toast: `alert`, `bar`, `flip-bar` or `bubble`. Defaults to `alert`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"alert\" | \"bar\" | \"flip-bar\" | \"bubble\""
+        },
+        {
+          "default": "12",
+          "description": "The gap between toasts in pixels.",
+          "name": "gap",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "[\"altKey\", \"KeyT\"]",
+          "description": "Hotkey that focuses the toast region. Modifiers match KeyboardEvent boolean props, other keys match event.code. Modifiers left out must be up, so Alt+T does not fire on Ctrl+Alt+T. Pass [] to disable.",
+          "name": "hotkey",
+          "required": false,
+          "source": "heroui",
+          "type": "string[]"
+        },
+        {
+          "default": "false",
+          "description": "Keeps the stack in its expanded layout instead of expanding only on\nhover or keyboard focus. Forced expansion does not pause toast timers.",
+          "name": "isExpanded",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "3",
+          "description": "The maximum number of toasts to display at a time (visual only).",
+          "name": "maxVisibleToasts",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "0.05",
+          "description": "How much each toast behind the front one scales down.",
+          "name": "scaleFactor",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "460",
+          "description": "The width of the toast; numbers are pixels.",
+          "name": "width",
+          "required": false,
+          "source": "heroui",
+          "type": "string | number"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'Notifications'",
+          "description": "An accessibility label for the toast region.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-ToastRegion'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<ToastRegionRenderProps<ToastContentValue>>"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"div\", ToastRegionRenderProps<ToastContentValue>>"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<ToastRegionRenderProps<ToastContentValue>>"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

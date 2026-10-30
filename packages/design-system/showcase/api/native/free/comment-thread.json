@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "be13063b52253fb6",
+    "propsFiles": ["ui/src/native/comment-thread/comment-thread.props.ts"]
+  },
+  "importLine": "import { CommentThread } from \"@stackra/ui/native\";",
+  "key": "free/comment-thread",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the reply's text and the ids of the people it mentions.",
+          "name": "onReply",
+          "required": false,
+          "source": "stackra",
+          "type": "(body: string, mentions: readonly string[]) => void"
+        },
+        {
+          "description": "Called with the new resolved state; no resolve button without it.",
+          "name": "onResolvedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isResolved: boolean) => void"
+        }
+      ],
+      "name": "CommentThread",
+      "props": [
+        {
+          "description": "",
+          "name": "comments",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly CommentItem[]"
+        },
+        {
+          "description": "The people `@` can mention.",
+          "name": "people",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly CommentPerson[]"
+        },
+        {
+          "description": "",
+          "name": "isResolved",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The thread's accessible name, such as \"Comments on line 3\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

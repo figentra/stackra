@@ -1,0 +1,28 @@
+{
+  "basics_label": "إجراءات الطلب 1001",
+  "basics_caption": "تُفتح عند نهاية الزر",
+  "size": "المقاس {size}",
+  "variant_label": "الإجراءات، {variant}",
+  "icon_label": "خيارات إضافية",
+  "icon_caption": "نقاط حذف رأسية",
+  "placement_default_label": "الإجراءات، الموضع الافتراضي",
+  "placement_default_caption": "الافتراضي: أسفل، النهاية",
+  "placement_top_label": "الإجراءات، في الأعلى",
+  "placement_top_caption": "placement=\"top\" align=\"start\"",
+  "disabled_label": "الإجراءات، غير متاحة",
+  "disabled_caption": "معطل",
+  "row_title": "الطلب 1001",
+  "open_order": "فتح الطلب",
+  "row_opened": "{count, plural, zero {لم يُفتح الصف بعد.} one {فُتح الصف مرة واحدة.} two {فُتح الصف مرتين.} few {فُتح الصف # مرات.} many {فُتح الصف # مرة.} other {فُتح الصف # مرة.}}",
+  "last_action": "آخر إجراء: {key, select, none {لا شيء} other {{key}}}",
+  "sample": {
+    "edit": "تعديل",
+    "rename": "إعادة تسمية",
+    "duplicate": "تكرار",
+    "make_a_copy_of_the": "إنشاء نسخة من الطلب",
+    "danger_zone": "منطقة الخطر",
+    "archive": "أرشفة",
+    "delete": "حذف",
+    "paid_orders_cannot_be_archived": "لا يمكن أرشفة الطلبات المدفوعة"
+  }
+}

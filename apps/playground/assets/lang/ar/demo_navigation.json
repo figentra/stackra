@@ -1,0 +1,15 @@
+{
+  "brand": "أكمي",
+  "workspace": "مساحة العمل",
+  "navigation": "تنقل مساحة العمل",
+  "account": "تنقل الحساب",
+  "items": {
+    "dashboard": "لوحة المعلومات",
+    "orders": "الطلبات",
+    "customers": "العملاء",
+    "reports": "التقارير",
+    "reports_overview": "نظرة عامة",
+    "reports_revenue": "الإيرادات",
+    "settings": "الإعدادات"
+  }
+}

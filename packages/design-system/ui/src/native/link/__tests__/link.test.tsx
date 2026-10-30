@@ -15,7 +15,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { LinkContractProps } from "#contracts/types/link-contract-props.type";
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { NATIVE_TONE_CLASS_NAME } from "#core/constants/native-tone-class-name.constant";
 import { Link } from "#native/link/link";
 import type { LinkProps } from "#native/link/link.props";
 import { RouterProvider } from "#native/router-provider/router-provider";
@@ -45,9 +45,11 @@ vi.mock("heroui-native", () => {
       hitSlop,
       size,
       testID,
+      className,
     }: Record<string, unknown> & { children?: ReactNode }) => (
       <button
         type="button"
+        data-class={className as string | undefined}
         data-testid={String(testID ?? "link")}
         data-role={String(accessibilityRole)}
         aria-label={accessibilityLabel as string | undefined}
@@ -92,7 +94,18 @@ describe("Link (native)", () => {
 
   it.each(Enum.values(Tone))("paints the %s tone", (tone) => {
     render(<Link tone={tone}>Go</Link>);
-    expect(labelClass()).toContain(tone === "default" ? "text-link" : TONE_CLASS_NAME[tone]);
+    expect(labelClass()).toContain(tone === "default" ? "text-link" : NATIVE_TONE_CLASS_NAME[tone]);
+  });
+
+  it("starts its content at the reading edge, ahead of the caller's class", () => {
+    const { rerender } = render(<Link href="/a">Docs</Link>);
+    expect(screen.getByTestId("link").dataset["class"]).toBe("!justify-start");
+    rerender(
+      <Link href="/a" className="mt-2">
+        Docs
+      </Link>,
+    );
+    expect(screen.getByTestId("link").dataset["class"]).toBe("!justify-start mt-2");
   });
 
   it("drops the underline for hover", () => {
@@ -100,10 +113,10 @@ describe("Link (native)", () => {
     expect(labelClass()).toBe("text-link");
   });
 
-  it("marks an external link with a hint and a mirrored small icon, and a custom hint replaces the default", () => {
+  it("marks an external link with a hint and a small icon (mirrored by Icon itself), and a custom hint replaces the default", () => {
     const { rerender } = render(<Link isExternal>Docs</Link>);
     expect(screen.getByTestId("link").dataset["hint"]).toBe("opens in your browser");
-    expect(native.icon).toMatchObject({ size: "sm", isMirroredInRtl: true });
+    expect(native.icon).toMatchObject({ size: "sm" });
     rerender(
       <Link isExternal externalLabel="öffnet den Browser">
         Docs

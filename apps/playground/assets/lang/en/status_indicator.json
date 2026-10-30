@@ -1,0 +1,20 @@
+{
+  "draft": "Draft",
+  "scheduled": "Scheduled",
+  "ready": "Ready",
+  "waiting": "Waiting",
+  "late": "Late",
+  "ticket": "Ticket #{id}",
+  "minutes": "{count, plural, one {# min} other {# min}}",
+  "shawarma": "2 × Chicken shawarma",
+  "falafel": "1 × Falafel plate",
+  "latte": "3 × Spanish latte",
+  "kunafa": "1 × Kunafa",
+  "table": "Table {n}",
+  "free": "Free",
+  "seated": "Seated",
+  "bill": "Bill requested",
+  "cleaning": "Cleaning",
+  "overdue": "Waiting for 25 min",
+  "caption": "Dining room tables"
+}

@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "018c0a036c147aa6",
+    "propsFiles": ["ui/src/native/theme-bars/theme-status-bar.props.ts"]
+  },
+  "importLine": "import { ThemeStatusBar } from \"@stackra/ui/native\";",
+  "key": "free/theme-bars",
+  "parts": [
+    {
+      "name": "ThemeStatusBar",
+      "props": [
+        {
+          "description": "The colour under the status bar when it is not the theme's background (a screen whose top is a dark or light\nhero): the content follows this colour's lightness instead.",
+          "name": "over",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Whether this bar speaks now (a screen's override only while it is focused); true by default.",
+          "name": "isActive",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

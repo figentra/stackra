@@ -17,8 +17,13 @@ import type { FieldContractProps } from "#contracts/types/field-contract-props.t
 export interface RadioGroupContractProps extends FieldContractProps<string> {
   /** The radios, in the order they are drawn; the group's value is the `value` of the one chosen. */
   readonly options: readonly ChoiceOption[];
-  /** `vertical` stacks the options, `horizontal` puts them in a wrapping row. Defaults to `vertical`. */
+  /** `vertical` stacks the options, `horizontal` puts them in a wrapping row under the label. Defaults to `vertical`. */
   readonly orientation?: Orientation | undefined;
+  /**
+   * Lays the options out in this many equal columns, under the label (the label, description and error never take a
+   * cell). Left out, the options stack (or wrap in a row, with `orientation="horizontal"`).
+   */
+  readonly columns?: number | undefined;
   /** The look of every radio in the group; left out, each runtime picks the one that suits where it sits. */
   readonly variant?: ControlVariant | undefined;
 }

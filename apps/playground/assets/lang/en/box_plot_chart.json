@@ -1,0 +1,8 @@
+{
+  "delivery_title": "Delivery time by city",
+  "delivery_description": "Minutes from order to door, last 30 days",
+  "riyadh": "Riyadh",
+  "jeddah": "Jeddah",
+  "dammam": "Dammam",
+  "makkah": "Makkah"
+}

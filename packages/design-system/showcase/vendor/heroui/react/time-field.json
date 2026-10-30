@@ -1,0 +1,131 @@
+{
+  "slug": "time-field",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(date-and-time)/time-field.mdx",
+  "parts": [
+    {
+      "name": "TimeFieldRenderProps",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the field is disabled."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the field is currently invalid."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the field is read-only."
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the field is currently focused."
+        },
+        {
+          "name": "isFocusWithin",
+          "type": "boolean",
+          "description": "Whether any child element is focused."
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether focus is visible (keyboard navigation)."
+        }
+      ]
+    },
+    {
+      "name": "TimeField.Group",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        }
+      ]
+    },
+    {
+      "name": "TimeField.Input",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        }
+      ]
+    },
+    {
+      "name": "TimeField.Segment",
+      "props": [
+        {
+          "name": "segment",
+          "type": "DateSegment",
+          "description": "The date segment object from the TimeField.Input render prop."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        }
+      ]
+    },
+    {
+      "name": "TimeField.Prefix",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content to display in the prefix slot."
+        }
+      ]
+    },
+    {
+      "name": "TimeField.Suffix",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content to display in the suffix slot."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".time-field",
+      "description": "Root container with minimal styling (`flex flex-col gap-1`)"
+    }
+  ]
+}

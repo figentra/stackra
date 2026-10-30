@@ -1,0 +1,166 @@
+{
+  "generatedFrom": {
+    "hash": "16947cbdeca5c859",
+    "propsFiles": ["ui/src/native/page-skeleton/page-skeleton.props.ts"]
+  },
+  "importLine": "import { PageSkeleton } from \"@stackra/ui/native\";",
+  "key": "free/page-skeleton",
+  "parts": [
+    {
+      "name": "PageSkeleton",
+      "props": [
+        {
+          "default": "page",
+          "description": "The shape of the page being loaded: `page`, `table`, `section` or `form`. Defaults to `page`.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"form\" | \"section\" | \"table\" | \"page\""
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\". Required: it is read once while the page loads.",
+          "name": "loadingLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How the placeholder moves while loading; defaults to `shimmer`, or to the enclosing group's animation.",
+          "name": "animationType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"shimmer\" | \"pulse\""
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "SkeletonRootAnimation"
+        },
+        {
+          "description": "Additional CSS classes for styling",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active\nWhen `false`, the animated style is removed and you can implement custom logic\nThis prop should only be used when you want to write custom styling logic instead of the default animated styles",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "false",
+          "description": "When true, hides the entire group when isLoading is false.\nUse this to prevent layout issues when skeleton contains wrapper elements.",
+          "name": "isSkeletonOnly",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Style for the skeleton group container",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

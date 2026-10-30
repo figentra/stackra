@@ -1,0 +1,43 @@
+{
+  "slug": "separator",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(layout)/separator.mdx",
+  "parts": [
+    {
+      "name": "Separator",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'thin' | 'thick'",
+          "default": "'thin'",
+          "description": "Variant style of the separator"
+        },
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'horizontal'",
+          "description": "Orientation of the separator"
+        },
+        {
+          "name": "thickness",
+          "type": "number",
+          "default": "undefined",
+          "description": "Custom thickness in pixels. Controls height for horizontal or width for vertical orientation"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

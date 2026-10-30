@@ -233,7 +233,13 @@
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
   // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
   // dist/ is build output (the tooling presets ship tsc-emitted JS and .d.ts); knip checks the src it is built from.
-  "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**", "**/dist/**"],
+  // A hook's `*.returns.ts` is read by path by the showcase API generator (gen-api.ts), not imported.
+  "ignore": [
+    "tools/scaffold/templates/**",
+    "**/__tests__/fixtures/**",
+    "**/dist/**",
+    "packages/design-system/ui/src/**/*.returns.ts",
+  ],
   // Unlisted dependencies in gen's output only (stackra-247, ADR 0295 decision 5, ADR 0261): gen's
   // generated_dependency_missing and schema_dependency_missing already hold every @stackra/* (and a schemas file's
   // zod) import there, and the wiring leaves out a driver's constructor tokens from a library the member does not

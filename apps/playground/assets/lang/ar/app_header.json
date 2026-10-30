@@ -1,0 +1,31 @@
+{
+  "all": "كل الأجزاء",
+  "title_only": "عنوان فقط",
+  "logo": "شعار بدل العنوان",
+  "no_actions": "البحث وقائمة المستخدم",
+  "long": "العنوان الطويل يُختصر",
+  "long_title": "أكمي لخدمات التوزيع والتنفيذ بالجملة الدولية",
+  "brand": "Acme",
+  "open_navigation": "فتح التنقل",
+  "search_label": "البحث في الطلبات",
+  "search_placeholder": "البحث في الطلبات",
+  "notifications": "الإشعارات، {unread} غير مقروءة",
+  "account_label": "قائمة الحساب",
+  "profile": "الملف الشخصي",
+  "settings": "الإعدادات",
+  "sign_out": "تسجيل الخروج",
+  "search_status": "{query, select, none {لا بحث بعد.} other {البحث عن «{query}».}}",
+  "unread_status": "{unread, plural, zero {لا إشعارات غير مقروءة.} one {إشعار واحد غير مقروء.} two {إشعاران غير مقروءين.} few {# إشعارات غير مقروءة.} many {# إشعارًا غير مقروء.} other {# إشعار غير مقروء.}}",
+  "action_status": "{action, select, none {لم يُختر إجراء للحساب.} other {إجراء الحساب المختار: {action}.}}",
+  "arabic_brand": "أكمي",
+  "arabic_open_navigation": "فتح التنقل",
+  "arabic_search_label": "البحث في الطلبات",
+  "arabic_notifications": "الإشعارات",
+  "arabic_account_label": "قائمة الحساب",
+  "arabic_profile": "الملف الشخصي",
+  "arabic_sign_out": "تسجيل الخروج",
+  "sample": {
+    "account": "الحساب",
+    "session": "الجلسة"
+  }
+}

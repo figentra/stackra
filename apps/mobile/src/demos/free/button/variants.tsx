@@ -1,0 +1,39 @@
+/**
+ * Stackra file contract:
+ * Purpose: the "variants" demo of the native Button: every variant in every size, one row per size.
+ * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
+ * Runtime: react-native
+ * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).
+ */
+import { ButtonVariant, Size } from "@stackra/ui/contracts";
+import { Button, Heading, useCatalogueText } from "@stackra/ui/native";
+import { View } from "react-native";
+
+import { BUTTON_KEYS } from "#src/constants/button-keys.constant";
+import { MESSAGES } from "#src/constants/messages.constant";
+
+/** The demo's keys. */
+const K = BUTTON_KEYS.button.variants;
+
+/** Every variant in every size. */
+export default function Variants() {
+  const t = useCatalogueText(MESSAGES.en);
+  return (
+    <View className="gap-4">
+      {Size.map((size) => (
+        <View key={size} className="gap-2">
+          <Heading level={3} type="h6">
+            {t(K.size, { size })}
+          </Heading>
+          <View className="flex-row flex-wrap gap-2">
+            {ButtonVariant.map((variant) => (
+              <Button key={variant} variant={variant} size={size}>
+                {variant}
+              </Button>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}

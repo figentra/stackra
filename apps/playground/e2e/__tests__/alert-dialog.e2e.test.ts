@@ -16,6 +16,8 @@
 // @covers sta-350:FR-105 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -24,16 +26,29 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/alert-dialog?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Alert dialog" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Alert dialog", locale) }),
+  ).toBeVisible();
 };
 
-/** Opens the dialog of a sample by its button and waits for the dialog, named by its title. */
-const openDialog = async (page: Page, trigger: string, title: string) => {
-  await page.getByRole("button", { name: trigger, exact: true }).click();
+/** Opens the dialog of a sample by its button in the example `id` and waits for the dialog, named by its title. */
+const openDialog = async (page: Page, trigger: string, title: string, id = "usage") => {
+  await example(page, id).getByRole("button", { name: trigger, exact: true }).click();
   const dialog = page.getByRole("alertdialog", { name: title });
   await expect(dialog).toBeVisible();
   return dialog;
 };
+
+/** Opens the danger sample, the fifth of Usage, by position: the Arabic page translates its words. */
+const openDanger = async (page: Page) => {
+  await example(page, "usage").getByRole("listitem").nth(4).getByRole("button").click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toBeVisible();
+  return dialog;
+};
+
+/** The status line of an example, where its last answer is reported. */
+const statusOf = (page: Page, id: string) => example(page, id).getByRole("status");
 
 const expectNothing = async (page: Page, include?: string) => {
   const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
@@ -57,7 +72,7 @@ for (const scheme of SCHEMES)
 
     test(`axe finds nothing inside an open dialog in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
-      await openDialog(page, "Danger tone", "Delete this project?");
+      await openDanger(page);
       await expectNothing(page, '[role="alertdialog"]');
     });
   }
@@ -90,12 +105,14 @@ test("focus starts on Cancel, stays inside on Tab, and returns to the opening bu
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("button", { name: "Danger tone", exact: true })).toBeFocused();
+  await expect(
+    example(page, "usage").getByRole("button", { name: "Danger tone", exact: true }),
+  ).toBeFocused();
 });
 
 test("Enter on the focused confirm button answers, and Cancel refuses", async ({ page }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
+  const status = statusOf(page, "usage");
   await expect(status).toHaveText("No answer yet.");
 
   const dialog = await openDialog(page, "Warning tone", "Close the project with open tasks?");
@@ -113,25 +130,24 @@ test("Enter on the focused confirm button answers, and Cancel refuses", async ({
 
 test("Escape refuses, and does nothing where it is disabled", async ({ page }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
   const dialog = await openDialog(page, "Success tone", "Mark the order as shipped?");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(status).toHaveText("Success tone: cancelled.");
+  await expect(statusOf(page, "usage")).toHaveText("Success tone: cancelled.");
 
-  const locked = await openDialog(page, "Escape disabled", "Accept the new terms?");
+  const locked = await openDialog(page, "Escape disabled", "Accept the new terms?", "dismissal");
   await page.keyboard.press("Escape");
   // A beat for a close that would be wrongly under way, then the dialog is still there.
   await page.waitForTimeout(300);
   await expect(locked).toBeVisible();
   await locked.getByRole("button", { name: "Decline" }).click();
   await expect(locked).toBeHidden();
-  await expect(status).toHaveText("Escape disabled: cancelled.");
+  await expect(statusOf(page, "dismissal")).toHaveText("Escape disabled: cancelled.");
 });
 
 test("a press outside answers only where it is turned on", async ({ page }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
+  const status = statusOf(page, "dismissal");
   const plain = await openDialog(page, "Danger tone", "Delete this project?");
   await page.mouse.click(4, 4);
   await page.waitForTimeout(300);
@@ -139,7 +155,12 @@ test("a press outside answers only where it is turned on", async ({ page }) => {
   await plain.getByRole("button", { name: "Keep project" }).click();
   await expect(plain).toBeHidden();
 
-  const dismissable = await openDialog(page, "Press outside answers", "Leave this team?");
+  const dismissable = await openDialog(
+    page,
+    "Press outside answers",
+    "Leave this team?",
+    "dismissal",
+  );
   await page.mouse.click(4, 4);
   await expect(dismissable).toBeHidden();
   await expect(status).toHaveText("Press outside answers: cancelled.");
@@ -162,21 +183,22 @@ test("every tone, an icon of its own and none open with the right mark", async (
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
   }
-  const custom = await openDialog(page, "Custom icon", "Empty the trash?");
+  const custom = await openDialog(page, "Custom icon", "Empty the trash?", "icons");
   await expect(custom.locator('[data-slot="alert-dialog-icon"] svg.lucide-trash')).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(custom).toBeHidden();
 
-  const bare = await openDialog(page, "No icon", "Sign out of every device?");
+  const bare = await openDialog(page, "No icon", "Sign out of every device?", "icons");
   await expect(bare.locator('[data-slot="alert-dialog-icon"]')).toHaveCount(0);
 });
 
 test("the buttons are at least 24 by 24 pixels and follow the reading order", async ({ page }) => {
   for (const locale of LOCALES) {
     await open(page, "light", locale);
-    const dialog = await openDialog(page, "Danger tone", "Delete this project?");
-    const keep = await dialog.getByRole("button", { name: "Keep project" }).boundingBox();
-    const remove = await dialog.getByRole("button", { name: "Delete project" }).boundingBox();
+    const dialog = await openDanger(page);
+    // Keep project, then Delete project, in the document's order.
+    const keep = await dialog.getByRole("button").nth(0).boundingBox();
+    const remove = await dialog.getByRole("button").nth(1).boundingBox();
     if (!keep || !remove) throw new Error("a dialog button has no box");
     for (const box of [keep, remove]) {
       expect(box.width).toBeGreaterThanOrEqual(24);

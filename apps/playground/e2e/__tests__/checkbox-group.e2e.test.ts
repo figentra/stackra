@@ -13,6 +13,8 @@
 // @covers sta-350:FR-082 sta-350:FR-084 sta-350:FR-086 sta-350:FR-087 sta-350:FR-089 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/checkbox-group?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Checkbox group" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Checkbox group", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -45,9 +49,10 @@ for (const scheme of SCHEMES)
 
 test("every group is named by its label and holds named checkboxes", async ({ page }) => {
   await open(page, "light", "en");
-  const groups = page.locator("article").getByRole("group");
+  // The demos' groups: the examples' sections, each loaded lazily, so the count is waited for.
+  const groups = page.locator('section:is(#usage, #examples) [data-slot="checkbox-group"]');
+  await expect(groups).toHaveCount(9);
   const count = await groups.count();
-  expect(count).toBe(9);
   for (let index = 0; index < count; index += 1) {
     const group = groups.nth(index);
     await expect(group, `group ${index}`).toHaveAccessibleName(/\S/);
@@ -106,17 +111,15 @@ test("the invalid group is described by its description and message until a day 
   );
   await group.getByRole("checkbox", { name: "Monday" }).focus();
   await page.keyboard.press("Space");
-  await expect(page.getByText("Choose a delivery day to continue.")).toBeHidden();
+  await expect(group).toHaveAccessibleDescription("Pick at least one day.");
 });
 
 for (const locale of LOCALES)
   test(`each box sits on the reading-start side of its label in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
     // A `has` locator is queried inside the item, so the group scopes the items and the box is found by role alone.
-    const item = page
-      .getByRole("group", { name: "Notify me by" })
-      .locator('[data-slot="checkbox"]')
-      .filter({ has: page.getByRole("checkbox", { name: "Text message" }) });
+    // The demo speaks the page's locale: Text message is the second box of the usage's Notify me by group.
+    const item = example(page, "usage").locator('[data-slot="checkbox"]').nth(1);
     const control = await item.locator('[data-slot="checkbox-control"]').boundingBox();
     const label = await item.locator('[data-slot="label"]').boundingBox();
     if (!control || !label) throw new Error("a box is missing");
@@ -125,7 +128,7 @@ for (const locale of LOCALES)
 
 test("the readout lists the choices in the order they were made", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = page.getByRole("region", { name: "Toppings" });
   await expect(live.getByRole("status")).toHaveText("Chosen: cheese");
   await live.getByText("Basil", { exact: true }).click();
   await live.getByText("Olives", { exact: true }).click();

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the icons the web components of @stackra/ui draw by themselves (the avatar's person mark, the action
- *          menu's ellipsis, the chevrons and check mark of lists, pagination and copy buttons, the copy mark and the tone icons of alerts and dialogs, and the sidebar's collapse and expand marks, and the AI mark's sparkles), registered here so they show without the app
+ *          menu's ellipsis, the password field's eye and eye-off, the chevrons and check mark of lists, pagination and copy buttons, the quantity stepper's minus, plus and trash, the copy mark and the tone icons of alerts and dialogs, the sidebar's collapse and expand marks, the side panel's expand and collapse marks, and the AI mark's sparkles), registered here so they show without the app
  *          registering them.
  * Boundary: a registry of named re-exports, so a bundler keeps only these; an app's own registry wins for the same
  *          name.
@@ -10,6 +10,9 @@
  */
 import { defineIconRegistry } from "@stackra/icons";
 import {
+  ArrowUpDown,
+  Camera,
+  ChartColumn,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -17,17 +20,41 @@ import {
   CircleAlert,
   CircleCheck,
   Copy,
+  Download,
   Ellipsis,
+  Eye,
+  EyeOff,
+  File,
+  GripVertical,
+  Image,
+  ImageOff,
+  Images,
   Info,
+  Link2,
+  Maximize2,
+  Minimize2,
+  Minus,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  SlidersHorizontal,
   Sparkles,
+  Table2,
+  Trash,
   TriangleAlert,
+  Upload,
   UserRound,
+  X,
 } from "@stackra/icons/react/lucide-icons";
 
 /** The icons the web components draw on their own. */
 export const UI_ICONS = defineIconRegistry({
+  "arrow-up-down": ArrowUpDown,
+  camera: Camera,
+  "chart-column": ChartColumn,
   check: Check,
   "chevron-down": ChevronDown,
   "chevron-left": ChevronLeft,
@@ -35,11 +62,32 @@ export const UI_ICONS = defineIconRegistry({
   "circle-alert": CircleAlert,
   "circle-check": CircleCheck,
   copy: Copy,
+  download: Download,
   ellipsis: Ellipsis,
+  eye: Eye,
+  "eye-off": EyeOff,
+  file: File,
+  "grip-vertical": GripVertical,
+  image: Image,
+  "image-off": ImageOff,
+  images: Images,
   info: Info,
+  "link-2": Link2,
+  "maximize-2": Maximize2,
+  "minimize-2": Minimize2,
+  minus: Minus,
   "panel-left-close": PanelLeftClose,
   "panel-left-open": PanelLeftOpen,
+  pencil: Pencil,
+  plus: Plus,
+  "refresh-cw": RefreshCw,
+  "rotate-ccw": RotateCcw,
+  "sliders-horizontal": SlidersHorizontal,
   sparkles: Sparkles,
+  "table-2": Table2,
+  trash: Trash,
   "triangle-alert": TriangleAlert,
+  upload: Upload,
   "user-round": UserRound,
+  x: X,
 });

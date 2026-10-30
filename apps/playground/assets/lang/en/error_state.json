@@ -1,0 +1,27 @@
+{
+  "region_name": "Orders demo",
+  "retry": "Try again",
+  "sign_in": "Sign in",
+  "go_back": "Go back",
+  "contact_support": "Contact support",
+  "loading_orders": "Loading orders",
+  "recovered": "Orders loaded",
+  "recovered_note": "The list came back. Break it again to see the failure once more.",
+  "break_again": "Break it again",
+  "sample": {
+    "sign_in_to_continue": "Sign in to continue",
+    "your_session_ended_sign_in": "Your session ended. Sign in again to see this page.",
+    "you_do_not_have_access": "You do not have access",
+    "ask_an_administrator_to_give": "Ask an administrator to give you access to this page.",
+    "we_could_not_find_that": "We could not find that page",
+    "the_link_may_be_old": "The link may be old, or the page may have moved.",
+    "something_went_wrong": "Something went wrong",
+    "we_could_not_load_this": "We could not load this page. Try again in a moment.",
+    "with_the_error_s_details": "With the error’s details",
+    "a_retry_and_a_further": "A retry and a further action",
+    "an_icon_of_your_own": "An icon of your own",
+    "this_page_is_locked": "This page is locked",
+    "an_administrator_has_paused_access": "An administrator has paused access while the data is checked.",
+    "no_icon": "No icon"
+  }
+}

@@ -12,7 +12,8 @@
  *           class from a map, never a computed string (decision 6), so it follows the viewport, not the shell's own
  *           width. `isEmbedded` is for a shell drawn inside another page (a preview, the playground): it fills its box
  *           instead of the viewport, and its `main` is a plain `div` with no skip link, because the page around it
- *           already has both and a page holds one `main`. A drawer left open while the window grows past the breakpoint stays
+ *           already has both and a page holds one `main`. `frame="inset"` draws the header and page as a rounded card
+ *           on the background (the `--radius-container` role), the look a split `SidePanel` beside it matches. A drawer left open while the window grows past the breakpoint stays
  *           open until it is dismissed (see the shortcut note on {@link AppShell}).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0317 (decisions 1, 4, 5 and 6); ADR
@@ -53,6 +54,7 @@ export function AppShell({
   isEmbedded = false,
   skipLabel: skipLabelProp,
   mainId = "main-content",
+  frame = "flush",
   className,
   ...rest
 }: AppShellProps): ReactElement {
@@ -102,7 +104,15 @@ export function AppShell({
             {draw(false)}
           </div>
         )}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div
+          data-slot="app-shell-content"
+          className={cn(
+            "flex min-w-0 flex-1 flex-col",
+            frame === "inset"
+              ? "m-2 overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm"
+              : "",
+          )}
+        >
           {header}
           {isEmbedded ? (
             <div id={mainId} className="min-h-0 flex-1 overflow-auto">
@@ -125,8 +135,11 @@ export function AppShell({
           <Drawer.Body className="p-0">
             {/* The capture phase, because React Aria's press handling stops an entry's click from bubbling. The
                 entries are the keyboard-reachable controls; this only listens. */}
+            {/* The full height, so a sidebar that fills its parent (`h-full`) is not drawn at zero height. */}
             {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- delegation only */}
-            <div onClickCapture={closeOnEntry}>{draw(true)}</div>
+            <div className="h-full" onClickCapture={closeOnEntry}>
+              {draw(true)}
+            </div>
           </Drawer.Body>
           <Drawer.Footer>
             <Button variant="secondary" slot="close">

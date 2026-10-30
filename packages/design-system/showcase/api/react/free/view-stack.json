@@ -1,0 +1,93 @@
+{
+  "generatedFrom": {
+    "hash": "604435a1ca1b04dd",
+    "propsFiles": [
+      "ui/src/react/view-stack/view-stack-back.props.ts",
+      "ui/src/react/view-stack/view-stack-view.props.ts",
+      "ui/src/react/view-stack/view-stack.props.ts"
+    ]
+  },
+  "importLine": "import { ViewStack } from \"@stackra/ui/react\";",
+  "key": "free/view-stack",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the view on top after every push and pop.",
+          "name": "onViewChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: string) => void"
+        }
+      ],
+      "name": "ViewStack",
+      "props": [
+        {
+          "description": "The views, as `ViewStack.View` elements.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The id of the view shown first, the bottom of the stack.",
+          "name": "defaultView",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "push",
+          "description": "How a view enters and leaves. Defaults to `push`; the motion level can lower it to a fade or nothing.",
+          "name": "transition",
+          "required": false,
+          "source": "stackra",
+          "type": "\"push\" | \"none\" | \"push-parallax\" | \"from-top\" | \"fade\""
+        }
+      ]
+    },
+    {
+      "name": "ViewStack.View",
+      "props": [
+        {
+          "description": "The view's id, what `push` takes.",
+          "name": "id",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The view's accessible name, read when it is shown and focus moves to it.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The view's content.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    },
+    {
+      "name": "ViewStack.Back",
+      "props": [
+        {
+          "description": "The visible label in the app's language, for example \"Back\" or the previous view's name.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "useViewStack",
+      "props": []
+    }
+  ],
+  "platform": "react"
+}

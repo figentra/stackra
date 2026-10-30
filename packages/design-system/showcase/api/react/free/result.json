@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "edd353abefcd3b7f",
+    "propsFiles": ["ui/src/react/result/result.props.ts"]
+  },
+  "importLine": "import { Result } from \"@stackra/ui/react\";",
+  "key": "free/result",
+  "parts": [
+    {
+      "name": "Result",
+      "props": [
+        {
+          "description": "`success`, `error`, `info` or `pending` (a spinner, announced politely).",
+          "name": "status",
+          "required": true,
+          "source": "stackra",
+          "type": "\"info\" | \"success\" | \"error\" | \"pending\""
+        },
+        {
+          "description": "What is the matter, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One or two sentences: why it is so, and what to do next.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon in place of the reason's or kind's own, or `false` for none.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6, so the page keeps one outline wherever this sits.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

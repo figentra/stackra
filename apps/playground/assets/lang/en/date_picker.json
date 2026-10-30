@@ -1,0 +1,29 @@
+{
+  "empty": "Start date",
+  "empty_description": "Type a day or open the calendar.",
+  "empty_button": "Choose the start date",
+  "filled": "Due date",
+  "filled_description": "The day the invoice is due.",
+  "filled_button": "Choose the due date",
+  "bounded_label": "Booking date",
+  "bounded_description": "Only days in March 2026 are accepted.",
+  "bounded_message": "Pick a day in March 2026.",
+  "bounded_button": "Choose the booking date",
+  "invalid": "Delivery date",
+  "invalid_message": "We do not deliver at weekends.",
+  "invalid_button": "Choose the delivery date",
+  "read_only": "Signed on",
+  "disabled": "Cancelled on",
+  "live_label": "Check-in date",
+  "live_button": "Choose the check-in date",
+  "live_empty": "No day chosen yet.",
+  "live_chosen": "Chosen day: {day}",
+  "live_open": "The calendar is open.",
+  "live_closed": "The calendar is closed.",
+  "open_from_outside": "Open the calendar",
+  "hijri": {
+    "label": "Contract date",
+    "hint": "Shown in the Umm al-Qura calendar; saved as a Gregorian date.",
+    "button": "Choose the contract date"
+  }
+}

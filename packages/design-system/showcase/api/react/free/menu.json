@@ -1,0 +1,166 @@
+{
+  "generatedFrom": {
+    "hash": "89cf8c64035a3115",
+    "heroDoc": "vendor/heroui/react/dropdown.json",
+    "propsFiles": ["ui/src/react/menu/menu.props.ts"]
+  },
+  "importLine": "import { Menu } from \"@stackra/ui/react\";",
+  "key": "free/menu",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new list of chosen keys each time the selection changes.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: readonly string[]) => void"
+        },
+        {
+          "description": "Called with the key of every action chosen, after the action's own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "Dropdown",
+      "name": "Menu",
+      "props": [
+        {
+          "description": "The element that opens the menu, usually a `Button` or `IconButton`; it must be pressable and named.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The groups of actions, in order, with a divider between them.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenuSection[]"
+        },
+        {
+          "description": "What choosing an action does: just run it (`none`, the default), or also keep it chosen, one per section\n(`single`) or any number (`multiple`). A chosen action shows a mark and is reported in `onChange`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The keys of the chosen actions, for a controlled menu; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The keys chosen at the start, for an uncontrolled menu.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'press'",
+          "description": "The type of interaction that triggers the menu",
+          "name": "trigger",
+          "required": false,
+          "source": "heroui",
+          "type": "\"contextMenu\" | \"press\" | \"longPress\""
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base dropdown container",
+      "name": ".dropdown"
+    },
+    {
+      "description": "The button or element that triggers the dropdown",
+      "name": ".dropdown__trigger"
+    },
+    {
+      "description": "The popover container",
+      "name": ".dropdown__popover"
+    },
+    {
+      "description": "The menu container inside the popover",
+      "name": ".dropdown__menu"
+    },
+    {
+      "description": "Focused trigger state",
+      "name": ".dropdown__trigger[data-focus-visible=\"true\"]"
+    },
+    {
+      "description": "Disabled trigger state",
+      "name": ".dropdown__trigger[data-disabled=\"true\"]"
+    },
+    {
+      "description": "Pressed trigger state",
+      "name": ".dropdown__trigger[data-pressed=\"true\"]"
+    },
+    {
+      "description": "Entering animation state",
+      "name": ".dropdown__popover[data-entering]"
+    },
+    {
+      "description": "Exiting animation state",
+      "name": ".dropdown__popover[data-exiting]"
+    },
+    {
+      "description": "Single selection mode",
+      "name": ".dropdown__menu[data-selection-mode=\"single\"]"
+    },
+    {
+      "description": "Multiple selection mode",
+      "name": ".dropdown__menu[data-selection-mode=\"multiple\"]"
+    }
+  ]
+}

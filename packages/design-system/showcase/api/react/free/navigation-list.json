@@ -1,0 +1,87 @@
+{
+  "generatedFrom": {
+    "hash": "ca304ed05ed0eedc",
+    "propsFiles": ["ui/src/react/navigation-list/navigation-list.props.ts"]
+  },
+  "importLine": "import { NavigationList } from \"@stackra/ui/react\";",
+  "key": "free/navigation-list",
+  "parts": [
+    {
+      "name": "NavigationList",
+      "props": [
+        {
+          "description": "The places, in order; groups and nesting come from each item's `children`.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NavigationItem[]"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True for the icon rail: labels leave the sight (they stay the accessible name) and a tooltip shows each.",
+          "name": "isCompact",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

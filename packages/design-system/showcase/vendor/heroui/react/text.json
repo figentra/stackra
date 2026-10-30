@@ -1,0 +1,52 @@
+{
+  "slug": "text",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(typography)/text.mdx",
+  "parts": [
+    {
+      "name": "Text",
+      "props": [
+        {
+          "name": "type",
+          "type": "'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body' | 'body-sm' | 'body-xs' | 'code'",
+          "default": "'body'",
+          "description": "Semantic typography style."
+        },
+        {
+          "name": "align",
+          "type": "'start' | 'center' | 'end' | 'justify'",
+          "default": "'start'",
+          "description": "Text alignment."
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'muted'",
+          "default": "'default'",
+          "description": "Text color."
+        },
+        {
+          "name": "weight",
+          "type": "'normal' | 'medium' | 'semibold' | 'bold'",
+          "description": "Font weight override."
+        },
+        {
+          "name": "truncate",
+          "type": "boolean",
+          "description": "Truncates the text to one line with ellipsis."
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction",
+          "description": "Custom render function from React Aria."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Text content."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

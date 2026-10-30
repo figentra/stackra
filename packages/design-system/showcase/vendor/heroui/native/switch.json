@@ -1,0 +1,227 @@
+{
+  "slug": "switch",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(controls)/switch.mdx",
+  "parts": [
+    {
+      "name": "Switch",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: SwitchRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Content to render inside the switch, or a render function"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the switch is currently selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the switch is disabled and cannot be interacted with"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the switch"
+        },
+        {
+          "name": "animation",
+          "type": "SwitchRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "(isSelected: boolean) => void",
+          "description": "Callback fired when the switch selection state changes"
+        },
+        {
+          "name": "...AnimatedPressableProps",
+          "type": "AnimatedProps<PressableProps>",
+          "description": "All React Native Reanimated Pressable props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the switch is selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the switch is disabled"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[1, 0.96]",
+          "description": "Scale values [unpressed, pressed]"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 150 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "backgroundColor.value",
+          "type": "[string, string]",
+          "default": "Uses theme colors",
+          "description": "Background color values [unselected, selected]"
+        },
+        {
+          "name": "backgroundColor.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 175, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    },
+    {
+      "name": "Switch.Thumb",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: SwitchRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Content to render inside the thumb, or a render function"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the thumb element"
+        },
+        {
+          "name": "animation",
+          "type": "SwitchThumbAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "left.value",
+          "type": "number",
+          "default": "2",
+          "description": "Offset value from the edges (left when unselected, right when selected)"
+        },
+        {
+          "name": "left.springConfig",
+          "type": "WithSpringConfig",
+          "default": "{ damping: 120, stiffness: 1600, mass: 2 }",
+          "description": "Spring animation configuration for thumb position"
+        },
+        {
+          "name": "backgroundColor.value",
+          "type": "[string, string]",
+          "default": "['white', theme accent-foreground color]",
+          "description": "Background color values [unselected, selected]"
+        },
+        {
+          "name": "backgroundColor.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 175, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    },
+    {
+      "name": "Switch.StartContent",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Content to render inside the switch content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the content element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Switch.EndContent",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Content to render inside the switch content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name for the content element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useSwitch",
+      "signature": "useSwitch()",
+      "returns": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the switch is selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the switch is disabled"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

@@ -39,9 +39,14 @@
     ]
   },
   "scripts": {
+    "brand:pull": "node ../../tools/scripts/brand-pull.mjs",
+    "predev": "pnpm brand:pull",
     "dev": "expo start",
+    "preios": "pnpm brand:pull",
     "ios": "expo run:ios",
+    "preandroid": "pnpm brand:pull",
     "android": "expo run:android",
+    "prebuild": "pnpm brand:pull",
     "build": "expo export --platform ios --platform android --output-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -60,6 +65,8 @@
     "@react-native-community/netinfo": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
+    "@shopify/react-native-skia": "catalog:mobile",
+    "@stackra/config": "workspace:*",
     "@stackra/consent": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -71,6 +78,7 @@
     "@stackra/native-share": "workspace:*",
     "@stackra/platform": "workspace:*",
     "@stackra/settings": "workspace:*",
+    "@stackra/showcase": "workspace:*",
     "@stackra/theming": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
@@ -118,7 +126,8 @@
     "tailwind-merge": "catalog:mobile",
     "tailwind-variants": "catalog:mobile",
     "tailwindcss": "catalog:frontend",
-    "uniwind": "catalog:uniwind-pro"
+    "uniwind": "catalog:uniwind-pro",
+    "victory-native": "catalog:mobile"
   },
   "devDependencies": {
     "@stackra/typescript-config": "workspace:*",

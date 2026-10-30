@@ -1,0 +1,304 @@
+{
+  "generatedFrom": {
+    "hash": "b78c55da9358b96a",
+    "heroDoc": "vendor/heroui/react/badge.json",
+    "propsFiles": ["ui/src/react/badge/badge-anchor.props.ts", "ui/src/react/badge/badge.props.ts"]
+  },
+  "importLine": "import { Badge } from \"@stackra/ui/react\";",
+  "key": "free/badge",
+  "parts": [
+    {
+      "extends": "Badge",
+      "name": "Badge",
+      "props": [
+        {
+          "description": "The text, number or icon shown, already formatted (for example \"99+\"); without it the badge is a dot.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The colour role of the badge. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "primary",
+          "description": "The fill: `primary` solid, `secondary` neutral with toned text, `soft` tinted. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\" | \"soft\""
+        },
+        {
+          "default": "md",
+          "description": "The minimum size and the text size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The corner of the anchor, by reading direction; `top-end` is top right in English, top left in Arabic.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top-end\" | \"top-start\" | \"bottom-end\" | \"bottom-start\""
+        },
+        {
+          "description": "What assistive technology says, for example \"3 unread\"; without it the badge is hidden from it.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes for the root element",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "extends": "Badge.Anchor",
+      "name": "Badge.Anchor",
+      "props": [
+        {
+          "description": "The anchored element first (an avatar, an icon button), then the `Badge`, which is drawn on top of it.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes for the anchor wrapper",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base badge container styles",
+      "name": ".badge"
+    },
+    {
+      "description": "Label text slot styles",
+      "name": ".badge__label"
+    },
+    {
+      "description": "Positioning wrapper for the anchored element",
+      "name": ".badge-anchor"
+    },
+    {
+      "description": "Accent color variant",
+      "name": ".badge--accent"
+    },
+    {
+      "description": "Danger color variant",
+      "name": ".badge--danger"
+    },
+    {
+      "description": "Default color variant",
+      "name": ".badge--default"
+    },
+    {
+      "description": "Success color variant",
+      "name": ".badge--success"
+    },
+    {
+      "description": "Warning color variant",
+      "name": ".badge--warning"
+    },
+    {
+      "description": "Primary variant with filled background",
+      "name": ".badge--primary"
+    },
+    {
+      "description": "Secondary variant with default background",
+      "name": ".badge--secondary"
+    },
+    {
+      "description": "Soft variant with lighter background",
+      "name": ".badge--soft"
+    },
+    {
+      "description": "Small size",
+      "name": ".badge--sm"
+    },
+    {
+      "description": "Medium size (default)",
+      "name": ".badge--md"
+    },
+    {
+      "description": "Large size",
+      "name": ".badge--lg"
+    },
+    {
+      "description": "Position at top-right corner (default)",
+      "name": ".badge--top-right"
+    },
+    {
+      "description": "Position at top-left corner",
+      "name": ".badge--top-left"
+    },
+    {
+      "description": "Position at bottom-right corner",
+      "name": ".badge--bottom-right"
+    },
+    {
+      "description": "Position at bottom-left corner",
+      "name": ".badge--bottom-left"
+    },
+    {
+      "description": "Primary accent with filled background",
+      "name": ".badge--primary.badge--accent"
+    },
+    {
+      "description": "Primary default with filled background",
+      "name": ".badge--primary.badge--default"
+    },
+    {
+      "description": "Primary success with filled background",
+      "name": ".badge--primary.badge--success"
+    },
+    {
+      "description": "Primary warning with filled background",
+      "name": ".badge--primary.badge--warning"
+    },
+    {
+      "description": "Primary danger with filled background",
+      "name": ".badge--primary.badge--danger"
+    },
+    {
+      "description": "Soft accent with lighter background",
+      "name": ".badge--soft.badge--accent"
+    },
+    {
+      "description": "Soft default with lighter background",
+      "name": ".badge--soft.badge--default"
+    },
+    {
+      "description": "Soft success with lighter background",
+      "name": ".badge--soft.badge--success"
+    },
+    {
+      "description": "Soft warning with lighter background",
+      "name": ".badge--soft.badge--warning"
+    },
+    {
+      "description": "Soft danger with lighter background",
+      "name": ".badge--soft.badge--danger"
+    }
+  ]
+}

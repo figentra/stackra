@@ -91,7 +91,7 @@ describe("Drawer (web)", () => {
     rerender(sample({ isOpen: true, onOpenChange }));
     expect(screen.getByRole("dialog")).toBeTruthy();
     // A controlled drawer asks to close and stays open until the app agrees.
-    press(screen.getByRole("button", { name: "Close" }));
+    press(screen.getByRole("button", { name: "Close, Esc" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.getByRole("dialog")).toBeTruthy();
     rerender(sample({ isOpen: false, onOpenChange }));
@@ -103,7 +103,7 @@ describe("Drawer (web)", () => {
     render(sample({ onOpenChange }));
     press(screen.getByRole("button", { name: "Open" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    press(screen.getByRole("button", { name: "Close" }));
+    press(screen.getByRole("button", { name: "Close, Esc" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -197,7 +197,7 @@ describe("Drawer (web)", () => {
 
   it("closes from `Drawer.Close`, named by its label, and from a `slot=close` button", () => {
     const { unmount } = render(sample({ defaultOpen: true }));
-    const close = screen.getByRole("button", { name: "Close" });
+    const close = screen.getByRole("button", { name: "Close, Esc" });
     expect(close.getAttribute("data-slot")).toBe("drawer-close-trigger");
     press(close);
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -216,10 +216,12 @@ describe("Drawer (web)", () => {
       </Drawer>,
     );
     expect(
-      within(screen.getByRole("button", { name: "Close panel" })).getByTestId("mine"),
+      within(screen.getByRole("button", { name: "Close panel, Esc" })).getByTestId("mine"),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
-    press(screen.getByRole("button", { name: "Close panel" }));
+    expect(screen.getByRole("button", { name: "Disabled, Esc" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    press(screen.getByRole("button", { name: "Close panel, Esc" }));
     expect(onPress).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -233,5 +235,47 @@ describe("Drawer (web)", () => {
     >();
     expectTypeOf<DrawerProps>().not.toHaveProperty("isDefaultOpen");
     expectTypeOf<DrawerProps>().not.toHaveProperty("isCloseOnPress");
+  });
+
+  it("opens a bottom drawer at its first snap point and steps through them from the handle", () => {
+    render(sample({ defaultOpen: true, placement: "bottom", snapPoints: [240, "80%"] }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.style.height).toBe("240px");
+    act(() => fireEvent.click(screen.getByRole("button", { name: "Resize panel" })));
+    expect(dialog.style.height).toBe("80dvh");
+    act(() => fireEvent.click(screen.getByRole("button", { name: "Resize panel" })));
+    expect(dialog.style.height).toBe("240px");
+  });
+  it("resizes a side drawer from its inner edge and expands it from the header", () => {
+    render(sample({ defaultOpen: true, isResizable: true, isExpandable: true, size: "sm" }));
+    const dialog = screen.getByRole("dialog");
+    const handle = within(dialog).getByRole("separator", { name: "Resize panel" });
+    expect(handle.getAttribute("aria-valuenow")).toBe("400");
+    // On the end edge the inner edge is the start: moving it towards the start widens the drawer.
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(handle.getAttribute("aria-valuenow")).toBe("416");
+    expect(dialog.style.width).toBe("416px");
+    fireEvent.keyDown(handle, { key: "Home" });
+    expect(dialog.style.width).toBe("320px");
+    const expand = within(dialog).getByRole("button", { name: "Expand panel" });
+    expect(expand.getAttribute("aria-pressed")).toBe("false");
+    press(expand);
+    expect(dialog.className).toContain("w-full");
+    expect(dialog.style.width).toBe("");
+    expect(within(dialog).queryByRole("separator")).toBeNull();
+    expect(
+      within(dialog).getByRole("button", { name: "Expand panel" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+  it("draws no handle or expand button by default, nor on a bottom drawer", () => {
+    const { unmount } = render(sample({ defaultOpen: true }));
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Expand panel" })).toBeNull();
+    unmount();
+    render(
+      sample({ defaultOpen: true, placement: "bottom", isResizable: true, isExpandable: true }),
+    );
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Expand panel" })).toBeNull();
   });
 });

@@ -1,0 +1,53 @@
+{
+  "generatedFrom": {
+    "hash": "7f44fe2e2adc623f",
+    "propsFiles": ["ui/src/native/coach-mark/coach-mark.props.ts"]
+  },
+  "importLine": "import { CoachMark } from \"@stackra/ui/native\";",
+  "key": "free/coach-mark",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called once when the tour closes: `done` after the last step, `skipped` before it.",
+          "name": "onFinish",
+          "required": false,
+          "source": "stackra",
+          "type": "(outcome: \"done\" | \"skipped\") => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "CoachMark",
+      "props": [
+        {
+          "description": "The stops, in order; each target must be mounted and on screen while its step shows.",
+          "name": "steps",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly CoachMarkStep<View>[]"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

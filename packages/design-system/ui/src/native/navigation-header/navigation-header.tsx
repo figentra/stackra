@@ -35,7 +35,7 @@ import { Text } from "#native/text/text";
 import type { NavigationHeaderProps } from "#native/navigation-header/navigation-header.props";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
-const BACK_ICON = <Icon name="chevron-left" isMirroredInRtl />;
+const BACK_ICON = <Icon name="chevron-left" />;
 
 /** A node as the bar can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode): ReactNode {

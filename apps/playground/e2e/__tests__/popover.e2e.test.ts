@@ -17,6 +17,8 @@
 // @covers sta-350:FR-110 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,11 +27,17 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/popover?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Popover" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Popover", locale) }),
+  ).toBeVisible();
+  // The demos load lazily and shift the page as they arrive, which would move or close an open popover.
+  await page.waitForLoadState("networkidle");
 };
 
 /** The trigger that opened the popover now showing: React Aria marks it expanded, and a CSS query still finds it. */
-const opened = (page: Page) => page.locator('[aria-expanded="true"]');
+// Scoped to the examples: the shell's sidebar marks its open group expanded too.
+const opened = (page: Page) =>
+  page.locator('section#usage, section[id^="example-"]').locator('[aria-expanded="true"]');
 
 /** A box that must exist. */
 const boxOf = async (locator: Locator) => {
@@ -40,7 +48,15 @@ const boxOf = async (locator: Locator) => {
 
 /** Waits for the open and close animations to finish, so a box or a colour is measured at rest. */
 const settled = (page: Page) =>
-  page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        // Time-based ones only: a scroll-driven fade (the nav edges) runs as long as its scroller can scroll.
+        .filter((animation) => animation.timeline === document.timeline)
+        .map((animation) => animation.finished),
+    ),
+  );
 
 /** Centres the trigger in the viewport, so a popover has room on every side and is never flipped or shifted. */
 const centre = (trigger: Locator) =>
@@ -68,10 +84,7 @@ for (const scheme of SCHEMES)
 for (const scheme of SCHEMES)
   test(`axe finds nothing in an open popover in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
-    await page
-      .getByRole("region", { name: "Content" })
-      .getByRole("button", { name: "With an arrow" })
-      .click();
+    await example(page, "content").getByRole("button", { name: "With an arrow" }).click();
     await expect(dialog(page)).toBeVisible();
     await settled(page);
     // Scoped to the dialog: it sits in a portal outside the page's landmarks, which the region rule would flag.
@@ -90,9 +103,7 @@ test("a popover opens from the keyboard as a dialog named by its title, takes fo
   page,
 }) => {
   await open(page, "light", "en");
-  const trigger = page
-    .getByRole("region", { name: "Content" })
-    .getByRole("button", { name: "With a title" });
+  const trigger = example(page, "content").getByRole("button", { name: "With a title" });
   await trigger.focus();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Enter");
@@ -108,17 +119,14 @@ test("a popover opens from the keyboard as a dialog named by its title, takes fo
 
 test("a popover without a title is named by its aria-label", async ({ page }) => {
   await open(page, "light", "en");
-  await page
-    .getByRole("region", { name: "Content" })
-    .getByRole("button", { name: "Named by aria-label" })
-    .click();
+  await example(page, "content").getByRole("button", { name: "Named by aria-label" }).click();
   await expect(dialog(page)).toHaveAccessibleName("Order reference");
   await expect(dialog(page).getByRole("heading")).toHaveCount(0);
 });
 
 test("the arrow is drawn only when asked", async ({ page }) => {
   await open(page, "light", "en");
-  const content = page.getByRole("region", { name: "Content" });
+  const content = example(page, "content");
   await content.getByRole("button", { name: "With a title" }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(page.locator('[data-slot="popover-overlay-arrow"]')).toHaveCount(0);
@@ -130,10 +138,7 @@ test("the arrow is drawn only when asked", async ({ page }) => {
 
 test("a field inside a popover takes typing", async ({ page }) => {
   await open(page, "light", "en");
-  await page
-    .getByRole("region", { name: "Content" })
-    .getByRole("button", { name: "With a field" })
-    .click();
+  await example(page, "content").getByRole("button", { name: "With a field" }).click();
   const field = dialog(page).getByRole("textbox", { name: "Order name" });
   await field.fill("Autumn order");
   await expect(field).toHaveValue("Autumn order");
@@ -148,9 +153,8 @@ for (const locale of LOCALES)
       page,
     }) => {
       await open(page, "light", locale);
-      const trigger = page
-        .getByRole("region", { name: "Placement" })
-        .getByRole("button", { name: side, exact: true });
+      // By position, in the order of SIDES: the buttons are named in the page's locale.
+      const trigger = example(page, "usage").getByRole("button").nth(SIDES.indexOf(side));
       await centre(trigger);
       await trigger.click();
       await expect(dialog(page)).toBeVisible();
@@ -183,9 +187,10 @@ for (const locale of LOCALES)
       page,
     }) => {
       await open(page, "light", locale);
-      const trigger = page
-        .getByRole("region", { name: "Alignment" })
-        .getByRole("button", { name: `Align ${align}` });
+      // By position (start, centre, end): the buttons are named in the page's locale.
+      const trigger = example(page, "alignment")
+        .getByRole("button")
+        .nth(align === "start" ? 0 : 2);
       await centre(trigger);
       await trigger.click();
       await expect(dialog(page)).toBeVisible();
@@ -204,9 +209,7 @@ test("a press outside closes the default popover and Escape closes it, returning
   page,
 }) => {
   await open(page, "light", "en");
-  const trigger = page
-    .getByRole("region", { name: "Dismissal" })
-    .getByRole("button", { name: "Closes anywhere" });
+  const trigger = example(page, "dismissal").getByRole("button", { name: "Closes anywhere" });
   await trigger.click();
   await expect(dialog(page)).toBeVisible();
   await page.mouse.click(4, 4);
@@ -222,9 +225,9 @@ test("a popover that refuses a press outside stays open until Done, and Done ret
   page,
 }) => {
   await open(page, "light", "en");
-  const trigger = page
-    .getByRole("region", { name: "Dismissal" })
-    .getByRole("button", { name: "Refuses a press outside" });
+  const trigger = example(page, "dismissal").getByRole("button", {
+    name: "Refuses a press outside",
+  });
   await trigger.click();
   await expect(dialog(page)).toHaveAccessibleName("Finish this step");
   await page.mouse.click(4, 4);
@@ -236,9 +239,7 @@ test("a popover that refuses a press outside stays open until Done, and Done ret
 
 test("a popover that refuses Escape stays open on Escape, and Done closes it", async ({ page }) => {
   await open(page, "light", "en");
-  const trigger = page
-    .getByRole("region", { name: "Dismissal" })
-    .getByRole("button", { name: "Refuses Escape" });
+  const trigger = example(page, "dismissal").getByRole("button", { name: "Refuses Escape" });
   await trigger.click();
   await expect(dialog(page)).toBeVisible();
   await page.keyboard.press("Escape");
@@ -252,7 +253,7 @@ test("the live popover opens from outside, reports its state and closes on Escap
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(live.getByTestId("popover-state")).toHaveText("State: closed");
   await live.getByRole("button", { name: "Open from outside" }).click();
   await expect(dialog(page)).toHaveAccessibleName("Order actions");

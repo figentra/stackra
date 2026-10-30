@@ -1,0 +1,160 @@
+{
+  "slug": "list-group",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(navigation)/list-group.mdx",
+  "parts": [
+    {
+      "name": "ListGroup",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the group"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'secondary' | 'tertiary' | 'transparent'",
+          "default": "'default'",
+          "description": "Visual variant of the underlying Surface container"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the root container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the item"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the item"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.ItemPrefix",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Leading content such as icons or avatars"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the prefix"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.ItemContent",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content area, typically title and description"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the content area"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.ItemTitle",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Title text or custom content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the title"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.ItemDescription",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description text or custom content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the description"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "ListGroup.ItemSuffix",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom trailing content; overrides the default chevron-right icon when provided"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the suffix"
+        },
+        {
+          "name": "iconProps",
+          "type": "ListGroupIconProps",
+          "description": "Props to customise the default chevron-right icon. Only applies when no children"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

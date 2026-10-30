@@ -4,8 +4,10 @@
 @import "@stackra/tokens/themes/stackra/web.css";
 
 /* Tailwind does not scan workspace packages: @stackra/ui's components carry their utility classes (`text-danger`, ...)
-   in their own source, so the app points the scanner at it. */
-@source "../../node_modules/@stackra/ui/src";
+   in their own source, so the app points the scanner at it, by its real path (as apps/mobile does): through the
+   `node_modules` symlink the dev server never watches it, so a class added to a ui component stayed ungenerated
+   until a restart. */
+@source "../../../../packages/design-system/ui/src";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -16,6 +18,19 @@ body {
 
 :root:lang(ar) body {
   font-family: var(--font-arabic);
+}
+
+/* Any element marked with a language takes that language's face, in a page of either (an Arabic card or name in
+   an English page, a language's own name in a switcher); in the base layer, so a component's own face still wins
+   (unlayered, it beat the layered component classes: a heading marked English lost the display face). */
+@layer base {
+  :where([lang="ar"]) {
+    font-family: var(--font-arabic);
+  }
+
+  :where([lang="en"]) {
+    font-family: var(--font-sans);
+  }
 }
 
 /* Jumps within a page glide, unless motion is reduced; a target scrolled or focused into view clears the sticky bar.
@@ -33,24 +48,21 @@ html {
 }
 
 /* The glass itself is the theme's material (`.material`, `.material-thin`, `.material-thick` and `data-material` on
-   <html>, ADR 0320), from @stackra/tokens. This file draws only the field under it: the ambient tints, the hero's grid
-   and glow, and the motion of the playground's own pieces. */
+   <html>, ADR 0320), from @stackra/tokens. This file draws only the field under it: the ambient tints, the heroes'
+   headline and re-theme, and the motion of the playground's own pieces. */
+/* The warm tints follow the brand's accent: steel by default, amber under Figentra. */
 :root {
   --ambient-a: color-mix(in oklch, var(--steel) 45%, transparent);
-  --ambient-b: color-mix(in oklch, var(--amber) 8%, transparent);
+  --ambient-b: color-mix(in oklch, var(--accent) 8%, transparent);
   --ambient-c: color-mix(in oklch, var(--white) 70%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
-  --glow-a: color-mix(in oklch, var(--amber) 45%, transparent);
-  --glow-b: color-mix(in oklch, var(--graphite-300) 70%, transparent);
 }
 
 .dark {
   --ambient-a: color-mix(in oklch, var(--steel-deep) 95%, transparent);
-  --ambient-b: color-mix(in oklch, var(--amber) 9%, transparent);
+  --ambient-b: color-mix(in oklch, var(--accent) 9%, transparent);
   --ambient-c: color-mix(in oklch, var(--graphite-800) 80%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
-  --glow-a: color-mix(in oklch, var(--amber) 22%, transparent);
-  --glow-b: color-mix(in oklch, var(--graphite-700) 80%, transparent);
 }
 
 /* The field under the glass: three soft glows and a faint dot grid that fades out, behind the whole page. Each
@@ -97,48 +109,108 @@ html {
   mask-composite: intersect;
 }
 
-/* The glow behind the hero art, the same flat-tint-and-mask way: something for the glass panes to blur. */
-.hero-glow > * {
-  position: absolute;
-  inset: 0;
+/* The landing heroes' h1: large and tight in the theme's sans (the theme storm's in each brand's display face);
+   Arabic untracked, with room for its ascenders. */
+.hero-headline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(2.75rem, 7vw, 5.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
 }
 
-.hero-glow > :nth-child(1) {
-  background-color: var(--glow-a);
-  mask-image: radial-gradient(closest-side at 30% 35%, black, transparent);
+:root:lang(ar) .hero-headline {
+  font-family: var(--font-arabic);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 
-.hero-glow > :nth-child(2) {
-  background-color: var(--glow-b);
-  mask-image: radial-gradient(closest-side at 72% 60%, black, transparent);
+.hero-storm .hero-headline {
+  font-family: var(--font-display, var(--font-sans));
+  /* Sized by its own column (the text column is a container), so each line ("One system." / "Every brand.") stays
+     whole at every width instead of breaking a word onto a third line. */
+  font-size: clamp(2.5rem, 12.5cqi, 4.5rem);
+  /* Lighter tracking: a brand's serif or mono display face would touch at the sans's. */
+  letter-spacing: -0.02em;
 }
 
-/* The brand's grid pattern behind the hero stage: hairlines on a 48px step that fade out from the middle. */
-.hero-grid {
-  background-color: var(--separator);
-  mask-image:
-    radial-gradient(closest-side, black, transparent),
-    repeating-linear-gradient(to right, black 0 1px, transparent 1px 48px),
-    repeating-linear-gradient(to bottom, black 0 1px, transparent 1px 48px);
-  mask-composite: intersect, add;
+:root:lang(ar) .hero-storm .hero-headline {
+  font-family: var(--font-display-arabic, var(--font-arabic));
 }
 
-/* The hero's tiles settle in once, staggered: a short rise and the material arriving, then they hold still. */
-.hero-tile {
-  animation: tile-in 600ms var(--ease-fast) var(--tile-delay, 0ms) both;
+/* The heroes' corners, in steps of the theme's radius, so a re-theme rounds them too: the hero panel and big card,
+   a card or tile, a chip or swatch, a bar (rounded top, square-ish foot) and a dot or pill. */
+.hero-panel {
+  border-radius: calc(var(--radius) * 4);
 }
 
-@keyframes tile-in {
-  from {
-    opacity: 0;
-    translate: 0 16px;
-    scale: 0.92;
-  }
+.hero-card {
+  border-radius: calc(var(--radius) * 2.5);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-tile {
-    animation: none;
+.hero-chip {
+  border-radius: calc(var(--radius) * 2);
+}
+
+.hero-bar {
+  border-radius: var(--radius) var(--radius) var(--radius-sm) var(--radius-sm);
+}
+
+.hero-round {
+  border-radius: var(--radius-full);
+}
+
+/* The line over a hero's headline: small spaced capitals in the mono face; Arabic is never tracked or cased. */
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 0.75rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+:root:lang(ar) .hero-eyebrow {
+  font-family: var(--font-arabic);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* The theme storm sets its theme's faces on itself, so its text reads them (not the page's). */
+.hero-storm {
+  font-family: var(--font-sans);
+}
+
+:root:lang(ar) .hero-storm {
+  font-family: var(--font-arabic);
+}
+
+/* A hero's progress line fills from the start of the reading direction. */
+.hero-progress {
+  transform-origin: left center;
+}
+
+[dir="rtl"] .hero-progress {
+  transform-origin: right center;
+}
+
+/* The mirror's ribbon of names loops by sliding half its width leftwards, so it lays out left to right in either
+   page direction; each name keeps its own direction. */
+.hero-ticker {
+  direction: ltr;
+}
+
+/* The theme storm eases each re-theme: colour, edges, corners and shadow, at no specificity so a component's own
+   transition still wins. Reduced motion draws the new theme at once. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(.hero-storm, .hero-storm *) {
+    transition:
+      background-color 0.9s var(--ease-fast, ease),
+      color 0.9s var(--ease-fast, ease),
+      border-color 0.9s var(--ease-fast, ease),
+      border-radius 0.9s var(--ease-fast, ease),
+      box-shadow 0.9s var(--ease-fast, ease);
   }
 }
 
@@ -227,4 +299,392 @@ html {
 :root:lang(ar) .type-h3 {
   font: var(--h3-ar);
   letter-spacing: var(--h3-ar-letter-spacing);
+}
+
+/* An accordion's separator sits in the flow under its section, not absolutely over it: the same 1px line, and axe can
+   then read the background behind the section's text instead of leaving every contrast check in it for review. */
+.accordion__item::after {
+  display: block;
+  position: static;
+}
+
+/* Doc-page heroes rise in once, staggered by `--rise-step`; reduced motion shows them in place (STA-1371). */
+@media (prefers-reduced-motion: no-preference) {
+  .doc-rise {
+    animation: doc-rise var(--duration-reveal, 0.5s) var(--ease-fast, ease) both;
+    animation-delay: calc(var(--rise-step, 0) * 70ms);
+  }
+}
+
+@keyframes doc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The knobs playground's density toggle scales Tailwind's spacing unit inside its pane only (STA-1371).
+   shortcut: a showcase-level stand-in until the tokens carry a density scale; then the theme sets it. */
+[data-density="compact"] {
+  --spacing: 0.2rem;
+}
+
+[data-density="spacious"] {
+  --spacing: 0.3rem;
+}
+
+/* ---- Component-page navigation: the sidebar and the "On this page" table of contents (STA-1371) ---------------- */
+
+/* The sidebar's list keeps a gutter on both edges, so the current row's fill and the filter's border never touch the
+   edge that clips them (or the scrollbar), in either direction. It fades at an edge it scrolls under: the fade
+   lengths run on the list's own scroll timeline, so a list that does not scroll has none. */
+@property --nav-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --nav-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes nav-fade {
+  0% {
+    --nav-fade-start: 0px;
+    --nav-fade-end: 1.5rem;
+  }
+
+  8%,
+  92% {
+    --nav-fade-start: 1.5rem;
+    --nav-fade-end: 1.5rem;
+  }
+
+  100% {
+    --nav-fade-start: 1.5rem;
+    --nav-fade-end: 0px;
+  }
+}
+
+/* In the components layer, so a layout utility on the host (`max-xl:hidden`) still wins. */
+@layer components {
+  .playground-sidebar {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding-block: 0.25rem 1rem;
+    padding-inline: 0.5rem;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .playground-sidebar,
+    .toc-rail {
+      mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--nav-fade-start),
+        #000 calc(100% - var(--nav-fade-end)),
+        transparent
+      );
+      animation: nav-fade linear both;
+      animation-timeline: scroll(self);
+    }
+  }
+
+  /* The table of contents: one continuous line on the start side, a single accent segment sliding along it to the row
+     the reader is at. Rows wrap; nested rows sit further in. */
+  .toc-rail {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-block: 0.25rem 1rem;
+    padding-inline-end: 0.25rem;
+    font-size: var(--text-sm);
+  }
+
+  .toc-rail__title {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: var(--muted);
+  }
+
+  .toc-track {
+    position: relative;
+    border-inline-start: 1px solid var(--separator);
+  }
+
+  .toc-mark {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: -1px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  :root[data-motion="full"] .toc-mark {
+    transition:
+      transform var(--duration-base, 200ms) var(--ease-fast, ease),
+      height var(--duration-base, 200ms) var(--ease-fast, ease);
+  }
+
+  .toc-list {
+    display: grid;
+  }
+
+  .toc-link {
+    display: block;
+    padding-block: 0.3125rem;
+    padding-inline: 0.875rem 0.25rem;
+    color: var(--muted);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+  }
+
+  .toc-link[data-level="3"] {
+    padding-inline-start: 1.625rem;
+  }
+
+  .toc-link:hover {
+    color: var(--foreground);
+  }
+
+  .toc-link[aria-current="location"] {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .toc-link:focus-visible,
+  .toc-rail__top:focus-visible,
+  .toc-menu > summary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+    border-radius: var(--radius-control);
+  }
+
+  .toc-rail__top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    justify-self: start;
+    padding-block: 0.25rem;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    text-decoration: none;
+  }
+
+  .toc-rail__top:hover {
+    color: var(--foreground);
+  }
+
+  /* Below `xl` the table of contents is a disclosure at the top of the page. */
+  .toc-menu {
+    border: 1px solid var(--separator);
+    border-radius: var(--radius-container);
+    font-size: var(--text-sm);
+  }
+
+  .toc-menu > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding-inline: 0.75rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .toc-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .toc-menu[open] .toc-menu__chevron {
+    transform: rotate(180deg);
+  }
+
+  .toc-menu__body {
+    max-height: min(24rem, 60dvh);
+    overflow-y: auto;
+    padding: 0.25rem 0.75rem 0.75rem;
+  }
+}
+
+/* A page row: indented under its group header's label, the status chip at the end edge. One shape for every state, the
+   control radius (the filter's), so the row, its hover and the filter above draw one corner in every brand. Hover is a
+   quiet neutral fill; the current page is the soft accent with a start-edge bar, so the two never read as two pills.
+   Outside the layer: the house Link carries a `text-link` utility, which a layered rule would lose to. */
+.sidebar-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.375rem;
+  padding-inline: 2rem 0.625rem;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.sidebar-row:hover {
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.sidebar-row[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+  font-weight: 500;
+}
+
+.sidebar-row[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.5rem;
+  inset-inline-start: 0.75rem;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.sidebar-row:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* ---- Preview stages and the components index's category rail (STA-1371, 2026-10-29) ------------------------- */
+
+/* The dot grid behind a live preview (a doc page's hero demo, its example and knobs stages): a neutral field the
+   component reads against in either scheme. Like the ambient field it is a flat tint shaped by a mask, so a contrast
+   checker measures text against the tint at full strength instead of giving up on a gradient image. The tint is
+   resolved here, on the stage, so a preview pane switched to the other scheme gets its own scheme's dots. It is the
+   first child of a `relative` stage, under the demo (positioned after it, below). */
+.stage-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* The tint is an inset shadow, not a background: axe blends every background under a label, so a 9% layer over
+     the whole stage read as a grey page and failed the success and warning tones, though only 1px dots show. */
+  box-shadow: inset 0 0 0 100vmax color-mix(in oklch, var(--foreground) 9%, transparent);
+  mask-image: radial-gradient(circle, black 1px, transparent 1.5px);
+  mask-size: 16px 16px;
+}
+
+/* The stage's other children are positioned, so they stack over the dots by order as well as by z-index: axe
+   otherwise reads the dots as covering every demo label and leaves its contrast for review. It sits in the components
+   layer: unlayered it beat Tailwind's `absolute` utility whatever its specificity and dropped the pane's toggles into
+   the centred grid, over the demo. */
+@layer components {
+  :where(.stage-dots ~ *) {
+    position: relative;
+  }
+}
+
+/* The components index's category rail: sticky under the 3.5rem top bar. It takes the page's background and a
+   hairline only once stuck (a scroll-state query); a browser without one paints them always. */
+.category-rail {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 10;
+  container-type: scroll-state;
+}
+
+/* The background is always painted (the row under it is opaque anyway) and only the hairline waits for the stuck
+   state, with no transition: a fading background let the shelves show through its edges for a few frames each time
+   the rail stuck or came loose. The hairline is always 1px (transparent until stuck), so the height never changes. */
+.category-rail > div {
+  margin-inline: -0.75rem;
+  border-block-end: 1px solid var(--separator);
+  background-color: var(--background);
+}
+
+@supports (container-type: scroll-state) {
+  .category-rail > div {
+    border-block-end-color: transparent;
+  }
+
+  @container scroll-state(stuck: top) {
+    .category-rail > div {
+      border-block-end-color: var(--separator);
+    }
+  }
+}
+
+/* One row that scrolls sideways when it overflows; both edges fade over the padding, so a pill at rest is never
+   faded and a cut one reads as "more this way" in either direction. The row paints the page's background, so a
+   contrast checker measures a pill cut by the edge against the row that spans it, not the page behind. */
+.category-rail-row {
+  display: flex;
+  background-color: var(--background);
+  gap: 0.375rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 0.5rem 0.75rem;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 0.75rem,
+    black calc(100% - 0.75rem),
+    transparent
+  );
+}
+
+.category-pill {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--separator);
+  border-radius: 9999px;
+  /* The row's ground on the pill too: axe extends a scroll row's box only rightwards, so in RTL a pill cut by the row's
+     left edge is left for review unless the pill itself carries the ground its text is measured against. */
+  background: var(--background);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.category-pill:hover {
+  background: var(--default);
+  color: var(--foreground);
+}
+
+.category-pill:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.category-pill-count {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+}
+
+/* The page's own pill on All: marked, but quieter than the lit shelf. */
+.category-pill[data-route] {
+  color: var(--foreground);
+}
+
+.category-pill[aria-current]:not([data-route]) {
+  border-color: color-mix(in oklch, var(--accent) 35%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+  /* Same weight as the rest: a bolder lit pill grew wider and nudged its neighbours each time the spy moved. */
 }

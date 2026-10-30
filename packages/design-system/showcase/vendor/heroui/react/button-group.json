@@ -1,0 +1,75 @@
+{
+  "slug": "button-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(buttons)/button-group.mdx",
+  "parts": [
+    {
+      "name": "ButtonGroup",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger'",
+          "description": "Visual style variant applied to all buttons in the group"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "description": "Size applied to all buttons in the group"
+        },
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'horizontal'",
+          "description": "The orientation of the button group"
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the button group should take full width of its container"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether all buttons in the group are disabled (can be overridden on individual buttons)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Button components to group together"
+        }
+      ]
+    },
+    {
+      "name": "ButtonGroup.Separator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".button-group",
+      "description": "Base button group container"
+    },
+    {
+      "name": ".button-group--full-width",
+      "description": "Full width modifier"
+    },
+    {
+      "name": ".button-group__separator",
+      "description": "Separator element between buttons"
+    }
+  ]
+}

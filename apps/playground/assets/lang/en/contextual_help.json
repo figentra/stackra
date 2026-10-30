@@ -1,0 +1,14 @@
+{
+  "prices_heading": "Tax-inclusive prices",
+  "prices_label": "About tax-inclusive prices",
+  "prices_title": "Tax-inclusive prices",
+  "prices_body": "Menu and shelf prices already include 15% VAT, so the receipt shows the tax inside the total instead of adding it.",
+  "float_heading": "Shift float",
+  "float_label": "About the shift float",
+  "float_body": "The cash the drawer starts the shift with. It is counted again when the shift closes.",
+  "sku_label_text": "SKU",
+  "sku_label": "About the SKU format",
+  "sku_title": "SKU format",
+  "sku_body": "Use the category code, a dash and the item number, for example",
+  "sku_example": "BEV-0042"
+}

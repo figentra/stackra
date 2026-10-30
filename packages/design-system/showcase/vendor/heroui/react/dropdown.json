@@ -1,0 +1,317 @@
+{
+  "slug": "dropdown",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(collections)/dropdown.mdx",
+  "parts": [
+    {
+      "name": "Dropdown",
+      "props": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Sets the open state of the menu (controlled)"
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "description": "Sets the default open state of the menu (uncontrolled)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Handler called when the open state changes"
+        },
+        {
+          "name": "trigger",
+          "type": "\"press\" | \"longPress\"",
+          "default": "\"press\"",
+          "description": "The type of interaction that triggers the menu"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Dropdown content"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.Trigger",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Trigger content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.Popover",
+      "props": [
+        {
+          "name": "placement",
+          "type": "\"bottom\" | \"bottom left\" | \"bottom right\" | \"bottom start\" | \"bottom end\" | \"top\" | \"top left\" | \"top right\" | \"top start\" | \"top end\" | \"left\" | \"left top\" | \"left bottom\" | \"start\" | \"start top\" | \"start bottom\" | \"right\" | \"right top\" | \"right bottom\" | \"end\" | \"end top\" | \"end bottom\"",
+          "default": "\"bottom\"",
+          "description": "Placement of the popover relative to the trigger"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content children"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.Menu",
+      "props": [
+        {
+          "name": "selectionMode",
+          "type": "\"single\" | \"multiple\" | \"none\"",
+          "default": "\"none\"",
+          "description": "Whether single or multiple selection is enabled"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Iterable<Key>",
+          "description": "The currently selected keys (controlled)"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Iterable<Key>",
+          "description": "The initial selected keys (uncontrolled)"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Selection) => void",
+          "description": "Handler called when the selection changes"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled items"
+        },
+        {
+          "name": "onAction",
+          "type": "(key: Key) => void",
+          "description": "Handler called when an item is activated"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Menu content"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.Section",
+      "props": [
+        {
+          "name": "selectionMode",
+          "type": "\"single\" | \"multiple\"",
+          "description": "Selection mode for items within this section"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Iterable<Key>",
+          "description": "The currently selected keys (controlled)"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Iterable<Key>",
+          "description": "The initial selected keys (uncontrolled)"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Selection) => void",
+          "description": "Handler called when the selection changes"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled items"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Section content"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.Item",
+      "props": [
+        {
+          "name": "id",
+          "type": "Key",
+          "description": "Unique identifier for the item"
+        },
+        {
+          "name": "textValue",
+          "type": "string",
+          "description": "Text content of the item for typeahead"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Visual variant of the item"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Item content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.ItemIndicator",
+      "props": [
+        {
+          "name": "type",
+          "type": "\"checkmark\" | \"dot\"",
+          "default": "\"checkmark\"",
+          "description": "Type of indicator to display"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Custom indicator content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.SubmenuIndicator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator content"
+        }
+      ]
+    },
+    {
+      "name": "Dropdown.SubmenuTrigger",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Submenu trigger content"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the item is selected"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the item is focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the item is disabled"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the item is being pressed"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".dropdown",
+      "description": "Base dropdown container"
+    },
+    {
+      "name": ".dropdown__trigger",
+      "description": "The button or element that triggers the dropdown"
+    },
+    {
+      "name": ".dropdown__popover",
+      "description": "The popover container"
+    },
+    {
+      "name": ".dropdown__menu",
+      "description": "The menu container inside the popover"
+    },
+    {
+      "name": ".dropdown__trigger[data-focus-visible=\"true\"]",
+      "description": "Focused trigger state"
+    },
+    {
+      "name": ".dropdown__trigger[data-disabled=\"true\"]",
+      "description": "Disabled trigger state"
+    },
+    {
+      "name": ".dropdown__trigger[data-pressed=\"true\"]",
+      "description": "Pressed trigger state"
+    },
+    {
+      "name": ".dropdown__popover[data-entering]",
+      "description": "Entering animation state"
+    },
+    {
+      "name": ".dropdown__popover[data-exiting]",
+      "description": "Exiting animation state"
+    },
+    {
+      "name": ".dropdown__menu[data-selection-mode=\"single\"]",
+      "description": "Single selection mode"
+    },
+    {
+      "name": ".dropdown__menu[data-selection-mode=\"multiple\"]",
+      "description": "Multiple selection mode"
+    }
+  ],
+  "a11y": "The Dropdown component implements the ARIA menu pattern and provides:\n\n- Full keyboard navigation support (arrow keys, home/end, typeahead)\n- Screen reader announcements for actions and selection changes\n- Proper focus management\n- Support for disabled states\n- Long press interaction support\n- Submenu navigation\n\nFor more information, see the [React Aria Menu documentation](https://react-spectrum.adobe.com/react-aria/Menu.html#menu)."
+}

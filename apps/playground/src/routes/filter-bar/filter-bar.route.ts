@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the filter bar route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the filter bar route of @figentra/playground: its path. The page it renders is
  *          `filter-bar.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The FilterBar page, at `/filter-bar`. */
-export class FilterBarRoute extends Route({ path: "/filter-bar" }) {
-  /** The page title. */
-  static readonly title = "Filter bar";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Data display";
-}
+export class FilterBarRoute extends Route({ path: "/filter-bar" }) {}

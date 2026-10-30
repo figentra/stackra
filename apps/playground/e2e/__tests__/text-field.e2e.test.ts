@@ -13,6 +13,8 @@
 // @covers sta-350:FR-063 sta-350:FR-064 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/text-field?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Text field" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Text field", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -119,8 +123,9 @@ test("the focused input shows a ring", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the label sits at the reading-start side of the input in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const input = page.getByRole("textbox", { name: "Label only" });
-    const label = page.getByText("Label only", { exact: true });
+    // By place: the words speak the page's locale; the usage's first field and its label.
+    const input = example(page, "usage").getByRole("textbox").first();
+    const label = example(page, "usage").locator('[data-slot="label"]').first();
     const inputBox = await input.boundingBox();
     const labelBox = await label.boundingBox();
     if (!inputBox || !labelBox) throw new Error("a box is missing");

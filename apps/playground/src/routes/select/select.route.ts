@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the select route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the select route of @figentra/playground: its path. The page it renders is
  *          `select.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Select page, at `/select`. */
-export class SelectRoute extends Route({ path: "/select" }) {
-  /** The page title. */
-  static readonly title = "Select";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Selection";
-}
+export class SelectRoute extends Route({ path: "/select" }) {}

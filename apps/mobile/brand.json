@@ -1,0 +1,76 @@
+{
+  "brand": "stackra",
+  "sha": "6775dc35",
+  "source": "local",
+  "registry": {
+    "package": "@figentra/brand-stackra",
+    "version": null
+  },
+  "out": "assets/brand",
+  "files": [
+    {
+      "to": "icon-1024.png",
+      "from": "logo/app-icon/ios/ios-1024.light.svg",
+      "size": 1024
+    },
+    {
+      "to": "stackra.icon/icon.json",
+      "json": {
+        "fill": {
+          "solid": "srgb:0.10980,0.11765,0.12941,1.00000"
+        },
+        "groups": [
+          {
+            "layers": [
+              {
+                "image-name": "1-st.svg",
+                "name": "st"
+              }
+            ],
+            "shadow": {
+              "kind": "neutral",
+              "opacity": 0.5
+            },
+            "translucency": {
+              "enabled": true,
+              "value": 0.4
+            }
+          }
+        ],
+        "supported-platforms": {
+          "circles": ["watchOS"],
+          "squares": "shared"
+        }
+      }
+    },
+    {
+      "to": "stackra.icon/Assets/1-st.svg",
+      "from": "logo/app-icon/liquid-glass/1-st.svg"
+    },
+    {
+      "to": "android-foreground.png",
+      "from": "logo/app-icon/android/adaptive-foreground.svg",
+      "size": 1024
+    },
+    {
+      "to": "android-background.png",
+      "from": "logo/app-icon/android/adaptive-background.svg",
+      "size": 1024
+    },
+    {
+      "to": "android-monochrome.png",
+      "from": "logo/app-icon/android/adaptive-monochrome.svg",
+      "size": 1024
+    },
+    {
+      "to": "splash-light.png",
+      "from": "logo/stackra-symbol.light.svg",
+      "size": 512
+    },
+    {
+      "to": "splash-dark.png",
+      "from": "logo/stackra-symbol.dark.svg",
+      "size": 512
+    }
+  ]
+}

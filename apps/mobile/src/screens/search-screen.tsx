@@ -1,35 +1,44 @@
 /**
  * Stackra file contract:
- * Purpose: the Search tab's screen in development builds: the review area's search on a tab of its own, which iOS 26
- *          draws as the search button beside the tab bar. The header search field filters every page by the landing's
- *          rule (`matchPages`), and a match opens its page in the Home tab, inside its category strip and pager.
- * Boundary: presentation, the query and navigation calls; release builds have no Search tab, and the pages come in
- *          gallery order from `design-system-components.ts`.
+ * Purpose: the Search tab's screen in development builds: the showcase search on a tab of its own, which iOS 26
+ *          draws as the search button beside the tab bar. The header search field runs the showcases' one rule
+ *          (`matchEntries`) over the registry worded in the current locale; a row shows the title, the category and
+ *          tier and why it matched, and a press opens the `Component` screen in the Home tab, on the API tab when a
+ *          prop matched.
+ * Boundary: presentation, the query and navigation calls; release builds have no Search tab.
  * Runtime: react-native
- * Governing contract: ADR 0310 (decision 6, the review area); ADR 0060 (light, dark, RTL); STA-429.
+ * Governing contract: showcase redesign spec (2026-10-27) sections 3.3 and 7.5; ADR 0310 (decision 6); STA-429.
  */
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text } from "@stackra/ui/native";
+import type { I18nKey } from "@stackra/i18n";
+import {
+  categoryKeys,
+  COMPONENTS,
+  entryKey,
+  matchEntries,
+  mobileRoute,
+  type MobileComponentParams,
+  type SearchHit,
+} from "@stackra/showcase";
+import { haptics, Surface, Text, useCatalogueText, useDesignSystem } from "@stackra/ui/native";
 import { useLayoutEffect, useState } from "react";
+import { Pressable } from "react-native";
 
-import { matchPages } from "../components/ui/match-pages";
-import { PageGallery } from "../components/ui/page-gallery";
 import { ReviewIcons } from "../components/ui/review-icons";
 import { Screen } from "../components/ui/screen";
+import { HOME_KEYS } from "../constants/home-keys.constant";
+import { MESSAGES } from "../constants/messages.constant";
+import { searchDocs } from "../functions/search-docs.function";
 import type { SearchStackParamList } from "../navigation/search-stack-param-list.type";
-import type { DesignSystemComponentRoute } from "../navigation/design-system-component-route.type";
-import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 
-// shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
-const STRINGS = {
-  placeholder: "Search components and categories…",
-  hint: "Type a component or a category.",
-  results: (count: number) => (count === 1 ? "1 match" : `${count} matches`),
-  empty: (query: string) => `Nothing matches “${query}”.`,
-} as const;
+/** The showcase chrome's keys. */
+const K = HOME_KEYS.showcase;
 
-/** Opens a page in the Home tab's stack, where the review area's pages live. */
-type OpenInHome = (tab: "HomeTab", params: { screen: DesignSystemComponentRoute }) => void;
+/** Opens a component in the Home tab's stack, where the showcase lives. */
+type OpenInHome = (
+  tab: "HomeTab",
+  params: { screen: "Component"; params: MobileComponentParams },
+) => void;
 
 /** The Search tab: the header search and its matches, inside the area's icons. */
 export function SearchScreen(props: NativeStackScreenProps<SearchStackParamList, "Search">) {
@@ -40,35 +49,58 @@ export function SearchScreen(props: NativeStackScreenProps<SearchStackParamList,
   );
 }
 
-/** The matches of the header search, or a hint while it is empty. */
+/** The matches of the header search, as rows. */
 function SearchResults({ navigation }: NativeStackScreenProps<SearchStackParamList, "Search">) {
   const [query, setQuery] = useState("");
-  // navigate() bubbles to the tab navigator; its per-route overloads cannot take a union of route names.
-  const openPage = (route: DesignSystemComponentRoute) =>
-    (navigation.navigate as OpenInHome)("HomeTab", { screen: route });
+  const t = useCatalogueText(MESSAGES.en);
+  const { locale } = useDesignSystem();
+  const placeholder = t(K.ui.search_placeholder);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerSearchBarOptions: {
-        placeholder: STRINGS.placeholder,
+        placeholder,
         hideWhenScrolling: false,
         onChangeText: (event) => setQuery(event.nativeEvent.text),
         onCancelButtonPress: () => setQuery(""),
       },
     });
-  }, [navigation]);
+  }, [navigation, placeholder]);
 
-  const found = query.trim() ? matchPages(DESIGN_SYSTEM_COMPONENTS, query) : undefined;
+  const hits = query.trim() ? matchEntries(searchDocs(t, locale), query) : undefined;
+  const open = (hit: SearchHit) => {
+    const entry = COMPONENTS.find((candidate) => entryKey(candidate) === hit.doc.key);
+    if (!entry) return;
+    haptics.play("impact");
+    // navigate() bubbles to the tab navigator; its per-route overloads do not reach a nested screen's params.
+    (navigation.navigate as OpenInHome)("HomeTab", {
+      screen: "Component",
+      params: mobileRoute(entry, hit.reason === "prop" ? "api" : undefined).params,
+    });
+  };
+
   return (
     <Screen isAmbient>
-      <Text tone="muted" accessibilityLiveRegion="polite">
-        {found === undefined
-          ? STRINGS.hint
-          : found.length === 0
-            ? STRINGS.empty(query)
-            : STRINGS.results(found.length)}
-      </Text>
-      {found && found.length > 0 ? <PageGallery pages={found} onOpen={openPage} /> : null}
+      {hits ? (
+        <Text tone="muted" accessibilityLiveRegion="polite">
+          {hits.length === 0
+            ? t(K.ui.no_results, { query })
+            : t(K.ui.count_components, { count: hits.length })}
+        </Text>
+      ) : null}
+      {hits?.map((hit) => (
+        <Pressable key={hit.doc.key} accessibilityRole="button" onPress={() => open(hit)}>
+          <Surface className="gap-0.5">
+            <Text className="font-semibold">{hit.doc.title}</Text>
+            <Text type="small" tone="muted">
+              {t(categoryKeys(hit.doc.category).title as I18nKey)}
+            </Text>
+            <Text type="caption" tone="muted">
+              {t(K.search.reason[hit.reason], { name: hit.matched })}
+            </Text>
+          </Surface>
+        </Pressable>
+      ))}
     </Screen>
   );
 }

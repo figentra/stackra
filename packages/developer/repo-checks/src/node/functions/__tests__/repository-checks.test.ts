@@ -95,7 +95,7 @@ const uniwind = (dir: string): string[] =>
     pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
   }).filter((m) => m.includes("Uniwind Pro"));
 
-test("no member depends on @stackra-pro/*, and HeroUI Pro reaches apps only (ADR 0461, ADR 0310)", () => {
+test("no member depends on @stackra-pro/* or HeroUI Pro, apps included (ADR 0461, ADR 0469)", () => {
   for (const dir of ["packages/design-system/ui", "apps/playground", "apps/mobile"])
     for (const field of ["dependencies", "devDependencies", "peerDependencies"] as const)
       assert.deepEqual(
@@ -114,21 +114,16 @@ test("no member depends on @stackra-pro/*, and HeroUI Pro reaches apps only (ADR
       "dependencies.@stackra-pro/builder is a Pro package: it lives in figentra/stackra-pro, and no member here may depend on it (ADR 0461)",
     ],
   );
-  for (const dep of ["@heroui-pro/react", "heroui-native-pro"]) {
-    assert.deepEqual(
-      pro("packages/design-system/ui", {
-        name: "@stackra/ui",
-        devDependencies: { [dep]: "catalog:" },
-      }),
-      [`devDependencies.${dep} is HeroUI Pro: only apps may depend on it (ADR 0310)`],
-      dep,
-    );
-    assert.deepEqual(
-      pro("apps/playground", { name: "@figentra/playground", dependencies: { [dep]: "catalog:" } }),
-      [],
-      dep,
-    );
-  }
+  for (const dep of ["@heroui-pro/react", "heroui-native-pro"])
+    for (const [dir, name] of [
+      ["packages/design-system/ui", "@stackra/ui"],
+      ["apps/playground", "@figentra/playground"],
+    ] as const)
+      assert.deepEqual(
+        pro(dir, { name, devDependencies: { [dep]: "catalog:" } }),
+        [`devDependencies.${dep} is HeroUI Pro: no member here may depend on it (ADR 0469)`],
+        `${dir} ${dep}`,
+      );
   // A free name that merely contains "pro" is not a Pro package.
   assert.deepEqual(
     pro("packages/data/x", {

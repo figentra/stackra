@@ -1,0 +1,151 @@
+{
+  "generatedFrom": {
+    "hash": "0c0407979d52cdec",
+    "propsFiles": ["ui/src/native/fullscreen-bar/fullscreen-bar.props.ts"]
+  },
+  "importLine": "import { FullscreenBar } from \"@stackra/ui/native\";",
+  "key": "free/fullscreen-bar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Leaves the full-screen mode; the bar's exit button calls it (with a haptic on native).",
+          "name": "onExit",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "FullscreenBar",
+      "props": [
+        {
+          "description": "What is on screen: the register's name, the station, the document.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Controls drawn before the exit button, such as a lock or a help button.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The exit button's accessible name; defaults to the catalogue's \"Exit full screen\".",
+          "name": "exitLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Milliseconds without a touch, pointer move or key before the bar slides away; `false` keeps it. Defaults to\n4000. The bar never hides while it holds focus or the pointer.",
+          "name": "autoHideMs",
+          "required": false,
+          "source": "stackra",
+          "type": "number | false"
+        },
+        {
+          "description": "True on a customer-facing screen (kiosk, KDS, customer display): once hidden, the bar comes back only on a long\npress at the top edge, the manager gesture, not on any tap or pointer move. A key press still brings it back on\nweb, since a keyboard is staff-only there.",
+          "name": "isLocked",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,0 +1,19 @@
+{
+  "search": {
+    "label": "Search customers",
+    "query": "محمد",
+    "r1": "مُحَمَّد العتيبي, Riyadh",
+    "r2": "Mohammed Al-Harbi, Jeddah",
+    "r3": "شركة محمد للتجارة, Dammam",
+    "r4": "Sara Al-Qahtani, Khobar"
+  },
+  "terms": {
+    "text": "Free delivery in Riyadh and Jeddah on orders over SAR 200.",
+    "a": "riyadh",
+    "b": "delivery"
+  },
+  "arabic": {
+    "query": "مدرسه",
+    "text": "المَدْرَسَةُ الأهليّة في حيّ النَّخيل تفتح التسجيل للعام الجديد."
+  }
+}

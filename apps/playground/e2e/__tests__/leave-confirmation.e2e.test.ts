@@ -17,6 +17,8 @@
 // @covers sta-350:FR-105 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,14 +27,27 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/leave-confirmation?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Leave confirmation" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Leave confirmation", locale) }),
+  ).toBeVisible();
 };
 
-/** Types into the note and tries to leave, returning the dialog that opens. */
+/** The Usage example: its note, its Save and Leave buttons (by position: the Arabic page translates them) and its answer. */
+const usage = (page: Page) => {
+  const section = example(page, "usage");
+  return {
+    note: section.getByRole("textbox"),
+    save: section.getByRole("listitem").nth(0).getByRole("button"),
+    leave: section.getByRole("listitem").nth(1).getByRole("button"),
+    status: section.getByRole("status"),
+  };
+};
+
+/** Types into the Usage note and tries to leave, returning the dialog that opens. */
 const tryToLeave = async (page: Page) => {
-  await page.getByRole("textbox", { name: "Note" }).fill("Draft");
-  await page.getByRole("button", { name: "Leave this page", exact: true }).click();
-  const dialog = page.getByRole("alertdialog", { name: "Discard unsaved changes?" });
+  await usage(page).note.fill("Draft");
+  await usage(page).leave.click();
+  const dialog = page.getByRole("alertdialog");
   await expect(dialog).toBeVisible();
   return dialog;
 };
@@ -88,22 +103,23 @@ for (const scheme of SCHEMES)
 
 test("leaving costs nothing while the note is saved", async ({ page }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
-  await page.getByRole("button", { name: "Leave this page", exact: true }).click();
+  const status = usage(page).status;
+  await usage(page).leave.click();
   await expect(status).toHaveText("You left the page.");
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
 
-  await page.getByRole("textbox", { name: "Note" }).fill("Draft");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.getByRole("button", { name: "Leave this page", exact: true }).click();
+  await usage(page).note.fill("Draft");
+  await usage(page).save.click();
+  await usage(page).leave.click();
   await expect(status).toHaveText("You left the page.");
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
-  await expect(page.getByRole("textbox", { name: "Note" })).toHaveValue("Draft");
+  await expect(usage(page).note).toHaveValue("Draft");
 });
 
 test("the dialog is named by its question, and focus starts on Stay", async ({ page }) => {
   await open(page, "light", "en");
   const dialog = await tryToLeave(page);
+  await expect(dialog).toHaveAccessibleName("Discard unsaved changes?");
   await expect(dialog).toHaveAccessibleDescription("Your edits to this note will be lost.");
   await expect(dialog.getByRole("button", { name: "Stay on page" })).toBeFocused();
 });
@@ -112,22 +128,22 @@ test("Stay and Escape keep the note and return focus to the button that asked", 
   page,
 }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
+  const status = usage(page).status;
   const first = await tryToLeave(page);
   await first.getByRole("button", { name: "Stay on page" }).click();
   await expect(first).toBeHidden();
   await expect(status).toHaveText("You stayed on the page.");
-  await expect(page.getByRole("textbox", { name: "Note" })).toHaveValue("Draft");
-  await expect(page.getByRole("button", { name: "Leave this page", exact: true })).toBeFocused();
+  await expect(usage(page).note).toHaveValue("Draft");
+  await expect(usage(page).leave).toBeFocused();
 
-  await page.getByRole("button", { name: "Leave this page", exact: true }).click();
-  const second = page.getByRole("alertdialog", { name: "Discard unsaved changes?" });
+  await usage(page).leave.click();
+  const second = page.getByRole("alertdialog");
   await expect(second).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(second).toBeHidden();
   await expect(status).toHaveText("You stayed on the page.");
-  await expect(page.getByRole("textbox", { name: "Note" })).toHaveValue("Draft");
-  await expect(page.getByRole("button", { name: "Leave this page", exact: true })).toBeFocused();
+  await expect(usage(page).note).toHaveValue("Draft");
+  await expect(usage(page).leave).toBeFocused();
 });
 
 test("Discard leaves the page and drops the note", async ({ page }) => {
@@ -137,20 +153,24 @@ test("Discard leaves the page and drops the note", async ({ page }) => {
   await expect(dialog.getByRole("button", { name: "Discard changes" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: "Last answer" }).getByRole("status")).toHaveText(
-    "You left the page.",
-  );
-  await expect(page.getByRole("textbox", { name: "Note" })).toHaveValue("");
+  await expect(usage(page).status).toHaveText("You left the page.");
+  await expect(usage(page).note).toHaveValue("");
 });
 
 test("the browser is asked to hold the tab back only while there are unsaved changes", async ({
   page,
 }) => {
   await open(page, "light", "en");
-  expect(await isHeldBack(page)).toBe(false);
-  await page.getByRole("textbox", { name: "Note" }).fill("Draft");
+  // The Last answer example opens with a draft of its own: the page is held back until it is saved. It loads lazily,
+  // so its Save button is waited for before the first check.
+  const saveAnswer = example(page, "answer").getByRole("button", { name: "Save", exact: true });
+  await expect(saveAnswer).toBeVisible();
   expect(await isHeldBack(page)).toBe(true);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await saveAnswer.click();
+  expect(await isHeldBack(page)).toBe(false);
+  await usage(page).note.fill("Draft");
+  expect(await isHeldBack(page)).toBe(true);
+  await usage(page).save.click();
   expect(await isHeldBack(page)).toBe(false);
 });
 

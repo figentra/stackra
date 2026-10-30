@@ -1,0 +1,23 @@
+{
+  "save": "Save",
+  "more_save_options": "More save options",
+  "save_options": "Save options",
+  "save_new": "Save and new",
+  "save_draft": "Save as draft",
+  "discard": "Discard changes",
+  "chosen": "Chosen: {action}",
+  "nothing_chosen": "Nothing chosen yet",
+  "charge": "Charge 245.50 SAR",
+  "more_charge_options": "More payment options",
+  "charge_options": "Payment options",
+  "split_bill": "Split the bill",
+  "pay_later": "Pay later",
+  "print": "Print receipt",
+  "more_print_options": "More print options",
+  "print_options": "Print options",
+  "gift_receipt": "Gift receipt",
+  "email_receipt": "Email receipt",
+  "disabled": "Disabled",
+  "start_saving": "Start saving",
+  "stop_saving": "Stop saving"
+}

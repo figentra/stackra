@@ -1,0 +1,158 @@
+{
+  "generatedFrom": {
+    "hash": "62ea1cc4efc5f192",
+    "propsFiles": ["ui/src/native/pull-to-refresh/pull-to-refresh.props.ts"]
+  },
+  "importLine": "import { PullToRefresh } from \"@stackra/ui/native\";",
+  "key": "free/pull-to-refresh",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called on a pull; while its promise runs the spinner shows.",
+          "name": "onRefresh",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void | Promise<void>"
+        }
+      ],
+      "name": "PullToRefresh",
+      "props": [
+        {
+          "description": "The content that scrolls.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to show the spinner from the app's side (a reload it started); controlled when given.",
+          "name": "isRefreshing",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What the spinner says to assistive technology and under it on iOS, for example \"Refreshing orders\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Style",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

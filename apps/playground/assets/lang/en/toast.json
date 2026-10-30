@@ -1,0 +1,47 @@
+{
+  "show": "Show {tone, select, accent {accent} success {success} warning {warning} danger {danger} other {default}} toast",
+  "with_description": "With a description",
+  "with_action": "With an action",
+  "staying": "Stays until dismissed",
+  "own_icon": "An icon of your own",
+  "no_icon": "No icon",
+  "at_top": "Show toasts at the top",
+  "stack": "Show four toasts",
+  "clear": "Dismiss all toasts",
+  "dismiss_label": "Dismiss notification",
+  "tone_messages": {
+    "default": "Draft autosaved",
+    "accent": "A new version is available",
+    "success": "Changes saved",
+    "warning": "Storage is almost full",
+    "danger": "Payment failed"
+  },
+  "message": {
+    "saved": "Changes saved",
+    "profile": "Your profile is up to date.",
+    "deleted": "Order deleted",
+    "undo": "Undo",
+    "restored": "Order restored",
+    "paused": "Upload paused",
+    "copied": "Link copied",
+    "saved_short": "Saved",
+    "syncing": "Syncing",
+    "offline": "Offline",
+    "mention": "Rana mentioned you in order 1042",
+    "person": "Rana Haddad"
+  },
+  "look_label": "Look",
+  "align_label": "Along the edge",
+  "looks": {
+    "alert": "Alert",
+    "bar": "Bar",
+    "flip_bar": "Flip bar",
+    "bubble": "Bubble"
+  },
+  "aligns": {
+    "start": "Start",
+    "center": "Centre",
+    "end": "End",
+    "full": "Full width"
+  }
+}

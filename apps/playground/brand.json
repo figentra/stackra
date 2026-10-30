@@ -1,0 +1,210 @@
+{
+  "brand": "stackra",
+  "sha": "6775dc35",
+  "source": "local",
+  "registry": {
+    "package": "@figentra/brand-stackra",
+    "version": null
+  },
+  "out": "public/brand",
+  "files": [
+    {
+      "to": "favicon.svg",
+      "from": "logo/favicon.svg"
+    },
+    {
+      "to": "favicon-16.svg",
+      "from": "logo/favicon-16.svg"
+    },
+    {
+      "to": "apple-touch-icon.png",
+      "from": "logo/app-icon/ios/ios-1024.dark.svg",
+      "size": 180
+    },
+    {
+      "to": "maskable-512.svg",
+      "from": "logo/app-icon/web/maskable-512.svg"
+    },
+    {
+      "to": "og.png",
+      "from": "logo/app-icon/ios/ios-1024.dark.svg",
+      "size": 1200
+    },
+    {
+      "to": "logo/stackra-symbol.light.svg",
+      "from": "logo/stackra-symbol.light.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.light.en.svg",
+      "from": "logo/stackra-wordmark.light.en.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.light.en.svg",
+      "from": "logo/stackra-horizontal.light.en.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.light.en.svg",
+      "from": "logo/stackra-stacked.light.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.light.en.svg",
+      "from": "logo/stackra-by-figentra.horizontal.light.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.light.en.svg",
+      "from": "logo/stackra-by-figentra.stacked.light.en.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.light.ar.svg",
+      "from": "logo/stackra-wordmark.light.ar.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.light.ar.svg",
+      "from": "logo/stackra-horizontal.light.ar.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.light.ar.svg",
+      "from": "logo/stackra-stacked.light.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.light.ar.svg",
+      "from": "logo/stackra-by-figentra.horizontal.light.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.light.ar.svg",
+      "from": "logo/stackra-by-figentra.stacked.light.ar.svg"
+    },
+    {
+      "to": "logo/stackra-symbol.dark.svg",
+      "from": "logo/stackra-symbol.dark.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.dark.en.svg",
+      "from": "logo/stackra-wordmark.dark.en.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.dark.en.svg",
+      "from": "logo/stackra-horizontal.dark.en.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.dark.en.svg",
+      "from": "logo/stackra-stacked.dark.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.dark.en.svg",
+      "from": "logo/stackra-by-figentra.horizontal.dark.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.dark.en.svg",
+      "from": "logo/stackra-by-figentra.stacked.dark.en.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.dark.ar.svg",
+      "from": "logo/stackra-wordmark.dark.ar.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.dark.ar.svg",
+      "from": "logo/stackra-horizontal.dark.ar.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.dark.ar.svg",
+      "from": "logo/stackra-stacked.dark.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.dark.ar.svg",
+      "from": "logo/stackra-by-figentra.horizontal.dark.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.dark.ar.svg",
+      "from": "logo/stackra-by-figentra.stacked.dark.ar.svg"
+    },
+    {
+      "to": "logo/stackra-symbol.mono-black.svg",
+      "from": "logo/stackra-symbol.mono-black.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.mono-black.en.svg",
+      "from": "logo/stackra-wordmark.mono-black.en.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.mono-black.en.svg",
+      "from": "logo/stackra-horizontal.mono-black.en.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.mono-black.en.svg",
+      "from": "logo/stackra-stacked.mono-black.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.mono-black.en.svg",
+      "from": "logo/stackra-by-figentra.horizontal.mono-black.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.mono-black.en.svg",
+      "from": "logo/stackra-by-figentra.stacked.mono-black.en.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.mono-black.ar.svg",
+      "from": "logo/stackra-wordmark.mono-black.ar.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.mono-black.ar.svg",
+      "from": "logo/stackra-horizontal.mono-black.ar.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.mono-black.ar.svg",
+      "from": "logo/stackra-stacked.mono-black.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.mono-black.ar.svg",
+      "from": "logo/stackra-by-figentra.horizontal.mono-black.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.mono-black.ar.svg",
+      "from": "logo/stackra-by-figentra.stacked.mono-black.ar.svg"
+    },
+    {
+      "to": "logo/stackra-symbol.mono-white.svg",
+      "from": "logo/stackra-symbol.mono-white.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.mono-white.en.svg",
+      "from": "logo/stackra-wordmark.mono-white.en.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.mono-white.en.svg",
+      "from": "logo/stackra-horizontal.mono-white.en.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.mono-white.en.svg",
+      "from": "logo/stackra-stacked.mono-white.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.mono-white.en.svg",
+      "from": "logo/stackra-by-figentra.horizontal.mono-white.en.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.mono-white.en.svg",
+      "from": "logo/stackra-by-figentra.stacked.mono-white.en.svg"
+    },
+    {
+      "to": "logo/stackra-wordmark.mono-white.ar.svg",
+      "from": "logo/stackra-wordmark.mono-white.ar.svg"
+    },
+    {
+      "to": "logo/stackra-horizontal.mono-white.ar.svg",
+      "from": "logo/stackra-horizontal.mono-white.ar.svg"
+    },
+    {
+      "to": "logo/stackra-stacked.mono-white.ar.svg",
+      "from": "logo/stackra-stacked.mono-white.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.horizontal.mono-white.ar.svg",
+      "from": "logo/stackra-by-figentra.horizontal.mono-white.ar.svg"
+    },
+    {
+      "to": "logo/stackra-by-figentra.stacked.mono-white.ar.svg",
+      "from": "logo/stackra-by-figentra.stacked.mono-white.ar.svg"
+    }
+  ]
+}

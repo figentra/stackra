@@ -1,0 +1,72 @@
+{
+  "slug": "spinner",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/spinner.mdx",
+  "parts": [
+    {
+      "name": "Spinner",
+      "props": [
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\" | \"xl\"",
+          "default": "\"md\"",
+          "description": "Size of the spinner"
+        },
+        {
+          "name": "color",
+          "type": "\"current\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"current\"",
+          "description": "Color variant of the spinner"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".spinner",
+      "description": "Base spinner styles with default size"
+    },
+    {
+      "name": ".spinner--sm",
+      "description": "Small size variant"
+    },
+    {
+      "name": ".spinner--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".spinner--lg",
+      "description": "Large size variant"
+    },
+    {
+      "name": ".spinner--xl",
+      "description": "Extra large size variant"
+    },
+    {
+      "name": ".spinner--current",
+      "description": "Inherits current text color"
+    },
+    {
+      "name": ".spinner--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".spinner--danger",
+      "description": "Danger color variant"
+    },
+    {
+      "name": ".spinner--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".spinner--warning",
+      "description": "Warning color variant"
+    }
+  ]
+}

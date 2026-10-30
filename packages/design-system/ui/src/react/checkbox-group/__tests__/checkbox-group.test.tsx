@@ -132,4 +132,20 @@ describe("CheckboxGroup (web)", () => {
     expectTypeOf<CheckboxGroupProps["value"]>().toEqualTypeOf<readonly string[] | undefined>();
     expect(children).toBeTruthy();
   });
+  it("lays the options out in columns under the label, never the label or the error in a cell", () => {
+    const { container } = render(
+      <CheckboxGroup
+        label="Channels"
+        options={OPTIONS}
+        columns={2}
+        errorMessage="Pick one"
+        isInvalid
+      />,
+    );
+    const grid = container.querySelector('[data-slot="checkbox-group-columns"]') as HTMLElement;
+    expect(grid.style.gridTemplateColumns).toBe("repeat(2, minmax(0, 1fr))");
+    expect(grid.querySelectorAll('input[type="checkbox"]')).toHaveLength(OPTIONS.length);
+    expect(grid.textContent).not.toContain("Channels");
+    expect(grid.textContent).not.toContain("Pick one");
+  });
 });

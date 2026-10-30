@@ -25,7 +25,6 @@ import type { DrawerProps } from "#native/drawer/drawer.props";
 import type { DrawerTitleProps } from "#native/drawer/drawer-title.props";
 import { ModalBody } from "#native/modal/modal-body";
 import { ModalFooter } from "#native/modal/modal-footer";
-import { ModalHeader } from "#native/modal/modal-header";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
@@ -33,6 +32,12 @@ const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, 
 vi.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }),
 }));
+
+/** The screen width `useWindowDimensions` reports: a phone unless a test says otherwise. */
+const screenSize = vi.hoisted(() => ({ width: 390 }));
+
+/** What a sheet's or a panel's own open state was last told. */
+const closed = vi.hoisted(() => ({ sheet: vi.fn(), panel: vi.fn() }));
 
 vi.mock("heroui-native", async () => {
   const { createElement } = await import("react");
@@ -49,6 +54,16 @@ vi.mock("heroui-native", async () => {
       Title: record("title"),
       Close: record("close"),
     }),
+    Dialog: Object.assign(record("dialog"), {
+      Trigger: record("dialog-trigger"),
+      Portal: record("dialog-portal"),
+      Overlay: record("dialog-overlay"),
+      Content: record("dialog-content"),
+      Title: record("dialog-title"),
+      Close: record("dialog-close"),
+    }),
+    useBottomSheet: () => ({ isOpen: true, onOpenChange: closed.sheet }),
+    useDialog: () => ({ isOpen: true, onOpenChange: closed.panel }),
   };
 });
 
@@ -57,8 +72,39 @@ vi.mock("react-native", async () => {
   return {
     View: (props: Record<string, unknown>) =>
       createElement("div", null, props["children"] as ReactNode),
+    useWindowDimensions: () => ({ width: screenSize.width, height: 800 }),
   };
 });
+
+vi.mock("react-native-reanimated", () => ({
+  SlideInLeft: "SlideInLeft",
+  SlideInRight: "SlideInRight",
+  SlideOutLeft: "SlideOutLeft",
+  SlideOutRight: "SlideOutRight",
+}));
+
+vi.mock("#native/view-stack/view-stack", () => ({
+  ViewStack: Object.assign(() => null, { View: () => null, Back: () => null }),
+}));
+
+vi.mock("#native/icon-button/icon-button", async () => {
+  const { createElement } = await import("react");
+  return {
+    IconButton: (props: { readonly label: string; readonly onPress: () => void }) =>
+      createElement("button", {
+        type: "button",
+        "aria-label": props.label,
+        onClick: props.onPress,
+      }),
+  };
+});
+
+vi.mock("#native/modal/back-button-block", () => ({
+  BackButtonBlock: (props: Record<string, unknown>) => {
+    received.props["back-block"] = props;
+    return null;
+  },
+}));
 
 vi.mock("#native/text/text", async () => {
   const { createElement } = await import("react");
@@ -81,6 +127,7 @@ const propsOf = (name: string) => received.props[name] ?? {};
 describe("Drawer (native)", () => {
   beforeEach(() => {
     received.props = {};
+    screenSize.width = 390;
   });
 
   it("hands the controlled open state to the sheet, and `defaultOpen` as `isDefaultOpen`", () => {
@@ -155,11 +202,71 @@ describe("Drawer (native)", () => {
     }
   });
 
-  it("shares the modal's header, body and footer, and exposes the five contract parts", () => {
-    expect(Drawer.Header).toBe(ModalHeader);
+  it("shares the modal's body and footer, and exposes the contract parts", () => {
     expect(Drawer.Body).toBe(ModalBody);
     expect(Drawer.Footer).toBe(ModalFooter);
-    expect(Object.keys(Drawer).sort()).toEqual(["Body", "Close", "Footer", "Header", "Title"]);
+    expect(Object.keys(Drawer).sort()).toEqual([
+      "Back",
+      "Body",
+      "Close",
+      "Description",
+      "Footer",
+      "Header",
+      "SubHeader",
+      "Title",
+      "View",
+      "ViewStack",
+    ]);
+  });
+
+  it("draws a start or end drawer as a floating side panel on a tablet, and a sheet on a phone", () => {
+    screenSize.width = 1024;
+    render(
+      <Drawer defaultOpen size="lg" isKeyboardDismissDisabled>
+        <Drawer.Header>
+          <Drawer.Title>Edit</Drawer.Title>
+          <Drawer.Close label="Close" />
+        </Drawer.Header>
+      </Drawer>,
+    );
+    expect(propsOf("dialog")["isDefaultOpen"]).toBe(true);
+    expect(propsOf("dialog-portal")["className"]).toContain("items-end");
+    expect(propsOf("dialog-content")["className"]).toContain("w-[720px]");
+    expect(propsOf("dialog-content")["className"]).toContain("rounded-3xl");
+    expect(propsOf("dialog-content")["style"]).toMatchObject({
+      marginBottom: 28,
+      marginHorizontal: 8,
+    });
+    expect(propsOf("dialog-title")["children"]).toBe("Edit");
+    expect(propsOf("dialog-close")["accessibilityLabel"]).toBe("Close");
+    expect(propsOf("back-block")["isBlocked"]).toBe(true);
+    expect(propsOf("sheet")).toEqual({});
+    received.props = {};
+    render(<Drawer placement="start">x</Drawer>);
+    expect(propsOf("dialog-portal")["className"]).toContain("items-start");
+    received.props = {};
+    render(<Drawer placement="bottom">x</Drawer>);
+    expect(propsOf("dialog")).toEqual({});
+    expect(propsOf("content")["detached"]).toBe(true);
+  });
+
+  it("shows Back only on a drawer stacked over another, and it closes just that layer", () => {
+    const { getByRole, queryByRole } = render(
+      <Drawer defaultOpen>
+        <Drawer.Header>
+          <Drawer.Title>Order</Drawer.Title>
+        </Drawer.Header>
+        <Drawer defaultOpen>
+          <Drawer.Header>
+            <Drawer.Title>Customer</Drawer.Title>
+          </Drawer.Header>
+        </Drawer>
+      </Drawer>,
+    );
+    const back = getByRole("button", { name: "Back" });
+    expect(queryByRole("button", { name: "Back" })).toBe(back);
+    back.click();
+    expect(closed.sheet).toHaveBeenCalledWith(false);
   });
 
   it("hands the title to the sheet title without its level", () => {
@@ -187,11 +294,16 @@ describe("Drawer (native)", () => {
     expect(container.querySelector("i")?.getAttribute("data-name")).toBe("circle-x");
   });
 
-  it("types: extends the contracts, takes only the bottom side and refuses the raw names", () => {
+  it("types: extends the contracts and refuses the raw names", () => {
     expectTypeOf<DrawerProps>().toExtend<DrawerContractProps>();
     expectTypeOf<DrawerTitleProps>().toExtend<OverlayTitleContractProps>();
-    expectTypeOf<DrawerProps["placement"]>().toEqualTypeOf<"bottom" | undefined>();
     expectTypeOf<DrawerProps>().not.toHaveProperty("isDefaultOpen");
     expectTypeOf<DrawerProps>().not.toHaveProperty("enablePanDownToClose");
+  });
+
+  it("hands the snap points to the sheet as a fresh array", () => {
+    const snapPoints = [240, "80%"] as const;
+    render(<Drawer snapPoints={snapPoints}>x</Drawer>);
+    expect(propsOf("content")["snapPoints"]).toEqual([240, "80%"]);
   });
 });

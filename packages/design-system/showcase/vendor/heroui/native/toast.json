@@ -1,0 +1,266 @@
+{
+  "slug": "toast",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(overlays)/toast.mdx",
+  "parts": [
+    {
+      "name": "Toast",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "default": "'default'",
+          "description": "Visual variant of the toast"
+        },
+        {
+          "name": "placement",
+          "type": "'top' | 'bottom'",
+          "default": "'top'",
+          "description": "Placement of the toast on screen"
+        },
+        {
+          "name": "isSwipeable",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the toast can be swiped to dismiss and dragged with rubber effect"
+        },
+        {
+          "name": "animation",
+          "type": "ToastRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the toast container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[1, 0]",
+          "description": "Opacity interpolation values for fade effect as toasts move beyond visible stack"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 300 }",
+          "description": "Animation timing configuration for opacity transitions"
+        },
+        {
+          "name": "translateY.value",
+          "type": "[number, number]",
+          "default": "[0, 10]",
+          "description": "Translate Y interpolation values for peek effect of stacked toasts"
+        },
+        {
+          "name": "translateY.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 300 }",
+          "description": "Animation timing configuration for translateY transitions"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[1, 0.97]",
+          "description": "Scale interpolation values for depth effect of stacked toasts"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 300 }",
+          "description": "Animation timing configuration for scale transitions"
+        },
+        {
+          "name": "entering.top",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeInUp`<br/>`.springify()`<br/>`.withInitialValues({ opacity: 1, transform: [{ translateY: -100 }] })`<br/>`.mass(3)`",
+          "description": "Custom entering animation for top placement"
+        },
+        {
+          "name": "entering.bottom",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeInDown`<br/>`.springify()`<br/>`.withInitialValues({ opacity: 1, transform: [{ translateY: 100 }] })`<br/>`.mass(3)`",
+          "description": "Custom entering animation for bottom placement"
+        },
+        {
+          "name": "exiting.top",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe animation with<br/>`translateY: -100, scale: 0.97, opacity: 0.5`",
+          "description": "Custom exiting animation for top placement"
+        },
+        {
+          "name": "exiting.bottom",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe animation with<br/>`translateY: 100, scale: 0.97, opacity: 0.5`",
+          "description": "Custom exiting animation for bottom placement"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered as title"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered as description"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Action",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered as action button label"
+        },
+        {
+          "name": "variant",
+          "type": "ButtonVariant",
+          "description": "Button variant. If not provided, automatically determined from toast variant"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'sm'",
+          "description": "Size of the action button"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Toast.Close",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom close icon. Defaults to CloseIcon"
+        },
+        {
+          "name": "iconProps",
+          "type": "{ size?: number; color?: string }",
+          "description": "Props for the default close icon"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'sm'",
+          "description": "Size of the close button"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "onPress",
+          "type": "(event: any) => void",
+          "description": "Custom press handler. Defaults to hiding toast"
+        }
+      ]
+    },
+    {
+      "name": "ToastProviderProps",
+      "props": [
+        {
+          "name": "defaultProps",
+          "type": "ToastGlobalConfig",
+          "description": "Global toast configuration used as defaults for all toasts"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true on iOS, uses View instead of FullWindowOverlay. Enables element inspector; toasts won't appear above native modals"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "insets",
+          "type": "ToastInsets",
+          "description": "Insets for spacing from screen edges (added to safe area insets)"
+        },
+        {
+          "name": "maxVisibleToasts",
+          "type": "number",
+          "default": "3",
+          "description": "Maximum number of visible toasts before opacity starts fading"
+        },
+        {
+          "name": "contentWrapper",
+          "type": "(children: React.ReactNode) => React.ReactElement",
+          "description": "Custom wrapper function to wrap toast content"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children to render"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useToast",
+      "signature": "useToast()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

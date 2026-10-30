@@ -1,0 +1,101 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "stackra",
+  "$comment": "Stackra is the base theme of @stackra/brand-kit; this diff pins the neutral steel accent (owner, rules §31; replaces the ADR 0319 steel-blue) and the tile roles so a kit built from figentra/brand matches @stackra/tokens.",
+  "changes": {
+    "colors": {
+      "accent": {
+        "light": "oklch(0.546 0.03 252)",
+        "dark": "oklch(0.77 0.03 252)",
+        "hexLight": "#647282",
+        "hexDark": "#A7B6C7"
+      },
+      "accent-foreground": {
+        "light": "oklch(0.972 0.004 122)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#F5F6F3",
+        "hexDark": "#0B0D0F"
+      },
+      "focus": {
+        "light": "oklch(0.546 0.03 252)",
+        "dark": "oklch(0.77 0.03 252)",
+        "hexLight": "#647282",
+        "hexDark": "#A7B6C7"
+      },
+      "link": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "background": {
+        "light": "oklch(0.972 0.004 122)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#F5F6F3",
+        "hexDark": "#0B0D0F"
+      }
+    },
+    "palette": {
+      "steel": {
+        "light": "oklch(0.931 0.012 248)",
+        "dark": "oklch(0.931 0.012 248)",
+        "hexLight": "#E2E9F0",
+        "hexDark": "#E2E9F0"
+      },
+      "steel-deep": {
+        "light": "oklch(0.24 0.015 248.4)",
+        "dark": "oklch(0.24 0.015 248.4)",
+        "hexLight": "#1A2026",
+        "hexDark": "#1A2026"
+      },
+      "stk-ink": {
+        "light": "oklch(0.24 0.015 248.4)",
+        "dark": "oklch(0.931 0.012 248)",
+        "hexLight": "#1A2026",
+        "hexDark": "#E2E9F0"
+      },
+      "stk-tile": {
+        "light": "oklch(1 0 89.9)",
+        "dark": "oklch(0.234 0.007 258.4)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#1C1E21"
+      },
+      "stk-tile-line": {
+        "light": "oklch(0.839 0.007 124.5)",
+        "dark": "oklch(0.35 0.009 248.1)",
+        "hexLight": "#C9CBC6",
+        "hexDark": "#373B3F"
+      },
+      "accent-hover": {
+        "light": "oklch(0.5 0.03 252)",
+        "dark": "oklch(0.72 0.03 252)",
+        "hexLight": "#576574",
+        "hexDark": "#97A6B7"
+      },
+      "accent-pressed": {
+        "light": "oklch(0.45 0.03 252)",
+        "dark": "oklch(0.67 0.03 252)",
+        "hexLight": "#495766",
+        "hexDark": "#8897A8"
+      },
+      "accent-soft": {
+        "light": "oklch(0.94 0.012 252)",
+        "dark": "oklch(0.29 0.015 252)",
+        "hexLight": "#E6ECF3",
+        "hexDark": "#262C33"
+      },
+      "accent-soft-foreground": {
+        "light": "oklch(0.4 0.03 252)",
+        "dark": "oklch(0.88 0.02 252)",
+        "hexLight": "#3C4958",
+        "hexDark": "#CED9E5"
+      }
+    },
+    "fontFamily": {
+      "display": "\"Geist Mono\", ui-monospace, \"SFMono-Regular\", \"Menlo\", monospace",
+      "displayArabic": "\"IBM Plex Sans Arabic\", \"Geist\", system-ui, \"Segoe UI\", \"Tahoma\", sans-serif"
+    }
+  }
+}

@@ -6,8 +6,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { BarContent } from "#contracts/enums/bar-content.enum";
 export { ColorRole } from "#contracts/enums/color-role.enum";
 export { MaterialLevel } from "#contracts/enums/material-level.enum";
+export { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 export { MaterialMode } from "#contracts/enums/material-mode.enum";
 export type { MotionTiming } from "#contracts/types/motion-timing.type";
 export type { ColorToken } from "#contracts/types/color-token.type";

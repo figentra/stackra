@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "0ccd24fe15c6ba41",
+    "propsFiles": ["ui/src/react/turnstile/turnstile.props.ts"]
+  },
+  "importLine": "import { Turnstile } from \"@stackra/ui/react\";",
+  "key": "free/turnstile",
+  "parts": [
+    {
+      "name": "Turnstile",
+      "props": [
+        {
+          "description": "The name the token is posted under; Cloudflare's own `cf-turnstile-response` when left out.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The site key; the app's `VITE_TURNSTILE_SITE_KEY` when left out.",
+          "name": "siteKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

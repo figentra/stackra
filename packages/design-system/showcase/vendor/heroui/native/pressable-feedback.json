@@ -1,0 +1,267 @@
+{
+  "slug": "pressable-feedback",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(utilities)/pressable-feedback.mdx",
+  "parts": [
+    {
+      "name": "PressableFeedback",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be wrapped with press feedback"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the pressable component is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "PressableFeedbackRootAnimation",
+          "description": "Customize scale via `{ scale: ... }`, `false` to disable root scale, `'disable-all'` to cascade-disable all"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the root's built-in animated styles are active"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...rest",
+          "type": "AnimatedProps<PressableProps>",
+          "description": "All Reanimated Animated Pressable props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "scale",
+          "type": "PressableFeedbackScaleAnimation",
+          "description": "Customize the built-in scale animation (value, timingConfig, etc.)"
+        },
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Control animation state while keeping configuration (e.g. for runtime toggling)"
+        }
+      ]
+    },
+    {
+      "name": "PressableFeedback.Scale",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "PressableFeedbackScaleAnimation",
+          "description": "Animation configuration for scale effect"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles"
+        },
+        {
+          "name": "...AnimatedProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "value",
+          "type": "number",
+          "default": "0.985",
+          "description": "Scale value when pressed (automatically adjusted based on container width)"
+        },
+        {
+          "name": "timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 300, easing: Easing.out(Easing.ease) }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "ignoreScaleCoefficient",
+          "type": "boolean",
+          "default": "false",
+          "description": "Ignore automatic scale coefficient and use the scale value directly"
+        }
+      ]
+    },
+    {
+      "name": "PressableFeedback.Highlight",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "PressableFeedbackHighlightAnimation",
+          "description": "Animation configuration for highlight overlay"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles"
+        },
+        {
+          "name": "...AnimatedProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 0.1]",
+          "description": "Opacity values [unpressed, pressed]"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 200 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "backgroundColor.value",
+          "type": "string",
+          "default": "Theme-aware gray",
+          "description": "Background color of highlight overlay"
+        }
+      ]
+    },
+    {
+      "name": "PressableFeedback.Ripple",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for container slot"
+        },
+        {
+          "name": "classNames",
+          "type": "ElementSlots<RippleSlots>",
+          "description": "Additional CSS classes for slots (container, ripple)"
+        },
+        {
+          "name": "styles",
+          "type": "Partial<Record<RippleSlots, ViewStyle>>",
+          "description": "Styles for different parts of the ripple overlay"
+        },
+        {
+          "name": "animation",
+          "type": "PressableFeedbackRippleAnimation",
+          "description": "Animation configuration for ripple overlay"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "Omit<ViewProps, 'style'>",
+          "description": "All View props except style are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "backgroundColor.value",
+          "type": "string",
+          "default": "Computed based on theme",
+          "description": "Background color of ripple effect"
+        },
+        {
+          "name": "progress.baseDuration",
+          "type": "number",
+          "default": "1000",
+          "description": "Base duration for ripple progress (automatically adjusted based on diagonal)"
+        },
+        {
+          "name": "progress.minBaseDuration",
+          "type": "number",
+          "default": "750",
+          "description": "Minimum base duration for the ripple progress animation"
+        },
+        {
+          "name": "progress.ignoreDurationCoefficient",
+          "type": "boolean",
+          "default": "false",
+          "description": "Ignore automatic duration coefficient and use base duration directly"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number, number]",
+          "default": "[0, 0.1, 0]",
+          "description": "Opacity values [start, peak, end] for ripple animation"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 200 }",
+          "description": "Animation timing configuration"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number, number]",
+          "default": "[0, 1, 1]",
+          "description": "Scale values [start, peak, end] for ripple animation"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 200 }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

@@ -1,0 +1,10 @@
+{
+  "label": "Order status",
+  "new": "New",
+  "preparing": "Preparing",
+  "ready": "Ready",
+  "new_body": "3 orders are waiting to be accepted.",
+  "preparing_body": "The kitchen is on 5 orders.",
+  "ready_body": "2 orders are ready for pickup.",
+  "hint": "Swipe the panel to move between tabs"
+}

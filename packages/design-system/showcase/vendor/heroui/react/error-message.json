@@ -1,0 +1,34 @@
+{
+  "slug": "error-message",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/error-message.mdx",
+  "parts": [
+    {
+      "name": "ErrorMessage",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The error message content"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".error-message",
+      "description": "Base error message styles with danger color and text truncation"
+    },
+    {
+      "name": "[slot=\"errorMessage\"]",
+      "description": "ErrorMessage slot styles for React Aria integration"
+    }
+  ],
+  "a11y": "The ErrorMessage component enhances accessibility by:\n\n- Using semantic HTML that screen readers can identify\n- Providing the `slot=\"errorMessage\"` attribute for React Aria integration\n- Supporting proper text contrast ratios for error states\n- Following WAI-ARIA best practices for error messaging"
+}

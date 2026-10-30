@@ -11,14 +11,12 @@ import type { BottomSheetContentProps as HeroSheetContentProps } from "heroui-na
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 
 /**
- * Props of the native Drawer: the shared contract, narrowed so `placement` is `bottom` only, plus HeroUI Native's own
- * sheet-content props, passed through. HeroUI Native's `enablePanDownToClose` is the contract's `isDismissable`, so
- * the type refuses it.
+ * Props of the native Drawer: the shared contract plus HeroUI Native's own sheet-content props, passed through to the
+ * sheet (a tablet's side panel takes none of them). HeroUI Native's `enablePanDownToClose` is the contract's
+ * `isDismissable`, so the type refuses it. On a phone every `placement` is the bottom sheet.
  */
-export type DrawerProps = Omit<DrawerContractProps, "placement"> & {
-  /** Accepted for the shared call site; a native drawer is always a bottom sheet. */
-  readonly placement?: "bottom" | undefined;
-} & Omit<
+export type DrawerProps = DrawerContractProps &
+  Omit<
     HeroSheetContentProps,
     keyof DrawerContractProps | "enablePanDownToClose" | "accessibilityLabel"
   >;

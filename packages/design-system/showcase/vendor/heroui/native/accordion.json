@@ -1,0 +1,277 @@
+{
+  "slug": "accordion",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(navigation)/accordion.mdx",
+  "parts": [
+    {
+      "name": "Accordion",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the accordion"
+        },
+        {
+          "name": "selectionMode",
+          "type": "'single' | 'multiple'",
+          "description": "Whether the accordion allows single or multiple expanded items"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'surface'",
+          "default": "'default'",
+          "description": "Visual variant of the accordion"
+        },
+        {
+          "name": "hideSeparator",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to hide the separator between accordion items"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | string[] | undefined",
+          "description": "Default expanded item(s) in uncontrolled mode"
+        },
+        {
+          "name": "value",
+          "type": "string | string[] | undefined",
+          "description": "Controlled expanded item(s)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether all accordion items are disabled"
+        },
+        {
+          "name": "isCollapsible",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether expanded items can be collapsed"
+        },
+        {
+          "name": "animation",
+          "type": "AccordionRootAnimation",
+          "description": "Animation configuration for accordion"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the container"
+        },
+        {
+          "name": "classNames",
+          "type": "ElementSlots<RootSlots>",
+          "description": "Additional CSS classes for the slots"
+        },
+        {
+          "name": "styles",
+          "type": "Partial<Record<RootSlots, ViewStyle>>",
+          "description": "Styles for different parts of the accordion root"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string | string[] | undefined) => void",
+          "description": "Callback when expanded items change"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "layout.value",
+          "type": "LayoutTransition",
+          "default": "`LinearTransition`<br/>`.springify()`<br/>`.damping(140)`<br/>`.stiffness(1600)`<br/>`.mass(4)`",
+          "description": "Custom layout animation for accordion transitions"
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: AccordionItemRenderProps) => React.ReactNode)",
+          "description": "Children elements to be rendered inside the accordion item, or a render function"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Unique value to identify this item"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether this specific item is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isExpanded",
+          "type": "boolean",
+          "description": "Whether the accordion item is currently expanded"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Unique value identifier for this accordion item"
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the trigger"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the trigger is disabled"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom indicator content, if not provided defaults to animated chevron"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "iconProps",
+          "type": "AccordionIndicatorIconProps",
+          "description": "Icon configuration"
+        },
+        {
+          "name": "animation",
+          "type": "AccordionIndicatorAnimation",
+          "description": "Animation configuration for indicator"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "rotation.value",
+          "type": "[number, number]",
+          "default": "[0, -180]",
+          "description": "Rotation values [collapsed, expanded] in degrees"
+        },
+        {
+          "name": "rotation.springConfig",
+          "type": "WithSpringConfig",
+          "default": "{ damping: 140, stiffness: 1000, mass: 4 }",
+          "description": "Spring animation configuration for rotation"
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "AccordionContentAnimation",
+          "description": "Animation configuration for content"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeIn`<br/>`.duration(200)`<br/>`.easing(Easing.out(Easing.ease))`",
+          "description": "Custom entering animation for content"
+        },
+        {
+          "name": "exiting.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeOut`<br/>`.duration(200)`<br/>`.easing(Easing.in(Easing.ease))`",
+          "description": "Custom exiting animation for content"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useAccordion",
+      "signature": "useAccordion()",
+      "returns": []
+    },
+    {
+      "name": "useAccordionItem",
+      "signature": "useAccordionItem()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

@@ -28,7 +28,7 @@ import { Link } from "#react/link/link";
 import type { NavigationHeaderProps } from "#react/navigation-header/navigation-header.props";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
-const BACK_ICON = <Icon name="chevron-left" isMirroredInRtl />;
+const BACK_ICON = <Icon name="chevron-left" />;
 
 /**
  * The compact header of one screen: back button, start slot, title and end slot, in that order from the inline start.

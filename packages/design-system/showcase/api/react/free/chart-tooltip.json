@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "e2ab326c379bcabf",
+    "propsFiles": ["ui/src/react/chart-tooltip/chart-tooltip.props.ts"]
+  },
+  "importLine": "import { ChartTooltip } from \"@stackra/ui/react\";",
+  "key": "free/chart-tooltip",
+  "parts": [
+    {
+      "name": "ChartTooltip",
+      "props": [
+        {
+          "description": "Whether a row is pointed at (Recharts).",
+          "name": "active",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The pointed row's values (Recharts).",
+          "name": "payload",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ChartTooltipItem[]"
+        },
+        {
+          "description": "The pointed row's category (Recharts).",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "description": "Writes a value; the locale's number format by default.",
+          "name": "formatValue",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: number) => string"
+        },
+        {
+          "description": "Writes the title from the category; no title without it.",
+          "name": "formatLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(label: unknown) => string"
+        },
+        {
+          "description": "Names each line from this key of its row instead of its series (one ring or slice per row).",
+          "name": "nameKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A square `dot` (the default) or a `line` beside each value.",
+          "name": "indicator",
+          "required": false,
+          "source": "stackra",
+          "type": "\"line\" | \"dot\""
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

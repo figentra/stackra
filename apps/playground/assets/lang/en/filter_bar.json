@@ -1,0 +1,42 @@
+{
+  "basics_search": "Search the sample orders",
+  "basics_placeholder": "Order or customer",
+  "kinds_list": "Filter kinds",
+  "applied": "Applied from the start",
+  "applied_search": "Search the applied orders",
+  "disabled": "A disabled filter",
+  "disabled_search": "Search the orders with a disabled filter",
+  "disabled_note": "Total is listed in the menu but cannot be added.",
+  "all_applied": "Every filter applied",
+  "all_applied_search": "Search the orders with every filter applied",
+  "live_search": "Search the live orders",
+  "live_placeholder": "Try ada, grace or an order number",
+  "results": "Matching orders",
+  "count": "{total, plural, one {# order matches.} other {# orders match.}}",
+  "none": "No order matches. Clear a filter to see more.",
+  "query": "Query: {text}",
+  "nothing": "none",
+  "kind_rows": {
+    "select": "Select: one choice from a short list; holds the key of the choice.",
+    "multi_select": "Multi-select: any of a short list, ticked; holds the keys, in the order of the list.",
+    "text": "Text: a text field; holds the text.",
+    "number": "Number: a minimum and a maximum; holds a range with either bound empty.",
+    "date_range": "Date range: a first and a last day; holds a range with either day empty.",
+    "boolean": "Boolean: yes or no; holds true or false."
+  },
+  "sample": {
+    "status": "Status",
+    "paid": "Paid",
+    "shipped": "Shipped",
+    "refunded": "Refunded",
+    "region": "Region",
+    "europe": "Europe",
+    "united_states": "United States",
+    "asia_pacific": "Asia Pacific",
+    "customer": "Customer",
+    "name_contains": "Name contains",
+    "total": "Total",
+    "placed": "Placed",
+    "gift_order": "Gift order"
+  }
+}

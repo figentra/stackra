@@ -16,6 +16,7 @@ import { useLocale } from "react-aria-components";
 import type { ComponentType, ReactElement } from "react";
 
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
 import { UI_ICONS } from "#react/icon/ui-icons.constant";
 import type { IconProps } from "#react/icon/icon.props";
@@ -45,7 +46,7 @@ export function Icon({
     return null;
   }
   const Drawn = found as ComponentType<LucideProps>;
-  const isMirrored = isMirroredInRtl === true && direction === "rtl";
+  const isMirrored = (isMirroredInRtl ?? isDirectionalIcon(iconName)) && direction === "rtl";
   const colour = tone ? { color: `var(--${tone === "default" ? "foreground" : tone})` } : {};
   // Set explicitly: the `aria-hidden` Lucide adds by itself is not relied on, the tests pin this one.
   const name = label ? { role: "img", "aria-label": label } : { "aria-hidden": true };

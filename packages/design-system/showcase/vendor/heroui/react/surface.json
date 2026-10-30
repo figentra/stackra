@@ -1,0 +1,47 @@
+{
+  "slug": "surface",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(layout)/surface.mdx",
+  "parts": [
+    {
+      "name": "Surface",
+      "props": [
+        {
+          "name": "variant",
+          "type": " \"transparent\" | \"default\" | \"secondary\" | \"tertiary\"",
+          "default": "\"default\"",
+          "description": "The visual variant of the surface"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The surface content"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".surface",
+      "description": "Base surface container"
+    },
+    {
+      "name": ".surface--default",
+      "description": "Default surface variant (bg-surface)"
+    },
+    {
+      "name": ".surface--secondary",
+      "description": "Secondary surface variant (bg-surface-secondary)"
+    },
+    {
+      "name": ".surface--tertiary",
+      "description": "Tertiary surface variant (bg-surface-tertiary)"
+    }
+  ]
+}

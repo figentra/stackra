@@ -49,13 +49,21 @@ export function List<TItem extends ListItemData = ListItemData>({
   hasMore,
   onLoadMore,
   isAnimated = true,
+  style,
   ...rest
 }: ListProps<TItem>): ReactElement {
   const ids = items.map((item) => item.id);
   const onReach = hasMore === true && !isLoading ? onLoadMore : undefined;
   const marker = useEndReached(onReach, items.length);
   return (
-    <div {...rest} aria-busy={isLoading}>
+    // A list fills its parent and keeps a floor, so a shrink-to-fit parent (a centred frame) never squeezes it to its
+    // content; the floor is capped at its grid cell, so two lists side by side never overlap. Inline, so it holds
+    // wherever the app's Tailwind does not scan this package.
+    <div
+      {...rest}
+      aria-busy={isLoading}
+      style={{ inlineSize: "100%", minInlineSize: "min(24rem, 100%)", ...style }}
+    >
       {items.length === 0 ? (
         isLoading ? null : (
           emptyState

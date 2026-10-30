@@ -1,0 +1,12 @@
+{
+  "latin_sample": "Build once, theme anywhere.",
+  "arabic_sample": "ابنِ مرة واحدة وطبّق أي سمة.",
+  "long_sample": "جملة طويلة توضح ما تفعله المحاذاة والاقتطاع حين لا تتسع في سطر واحد.",
+  "level": "المستوى {level}",
+  "inline_before": "جملة فيها ",
+  "inline_text": "نص ضمني",
+  "inline_after": " مرسوم عبر render.",
+  "small": "صغير وخافت: السطر الثانوي في قائمة.",
+  "next_tone": "النبرة التالية",
+  "state": "{presses, plural, zero {النبرة {tone}، لم يُضغط بعد.} one {النبرة {tone}، ضُغط مرة واحدة.} two {النبرة {tone}، ضُغط مرتين.} few {النبرة {tone}، ضُغط # مرات.} many {النبرة {tone}، ضُغط # مرة.} other {النبرة {tone}، ضُغط # مرة.}}"
+}

@@ -1,0 +1,271 @@
+{
+  "generatedFrom": {
+    "hash": "0d79750212e775e3",
+    "heroDoc": "vendor/heroui/native/popover.json",
+    "propsFiles": ["ui/src/native/popover/popover.props.ts"]
+  },
+  "importLine": "import { Popover } from \"@stackra/ui/native\";",
+  "key": "free/popover",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "Popover",
+      "name": "Popover",
+      "props": [
+        {
+          "description": "The pressable that opens the popover, usually a Button. It keeps its own accessible name; the popover only adds\nthe pressed and expanded state.",
+          "name": "trigger",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The popover's content: text, a form, a list of actions. Anything the user must be able to dismiss needs a\ncontrol of its own when `isDismissable` is false. Plain text is wrapped for the runtime.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The popover's heading, which also names it for assistive technology. Without it, name the content with\n`aria-label` (web) so a screen reader does not announce an unnamed dialog.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw an arrow from the content to its trigger. Defaults to false.",
+          "name": "hasArrow",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True, the default, to close the overlay on a press outside it (the backdrop on a modal, a drawer and a dialog).\nSet false for a step the user must finish, and give the content its own close control.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the Escape key from closing the overlay. It is for a flow with unsaved work or a nested overlay\nopen, so set it only with `isDismissable` false or a close control in reach. Native has no Escape key, so it\nstays unread there unless a component's own page says it maps to the Android back button.",
+          "name": "isKeyboardDismissDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "Offset along the alignment axis in pixels",
+          "name": "alignOffset",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "description": "Animation configuration. Can be `false`, `\"disabled\"`, `\"disable-all\"`, `true`, or `undefined`",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "PopupPopoverContentAnimation"
+        },
+        {
+          "default": "false",
+          "description": "Whether to render as a child element",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "true",
+          "description": "Whether to automatically adjust position to avoid screen edges",
+          "name": "avoidCollisions",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the popover content.\n- `undefined` (default): renders `Popover.ContentBackground`, whose\n  content is decided by the active library theme\n- custom node: replaces the default layer entirely (wrap content in\n  `Popover.ContentBackground` to keep the absolute-fill and clipping)\n- `null`: removes the background layer",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS class for the content container",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "false",
+          "description": "Whether to disable the automatic positioning styles\nUseful when you want to handle positioning manually",
+          "name": "disablePositioningStyle",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether to force mount the component in the DOM",
+          "name": "forceMount",
+          "required": false,
+          "source": "heroui",
+          "type": "true"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Screen edge insets to respect when positioning",
+          "name": "insets",
+          "required": false,
+          "source": "heroui",
+          "type": "Insets"
+        },
+        {
+          "default": "0",
+          "description": "Offset from the trigger element in pixels",
+          "name": "offset",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "description": "Custom styles to apply to the positioned content",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "(false | \"\" | ViewStyle | RecursiveArray<Falsy | ViewStyle> | null) & ViewStyle"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'content-fit'",
+          "description": "Content width sizing strategy\n- 'content-fit': Auto-size to content width (default)\n- 'trigger': Match trigger width exactly\n- 'full': 100% width\n- number: Fixed width in pixels",
+          "name": "width",
+          "required": false,
+          "source": "heroui",
+          "type": "ContentSizing"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -37,7 +37,7 @@ The repository checks `stackra check` runs (ADR 0282 decision 3). Member at `pac
   raise one or add a file; a new call gets its reason instead (ADR 0160, stackra-288).
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.
 - No `@stackra-pro/*` member or dependency in figentra/stackra (ADR 0461): `checkMember` refuses any `@stackra-pro/*`
-  dependency in every member, apps included (`PRO_SCOPE`), and HeroUI Pro outside apps (`PRO_DEPENDENCIES`). Pro
+  dependency in every member, apps included (`PRO_SCOPE`), and HeroUI Pro everywhere (`PRO_DEPENDENCIES`, ADR 0469). Pro
   packages and their publishing checks live in figentra/stackra-pro.
 
 ## PII

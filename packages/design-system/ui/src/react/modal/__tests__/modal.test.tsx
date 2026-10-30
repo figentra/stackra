@@ -82,11 +82,17 @@ describe("Modal (web)", () => {
     rerender(sample({ isOpen: true, onOpenChange }));
     expect(screen.getByRole("dialog")).toBeTruthy();
     // A controlled modal asks to close and stays open until the app agrees.
-    press(screen.getByRole("button", { name: "Close" }));
+    press(screen.getByRole("button", { name: "Close, Esc" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.getByRole("dialog")).toBeTruthy();
     rerender(sample({ isOpen: false, onOpenChange }));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("draws the close mark, named by its label alone, when Escape does not close the modal", () => {
+    render(sample({ isOpen: true, isKeyboardDismissDisabled: true }));
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Close, Esc" })).toBeNull();
   });
 
   it("reports opening and closing through `onOpenChange`", () => {
@@ -94,7 +100,7 @@ describe("Modal (web)", () => {
     render(sample({ onOpenChange }));
     press(screen.getByRole("button", { name: "Open" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    press(screen.getByRole("button", { name: "Close" }));
+    press(screen.getByRole("button", { name: "Close, Esc" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -214,7 +220,7 @@ describe("Modal (web)", () => {
 
   it("closes from `Modal.Close`, named by its label, and from a `slot=close` button", () => {
     const { unmount } = render(sample({ defaultOpen: true }));
-    const close = screen.getByRole("button", { name: "Close" });
+    const close = screen.getByRole("button", { name: "Close, Esc" });
     expect(close.getAttribute("data-slot")).toBe("modal-close-trigger");
     press(close);
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -233,10 +239,12 @@ describe("Modal (web)", () => {
       </Modal>,
     );
     expect(
-      within(screen.getByRole("button", { name: "Close panel" })).getByTestId("mine"),
+      within(screen.getByRole("button", { name: "Close panel, Esc" })).getByTestId("mine"),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
-    press(screen.getByRole("button", { name: "Close panel" }));
+    expect(screen.getByRole("button", { name: "Disabled, Esc" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    press(screen.getByRole("button", { name: "Close panel, Esc" }));
     expect(onPress).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -249,5 +257,13 @@ describe("Modal (web)", () => {
     expectTypeOf<ModalProps>().not.toHaveProperty("isDefaultOpen");
     expectTypeOf<ModalProps>().not.toHaveProperty("isCloseOnPress");
     expectTypeOf<ModalProps["size"]>().toEqualTypeOf<"sm" | "md" | "lg" | "full" | undefined>();
+  });
+
+  it("enters by its motion: a side panel slides from the inline end at the top of the screen", () => {
+    render(sample({ defaultOpen: true, motion: "slide-side" }));
+    const container = screen.getByRole("dialog").closest('[data-slot="modal-container"]');
+    expect(container?.getAttribute("data-placement")).toBe("top");
+    expect(container?.className).toContain("slide-in-from-end");
+    expect(screen.getByRole("dialog").className).toContain("rounded-e-none");
   });
 });

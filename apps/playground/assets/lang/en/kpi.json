@@ -1,0 +1,10 @@
+{
+  "band": "This month at a glance",
+  "revenue": "Revenue",
+  "orders": "Orders",
+  "refunds": "Refunds",
+  "basket": "Average basket",
+  "vs_last": "vs last month",
+  "customers": "New customers",
+  "opened": "Opened: {name}"
+}

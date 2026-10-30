@@ -12,6 +12,8 @@
 // @covers sta-350:FR-036 sta-350:P-024 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -29,7 +31,9 @@ const STATES = [
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/status-badge?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Status badge" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Status badge", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed background as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -77,8 +81,9 @@ for (const scheme of SCHEMES)
 
 test("every badge reads as its state alone and none is a live region", async ({ page }) => {
   await open(page, "light", "en");
-  const badges = page
-    .getByRole("main")
+  // The examples only: the Stackra section draws the usage demo again in hidden frames.
+  const examples = page.locator("#usage, #examples");
+  const badges = examples
     .locator('[data-slot="chip"]')
     .filter({ has: page.locator('[data-slot="status-badge-dot"]') });
   // Five tones in three sizes, four records and the live sample.
@@ -87,7 +92,7 @@ test("every badge reads as its state alone and none is a live region", async ({ 
     await expect(badge).toHaveText(/^(Draft|Scheduled|Active|Pending|Failed)$/);
     await expect(badge.locator('[role="status"], [aria-live]')).toHaveCount(0);
   }
-  await expect(page.getByRole("main").locator('[role="status"], [aria-live]')).toHaveCount(0);
+  await expect(examples.locator('[role="status"], [aria-live]')).toHaveCount(0);
 });
 
 for (const scheme of SCHEMES)
@@ -95,8 +100,7 @@ for (const scheme of SCHEMES)
     page,
   }) => {
     await open(page, scheme, "en");
-    const medium = page
-      .getByRole("region", { name: "Tones and sizes" })
+    const medium = example(page, "usage")
       .locator("ul")
       .nth(1)
       .locator('[data-slot="status-badge-dot"]');
@@ -115,10 +119,7 @@ for (const scheme of SCHEMES)
 for (const locale of LOCALES)
   test(`the dot sits on the reading-start side of the text in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const badge = page
-      .getByRole("region", { name: "Tones and sizes" })
-      .locator('[data-slot="chip"]')
-      .first();
+    const badge = example(page, "usage").locator('[data-slot="chip"]').first();
     const dot = await badge.locator('[data-slot="status-badge-dot"]').boundingBox();
     const text = await badge.locator(".chip__label").boundingBox();
     if (!dot || !text) throw new Error("a box is missing");
@@ -127,7 +128,7 @@ for (const locale of LOCALES)
 
 test("the live badge moves to the next state and announces nothing", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(live.getByText("Draft")).toBeVisible();
   await live.getByRole("button", { name: "Next state" }).click();
   await expect(live.getByText("Scheduled")).toBeVisible();

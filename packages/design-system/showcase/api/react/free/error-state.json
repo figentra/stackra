@@ -1,0 +1,129 @@
+{
+  "generatedFrom": {
+    "hash": "295b7225153e8180",
+    "propsFiles": ["ui/src/react/error-state/error-state.props.ts"]
+  },
+  "importLine": "import { ErrorState } from \"@stackra/ui/react\";",
+  "key": "free/error-state",
+  "parts": [
+    {
+      "name": "ErrorState",
+      "props": [
+        {
+          "default": "unexpected",
+          "description": "What kind of failure it is: `unauthenticated`, `forbidden`, `not-found` or `unexpected`. Defaults to `unexpected`.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"unauthenticated\" | \"forbidden\" | \"not-found\" | \"unexpected\""
+        },
+        {
+          "description": "The thrown value, as caught. An `Error` or a string shows its message outside production; its stack is shown\noutside production only.",
+          "name": "error",
+          "required": false,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "description": "Whether the error's message is shown. It defaults to true outside production and false in production, because a\nserver or driver message (a database or gateway error) is an internal the user must not read. An app whose error\ncarries text written for the user (a typed refusal's message) sets it to true.",
+          "name": "isMessageShown",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A button that tries again: its label in the app's language and what it runs. Left out, there is no button.",
+          "name": "retry",
+          "required": false,
+          "source": "stackra",
+          "type": "{ readonly label: string; readonly onPress: () => void; }"
+        },
+        {
+          "description": "What is the matter, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One or two sentences: why it is so, and what to do next.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon in place of the reason's or kind's own, or `false` for none.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6, so the page keeps one outline wherever this sits.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

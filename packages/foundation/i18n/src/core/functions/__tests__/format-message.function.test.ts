@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `formatMessage`: nested lookup by `<namespace>::<path>`, ICU arguments, the six Arabic plural
- *          categories, `select`, number arguments in the digits of the locale tag, rich-text tags kept literal, and
+ *          categories, `select`, numbers, dates and plurals in the digits of the tag or the argument (the latn/arab × en/ar matrix), rich-text tags kept literal, and
  *          clear failures for a malformed key or a missing message (never the raw key).
  * Boundary: test only.
  * Runtime: node (vitest, full ICU)
@@ -9,11 +9,14 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { NumberingSystem } from "#core/enums/numbering-system.enum";
 import { formatMessage } from "#core/functions/format-message.function";
+import { intlLocale } from "#core/functions/intl-locale.function";
 import { keys } from "#core/functions/keys.function";
+import type { I18nKey } from "#core/types/i18n-key.type";
 
 const I18n = keys({
-  web: { nav: ["home"], cta: ["trial", "seats", "greeting", "bold"], inbox: ["unread"] },
+  web: { nav: ["home"], cta: ["trial", "seats", "greeting", "bold", "weight"], inbox: ["unread"] },
   other: { title: ["x"] },
 });
 
@@ -28,6 +31,7 @@ const MESSAGES = {
       seats: "{count, plural, one {# seat} other {# seats}}",
       greeting: "{tone, select, formal {Good day} other {Hi}}, {name}",
       bold: "Read <b>this</b>",
+      weight: "{kg, number} kg on {day, date, ::yyyyMMdd}",
     },
     inbox: { unread: PLURAL },
   },
@@ -67,6 +71,31 @@ describe("formatMessage", () => {
       "٣ seats",
     );
   });
+
+  it.each([
+    ["en", NumberingSystem.Latn, "1,310.5 kg on 10/28/2026", "3 seats"],
+    ["ar", NumberingSystem.Latn, "1,310.5 kg on 28/10/2026", "3 رسائل"],
+    ["en", NumberingSystem.Arab, "١٬٣١٠٫٥ kg on ١٠/٢٨/٢٠٢٦", "٣ seats"],
+    ["ar", NumberingSystem.Arab, "١٬٣١٠٫٥ kg on ٢٨/١٠/٢٠٢٦", "٣ رسائل"],
+  ] as const)(
+    "writes %s numbers, dates and plurals in %s digits",
+    (locale, numerals, weight, count) => {
+      // Given as the tag's keyword (the provider) and as the argument with a bare tag (an engine ignoring the keyword).
+      for (const [tag, given] of [
+        [intlLocale(locale, numerals), undefined],
+        [locale, numerals],
+      ] as const) {
+        const at = (key: I18nKey, values: Record<string, unknown>) =>
+          formatMessage(MESSAGES, key, values, tag, given)
+            .replaceAll(/[\u200e\u200f\u061c]/g, "")
+            .replaceAll(/[\u00a0\u202f]/g, " ");
+        expect(at(I18n.web.cta.weight, { kg: 1310.5, day: Date.UTC(2026, 9, 28) })).toBe(weight);
+        expect(at(locale === "ar" ? I18n.web.inbox.unread : I18n.web.cta.seats, { count: 3 })).toBe(
+          count,
+        );
+      }
+    },
+  );
 
   it("keeps rich-text tags as literal text", () => {
     expect(formatMessage(MESSAGES, I18n.web.cta.bold, undefined, "en")).toBe("Read <b>this</b>");

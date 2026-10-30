@@ -1,0 +1,8 @@
+{
+  "label": "Checkout funnel, October",
+  "visited": "Visited the store",
+  "viewed": "Viewed a product",
+  "cart": "Added to cart",
+  "checkout": "Started checkout",
+  "paid": "Paid"
+}

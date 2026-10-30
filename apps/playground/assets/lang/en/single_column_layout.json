@@ -1,0 +1,22 @@
+{
+  "stacked_caption": "Three stacked sections",
+  "wide_caption": "A row wider than the column",
+  "scroller": "Scrollable items",
+  "customer": "Customer",
+  "customer_body": "Ada Lovelace, ada@example.com",
+  "payment": "Payment",
+  "payment_body": "Paid in full on 3 March",
+  "shipping": "Shipping",
+  "shipping_body": "Shipped on 5 March, arriving in two days",
+  "items_title": "Items",
+  "items_row": "Product name, quantity, unit price, tax, discount, total, and the warehouse it ships from",
+  "arabic_customer": "بيانات العميل",
+  "arabic_customer_body": "منى السالم",
+  "arabic_payment": "تفاصيل الدفع",
+  "arabic_payment_body": "تم الدفع بالكامل في 3 مارس",
+  "add": "Add a section",
+  "remove": "Remove a section",
+  "note": "Note {index}",
+  "note_body": "A note on the order.",
+  "count": "{count, plural, one {# section.} other {# sections.}}"
+}

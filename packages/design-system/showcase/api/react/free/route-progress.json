@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "c598e7574ca03ee0",
+    "propsFiles": ["ui/src/react/route-progress/route-progress.props.ts"]
+  },
+  "importLine": "import { RouteProgress } from \"@stackra/ui/react\";",
+  "key": "free/route-progress",
+  "parts": [
+    {
+      "name": "RouteProgress",
+      "props": [
+        {
+          "description": "True while the next route loads; the bar fills to the end and fades out when it turns false.",
+          "name": "isLoading",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The progress bar's accessible name; defaults to \"Loading page\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True, the default, to pin the bar to the top of the viewport; false pins it to the nearest positioned parent.",
+          "name": "isFixed",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

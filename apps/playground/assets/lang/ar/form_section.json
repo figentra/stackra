@@ -1,0 +1,20 @@
+{
+  "title_only": "عنوان فقط",
+  "with_description": "مع وصف",
+  "description": "أين نرسل الفواتير وكيف نخاطبك.",
+  "several": "عدة حقول",
+  "name": "الاسم الكامل",
+  "company": "الشركة",
+  "country": "الدولة",
+  "disabled_section": "قسم معطل",
+  "kept": "قيمة محفوظة",
+  "live_name": "نموذج الفوترة",
+  "profile": "الملف الشخصي",
+  "profile_description": "يظهر على فواتيرك.",
+  "display_name": "الاسم المعروض",
+  "billing": "الفوترة",
+  "billing_description": "يُستخدم للإيصال.",
+  "address": "عنوان الفوترة",
+  "vat_number": "الرقم الضريبي",
+  "disable_billing": "تعطيل قسم الفوترة"
+}

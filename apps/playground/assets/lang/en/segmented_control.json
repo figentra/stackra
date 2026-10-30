@@ -1,0 +1,7 @@
+{
+  "label": "Range",
+  "day": "Day",
+  "week": "Week",
+  "month": "Month",
+  "showing": "Showing: {range}"
+}

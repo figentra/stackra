@@ -1,0 +1,117 @@
+{
+  "generatedFrom": {
+    "hash": "92e229ba908d3631",
+    "propsFiles": [
+      "ui/src/react/column-chooser/column-chooser.props.ts",
+      "ui/src/react/column-chooser/column-editor.props.ts"
+    ]
+  },
+  "importLine": "import { ColumnChooser } from \"@stackra/ui/react\";",
+  "key": "free/column-chooser",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the next hidden ids when a column is hidden or shown.",
+          "name": "onHiddenColumnsChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(hiddenColumns: readonly string[]) => void"
+        }
+      ],
+      "name": "ColumnChooser",
+      "props": [
+        {
+          "description": "The table's columns, in order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TableColumn[]"
+        },
+        {
+          "description": "The ids of the hidden columns.",
+          "name": "hiddenColumns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The trigger's text and the chooser's name. Defaults to the `ui` catalogue's \"Columns\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "ColumnEditor",
+      "props": [
+        {
+          "description": "The engine whose columns are arranged (`useCollection`).",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The trigger's text and the editor's name. Defaults to the `ui` catalogue's \"Columns\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw the trigger as an icon button (its text stays its name).",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

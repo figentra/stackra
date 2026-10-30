@@ -15,6 +15,8 @@
 // @covers sta-350:FR-140 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -27,7 +29,9 @@ const WARRANTY = "Is there a warranty?";
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/accordion?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Accordion" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Accordion", locale) }),
+  ).toBeVisible();
 };
 
 const audit = async (page: Page) => {
@@ -55,14 +59,12 @@ for (const [scheme, locale] of [
 ] as const)
   test(`axe finds nothing with every section open in ${scheme}, ${locale}`, async ({ page }) => {
     await open(page, scheme, locale);
-    await page
-      .getByRole("region", { name: "Try it" })
-      .getByRole("button", { name: "Expand all" })
+    // By name in either language (the pane's own direction and scheme toggles are buttons too, so not by position).
+    // Expand all follows the live example's three sections.
+    await example(page, "live")
+      .getByRole("button", { name: /^(Expand all|توسيع الكل)$/ })
       .click();
-    await page
-      .getByRole("region", { name: "One open at a time" })
-      .getByRole("button", { name: SHIPPING })
-      .click();
+    await example(page, "usage").locator('[data-slot="accordion-trigger"]').first().click();
     await audit(page);
   });
 
@@ -70,7 +72,7 @@ test("each title is a button in a heading, with its state and a panel named by i
   page,
 }) => {
   await open(page, "light", "en");
-  const single = page.getByRole("region", { name: "One open at a time" });
+  const single = example(page, "usage");
   const shipping = single.getByRole("button", { name: SHIPPING });
   await expect(single.getByRole("heading", { name: SHIPPING })).toBeVisible();
   await expect(shipping).toHaveAttribute("aria-expanded", "false");
@@ -87,7 +89,7 @@ test("one open at a time closes the others, and a press on the open one closes i
   page,
 }) => {
   await open(page, "light", "en");
-  const single = page.getByRole("region", { name: "One open at a time" });
+  const single = example(page, "usage");
   await single.getByRole("button", { name: SHIPPING }).click();
   await single.getByRole("button", { name: RETURNS }).click();
   await expect(single.getByRole("button", { name: SHIPPING })).toHaveAttribute(
@@ -104,7 +106,7 @@ test("one open at a time closes the others, and a press on the open one closes i
 
 test("several-open keeps each section open on its own", async ({ page }) => {
   await open(page, "light", "en");
-  const multiple = page.getByRole("region", { name: "Several open" });
+  const multiple = example(page, "multiple");
   await multiple.getByRole("button", { name: SHIPPING }).click();
   await multiple.getByRole("button", { name: RETURNS }).click();
   await expect(multiple.locator('[aria-expanded="true"]')).toHaveCount(2);
@@ -114,7 +116,7 @@ test("several-open keeps each section open on its own", async ({ page }) => {
 
 test("Enter and Space open a section and keep focus on its button", async ({ page }) => {
   await open(page, "light", "en");
-  const multiple = page.getByRole("region", { name: "Several open" });
+  const multiple = example(page, "multiple");
   const shipping = multiple.getByRole("button", { name: SHIPPING });
   await shipping.focus();
   await page.keyboard.press("Enter");
@@ -129,7 +131,7 @@ test("Enter and Space open a section and keep focus on its button", async ({ pag
 
 test("the sections told to be open at the start are open", async ({ page }) => {
   await open(page, "light", "en");
-  const expanded = page.getByRole("region", { name: "Open at the start" });
+  const expanded = example(page, "expanded");
   await expect(expanded.getByRole("button", { name: SHIPPING })).toHaveAttribute(
     "aria-expanded",
     "true",
@@ -148,7 +150,7 @@ test("a disabled section and a disabled accordion refuse a press and leave the t
   page,
 }) => {
   await open(page, "light", "en");
-  const states = page.getByRole("region", { name: "States" });
+  const states = example(page, "states");
   const refused = states.getByRole("button", { name: RETURNS }).first();
   await expect(refused).toBeDisabled();
   await refused.click({ force: true });
@@ -164,7 +166,7 @@ test("a disabled section and a disabled accordion refuse a press and leave the t
 
 test("the live example reports the open ids and follows the page's buttons", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(live.getByTestId("accordion-open")).toHaveText("Open: shipping");
   await live.getByRole("button", { name: WARRANTY }).click();
   await expect(live.getByTestId("accordion-open")).toHaveText("Open: shipping, warranty");
@@ -180,7 +182,7 @@ test("the live example reports the open ids and follows the page's buttons", asy
 
 test("a link in a section shows when the section is opened", async ({ page }) => {
   await open(page, "light", "en");
-  const rich = page.getByRole("region", { name: "Rich content" });
+  const rich = example(page, "rich");
   await expect(rich.getByRole("link")).toHaveCount(0);
   await rich.getByRole("button", { name: RETURNS }).click();
   await expect(rich.getByRole("link", { name: /Read the returns policy/ })).toBeVisible();
@@ -188,7 +190,7 @@ test("a link in a section shows when the section is opened", async ({ page }) =>
 
 test("every section button is a touch target of at least 24 pixels", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = page.getByRole("region", { name: "One open at a time" }).getByRole("button");
+  const buttons = example(page, "usage").getByRole("button");
   for (let index = 0; index < (await buttons.count()); index += 1) {
     const box = await buttons.nth(index).boundingBox();
     if (!box) throw new Error(`no box for button ${index}`);
@@ -200,10 +202,7 @@ test("every section button is a touch target of at least 24 pixels", async ({ pa
 for (const locale of LOCALES)
   test(`the indicator sits at the end side of its button in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const button = page
-      .getByRole("region", { name: "One open at a time" })
-      .locator('[data-slot="accordion-trigger"]')
-      .first();
+    const button = example(page, "usage").locator('[data-slot="accordion-trigger"]').first();
     const trigger = await button.boundingBox();
     const indicator = await button.locator('[data-slot="accordion-indicator"]').boundingBox();
     if (!trigger || !indicator) throw new Error("a box is missing");

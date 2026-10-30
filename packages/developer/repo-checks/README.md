@@ -39,9 +39,9 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
 
-`checkMember` refuses any `@stackra-pro/*` dependency in every member, apps included (`PRO_SCOPE`): the Pro packages,
-`@stackra-pro/ui` among them, live in figentra/stackra-pro (ADR 0461). HeroUI Pro (`PRO_DEPENDENCIES`) stays apps-only
-(ADR 0310).
+`checkMember` refuses any `@stackra-pro/*` dependency in every member, apps included (`PRO_SCOPE`): the Pro packages
+live in figentra/stackra-pro (ADR 0461). It refuses HeroUI Pro (`PRO_DEPENDENCIES`) in every member too, apps
+included: Stackra ships free HeroUI and its own components only (ADR 0469).
 
 `checkRawSql` (rule `raw-sql`, ADR 0160 decision 1, stackra-288) holds every raw SQL call in member source (not tests):
 an `.execute(...)` with a literal statement, or a `raw(...)` imported from the ORM or `@stackra/database`, carries a

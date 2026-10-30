@@ -1,0 +1,266 @@
+{
+  "generatedFrom": {
+    "hash": "9b54b268bae748b2",
+    "propsFiles": ["ui/src/native/data-view/data-view.props.ts"]
+  },
+  "importLine": "import { DataView } from \"@stackra/ui/native\";",
+  "key": "free/data-view",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when a list row or a card is pressed, for example to open the record.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        },
+        {
+          "description": "Web: saves the grid view's edited cells.",
+          "name": "onGridSave",
+          "required": false,
+          "source": "stackra",
+          "type": "(changes: Readonly<Record<string, Readonly<Record<string, DataGridValue>>>>) => void | Promise<void>"
+        },
+        {
+          "description": "Shares a saved view; given, the views menu has \"Share view\".",
+          "name": "onShareView",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: CollectionView) => void"
+        },
+        {
+          "description": "Fetches the rows again; defaults to the engine's own refresh in server mode, and no Refresh otherwise.",
+          "name": "onRefresh",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "DataView",
+      "props": [
+        {
+          "description": "The name of the records, for example \"Orders\": the table's name and the toolbar's.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The engine every view draws from (`useCollection`).",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is\ngiven (web); native offers list and cards.",
+          "name": "layouts",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"table\" | \"list\" | \"grid\" | \"cards\" | \"board\")[]"
+        },
+        {
+          "description": "The view a phone opens on when the engine was never switched: `list` (the default) or `cards`.",
+          "name": "phoneLayout",
+          "required": false,
+          "source": "stackra",
+          "type": "\"list\" | \"cards\""
+        },
+        {
+          "description": "The content of a table cell; left out, the column's text.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "What a list row shows.",
+          "name": "list",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewFields<TItem>"
+        },
+        {
+          "description": "What a card shows.",
+          "name": "cards",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewFields<TItem>"
+        },
+        {
+          "description": "The actions of one row, in the table's row menu.",
+          "name": "rowActions",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => readonly ResourceAction[]"
+        },
+        {
+          "description": "The actions on the selection, in the bulk bar.",
+          "name": "bulkActions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly ResourceAction[]"
+        },
+        {
+          "default": "none",
+          "description": "How many rows can be selected in the table. Defaults to `none`, or `multiple` with `bulkActions`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "Web: the typed columns of the grid view; given, the grid is offered.",
+          "name": "gridColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly DataGridColumn[]"
+        },
+        {
+          "description": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",
+          "name": "exportOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "Omit<ExportDialogContractProps, \"trigger\" | \"counts\"> & Partial<Pick<ExportDialogContractProps, \"counts\">>"
+        },
+        {
+          "description": "The import dialog's options; given, the toolbar has Import.",
+          "name": "importOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "Omit<ImportDialogContractProps, \"trigger\">"
+        },
+        {
+          "description": "False to leave out the full-screen button. Defaults to true on web.",
+          "name": "hasFullscreen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Draws a view the component does not (the board of wave 4), or replaces one, by layout.",
+          "name": "renderLayout",
+          "required": false,
+          "source": "stackra",
+          "type": "Partial<Record<\"table\" | \"list\" | \"grid\" | \"cards\" | \"board\", () => ReactNode>>"
+        },
+        {
+          "description": "What shows when there are no rows at all.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    },
+    {
+      "name": "CollectionFilterEditor",
+      "props": []
+    },
+    {
+      "name": "CollectionSortEditor",
+      "props": []
+    },
+    {
+      "name": "DataViewCards",
+      "props": []
+    },
+    {
+      "name": "SavedViewsMenu",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

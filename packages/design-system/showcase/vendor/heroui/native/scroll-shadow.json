@@ -1,0 +1,113 @@
+{
+  "slug": "scroll-shadow",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(utilities)/scroll-shadow.mdx",
+  "parts": [
+    {
+      "name": "ScrollShadow",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactElement",
+          "description": "The scrollable component to enhance with shadows. Must be a single React element (ScrollView, FlatList, etc.)"
+        },
+        {
+          "name": "LinearGradientComponent",
+          "type": "`ComponentType<`<br/>`LinearGradientProps>`",
+          "default": "**required**",
+          "description": "LinearGradient component from any compatible library (expo-linear-gradient, react-native-linear-gradient, etc.)"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "default": "50",
+          "description": "Size (height/width) of the gradient shadow in pixels"
+        },
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "auto-detect",
+          "description": "Orientation of the scroll shadow. If not provided, will auto-detect from child's `horizontal` prop"
+        },
+        {
+          "name": "visibility",
+          "type": "'auto' | 'top' | 'bottom' | 'left' | 'right' | 'both' | 'none'",
+          "default": "'auto'",
+          "description": "Visibility mode for the shadows. 'auto' shows shadows based on scroll position and content overflow"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "default": "theme color",
+          "description": "Custom color for the gradient shadow. If not provided, uses the theme's background color"
+        },
+        {
+          "name": "isEnabled",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the shadow effect is enabled"
+        },
+        {
+          "name": "animation",
+          "type": "ScrollShadowRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply to the container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 1]",
+          "description": "`Opacity values [initial, active].`<br/>`For bottom/right shadow, this is reversed`"
+        }
+      ]
+    },
+    {
+      "name": "LinearGradientProps",
+      "props": [
+        {
+          "name": "colors",
+          "type": "any",
+          "description": "Array of colors for the gradient"
+        },
+        {
+          "name": "locations",
+          "type": "`any` (optional)",
+          "description": "Array of numbers defining the location of each gradient color stop"
+        },
+        {
+          "name": "start",
+          "type": "`any` (optional)",
+          "description": "Start point of the gradient (e.g., `{ x: 0, y: 0 }`)"
+        },
+        {
+          "name": "end",
+          "type": "`any` (optional)",
+          "description": "End point of the gradient (e.g., `{ x: 1, y: 0 }`)"
+        },
+        {
+          "name": "style",
+          "type": "`StyleProp<ViewStyle>` (optional)",
+          "description": "Style to apply to the gradient view"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

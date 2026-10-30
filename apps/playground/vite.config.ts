@@ -13,8 +13,10 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig } from "vite";
 
+import { llmsTxtPlugin } from "./scripts/llms-txt.plugin";
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), llmsTxtPlugin()],
   resolve: {
     conditions: ["@stackra/source", ...defaultClientConditions],
     dedupe: ["react", "react-dom", "@heroui/react"],

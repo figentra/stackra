@@ -142,4 +142,24 @@ describe("ProgressBar (web)", () => {
     // @ts-expect-error the parts are drawn by the component
     render(<ProgressBar label="x">child</ProgressBar>);
   });
+  it("fills from the inline start and mirrors the sweep in right-to-left", () => {
+    const { container, rerender } = render(
+      <div dir="rtl">
+        <ProgressBar label="Uploading" value={40} />
+      </div>,
+    );
+    const fill = () => container.querySelector<HTMLElement>('[data-slot="progress-bar-fill"]');
+    // HeroUI places the fill with `start-0`; no physical side may be written inline.
+    expect(fill()?.className).toContain("progress-bar__fill");
+    expect(fill()?.style.left).toBe("");
+    expect(fill()?.style.right).toBe("");
+    expect(fill()?.style.width).toBe("40%");
+    rerender(
+      <div dir="rtl">
+        <ProgressBar label="Uploading" />
+      </div>,
+    );
+    // The sweep is a physical translateX from the left; mirrored in right-to-left it runs from the inline start.
+    expect(fill()?.className).toContain("rtl:[scale:-1_1]");
+  });
 });

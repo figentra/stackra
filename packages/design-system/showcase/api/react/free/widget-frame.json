@@ -1,0 +1,172 @@
+{
+  "generatedFrom": {
+    "hash": "6923edf8ca99e19a",
+    "propsFiles": ["ui/src/react/widget-frame/widget-frame.props.ts"]
+  },
+  "importLine": "import { WidgetFrame } from \"@stackra/ui/react\";",
+  "key": "free/widget-frame",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Shows a retry button in the error state.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Shows a refresh button in the header that runs it; its icon spins while `isRefreshing` (still under reduced motion).",
+          "name": "onRefresh",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the order picked in the sort menu.",
+          "name": "onSortChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(sort: \"label\" | \"value-desc\" | \"value-asc\") => void"
+        },
+        {
+          "description": "Called when the compare switch is turned on or off.",
+          "name": "onCompareChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isComparing: boolean) => void"
+        }
+      ],
+      "name": "WidgetFrame",
+      "props": [
+        {
+          "description": "The widget's title; it also names the region.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A muted line under the title, such as the range shown.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Controls at the header's end: a range picker, a menu, a link to the full report.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The body, drawn while `state` is `ready`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A row under the body: a \"View all\" link, a last-updated note.",
+          "name": "footer",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the body shows; `ready` by default.",
+          "name": "state",
+          "required": false,
+          "source": "stackra",
+          "type": "\"loading\" | \"error\" | \"ready\" | \"empty\""
+        },
+        {
+          "description": "The empty note; \"No data for this range yet\" by default.",
+          "name": "emptyText",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The error note; \"This widget could not load\" by default.",
+          "name": "errorText",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while fresh data loads behind the current body: a quiet spinner in the header.",
+          "name": "isRefreshing",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The columns it spans in a 12-column dashboard grid (web); `medium` by default. Native fills the width.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"small\" | \"full\" | \"medium\" | \"large\""
+        },
+        {
+          "description": "When the data was fetched: the header reads \"Updated 2 min ago\" in the locale and keeps it current.",
+          "name": "updatedAt",
+          "required": false,
+          "source": "stackra",
+          "type": "number | Date"
+        },
+        {
+          "description": "A row under the header for the body's own controls: a range or period picker, a filter.",
+          "name": "controls",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The overflow menu's entries, in this order; no menu when left out. `csv` and `table` read `data`.",
+          "name": "menu",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"link\" | \"table\" | \"fullscreen\" | \"csv\" | \"png\")[]"
+        },
+        {
+          "description": "The numbers behind the body: the \"View as table\" view, the accessible alternative, and the CSV download.",
+          "name": "data",
+          "required": false,
+          "source": "stackra",
+          "type": "WidgetData"
+        },
+        {
+          "description": "The downloads' file name without its extension; the title by default.",
+          "name": "fileName",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The order the body's categories are in; with `onSortChange`, the header shows a sort menu.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        },
+        {
+          "description": "Whether the previous period is drawn beside this one; with `onCompareChange`, the controls row shows a switch.",
+          "name": "isComparing",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,7 @@
+{
+  "size": "Size {size}",
+  "caption": "Orders",
+  "order": "Order",
+  "status": "Status",
+  "advance": "Next state"
+}

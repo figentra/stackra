@@ -1,0 +1,18 @@
+{
+  "shape": "الشكل {shape}",
+  "with_image": "صورة",
+  "variant": "النمط {variant}",
+  "loaded": "صورة محمّلة",
+  "broken": "صورة معطوبة",
+  "organisation": "مؤسسة",
+  "anonymous": "دون اسم",
+  "accessible_name": "اسم يمكن الوصول إليه",
+  "standalone": "Ada Lovelace",
+  "row": "Ada Lovelace، مسؤولة",
+  "row_name": "Ada Lovelace",
+  "row_role": "مسؤولة",
+  "next_name": "الاسم التالي",
+  "image_on": "إظهار الصورة",
+  "image_off": "إخفاء الصورة",
+  "current": "الصورة الرمزية الحالية"
+}

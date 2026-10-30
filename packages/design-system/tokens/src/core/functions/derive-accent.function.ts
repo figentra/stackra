@@ -2,9 +2,12 @@
  * Stackra file contract:
  * Purpose: ADR 0340 decision 4's accent derivation, the one way a product layer or a tenant's single colour becomes an
  *          accent family. The submitted accent is kept as given: a colour string (`oklch(L C H)` or `#RRGGBB`) is the
- *          accent in both schemes, and a hue and chroma take the base accent's own lightness in each scheme. From it,
- *          per scheme, come only its steps, relative to its own lightness (the stackra theme's ADR 0319 steps):
- *          - `accent-hover` 0.05 darker and `accent-pressed` 0.1 darker, at its chroma;
+ *          accent in both schemes, a `{ light, dark }` pair is one per scheme (a brand layer's two accents), and a hue
+ *          and chroma take the base accent's own lightness in each scheme. From it, per scheme, come only its steps,
+ *          relative to its own lightness (the stackra theme's ADR 0319 steps):
+ *          - `accent-hover` 0.05 and `accent-pressed` 0.1 away from its label, at its chroma: darker under a light
+ *            label, lighter under a dark one (an amber, a dark scheme's light accent), so neither state loses the
+ *            label's contrast;
  *          - `accent-soft`, a tint on the page: the base `background`'s lightness, 0.03 darker (light) or 0.13 lighter
  *            (dark), at a quarter (light) or 0.45 (dark) of its chroma;
  *          - `accent-soft-foreground`, 0.08 darker at its chroma (light) or 0.13 lighter at 0.64 of it (dark);
@@ -60,11 +63,25 @@ function lightnessOf(css: string, hex: string): number {
   return match ? Number(match[1]) : lchOfHex(hex.slice(0, 7))[0];
 }
 
+/** An accent as `deriveAccent` takes it: one colour, one per scheme, or a hue and chroma. */
+type AccentInput =
+  | { readonly hue: number; readonly chroma: number }
+  | { readonly light: string; readonly dark: string }
+  | string;
+
+/** The lightest a soft label may be on the light scheme's soft fill, and the darkest on the dark one's. */
+const SOFT_LABEL_MAX_LIGHT = 0.47;
+const SOFT_LABEL_MIN_DARK = 0.75;
+
 /** The accent in each scheme, as given, with its oklch parts. */
 function accentOf(
   base: Theme,
-  accent: { readonly hue: number; readonly chroma: number } | string,
+  accent: AccentInput,
 ): Record<"light" | "dark", { readonly css: string; readonly hex: string; readonly lch: Lch }> {
+  if (typeof accent === "object" && "light" in accent) {
+    const [light, dark] = [accentOf(base, accent.light).light, accentOf(base, accent.dark).dark];
+    return { light, dark };
+  }
   if (typeof accent === "string") {
     const value = accent.trim();
     const match = OKLCH.exec(value);
@@ -102,15 +119,15 @@ function accentOf(
 /**
  * The accent family of `accent` on `base`, as a diff.
  * @param base - the theme the accent goes on; its `background`, `foreground` and (for a hue) accent lightness are read
- * @param accent - a colour kept as given in both schemes, or a hue (0 to 360) and chroma (0 to 0.37) at the base
- *   accent's lightness
+ * @param accent - a colour kept as given in both schemes, a `{ light, dark }` pair of colours, or a hue (0 to 360)
+ *   and chroma (0 to 0.37) at the base accent's lightness
  * @param options - `link: true` points the link at the accent too
  * @returns the changed accent, accent-foreground, focus (and link) roles and the four accent palette steps
  * @throws InvalidThemeError when the accent is not a colour this function reads
  */
 export function deriveAccent(
   base: Theme,
-  accent: { readonly hue: number; readonly chroma: number } | string,
+  accent: AccentInput,
   options: { readonly link?: boolean } = {},
 ): ThemeDiff {
   const given = accentOf(base, accent);
@@ -145,6 +162,13 @@ export function deriveAccent(
     };
   };
   const [labelLight, labelDark] = [label("light"), label("dark")];
+  /** +1 (lighter) when the label is darker than the accent, else -1: the steps move away from the label. */
+  const away = (mode: "light" | "dark") =>
+    contrastRatio((mode === "light" ? labelLight : labelDark).hex, "#FFFFFF") >
+    contrastRatio(given[mode].hex, "#FFFFFF")
+      ? 1
+      : -1;
+  const [awayLight, awayDark] = [away("light"), away("dark")];
   return {
     colors: {
       accent: accentToken,
@@ -158,15 +182,23 @@ export function deriveAccent(
       ...(options.link ? { link: accentToken } : {}),
     },
     palette: {
-      "accent-hover": token(step("light", lightL - 0.05), step("dark", darkL - 0.05)),
-      "accent-pressed": token(step("light", lightL - 0.1), step("dark", darkL - 0.1)),
+      "accent-hover": token(
+        step("light", lightL + awayLight * 0.05),
+        step("dark", darkL + awayDark * 0.05),
+      ),
+      "accent-pressed": token(
+        step("light", lightL + awayLight * 0.1),
+        step("dark", darkL + awayDark * 0.1),
+      ),
       "accent-soft": token(
         step("light", page.light - 0.03, 0.25),
         step("dark", page.dark + 0.13, 0.45),
       ),
+      // Clamped so a light accent (amber, yellow) still labels its soft fill: unclamped, amber's light step sat at
+      // L 0.75 on a near-white fill, under 2:1. Mid accents (the steel default) are inside the clamp and unchanged.
       "accent-soft-foreground": token(
-        step("light", lightL - 0.08),
-        step("dark", darkL + 0.13, 0.64),
+        step("light", Math.min(lightL - 0.08, SOFT_LABEL_MAX_LIGHT)),
+        step("dark", Math.max(darkL + 0.13, SOFT_LABEL_MIN_DARK), 0.64),
       ),
     },
   };

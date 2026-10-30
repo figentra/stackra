@@ -1,0 +1,254 @@
+{
+  "slug": "tag-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(collections)/tag-group.mdx",
+  "parts": [
+    {
+      "name": "TagGroup",
+      "props": [
+        {
+          "name": "selectionMode",
+          "type": "\"none\" | \"single\" | \"multiple\"",
+          "default": "\"none\"",
+          "description": "The type of selection that is allowed"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Selection",
+          "description": "The currently selected keys (controlled)"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Selection",
+          "description": "The initial selected keys (uncontrolled)"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Selection) => void",
+          "description": "Handler called when the selection changes"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled tags"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the tag group is disabled"
+        },
+        {
+          "name": "onRemove",
+          "type": "(keys: Set<Key>) => void",
+          "description": "Handler called when tags are removed"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the tags in the group"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"surface\"",
+          "default": "\"default\"",
+          "description": "Visual variant of the tags"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "TagGroup content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, undefined>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "TagGroup.List",
+      "props": [
+        {
+          "name": "items",
+          "type": "Iterable<T>",
+          "description": "The items to display in the tag list"
+        },
+        {
+          "name": "renderEmptyState",
+          "type": "() => ReactNode",
+          "description": "Function to render when the list is empty"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "TagList content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TagListRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tag",
+      "props": [
+        {
+          "name": "id",
+          "type": "Key",
+          "description": "The unique identifier for the tag"
+        },
+        {
+          "name": "textValue",
+          "type": "string",
+          "description": "A string representation of the tag's content, used for accessibility"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the tag is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Tag content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TagRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tag.RemoveButton",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom remove button content (defaults to close icon)"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the tag is selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the tag is disabled"
+        },
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the tag is hovered"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the tag is pressed"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the tag is focused"
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether the tag has keyboard focus"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".tag-group",
+      "description": "Base tag group container"
+    },
+    {
+      "name": ".tag-group__list",
+      "description": "Container for the list of tags"
+    },
+    {
+      "name": ".tag",
+      "description": "Base tag styles"
+    },
+    {
+      "name": ".tag__remove-button",
+      "description": "Remove button trigger"
+    },
+    {
+      "name": ".tag-group [slot=\"description\"]",
+      "description": "Description slot styles"
+    },
+    {
+      "name": ".tag-group [slot=\"errorMessage\"]",
+      "description": "ErrorMessage slot styles"
+    },
+    {
+      "name": ".tag--sm",
+      "description": "Small size tag"
+    },
+    {
+      "name": ".tag--md",
+      "description": "Medium size tag (default)"
+    },
+    {
+      "name": ".tag--lg",
+      "description": "Large size tag"
+    },
+    {
+      "name": ".tag--default",
+      "description": "Default variant"
+    },
+    {
+      "name": ".tag--surface",
+      "description": "Surface variant with surface background"
+    },
+    {
+      "name": ".tag[data-selected=\"true\"]",
+      "description": "Selected tag state"
+    },
+    {
+      "name": ".tag[data-disabled=\"true\"]",
+      "description": "Disabled tag state"
+    },
+    {
+      "name": ".tag[data-hovered=\"true\"]",
+      "description": "Hovered tag state"
+    },
+    {
+      "name": ".tag[data-pressed=\"true\"]",
+      "description": "Pressed tag state"
+    },
+    {
+      "name": ".tag[data-focus-visible=\"true\"]",
+      "description": "Focused tag state (keyboard focus)"
+    }
+  ]
+}

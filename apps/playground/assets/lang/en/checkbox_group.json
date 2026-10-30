@@ -1,0 +1,42 @@
+{
+  "captions": {
+    "disabled": "Disabled",
+    "option_disabled": "One option disabled",
+    "read_only": "Read-only",
+    "required": "Required",
+    "invalid": "Invalid, with a message"
+  },
+  "group_labels": {
+    "basic": "Notify me by",
+    "disabled": "Weekly reports",
+    "option_disabled": "Export formats",
+    "read_only": "Included in your plan",
+    "required": "Topics",
+    "invalid": "Delivery days",
+    "live": "Toppings",
+    "primary": "Primary group",
+    "secondary": "Secondary group"
+  },
+  "basic_description": "You can change this at any time.",
+  "invalid_description": "Pick at least one day.",
+  "invalid_error": "Choose a delivery day to continue.",
+  "chosen": "Chosen: {keys}",
+  "none": "none",
+  "all": "Choose all",
+  "clear": "Clear",
+  "sample": {
+    "email": "Email",
+    "a_weekly_digest": "A weekly digest.",
+    "text_message": "Text message",
+    "push_notification": "Push notification",
+    "cheese": "Cheese",
+    "olives": "Olives",
+    "basil": "Basil",
+    "chilli": "Chilli",
+    "csv": "CSV",
+    "excel": "Excel",
+    "pdf": "PDF",
+    "monday": "Monday",
+    "thursday": "Thursday"
+  }
+}

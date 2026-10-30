@@ -10,8 +10,8 @@ import type { ViewProps } from "react-native";
 import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
 
 /**
- * Props of the native Sidebar: the shared contract plus the root `View`'s own props, passed through. The sidebar's
- * content is `items` and its two slots, so the type refuses JSX children.
+ * Props of the native Sidebar: the shared contract plus the root `View`'s own props, passed through. A native sidebar
+ * is drawn from `items` only (there are no composed parts on native), so the type refuses JSX children.
  */
 export type SidebarProps = SidebarContractProps &
   Omit<ViewProps, keyof SidebarContractProps | "children">;

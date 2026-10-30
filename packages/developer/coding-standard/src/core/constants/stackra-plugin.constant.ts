@@ -25,6 +25,7 @@ import { NO_EMPTY_MODULE_RULE } from "./no-empty-module-rule.constant.ts";
 import { NO_ENUM_RULE } from "./no-enum-rule.constant.ts";
 import { NO_HASH_PRIVATE_RULE } from "./no-hash-private-rule.constant.ts";
 import { NO_KIND_DECORATOR_RULE } from "./no-kind-decorator-rule.constant.ts";
+import { NO_LITERAL_RADIUS_RULE } from "./no-literal-radius-rule.constant.ts";
 import { NO_PARAMETER_DECORATOR_RULE } from "./no-parameter-decorator-rule.constant.ts";
 import { NO_RAW_KEY_LITERAL_RULE } from "./no-raw-key-literal-rule.constant.ts";
 import { NO_TENANT_VOCABULARY_RULE } from "./no-tenant-vocabulary-rule.constant.ts";
@@ -58,6 +59,7 @@ export const STACKRA_PLUGIN: Plugin = {
     "no-enum": NO_ENUM_RULE,
     "no-hash-private": NO_HASH_PRIVATE_RULE,
     "no-kind-decorator": NO_KIND_DECORATOR_RULE,
+    "no-literal-radius": NO_LITERAL_RADIUS_RULE,
     "no-parameter-decorator": NO_PARAMETER_DECORATOR_RULE,
     "no-raw-key-literal": NO_RAW_KEY_LITERAL_RULE,
     "no-tenant-vocabulary": NO_TENANT_VOCABULARY_RULE,

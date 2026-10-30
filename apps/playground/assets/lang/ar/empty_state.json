@@ -1,0 +1,25 @@
+{
+  "search_label": "البحث في الطلبات",
+  "search_placeholder": "جرّب «استرداد»",
+  "clear_search": "مسح البحث",
+  "show_all": "عرض كل الطلبات",
+  "results_intro": "الطلبات",
+  "create": "إنشاء طلب",
+  "clear_filters": "مسح عوامل التصفية",
+  "learn_more": "طلب الوصول",
+  "count": "{shown, plural, =0 {لا طلبات مطابقة.} one {عُرض طلب واحد.} two {عُرض طلبان.} few {عُرضت # طلبات.} many {عُرض # طلبًا.} other {عُرض # طلب.}}",
+  "sample": {
+    "no_orders_yet": "لا طلبات بعد",
+    "orders_appear_here_once_a": "تظهر الطلبات هنا بعد أن يدفع العميل.",
+    "no_orders_match_your_filters": "لا طلبات تطابق عوامل التصفية",
+    "try_a_different_status_or": "جرّب حالة أخرى أو نطاق تواريخ أوسع.",
+    "you_cannot_see_orders": "لا يمكنك رؤية الطلبات",
+    "ask_an_administrator_to_give": "اطلب من المسؤول منحك صلاحية الطلبات.",
+    "title_only": "عنوان فقط",
+    "with_an_action": "مع إجراء",
+    "an_icon_of_your_own": "أيقونة خاصة بك",
+    "importing_is_paused": "الاستيراد متوقف مؤقتًا",
+    "orders_will_appear_here_when": "ستظهر الطلبات هنا عند استئناف الاستيراد.",
+    "no_icon": "دون أيقونة"
+  }
+}

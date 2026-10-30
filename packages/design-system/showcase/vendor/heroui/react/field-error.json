@@ -1,0 +1,9 @@
+{
+  "slug": "field-error",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/field-error.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": [],
+  "a11y": "The FieldError component ensures accessibility by:\n\n- Using proper ARIA attributes for error announcement\n- Supporting screen readers with semantic HTML\n- Providing visual and programmatic error indication\n- Automatically managing visibility based on validation state"
+}

@@ -1,0 +1,146 @@
+{
+  "slug": "chip",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(data-display)/chip.mdx",
+  "parts": [
+    {
+      "name": "Chip",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to display inside the chip"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the root element"
+        },
+        {
+          "name": "color",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Color variant of the chip"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\" | \"tertiary\" | \"soft\"",
+          "default": "\"secondary\"",
+          "description": "Visual style variant"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the chip"
+        }
+      ]
+    },
+    {
+      "name": "Chip.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Label text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the label slot"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".chip",
+      "description": "Base chip container styles"
+    },
+    {
+      "name": ".chip__label",
+      "description": "Label text slot styles"
+    },
+    {
+      "name": ".chip--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".chip--danger",
+      "description": "Danger color variant"
+    },
+    {
+      "name": ".chip--default",
+      "description": "Default color variant"
+    },
+    {
+      "name": ".chip--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".chip--warning",
+      "description": "Warning color variant"
+    },
+    {
+      "name": ".chip--primary",
+      "description": "Primary variant with filled background"
+    },
+    {
+      "name": ".chip--secondary",
+      "description": "Secondary variant with border"
+    },
+    {
+      "name": ".chip--tertiary",
+      "description": "Tertiary variant with transparent background"
+    },
+    {
+      "name": ".chip--soft",
+      "description": "Soft variant with lighter background"
+    },
+    {
+      "name": ".chip--sm",
+      "description": "Small size"
+    },
+    {
+      "name": ".chip--md",
+      "description": "Medium size (default)"
+    },
+    {
+      "name": ".chip--lg",
+      "description": "Large size"
+    },
+    {
+      "name": ".chip--primary.chip--accent",
+      "description": "Primary accent combination with filled background"
+    },
+    {
+      "name": ".chip--primary.chip--success",
+      "description": "Primary success combination with filled background"
+    },
+    {
+      "name": ".chip--primary.chip--warning",
+      "description": "Primary warning combination with filled background"
+    },
+    {
+      "name": ".chip--primary.chip--danger",
+      "description": "Primary danger combination with filled background"
+    },
+    {
+      "name": ".chip--accent.chip--soft",
+      "description": "Soft accent combination with lighter background"
+    },
+    {
+      "name": ".chip--success.chip--soft",
+      "description": "Soft success combination with lighter background"
+    },
+    {
+      "name": ".chip--warning.chip--soft",
+      "description": "Soft warning combination with lighter background"
+    },
+    {
+      "name": ".chip--danger.chip--soft",
+      "description": "Soft danger combination with lighter background"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "link-button",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(buttons)/link-button.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": []
+}

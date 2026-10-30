@@ -1,0 +1,489 @@
+{
+  "generatedFrom": {
+    "hash": "7b9f07589cee276d",
+    "heroDoc": "vendor/heroui/react/button.json",
+    "propsFiles": ["ui/src/react/button/button.props.ts"]
+  },
+  "importLine": "import { Button } from \"@stackra/ui/react\";",
+  "key": "free/button",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the button is pressed, by pointer, touch or keyboard.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "name": "onClick",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: MouseEvent<FocusableElement, MouseEvent>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when the hover state changes.",
+          "name": "onHoverChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isHovering: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction ends.",
+          "name": "onHoverEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction starts.",
+          "name": "onHoverStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is pressed.",
+          "name": "onKeyDown",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is released.",
+          "name": "onKeyUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the press state changes.",
+          "name": "onPressChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isPressed: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "name": "onPressEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction starts.",
+          "name": "onPressStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "name": "onPressUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        }
+      ],
+      "extends": "Button",
+      "name": "Button",
+      "props": [
+        {
+          "description": "The visible label, usually a string; it is also the accessible name unless `label` is given.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "primary",
+          "description": "The emphasis and colour of the button. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "default": "md",
+          "description": "The height, padding and text size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while the action runs: presses are refused, a spinner replaces the start icon, focus stays.",
+          "name": "isLoading",
+          "replaces": "isPending",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to stretch the button to the full width of its container.",
+          "name": "isFullWidth",
+          "replaces": "fullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
+          "name": "startIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "An element drawn after the label, on the inline-end side: an icon name or any icon element.",
+          "name": "endIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "The accessible name when it must differ from the visible label.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"button\", ButtonRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+          "name": "aria-controls",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+          "name": "aria-current",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"time\" | \"true\" | \"false\" | \"step\" | \"page\" | \"location\" | \"date\""
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates whether the element is disabled to users of assistive technology.",
+          "name": "aria-disabled",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\""
+        },
+        {
+          "description": "Indicates whether the element, or another grouping element it controls, is currently expanded\nor collapsed.",
+          "name": "aria-expanded",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\""
+        },
+        {
+          "description": "Indicates the availability and type of interactive popup element, such as menu or dialog, that\ncan be triggered by an element.",
+          "name": "aria-haspopup",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"dialog\" | \"menu\" | \"true\" | \"false\" | \"grid\" | \"listbox\" | \"tree\""
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates the current \"pressed\" state of toggle buttons.",
+          "name": "aria-pressed",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\" | \"mixed\""
+        },
+        {
+          "description": "Whether the element should receive focus on render.",
+          "name": "autoFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "'react-aria-Button'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<ButtonRenderProps>"
+        },
+        {
+          "description": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+          "name": "excludeFromTabOrder",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "The `<form>` element to associate the button with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#form).",
+          "name": "form",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The URL that processes the information submitted by the button.\nOverrides the action attribute of the button's form owner.",
+          "name": "formAction",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | ((formData: FormData) => void | Promise<void>)"
+        },
+        {
+          "description": "Indicates how to encode the form data that is submitted.",
+          "name": "formEncType",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates the HTTP method used to submit the form.",
+          "name": "formMethod",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates that the form is not to be validated when it is submitted.",
+          "name": "formNoValidate",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the target attribute of the button's form owner.",
+          "name": "formTarget",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Submitted as a pair with the button's value as part of the form data.",
+          "name": "name",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
+          "name": "preventFocusOnPress",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLButtonElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<ButtonRenderProps>"
+        },
+        {
+          "default": "'button'",
+          "description": "The behavior of the button when used in an HTML form.",
+          "name": "type",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"button\" | \"submit\" | \"reset\""
+        },
+        {
+          "description": "The value associated with the button's name when it's submitted with the form data.",
+          "name": "value",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ],
+      "renderProps": [
+        {
+          "description": "Whether the button is in a loading state",
+          "name": "isPending",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the button is currently pressed",
+          "name": "isPressed",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the button is hovered",
+          "name": "isHovered",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the button is focused",
+          "name": "isFocused",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the button should show focus indicator",
+          "name": "isFocusVisible",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the button is disabled",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base button styles",
+      "name": ".button"
+    },
+    {
+      "description": "Small size variant",
+      "name": ".button--sm"
+    },
+    {
+      "description": "Medium size variant",
+      "name": ".button--md"
+    },
+    {
+      "description": "Large size variant",
+      "name": ".button--lg"
+    },
+    {
+      "description": "",
+      "name": ".button--primary"
+    },
+    {
+      "description": "",
+      "name": ".button--secondary"
+    },
+    {
+      "description": "",
+      "name": ".button--tertiary"
+    },
+    {
+      "description": "",
+      "name": ".button--outline"
+    },
+    {
+      "description": "",
+      "name": ".button--ghost"
+    },
+    {
+      "description": "",
+      "name": ".button--danger"
+    },
+    {
+      "description": "",
+      "name": ".button--icon-only"
+    },
+    {
+      "description": "",
+      "name": ".button--icon-only.button--sm"
+    },
+    {
+      "description": "",
+      "name": ".button--icon-only.button--lg"
+    }
+  ]
+}

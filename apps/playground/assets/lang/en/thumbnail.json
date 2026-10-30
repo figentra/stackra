@@ -1,0 +1,16 @@
+{
+  "sm": "Small",
+  "md": "Medium",
+  "lg": "Large",
+  "empty": "No image",
+  "broken": "Broken image",
+  "named": "Named image",
+  "latte": "Iced latte",
+  "croissant": "Butter croissant",
+  "shawarma": "Chicken shawarma",
+  "menu": "Menu items",
+  "reload": "Load again",
+  "drinks": "Drinks",
+  "bakery": "Bakery",
+  "mains": "Mains"
+}

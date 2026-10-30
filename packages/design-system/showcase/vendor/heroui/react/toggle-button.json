@@ -1,0 +1,133 @@
+{
+  "slug": "toggle-button",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(buttons)/toggle-button.mdx",
+  "parts": [
+    {
+      "name": "ToggleButton",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'default' | 'ghost'",
+          "default": "'default'",
+          "description": "Visual style variant"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of the toggle button"
+        },
+        {
+          "name": "isIconOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the button contains only an icon"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Controlled selected state"
+        },
+        {
+          "name": "defaultSelected",
+          "type": "boolean",
+          "default": "false",
+          "description": "Default selected state (uncontrolled)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the toggle button is disabled"
+        },
+        {
+          "name": "onChange",
+          "type": "(isSelected: boolean) => void",
+          "description": "Handler called when selection changes"
+        },
+        {
+          "name": "onPress",
+          "type": "(e: PressEvent) => void",
+          "description": "Handler called when the button is pressed"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: ToggleButtonRenderProps) => React.ReactNode",
+          "description": "Button content or render prop"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the button is currently selected"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the button is currently pressed"
+        },
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the button is hovered"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the button is focused"
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether the button should show focus indicator"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the button is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".toggle-button",
+      "description": "Base toggle button styles"
+    },
+    {
+      "name": ".toggle-button--sm",
+      "description": "Small size variant"
+    },
+    {
+      "name": ".toggle-button--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".toggle-button--lg",
+      "description": "Large size variant"
+    },
+    {
+      "name": ".toggle-button--default",
+      "description": "Default variant with filled background"
+    },
+    {
+      "name": ".toggle-button--ghost",
+      "description": "Ghost variant with transparent background"
+    },
+    {
+      "name": ".toggle-button--icon-only",
+      "description": "Icon-only toggle button"
+    },
+    {
+      "name": ".toggle-button--icon-only.toggle-button--sm",
+      "description": "Small icon-only"
+    },
+    {
+      "name": ".toggle-button--icon-only.toggle-button--lg",
+      "description": "Large icon-only"
+    }
+  ]
+}

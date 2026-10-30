@@ -1,0 +1,161 @@
+{
+  "slug": "skeleton-group",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(feedback)/skeleton-group.mdx",
+  "parts": [
+    {
+      "name": "SkeletonGroup",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "SkeletonGroup.Item components and layout elements"
+        },
+        {
+          "name": "isLoading",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the skeleton items are currently loading"
+        },
+        {
+          "name": "isSkeletonOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Hides entire group when isLoading is false (for skeleton-only layouts)"
+        },
+        {
+          "name": "variant",
+          "type": "'shimmer' | 'pulse' | 'none'",
+          "default": "'shimmer'",
+          "description": "Animation variant for all items in the group"
+        },
+        {
+          "name": "animation",
+          "type": "SkeletonRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the group container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Custom styles for the group container"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeIn",
+          "description": "Custom entering animation"
+        },
+        {
+          "name": "exiting.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeOut",
+          "description": "Custom exiting animation"
+        },
+        {
+          "name": "shimmer.duration",
+          "type": "number",
+          "default": "1500",
+          "description": "Animation duration in milliseconds"
+        },
+        {
+          "name": "shimmer.speed",
+          "type": "number",
+          "default": "1",
+          "description": "Speed multiplier for the animation"
+        },
+        {
+          "name": "shimmer.highlightColor",
+          "type": "string",
+          "description": "Highlight color for the shimmer effect"
+        },
+        {
+          "name": "shimmer.easing",
+          "type": "EasingFunction",
+          "default": "Easing.linear",
+          "description": "Easing function for the animation"
+        },
+        {
+          "name": "pulse.duration",
+          "type": "number",
+          "default": "1000",
+          "description": "Animation duration in milliseconds"
+        },
+        {
+          "name": "pulse.minOpacity",
+          "type": "number",
+          "default": "0.5",
+          "description": "Minimum opacity value"
+        },
+        {
+          "name": "pulse.maxOpacity",
+          "type": "number",
+          "default": "1",
+          "description": "Maximum opacity value"
+        },
+        {
+          "name": "pulse.easing",
+          "type": "EasingFunction",
+          "default": "Easing.inOut(Easing.ease)",
+          "description": "Easing function for the animation"
+        }
+      ]
+    },
+    {
+      "name": "SkeletonGroup.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to show when not loading"
+        },
+        {
+          "name": "isLoading",
+          "type": "boolean",
+          "default": "inherited",
+          "description": "Whether the skeleton is currently loading (overrides group setting)"
+        },
+        {
+          "name": "variant",
+          "type": "'shimmer' | 'pulse' | 'none'",
+          "default": "inherited",
+          "description": "Animation variant (overrides group setting)"
+        },
+        {
+          "name": "animation",
+          "type": "SkeletonRootAnimation",
+          "default": "inherited",
+          "description": "Animation configuration (overrides group setting)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for styling the item"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

@@ -1,0 +1,72 @@
+---
+title: "0466 — The document editor is TipTap v3 core, and packages extend it through editor contributions"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the engine of @stackra/builder's document surface (TipTap v3 core on ProseMirror), how packages contribute to it, and how Markdown and MDX enter and leave it. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0110, 0154, 0225, 0270, 0305, 0350. */}
+
+<Note>
+  Accepted by the owner on 2026-10-28 (design-system session c6, STA-1371), as drafted. It gates
+  gap-inventory batch 2.
+</Note>
+
+## Context
+
+[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels) makes `@stackra/builder`
+the one editor kernel, with a "document" surface for posts, articles, help articles, product descriptions and email
+templates, and full Yjs co-editing through `@stackra/collaboration`. It does not name the rich-text engine. The HeroUI Pro
+rich-text editor left core with ADR 0461, so core has none. Products need Shopify-level product descriptions, Yoast-style
+SEO beside the text, AI writing actions, and Markdown/MDX in and out, on web and on mobile. Weighed: TipTap v3 (ProseMirror),
+Lexical, BlockNote (built on TipTap; parts GPL or commercial), Plate (Slate) and Milkdown.
+
+## Decision
+
+1. **Engine.** The document surface runs on **TipTap v3 core** (MIT, ProseMirror) and only its MIT packages. TipTap's paid
+   cloud and Pro extensions are not used. On native the same engine runs through a TipTap-based React Native editor
+   (10tap class), so one schema and one set of extensions serve web and mobile.
+2. **One schema, owned by `@stackra/builder`.** Nodes and marks are declared once. The stored form is the L2 document JSON
+   ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)): ProseMirror JSON that references registered blocks by name,
+   never markup, CSS or code ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)).
+3. **Editor contributions.** A package extends the editor by registering contributions in its module, never by importing
+   editor internals:
+   - nodes and marks;
+   - slash-menu commands and toolbar or bubble-menu buttons;
+   - side panels (for example the SEO analysis panel);
+   - input rules and paste handlers;
+   - AI actions.
+
+   A contribution names the document kinds it applies to. Contributions are UI slots in the sense of
+   [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules),
+   and gen lists them in the manifest like other registered code.
+
+4. **AI is a contributor, not part of the kernel.** `@stackra/ai` contributes actions: rewrite, shorten, expand, change
+   tone, translate EN↔AR, summarise, generate SEO title and description, alt text, FAQ from content, and suggest category.
+   Each runs as an ordinary action (permission, risk, human approval for writes, [0021](/adr/0021-ai-engine-and-agent-write-safety)).
+   Its result is applied as one undoable transaction that the author accepts or rejects.
+5. **Markdown and MDX are serialisers.**
+   - Markdown import and export use TipTap's Markdown support, both CommonMark and GFM.
+   - MDX import maps each JSX element to a registered block by name and its props through the block's Zod schema. Unknown
+     elements are refused, and expressions are never evaluated.
+   - MDX export writes registered blocks back as JSX.
+   - HTML is accepted on paste only, sanitised to the schema.
+6. **Collaboration** binds through `@stackra/collaboration` (Yjs), per 0270 decision 5. Comments use `@Commentable`
+   ([0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait)).
+7. **Design system.** The editor's chrome (toolbar, bubble menu, slash menu, block handle, link and image dialogs) is
+   `@stackra/ui` components (gap-inventory row 67). `@stackra/builder` composes them; the UI kit has no editor logic.
+8. **Bidi.** Every block carries `dir="auto"` unless set, and Arabic is the first-class test language for the schema,
+   paste and serialisers.
+
+## Consequences
+
+- One engine and schema on web and mobile, with Yjs co-editing ready, and every package can add to the editor without
+  forking it.
+- AI and SEO arrive as contributions, so a product without them ships a smaller editor.
+- We depend on ProseMirror's model and TipTap's release cadence. MDX is limited to registered blocks, by design.
+- Chore: `@stackra/builder` owns the schema version and its migrations. A contribution that adds a node must ship its
+  Markdown and MDX serialiser.
+
+## Enforcement
+
+- Planned: gen refuses a contribution whose node has no serialiser.
+- Planned: `FORBIDDEN_DEPENDENCIES` adds `@tiptap-pro/*`.
+- Planned: a schema round-trip test in `@stackra/builder` covers JSON ↔ Markdown ↔ MDX on an Arabic fixture.

@@ -6,6 +6,13 @@ description: "Accepted · 2026-10-27"
 {/* Stackra file contract. Purpose: ADR 0461, the Pro line for release 0.1.0 (owner decision D6): which code is free behind plan entitlements, which new packages are paid `@stackra-pro/*`, the internal-only `@stackra-pro/ui`, the free `@stackra/licensing`, the cancelled split batches and the per-package tier table. Boundary: decision text only; the Pro packages are built in figentra/stackra-pro by stackra-188, 189 and 195 to 199; the registry read rule by stackra-182 and 183; the index row and docs nav by stackra-90. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0077, 0202, 0240, 0310, 0327, 0453; STA-1355. */}
 
 <Note>
+  Amended 2026-10-28 (STA-1371) by [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only): decision 3 and the `design-system/ui-pro` row of
+  decision 6 are withdrawn. HeroUI refused redistribution, so `@stackra-pro/ui` is removed, not
+  kept internal; Figentra's product apps that use HeroUI Pro import it directly. The other
+  decisions stand.
+</Note>
+
+<Note>
   Accepted 2026-10-27 (STA-1355, batch stackra-203): owner decision D6 of the Stackra finish plan.
   Amends [0077](/adr/0077-open-core-free-and-pro-lists) (decision 7, the Pro list),
   [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code) (decisions 1 and 2, for

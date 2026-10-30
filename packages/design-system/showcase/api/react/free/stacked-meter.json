@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "842c8ef0c2ea2b8d",
+    "propsFiles": ["ui/src/react/stacked-meter/stacked-meter.props.ts"]
+  },
+  "importLine": "import { StackedMeter } from \"@stackra/ui/react\";",
+  "key": "free/stacked-meter",
+  "parts": [
+    {
+      "name": "StackedMeter",
+      "props": [
+        {
+          "description": "",
+          "name": "segments",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MeterSegment[]"
+        },
+        {
+          "description": "The meter's accessible name and visible title, such as \"Storage\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The whole; the segments' sum by default (a full bar).",
+          "name": "max",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "Shows the legend of parts under the bar; on by default.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

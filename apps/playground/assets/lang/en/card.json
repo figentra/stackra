@@ -1,0 +1,23 @@
+{
+  "level_title": "Level {level}",
+  "level_description": "A short description under the title.",
+  "level_content": "The content of the card.",
+  "anatomy_title": "Invoice 1042",
+  "anatomy_description": "Due on the first of next month.",
+  "anatomy_content": "Three line items, one reminder sent, no payment yet.",
+  "pay": "Pay now",
+  "later": "Remind me later",
+  "outer_title": "Subscription",
+  "outer_description": "Your plan and what it includes.",
+  "inner_title": "Add-ons",
+  "inner_content": "Two add-ons are active.",
+  "named_title": "Release notes",
+  "named_content": "A screen reader announces this card as an article called Release notes.",
+  "horizontal_title": "Weekly digest",
+  "horizontal_content": "A summary of what changed this week.",
+  "dismissible_title": "Your changes were saved",
+  "dismissible_content": "You can close this card at any time.",
+  "dismiss": "Dismiss card",
+  "show_again": "Show again",
+  "hidden": "The card is hidden."
+}

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the Theme Studio route of @figentra/playground: its path and title. It names no category, so the gallery
+ * Purpose: the Theme Studio route of @figentra/playground: its path, title and handle. The handle asks the shell for
+ *          the whole screen (`fullscreen`), so the studio draws its own bar, rail and inspector. It names no category, so the gallery
  *          and the palette list it apart from the component pages; the shell's bar and the index link to it.
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -12,4 +13,7 @@ import { Route } from "@stackra/navigation";
 export class ThemeStudioRoute extends Route({ path: "/theme-studio" }) {
   /** The page title. */
   static readonly title = "Theme Studio";
+
+  /** The router handle: the studio is a full-screen builder, without the shell's bar and sidebar, in the Theme Studio section. */
+  static readonly handle = { fullscreen: true, section: "studio" } as const;
 }

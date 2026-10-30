@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "3dfc211e1645955e",
+    "propsFiles": ["ui/src/react/treemap-chart/treemap-chart.props.ts"]
+  },
+  "importLine": "import { TreemapChart } from \"@stackra/ui/react\";",
+  "key": "free/treemap-chart",
+  "parts": [
+    {
+      "name": "TreemapChart",
+      "props": [
+        {
+          "description": "",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TreemapItem[]"
+        },
+        {
+          "description": "The chart's accessible name, such as \"Revenue by category\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"label\" | \"value-desc\" | \"value-asc\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

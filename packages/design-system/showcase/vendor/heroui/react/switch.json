@@ -1,0 +1,180 @@
+{
+  "slug": "switch",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(controls)/switch.mdx",
+  "parts": [
+    {
+      "name": "Switch",
+      "props": [
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "The size of the switch"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the switch is on"
+        },
+        {
+          "name": "defaultSelected",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the switch is on by default (uncontrolled)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the switch is disabled"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input element, used when submitting an HTML form"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the input element, used when submitting an HTML form"
+        },
+        {
+          "name": "onChange",
+          "type": "(isSelected: boolean) => void",
+          "description": "Handler called when the switch value changes"
+        },
+        {
+          "name": "onPress",
+          "type": "(e: PressEvent) => void",
+          "description": "Handler called when the switch is pressed"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: SwitchRenderProps) => React.ReactNode",
+          "description": "Switch content or render prop"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, SwitchRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the switch is currently on"
+        },
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the switch is hovered"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the switch is currently pressed"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the switch is focused"
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether the switch is keyboard focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the switch is disabled"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the switch is read only"
+        },
+        {
+          "name": "state",
+          "type": "-",
+          "description": "State of the switch."
+        }
+      ]
+    },
+    {
+      "name": "SwitchGroup",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'vertical'",
+          "description": "The orientation of the switch group"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The switch items to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class names"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".switch",
+      "description": "Base switch container"
+    },
+    {
+      "name": ".switch__content",
+      "description": "Optional content container"
+    },
+    {
+      "name": ".switch__control",
+      "description": "Switch control track"
+    },
+    {
+      "name": ".switch__thumb",
+      "description": "Switch thumb that moves"
+    },
+    {
+      "name": ".switch__icon",
+      "description": "Optional icon inside the thumb"
+    },
+    {
+      "name": ".switch--sm",
+      "description": "Small size variant"
+    },
+    {
+      "name": ".switch--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".switch--lg",
+      "description": "Large size variant"
+    },
+    {
+      "name": ".switch-group",
+      "description": "Switch group container"
+    },
+    {
+      "name": ".switch-group__items",
+      "description": "Container for switch items"
+    },
+    {
+      "name": ".switch-group--horizontal",
+      "description": "Horizontal layout"
+    },
+    {
+      "name": ".switch-group--vertical",
+      "description": "Vertical layout (default)"
+    }
+  ]
+}

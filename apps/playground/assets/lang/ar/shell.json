@@ -1,0 +1,80 @@
+{
+  "product": "ساحة التجربة",
+  "title": "نظام تصميم Stackra",
+  "skip": "الانتقال إلى المحتوى",
+  "search": "البحث في المكونات",
+  "studio": "استوديو السمات",
+  "settings": "إعدادات العرض",
+  "show_settings": "النمط واللغة",
+  "color_scheme": "نمط الألوان",
+  "language": "اللغة والاتجاه",
+  "material": "الخامة",
+  "motion": "الحركة",
+  "digits": "الأرقام",
+  "brand": "العلامة التجارية",
+  "transition": "الانتقال",
+  "mode": "النمط",
+  "lang": "اللغة",
+  "nav": "الموقع",
+  "components": "المكونات",
+  "docs": "الدليل",
+  "display": "العرض",
+  "menu": "القائمة",
+  "back_to_top": "العودة إلى الأعلى",
+  "scheme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "materials": {
+    "solid": "مصمتة",
+    "frosted": "ضبابية",
+    "glass": "زجاجية",
+    "liquid": "سائلة"
+  },
+  "motions": {
+    "full": "كاملة",
+    "reduced": "مخفّفة",
+    "none": "متوقفة"
+  },
+  "transitions": {
+    "circle_origin": "دائرة من عنصر التحكم",
+    "slide_origin": "شريط من عنصر التحكم",
+    "circle_center": "دائرة من المنتصف",
+    "circle_top_right": "دائرة من أعلى اليمين",
+    "circle_top_left": "دائرة من أعلى اليسار",
+    "circle_bottom_right": "دائرة من أسفل اليمين",
+    "circle_bottom_left": "دائرة من أسفل اليسار",
+    "slide_rtl": "انزلاق من اليمين إلى اليسار",
+    "slide_ltr": "انزلاق من اليسار إلى اليمين",
+    "fade": "تلاشٍ",
+    "blur": "تمويه",
+    "none": "بلا انتقال"
+  },
+  "actions": {
+    "scheme": "النمط: {name}",
+    "material": "الخامة: {name}",
+    "home": "الانتقال إلى الفهرس",
+    "components": "تصفح كل المكونات",
+    "components_detail": "المعرض حسب الفئة",
+    "studio_detail": "اشتقاق سمة ومعاينتها وتصديرها"
+  },
+  "numerals": {
+    "latn": "لاتينية (012)",
+    "arab": "عربية هندية (٠١٢)"
+  },
+  "reset": "استعادة الإعدادات الافتراضية",
+  "sections": {
+    "appearance": "المظهر",
+    "language": "اللغة والأرقام",
+    "motion": "الحركة",
+    "showcase": "ساحة التجربة"
+  },
+  "footer": {
+    "copyright": "© 2026 فيجنترا · ستاكرا",
+    "nav": "التذييل",
+    "github": "غيت هب",
+    "changelog": "سجل التغييرات",
+    "version": "الإصدار {version}"
+  }
+}

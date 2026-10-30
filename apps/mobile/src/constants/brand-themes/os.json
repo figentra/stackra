@@ -1,0 +1,64 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "figentra-os",
+  "changes": {
+    "colors": {
+      "accent": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.974 0.006 240)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F3F7FA"
+      },
+      "accent-foreground": {
+        "light": "oklch(0.974 0.006 240)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#F3F7FA",
+        "hexDark": "#0B0D0F"
+      },
+      "focus": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.974 0.006 240)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F3F7FA"
+      },
+      "link": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.974 0.006 240)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F3F7FA"
+      }
+    },
+    "palette": {
+      "accent-hover": {
+        "light": "oklch(0.254 0.007 248)",
+        "dark": "oklch(1 0 0)",
+        "hexLight": "#202326",
+        "hexDark": "#FFFFFF"
+      },
+      "accent-pressed": {
+        "light": "oklch(0.32 0.008 256)",
+        "dark": "oklch(0.881 0.005 248)",
+        "hexLight": "#303337",
+        "hexDark": "#D5D8DB"
+      },
+      "accent-soft": {
+        "light": "oklch(0.933 0.005 248)",
+        "dark": "oklch(0.254 0.007 248)",
+        "hexLight": "#E6E9EC",
+        "hexDark": "#202326"
+      },
+      "accent-soft-foreground": {
+        "light": "oklch(0.32 0.008 256)",
+        "dark": "oklch(0.881 0.005 248)",
+        "hexLight": "#303337",
+        "hexDark": "#D5D8DB"
+      }
+    },
+    "fontFamily": {
+      "display": "\"Geist\", ui-sans-serif, system-ui, sans-serif",
+      "displayArabic": "\"IBM Plex Sans Arabic\", \"Geist\", system-ui, \"Segoe UI\", \"Tahoma\", sans-serif"
+    }
+  }
+}

@@ -15,6 +15,8 @@ import type { ReactNode } from "react";
 
 import { ModalBody } from "#native/modal/modal-body";
 import { ModalFooter } from "#native/modal/modal-footer";
+import { DrawerClose } from "#native/drawer/drawer-close";
+import { ModalClose } from "#native/modal/modal-close";
 import { ModalHeader } from "#native/modal/modal-header";
 
 /** The props each View stand-in was last handed, in render order. */
@@ -29,6 +31,10 @@ vi.mock("react-native", async () => {
     },
   };
 });
+
+// The close parts are only compared by identity; stand-ins keep heroui-native out of jsdom.
+vi.mock("#native/modal/modal-close", () => ({ ModalClose: () => null }));
+vi.mock("#native/drawer/drawer-close", () => ({ DrawerClose: () => null }));
 
 vi.mock("#native/text/text", async () => {
   const { createElement } = await import("react");
@@ -68,6 +74,22 @@ describe("Modal sections (native)", () => {
     );
     expect(container.querySelector('[data-testid="text"]')).toBeNull();
     expect(container.querySelector('[data-testid="mine"]')).toBeTruthy();
+  });
+
+  it.each([
+    ["Modal.Close", ModalClose],
+    ["Drawer.Close", DrawerClose],
+  ] as const)("puts a %s on the title's row, after the title column", (_name, Close) => {
+    render(
+      <ModalHeader className="px-2">
+        <i data-testid="title" />
+        <Close label="Close" />
+      </ModalHeader>,
+    );
+    expect(received.views.map((view) => view["className"])).toEqual([
+      "flex-row items-center gap-3 pb-3 px-2",
+      "flex-1 gap-1",
+    ]);
   });
 
   it("passes View props through", () => {

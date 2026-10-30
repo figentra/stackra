@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "122810bbbaf50149",
+    "heroDoc": "vendor/heroui/react/button-group.json",
+    "propsFiles": ["ui/src/react/button-group/button-group.props.ts"]
+  },
+  "importLine": "import { ButtonGroup } from \"@stackra/ui/react\";",
+  "key": "free/button-group",
+  "parts": [
+    {
+      "name": "ButtonGroup",
+      "props": [
+        {
+          "description": "The buttons, in reading order.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The group's spoken name, for example \"Text alignment\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`horizontal` (the default) or `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The size every button takes.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "secondary",
+          "description": "The variant every button takes. Defaults to `secondary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "description": "True to disable every button.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

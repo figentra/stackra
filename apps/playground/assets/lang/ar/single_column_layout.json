@@ -1,0 +1,22 @@
+{
+  "stacked_caption": "ثلاثة أقسام متراصة",
+  "wide_caption": "صف أعرض من العمود",
+  "scroller": "عناصر قابلة للتمرير",
+  "customer": "العميل",
+  "customer_body": "Ada Lovelace، ada@example.com",
+  "payment": "الدفع",
+  "payment_body": "دُفع بالكامل في 3 مارس",
+  "shipping": "الشحن",
+  "shipping_body": "شُحن في 5 مارس، ويصل خلال يومين",
+  "items_title": "العناصر",
+  "items_row": "اسم المنتج والكمية وسعر الوحدة والضريبة والخصم والإجمالي والمستودع الذي يُشحن منه",
+  "arabic_customer": "بيانات العميل",
+  "arabic_customer_body": "منى السالم",
+  "arabic_payment": "تفاصيل الدفع",
+  "arabic_payment_body": "تم الدفع بالكامل في 3 مارس",
+  "add": "إضافة قسم",
+  "remove": "إزالة قسم",
+  "note": "الملاحظة {index}",
+  "note_body": "ملاحظة على الطلب.",
+  "count": "{count, plural, zero {لا أقسام.} one {قسم واحد.} two {قسمان.} few {# أقسام.} many {# قسمًا.} other {# قسم.}}"
+}

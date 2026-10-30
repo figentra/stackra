@@ -15,6 +15,8 @@
 // @covers sta-350:FR-081 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +25,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/combo-box?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Combo box" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Combo box", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -47,7 +51,7 @@ test("each field is named, and the description and the error are tied to its inp
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   await expect(basics.getByRole("combobox", { name: /Country/ })).toBeVisible();
   await expect(basics.getByRole("combobox", { name: /Search countries/ })).toBeVisible();
   await expect(basics.getByRole("combobox", { name: /Ship from/ })).toHaveAccessibleDescription(
@@ -63,7 +67,7 @@ test("each field is named, and the description and the error are tied to its inp
 test("typing narrows the list, and a choice is made from the keyboard alone", async ({ page }) => {
   await open(page, "light", "en");
   const input = page
-    .getByRole("region", { name: "Basics" })
+    .getByRole("region", { name: "Usage" })
     .getByRole("combobox", { name: /Country/ });
   await input.focus();
   await page.keyboard.type("aus");
@@ -78,7 +82,7 @@ test("typing narrows the list, and a choice is made from the keyboard alone", as
 test("Escape closes the list and keeps focus in the field", async ({ page }) => {
   await open(page, "light", "en");
   const input = page
-    .getByRole("region", { name: "Basics" })
+    .getByRole("region", { name: "Usage" })
     .getByRole("combobox", { name: /Country/ });
   await input.focus();
   await page.keyboard.type("fra");
@@ -173,10 +177,7 @@ test("the live field is busy while the server answers, loads more at the end and
 for (const locale of LOCALES)
   test(`the trigger sits at the reading-end side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const group = page
-      .getByRole("region", { name: "Basics" })
-      .locator('[data-slot="combo-box-input-group"]')
-      .first();
+    const group = example(page, "usage").locator('[data-slot="combo-box-input-group"]').first();
     const groupBox = await group.boundingBox();
     const trigger = await group.locator('[data-slot="combo-box-trigger"]').boundingBox();
     if (!groupBox || !trigger) throw new Error("a box is missing");

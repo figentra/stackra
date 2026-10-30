@@ -1,0 +1,25 @@
+{
+  "paid": {
+    "title": "Payment received",
+    "description": "SAR 3,450 was paid for invoice INV-2207. A receipt is on its way to your email.",
+    "receipt": "View the receipt",
+    "back": "Back to invoices"
+  },
+  "states": {
+    "pending": "Submitting your VAT return",
+    "pending_description": "This usually takes under a minute.",
+    "error": "The return was not submitted",
+    "error_description": "ZATCA did not answer in time. Nothing was filed; try again.",
+    "info": "Your return is under review",
+    "info_description": "We will tell you by email within two working days.",
+    "again": "Start again",
+    "show_error": "Show the error",
+    "show_info": "Show the review"
+  },
+  "arabic": {
+    "title": "تم استلام الدفعة",
+    "description": "دُفع 3٬450 ريالًا للفاتورة INV-2207، وأرسلنا الإيصال إلى بريدك.",
+    "receipt": "عرض الإيصال",
+    "back": "العودة إلى الفواتير"
+  }
+}

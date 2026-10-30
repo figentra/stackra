@@ -1,0 +1,12 @@
+{
+  "size_label": "المزامنة، {size}",
+  "tone_label": "المزامنة، {tone}",
+  "value_label": "المزامنة عند {value} بالمئة",
+  "indeterminate_label": "تجهيز المزامنة",
+  "beside_label": "مزامنة جهات الاتصال",
+  "beside_text": "6 من 8 جهات اتصال",
+  "action_label": "تقدم المزامنة",
+  "advance": "تقدم بنسبة 10%",
+  "reset": "إعادة تعيين",
+  "complete": "اكتملت المزامنة"
+}

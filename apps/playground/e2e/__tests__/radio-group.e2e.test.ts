@@ -13,6 +13,11 @@
 // @covers sta-350:FR-082 sta-350:FR-085 sta-350:FR-086 sta-350:FR-087 sta-350:FR-089 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
+
+/** A demo's radio group, not a preview pane's own direction or scheme toggle group. */
+const DEMO_GROUP = '[data-slot="radio-group"]';
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +26,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/radio-group?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Radio group" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Radio group", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -43,9 +50,11 @@ for (const scheme of SCHEMES)
 
 test("every group is a named radiogroup of named radios", async ({ page }) => {
   await open(page, "light", "en");
-  const groups = page.locator("article").getByRole("radiogroup");
+  // The demos' groups: the examples' sections, without each pane's own direction and scheme toggles.
+  const groups = page.locator(`section:is(#usage, #examples) ${DEMO_GROUP}`);
+  // The demos load lazily: wait for all of them before walking them.
+  await expect(groups).toHaveCount(10);
   const count = await groups.count();
-  expect(count).toBe(10);
   for (let index = 0; index < count; index += 1) {
     const group = groups.nth(index);
     await expect(group, `group ${index}`).toHaveAccessibleName(/\S/);
@@ -76,9 +85,10 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const group = page.getByRole("radiogroup", { name: "Size" });
-    const medium = group.getByRole("radio", { name: "Medium" });
-    const large = group.getByRole("radio", { name: "Large" });
+    // The demo speaks the page's locale: the horizontal Size group is the usage's second, its radios found by place.
+    const group = example(page, "usage").locator(DEMO_GROUP).nth(1);
+    const medium = group.getByRole("radio").nth(1);
+    const large = group.getByRole("radio").nth(2);
     const forward = locale === "en" ? "ArrowRight" : "ArrowLeft";
     const backward = locale === "en" ? "ArrowLeft" : "ArrowRight";
     await expect(medium).toBeChecked();
@@ -129,17 +139,15 @@ test("the required group is required, and the invalid group is described until a
     "Pick the time that suits you. Choose a delivery window to continue.",
   );
   await group.getByText("Monthly", { exact: true }).click();
-  await expect(page.getByText("Choose a delivery window to continue.")).toBeHidden();
+  await expect(group).toHaveAccessibleDescription("Pick the time that suits you.");
 });
 
 for (const locale of LOCALES)
   test(`the radio sits on the reading-start side of its label in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
     // A `has` locator is queried inside the item, so the group scopes the items and the radio is found by role alone.
-    const item = page
-      .getByRole("radiogroup", { name: "Shipping speed" })
-      .locator('[data-slot="radio"]')
-      .filter({ has: page.getByRole("radio", { name: "Standard" }) });
+    // The demo speaks the page's locale: Standard is the first radio of the usage's Shipping speed group.
+    const item = example(page, "usage").locator('[data-slot="radio"]').first();
     const control = await item.locator('[data-slot="radio-control"]').boundingBox();
     const label = await item.locator('[data-slot="label"]').boundingBox();
     if (!control || !label) throw new Error("a box is missing");
@@ -148,7 +156,7 @@ for (const locale of LOCALES)
 
 test("the readout follows clicks and the buttons that choose from outside", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = page.getByRole("region", { name: "Fruit" });
   await expect(live.getByRole("status")).toHaveText("Chosen: apple");
   await live.getByText("Plum", { exact: true }).click();
   await expect(live.getByRole("status")).toHaveText("Chosen: plum");

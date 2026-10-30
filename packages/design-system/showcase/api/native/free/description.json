@@ -1,0 +1,145 @@
+{
+  "generatedFrom": {
+    "hash": "3c68297b3568e715",
+    "propsFiles": ["ui/src/native/description/description.props.ts"]
+  },
+  "importLine": "import { Description } from \"@stackra/ui/native\";",
+  "key": "free/description",
+  "parts": [
+    {
+      "name": "Description",
+      "props": [
+        {
+          "description": "The help text.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Animation configuration for description\n- `true` or `undefined`: Use default animations\n- `false` or `\"disabled\"`: Disable only description animations (children can still animate)\n- `\"disable-all\"`: Disable all animations including children (cascades down)\n- `object`: Custom animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "DescriptionAnimation"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "false",
+          "description": "Whether to hide the description when invalid",
+          "name": "hideOnInvalid",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "undefined",
+          "description": "Whether the description is disabled (overrides context)",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "undefined",
+          "description": "Whether the description is in an invalid state (overrides context)",
+          "name": "isInvalid",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Native ID for accessibility. Used to link description to form fields via aria-describedby.\nWhen provided, form fields can reference this description using aria-describedby={nativeID}.",
+          "name": "nativeID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<Text>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<TextStyle>>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...TextProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the section route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the section route of @figentra/playground: its path. The page it renders is
  *          `section.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Section page, at `/section`. */
-export class SectionRoute extends Route({ path: "/section" }) {
-  /** The page title. */
-  static readonly title = "Section";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Layout";
-}
+export class SectionRoute extends Route({ path: "/section" }) {}

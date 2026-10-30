@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "e280114e7eda6938",
+    "propsFiles": ["ui/src/native/rule-builder/rule-builder.props.ts"]
+  },
+  "importLine": "import { RuleBuilder } from \"@stackra/ui/native\";",
+  "key": "free/rule-builder",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: RuleGroup) => void"
+        }
+      ],
+      "name": "RuleBuilder",
+      "props": [
+        {
+          "description": "",
+          "name": "fields",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly RuleField[]"
+        },
+        {
+          "description": "",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "RuleGroup"
+        },
+        {
+          "description": "The builder's accessible name, such as \"Discount applies when\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

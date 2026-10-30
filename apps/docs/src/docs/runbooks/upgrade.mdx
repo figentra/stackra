@@ -64,9 +64,9 @@ Expo SDK versions move the whole `mobile` catalog together. Never bump one packa
   </Step>
 </Steps>
 
-## Licensed UI packages (HeroUI Pro, Uniwind Pro)
+## Licensed UI package (Uniwind Pro)
 
-Installed by `@stackra/ui-pro` and our apps ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)): `@heroui-pro/react` and `recharts`, `motion` and `react-resizable-panels` in `catalog:frontend`, `heroui-native-pro` in `catalog:mobile`, and Uniwind Pro in `catalog:uniwind-pro`. Bump them with the matching free packages, copy the downloaded HeroUI Pro peers into `packageExtensions` in `pnpm-workspace.yaml` again, check Uniwind Pro's compatibility table against the React Native and Expo versions, and confirm the licence tokens are present as secrets in CI and EAS before installing, or a token-less install caches an empty stub ([Mobile release](/runbooks/mobile-release#troubleshooting-each-one-happened)).
+Installed by `apps/mobile` ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) decision 11): Uniwind Pro in `catalog:uniwind-pro`. Stackra installs no HeroUI Pro ([0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only)). Bump it with free Uniwind, check Uniwind Pro's compatibility table against the React Native and Expo versions, and confirm the licence token is present as a secret in CI and EAS before installing, or a token-less install caches an empty stub ([Mobile release](/runbooks/mobile-release#troubleshooting-each-one-happened)).
 
 ## Checks that back this page
 

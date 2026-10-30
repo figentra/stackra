@@ -1,0 +1,88 @@
+{
+  "slug": "breadcrumbs",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/breadcrumbs.mdx",
+  "parts": [
+    {
+      "name": "Breadcrumbs",
+      "props": [
+        {
+          "name": "separator",
+          "type": "ReactNode",
+          "default": "chevron-right icon",
+          "description": "Custom separator between breadcrumb items"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether all breadcrumb links are disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The breadcrumb items"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, undefined>",
+          "description": "Overrides the default DOM element with a custom render function"
+        }
+      ]
+    },
+    {
+      "name": "Breadcrumbs.Item",
+      "props": [
+        {
+          "name": "href",
+          "type": "string",
+          "description": "The URL to link to (omit for current page)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Item content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, BreadcrumbRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".breadcrumbs",
+      "description": "Base breadcrumbs container"
+    },
+    {
+      "name": ".breadcrumbs__item",
+      "description": "Individual breadcrumb item wrapper"
+    },
+    {
+      "name": ".breadcrumbs__link",
+      "description": "Breadcrumb link element"
+    },
+    {
+      "name": ".breadcrumbs__separator",
+      "description": "Separator icon between items"
+    },
+    {
+      "name": ".breadcrumbs__link[data-current=\"true\"]",
+      "description": "Current page indicator (not a link)"
+    }
+  ],
+  "a11y": "Breadcrumbs uses React Aria Components' Breadcrumbs primitive, which provides:\n\n- Proper ARIA attributes for navigation landmarks\n- Current page indication via `aria-current=\"page\"`\n- Keyboard navigation support\n- Screen reader announcements for navigation context\n\nThe last breadcrumb item (without `href`) automatically becomes the current page indicator."
+}

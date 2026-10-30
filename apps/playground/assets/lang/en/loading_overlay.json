@@ -1,0 +1,18 @@
+{
+  "saving": {
+    "title": "Wholesale price list",
+    "body": "214 products, prices in SAR, VAT included.",
+    "edit": "Edit prices",
+    "message": "Saving the price list…",
+    "toggle": "Saving"
+  },
+  "default": {
+    "title": "Branch stock",
+    "body": "Counts from the Dammam and Khobar branches."
+  },
+  "arabic": {
+    "title": "قائمة أسعار الجملة",
+    "body": "214 منتجًا، الأسعار بالريال وتشمل الضريبة.",
+    "message": "جارٍ حفظ قائمة الأسعار…"
+  }
+}

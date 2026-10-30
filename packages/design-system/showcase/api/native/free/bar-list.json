@@ -1,0 +1,58 @@
+{
+  "generatedFrom": {
+    "hash": "e07d2d9cbef53f4e",
+    "propsFiles": ["ui/src/native/bar-list/bar-list.props.ts"]
+  },
+  "importLine": "import { BarList } from \"@stackra/ui/native\";",
+  "key": "free/bar-list",
+  "parts": [
+    {
+      "name": "BarList",
+      "props": [
+        {
+          "description": "The rows.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly BarListItem[]"
+        },
+        {
+          "description": "The list's name, for example \"Sales by city\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written, for example a currency.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The value of a full bar; defaults to the largest value.",
+          "name": "max",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "`descending` (the default) ranks the rows by value; `none` keeps the order given.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"descending\""
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

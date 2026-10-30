@@ -1,0 +1,20 @@
+{
+  "plain": "الكمية",
+  "plain_description": "اكتب رقمًا أو غيّره بالأزرار.",
+  "bounded": "المقاعد، من 1 إلى 10",
+  "bounded_description": "اكتب 40 واخرج من الحقل: تصبح 10.",
+  "percent": "الخصم",
+  "percent_description": "يُحفظ كسرًا ويُعرض نسبة مئوية.",
+  "currency": "السعر",
+  "currency_description": "بالدولار، بخطوات من خمسين سنتًا.",
+  "no_steppers": "سنوات الخبرة",
+  "no_steppers_description": "اضغط مفتاح السهم للأعلى أو للأسفل.",
+  "invalid": "الضيوف",
+  "invalid_message": "أدخل ضيفًا واحدًا على الأقل.",
+  "disabled": "الغرف",
+  "read_only": "الطوابق",
+  "live_label": "المقاعد المراد حجزها",
+  "live_description": "بين واحد وعشرة.",
+  "live_empty": "لم تُختر مقاعد بعد.",
+  "live_chosen": "{seats, plural, zero {لم يُختر أي مقعد.} one {اختير مقعد واحد.} two {اختير مقعدان.} few {اختيرت # مقاعد.} many {اختير # مقعدًا.} other {اختير # مقعد.}}"
+}

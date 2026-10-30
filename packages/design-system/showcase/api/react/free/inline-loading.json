@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "a905864ea8512bb0",
+    "propsFiles": ["ui/src/react/inline-loading/inline-loading.props.ts"]
+  },
+  "importLine": "import { InlineLoading } from \"@stackra/ui/react\";",
+  "key": "free/inline-loading",
+  "parts": [
+    {
+      "name": "InlineLoading",
+      "props": [
+        {
+          "description": "What is happening; `idle` draws nothing but keeps the live region in place.",
+          "name": "status",
+          "required": true,
+          "source": "stackra",
+          "type": "\"success\" | \"loading\" | \"error\" | \"idle\""
+        },
+        {
+          "description": "The text beside the spinner, for example \"Charging card\". Defaults to the `ui` catalogue's \"Loading\".",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text beside the check, for example \"Paid\". Defaults to the `ui` catalogue's \"Done\".",
+          "name": "successLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The text beside the alert icon, for example \"Card declined\". Defaults to the `ui` catalogue's \"Failed\".",
+          "name": "errorLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

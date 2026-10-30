@@ -1,0 +1,58 @@
+{
+  "generatedFrom": {
+    "hash": "e7e489fe7b818010",
+    "propsFiles": ["ui/src/react/leave-confirmation/leave-confirmation.props.ts"]
+  },
+  "importLine": "import { LeaveConfirmation } from \"@stackra/ui/react\";",
+  "key": "free/leave-confirmation",
+  "parts": [
+    {
+      "name": "LeaveConfirmation",
+      "props": [
+        {
+          "description": "True while there is unsaved work; false means leaving costs nothing and `confirmLeave` never asks.",
+          "name": "when",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The question, required, for example \"Discard unsaved changes?\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What leaving costs, read out with the dialog, for example \"Your edits to this page will be lost.\".",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The label of the button that stays on the page, in the app's language. It takes focus first.",
+          "name": "stayLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The label of the button that leaves and drops the changes, in the app's language.",
+          "name": "discardLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Receives the handle with `confirmLeave`.",
+          "name": "ref",
+          "required": false,
+          "source": "stackra",
+          "type": "Ref<LeaveConfirmationHandle>"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

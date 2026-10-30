@@ -15,6 +15,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { CursorPagination } from "#native/cursor-pagination/cursor-pagination";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 
 const received = vi.hoisted(() => ({ buttons: [] as Record<string, unknown>[] }));
 
@@ -41,7 +42,11 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("#native/icon/icon", () => ({
   Icon: ({ name, isMirroredInRtl }: { name: string; isMirroredInRtl?: boolean }) => (
-    <i data-testid="icon" data-name={name} data-mirrored={String(isMirroredInRtl === true)} />
+    <i
+      data-testid="icon"
+      data-name={name}
+      data-mirrored={String(isMirroredInRtl ?? isDirectionalIcon(name))}
+    />
   ),
 }));
 vi.mock("#native/text/text", () => ({

@@ -1,0 +1,82 @@
+{
+  "generatedFrom": {
+    "hash": "4100c37699f4d651",
+    "propsFiles": ["ui/src/native/stepper/stepper.props.ts"]
+  },
+  "importLine": "import { Stepper } from \"@stackra/ui/native\";",
+  "key": "free/stepper",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a step's id when it is pressed; left out, the steps are not pressable.",
+          "name": "onStepPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "Stepper",
+      "props": [
+        {
+          "description": "The steps, in order.",
+          "name": "steps",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly StepperStep[]"
+        },
+        {
+          "description": "The id of the step in hand; earlier steps read as complete, later ones as upcoming.",
+          "name": "currentStep",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "horizontal",
+          "description": "`horizontal` (a row with connectors between) or `vertical` (a column). Defaults to `horizontal`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "`default`, or `compact`: \"Step 2 of 4\", the current step's name and a dot per step.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"compact\""
+        },
+        {
+          "description": "`number` (1, 2, 3 in the customer's digits) or `icon` (each step's icon). A complete step shows a check.",
+          "name": "marker",
+          "required": false,
+          "source": "stackra",
+          "type": "\"number\" | \"icon\""
+        },
+        {
+          "description": "True (the default): only complete steps can be pressed. False: any step but the current one.",
+          "name": "isLinear",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The list's name, for example \"Add a product\"; defaults to the catalogue's \"Progress\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

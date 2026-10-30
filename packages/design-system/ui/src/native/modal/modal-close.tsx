@@ -20,8 +20,10 @@ export function ModalClose({
   icon,
   isDisabled,
   onPress,
+  closeButton,
   ...rest
-}: ModalCloseProps): ReactElement {
+}: ModalCloseProps): ReactElement | null {
+  if (closeButton === "none") return null;
   return (
     <Dialog.Close {...rest} {...omitUndefined({ isDisabled, onPress })} accessibilityLabel={label}>
       {icon === undefined ? undefined : <SlotIcon icon={icon} />}

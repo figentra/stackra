@@ -88,7 +88,18 @@
   },
   "sidebar": {
     "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar"
+    "expand": "Expand sidebar",
+    "open": "Open navigation",
+    "resize": "Resize sidebar",
+    "search": "Filter navigation",
+    "no_results": "No matching places",
+    "loading": "Loading navigation",
+    "sub_toggle": "Pages under {label}"
+  },
+  "side_panel": {
+    "expand": "Expand panel",
+    "close": "Close panel",
+    "resize": "Resize panel"
   },
   "data_table": {
     "loading": "Loading",
@@ -107,5 +118,662 @@
   },
   "search_field": {
     "clear": "Clear search"
+  },
+  "overflow_list": {
+    "more": "+{count, number} more",
+    "less": "Show less"
+  },
+  "tree_view": {
+    "expand": "Expand {label}",
+    "collapse": "Collapse {label}"
+  },
+  "sortable_list": {
+    "handle": "Reorder {label}",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "moved": "{label} moved to position {position, number} of {count, number}",
+    "hint": "Drag the handle, or use the actions to move this row."
+  },
+  "filter_panel": {
+    "applied": "Applied filters",
+    "views": "Saved views",
+    "sort": "Sort",
+    "order": "Order",
+    "results": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "facet_option": "{label} ({count, number})"
+  },
+  "notifications_panel": {
+    "label": "Notifications",
+    "label_unread": "Notifications, {count, plural, one {# unread} other {# unread}}",
+    "title": "Notifications",
+    "mark_all_read": "Mark all as read",
+    "dismiss": "Dismiss notification",
+    "empty": "You're all caught up",
+    "unread": "Unread"
+  },
+  "system_banner": {
+    "dismiss": "Dismiss message"
+  },
+  "route_progress": {
+    "label": "Loading page"
+  },
+  "copy_button": {
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "file_trigger": {
+    "files": "Choose files",
+    "photos": "Choose photos",
+    "camera": "Take a photo"
+  },
+  "upload_list": {
+    "label": "Uploads",
+    "queued": "Waiting",
+    "uploading": "Uploading {name}",
+    "done": "Uploaded",
+    "failed": "Upload failed",
+    "retry": "Retry {name}",
+    "remove": "Remove {name}",
+    "preview": "Preview of {name}",
+    "preview_hint": "Long press to preview"
+  },
+  "avatar_group": {
+    "more": "{count, plural, other {+#}}",
+    "more_label": "{count, plural, one {# more person} other {# more people}}",
+    "summary": "{label}: {names}"
+  },
+  "save_bar": {
+    "label": "Unsaved changes",
+    "message": "Unsaved changes",
+    "save": "Save",
+    "discard": "Discard",
+    "saving": "Saving…",
+    "saved": "All changes saved",
+    "failed": "Couldn't save"
+  },
+  "setup_guide": {
+    "progress": "{done} of {total} tasks done",
+    "complete": "All set",
+    "show": "Show tasks",
+    "hide": "Hide tasks"
+  },
+  "inline_loading": {
+    "loading": "Loading…",
+    "success": "Done",
+    "error": "Failed"
+  },
+  "date_label": {
+    "due_soon": "Due soon",
+    "overdue": "Overdue",
+    "expiring_soon": "Expires soon",
+    "expired": "Expired",
+    "with_state": "{state} · {when}",
+    "with_date": "{label}, {date}"
+  },
+  "permissions_matrix": {
+    "permission": "Permission",
+    "all_for_role": "All permissions for {role}",
+    "group_for_role": "All {group} permissions for {role}",
+    "cell": "{permission} for {role}",
+    "cell_state": "{permission} for {role}: {state}",
+    "allowed": "Allowed",
+    "denied": "Not allowed",
+    "summary": "{count} of {total}"
+  },
+  "money_field": {
+    "currency": "Currency"
+  },
+  "password_field": {
+    "show": "Show password",
+    "hide": "Hide password",
+    "caps_lock": "Caps Lock is on"
+  },
+  "multi_select": {
+    "remove": "Remove {label}",
+    "search": "Search",
+    "close": "Done",
+    "no_matches": "Nothing matches"
+  },
+  "inline_edit": {
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "export_dialog": {
+    "title": "Export",
+    "format": "Format",
+    "columns": "Columns",
+    "scope": "Rows",
+    "delivery": "Delivery",
+    "scope_selection": "{count, plural, =0 {Selected rows (none)} one {Selected row (#)} other {Selected rows (#)}}",
+    "scope_filtered": "{count, plural, =0 {Rows matching the filters (none)} other {Rows matching the filters (#)}}",
+    "scope_all": "{count, plural, one {All rows (#)} other {All rows (#)}}",
+    "download": "Download a file",
+    "email": "Send by email",
+    "email_to": "Email it to {email}",
+    "cancel": "Cancel",
+    "export": "Export",
+    "done": "Done",
+    "done_download": "The export is ready and downloading.",
+    "done_email": "The export is on its way to your inbox.",
+    "failed": "The export failed. Try again.",
+    "no_columns": "Choose at least one column.",
+    "close": "Close",
+    "preparing": "Preparing the file"
+  },
+  "error_page": {
+    "retry": "Try again",
+    "forbidden": {
+      "title": "You do not have access to this page",
+      "description": "Ask an administrator of this workspace to give you access."
+    },
+    "not_found": {
+      "title": "This page does not exist",
+      "description": "The link may be old, or the page may have moved or been deleted."
+    },
+    "server_error": {
+      "title": "Something went wrong on our side",
+      "description": "We have been told about it. Try again in a moment."
+    },
+    "offline": {
+      "title": "You are offline",
+      "description": "Check the network connection, then try again."
+    }
+  },
+  "fullscreen_bar": {
+    "exit": "Exit full screen",
+    "reveal": "Show the full-screen bar",
+    "reveal_locked": "Show the full-screen bar (press and hold)"
+  },
+  "coach_mark": {
+    "progress": "Step {current} of {total}",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "skip": "Skip tour"
+  },
+  "chart": {
+    "category": "Category",
+    "value": "Value",
+    "previous": "{series}, previous period",
+    "previous_period": "Previous period",
+    "series": "Series shown",
+    "zoom": "Zoom range",
+    "bin": "Range",
+    "count": "Count",
+    "minimum": "Minimum",
+    "lower_quartile": "Lower quartile",
+    "median": "Median",
+    "upper_quartile": "Upper quartile",
+    "maximum": "Maximum",
+    "outliers": "Outliers",
+    "low": "Low",
+    "high": "High",
+    "target": "Target",
+    "less": "Less",
+    "more": "More",
+    "cell": "{row}, {column}: {value}",
+    "open": "Open",
+    "close": "Close",
+    "volume": "Volume",
+    "change": "Change",
+    "total": "Total",
+    "of_target": "{value} of {target}",
+    "date": "Date",
+    "group": "Group",
+    "from": "From",
+    "to": "To",
+    "task": "Task",
+    "lane": "Lane",
+    "start": "Start",
+    "end": "End",
+    "today": "Today",
+    "region": "Region",
+    "no_data": "No data"
+  },
+  "data_grid": {
+    "changes": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
+    "errors": "{count, plural, one {# cell needs fixing} other {# cells need fixing}}",
+    "undo": "Undo",
+    "redo": "Redo",
+    "total": "Total",
+    "required": "Required",
+    "type": "Not a valid value",
+    "min": "At least {limit}",
+    "max": "At most {limit}",
+    "edit": "Edit",
+    "edit_row": "Edit {name}",
+    "bulk_edit": "Edit {count, plural, one {# row} other {# rows}}",
+    "bulk_edit_title": "Edit the selected rows",
+    "bulk_column": "Field",
+    "bulk_value": "New value",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "done": "Done",
+    "select": "Select",
+    "selected": "{count, plural, one {# selected} other {# selected}}",
+    "fill_handle": "Fill handle",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "data_table_tools": {
+    "columns": "Columns",
+    "views": "Views",
+    "save_view": "Save view",
+    "group_count": "{count, plural, one {# row} other {# rows}}",
+    "total": "Total",
+    "aggregate_sum": "Sum",
+    "aggregate_avg": "Average",
+    "aggregate_min": "Lowest",
+    "aggregate_max": "Highest",
+    "aggregate_count": "Count"
+  },
+  "collection": {
+    "sort_rank": "sort {rank, number}",
+    "column_menu": "{label} options",
+    "sort_ascending": "Sort ascending",
+    "sort_descending": "Sort descending",
+    "add_sort": "Add to sort",
+    "clear_sort": "Remove from sort",
+    "filter_column": "Filter by this column",
+    "pin_start": "Pin to start",
+    "pin_end": "Pin to end",
+    "unpin": "Unpin",
+    "hide_column": "Hide column",
+    "group_by_column": "Group by this column",
+    "ungroup": "Stop grouping",
+    "summary": "Summary",
+    "summary_none": "No summary",
+    "resize_column": "Resize column",
+    "resize_handle": "Resize {label}",
+    "move_start": "Move towards start",
+    "move_end": "Move towards end",
+    "column_moved": "{label} moved to position {position, number} of {count, number}",
+    "editor_title": "Arrange columns",
+    "editor_hint": "Drag to reorder, rename, pin, size and hide columns.",
+    "show_column": "Show {label}",
+    "rename_column": "Rename {label}",
+    "column_name": "Column name",
+    "pin": "Pin",
+    "pin_none": "Not pinned",
+    "width": "Width",
+    "width_auto": "Auto",
+    "fit_width": "Fit to content",
+    "wrap": "Wrap text",
+    "reset_columns": "Reset columns",
+    "density": "Row density",
+    "density_compact": "Compact",
+    "density_normal": "Normal",
+    "density_roomy": "Roomy",
+    "toolbar": "{label} tools",
+    "search": "Search {label}",
+    "filter": "Filter",
+    "filter_count": "{count, plural, =0 {Filter} one {Filter, # rule} other {Filter, # rules}}",
+    "filter_title": "Filter {label}",
+    "add_group": "Add a group",
+    "remove_group": "Remove the group",
+    "group_match": "Group {index, number}",
+    "clear_filters": "Clear filters",
+    "remove_filter": "Remove filter: {text}",
+    "sort": "Sort",
+    "sort_count": "{count, plural, =0 {Sort} one {Sort, # key} other {Sort, # keys}}",
+    "sort_title": "Sort {label}",
+    "add_sort_key": "Add a sort key",
+    "remove_sort": "Remove {label} from the sort",
+    "sort_direction": "Direction of {label}",
+    "sort_empty": "Not sorted: rows keep their source order.",
+    "group": "Group",
+    "group_by": "Group by",
+    "group_none": "No grouping",
+    "layout": "View as",
+    "layout_table": "Table",
+    "layout_grid": "Grid",
+    "layout_list": "List",
+    "layout_cards": "Cards",
+    "layout_board": "Board",
+    "views": "Views",
+    "all_records": "All records",
+    "view_menu": "View actions",
+    "save_view": "Save changes to view",
+    "save_view_as": "Save as a new view",
+    "rename_view": "Rename view",
+    "share_view": "Share view",
+    "set_default": "Make default",
+    "unset_default": "Stop using as default",
+    "delete_view": "Delete view",
+    "view_name": "View name",
+    "default_view": "{label} (default)",
+    "shared_view": "{label} (shared)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "fullscreen": "Full screen",
+    "exit_fullscreen": "Exit full screen",
+    "more_tools": "More tools",
+    "results": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "options": "Search, filter and sort",
+    "done": "Done",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
+    "page_of": "Page {page, number} of {count, number}",
+    "load_more": "Load more"
+  },
+  "number_pad": {
+    "delete": "Delete",
+    "decimal": "Decimal point"
+  },
+  "quantity_stepper": {
+    "remove": "Remove"
+  },
+  "social_sign_in": {
+    "continue_with": "Continue with {provider}"
+  },
+  "widget_frame": {
+    "loading": "Loading",
+    "empty": "No data for this range yet",
+    "error": "This widget could not load",
+    "retry": "Try again",
+    "refreshing": "Refreshing",
+    "updated": "Updated {time}",
+    "refresh": "Refresh",
+    "more": "More actions",
+    "csv": "Download CSV",
+    "png": "Download PNG",
+    "table": "View as table",
+    "chart": "View as chart",
+    "fullscreen": "Full screen",
+    "close": "Close",
+    "link": "Copy link",
+    "link_copied": "Link copied",
+    "sort": "Sort",
+    "sort_value_desc": "Largest first",
+    "sort_value_asc": "Smallest first",
+    "sort_label": "By name",
+    "compare": "Compare to previous period"
+  },
+  "trend_chip": {
+    "up": "Up {value}",
+    "down": "Down {value}",
+    "flat": "No change"
+  },
+  "stat": {
+    "target": "Target {value}",
+    "drill_down": "Open {label}"
+  },
+  "funnel_chart": {
+    "conversion": "{value} of the step before"
+  },
+  "stacked_meter": {
+    "free": "Free",
+    "total": "{used} of {max}"
+  },
+  "code_block": {
+    "code": "Code",
+    "show_all": "Show all {count} lines",
+    "show_less": "Show fewer lines",
+    "wrap": "Wrap long lines",
+    "files": "Files"
+  },
+  "json_viewer": {
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "toc_rail": {
+    "label": "On this page",
+    "open": "Open the page contents"
+  },
+  "carousel": {
+    "previous": "Previous slide",
+    "next": "Next slide",
+    "slide": "Slide {index} of {count}",
+    "pages": "Choose a slide"
+  },
+  "command_palette": {
+    "label": "Command palette",
+    "placeholder": "Search commands",
+    "empty": "No commands match"
+  },
+  "import_flow": {
+    "mapping": "Match the columns",
+    "column": "Column in the file",
+    "field": "Field",
+    "skip": "Skip this column",
+    "sample": "e.g. {value}",
+    "required_missing": "Match these required fields first: {fields}",
+    "check": "Check the file",
+    "import": "Import",
+    "back": "Change the matching",
+    "created": "To create",
+    "updated": "To update",
+    "failed": "Refused",
+    "issues": "Problems found",
+    "row": "Row {row}",
+    "no_issues": "No problems found"
+  },
+  "rule_builder": {
+    "match": "Conditions that must hold",
+    "match_all": "All of these",
+    "match_any": "Any of these",
+    "add": "Add a condition",
+    "remove": "Remove the condition",
+    "field": "Field",
+    "operator": "Operator",
+    "value": "Value",
+    "empty": "No conditions yet: everything matches"
+  },
+  "rule_operator": {
+    "equals": "is",
+    "not_equals": "is not",
+    "contains": "contains",
+    "not_contains": "does not contain",
+    "greater": "is more than",
+    "less": "is less than",
+    "is_empty": "is empty",
+    "is_not_empty": "is not empty"
+  },
+  "comment_thread": {
+    "reply": "Reply",
+    "send": "Send",
+    "resolve": "Resolve",
+    "reopen": "Reopen",
+    "resolved": "Resolved",
+    "people": "People to mention"
+  },
+  "diff_review": {
+    "before": "Before",
+    "after": "After",
+    "accept": "Accept",
+    "reject": "Reject",
+    "accept_all": "Accept all",
+    "apply": "Apply changes",
+    "pending": "{count} left to review",
+    "not_set": "Not set",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
+  },
+  "wheel": {
+    "day": "Day",
+    "month": "Month",
+    "year": "Year",
+    "hour": "Hour",
+    "minute": "Minute",
+    "period": "AM or PM"
+  },
+  "time_picker": {
+    "open": "Choose a time"
+  },
+  "date_time_picker": {
+    "date": "Date",
+    "time": "Time"
+  },
+  "date_range_picker": {
+    "calendar": "Choose dates",
+    "presets": "Quick ranges",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "this_month": "This month",
+    "last_month": "Last month",
+    "this_year": "This year"
+  },
+  "year_picker": {
+    "label": "Choose a year"
+  },
+  "emoji_picker": {
+    "label": "Emoji",
+    "search": "Search emoji",
+    "recent": "Recently used",
+    "no_matches": "No emoji match that search.",
+    "smileys": "Smileys",
+    "people": "People and gestures",
+    "nature": "Nature",
+    "food": "Food and drink",
+    "activities": "Activities",
+    "travel": "Travel and places",
+    "objects": "Objects",
+    "symbols": "Symbols"
+  },
+  "reaction_button": {
+    "label": "{emoji}: {count}"
+  },
+  "otp_input": {
+    "label": "Verification code",
+    "digit": "Digit {index} of {total}"
+  },
+  "phone_field": {
+    "country": "Country code",
+    "number": "Phone number",
+    "empty": "No country matches.",
+    "selected": "{country}, {code}",
+    "close": "Close"
+  },
+  "country_select": {
+    "label": "Country",
+    "search": "Search countries"
+  },
+  "address_field": {
+    "line1": "Address",
+    "line2": "Building or unit (optional)",
+    "city": "City",
+    "region": "Region",
+    "postal_code": "Postal code",
+    "country": "Country"
+  },
+  "drop_zone": {
+    "label": "Drop files here",
+    "browse": "Choose files",
+    "label_one": "Drop a file here",
+    "browse_one": "Choose a file"
+  },
+  "color_picker": {
+    "label": "Colour",
+    "hex": "Hex code",
+    "hue": "Hue",
+    "swatches": "Ready colours"
+  },
+  "locale_switcher": {
+    "label": "Language"
+  },
+  "range_calendar": {
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "drawer": {
+    "resize": "Resize panel",
+    "back": "Back",
+    "expand": "Expand panel",
+    "close_escape": "{label}, Esc"
+  },
+  "import_dialog": {
+    "title": "Import",
+    "close": "Close",
+    "step_of": "Step {step} of {total}",
+    "step_upload": "Upload the file",
+    "step_match": "Match the columns",
+    "step_review": "Review the changes",
+    "step_import": "Import",
+    "upload_label": "Drop a CSV or Excel file here",
+    "upload_hint": "One sheet, with the column names in the first row.",
+    "template": "Download the template",
+    "reading": "Reading the file",
+    "read_failed": "This file couldn't be read. Check it's a CSV or Excel file, then try again.",
+    "file_rows": "{count, plural, one {# row} other {# rows}}",
+    "check_failed": "The file couldn't be checked. Try again.",
+    "skipped": "To skip",
+    "download_errors": "Download the error list",
+    "error_row": "Row",
+    "error_field": "Field",
+    "error_message": "Problem",
+    "importing": "Importing the rows",
+    "done_title": "Import complete",
+    "import_failed": "The import failed. Try again.",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Continue",
+    "retry": "Try again",
+    "done": "Done",
+    "done_created": "Created",
+    "done_updated": "Updated",
+    "done_skipped": "Skipped",
+    "done_failed": "Failed"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {page}",
+    "more": "More pages",
+    "per_page": "Rows per page",
+    "jump": "Go to page",
+    "go": "Go",
+    "summary": "{from}–{to} of {total}"
+  },
+  "tag_input": {
+    "remove": "Remove {tag}",
+    "duplicate": "“{tag}” is already added.",
+    "max": "You can add up to {max} tags.",
+    "count": "{count} of {max}"
+  },
+  "stepper": {
+    "label": "Progress",
+    "step_of": "Step {step} of {total}",
+    "complete": "Completed",
+    "error": "Needs attention",
+    "optional": "Optional"
+  },
+  "timeline": {
+    "label": "Activity",
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "loading_overlay": {
+    "loading": "Loading…"
+  },
+  "truncate": {
+    "more": "Show more",
+    "less": "Show less"
+  },
+  "countdown": {
+    "left": "{time} left",
+    "elapsed": "{time} elapsed",
+    "done": "Time is up"
+  },
+  "multi_select_more": {
+    "select_all": "Select all",
+    "clear_all": "Clear all",
+    "more": "+{count}",
+    "more_label": "{count} more: {labels}"
+  },
+  "date_presets": {
+    "label": "Quick dates",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "in_7_days": "In 7 days",
+    "start_of_month": "Start of month",
+    "end_of_month": "End of month"
   }
 }

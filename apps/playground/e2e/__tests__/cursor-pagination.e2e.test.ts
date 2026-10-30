@@ -14,6 +14,8 @@
 // @covers sta-350:FR-142 sta-350:FR-146 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/cursor-pagination?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Cursor pagination" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Cursor pagination", locale) }),
+  ).toBeVisible();
 };
 
 /** The list of orders the live pager shows on its current page. */
@@ -49,9 +53,15 @@ for (const scheme of SCHEMES)
 
 test("every pagination is a navigation landmark with its own name", async ({ page }) => {
   await open(page, "light", "en");
-  const names = await page
-    .locator("nav[aria-label]")
-    .evaluateAll((navs) => navs.map((nav) => nav.getAttribute("aria-label")));
+  // The demos load lazily: wait for the last example's pagers before reading the names.
+  await expect(page.getByRole("navigation", { name: "Orders, paged" })).toBeVisible();
+  const names = await page.locator("nav[aria-label]").evaluateAll((navs) =>
+    navs
+      // The preview copies are hidden from assistive tech, and the "On this page" menu or rail the width does not
+      // draw is display: none, so neither is a landmark.
+      .filter((nav) => nav.checkVisibility() && !nav.closest('[aria-hidden="true"]'))
+      .map((nav) => nav.getAttribute("aria-label")),
+  );
   expect(names.length).toBeGreaterThan(10);
   expect(new Set(names).size).toBe(names.length);
   await expect(page.getByRole("navigation", { name: "Orders, paged" })).toBeVisible();
@@ -136,7 +146,8 @@ test("the growing list adds a page per press, counts it as a status and keeps it
 for (const locale of LOCALES)
   test(`previous sits at the inline start in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const pager = page.getByRole("navigation", { name: "Middle page" });
+    // By place: the pager's name speaks the page's locale; Middle page is the usage's second.
+    const pager = example(page, "usage").getByRole("navigation").nth(1);
     const [previous, next] = await Promise.all([
       pager.getByRole("button").first().boundingBox(),
       pager.getByRole("button").last().boundingBox(),

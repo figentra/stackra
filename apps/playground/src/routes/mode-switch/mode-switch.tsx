@@ -1,54 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Mode switch route: `@stackra/ui`'s ModeSwitch turning the developer display mode on and
- *          off, with the mode it reports written under it.
- * Boundary: presentation only; the mode is local state. What developer mode shows (ids, keys, raw values) is the
- *           app's.
+ * Purpose: the page of the mode-switch route: the generic component page of the registry entry `free/mode-switch`.
+ * Boundary: one line; the sections, demos and API come from `components/component-page` and `demos/`.
  * Runtime: browser
- * Governing contract: ADR 0060 (light, dark, RTL); STA-803.
+ * Governing contract: showcase redesign spec (2026-10-27) section 4; ADR 0302 (decision 5).
  */
-import { ModeSwitch as UiModeSwitch } from "@stackra/ui/react";
-import { useState } from "react";
+import { ComponentPage } from "#src/components/component-page";
 
-import { ModeSwitchRoute } from "#src/routes/mode-switch/mode-switch.route";
-
-// shortcut: English strings in one place until the playground reads `playground::*` keys (STA-788).
-const STRINGS = {
-  documentTitle: `${ModeSwitchRoute.title} · Stackra Playground`,
-  intro:
-    "Turns the developer display mode on and off: ids, keys and raw values appear beside the friendly labels.",
-  demo: "Display mode",
-  label: "Developer mode",
-  description: "Show ids, keys and raw values.",
-  current: (mode: string) => `Current mode: ${mode}`,
-} as const;
-
-/** The Mode switch page. */
-export function ModeSwitch() {
-  const [mode, setMode] = useState<"normal" | "developer">("normal");
-  return (
-    <article className="grid gap-6">
-      <title>{STRINGS.documentTitle}</title>
-      <header className="grid gap-2">
-        <h1 className="type-h1">{ModeSwitchRoute.title}</h1>
-        <p className="max-w-prose">
-          <bdi>{STRINGS.intro}</bdi>
-        </p>
-      </header>
-      <section aria-labelledby="demo-heading" className="grid max-w-xl gap-3">
-        <h2 id="demo-heading" className="type-h2">
-          {STRINGS.demo}
-        </h2>
-        <UiModeSwitch
-          label={STRINGS.label}
-          description={STRINGS.description}
-          mode={mode}
-          onModeChange={setMode}
-        />
-        <p role="status" className="text-sm text-muted">
-          {STRINGS.current(mode)}
-        </p>
-      </section>
-    </article>
-  );
+/** The mode-switch page. */
+export default function Page() {
+  return <ComponentPage tier="free" slug="mode-switch" />;
 }

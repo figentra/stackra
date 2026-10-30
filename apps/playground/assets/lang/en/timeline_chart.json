@@ -1,0 +1,12 @@
+{
+  "label": "Launch plan, Q4 2026",
+  "design": "Design",
+  "build": "Build",
+  "launch": "Launch",
+  "research": "Research",
+  "screens": "Screens",
+  "api": "API",
+  "app": "App",
+  "beta": "Beta",
+  "release": "Release"
+}

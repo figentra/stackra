@@ -1,0 +1,23 @@
+{
+  "level_title": "المستوى {level}",
+  "level_description": "وصف قصير تحت العنوان.",
+  "level_content": "محتوى البطاقة.",
+  "anatomy_title": "الفاتورة 1042",
+  "anatomy_description": "مستحقة في أول الشهر القادم.",
+  "anatomy_content": "ثلاثة بنود، وتذكير واحد مُرسل، ولا دفع بعد.",
+  "pay": "الدفع الآن",
+  "later": "ذكّرني لاحقًا",
+  "outer_title": "الاشتراك",
+  "outer_description": "خطتك وما تشمله.",
+  "inner_title": "الإضافات",
+  "inner_content": "إضافتان مفعّلتان.",
+  "named_title": "ملاحظات الإصدار",
+  "named_content": "يعلن قارئ الشاشة هذه البطاقة مقالةً باسم «ملاحظات الإصدار».",
+  "horizontal_title": "الملخص الأسبوعي",
+  "horizontal_content": "ملخص لما تغيّر هذا الأسبوع.",
+  "dismissible_title": "حُفظت تغييراتك",
+  "dismissible_content": "يمكنك إغلاق هذه البطاقة في أي وقت.",
+  "dismiss": "إغلاق البطاقة",
+  "show_again": "إظهارها مجددًا",
+  "hidden": "البطاقة مخفية."
+}

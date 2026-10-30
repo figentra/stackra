@@ -1,0 +1,107 @@
+{
+  "generatedFrom": {
+    "hash": "a774e77e95feee98",
+    "heroDoc": "vendor/heroui/react/surface.json",
+    "propsFiles": ["ui/src/react/surface/surface.props.ts"]
+  },
+  "importLine": "import { Surface } from \"@stackra/ui/react\";",
+  "key": "free/surface",
+  "parts": [
+    {
+      "extends": "Surface",
+      "name": "Surface",
+      "props": [
+        {
+          "description": "The content painted on the surface; HeroUI components inside read the level and pick on-surface colours.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The surface level, from the theme's surface roles. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"secondary\" | \"tertiary\" | \"transparent\""
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base surface container",
+      "name": ".surface"
+    },
+    {
+      "description": "Default surface variant (bg-surface)",
+      "name": ".surface--default"
+    },
+    {
+      "description": "Secondary surface variant (bg-surface-secondary)",
+      "name": ".surface--secondary"
+    },
+    {
+      "description": "Tertiary surface variant (bg-surface-tertiary)",
+      "name": ".surface--tertiary"
+    }
+  ]
+}

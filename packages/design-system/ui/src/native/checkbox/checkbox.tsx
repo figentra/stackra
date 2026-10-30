@@ -24,6 +24,7 @@ import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { haptics } from "#native/haptics/haptics";
 import type { CheckboxProps } from "#native/checkbox/checkbox.props";
 
 /**
@@ -54,6 +55,7 @@ export function Checkbox({
   void name;
   const change = (next: boolean) => {
     if (isReadOnly) return;
+    haptics.play("selection");
     setHeld(next);
     onChange?.(next);
   };

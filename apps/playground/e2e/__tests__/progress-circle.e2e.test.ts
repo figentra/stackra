@@ -14,6 +14,7 @@
 // @covers sta-350:FR-120 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -33,7 +34,9 @@ const open = async (
 ) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion });
   await page.goto(`/progress-circle?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Progress circle" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Progress circle", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour as `#rrggbb`, drawn on a canvas so any CSS colour form (oklch, `color-mix`) reads. */
@@ -95,13 +98,15 @@ test("determinate rings carry their value and text, and the indeterminate one ca
 
 test("a ring draws no text of its own", async ({ page }) => {
   await open(page, "light", "en");
-  await expect(page.locator('[data-size="md"]')).toHaveText("");
+  await expect(page.locator('section#usage [data-size="md"]')).toHaveText("");
 });
 
 test("the three sizes are 20, 28 and 36 px across", async ({ page }) => {
   await open(page, "light", "en");
   for (const [size, pixels] of Object.entries(SIZES)) {
-    const box = await page.locator(`[data-size="${size}"] .progress-circle__track`).boundingBox();
+    const box = await page
+      .locator(`section#usage [data-size="${size}"] .progress-circle__track`)
+      .boundingBox();
     if (!box) throw new Error(`no box for ${size}`);
     expect(box.width, size).toBeCloseTo(pixels, 0);
     expect(box.height, size).toBeCloseTo(pixels, 0);

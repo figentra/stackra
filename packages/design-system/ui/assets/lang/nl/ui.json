@@ -88,7 +88,18 @@
   },
   "sidebar": {
     "collapse": "Zijbalk inklappen",
-    "expand": "Zijbalk uitklappen"
+    "expand": "Zijbalk uitklappen",
+    "open": "Navigatie openen",
+    "resize": "Breedte van de zijbalk wijzigen",
+    "search": "Navigatie filteren",
+    "no_results": "Geen overeenkomende items",
+    "loading": "Navigatie wordt geladen",
+    "sub_toggle": "Pagina's onder {label}"
+  },
+  "side_panel": {
+    "expand": "Paneel vergroten",
+    "close": "Paneel sluiten",
+    "resize": "Breedte van het paneel wijzigen"
   },
   "data_table": {
     "loading": "Laden",
@@ -107,5 +118,662 @@
   },
   "search_field": {
     "clear": "Zoekopdracht wissen"
+  },
+  "overflow_list": {
+    "more": "+{count, number} meer",
+    "less": "Minder tonen"
+  },
+  "tree_view": {
+    "expand": "{label} uitklappen",
+    "collapse": "{label} inklappen"
+  },
+  "sortable_list": {
+    "handle": "{label} verplaatsen",
+    "move_up": "Omhoog",
+    "move_down": "Omlaag",
+    "moved": "{label} verplaatst naar positie {position, number} van {count, number}",
+    "hint": "Sleep de greep of gebruik de acties om deze rij te verplaatsen."
+  },
+  "filter_panel": {
+    "applied": "Toegepaste filters",
+    "views": "Opgeslagen weergaven",
+    "sort": "Sorteren",
+    "order": "Volgorde",
+    "results": "{count, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}",
+    "facet_option": "{label} ({count, number})"
+  },
+  "notifications_panel": {
+    "label": "Meldingen",
+    "label_unread": "Meldingen, {count, plural, one {# ongelezen} other {# ongelezen}}",
+    "title": "Meldingen",
+    "mark_all_read": "Alles als gelezen markeren",
+    "dismiss": "Melding sluiten",
+    "empty": "Je bent helemaal bij",
+    "unread": "Ongelezen"
+  },
+  "system_banner": {
+    "dismiss": "Bericht sluiten"
+  },
+  "route_progress": {
+    "label": "Pagina wordt geladen"
+  },
+  "copy_button": {
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd"
+  },
+  "file_trigger": {
+    "files": "Bestanden kiezen",
+    "photos": "Foto’s kiezen",
+    "camera": "Foto maken"
+  },
+  "upload_list": {
+    "label": "Uploads",
+    "queued": "Wacht",
+    "uploading": "{name} wordt geüpload",
+    "done": "Geüpload",
+    "failed": "Uploaden mislukt",
+    "retry": "{name} opnieuw proberen",
+    "remove": "{name} verwijderen",
+    "preview": "Voorbeeld van {name}",
+    "preview_hint": "Lang indrukken voor een voorbeeld"
+  },
+  "avatar_group": {
+    "more": "{count, plural, other {+#}}",
+    "more_label": "{count, plural, one {nog # persoon} other {nog # personen}}",
+    "summary": "{label}: {names}"
+  },
+  "save_bar": {
+    "label": "Niet-opgeslagen wijzigingen",
+    "message": "Niet-opgeslagen wijzigingen",
+    "save": "Opslaan",
+    "discard": "Verwerpen",
+    "saving": "Opslaan…",
+    "saved": "Alle wijzigingen opgeslagen",
+    "failed": "Opslaan mislukt"
+  },
+  "setup_guide": {
+    "progress": "{done} van {total} taken klaar",
+    "complete": "Helemaal klaar",
+    "show": "Taken tonen",
+    "hide": "Taken verbergen"
+  },
+  "inline_loading": {
+    "loading": "Laden…",
+    "success": "Klaar",
+    "error": "Mislukt"
+  },
+  "date_label": {
+    "due_soon": "Binnenkort verschuldigd",
+    "overdue": "Achterstallig",
+    "expiring_soon": "Verloopt binnenkort",
+    "expired": "Verlopen",
+    "with_state": "{state} · {when}",
+    "with_date": "{label}, {date}"
+  },
+  "permissions_matrix": {
+    "permission": "Recht",
+    "all_for_role": "Alle rechten voor {role}",
+    "group_for_role": "Alle rechten voor {group} voor {role}",
+    "cell": "{permission} voor {role}",
+    "cell_state": "{permission} voor {role}: {state}",
+    "allowed": "Toegestaan",
+    "denied": "Niet toegestaan",
+    "summary": "{count} van {total}"
+  },
+  "money_field": {
+    "currency": "Valuta"
+  },
+  "password_field": {
+    "show": "Wachtwoord tonen",
+    "hide": "Wachtwoord verbergen",
+    "caps_lock": "Caps Lock staat aan"
+  },
+  "multi_select": {
+    "remove": "{label} verwijderen",
+    "search": "Zoeken",
+    "close": "Klaar",
+    "no_matches": "Geen resultaten"
+  },
+  "inline_edit": {
+    "edit": "Bewerken",
+    "save": "Opslaan",
+    "cancel": "Annuleren"
+  },
+  "export_dialog": {
+    "title": "Exporteren",
+    "format": "Formaat",
+    "columns": "Kolommen",
+    "scope": "Rijen",
+    "delivery": "Levering",
+    "scope_selection": "{count, plural, =0 {Geselecteerde rijen (geen)} one {Geselecteerde rij (#)} other {Geselecteerde rijen (#)}}",
+    "scope_filtered": "{count, plural, =0 {Gefilterde rijen (geen)} other {Gefilterde rijen (#)}}",
+    "scope_all": "{count, plural, other {Alle rijen (#)}}",
+    "download": "Bestand downloaden",
+    "email": "Per e-mail versturen",
+    "email_to": "Versturen naar {email}",
+    "cancel": "Annuleren",
+    "export": "Exporteren",
+    "done": "Klaar",
+    "done_download": "De export is klaar en wordt gedownload.",
+    "done_email": "De export is onderweg naar je inbox.",
+    "failed": "Het exporteren is mislukt. Probeer het opnieuw.",
+    "no_columns": "Kies minstens één kolom.",
+    "close": "Sluiten",
+    "preparing": "Bestand wordt voorbereid"
+  },
+  "error_page": {
+    "retry": "Opnieuw proberen",
+    "forbidden": {
+      "title": "Je hebt geen toegang tot deze pagina",
+      "description": "Vraag een beheerder van deze werkruimte om toegang."
+    },
+    "not_found": {
+      "title": "Deze pagina bestaat niet",
+      "description": "De link is misschien oud, of de pagina is verplaatst of verwijderd."
+    },
+    "server_error": {
+      "title": "Er ging iets mis aan onze kant",
+      "description": "We zijn op de hoogte gebracht. Probeer het zo opnieuw."
+    },
+    "offline": {
+      "title": "Je bent offline",
+      "description": "Controleer de netwerkverbinding en probeer het opnieuw."
+    }
+  },
+  "fullscreen_bar": {
+    "exit": "Volledig scherm sluiten",
+    "reveal": "Balk van volledig scherm tonen",
+    "reveal_locked": "Balk van volledig scherm tonen (lang indrukken)"
+  },
+  "coach_mark": {
+    "progress": "Stap {current} van {total}",
+    "back": "Terug",
+    "next": "Volgende",
+    "done": "Klaar",
+    "skip": "Rondleiding overslaan"
+  },
+  "chart": {
+    "category": "Categorie",
+    "value": "Waarde",
+    "previous": "{series}, vorige periode",
+    "previous_period": "Vorige periode",
+    "series": "Getoonde reeksen",
+    "zoom": "Zoombereik",
+    "bin": "Bereik",
+    "count": "Aantal",
+    "minimum": "Minimum",
+    "lower_quartile": "Eerste kwartiel",
+    "median": "Mediaan",
+    "upper_quartile": "Derde kwartiel",
+    "maximum": "Maximum",
+    "outliers": "Uitschieters",
+    "low": "Laag",
+    "high": "Hoog",
+    "target": "Doel",
+    "less": "Minder",
+    "more": "Meer",
+    "cell": "{row}, {column}: {value}",
+    "open": "Opening",
+    "close": "Slot",
+    "volume": "Volume",
+    "change": "Verandering",
+    "total": "Totaal",
+    "of_target": "{value} van {target}",
+    "date": "Datum",
+    "group": "Groep",
+    "from": "Van",
+    "to": "Naar",
+    "task": "Taak",
+    "lane": "Baan",
+    "start": "Begin",
+    "end": "Einde",
+    "today": "Vandaag",
+    "region": "Regio",
+    "no_data": "Geen gegevens"
+  },
+  "data_grid": {
+    "changes": "{count, plural, one {# niet-opgeslagen wijziging} other {# niet-opgeslagen wijzigingen}}",
+    "errors": "{count, plural, one {# cel moet worden verbeterd} other {# cellen moeten worden verbeterd}}",
+    "undo": "Ongedaan maken",
+    "redo": "Opnieuw",
+    "total": "Totaal",
+    "required": "Verplicht",
+    "type": "Ongeldige waarde",
+    "min": "Minstens {limit}",
+    "max": "Hoogstens {limit}",
+    "edit": "Bewerken",
+    "edit_row": "{name} bewerken",
+    "bulk_edit": "{count, plural, one {# rij bewerken} other {# rijen bewerken}}",
+    "bulk_edit_title": "Geselecteerde rijen bewerken",
+    "bulk_column": "Veld",
+    "bulk_value": "Nieuwe waarde",
+    "apply": "Toepassen",
+    "cancel": "Annuleren",
+    "done": "Klaar",
+    "select": "Selecteren",
+    "selected": "{count, plural, one {# geselecteerd} other {# geselecteerd}}",
+    "fill_handle": "Vulgreep",
+    "yes": "Ja",
+    "no": "Nee"
+  },
+  "data_table_tools": {
+    "columns": "Kolommen",
+    "views": "Weergaven",
+    "save_view": "Weergave opslaan",
+    "group_count": "{count, plural, one {# rij} other {# rijen}}",
+    "total": "Totaal",
+    "aggregate_sum": "Som",
+    "aggregate_avg": "Gemiddelde",
+    "aggregate_min": "Minimum",
+    "aggregate_max": "Maximum",
+    "aggregate_count": "Aantal"
+  },
+  "collection": {
+    "sort_rank": "sortering {rank, number}",
+    "column_menu": "Opties voor {label}",
+    "sort_ascending": "Oplopend sorteren",
+    "sort_descending": "Aflopend sorteren",
+    "add_sort": "Aan sortering toevoegen",
+    "clear_sort": "Uit sortering verwijderen",
+    "filter_column": "Op deze kolom filteren",
+    "pin_start": "Vastzetten aan het begin",
+    "pin_end": "Vastzetten aan het eind",
+    "unpin": "Losmaken",
+    "hide_column": "Kolom verbergen",
+    "group_by_column": "Op deze kolom groeperen",
+    "ungroup": "Groeperen stoppen",
+    "summary": "Samenvatting",
+    "summary_none": "Geen samenvatting",
+    "resize_column": "Kolombreedte wijzigen",
+    "resize_handle": "Breedte van {label} wijzigen",
+    "move_start": "Naar het begin verplaatsen",
+    "move_end": "Naar het eind verplaatsen",
+    "column_moved": "{label} verplaatst naar positie {position, number} van {count, number}",
+    "editor_title": "Kolommen ordenen",
+    "editor_hint": "Sleep om te ordenen; hernoem, zet vast, wijzig de breedte en verberg kolommen.",
+    "show_column": "{label} tonen",
+    "rename_column": "{label} hernoemen",
+    "column_name": "Kolomnaam",
+    "pin": "Vastzetten",
+    "pin_none": "Niet vastgezet",
+    "width": "Breedte",
+    "width_auto": "Automatisch",
+    "fit_width": "Passend bij inhoud",
+    "wrap": "Tekst laten teruglopen",
+    "reset_columns": "Kolommen herstellen",
+    "density": "Rijdichtheid",
+    "density_compact": "Compact",
+    "density_normal": "Normaal",
+    "density_roomy": "Ruim",
+    "toolbar": "Hulpmiddelen voor {label}",
+    "search": "Zoeken in {label}",
+    "filter": "Filteren",
+    "filter_count": "{count, plural, =0 {Filteren} one {Filteren, # regel} other {Filteren, # regels}}",
+    "filter_title": "{label} filteren",
+    "add_group": "Groep toevoegen",
+    "remove_group": "Groep verwijderen",
+    "group_match": "Groep {index, number}",
+    "clear_filters": "Filters wissen",
+    "remove_filter": "Filter verwijderen: {text}",
+    "sort": "Sorteren",
+    "sort_count": "{count, plural, =0 {Sorteren} one {Sorteren, # sleutel} other {Sorteren, # sleutels}}",
+    "sort_title": "{label} sorteren",
+    "add_sort_key": "Sorteersleutel toevoegen",
+    "remove_sort": "{label} uit sortering verwijderen",
+    "sort_direction": "Richting van {label}",
+    "sort_empty": "Niet gesorteerd: rijen houden de volgorde van de bron.",
+    "group": "Groeperen",
+    "group_by": "Groeperen op",
+    "group_none": "Niet groeperen",
+    "layout": "Weergeven als",
+    "layout_table": "Tabel",
+    "layout_grid": "Raster",
+    "layout_list": "Lijst",
+    "layout_cards": "Kaarten",
+    "layout_board": "Bord",
+    "views": "Weergaven",
+    "all_records": "Alle records",
+    "view_menu": "Weergaveacties",
+    "save_view": "Wijzigingen in weergave opslaan",
+    "save_view_as": "Opslaan als nieuwe weergave",
+    "rename_view": "Weergave hernoemen",
+    "share_view": "Weergave delen",
+    "set_default": "Als standaard instellen",
+    "unset_default": "Niet meer als standaard gebruiken",
+    "delete_view": "Weergave verwijderen",
+    "view_name": "Naam van de weergave",
+    "default_view": "{label} (standaard)",
+    "shared_view": "{label} (gedeeld)",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "export": "Exporteren",
+    "import": "Importeren",
+    "refresh": "Vernieuwen",
+    "fullscreen": "Volledig scherm",
+    "exit_fullscreen": "Volledig scherm sluiten",
+    "more_tools": "Meer hulpmiddelen",
+    "results": "{count, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}",
+    "options": "Zoeken, filteren en sorteren",
+    "done": "Klaar",
+    "previous_page": "Vorige pagina",
+    "next_page": "Volgende pagina",
+    "page_of": "Pagina {page, number} van {count, number}",
+    "load_more": "Meer laden"
+  },
+  "number_pad": {
+    "delete": "Wissen",
+    "decimal": "Decimaalteken"
+  },
+  "quantity_stepper": {
+    "remove": "Verwijderen"
+  },
+  "social_sign_in": {
+    "continue_with": "Doorgaan met {provider}"
+  },
+  "widget_frame": {
+    "loading": "Laden",
+    "empty": "Nog geen gegevens voor deze periode",
+    "error": "Deze widget kon niet laden",
+    "retry": "Opnieuw proberen",
+    "refreshing": "Vernieuwen",
+    "updated": "Bijgewerkt {time}",
+    "refresh": "Vernieuwen",
+    "more": "Meer acties",
+    "csv": "CSV downloaden",
+    "png": "PNG downloaden",
+    "table": "Als tabel bekijken",
+    "chart": "Als grafiek bekijken",
+    "fullscreen": "Volledig scherm",
+    "close": "Sluiten",
+    "link": "Link kopiëren",
+    "link_copied": "Link gekopieerd",
+    "sort": "Sorteren",
+    "sort_value_desc": "Grootste eerst",
+    "sort_value_asc": "Kleinste eerst",
+    "sort_label": "Op naam",
+    "compare": "Vergelijken met vorige periode"
+  },
+  "trend_chip": {
+    "up": "Omhoog {value}",
+    "down": "Omlaag {value}",
+    "flat": "Geen verandering"
+  },
+  "stat": {
+    "target": "Doel {value}",
+    "drill_down": "{label} openen"
+  },
+  "funnel_chart": {
+    "conversion": "{value} van de vorige stap"
+  },
+  "stacked_meter": {
+    "free": "Vrij",
+    "total": "{used} van {max}"
+  },
+  "code_block": {
+    "code": "Code",
+    "show_all": "Alle {count} regels tonen",
+    "show_less": "Minder regels tonen",
+    "wrap": "Lange regels afbreken",
+    "files": "Bestanden"
+  },
+  "json_viewer": {
+    "expand": "Uitklappen",
+    "collapse": "Inklappen"
+  },
+  "toc_rail": {
+    "label": "Op deze pagina",
+    "open": "Inhoudsopgave openen"
+  },
+  "carousel": {
+    "previous": "Vorige dia",
+    "next": "Volgende dia",
+    "slide": "Dia {index} van {count}",
+    "pages": "Kies een dia"
+  },
+  "command_palette": {
+    "label": "Opdrachtenpalet",
+    "placeholder": "Opdrachten zoeken",
+    "empty": "Geen opdrachten gevonden"
+  },
+  "import_flow": {
+    "mapping": "Kolommen koppelen",
+    "column": "Kolom in het bestand",
+    "field": "Veld",
+    "skip": "Kolom overslaan",
+    "sample": "bijv. {value}",
+    "required_missing": "Koppel eerst deze verplichte velden: {fields}",
+    "check": "Bestand controleren",
+    "import": "Importeren",
+    "back": "Koppeling wijzigen",
+    "created": "Nieuw",
+    "updated": "Bijgewerkt",
+    "failed": "Geweigerd",
+    "issues": "Gevonden problemen",
+    "row": "Rij {row}",
+    "no_issues": "Geen problemen"
+  },
+  "rule_builder": {
+    "match": "Voorwaarden die moeten gelden",
+    "match_all": "Alle",
+    "match_any": "Minstens één",
+    "add": "Voorwaarde toevoegen",
+    "remove": "Voorwaarde verwijderen",
+    "field": "Veld",
+    "operator": "Operator",
+    "value": "Waarde",
+    "empty": "Nog geen voorwaarden: alles komt overeen"
+  },
+  "rule_operator": {
+    "equals": "is",
+    "not_equals": "is niet",
+    "contains": "bevat",
+    "not_contains": "bevat niet",
+    "greater": "is groter dan",
+    "less": "is kleiner dan",
+    "is_empty": "is leeg",
+    "is_not_empty": "is niet leeg"
+  },
+  "comment_thread": {
+    "reply": "Reageren",
+    "send": "Versturen",
+    "resolve": "Afhandelen",
+    "reopen": "Heropenen",
+    "resolved": "Afgehandeld",
+    "people": "Personen om te vermelden"
+  },
+  "diff_review": {
+    "before": "Voor",
+    "after": "Na",
+    "accept": "Accepteren",
+    "reject": "Weigeren",
+    "accept_all": "Alles accepteren",
+    "apply": "Wijzigingen toepassen",
+    "pending": "Nog {count} te beoordelen",
+    "not_set": "Niet ingesteld",
+    "accepted": "Geaccepteerd",
+    "rejected": "Geweigerd"
+  },
+  "wheel": {
+    "day": "Dag",
+    "month": "Maand",
+    "year": "Jaar",
+    "hour": "Uur",
+    "minute": "Minuut",
+    "period": "Ochtend of middag"
+  },
+  "time_picker": {
+    "open": "Kies een tijd"
+  },
+  "date_time_picker": {
+    "date": "Datum",
+    "time": "Tijd"
+  },
+  "date_range_picker": {
+    "calendar": "Kies data",
+    "presets": "Snelle periodes",
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "last_7_days": "Afgelopen 7 dagen",
+    "last_30_days": "Afgelopen 30 dagen",
+    "this_month": "Deze maand",
+    "last_month": "Vorige maand",
+    "this_year": "Dit jaar"
+  },
+  "year_picker": {
+    "label": "Kies een jaar"
+  },
+  "emoji_picker": {
+    "label": "Emoji",
+    "search": "Emoji zoeken",
+    "recent": "Recent gebruikt",
+    "no_matches": "Geen emoji gevonden.",
+    "smileys": "Smileys",
+    "people": "Mensen en gebaren",
+    "nature": "Natuur",
+    "food": "Eten en drinken",
+    "activities": "Activiteiten",
+    "travel": "Reizen en plaatsen",
+    "objects": "Voorwerpen",
+    "symbols": "Symbolen"
+  },
+  "reaction_button": {
+    "label": "{emoji}: {count}"
+  },
+  "otp_input": {
+    "label": "Verificatiecode",
+    "digit": "Cijfer {index} van {total}"
+  },
+  "phone_field": {
+    "country": "Landcode",
+    "number": "Telefoonnummer",
+    "empty": "Geen land gevonden.",
+    "selected": "{country}, {code}",
+    "close": "Sluiten"
+  },
+  "country_select": {
+    "label": "Land",
+    "search": "Land zoeken"
+  },
+  "address_field": {
+    "line1": "Adres",
+    "line2": "Gebouw of unit (optioneel)",
+    "city": "Plaats",
+    "region": "Regio",
+    "postal_code": "Postcode",
+    "country": "Land"
+  },
+  "drop_zone": {
+    "label": "Zet bestanden hier neer",
+    "browse": "Bestanden kiezen",
+    "label_one": "Zet hier een bestand neer",
+    "browse_one": "Kies een bestand"
+  },
+  "color_picker": {
+    "label": "Kleur",
+    "hex": "Hexcode",
+    "hue": "Tint",
+    "swatches": "Kant-en-klare kleuren"
+  },
+  "locale_switcher": {
+    "label": "Taal"
+  },
+  "range_calendar": {
+    "previous": "Vorige maand",
+    "next": "Volgende maand"
+  },
+  "drawer": {
+    "resize": "Hoogte van het paneel wijzigen",
+    "back": "Terug",
+    "expand": "Paneel vergroten",
+    "close_escape": "{label}, Esc"
+  },
+  "import_dialog": {
+    "title": "Importeren",
+    "close": "Sluiten",
+    "step_of": "Stap {step} van {total}",
+    "step_upload": "Bestand uploaden",
+    "step_match": "Kolommen koppelen",
+    "step_review": "Wijzigingen controleren",
+    "step_import": "Importeren",
+    "upload_label": "Zet hier een CSV- of Excel-bestand neer",
+    "upload_hint": "Eén blad, met de kolomnamen in de eerste rij.",
+    "template": "Sjabloon downloaden",
+    "reading": "Bestand wordt gelezen",
+    "read_failed": "Dit bestand kon niet worden gelezen. Controleer of het een CSV- of Excel-bestand is en probeer het opnieuw.",
+    "file_rows": "{count, plural, one {# rij} other {# rijen}}",
+    "check_failed": "Het bestand kon niet worden gecontroleerd. Probeer het opnieuw.",
+    "skipped": "Over te slaan",
+    "download_errors": "Foutenlijst downloaden",
+    "error_row": "Rij",
+    "error_field": "Veld",
+    "error_message": "Probleem",
+    "importing": "Rijen worden geïmporteerd",
+    "done_title": "Import voltooid",
+    "import_failed": "De import is mislukt. Probeer het opnieuw.",
+    "cancel": "Annuleren",
+    "back": "Terug",
+    "next": "Doorgaan",
+    "retry": "Opnieuw proberen",
+    "done": "Klaar",
+    "done_created": "Aangemaakt",
+    "done_updated": "Bijgewerkt",
+    "done_skipped": "Overgeslagen",
+    "done_failed": "Mislukt"
+  },
+  "pagination": {
+    "label": "Paginering",
+    "previous": "Vorige pagina",
+    "next": "Volgende pagina",
+    "page": "Pagina {page}",
+    "more": "Meer pagina's",
+    "per_page": "Rijen per pagina",
+    "jump": "Ga naar pagina",
+    "go": "Ga",
+    "summary": "{from}–{to} van {total}"
+  },
+  "tag_input": {
+    "remove": "{tag} verwijderen",
+    "duplicate": "‘{tag}’ is al toegevoegd.",
+    "max": "Je kunt tot {max} tags toevoegen.",
+    "count": "{count} van {max}"
+  },
+  "stepper": {
+    "label": "Voortgang",
+    "step_of": "Stap {step} van {total}",
+    "complete": "Voltooid",
+    "error": "Vraagt aandacht",
+    "optional": "Optioneel"
+  },
+  "timeline": {
+    "label": "Activiteit",
+    "today": "Vandaag",
+    "yesterday": "Gisteren"
+  },
+  "loading_overlay": {
+    "loading": "Laden…"
+  },
+  "truncate": {
+    "more": "Meer tonen",
+    "less": "Minder tonen"
+  },
+  "countdown": {
+    "left": "Nog {time}",
+    "elapsed": "{time} verstreken",
+    "done": "De tijd is om"
+  },
+  "multi_select_more": {
+    "select_all": "Alles selecteren",
+    "clear_all": "Alles wissen",
+    "more": "+{count}",
+    "more_label": "{count} meer: {labels}"
+  },
+  "date_presets": {
+    "label": "Snelle datums",
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "tomorrow": "Morgen",
+    "in_7_days": "Over 7 dagen",
+    "start_of_month": "Begin van de maand",
+    "end_of_month": "Einde van de maand"
   }
 }

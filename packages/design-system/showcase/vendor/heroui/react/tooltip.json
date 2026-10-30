@@ -1,0 +1,125 @@
+{
+  "slug": "tooltip",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(overlays)/tooltip.mdx",
+  "parts": [
+    {
+      "name": "Tooltip",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Trigger element and content"
+        },
+        {
+          "name": "delay",
+          "type": "number",
+          "default": "700",
+          "description": "Delay in milliseconds before showing tooltip"
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": "0",
+          "description": "Delay in milliseconds before hiding tooltip"
+        },
+        {
+          "name": "trigger",
+          "type": "\"hover\" | \"focus\"",
+          "default": "\"hover\"",
+          "description": "How the tooltip is triggered"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the tooltip is disabled"
+        }
+      ]
+    },
+    {
+      "name": "Tooltip.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to display in the tooltip"
+        },
+        {
+          "name": "showArrow",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to show the arrow indicator"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "`3` (7 with arrow)",
+          "description": "Distance from the trigger element"
+        },
+        {
+          "name": "placement",
+          "type": "`\"top\" | \"bottom\" | \"left\" | \"right\"` (and variants)",
+          "default": "\"top\"",
+          "description": "Placement of the tooltip"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TooltipRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tooltip.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Element that triggers the tooltip"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Tooltip.Arrow",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom arrow element"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, OverlayArrowRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".tooltip",
+      "description": "Base tooltip styles with animations"
+    },
+    {
+      "name": ".tooltip__trigger",
+      "description": "Trigger element styles"
+    }
+  ]
+}

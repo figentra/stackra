@@ -3,8 +3,9 @@
  * Purpose: proves the native DesignSystemProvider hands the colour scheme to Uniwind and to React Native's
  *          Appearance (restored on unmount), lays the subtree out in the direction through a Yoga `direction` View,
  *          Uniwind's LayoutDirection and HeroUI Native's `isRTL`, scales text with the device's text size under an
- *          optional cap, reads the resolved scheme back from Uniwind, and
- *          gives Lucide icons the md size and the theme's foreground colour.
+ *          optional cap, reads the resolved scheme back from Uniwind, gives Lucide icons the md size and the theme's
+ *          foreground colour, draws the scheme transition on a change after mount, and turns the haptics switch with
+ *          its prop.
  * Boundary: React Native does not render in vitest, so react-native, heroui-native, uniwind and lucide-react-native
  *          are replaced by recording stand-ins and the tree renders to the jsdom DOM; what reaches the real libraries
  *          is checked, not their rendering.
@@ -51,6 +52,14 @@ vi.mock("uniwind", () => ({
   ),
 }));
 
+const reanimated = vi.hoisted(() => ({ isReduced: false }));
+
+vi.mock("react-native-reanimated", () => ({
+  useReducedMotion: () => reanimated.isReduced,
+  ReduceMotion: { System: "system", Always: "always" },
+  ReducedMotionConfig: ({ mode }: { mode: string }) => <i data-testid="reduce" data-mode={mode} />,
+}));
+
 vi.mock("heroui-native", () => ({
   HeroUINativeProvider: ({
     config,
@@ -58,6 +67,7 @@ vi.mock("heroui-native", () => ({
   }: {
     config?: {
       isRTL?: boolean;
+      animation?: string;
       textProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
       textInputProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
     };
@@ -66,6 +76,7 @@ vi.mock("heroui-native", () => ({
     <div
       data-testid="heroui"
       data-rtl={String(config?.isRTL)}
+      data-animation={String(config?.animation)}
       data-text={JSON.stringify(config?.textProps)}
       data-text-input={JSON.stringify(config?.textInputProps)}
     >
@@ -106,6 +117,11 @@ function Probe() {
       </button>
     </>
   );
+}
+
+function MotionProbe() {
+  const { motion, resolvedMotion } = useDesignSystem();
+  return <output data-testid="motion">{`${motion} ${resolvedMotion}`}</output>;
 }
 
 describe("DesignSystemProvider (native)", () => {
@@ -201,6 +217,18 @@ describe("DesignSystemProvider (native)", () => {
     expect(appearance.setColorScheme.mock.calls).toEqual([["unspecified"]]);
   });
 
+  it("draws the scheme transition on a change after mount, never on the first paint", () => {
+    const transition = { preset: 12, origin: { x: 1, y: 2 } };
+    render(
+      <DesignSystemProvider schemeTransition={() => transition}>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(uniwind.setTheme.mock.calls).toEqual([["system"]]);
+    act(() => screen.getByRole("button", { name: "dark" }).click());
+    expect(uniwind.setTheme).toHaveBeenLastCalledWith("dark", transition);
+  });
+
   it("hands Uniwind the scheme before any child's effect runs, so the first paint is in it", () => {
     const seenByChild: unknown[][] = [];
     function Child() {
@@ -254,8 +282,48 @@ describe("DesignSystemProvider (native)", () => {
     expect(lucide.contains(screen.getByTestId("state"))).toBe(true);
   });
 
+  it("turns the app-wide haptics switch with its haptics prop and leaves it alone without one", async () => {
+    const { haptics } = await import("#native/haptics/haptics");
+    const { rerender } = render(
+      <DesignSystemProvider haptics={false}>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(haptics.isEnabled()).toBe(false);
+    rerender(
+      <DesignSystemProvider>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(haptics.isEnabled()).toBe(false);
+    rerender(
+      <DesignSystemProvider haptics>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(haptics.isEnabled()).toBe(true);
+  });
+
   it("refuses useDesignSystem outside a provider", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(() => render(<Probe />)).toThrow("needs a DesignSystemProvider");
+  });
+  it("holds the motion level, lowers full under the system setting and turns animations off at none", () => {
+    reanimated.isReduced = true;
+    const { rerender } = render(
+      <DesignSystemProvider>
+        <MotionProbe />
+      </DesignSystemProvider>,
+    );
+    expect(screen.getByTestId("motion").textContent).toBe("full reduced");
+    expect(screen.getByTestId("reduce").dataset["mode"]).toBe("always");
+    reanimated.isReduced = false;
+    rerender(
+      <DesignSystemProvider motion="none">
+        <MotionProbe />
+      </DesignSystemProvider>,
+    );
+    expect(screen.getByTestId("motion").textContent).toBe("none none");
+    expect(screen.getByTestId("heroui").dataset["animation"]).toBe("disable-all");
   });
 });

@@ -7,7 +7,7 @@
  *           screen reader never hears an unnamed button.
  * Runtime: isomorphic
  * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0312 (overlay vocabulary); WCAG 2.2 SC 2.1.2, 2.4.3 and
- *          4.1.2.
+ *          4.1.2; ADR 0317 amendment 2026-10-28 (stacked overlays).
  */
 import type { ReactNode } from "react";
 
@@ -33,4 +33,9 @@ export interface RouteOverlayContractProps {
   readonly footer?: ReactNode;
   /** The width of a `modal` on web: `sm`, `md` (the default) or `lg`. Native modals are sized by the platform. */
   readonly size?: "sm" | "md" | "lg" | undefined;
+  /**
+   * The overlay's name in the breadcrumb of the drawers stacked over it (web). Defaults to `title` when it is text;
+   * set it when `title` is an element.
+   */
+  readonly trailLabel?: string | undefined;
 }

@@ -1,0 +1,70 @@
+{
+  "no_answer": "No answer yet.",
+  "confirmed": "{name}: confirmed.",
+  "cancelled": "{name}: cancelled.",
+  "samples": {
+    "default": {
+      "trigger": "Default tone",
+      "title": "Publish this page?",
+      "description": "Everyone with the link will be able to read it.",
+      "confirm": "Publish",
+      "cancel": "Not yet"
+    },
+    "accent": {
+      "trigger": "Accent tone",
+      "title": "Invite the whole team?",
+      "description": "Forty people will get an email today.",
+      "confirm": "Send invitations",
+      "cancel": "Not now"
+    },
+    "success": {
+      "trigger": "Success tone",
+      "title": "Mark the order as shipped?",
+      "description": "The customer is told straight away.",
+      "confirm": "Mark as shipped",
+      "cancel": "Not yet"
+    },
+    "warning": {
+      "trigger": "Warning tone",
+      "title": "Close the project with open tasks?",
+      "description": "Three tasks are still open and will be archived.",
+      "confirm": "Close project",
+      "cancel": "Keep it open"
+    },
+    "danger": {
+      "trigger": "Danger tone",
+      "title": "Delete this project?",
+      "description": "This cannot be undone.",
+      "confirm": "Delete project",
+      "cancel": "Keep project"
+    },
+    "custom_icon": {
+      "trigger": "Custom icon",
+      "title": "Empty the trash?",
+      "description": "Everything in it is deleted for good.",
+      "confirm": "Empty trash",
+      "cancel": "Keep it"
+    },
+    "no_icon": {
+      "trigger": "No icon",
+      "title": "Sign out of every device?",
+      "description": "You will have to sign in again everywhere.",
+      "confirm": "Sign out everywhere",
+      "cancel": "Stay signed in"
+    },
+    "dismissable": {
+      "trigger": "Press outside answers",
+      "title": "Leave this team?",
+      "description": "A press on the backdrop refuses, as Cancel does.",
+      "confirm": "Leave team",
+      "cancel": "Stay"
+    },
+    "no_escape": {
+      "trigger": "Escape disabled",
+      "title": "Accept the new terms?",
+      "description": "Only the buttons answer; Escape does nothing.",
+      "confirm": "Accept",
+      "cancel": "Decline"
+    }
+  }
+}

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `useMoney()`, the hook a component shows prices with: `money = useMoney()` as a class component field,
  *          then `this.money(product.priceMinor, product.currency)` or `this.money(perMonth(price, currency))`.
- * Boundary: formats with Intl's currency style in the active locale and digits, with exactly the currency's ISO 4217
+ * Boundary: formats with Intl's currency style in the active locale and digits (`formatNumber`, on every engine), with exactly the currency's ISO 4217
  *           exponent of fraction digits (`Money.toDecimal`), so a price is never rounded for display. Minor units go
  *           through `Money.ofMinor`, which refuses an unsafe amount or an unknown currency.
  * Runtime: isomorphic
@@ -11,6 +11,7 @@
 import { Money } from "@stackra/money";
 import { useMemo } from "react";
 
+import { formatNumber } from "#core/functions/format-number.function";
 import { useI18nState } from "#react/i18n-provider/use-i18n-state";
 import type { MoneyFormatter } from "./money-formatter.type";
 
@@ -24,7 +25,7 @@ import type { MoneyFormatter } from "./money-formatter.type";
  * money(Money.ofMinor(1_250, "KWD")); // "KWD 1.250" in en: the currency's three fraction digits
  */
 export function useMoney(): MoneyFormatter {
-  const { intlLocale } = useI18nState();
+  const { intlLocale, numerals } = useI18nState();
   return useMemo(() => {
     function money(amount: Money): string;
     function money(minor: number, currency: string): string;
@@ -34,13 +35,18 @@ export function useMoney(): MoneyFormatter {
       const digits = decimal.split(".")[1]?.length ?? 0;
       // shortcut: Number() keeps 15 significant digits, exact for any realistic price; pass the decimal string once
       // every target runtime's Intl.NumberFormat accepts one (ES2023).
-      return new Intl.NumberFormat(intlLocale, {
-        style: "currency",
-        currency: value.currency,
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      }).format(Number(decimal));
+      return formatNumber(
+        Number(decimal),
+        intlLocale,
+        {
+          style: "currency",
+          currency: value.currency,
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits,
+        },
+        numerals,
+      );
     }
     return money;
-  }, [intlLocale]);
+  }, [intlLocale, numerals]);
 }

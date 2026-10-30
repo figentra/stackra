@@ -8,6 +8,7 @@
  */
 import type { DialogCloseProps as HeroDialogCloseProps } from "heroui-native";
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
+import type { CloseControl } from "#contracts/types/close-control.type";
 import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 
 /**
@@ -18,4 +19,7 @@ export type ModalCloseProps = CloseButtonContractProps &
   DistributiveOmit<
     HeroDialogCloseProps,
     keyof CloseButtonContractProps | "children" | "accessibilityLabel" | "aria-label"
-  >;
+  > & {
+    /** Web parity: native always draws the close mark (a phone has no Escape key); `"none"` draws nothing. */
+    readonly closeButton?: CloseControl | undefined;
+  };

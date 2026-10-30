@@ -1,0 +1,393 @@
+{
+  "generatedFrom": {
+    "hash": "ca4f27ba26a62be2",
+    "propsFiles": [
+      "ui/src/native/settings-cell/settings-cell.props.ts",
+      "ui/src/native/settings-cell/settings-color-cell.props.ts",
+      "ui/src/native/settings-cell/settings-select-cell.props.ts",
+      "ui/src/native/settings-cell/settings-slider-cell.props.ts",
+      "ui/src/native/settings-cell/settings-switch-cell.props.ts"
+    ]
+  },
+  "importLine": "import { SettingsCell } from \"@stackra/ui/native\";",
+  "key": "free/settings-cell",
+  "parts": [
+    {
+      "name": "SettingsCell",
+      "props": [
+        {
+          "description": "The setting's title; it names the control.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the title; it describes the control.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "The control at the inline end; the family members fill it.",
+          "name": "control",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What sits under the row, full width: the slider of a SettingsSliderCell, the swatches of a SettingsColorCell.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to refuse change and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the cell.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new value.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: boolean) => void"
+        }
+      ],
+      "name": "SettingsSwitchCell",
+      "props": [
+        {
+          "description": "The value, for a controlled cell.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting value, for an uncontrolled cell.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse change and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What sits under the row, full width: the slider of a SettingsSliderCell, the swatches of a SettingsColorCell.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The setting's title; it names the control.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the title; it describes the control.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "Styles the cell.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new value.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "SettingsSelectCell",
+      "props": [
+        {
+          "description": "The value, for a controlled cell.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting value, for an uncontrolled cell.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The choices.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SelectItem[]"
+        },
+        {
+          "description": "True to refuse change and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What sits under the row, full width: the slider of a SettingsSliderCell, the swatches of a SettingsColorCell.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The setting's title; it names the control.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the title; it describes the control.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "Styles the cell.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new value.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: number) => void"
+        }
+      ],
+      "name": "SettingsSliderCell",
+      "props": [
+        {
+          "description": "The value, for a controlled cell.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The starting value, for an uncontrolled cell.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The lowest value; defaults to 0.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The highest value; defaults to 100.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The step; defaults to 1.",
+          "name": "step",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How the value is written, for example a percent.",
+          "name": "formatOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "True to refuse change and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What sits under the row, full width: the slider of a SettingsSliderCell, the swatches of a SettingsColorCell.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The setting's title; it names the control.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the title; it describes the control.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "Styles the cell.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with each new value.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "SettingsColorCell",
+      "props": [
+        {
+          "description": "The value, for a controlled cell.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting value, for an uncontrolled cell.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours offered, as `#rrggbb`; defaults to the house set.",
+          "name": "swatches",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "True to refuse change and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What sits under the row, full width: the slider of a SettingsSliderCell, the swatches of a SettingsColorCell.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The setting's title; it names the control.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under the title; it describes the control.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A leading icon from the house set.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "Styles the cell.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

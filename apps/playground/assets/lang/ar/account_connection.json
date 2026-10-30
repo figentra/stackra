@@ -1,0 +1,15 @@
+{
+  "connected": "متصل",
+  "not_connected": "غير متصل",
+  "connect": "ربط الحساب",
+  "disconnect": "فصل الحساب",
+  "stripe": "Stripe",
+  "stripe_description": "استقبل مدفوعات البطاقات عبر الإنترنت وعند نقطة البيع.",
+  "terms": "بربط الحساب، فإنك توافق على اتفاقية خدمات Stripe وتسمح لفيجنترا بمشاركة إجماليات الطلبات معها.",
+  "talabat": "طلبات",
+  "talabat_description": "استقبل طلبات التوصيل مباشرةً في قائمة المطبخ.",
+  "talabat_account": "رقم المتجر 4471-RYD",
+  "xero": "Xero",
+  "xero_description": "أرسل المبيعات اليومية والمبالغ المستردة إلى دفاترك المحاسبية.",
+  "xero_account": "finance@souq-alnakheel.sa"
+}

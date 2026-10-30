@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "59f4e15e09cad87a",
+    "propsFiles": ["ui/src/native/router-provider/router-provider.props.ts"]
+  },
+  "importLine": "import { RouterProvider } from \"@stackra/ui/native\";",
+  "key": "free/router-provider",
+  "parts": [
+    {
+      "name": "RouterProvider",
+      "props": [
+        {
+          "description": "Opens an app path, usually through React Navigation's `useLinkTo()`.",
+          "name": "navigate",
+          "required": true,
+          "source": "stackra",
+          "type": "(href: string) => void"
+        },
+        {
+          "description": "The tree whose links navigate through `navigate`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

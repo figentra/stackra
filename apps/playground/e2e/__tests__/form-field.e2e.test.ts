@@ -14,6 +14,8 @@
 // @covers sta-350:FR-058 sta-350:FR-059 sta-350:SC-007 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/form-field?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Form field" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Form field", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -47,7 +51,7 @@ for (const scheme of SCHEMES)
     page,
   }) => {
     await open(page, scheme, "en");
-    const live = page.getByRole("region", { name: "Try it" });
+    const live = example(page, "usage");
     await live.getByRole("button", { name: "Save" }).click();
     await expect(live.getByText("Enter your email address.")).toBeVisible();
     const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
@@ -65,7 +69,7 @@ test("a failed submit shows each message, marks the field invalid and reads the 
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "usage");
   const email = live.getByRole("textbox", { name: /Email/ });
   await expect(live.getByText("Enter your email address.")).toBeHidden();
   await live.getByRole("button", { name: "Save" }).click();
@@ -81,15 +85,12 @@ test("a failed submit shows each message, marks the field invalid and reads the 
 
 test("the status line is polite live text, so a failed submit is announced", async ({ page }) => {
   await open(page, "light", "en");
-  await expect(page.getByRole("region", { name: "Try it" }).getByTestId("status")).toHaveAttribute(
-    "aria-live",
-    "polite",
-  );
+  await expect(example(page, "usage").getByTestId("status")).toHaveAttribute("aria-live", "polite");
 });
 
 test("a keyboard user fills the form in order and submits with Enter", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "usage");
   const email = live.getByRole("textbox", { name: /Email/ });
   await email.focus();
   await page.keyboard.type("ada@example.com");
@@ -108,7 +109,7 @@ test("a keyboard user fills the form in order and submits with Enter", async ({ 
 
 test("fixing a field clears its message", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "usage");
   const email = live.getByRole("textbox", { name: /Email/ });
   await live.getByRole("button", { name: "Save" }).click();
   await expect(live.getByText("Enter your email address.")).toBeVisible();
@@ -128,7 +129,7 @@ test("fixing a field clears its message", async ({ page }) => {
 
 test("a server rejection shows on the email and reset clears it", async ({ page }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "usage");
   await live.getByRole("button", { name: "Simulate a server rejection" }).click();
   await expect(live.getByText("That email address is already in use.")).toBeVisible();
   await expect(live.getByRole("textbox", { name: /Email/ })).toHaveAttribute(
@@ -142,7 +143,7 @@ test("a server rejection shows on the email and reset clears it", async ({ page 
 
 test("the states form shows its required, invalid and disabled fields", async ({ page }) => {
   await open(page, "light", "en");
-  const states = page.getByRole("region", { name: "States" });
+  const states = example(page, "states");
   await expect(states.getByRole("textbox", { name: /Required field/ })).toHaveAttribute(
     "aria-required",
     "true",
@@ -165,9 +166,11 @@ test("the states form shows its required, invalid and disabled fields", async ({
 for (const locale of LOCALES)
   test(`the label sits at the reading-start side of the field in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const live = page.getByRole("region", { name: "Try it" });
-    const input = live.getByRole("textbox", { name: /Email/ });
-    const label = live.locator("label").filter({ hasText: "Email" }).first();
+    const live = example(page, "usage");
+    // The demo speaks the page's language (`assets/lang/<locale>/form_field.json`).
+    const email = locale === "en" ? "Email" : "البريد الإلكتروني";
+    const input = live.getByRole("textbox", { name: new RegExp(email) });
+    const label = live.locator("label").filter({ hasText: email }).first();
     const inputBox = await input.boundingBox();
     const labelBox = await label.boundingBox();
     if (!inputBox || !labelBox) throw new Error("a box is missing");
