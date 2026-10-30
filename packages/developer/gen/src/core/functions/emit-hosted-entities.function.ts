@@ -50,9 +50,7 @@ interface EntityFacts {
 }
 
 /** The hosted models of `manifest` with their facts, or undefined when one records none. */
-function hostedModels(
-  manifest: StackraManifest,
-):
+function hostedModels(manifest: StackraManifest):
   | {
       readonly model: NonNullable<StackraManifest["models"]>[number];
       readonly facts: EntityFacts;
@@ -115,7 +113,9 @@ export function emitHostedEntities(ir: MemberIR): GeneratedFile[] {
         importPath: packageSpecifier(name, file),
         fields,
         relations: relations.map((relation) => relation.name),
-        entity: { optional: facts.optional, relations, computed: facts.computed },
+        // No `[OptionalProps]` augmentation: the package's own types carry it, and a second, different declaration on
+        // its class is TS2717 in the host (STA-1667). The schema's properties do not depend on it.
+        entity: { optional: [], relations, computed: facts.computed },
       };
     });
     const classes: DeclaredClass[] = hosted.map(({ model, facts }) => ({

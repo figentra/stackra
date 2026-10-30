@@ -20,13 +20,13 @@ import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
-/** The commerce fixture as a package the billing service hosts, through the manifest gen builds for it. */
-const KIT = { ...buildManifest(COMMERCE_IR).manifest, package: "@acme/commerce-kit" };
+/** The billing fixture (models with relations and a link) as a package, through the manifest gen builds for it. */
+const KIT = { ...buildManifest(BILLING_IR).manifest, package: "@acme/billing-kit" };
 
-/** The billing service hosting it. */
+/** The commerce service hosting it. */
 const HOST: MemberIR = {
-  ...BILLING_IR,
-  dependencies: [...BILLING_IR.dependencies, { package: "@acme/commerce-kit", manifest: KIT }],
+  ...COMMERCE_IR,
+  dependencies: [...COMMERCE_IR.dependencies, { package: "@acme/billing-kit", manifest: KIT }],
 };
 
 /** The `properties` block of the `EntitySchema` of `model` in an entity file. */
@@ -37,45 +37,63 @@ function propertiesOf(content: string, model: string): string {
 
 describe("emitHostedEntities", () => {
   const files = emitHostedEntities(HOST);
-  const orders = files.find((file) => file.path.endsWith("/orders.ts"))?.content ?? "";
+  const billing = files.find((file) => file.path.endsWith("/billing.ts"))?.content ?? "";
 
   it("records each model's entity facts in the manifest", () => {
-    const order = KIT.models?.find((model) => model["class"] === "Order");
-    expect(order?.["entity"]).toMatchObject({ module: "orders", relations: [], computed: [] });
+    const invoice = KIT.models?.find((model) => model["class"] === "Invoice");
+    expect(invoice?.["entity"]).toMatchObject({ module: "billing", computed: ["isPaid"] });
   });
 
   it("writes the hosted package's entities into the service, one file per module", () => {
     expect(files.map((file) => file.path)).toEqual([
-      ".stackra/gen/entities/hosted/commerce/orders.ts",
+      ".stackra/gen/entities/hosted/billing/billing.ts",
+      ".stackra/gen/entities/hosted/billing/crm.ts",
     ]);
-    expect(orders).toContain("export const ORDERS_ENTITIES");
-    expect(orders).toContain("registerEntities(ORDERS_ENTITIES);");
+    expect(billing).toContain("export const BILLING_ENTITIES");
+    expect(billing).toContain("registerEntities(BILLING_ENTITIES);");
   });
 
-  it("imports the model from the package's entry, not the package's source", () => {
-    expect(orders).toContain('import { Order } from "@acme/commerce-kit/node";');
-    expect(orders).not.toContain("#modules/");
+  it("imports the models from the package's entry and re-declares no [OptionalProps]", () => {
+    expect(billing).toMatch(/import \{[^}]*Invoice[^}]*\} from "@acme\/billing-kit\/node";/);
+    expect(billing).not.toContain("#modules/");
+    expect(billing).not.toContain("declare module");
   });
 
   it("writes the same EntitySchema properties as the package writes for itself", () => {
-    expect(propertiesOf(orders, "Order")).toBe(
-      propertiesOf(emitEntities(COMMERCE_IR, "orders") ?? "", "Order"),
-    );
+    const own = emitEntities(BILLING_IR, "billing") ?? "";
+    for (const model of ["Invoice", "InvoiceLine"])
+      expect(propertiesOf(billing, model)).toBe(propertiesOf(own, model));
   });
 
-  it("makes the registrations load the file instead of importing ORDERS_ENTITIES", () => {
+  it("makes the registrations load the files instead of importing BILLING_ENTITIES", () => {
     const registrations = emitRegistrations(HOST, buildManifest(HOST).manifest) ?? "";
-    expect(registrations).toContain('import "#stackra/entities/hosted/commerce/orders";');
-    expect(registrations).not.toContain("COMMERCE_ENTITIES");
-    // `@stackra/segments`' fixture manifest records no facts, so it keeps its import.
-    expect(registrations).toContain("registerEntities([...SEGMENTS_ENTITIES]);");
+    expect(registrations).toContain('import "#stackra/entities/hosted/billing/billing";');
+    expect(registrations).not.toContain("BILLING_ENTITIES");
+  });
+
+  it("keeps the BILLING_ENTITIES import for a manifest that records no entity facts", () => {
+    const older = {
+      ...KIT,
+      models: (KIT.models ?? []).map(({ entity: _entity, ...model }) => model),
+    };
+    const host: MemberIR = {
+      ...COMMERCE_IR,
+      dependencies: [
+        ...COMMERCE_IR.dependencies,
+        { package: "@acme/billing-kit", manifest: older },
+      ],
+    };
+    expect(emitHostedEntities(host)).toEqual([]);
+    expect(emitRegistrations(host, buildManifest(host).manifest)).toContain(
+      "registerEntities([...BILLING_ENTITIES]);",
+    );
   });
 
   it("writes nothing outside a service", () => {
     expect(
       emitHostedEntities({
         ...LOYALTY_KIT_IR,
-        dependencies: [{ package: "@acme/commerce-kit", manifest: KIT }],
+        dependencies: [{ package: "@acme/billing-kit", manifest: KIT }],
       }),
     ).toEqual([]);
   });
