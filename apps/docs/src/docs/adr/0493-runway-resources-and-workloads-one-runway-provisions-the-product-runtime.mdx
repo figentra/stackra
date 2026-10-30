@@ -1,0 +1,87 @@
+---
+title: "0493 — Runway resources and workloads: one runway provisions a product's runtime"
+description: "Draft · 2026-10-30"
+---
+
+{/* Stackra file contract: Purpose: the decision record that a product's root runway declares named managed `resources:` (postgres, kafka, and the existing queues, topics, caches and buckets) and generic container `workloads:` (ECS Fargate), sized and capped per environment, that Runway provisions them in the product's AWS account through @stackra/infra-aws-runtime, that their connection secrets go to Infisical and reach only the consumers that declare them, and that a workload is allowed only when no managed option fits. Boundary: decision text only; the code is @stackra/runway (schema) and @stackra/infra-aws-runtime (plan and Pulumi), STA-1640. Runtime: docs. Governing contract: ADR template; ADR 0296, 0238, 0473, 0172, 0173, 0227, 0352, 0444, 0206, 0482. */}
+
+<Note>
+  Draft (epic STA-1640), waiting for the owner's answers (spec
+  `sta-1640-runway-resources-workloads`, Q1 to Q7). Extends
+  [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) (member `requires`, root
+  `shared`) and generalises
+  [0444](/adr/0444-one-self-hosted-tools-stack-per-region-from-the-root-runway)'s Fargate stack.
+  Revives two rows of [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) as resource
+  kinds, subject to Q1. Numbered after the highest ADR in flight (0492); the ADR steward reconciles
+  the number.
+</Note>
+
+## Context
+
+A product's runtime resources today come from two places. Each service member's runway `requires` an engine, and
+the root runway's `environments.<env>.shared` sizes the shared pools. `@stackra/infra-aws-runtime` turns them into
+SQS queues, SNS topics, Valkey caches and S3 buckets. The environment's Postgres server (0238) is created by Encore
+Cloud through the role `encoreAccess` grants. Self-hosted servers run only in the per-region tools stack (0444),
+from a fixed catalogue.
+
+Nothing lets a product declare a database, a Kafka cluster or a container it needs beside its services, size it per
+environment, and get its connection details where they are used. Each new need becomes hand-written infrastructure.
+
+## Decision
+
+1. **One root runway declares the runtime.** Two new top-level blocks, both named maps:
+   - `resources.<name>`: a managed kind (`postgres`, `kafka`, and the existing `queue`, `topic`, `cache`, `bucket`),
+     its engine options, and a size per environment.
+   - `workloads.<name>`: a container (image pinned by digest, port, health check, env, secret names, size and scale per
+     environment, `uses` of resources, `expose: internal | public`) and a required `reason`.
+
+   A service member or a workload names what it uses (`uses: [main-db]`); the resource does not list its consumers.
+   Member `requires` and root `shared` keep working: Runway reads them as implicit resources, so no product breaks.
+
+2. **Runway provisions, per environment, in the product's account** (0172 decision 1). `@stackra/infra-aws-runtime`
+   plans each kind (pure, `.`) and declares it with Pulumi (`./node`), as it does for queues and caches. Postgres is
+   RDS by default or Aurora, with RDS Proxy in front (0473); Kafka is MSK (Serverless by default, IAM auth, no
+   passwords). Workloads run on one ECS Fargate cluster per environment, with service discovery for `internal` and
+   an ALB for `public`. This is the construct 0444's tools stack already uses, extracted and shared.
+3. **Sizes come from a catalogue; limits come from the runway.** Each kind has named sizes (`small`, `medium`,
+   `large`) in a catalogue that maps to instance classes, capacity and a monthly estimate. Each resource and workload
+   picks a size per environment; an environment it does not name runs `small`. `environments.<env>.limits.monthly`
+   caps the plan's estimate: a plan over the cap is refused before anything is created. AWS Budgets (0172 decision 5)
+   stay the backstop for actual spend.
+4. **Secrets go to Infisical; consumers get them by name.** A generated credential (a database password) is created
+   inside the CI job and written blind to Infisical at `<env>:/runtime/<resource>/` (0482 decision 7). A connection
+   string is written there too. Each consumer that `uses` a resource gets fixed variable names
+   (`<RESOURCE>_URL`, `<RESOURCE>_PASSWORD`, …): Encore services through the Infisical sync into Encore secrets
+   (0173), workloads through SSM parameters the same sync fills (0444 decision 4). Nobody reads a value.
+5. **Managed first; a workload needs a reason.** A workload is allowed only when no managed resource or vendor cloud
+   fits, when residency forces self-hosting (an in-country region), or for on-prem parity. Its `reason` is required by
+   the schema and read in review. A kind that 0227 defers is allowed only as a resource with a `reason`: Kafka and
+   OpenSearch become available as kinds, and the bus decision of 0142 and the search decision of 0221 keep their own
+   triggers.
+6. **Nothing changes AWS without the owner.** Runway's `plan` is data and runs nothing. `pulumi preview` runs in CI,
+   and `pulumi up` runs only from the product's `production`-protected deploy job, as every infrastructure change
+   does (0352).
+
+## Consequences
+
+- A product adds a database, a cluster or a container by adding a runway block, not infrastructure code.
+- 0444's tools stack moves onto the shared workload construct; its catalogue stays as the defaults of its tools.
+- One Postgres server per environment (0238) meets Encore Cloud's own database management. Until the Encore deploy
+  path (STA-136) is settled, `resources.postgres` serves workloads and non-Encore consumers, and Encore keeps its own
+  (Q2).
+- Cost is visible before anything is created, per environment.
+
+## Enforcement
+
+- `@stackra/runway`: the root schema's `resources`, `workloads` and `limits`, with the `reason` refine and the `uses`
+  reference check; the canonical schema copy.
+- `@stackra/infra-aws-runtime`: plan tests for every kind and size, the cost cap refusal, and Pulumi mock tests of the
+  declared resources and the injected secret names.
+- planned — STA-1640: a review checklist row that every workload's `reason` names one of the three allowed grounds.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (the Kafka and OpenSearch
+rows become resource kinds with a reason; subject to Q1) and, subject to Q3,
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 4 (self-hosted
+ZITADEL in a SaaS region that residency forces). Sources: owner decision relayed 2026-10-30; STA-1640.
