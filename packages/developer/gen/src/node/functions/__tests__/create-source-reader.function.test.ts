@@ -562,6 +562,47 @@ describe("createSourceReader on a driver over its package's own base", async () 
   });
 });
 
+/** A field typed with an `Enum.of` that a workspace package declares, read through its build (STA-1663). */
+const SHARED_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@acme/shared/package.json": JSON.stringify({
+    name: "@acme/shared",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@acme/shared/index.d.ts": [
+    'import type { Enum } from "@stackra/contracts";',
+    'export declare const ChannelKind: Enum.Of<{ readonly Online: "online"; readonly Pos: "pos" }>;',
+    "export type ChannelKind = Enum.Value<typeof ChannelKind>;",
+    "",
+  ].join("\n"),
+  "src/core/schemas/order-channel.schema.ts": [
+    'import { ChannelKind } from "@acme/shared";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class OrderChannel extends Schema {",
+    "  channelKind!: ChannelKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum from a workspace package", async () => {
+  const root = writeFixtureMember("shared-enum", SHARED_ENUM_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes instead of refusing it as an unknown type", () => {
+    expect(shapes.find((shape) => shape.name === "OrderChannel")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "ChannelKind",
+      values: ["online", "pos"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
 /** A driver over another package's abstract base, whose port that package imports by its own `#contracts` path. */
 const PACKAGE_BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/printer-fixture/package.json": JSON.stringify({

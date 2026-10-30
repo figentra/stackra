@@ -897,8 +897,13 @@ export function createSourceReader(
         ...(isOwn(path) ? { module: moduleOf(path) } : {}),
       };
     }
-    if (at === undefined || declaration === undefined || !isStackra(host.fileName(declaration)))
-      return undefined;
+    if (at === undefined || declaration === undefined) return undefined;
+    // An `Enum.of` read through a declaration file (a workspace package's or a sibling's build) carries `Enum.Of`'s
+    // type-only `~enum`, so a shared enum stays single-source wherever it is declared (STA-1663).
+    const isEnum = host
+      .properties(host.typeOfSymbol(symbol))
+      .some((property) => host.symbolName(property) === "~enum");
+    if (!isEnum && !isStackra(host.fileName(declaration))) return undefined;
     // A published enum without its initializer: its codes from the checker (sorted, the alias order is lost).
     const members = host.unionMembers(host.typeAt(at)) ?? [];
     const values = members
