@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `easJsonOf` and `toolVersionOf`: the profiles carry the exact node and pnpm pins and a
- *          channel each, the submit profile goes to the Play internal track, the template's other keys stay, a missing
+ *          channel each, the `simulator` profile is a preview Release build for the simulator, the submit profile goes to the Play internal track, the template's other keys stay, a missing
  *          pin keeps the template's, and a major-only node version is refused; `toolVersionOf` reads a mise pin.
  * Boundary: test only; `toolVersionOf` reads a temporary folder.
  * Runtime: node (vitest)
@@ -19,7 +19,8 @@ import { toolVersionOf } from "#node/functions/tool-version-of.function";
 
 describe("easJsonOf", () => {
   // @covers sta-1623:FR-007
-  it("writes the three build profiles over a base holding the exact pins", () => {
+  // @covers sta-265:FR-004
+  it("writes the four build profiles over a base holding the exact pins", () => {
     const json = easJsonOf(
       { build: { base: { node: "24" } }, extra: true },
       { node: "24.22.0", pnpm: "12.6.0", channel: "production" },
@@ -32,6 +33,7 @@ describe("easJsonOf", () => {
         base: { node: "24.22.0", pnpm: "12.6.0" },
         development: { extends: "base", developmentClient: true, channel: "development" },
         preview: { extends: "base", channel: "preview" },
+        simulator: { extends: "preview", ios: { simulator: true } },
         production: { extends: "base", autoIncrement: true, channel: "production" },
       },
       submit: { production: { android: { track: "internal" } } },

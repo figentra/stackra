@@ -152,6 +152,36 @@ pnpm eas:preflight record --platform ios --build-id <eas build id> [--rollout-id
 
 **Before the first public release:** production API URL and keys only in the EAS `production` environment; store listing complete (category, age rating, privacy questionnaire, screenshots per language, support and privacy-policy URLs, a review demo account); the app sits under your own company's Apple and Google accounts.
 
+## Launch check (STA-265)
+
+No promotion of a mobile app without a launch on a simulator and an emulator: a launch crash once reached `main`
+unnoticed (STA-1625). Runway's `launchCheckJob` (see the runway README) installs the `simulator` EAS build and runs the
+template line's Maestro flows; `runLaunchCheck` fails at the first failing flow.
+
+| Where            | Runner                                                         | When                                                           |
+| ---------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
+| iOS simulator    | GitHub `macos` (the store-screenshot capture job's runner)     | A template line release; a product's preview deploy of the app |
+| Android emulator | `ubuntu-latest` with KVM, the pinned `android-emulator-runner` | The same, only when the app or its line changed                |
+
+**Read a failure.** The job uploads `.stackra/launch-check/<app>/<platform>/`: `launch.xml` (JUnit) names the failed
+step, and `launch/` holds Maestro's screenshots and logs. "`stackra-launch-ready` is visible" timing out means the app
+never reached its first screen: a native fatal (the `RCTFatal` of STA-1625), a stuck splash, or a dev-client build passed
+by mistake (it waits for Metro). A red screen or "Unhandled JS Exception" text fails the flow even when the marker shows.
+
+**Reproduce locally** on the iPhone 17 simulator, in a build worktree:
+
+```bash
+eas build --profile simulator --platform ios --local
+```
+
+```bash
+maestro test --platform ios -e APP_ID=<bundle id> apps/mobile/.maestro/launch.yaml
+```
+
+**Rerun or block.** An infrastructure failure (the simulator or emulator never booted) is rerun once; anything else blocks
+the promotion until fixed. There is no override flag. A capability adds its own flow next to `launch.yaml` and to the
+job's `flows`; it opens the demo deep links the capture job uses (`{scheme}://demo`, `{scheme}://store-screenshot/{screen}`).
+
 ## EAS Workflows (target)
 
 Under `apps/mobile/.eas/workflows/`:
@@ -184,6 +214,7 @@ Validate with `eas workflow:validate .eas/workflows/<file>.yml`; run by hand wit
 | App config and `eas.json` stay valid  | `pnpm run doctor` (expo install --check) in `apps/mobile`, `npx expo config --type public` | Manual    |
 | No secret in `eas.json` or app config | gitleaks                                                                                   | Live      |
 | Workflows validate                    | `eas workflow:validate`                                                                    | Not built |
+| The app launches before promotion     | Runway `launchCheckJob` + Maestro on CI (STA-265)                                          | Not wired |
 | Local build from a clean deployed sha | `pnpm eas:preflight check` (`tools/scripts/eas-preflight.mjs`, + test)                     | Manual    |
 
 See also [Secrets](/runbooks/secrets), [CI](/runbooks/ci) and [Upgrade](/runbooks/upgrade).

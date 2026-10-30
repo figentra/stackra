@@ -4,7 +4,7 @@
  *          `devServer` from `@stackra/runway/node`; with `readRunway`, `runCommand`, the three provider drivers and the
  *          mobile job (`runMobileJob`, `capabilityConfig`), the brand step (`runBrandStep`, `committedBrandOutputs`,
  *          `BRAND_STEP_SETTINGS`) and the capture job (`screenshotCaptureJob`, `runScreenshotCapture`,
- *          `SCREENSHOT_CAPTURE_DEFAULTS`) and the publish step (`publishProduct`, `publishShell`, `promoteCanary`,
+ *          `SCREENSHOT_CAPTURE_DEFAULTS`), the launch check (`launchCheckJob`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`) and the publish step (`publishProduct`, `publishShell`, `promoteCanary`,
  *          `canaryVerdict`, `checkShellCompatibility`, `checkOpsReview`, `platformRows`, `readBundles`, `uploadBundle`,
  *          `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`, `WranglerEdgeKvDriver`, `EdgeKvConfig`, `EdgeKvOptions`) those
  *          are its only values, none of them shared with `.`, and the types resolve.
@@ -27,6 +27,8 @@ import type {
   DevServerOptions,
   MobileJobRequest,
   MobileJobResult,
+  LaunchCheckJob,
+  LaunchCheckRequest,
   ScreenshotCaptureJob,
   ScreenshotCaptureRequest,
 } from "#node/index";
@@ -47,6 +49,7 @@ describe("@stackra/runway/node", () => {
       "GoogleCloudDriver",
       "GooglePlayConsoleDriver",
       "InfisicalVaultWriterDriver",
+      "LAUNCH_CHECK_DEFAULTS",
       "LINE_CHECKOUT_SETTINGS",
       "MOBILE_DEV_SETTINGS",
       "MOBILE_ONBOARD_SETTINGS",
@@ -77,6 +80,7 @@ describe("@stackra/runway/node", () => {
       "dryRunCommand",
       "easJsonOf",
       "exportSourceOf",
+      "launchCheckJob",
       "onboardMobile",
       "platformRows",
       "prepareMobileDev",
@@ -87,6 +91,7 @@ describe("@stackra/runway/node", () => {
       "readRunway",
       "runBrandStep",
       "runCommand",
+      "runLaunchCheck",
       "runMobileJob",
       "runScreenshotCapture",
       "screenshotCaptureJob",
@@ -110,6 +115,8 @@ describe("@stackra/runway/node", () => {
       [request: ScreenshotCaptureRequest]
     >();
     expectTypeOf(node.screenshotCaptureJob).returns.toEqualTypeOf<ScreenshotCaptureJob>();
+    expectTypeOf(node.launchCheckJob).parameters.toEqualTypeOf<[request: LaunchCheckRequest]>();
+    expectTypeOf(node.launchCheckJob).returns.toEqualTypeOf<LaunchCheckJob>();
     expectTypeOf(node.publishProduct).parameters.toEqualTypeOf<[request: ProductPublishRequest]>();
     expectTypeOf(node.publishProduct).returns.toEqualTypeOf<Promise<ProductPublishResult>>();
     expectTypeOf(node.promoteCanary).parameters.toEqualTypeOf<[request: CanaryPromotionRequest]>();

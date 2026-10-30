@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `easJsonOf(base, toolchain)`, the `eas.json` the mobile job writes into the template checkout: the
  *          template's own file with Runway's build profiles (`development`, `preview` and the app's channel, each on
- *          the channel of its name, over a `base` profile holding the exact node and pnpm pins) and the `production`
- *          submit profile on the Play internal track.
+ *          the channel of its name, and `simulator`, the preview build for the iOS simulator and as an Android APK,
+ *          STA-265) over a `base` profile holding the exact node and pnpm pins, and the `production` submit profile
+ *          on the Play internal track.
  * Boundary: pure. Keeps every other key of `base`; the App Store Connect app id of the submit profile is ADR 0480's
  *           `store eas-submit` step's. Signing is EAS-managed (no credentials key, ADR 0482 decision 3).
  * Runtime: node
- * Governing contract: ADR 0482 (decision 1), ADR 0180 and ADR 0344 (EAS builds and channels); STA-1621.
+ * Governing contract: ADR 0482 (decision 1), ADR 0180 and ADR 0344 (EAS builds and channels); STA-1621; STA-265
+ *                     (FR-004).
  */
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 
@@ -72,6 +74,11 @@ export function easJsonOf(
         distribution: "internal",
         channel: "preview",
         android: { buildType: "apk" },
+      },
+      // The launch check and the store-screenshot capture install this Release build on a simulator and an emulator.
+      simulator: {
+        extends: "preview",
+        ios: { simulator: true },
       },
       [toolchain.channel]: { extends: "base", autoIncrement: true, channel: toolchain.channel },
     },

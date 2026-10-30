@@ -7,7 +7,8 @@
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
- *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), and the publish step (`publishProduct`,
+ *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the mobile launch check (`launchCheckJob`,
+ *          `runLaunchCheck`, STA-265), and the publish step (`publishProduct`,
  *          `publishShell`, `promoteCanary`, `canaryVerdict`, `checkShellCompatibility`, `checkOpsReview`,
  *          `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`) with the
  *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07), and the
@@ -47,6 +48,7 @@ export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
+export { LAUNCH_CHECK_DEFAULTS } from "#node/constants/launch-check-defaults.constant";
 export { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 export { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
 export { MOBILE_ONBOARD_SETTINGS } from "#node/constants/mobile-onboard-settings.constant";
@@ -72,9 +74,11 @@ export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
+export { launchCheckJob } from "#node/functions/launch-check-job.function";
 export { readRunway } from "#node/functions/read-runway.function";
 export { runCommand } from "#node/functions/run-command.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
+export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
@@ -131,5 +135,7 @@ export type { MobileOnboard } from "#node/types/mobile-onboard.type";
 export type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
 export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
+export type { LaunchCheckJob } from "#node/types/launch-check-job.type";
+export type { LaunchCheckRequest } from "#node/types/launch-check-request.type";
 export type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.type";
 export type { ScreenshotCaptureRequest } from "#node/types/screenshot-capture-request.type";

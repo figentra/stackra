@@ -50,6 +50,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                                                              | dry runs: every command and KV write recorded, local outputs still written                                                                                             |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                                                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check                                                                 |
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …                                           | the store-screenshot capture job on a Mac CI runner                                                                                                                    |
+| `./node`    | `launchCheckJob(request)`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`, `LaunchCheckJob`, `LaunchCheckRequest`                                                | the mobile launch check: Maestro flows on a CI simulator or emulator (STA-265)                                                                                         |
 | `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
 | `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                                                  | the shell canary list and health-gated promotion of release and shell canaries                                                                                         |
 | `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                                                                | the shell compatibility gate and the ops second-reviewer gate                                                                                                          |
@@ -266,6 +267,22 @@ the demo-data simulator build, and per locale launch in that language, open the 
 overrides any of them. `runScreenshotCapture(job, repository)` runs exactly that list, on a Mac CI runner only (never a
 developer's Mac). Not built: the CI workflow that schedules it (it needs a Mac runner), and the app's handling of the
 two links (the mobile template line's).
+
+## The mobile launch check
+
+`launchCheckJob` (`./node`) launches the real app before anyone can promote it (STA-265). For one app of the root
+runway's `mobile` and one platform it defines the commands that install the Release simulator build (the `simulator`
+EAS profile `easJsonOf` writes: a `.app` for the iOS simulator, an `.apk` for Android) and run each Maestro flow of the
+template line checkout with the app's store id as `APP_ID` (`mobileIdsOf`), writing a JUnit report and the flow's
+screenshots to `.stackra/launch-check/<app>/<platform>/`. iOS boots and shuts down the simulator on the capture job's
+Mac runner; Android installs on the emulator the workflow started on a Linux runner with KVM (the pinned
+`reactivecircus/android-emulator-runner` step). The default flow is os/mobile@3's `.maestro/launch.yaml`: cold launch,
+the `stackra-launch-ready` marker within 60 seconds, no red screen or fatal error text. `LAUNCH_CHECK_DEFAULTS` holds
+the runners, simulator, flows and folder; a request overrides any of them, and a capability adds its flow to `flows`.
+`runLaunchCheck(job, repository)` runs exactly that list and fails at the first failing command, so the promote job
+that `needs` it is blocked. It runs on a template line release and on a product's preview deploy when the app or its
+line changed, never on every push (Maestro is pinned in the runner's `mise.toml`; macOS minutes are billed). On the
+capture job's runner it runs before `runScreenshotCapture`, from the same build.
 
 ## The publish step
 
