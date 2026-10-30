@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
- *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy and mobile onboard
- *          commands (ADR 0482), the db commands, the seed-pack
+ *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
+ *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
@@ -50,6 +50,7 @@ import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
 import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
 import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
+import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -98,6 +99,7 @@ export const COMMANDS: readonly CliCommand[] = [
   DEPLOY_COMMAND,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
+  PREVIEW_SERVE_COMMAND,
   OPS_BOOTSTRAP_OPERATOR_COMMAND,
   LS_COMMAND,
   TESTBED_COMMAND,

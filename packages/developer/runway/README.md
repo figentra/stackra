@@ -232,6 +232,15 @@ const result = await onboardMobile({
 result.steps.filter((step) => step.state === "manual");
 ```
 
+## The local edge
+
+`previewServe` (`./node`, `stackra preview serve --surface console [--api http://127.0.0.1:4000]`) serves one built web
+surface on `127.0.0.1` as the edge Worker would. It writes the bundle's `release:` row and the shell's `shell:` row into
+`LocalEdgeKvDriver`'s file (`.stackra/preview/edge-kv.json`) with every URL on its own origin, renders the page (import
+map, startup record, modulepreload, stylesheets), serves the bundle and shell files under `/assets/`, and proxies `/api`
+(or `--api-prefix`) to `--api`. Clients call the page's own origin, so pointing the API is a runtime flag, not a rebuild.
+The testbed's console e2e runs on it (STA-1676).
+
 ## The brand step
 
 `runBrandStep` (`./node`) runs `@stackra/brand-kit` (its `stackra-brand-kit` binary, on the CI job's PATH; runway takes
