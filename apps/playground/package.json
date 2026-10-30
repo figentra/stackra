@@ -43,7 +43,6 @@
     "brand:pull": "node ../../tools/scripts/brand-pull.mjs",
     "predev": "pnpm brand:pull",
     "dev": "vite --port 3710 --strictPort",
-    "prebuild": "pnpm brand:pull",
     "build": "vite build",
     "preview": "vite preview --port 3710 --strictPort",
     "typecheck": "tsc --noEmit",

@@ -46,7 +46,6 @@
     "ios": "expo run:ios",
     "preandroid": "pnpm brand:pull",
     "android": "expo run:android",
-    "prebuild": "pnpm brand:pull",
     "build": "expo export --platform ios --platform android --output-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
