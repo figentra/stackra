@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c7685f87012f1a47",
+    "hash": "99ded00247e37faf",
     "propsFiles": ["ui/src/native/highlight/highlight.props.ts"]
   },
   "importLine": "import { Highlight } from \"@stackra/ui/native\";",
@@ -10,7 +10,7 @@
       "name": "Highlight",
       "props": [
         {
-          "description": "The text.",
+          "description": "The text to search and mark.",
           "name": "children",
           "required": true,
           "source": "stackra",

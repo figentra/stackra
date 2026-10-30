@@ -20,6 +20,7 @@ export interface CodeBlockContractProps {
   readonly title?: string | undefined;
   /** Several files, one tab each (`title`, `code`, `language`); replaces `code`, `title` and `language`. */
   readonly files?: readonly CodeFile[] | undefined;
+  /** Shows a number beside each line when true. */
   readonly showLineNumbers?: boolean | undefined;
   /** Lines to highlight, from 1: numbers and ranges such as `[2, "4-6"]`. */
   readonly highlightLines?: readonly (number | `${number}-${number}`)[] | undefined;

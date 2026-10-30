@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3068e5ddd4a2b6d9",
+    "hash": "008421c3d95a9416",
     "propsFiles": ["ui/src/native/inline-select/inline-select.props.ts"]
   },
   "importLine": "import { InlineSelect } from \"@stackra/ui/native\";",
@@ -19,7 +19,7 @@
       "name": "InlineSelect",
       "props": [
         {
-          "description": "The choices.",
+          "description": "The choices the control offers.",
           "name": "items",
           "required": true,
           "source": "stackra",

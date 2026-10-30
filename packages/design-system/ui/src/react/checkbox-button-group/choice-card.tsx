@@ -36,14 +36,14 @@ export function ChoiceCard({
         className={
           cn(
             "mt-0.5 grid size-5 shrink-0 place-items-center border-2",
-            mark === "radio" ? "rounded-full" : "rounded-md",
+            mark === "radio" ? "rounded-[var(--radius-pill)]" : "rounded-[var(--radius-control)]",
             isSelected ? "border-accent bg-accent text-accent-foreground" : "border-field-border",
           ) ?? ""
         }
       >
         {isSelected ? (
           mark === "radio" ? (
-            <span className="size-2 rounded-full bg-accent-foreground" />
+            <span className="size-2 rounded-[var(--radius-pill)] bg-accent-foreground" />
           ) : (
             <Icon name="check" size="sm" />
           )

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Table. */
+/** The Table entry of the component registry. */
 export const FREE_TABLE: ComponentEntry = {
   slug: "table",
   tier: "free",

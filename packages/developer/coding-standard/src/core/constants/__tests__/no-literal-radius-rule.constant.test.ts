@@ -28,6 +28,8 @@ tester.run(
     valid: [
       'const a = <Card className="p-4 gap-2" />;',
       'const b = "Buttons with rounded corners";',
+      'const g = <div className="rounded-[var(--radius-container)] md:rounded-e-none rounded-[inherit]" />;',
+      'const h = cn("rounded-t-[max(0px,calc(var(--radius-control)-0.25rem))]");',
       'const c = { borderRadius: "var(--radius-field)" };',
       "const d = { borderRadius: theme.radius.field };",
       "const e = { padding: 8, borderWidth: 1 };",
@@ -48,6 +50,10 @@ tester.run(
       {
         code: "const d = `gap-1 ${x} rounded-[12px]`;",
         errors: [{ messageId: "roundedClass", data: { token: "rounded-[12px]" } }],
+      },
+      {
+        code: 'const i = <div className="rounded-[var(--radius-pill)] rounded-lg" />;',
+        errors: [{ messageId: "roundedClass", data: { token: "rounded-lg" } }],
       },
       {
         code: "const e = { borderRadius: 12 };",

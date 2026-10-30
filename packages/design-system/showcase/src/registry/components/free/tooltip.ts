@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tooltip. */
+/** The Tooltip entry of the component registry. */
 export const FREE_TOOLTIP: ComponentEntry = {
   slug: "tooltip",
   tier: "free",

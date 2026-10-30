@@ -8,6 +8,7 @@
 
 /** One step of a funnel chart. */
 export interface FunnelStage {
+  /** A stable id, unique within the chart. */
   readonly key: string;
   /** The step's name: "Visited", "Added to cart", "Paid". */
   readonly label: string;

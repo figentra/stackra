@@ -7,4 +7,11 @@
  */
 
 /** The icon of each scheme choice. */
-export const SCHEME_ICONS = { light: "sun", dark: "moon", system: "monitor" } as const;
+export const SCHEME_ICONS = {
+  /** The icon of the light scheme. */
+  light: "sun",
+  /** The icon of the dark scheme. */
+  dark: "moon",
+  /** The icon of following the system scheme. */
+  system: "monitor",
+} as const;

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "be13063b52253fb6",
+    "hash": "1cff8a83f425eb01",
     "propsFiles": ["ui/src/native/comment-thread/comment-thread.props.ts"]
   },
   "importLine": "import { CommentThread } from \"@stackra/ui/native\";",
@@ -26,7 +26,7 @@
       "name": "CommentThread",
       "props": [
         {
-          "description": "",
+          "description": "The comments to show, oldest first.",
           "name": "comments",
           "required": true,
           "source": "stackra",
@@ -40,7 +40,7 @@
           "type": "readonly CommentPerson[]"
         },
         {
-          "description": "",
+          "description": "True when the thread is marked resolved.",
           "name": "isResolved",
           "required": false,
           "source": "stackra",

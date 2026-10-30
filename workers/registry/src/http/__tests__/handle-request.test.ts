@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: end-to-end tests of the registry over fakes (ADR 0453 decisions 4 to 12): the landing page, the OIDC
+ * Purpose: end-to-end tests of the registry over fakes (ADR 0453 decisions 4 to 12): the browser's root, the OIDC
  *          exchange, publish and its refusals, packuments (full, abbreviated, KV cached and dropped), versions, tarballs
  *          and their cache headers, signatures against /-/npm/v1/keys, attestations, dist-tags, deprecation, the refused
  *          routes, the scope read rules through the licence port, whoami and the catalogue API.
@@ -49,13 +49,11 @@ describe("handleRequest", () => {
   });
 
   describe("fixed routes", () => {
-    it("serves the branded landing page at / for GET only", async () => {
+    it("serves the registry browser at / for GET only", async () => {
       const response = await registry.request("/");
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
-      const page = await response.text();
-      expect(page).toContain("<title>Stackra registry</title>");
-      expect(page).toContain("@stackra:registry=https://npm.stackra.figentra.com/");
+      expect(await response.text()).toContain("<title>Stackra registry</title>");
       expect((await registry.request("/", { method: "POST", body: {} })).status).toBe(405);
     });
 

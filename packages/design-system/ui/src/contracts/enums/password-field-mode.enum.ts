@@ -8,6 +8,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the modes carry no labels.
+/** The kinds of secret a password field can take. */
 export const PasswordFieldMode = Object.freeze(["password", "pin"] as const);
 
 /** One password field mode. */

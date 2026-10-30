@@ -8,7 +8,10 @@
 
 /** The three pillars, already translated. */
 export interface PillarBandProps {
+  /** What the component is. */
   readonly what: string;
+  /** When to use the component. */
   readonly when: string;
+  /** How to use the component. */
   readonly how: string;
 }

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Surface. */
+/** The Surface entry of the component registry. */
 export const FREE_SURFACE: ComponentEntry = {
   slug: "surface",
   tier: "free",

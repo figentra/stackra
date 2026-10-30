@@ -54,7 +54,7 @@ function Sample({ buttonLabel, title, body, ...drawerProps }: SampleProps) {
   );
 }
 
-/** Drawer: Dismissal. */
+/** The Drawer demo: dismissal. */
 export default function Dismissal() {
   const t = useCatalogueText(MESSAGES.en);
   return (

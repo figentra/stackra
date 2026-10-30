@@ -100,8 +100,8 @@ const FRAME = [
 /** The panel's shape on each edge: floating clear of the edges, or flush. */
 const SHAPE = {
   inset: {
-    side: "m-2 h-[calc(100%-1rem)] max-w-[calc(100%-1rem)] rounded-3xl",
-    across: "m-2 w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] rounded-3xl",
+    side: "m-2 h-[calc(100%-1rem)] max-w-[calc(100%-1rem)] rounded-[var(--radius-container)]",
+    across: "m-2 w-[calc(100%-1rem)] max-h-[calc(100%-1rem)] rounded-[var(--radius-container)]",
   },
   flush: { side: "h-full max-w-full rounded-none", across: "" },
 } as const;
@@ -269,7 +269,7 @@ function DrawerRoot({
             {edge === "bottom" && snapPoints && snapPoints.length > 1 ? (
               <button
                 type="button"
-                className="mx-auto flex h-6 w-16 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-focus"
+                className="mx-auto flex h-6 w-16 items-center justify-center rounded-[var(--radius-pill)] focus-visible:outline-2 focus-visible:outline-focus"
                 aria-label={t(UI_KEYS.ui.drawer.resize)}
                 onClick={() => setSnap((current) => (current + 1) % snapPoints.length)}
               >

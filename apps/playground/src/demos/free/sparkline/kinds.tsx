@@ -16,7 +16,7 @@ const K = SPARKLINE_KEYS.sparkline;
 /** Twelve weeks of revenue, in thousands. */
 const WEEKS = [12, 14, 13, 17, 16, 19, 18, 22, 21, 24, 23, 27];
 
-/** Sparkline: kinds. */
+/** The Sparkline demo: kinds. */
 export default function Kinds() {
   const t = useCatalogueText(MESSAGES.en);
   const kinds = [

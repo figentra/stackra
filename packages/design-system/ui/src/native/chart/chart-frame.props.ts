@@ -28,7 +28,8 @@ export interface ChartFrameProps {
   readonly showComparison?: boolean | undefined;
   /** The pressed row's readout, above the plot. */
   readonly readout?: ReactNode;
+  /** Extra classes for the frame container. */
   readonly className?: string | undefined;
-  /** The plot. */
+  /** The plot drawn inside the frame. */
   readonly children: ReactNode;
 }

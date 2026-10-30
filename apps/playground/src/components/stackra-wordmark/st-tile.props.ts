@@ -8,6 +8,6 @@
 
 /** Props of {@link StTile}. */
 export interface StTileProps {
-  /** Sizing classes. */
+  /** Classes that size the tile. */
   className?: string;
 }

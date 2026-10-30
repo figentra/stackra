@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Page header. */
+/** The Page header entry of the component registry. */
 export const FREE_PAGE_HEADER: ComponentEntry = {
   slug: "page-header",
   tier: "free",

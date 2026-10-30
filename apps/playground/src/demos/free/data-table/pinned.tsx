@@ -13,7 +13,20 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 /** Data table: Pinned columns. */
 export default function Pinned() {
   const { orders, columns, renderCell, t, K } = useGulfOrders(12);
-  const collection = useCollection({ columns, items: orders, initialState: { columns: columns.map((column) => ({ id: column.id, ...(column.id === "order" ? { pin: "start" as const } : column.id === "total" ? { pin: "end" as const } : {}) })) } });
+  const collection = useCollection({
+    columns,
+    items: orders,
+    initialState: {
+      columns: columns.map((column) => ({
+        id: column.id,
+        ...(column.id === "order"
+          ? { pin: "start" as const }
+          : column.id === "total"
+            ? { pin: "end" as const }
+            : {}),
+      })),
+    },
+  });
   return (
     <div className="grid gap-3">
       <Text tone="muted">{t(K.pinned_hint)}</Text>

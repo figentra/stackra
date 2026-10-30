@@ -8,6 +8,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the orders carry no labels.
+/** The orders a chart can sort its rows in. */
 export const ChartSort = Object.freeze(["value-desc", "value-asc", "label"] as const);
 
 /** One order of a chart's categories. */

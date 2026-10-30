@@ -29,10 +29,12 @@ export function checkMember(member: {
     | { readonly extends?: string | readonly string[]; readonly tags?: readonly string[] }
     | undefined;
   readonly tsconfig?: { readonly extends?: string | readonly string[] } | undefined;
+  /** False in a product repository, whose members carry the product's names (ADR 0349). */
+  readonly stackra?: boolean | undefined;
 }): string[] {
-  const { dir, pkg, turbo, tsconfig } = member;
+  const { dir, pkg, turbo, tsconfig, stackra = true } = member;
   const out: string[] = [];
-  const want = expectedName(dir);
+  const want = stackra ? expectedName(dir) : undefined;
   if (want && pkg.name !== want) out.push(`package name ${pkg.name} must be ${want}`);
 
   for (const field of DEPENDENCY_FIELDS) {

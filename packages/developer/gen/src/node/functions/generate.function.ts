@@ -13,9 +13,9 @@
  *           files (when the clients target itself is clean) and the manifest (when the manifest pass is clean). The
  *           committed `stackra.manifest.json` is read first, so its identities stay locked. An authored root
  *           `vitest.config.ts` (no generated notice) is never overwritten: one that imports `./.stackra/vitest.config`
- *           is kept and the shim skipped; any other is refused as `shim_authored` (STA-1296, STA-1297), and so is an
- *           authored root `tsdown.config.ts` that does not import `./.stackra/tsdown.config` when gen writes one
- *           (STA-1306). A root `*.extend.ts` hatch outside the closed set (vite, expo, metro, desktop, pwa) or without
+ *           is kept and the shim skipped; any other is refused as `shim_authored` (STA-1296, STA-1297), and the root
+ *           `tsdown.config.ts` the same way when gen writes a tsdown config (STA-1306). A root `*.extend.ts` hatch
+ *           outside the closed set (vite, expo, metro, desktop, pwa) or without
  *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
  *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
  *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
@@ -39,7 +39,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
-import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
+import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -247,12 +247,29 @@ export async function generate(
           "shim_authored",
           config,
           `an authored ${config} sits at the member root and does not import ./.stackra/${tool}.config, so the generated config never loads`,
-          `import the generated config and merge it: \`import generated from "./.stackra/${tool}.config"\` and extend it, or delete the file${tool === "vitest" ? " so gen writes the shim" : ""}`,
+          `import the generated config and merge it: \`import generated from "./.stackra/${tool}.config"\` and extend it, or delete the file so gen writes the shim`,
         ),
       );
-    else if (config === ROOT_VITEST_SHIM)
-      files = files.filter((file) => file.path !== ROOT_VITEST_SHIM);
+    // An authored root config that loads the generated one is kept, and the shim is not written over it; an authored
+    // tsdown config sets its own `dts`, so the declaration tsconfig goes with the shim.
+    else
+      files = files.filter(
+        (file) => file.path !== config && !(tool === "tsdown" && file.path === ROOT_DTS_TSCONFIG),
+      );
   }
+  if (
+    files.some((file) => file.path === ROOT_DTS_TSCONFIG) &&
+    existsSync(join(root, ROOT_DTS_TSCONFIG)) &&
+    !readFileSync(join(root, ROOT_DTS_TSCONFIG), "utf8").includes(GENERATED_NOTICE)
+  )
+    errors.push(
+      refusal(
+        "shim_authored",
+        ROOT_DTS_TSCONFIG,
+        `an authored ${ROOT_DTS_TSCONFIG} sits at the member root, where gen writes the declaration build's tsconfig`,
+        "delete it so gen writes it, or author a root tsdown.config.ts that imports ./.stackra/tsdown.config.ts and sets its own `dts`",
+      ),
+    );
   // The Expo config is gen's alone: an authored app.json or app.config.ts at the root would shadow or be overwritten.
   if (files.some((file) => file.path === "app.config.ts")) {
     if (existsSync(join(root, "app.json")))

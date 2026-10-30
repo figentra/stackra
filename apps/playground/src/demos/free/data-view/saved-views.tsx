@@ -27,7 +27,9 @@ export default function SavedViews() {
         state: {
           filter: {
             match: "all",
-            conditions: [{ id: "s", field: "status", operator: "equals", value: t(K.status_pending) }],
+            conditions: [
+              { id: "s", field: "status", operator: "equals", value: t(K.status_pending) },
+            ],
           },
         },
       },
@@ -35,7 +37,10 @@ export default function SavedViews() {
         id: "riyadh",
         label: t(K.view_riyadh),
         state: {
-          filter: { match: "all", conditions: [{ id: "c", field: "city", operator: "equals", value: t(K.city_0) }] },
+          filter: {
+            match: "all",
+            conditions: [{ id: "c", field: "city", operator: "equals", value: t(K.city_0) }],
+          },
           sort: [{ column: "total", direction: "descending" }],
         },
         isShared: true,
@@ -46,7 +51,9 @@ export default function SavedViews() {
         state: {
           filter: {
             match: "all",
-            conditions: [{ id: "w", field: "channel", operator: "equals", value: t(K.channel_whatsapp) }],
+            conditions: [
+              { id: "w", field: "channel", operator: "equals", value: t(K.channel_whatsapp) },
+            ],
           },
           layout: "cards",
         },

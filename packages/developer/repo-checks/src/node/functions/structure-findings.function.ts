@@ -160,17 +160,18 @@ export async function structureFindings(
   );
   for (const p of files.filter(isAppSource))
     report("window-sizing", "", checkWindowSizing(p, text(p)));
+  // ADR 0453 decision 11 (amendment of 2026-10-27): the member metadata rules are the Stackra repository's own.
+  const isStackraRepo =
+    (JSON.parse(maybe("package.json") ?? "{}") as PackageManifest).name === "stackra";
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE (in the docs app since ADR 0302).
   if (
+    isStackraRepo &&
     existsSync(join(root, "apps/docs")) &&
     !existsSync(join(root, "apps/docs/src/assets/brand/NOTICE"))
   )
     report("brand-notice", "apps/docs", ["src/assets/brand/NOTICE missing (ADR 0024)"]);
 
   const rootLicense = maybe("LICENSE");
-  // ADR 0453 decision 11 (amendment of 2026-10-27): the member metadata rules are the Stackra repository's own.
-  const isStackraRepo =
-    (JSON.parse(maybe("package.json") ?? "{}") as PackageManifest).name === "stackra";
   const manifestSchema = isStackraRepo ? await loadManifestSchema(root) : undefined;
   if (isStackraRepo && !manifestSchema) {
     // CI builds before it validates, as for runway; locally the other metadata rules still run.
@@ -195,6 +196,7 @@ export async function structureFindings(
       checkMember({
         dir,
         pkg,
+        stackra: isStackraRepo,
         turbo:
           dir === ""
             ? undefined
@@ -227,6 +229,7 @@ export async function structureFindings(
           agents: read("AGENTS.md"),
           licenseText: read("LICENSE"),
           rootLicense,
+          stackra: isStackraRepo,
         }),
       );
     if (tierFor(dir) === "tier:service")

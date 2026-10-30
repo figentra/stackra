@@ -138,7 +138,7 @@ function CodeFrame({
   return (
     <View
       className={[
-        "w-full overflow-hidden rounded-xl border border-separator bg-surface-secondary",
+        "w-full overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface-secondary",
         className,
       ]
         .filter(Boolean)

@@ -13,15 +13,22 @@ import type { Platform } from "#src/enums/platform.enum";
 export interface SearchDoc {
   /** The entry key, "free/button". */
   readonly key: string;
+  /** The registry tier of the entry. */
   readonly tier: ComponentTier;
+  /** The entry's category. */
   readonly category: ComponentCategory;
+  /** The platforms the entry ships on. */
   readonly platforms: readonly Platform[];
   /** "en" or "ar". */
   readonly lang: string;
+  /** The entry's title in this locale. */
   readonly title: string;
+  /** The entry's description in this locale. */
   readonly description: string;
+  /** Extra words the entry is found by. */
   readonly keywords: readonly string[];
   /** Section and example headings. */
   readonly headings: readonly string[];
+  /** The names of the entry's props. */
   readonly propNames: readonly string[];
 }

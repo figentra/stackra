@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Sunburst chart. */
+/** The Sunburst chart entry of the component registry. */
 export const FREE_SUNBURST_CHART: ComponentEntry = {
   slug: "sunburst-chart",
   tier: "free",

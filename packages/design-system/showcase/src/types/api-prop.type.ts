@@ -8,9 +8,13 @@
 
 /** One prop, render prop, event or animation option of a part. */
 export interface ApiProp {
+  /** The member's name. */
   readonly name: string;
+  /** The member's type as written. */
   readonly type: string;
+  /** The default value, when there is one. */
   readonly default?: string;
+  /** True when the member must be passed. */
   readonly required: boolean;
   /** English; Arabic comes from `api::<key>.<Part>.<prop>`. */
   readonly description: string;
@@ -18,5 +22,6 @@ export interface ApiProp {
   readonly source: "stackra" | "heroui" | "react-aria";
   /** The HeroUI prop this one replaces ("isPending" on our "isLoading"). */
   readonly replaces?: string;
+  /** The deprecation note, when the member is deprecated. */
   readonly deprecated?: string;
 }

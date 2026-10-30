@@ -130,7 +130,7 @@ export function Sidebar({
               <SlotIcon icon={item.icon} />
             )}
             {hasBadge ? (
-              <View className="absolute end-2 top-2 size-2 rounded-full bg-accent" />
+              <View className="absolute end-2 top-2 size-2 rounded-[var(--radius-pill)] bg-accent" />
             ) : null}
           </Pressable>
         );

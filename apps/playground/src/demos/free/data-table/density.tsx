@@ -17,11 +17,18 @@ const DENSITIES: readonly CollectionDensity[] = ["compact", "normal", "roomy"];
 /** Data table: Density. */
 export default function Density() {
   const { orders, columns, renderCell, t, K } = useGulfOrders(8);
-  const collection = useCollection({ columns, items: orders, initialState: {
+  const collection = useCollection({
+    columns,
+    items: orders,
+    initialState: {
       density: "compact",
       // The totals in view: the long text columns are hidden.
-      columns: columns.map((column) => ({ id: column.id, isHidden: ["city", "product", "channel", "date"].includes(column.id) })),
-    } });
+      columns: columns.map((column) => ({
+        id: column.id,
+        isHidden: ["city", "product", "channel", "date"].includes(column.id),
+      })),
+    },
+  });
   return (
     <div className="grid gap-3">
       <SegmentedControl

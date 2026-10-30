@@ -15,7 +15,7 @@ import { SAVE_BAR_DEMO_KEYS } from "#src/demos/free/save-bar/save-bar-demo-keys.
 /** The demo's keys. */
 const K = SAVE_BAR_DEMO_KEYS.demo_free.save_bar;
 
-/** Blocked navigation. */
+/** The SaveBar demo: leaving with unsaved changes is blocked. */
 export default function Attention() {
   const t = useCatalogueText(MESSAGES.en);
   const [name, setName] = useState("");

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Action menu. */
+/** The Action menu entry of the component registry. */
 export const FREE_ACTION_MENU: ComponentEntry = {
   slug: "action-menu",
   tier: "free",

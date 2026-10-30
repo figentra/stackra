@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Link. */
+/** The Link entry of the component registry. */
 export const FREE_LINK: ComponentEntry = {
   slug: "link",
   tier: "free",

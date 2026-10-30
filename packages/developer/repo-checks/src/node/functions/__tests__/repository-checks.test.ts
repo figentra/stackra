@@ -263,6 +263,26 @@ test("sideEffects and exports rules apply to tier:lib only", () => {
   assert.deepEqual(checkMemberFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
 });
 
+/** The package-name findings among `findings`. */
+const packageNameFindings = (findings: string[]): string[] =>
+  findings.filter((finding) => finding.startsWith("package name"));
+
+test("a product repository keeps its own names, licence and publish settings (ADR 0349, ADR 0453)", () => {
+  const pkg = {
+    name: "@figentra/acme-example",
+    description: "x",
+    license: "UNLICENSED",
+    sideEffects: ["./src/landing.ts"],
+  };
+  assert.deepEqual(
+    checkMemberFiles({ ...filesOk, dir: "packages/application/example", pkg, stackra: false }),
+    [],
+  );
+  const member = { dir: "packages/application/example", pkg: { name: pkg.name } };
+  assert.equal(packageNameFindings(checkMember(member)).length, 1);
+  assert.deepEqual(packageNameFindings(checkMember({ ...member, stackra: false })), []);
+});
+
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
   const good = {
     "@stackra/source": "./src/a/index.ts",
@@ -305,14 +325,14 @@ test("transition: a v2 service keeps src/main.ts and an existing stackra.module 
 });
 
 // @covers sta-347:FR-005 sta-347:P-004
-test("transition: a v3 service has stackra.config.ts and src/<dir>.module.ts, no main.ts", () => {
+test("transition: a v3 service has stackra.config.ts, no main.ts, and its module file only when it says something", () => {
   const dir = "services/notes";
   const v3 = ["stackra.config.ts", "src/notes.module.ts", "runway.yaml"];
   assert.equal(isV2Service(v3), false);
   assert.deepEqual(checkService({ dir, pkg: {}, paths: v3 }), []);
+  assert.deepEqual(checkService({ dir, pkg: {}, paths: ["stackra.config.ts", "runway.yaml"] }), []);
   assert.deepEqual(checkService({ dir, pkg: {}, paths: ["src/encore.service.ts"] }), [
     "stackra.config.ts missing (v3 service shape, ADR 0294 R12; a v2 service keeps src/main.ts until STA-344)",
-    "src/notes.module.ts missing (v3 service shape, ADR 0294 R12; a v2 service keeps src/main.ts until STA-344)",
     "src/encore.service.ts: services hold no Encore files; stackra gen generates them (ADR 0124)",
   ]);
 });
@@ -362,6 +382,9 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       ".specify/integration.json",
       "assets/landing/index.json",
       "brand.json",
+      "apps/mobile/brand.json",
+      "apps/playground/src/constants/brand-themes/jute.json",
+      "packages/design-system/showcase/api/react/free/button.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",

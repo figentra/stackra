@@ -8,6 +8,7 @@
 
 /** One step of a waterfall. */
 export interface WaterfallStep {
+  /** A stable id, unique within the chart. */
   readonly key: string;
   /** What changed: "New customers", "Refunds". */
   readonly label: string;

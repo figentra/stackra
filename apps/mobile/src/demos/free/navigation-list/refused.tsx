@@ -14,10 +14,10 @@ import { NAVIGATION_LIST_DEMO_KEYS } from "#src/demos/free/navigation-list/navig
 /** The demo's keys. */
 const K = NAVIGATION_LIST_DEMO_KEYS.demo_free.navigation_list.places;
 
-/** Billing is refused. */
 /** The places do nothing when pressed: the demo shows the list, not the screens. */
 const ignore = (): undefined => undefined;
 
+/** The NavigationList demo: Billing is refused. */
 export default function Refused() {
   const t = useCatalogueText(MESSAGES.en);
   const places: readonly NavigationItem[] = [

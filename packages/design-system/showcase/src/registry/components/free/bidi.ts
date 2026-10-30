@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Bidi. */
+/** The Bidi entry of the component registry. */
 export const FREE_BIDI: ComponentEntry = {
   slug: "bidi",
   tier: "free",

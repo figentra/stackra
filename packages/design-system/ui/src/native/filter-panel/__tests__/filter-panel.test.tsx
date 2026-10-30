@@ -15,7 +15,10 @@ import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import { FilterPanel } from "#native/filter-panel/filter-panel";
 
-const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
+const received = vi.hoisted(() => ({
+  props: {} as Record<string, Record<string, unknown>>,
+  isReduced: false,
+}));
 
 vi.mock("react-native", async () => {
   const { createElement } = await import("react");
@@ -43,7 +46,7 @@ vi.mock("react-native-reanimated", async () => {
     FadeOut: chain,
     LinearTransition: chain,
     SlideInDown: chain,
-    useReducedMotion: () => false,
+    useReducedMotion: () => received.isReduced,
   };
 });
 
@@ -145,6 +148,7 @@ vi.mock("#native/filter-bar/filter-editor", async () => {
   const { createElement } = await import("react");
   return {
     FilterEditor: (props: Record<string, unknown>) => {
+      received.props["editor"] = props;
       const definition = props["definition"] as FilterDefinition;
       return createElement(
         "ul",
@@ -227,5 +231,86 @@ describe("FilterPanel (native)", () => {
     expect(screen.getByText("1 result").closest("[aria-live]")?.getAttribute("aria-live")).toBe(
       "polite",
     );
+  });
+
+  it("sorts by the chosen column and direction, keeping ascending by default", () => {
+    const onQueryChange = vi.fn();
+    render(
+      <FilterPanel
+        query={{ ...QUERY, sort: { column: "due", direction: "descending" } }}
+        onQueryChange={onQueryChange}
+        filters={FILTERS}
+        label="Filter tickets"
+        sortOptions={[{ column: "due", label: "Due" }]}
+      />,
+    );
+    const menu = received.props["menu"] ?? {};
+    expect(menu["value"]).toEqual(["due", "descending"]);
+    const choose = menu["onChange"] as (ids: string[]) => void;
+    choose(["due"]);
+    expect(onQueryChange).toHaveBeenLastCalledWith({
+      ...QUERY,
+      sort: { column: "due", direction: "ascending" },
+    });
+    choose(["due", "descending"]);
+    expect(onQueryChange.mock.lastCall?.[0].sort.direction).toBe("descending");
+    onQueryChange.mockClear();
+    choose(["descending"]);
+    expect(onQueryChange).not.toHaveBeenCalled();
+  });
+
+  it("clears every filter, edits a facet in the drawer and closes it with Done", () => {
+    received.isReduced = true;
+    const onQueryChange = vi.fn();
+    render(
+      <FilterPanel
+        query={QUERY}
+        onQueryChange={onQueryChange}
+        filters={FILTERS}
+        label="Filter tickets"
+        resultCount={3}
+        sortOptions={[{ column: "due", label: "Due" }]}
+        className="x"
+      />,
+    );
+    expect((received.props["menu"] ?? {})["value"]).toEqual([]);
+    act(() => screen.getByRole("button", { name: "Clear all" }).click());
+    expect(onQueryChange).toHaveBeenLastCalledWith({ ...QUERY, filterValues: {} });
+    act(() => screen.getByRole("button", { name: "Filters (1)" }).click());
+    act(() =>
+      (received.props["editor"]?.["onChange"] as ((value: unknown) => void) | undefined)?.(
+        "closed",
+      ),
+    );
+    expect(onQueryChange).toHaveBeenLastCalledWith({
+      ...QUERY,
+      filterValues: { status: "closed" },
+    });
+    act(() => screen.getByRole("button", { name: "Done" }).click());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    received.isReduced = false;
+  });
+
+  it("follows the active view, reports a change of view and ignores an unknown one", () => {
+    const onQueryChange = vi.fn();
+    const onViewChange = vi.fn();
+    render(
+      <FilterPanel
+        query={{ ...QUERY, filterValues: {} }}
+        onQueryChange={onQueryChange}
+        filters={FILTERS}
+        label="Filter tickets"
+        views={[{ id: "open", label: "Open", query: QUERY }]}
+        activeViewId="open"
+        onViewChange={onViewChange}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Filters" })).toBeTruthy();
+    const tabs = received.props["tabs"] ?? {};
+    expect(tabs["selectedKeys"]).toEqual(["open"]);
+    act(() => screen.getByRole("tab", { name: "Open" }).click());
+    expect(onViewChange).toHaveBeenCalledWith("open");
+    (tabs["onSelectionChange"] as (keys: string[]) => void)(["gone"]);
+    expect(onQueryChange).toHaveBeenCalledTimes(1);
   });
 });

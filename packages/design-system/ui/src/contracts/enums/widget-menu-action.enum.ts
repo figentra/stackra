@@ -8,6 +8,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the words live in the ui catalogue.
+/** The entries a widget overflow menu can offer. */
 export const WidgetMenuAction = Object.freeze([
   "csv",
   "png",

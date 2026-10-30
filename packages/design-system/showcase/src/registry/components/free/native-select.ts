@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Native select. */
+/** The Native select entry of the component registry. */
 export const FREE_NATIVE_SELECT: ComponentEntry = {
   slug: "native-select",
   tier: "free",

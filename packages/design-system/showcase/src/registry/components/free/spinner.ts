@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Spinner. */
+/** The Spinner entry of the component registry. */
 export const FREE_SPINNER: ComponentEntry = {
   slug: "spinner",
   tier: "free",

@@ -44,9 +44,12 @@ export function useActionRunner(): ActionRunner {
     async <A extends ActionRef>(
       action: A,
       input: RefInput<A>,
+      options?: { readonly confirmed?: boolean },
     ): Promise<ActionRun<RefOutput<A>>> => {
       const ask = action.texts.confirm;
-      if (ask !== undefined || (action.risk !== undefined && CONFIRMED.has(action.risk))) {
+      // A caller's modal that showed the declared copy was the yes already (ADR 0307 rule 3).
+      const asks = ask !== undefined || (action.risk !== undefined && CONFIRMED.has(action.risk));
+      if (asks && options?.confirmed !== true) {
         const yes = await confirm({
           title: t(PANEL_KEYS.panel.actions.confirm_title),
           ...(ask === undefined

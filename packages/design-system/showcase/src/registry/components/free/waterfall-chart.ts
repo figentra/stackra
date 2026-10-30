@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Waterfall chart. */
+/** The Waterfall chart entry of the component registry. */
 export const FREE_WATERFALL_CHART: ComponentEntry = {
   slug: "waterfall-chart",
   tier: "free",

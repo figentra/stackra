@@ -169,7 +169,7 @@ describe("ToastItem (native)", () => {
       entering: { top: "flip-up", bottom: "flip-down" },
     });
     render(item({ variant: "bubble" }));
-    expect(propsOf("toast")["className"]).toContain("rounded-full");
+    expect(propsOf("toast")["className"]).toContain("rounded-[var(--radius-pill)]");
   });
 
   it("puts the dismiss inside the card at the end of the title row, on the overlay surface", () => {

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "e280114e7eda6938",
+    "hash": "1aa06c047bb5633f",
     "propsFiles": ["ui/src/native/rule-builder/rule-builder.props.ts"]
   },
   "importLine": "import { RuleBuilder } from \"@stackra/ui/native\";",
@@ -9,7 +9,7 @@
     {
       "events": [
         {
-          "description": "",
+          "description": "Called with the new rule after each edit.",
           "name": "onChange",
           "required": true,
           "source": "stackra",
@@ -19,14 +19,14 @@
       "name": "RuleBuilder",
       "props": [
         {
-          "description": "",
+          "description": "The fields a condition can test.",
           "name": "fields",
           "required": true,
           "source": "stackra",
           "type": "readonly RuleField[]"
         },
         {
-          "description": "",
+          "description": "The rule being edited.",
           "name": "value",
           "required": true,
           "source": "stackra",
@@ -40,7 +40,7 @@
           "type": "string"
         },
         {
-          "description": "",
+          "description": "True to show the rule but refuse edits.",
           "name": "isDisabled",
           "required": false,
           "source": "stackra",

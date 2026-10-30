@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Swipeable row. */
+/** The Swipeable row entry of the component registry. */
 export const FREE_SWIPEABLE_ROW: ComponentEntry = {
   slug: "swipeable-row",
   tier: "free",

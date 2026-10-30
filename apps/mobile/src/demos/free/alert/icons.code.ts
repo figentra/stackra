@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/alert/icons.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "icons" demo of the native Alert: `icon` by name instead of the tone\'s, and `false` for none.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Alert, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { ALERT_DEMO_KEYS } from "#src/demos/free/alert/alert-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = ALERT_DEMO_KEYS.demo_free.alert.icons;\n\n/** A bell instead of the tone\'s icon, and no icon at all. */\nexport default function Icons() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-3">\n      <Alert tone="accent" icon="bell" title={t(K.custom)} />\n      <Alert tone="warning" icon={false} title={t(K.none)} />\n    </View>\n  );\n}\n';

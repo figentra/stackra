@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Diff review. */
+/** The Diff review entry of the component registry. */
 export const FREE_DIFF_REVIEW: ComponentEntry = {
   slug: "diff-review",
   tier: "free",

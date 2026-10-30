@@ -13,7 +13,7 @@ import { NUMBER_FIELD_DEMO_KEYS } from "#src/demos/free/number-field/number-fiel
 /** The demo's keys. */
 const K = NUMBER_FIELD_DEMO_KEYS.demo_free.number_field.steppers;
 
-/** No steppers. */
+/** The NumberField demo: a field with no steppers. */
 export default function Steppers() {
   const t = useCatalogueText(MESSAGES.en);
   return <NumberField label={t(K.label)} defaultValue={5} hasSteppers={false} />;

@@ -8,6 +8,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the curves carry no labels.
+/** The shapes a line or area chart can draw between points. */
 export const ChartCurve = Object.freeze(["monotone", "natural", "linear", "step"] as const);
 
 /** One way of joining a series' points. */

@@ -17,5 +17,5 @@ export const ErrorPagePreset = Object.freeze([
   "offline",
 ] as const);
 
-/** One preset. */
+/** One ready-made error page by name. */
 export type ErrorPagePreset = (typeof ErrorPagePreset)[number];

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** File trigger. */
+/** The File trigger entry of the component registry. */
 export const FREE_FILE_TRIGGER: ComponentEntry = {
   slug: "file-trigger",
   tier: "free",

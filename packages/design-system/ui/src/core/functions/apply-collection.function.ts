@@ -47,10 +47,7 @@ export function applyCollection<TItem extends CollectionItem>(
     items.filter(
       (item) =>
         collectionSearchMatches(item, state.search, searched) &&
-        collectionFilterMatches(
-          state.filter,
-          item as unknown as Readonly<Record<string, unknown>>,
-        ),
+        collectionFilterMatches(state.filter, item as unknown as Readonly<Record<string, unknown>>),
     ),
     state.sort,
     locale,

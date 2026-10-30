@@ -9,7 +9,10 @@ import type { ApiProp } from "#src/types/api-prop.type";
 
 /** One hook of an entry. */
 export interface ApiHook {
+  /** The hook's name. */
   readonly name: string;
+  /** The hook's call signature as written. */
   readonly signature: string;
+  /** The members of the hook's return value. */
   readonly returns: readonly ApiProp[];
 }

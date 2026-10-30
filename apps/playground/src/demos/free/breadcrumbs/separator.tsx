@@ -15,7 +15,7 @@ import { BREADCRUMBS_KEYS } from "#src/demos/free/breadcrumbs/breadcrumbs-keys.c
 /** The demo's keys. */
 const K = BREADCRUMBS_KEYS.breadcrumbs;
 
-/** Breadcrumbs: Separator. */
+/** The Breadcrumbs demo: separator. */
 export default function Separator() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

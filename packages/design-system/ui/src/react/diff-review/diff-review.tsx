@@ -59,7 +59,7 @@ export function DiffReview({
           {t(K.accept_all)}
         </Button>
       </div>
-      <ul className="@container m-0 flex list-none flex-col divide-y divide-separator rounded-xl border border-separator p-0">
+      <ul className="@container m-0 flex list-none flex-col divide-y divide-separator rounded-[var(--radius-container)] border border-separator p-0">
         {changes.map((change) => {
           const answer = decisions[change.id];
           return (
@@ -74,12 +74,12 @@ export function DiffReview({
                 <span className="text-xs font-medium text-muted">{change.label}</span>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="sr-only">{t(K.before)}</span>
-                  <bdi className="rounded bg-danger/10 px-1 text-muted line-through">
+                  <bdi className="rounded-[var(--radius-control-inner)] bg-danger/10 px-1 text-muted line-through">
                     {change.before ?? t(K.not_set)}
                   </bdi>
                   <Icon name="arrow-right" size="sm" tone="muted" />
                   <span className="sr-only">{t(K.after)}</span>
-                  <bdi className="rounded bg-success/10 px-1 font-medium">
+                  <bdi className="rounded-[var(--radius-control-inner)] bg-success/10 px-1 font-medium">
                     {change.after ?? t(K.not_set)}
                   </bdi>
                 </div>

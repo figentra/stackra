@@ -28,8 +28,17 @@ export default function Query() {
   });
   return (
     <div className="grid w-full gap-3">
-      <DataView label={t(K.orders)} collection={collection} renderCell={renderCell} layouts={["table", "list"]} />
-      <CodeBlock title={words(E.query)} language="json" code={JSON.stringify(collection.query, null, 2)} />
+      <DataView
+        label={t(K.orders)}
+        collection={collection}
+        renderCell={renderCell}
+        layouts={["table", "list"]}
+      />
+      <CodeBlock
+        title={words(E.query)}
+        language="json"
+        code={JSON.stringify(collection.query, null, 2)}
+      />
     </div>
   );
 }

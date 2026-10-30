@@ -13,7 +13,7 @@ import { CARD_KEYS } from "#src/demos/free/card/card-keys.constant";
 /** The demo's keys. */
 const K = CARD_KEYS.card;
 
-/** Card: Horizontal. */
+/** The Card demo: horizontal. */
 export default function Horizontal() {
   const t = useCatalogueText(MESSAGES.en);
   return (

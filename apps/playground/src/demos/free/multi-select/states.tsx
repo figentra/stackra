@@ -13,7 +13,7 @@ import { MULTI_SELECT_KEYS } from "#src/demos/free/multi-select/multi-select-key
 /** The demo's keys. */
 const K = MULTI_SELECT_KEYS.multi_select;
 
-/** Multi-select: States. */
+/** The Multi-select demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   const items = [

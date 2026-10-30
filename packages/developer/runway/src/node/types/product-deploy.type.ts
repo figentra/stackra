@@ -26,6 +26,8 @@ export type ProductDeploy = {
   readonly seeds: Readonly<Record<string, readonly string[]>>;
   /** Each mobile app's submitted EAS build ids. */
   readonly submitted: Readonly<Record<string, readonly string[]>>;
+  /** Why an app's Android build was held back (no Play release yet), by app key. */
+  readonly held?: Readonly<Record<string, string>>;
   /** The external commands a dry run recorded, in order. */
   readonly planned: readonly DeployStep[];
 };

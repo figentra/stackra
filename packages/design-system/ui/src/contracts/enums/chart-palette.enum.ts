@@ -9,6 +9,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the palettes carry no labels.
+/** The colour sets a chart can paint its series from. */
 export const ChartPalette = Object.freeze(["accent", "categorical"] as const);
 
 /** One palette a chart's series are coloured from. */

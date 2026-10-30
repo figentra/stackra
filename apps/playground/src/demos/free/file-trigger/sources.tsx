@@ -14,7 +14,7 @@ import { FILE_TRIGGER_KEYS } from "#src/demos/free/file-trigger/file-trigger-key
 /** The demo's keys. */
 const K = FILE_TRIGGER_KEYS.file_trigger;
 
-/** FileTrigger: Sources. */
+/** The FileTrigger demo: sources. */
 export default function Sources() {
   const t = useCatalogueText(MESSAGES.en);
   const [count, setCount] = useState(0);

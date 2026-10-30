@@ -14,5 +14,6 @@ import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { DataViewContractProps } from "#contracts/types/data-view-contract-props.type";
 
 /** Props of the native DataView. */
-export type DataViewProps<TItem extends CollectionItem = CollectionItem> = DataViewContractProps<TItem> &
-  Omit<ComponentPropsWithoutRef<typeof View>, keyof DataViewContractProps | "children">;
+export type DataViewProps<TItem extends CollectionItem = CollectionItem> =
+  DataViewContractProps<TItem> &
+    Omit<ComponentPropsWithoutRef<typeof View>, keyof DataViewContractProps | "children">;

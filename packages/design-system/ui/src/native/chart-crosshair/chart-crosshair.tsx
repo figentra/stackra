@@ -17,7 +17,17 @@ import { useDerivedValue } from "react-native-reanimated";
 import type { ChartCrosshairProps } from "#native/chart-crosshair/chart-crosshair.props";
 
 /** One ringed dot on a line series at the scrubbed point. */
-function Dot({ state, dotKey, color, ring }: { state: ChartCrosshairProps["state"]; dotKey: string; color: string; ring: string }) {
+function Dot({
+  state,
+  dotKey,
+  color,
+  ring,
+}: {
+  state: ChartCrosshairProps["state"];
+  dotKey: string;
+  color: string;
+  ring: string;
+}) {
   const y = useDerivedValue(() => state.y[dotKey]?.position.value ?? -100);
   return (
     <Group>
@@ -50,7 +60,13 @@ export function ChartCrosshair(props: ChartCrosshairProps): ReactElement {
         <DashPathEffect intervals={[4, 4]} />
       </Line>
       {dots.map((dot) => (
-        <Dot key={dot.key} state={state} dotKey={dot.key} color={dot.color} ring={props.ringColor} />
+        <Dot
+          key={dot.key}
+          state={state}
+          dotKey={dot.key}
+          color={dot.color}
+          ring={props.ringColor}
+        />
       ))}
     </Group>
   );

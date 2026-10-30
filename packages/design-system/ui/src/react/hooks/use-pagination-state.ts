@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `usePaginationState(props)`, the state every runtime's Pagination shares: the page and page size
  *          (controlled or not), the page count, the shown range and the moves, each clamped to the pages there are.
- * Boundary: a React hook with no rendering; the runtimes draw the buttons, the size choice and the jump.
- * Runtime: isomorphic (the web and native Pagination both use it)
+ * Boundary: a React hook with no rendering; the runtimes draw the buttons, the size choice and the jump; the web and native Pagination both use it.
+ * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); STA-1371 (wave A, owner request 2026-10-29).
  */
 import { useState } from "react";

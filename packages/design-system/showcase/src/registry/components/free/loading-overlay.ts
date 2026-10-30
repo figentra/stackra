@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Loading overlay. */
+/** The Loading overlay entry of the component registry. */
 export const FREE_LOADING_OVERLAY: ComponentEntry = {
   slug: "loading-overlay",
   tier: "free",

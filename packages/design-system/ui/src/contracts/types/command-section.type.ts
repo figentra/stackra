@@ -9,7 +9,10 @@ import type { CommandItem } from "#contracts/types/command-item.type";
 
 /** A group of commands. */
 export interface CommandSection {
+  /** A stable id, unique within the palette. */
   readonly id: string;
+  /** The heading shown over the group. */
   readonly title: string;
+  /** The commands in the group, in order. */
   readonly items: readonly CommandItem[];
 }

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Navigation list. */
+/** The Navigation list entry of the component registry. */
 export const FREE_NAVIGATION_LIST: ComponentEntry = {
   slug: "navigation-list",
   tier: "free",

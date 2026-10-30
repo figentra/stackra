@@ -55,7 +55,7 @@ export function ProgressButton({
     <View
       className={
         cn(
-          "relative overflow-hidden rounded-full",
+          "relative overflow-hidden rounded-[var(--radius-pill)]",
           isFullWidth ? "self-stretch" : "self-start",
           className,
         ) ?? ""

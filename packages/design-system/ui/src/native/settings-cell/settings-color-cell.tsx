@@ -33,7 +33,7 @@ export function SettingsColorCell({
       control={
         current ? (
           <View
-            className="size-5 rounded-full border border-border"
+            className="size-5 rounded-[var(--radius-pill)] border border-border"
             style={{ backgroundColor: current }}
           />
         ) : null

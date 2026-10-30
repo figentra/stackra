@@ -15,7 +15,7 @@ import { SECTION_KEYS } from "#src/demos/free/section/section-keys.constant";
 /** The demo's keys. */
 const K = SECTION_KEYS.section;
 
-/** Section: Arabic. */
+/** The Section demo: arabic. */
 export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   return (

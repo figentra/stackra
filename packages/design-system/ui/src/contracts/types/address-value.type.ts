@@ -12,7 +12,7 @@ export interface AddressValue {
   readonly line1: string;
   /** The second line: building, unit, district. */
   readonly line2?: string | undefined;
-  /** The city. */
+  /** The city or town name. */
   readonly city: string;
   /** The region, province or state. */
   readonly region?: string | undefined;

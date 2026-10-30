@@ -31,7 +31,7 @@ function stepped(column: WheelPickerColumn, from: number, step: number): number 
   return from;
 }
 
-/** One wheel. */
+/** Draws one scrolling wheel of a wheel picker. */
 export function WheelColumn({
   column,
   selected,
@@ -105,7 +105,7 @@ export function WheelColumn({
         window.clearTimeout(timer.current);
         timer.current = window.setTimeout(settle, SETTLE_MS);
       }}
-      className="relative min-w-14 flex-auto snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-xl outline-none [scrollbar-width:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+      className="relative min-w-14 flex-auto snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[var(--radius-container)] outline-none [scrollbar-width:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
       style={{
         height: WHEEL_ROW * visibleCount,
         paddingBlock: (WHEEL_ROW * (visibleCount - 1)) / 2,

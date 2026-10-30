@@ -13,6 +13,7 @@ export interface PropCardProps {
   readonly prop: ApiProp;
   /** The entry key ("free/button") and part ("Button") the Arabic overlay is keyed by. */
   readonly entryKey: string;
+  /** The part the prop belongs to, such as "Button". */
   readonly part: string;
   /** False for a render prop, which has no default. Defaults to true. */
   readonly hasDefault?: boolean;

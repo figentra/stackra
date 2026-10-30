@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Line chart. */
+/** The Line chart entry of the component registry. */
 export const FREE_LINE_CHART: ComponentEntry = {
   slug: "line-chart",
   tier: "free",
@@ -17,11 +17,7 @@ export const FREE_LINE_CHART: ComponentEntry = {
   exportName: "LineChart",
   parts: ["LineChart"],
   hero: {},
-  examples: [
-    { id: "multiple", card: true },
-    { id: "dots" },
-    { id: "linear" },
-  ],
+  examples: [{ id: "multiple", card: true }, { id: "dots" }, { id: "linear" }],
   related: ["free/area-chart", "free/bar-chart", "free/sparkline"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["line", "trend", "time series"],

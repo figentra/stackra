@@ -53,7 +53,7 @@ function Sample({ buttonLabel, title, body, ...modalProps }: SampleProps) {
   );
 }
 
-/** Modal: Sizes. */
+/** The Modal demo: sizes. */
 export default function Sizes() {
   const t = useCatalogueText(MESSAGES.en);
   /** The sizes the modal takes, each with the label of the button that opens it. */

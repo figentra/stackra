@@ -29,7 +29,13 @@ export function ScrollArea({
       orientation={orientation}
       size={fadeSize}
       {...(className ? { className } : {})}
-      style={maxSize === undefined ? undefined : isVertical ? { maxHeight: maxSize } : { maxWidth: maxSize }}
+      style={
+        maxSize === undefined
+          ? undefined
+          : isVertical
+            ? { maxHeight: maxSize }
+            : { maxWidth: maxSize }
+      }
     >
       <ScrollView accessibilityLabel={label} horizontal={!isVertical}>
         {children}

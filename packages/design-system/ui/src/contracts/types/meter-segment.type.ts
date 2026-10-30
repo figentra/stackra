@@ -9,8 +9,12 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 
 /** One part of a stacked meter. */
 export interface MeterSegment {
+  /** A stable id, unique within the meter. */
   readonly key: string;
+  /** The name shown in the legend. */
   readonly label: string;
+  /** The size of this part. */
   readonly value: number;
+  /** Its theme colour; the palette picks one by position by default. */
   readonly color?: ChartColor | undefined;
 }

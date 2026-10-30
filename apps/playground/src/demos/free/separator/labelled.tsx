@@ -13,7 +13,7 @@ import { SEPARATOR_KEYS } from "#src/demos/free/separator/separator-keys.constan
 /** The demo's keys. */
 const K = SEPARATOR_KEYS.separator;
 
-/** Separator: Labelled. */
+/** The Separator demo: labelled. */
 export default function Labelled() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -87,7 +87,7 @@ export function AppShell({
       {isEmbedded ? null : (
         <a
           href={`#${mainId}`}
-          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
+          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded-[var(--radius-control-inner)] focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
         >
           {skipLabel}
         </a>

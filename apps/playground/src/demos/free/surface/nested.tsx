@@ -16,7 +16,7 @@ const K = SURFACE_KEYS.surface;
 /** The padding and radius every sample adds, since the web surface has neither. */
 const BOX = "p-6";
 
-/** Surface: Nested. */
+/** The Surface demo: nested. */
 export default function Nested() {
   const t = useCatalogueText(MESSAGES.en);
   return (

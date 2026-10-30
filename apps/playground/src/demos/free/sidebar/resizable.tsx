@@ -36,7 +36,7 @@ function Brand() {
   );
 }
 
-/** Sidebar: Resizable. */
+/** The Sidebar demo: resizable. */
 export default function Resizable() {
   const t = useCatalogueText(MESSAGES.en);
   const [width, setWidth] = useState(256);

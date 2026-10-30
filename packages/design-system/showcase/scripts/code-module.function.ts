@@ -16,6 +16,8 @@ export function codeModule(demo: string, source: string): string {
     " * Runtime: react-native",
     " * Governing contract: showcase redesign spec (2026-10-27) section 7.2.",
     " */",
+    "",
+    `/** The source text of \`${demo}\`, as the Usage tab shows it. */`,
     `export default ${JSON.stringify(source)};`,
     "",
   ].join("\n");

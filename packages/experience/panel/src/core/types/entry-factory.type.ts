@@ -24,10 +24,14 @@ export interface EntryFactory<R> {
   /** Minor units rendered as money in the currency at `currency`. */
   money: (key: Path<R>, options: { readonly currency: Path<R> }) => EntryBuilder;
 
-  /** A list field as a small table of the item paths `columns`. */
+  /**
+   * A list field as a small table of the item paths `columns`. A `…Minor` column is money in its item's own `currency`,
+   * else in the record's currency at `options.currency`.
+   */
   list: <K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
+    options?: { readonly currency: Path<R> },
   ) => Built<EntryNode>;
 
   /** A titled group of entries. */

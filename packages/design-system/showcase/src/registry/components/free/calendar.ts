@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Calendar. */
+/** The Calendar entry of the component registry. */
 export const FREE_CALENDAR: ComponentEntry = {
   slug: "calendar",
   tier: "free",

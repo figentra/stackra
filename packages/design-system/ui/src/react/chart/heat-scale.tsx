@@ -22,7 +22,7 @@ export function HeatScale({ color }: { readonly color: ChartColor }): ReactEleme
       {[0, 1, 2, 3, 4].map((level) => (
         <span
           key={level}
-          className="size-3 rounded-[3px]"
+          className="size-3 rounded-[var(--radius-control-inner)]"
           style={{ backgroundColor: heatShadeOf(level, color) }}
         />
       ))}

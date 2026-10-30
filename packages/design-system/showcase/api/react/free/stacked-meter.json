@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "842c8ef0c2ea2b8d",
+    "hash": "8b7906f924c87bfe",
     "propsFiles": ["ui/src/react/stacked-meter/stacked-meter.props.ts"]
   },
   "importLine": "import { StackedMeter } from \"@stackra/ui/react\";",
@@ -10,7 +10,7 @@
       "name": "StackedMeter",
       "props": [
         {
-          "description": "",
+          "description": "The parts of the bar, in order.",
           "name": "segments",
           "required": true,
           "source": "stackra",
@@ -31,14 +31,14 @@
           "type": "number"
         },
         {
-          "description": "",
+          "description": "How values are written; plain numbers in the locale by default.",
           "name": "valueFormat",
           "required": false,
           "source": "stackra",
           "type": "NumberFormatOptions"
         },
         {
-          "description": "",
+          "description": "`accent` steps (the default) or the `categorical` set.",
           "name": "palette",
           "required": false,
           "source": "stackra",

@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 
 /** Props shared by the web and native `HoloCard`. */
 export interface HoloCardContractProps {
+  /** The content drawn on the card. */
   readonly children: ReactNode;
   /** The most the card tilts, in degrees; 10 by default. */
   readonly maxTilt?: number | undefined;

@@ -8,8 +8,14 @@
 
 /** The pressed row's title and its values, each with its resolved series colour. */
 export interface ChartReadoutProps {
+  /** The pressed row name, shown as the heading. */
   readonly title: string;
-  readonly items: readonly { readonly label: string; readonly value: string; readonly color: string }[];
+  /** Each series value at the pressed row, with its colour. */
+  readonly items: readonly {
+    readonly label: string;
+    readonly value: string;
+    readonly color: string;
+  }[];
   /** An 8px round dot (the default) or a 4×12 rounded bar, for line series. */
   readonly indicator?: "dot" | "line" | undefined;
 }

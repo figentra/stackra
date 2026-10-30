@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Import dialog. */
+/** The Import dialog entry of the component registry. */
 export const FREE_IMPORT_DIALOG: ComponentEntry = {
   slug: "import-dialog",
   tier: "free",

@@ -15,6 +15,7 @@ export interface PreviewFrameProps {
   readonly label: string;
   /** The direction and language the demo is drawn in; its words follow `lang`'s catalogue. */
   readonly dir: "ltr" | "rtl";
+  /** The language the demo's words are drawn in. */
   readonly lang: "en" | "ar";
   /** The brand layer the frame (and any overlay opened in it) is drawn in; the page's when omitted. */
   readonly brand?: BrandTheme | undefined;

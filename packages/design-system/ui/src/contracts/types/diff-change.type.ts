@@ -8,9 +8,12 @@
 
 /** One reviewed change. */
 export interface DiffChange {
+  /** A stable id, the key of its decision. */
   readonly id: string;
   /** What changes: "Price", "Shipping zone". */
   readonly label: string;
+  /** The value before the change; null when it is added. */
   readonly before: string | null;
+  /** The value after the change; null when it is removed. */
   readonly after: string | null;
 }

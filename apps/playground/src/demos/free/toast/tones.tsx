@@ -17,7 +17,7 @@ const K = TOAST_KEYS.toast;
 /** The row that lays buttons out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Toast: Tones. */
+/** The Toast demo: tones. */
 export default function Tones() {
   const t = useCatalogueText(MESSAGES.en);
   return (

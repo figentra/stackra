@@ -30,7 +30,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   );
 }
 
-/** Checkbox: States. */
+/** The Checkbox demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   const [accepted, setAccepted] = useState(false);

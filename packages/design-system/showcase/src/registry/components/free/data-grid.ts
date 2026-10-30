@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Data grid. */
+/** The Data grid entry of the component registry. */
 export const FREE_DATA_GRID: ComponentEntry = {
   slug: "data-grid",
   tier: "free",
@@ -17,7 +17,11 @@ export const FREE_DATA_GRID: ComponentEntry = {
   exportName: "DataGrid",
   parts: ["DataGrid"],
   hero: {},
-  examples: [{ id: "sheet", card: true }, { id: "matrix" }, { id: "column-tools", platforms: ["react"] }],
+  examples: [
+    { id: "sheet", card: true },
+    { id: "matrix" },
+    { id: "column-tools", platforms: ["react"] },
+  ],
   related: ["free/data-table", "free/data-view", "free/save-bar"],
   tokens: ["color.surface", "color.border", "color.accent"],
   keywords: ["spreadsheet", "excel", "grid", "bulk edit", "paste", "matrix"],

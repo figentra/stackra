@@ -21,13 +21,13 @@ import { BottomSheet } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
-import { MESSAGES } from "../../constants/messages.constant";
-import { SHELL_KEYS } from "../../constants/shell-keys.constant";
+import { MESSAGES } from "#src/constants/messages.constant";
+import { SHELL_KEYS } from "#src/constants/shell-keys.constant";
 import { ChoiceGroup } from "./choice-group";
 import { useInsetSheet } from "./use-inset-sheet";
 import { ReviewIcons } from "./review-icons";
-import { numeralsChoice } from "../../stores/numerals-choice.store";
-import { useNumeralsChoice } from "../../stores/use-numerals-choice";
+import { numeralsChoice } from "#src/stores/numerals-choice.store";
+import { useNumeralsChoice } from "#src/stores/use-numerals-choice";
 
 /** The shell's keys. */
 const K = SHELL_KEYS.shell;

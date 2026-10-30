@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/checkbox/unnamed.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "unnamed" demo of the native Checkbox: no visible label, an accessible name instead.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Checkbox, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { CHECKBOX_DEMO_KEYS } from "#src/demos/free/checkbox/checkbox-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = CHECKBOX_DEMO_KEYS.demo_free.checkbox.unnamed;\n\n/** A row selector, as a table has. */\nexport default function Unnamed() {\n  const t = useCatalogueText(MESSAGES.en);\n  return <Checkbox accessibilityLabel={t(K.row_selector)} />;\n}\n';

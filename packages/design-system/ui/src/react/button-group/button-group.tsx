@@ -13,7 +13,7 @@ import type { ReactElement } from "react";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import type { ButtonGroupProps } from "#react/button-group/button-group.props";
 
-/** Attached buttons. */
+/** Draws buttons joined into one attached row. */
 export function ButtonGroup({
   children,
   label,

@@ -39,8 +39,11 @@ export interface DataGridModel {
   readonly write: (writes: readonly DataGridWrite[]) => void;
   /** Steps back and forward through the edits. */
   readonly undo: () => void;
+  /** Steps forward to the edit last undone. */
   readonly redo: () => void;
+  /** True when there is an edit to undo. */
   readonly canUndo: boolean;
+  /** True when there is an edit to redo. */
   readonly canRedo: boolean;
   /** Saves the changes through `onSave`, then clears them. */
   readonly save: () => Promise<void>;

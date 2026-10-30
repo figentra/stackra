@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Wheel picker. */
+/** The Wheel picker entry of the component registry. */
 export const FREE_WHEEL_PICKER: ComponentEntry = {
   slug: "wheel-picker",
   tier: "free",

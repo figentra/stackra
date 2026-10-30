@@ -9,6 +9,7 @@ import type { ApiPart, ComponentEntry } from "@stackra/showcase";
 
 /** The entry and its first API part. */
 export interface KnobsPlaygroundProps {
+  /** The registry entry the knobs belong to. */
   readonly entry: ComponentEntry;
   /** The part the knobs edit (the root). */
   readonly part: ApiPart;

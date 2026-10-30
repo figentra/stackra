@@ -5,20 +5,17 @@
  * Runtime: worker
  * Governing contract: ADR 0453 (decisions 4, 12 and 14).
  */
+import type { BrowseLocale } from "#src/interfaces/browse-locale.type";
 
 /** One route of the registry. */
 export type RegistryRoute =
   | {
-      readonly kind:
-        | "landing"
-        | "ping"
-        | "whoami"
-        | "keys"
-        | "login"
-        | "catalogue"
-        | "entitlements";
+      readonly kind: "ping" | "whoami" | "keys" | "login" | "catalogue" | "entitlements";
     }
   | { readonly kind: "package" | "unpublish" | "exchange" | "catalogueItem"; readonly name: string }
+  /** The registry browser: the package list (`/`, `/ar/`) and a package page (`/package/@scope/name`). */
+  | { readonly kind: "browseList"; readonly locale: BrowseLocale }
+  | { readonly kind: "browsePackage"; readonly locale: BrowseLocale; readonly name: string }
   | { readonly kind: "version"; readonly name: string; readonly spec: string }
   | { readonly kind: "tarball"; readonly name: string; readonly file: string }
   | { readonly kind: "attestations"; readonly name: string; readonly version: string }

@@ -14,7 +14,7 @@ import { USE_BREAKPOINT_KEYS } from "#src/demos/free/use-breakpoint/use-breakpoi
 /** The demo's keys. */
 const K = USE_BREAKPOINT_KEYS.use_breakpoint;
 
-/** useBreakpoint: Current. */
+/** The useBreakpoint demo: current. */
 export default function Current() {
   const t = useCatalogueText(MESSAGES.en);
   const { sizeClass, breakpoint } = useBreakpoint();

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Accordion. */
+/** The Accordion entry of the component registry. */
 export const FREE_ACCORDION: ComponentEntry = {
   slug: "accordion",
   tier: "free",

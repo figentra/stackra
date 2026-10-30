@@ -77,7 +77,7 @@ export function PhoneField({
         data-invalid={isInvalid || undefined}
         className={
           cn(
-            "flex h-10 min-w-0 items-stretch overflow-hidden rounded-field border border-field-border bg-field text-field-foreground",
+            "flex h-10 min-w-0 items-stretch overflow-hidden rounded-[var(--radius-control)] border border-field-border bg-field text-field-foreground",
             "focus-within:border-field-border-focus has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-focus",
             isInvalid && "border-danger",
             isDisabled && "opacity-60",

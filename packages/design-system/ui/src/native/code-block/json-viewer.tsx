@@ -101,7 +101,10 @@ export function JsonViewer({
   return (
     <View
       accessibilityLabel={label}
-      className={["rounded-xl border border-separator bg-surface-secondary py-3 pe-3", className]
+      className={[
+        "rounded-[var(--radius-container)] border border-separator bg-surface-secondary py-3 pe-3",
+        className,
+      ]
         .filter(Boolean)
         .join(" ")}
     >

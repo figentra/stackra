@@ -66,9 +66,9 @@ export function FunnelChart({
           <Text type="caption" tone="muted" numberOfLines={1} className="w-20">
             {row.stage.label}
           </Text>
-          <View className="h-7 flex-1 flex-row justify-center rounded bg-default/40">
+          <View className="h-7 flex-1 flex-row justify-center rounded-[var(--radius-control-inner)] bg-default/40">
             <View
-              className="h-full rounded"
+              className="h-full rounded-[var(--radius-control-inner)]"
               style={{
                 width: `${Math.max(row.share * 100, 1)}%`,
                 backgroundColor: paint.series[0],

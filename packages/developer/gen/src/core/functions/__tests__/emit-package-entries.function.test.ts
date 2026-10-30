@@ -15,6 +15,14 @@ import { emitPackageEntries } from "#core/functions/emit-package-entries.functio
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
+/** A hand-written OS shell entry directly in `src/`, exporting `register`. */
+const shell = (file: string): (typeof LOYALTY_KIT_IR.files)[number] => ({
+  file,
+  importPath: `#src/${file.slice(4, file.lastIndexOf("."))}`,
+  folder: "",
+  names: [{ name: "register", typeOnly: false }],
+});
+
 describe("emitPackageEntries", () => {
   const files = new Map(
     emitPackageEntries(LOYALTY_KIT_IR).map((file) => [file.path, file.content]),
@@ -121,6 +129,18 @@ describe("emitPackageEntries", () => {
     )?.content;
     expect(node).toContain('export { LOYALTY_KIT_ENTITIES } from "#stackra/entities/loyalty_kit";');
     expect(entry("node")).not.toContain("_ENTITIES");
+  });
+
+  it("puts no file directly in src/ in a barrel: those are hand-written shell entries", () => {
+    const barrels = emitPackageEntries({
+      ...LOYALTY_KIT_IR,
+      files: [...LOYALTY_KIT_IR.files, shell("src/console.tsx"), shell("src/native.tsx")],
+    });
+    for (const barrel of barrels) expect(barrel.content, barrel.path).not.toContain("#src/");
+    const index =
+      barrels.find((barrel) => barrel.path === ".stackra/entry/index.ts")?.content ?? "";
+    expect(index.match(/\bregister\b/g)).toBeNull();
+    expect(index).toBe(entry("index"));
   });
 
   it("writes no entry for a service", () => {

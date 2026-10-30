@@ -3,13 +3,14 @@
  * Purpose: `MOBILE_APP_SCHEMA`, one app of the root runway's `mobile` (staff, shopper, …): the template line, the
  *          product packages, the `assets` and `store` paths under `assets/`, the identity (localised name, iOS and
  *          Android ids, scheme, app links), the capability flags, tablet support, the social sign-in providers, the
- *          store accounts, the EAS project and channel, and its per-tenant white-label variants.
+ *          store accounts, the EAS project, channel and owning account, the Google project and Analytics account, the
+ *          Sentry project and DSN, and its per-tenant white-label variants.
  * Boundary: internal; the root runway schema composes it. Strict at its top and in `identity`; the store and EAS
  *           blocks stay open for their drivers. Capability names are the template's flags, not checked here; the
  *           build strips what an app does not list (ADR 0439). Every app ships to iOS, so a social sign-in list
  *           without `apple` is refused (App Store guideline 4.8).
  * Runtime: isomorphic
- * Governing contract: ADR 0441 (decision 3), ADR 0439 (capability flags, tenant-started builds), app-shells D13 and
+ * Governing contract: ADR 0441 (decision 3), ADR 0482 (the EAS owner), ADR 0439 (capability flags, tenant-started builds), app-shells D13 and
  *                     D14, STA-1578 (App Store guideline 4.8: Sign in with Apple beside every social sign-in).
  */
 import { z } from "zod";
@@ -84,6 +85,22 @@ export const MOBILE_APP_SCHEMA = z.strictObject({
   stores: z
     .looseObject({ apple: STORE_ACCOUNT.optional(), google: STORE_ACCOUNT.optional() })
     .optional(),
-  eas: z.looseObject({ project: z.string().optional(), channel: z.string().optional() }).optional(),
+  eas: z
+    .looseObject({
+      project: z.string().optional(),
+      channel: z.string().optional(),
+      owner: z.string().optional(),
+    })
+    .optional(),
+  google: z
+    .strictObject({
+      project: z
+        .string()
+        .regex(/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/, "Expected a Google Cloud project id")
+        .optional(),
+      analyticsAccount: z.string().optional(),
+    })
+    .optional(),
+  sentry: z.strictObject({ project: z.string().optional(), dsn: z.url().optional() }).optional(),
   whiteLabel: WHITE_LABEL_SCHEMA.optional(),
 });

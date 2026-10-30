@@ -3931,46 +3931,46 @@
       "export": "ملف التصدير"
     }
   },
-    "stepper": {
-      "horizontal": {
-        "label": "Checkout",
-        "cart": "Cart",
-        "shipping": "Shipping",
-        "payment": "Payment",
-        "review": "Review",
-        "back": "Back",
-        "next": "Next",
-        "place": "Place order"
-      },
-      "vertical": {
-        "label": "Set up your store",
-        "profile": "Store profile",
-        "profile_note": "Name, logo and currency",
-        "products": "First products",
-        "products_note": "Add at least one",
-        "payments": "Payments",
-        "payments_note": "Connect Mada or a card",
-        "domain": "Custom domain",
-        "launch": "Launch"
-      },
-      "error": {
-        "label": "Import customers",
-        "upload": "Upload file",
-        "columns": "Match columns",
-        "rows": "Check rows",
-        "rows_note": "12 rows have no phone number",
-        "import": "Import"
-      },
-      "compact": {
-        "label": "Add a product",
-        "basics": "Basics",
-        "pricing": "Pricing",
-        "stock": "Stock",
-        "review": "Review",
-        "back": "Back",
-        "next": "Next"
-      }
+  "stepper": {
+    "horizontal": {
+      "label": "Checkout",
+      "cart": "Cart",
+      "shipping": "Shipping",
+      "payment": "Payment",
+      "review": "Review",
+      "back": "Back",
+      "next": "Next",
+      "place": "Place order"
     },
+    "vertical": {
+      "label": "Set up your store",
+      "profile": "Store profile",
+      "profile_note": "Name, logo and currency",
+      "products": "First products",
+      "products_note": "Add at least one",
+      "payments": "Payments",
+      "payments_note": "Connect Mada or a card",
+      "domain": "Custom domain",
+      "launch": "Launch"
+    },
+    "error": {
+      "label": "Import customers",
+      "upload": "Upload file",
+      "columns": "Match columns",
+      "rows": "Check rows",
+      "rows_note": "12 rows have no phone number",
+      "import": "Import"
+    },
+    "compact": {
+      "label": "Add a product",
+      "basics": "Basics",
+      "pricing": "Pricing",
+      "stock": "Stock",
+      "review": "Review",
+      "back": "Back",
+      "next": "Next"
+    }
+  },
   "countdown": {
     "offer": {
       "label": "White Friday offer ends in"

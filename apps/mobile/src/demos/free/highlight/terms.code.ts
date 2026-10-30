@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/highlight/terms.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "terms" demo of the native Highlight: two terms marked in one sentence.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);\n *          ADR 0060 (light, dark, RTL); STA-1371 (wave A, owner request 2026-10-29).\n */\nimport { Highlight, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { HIGHLIGHT_DEMO_KEYS } from "#src/demos/free/highlight/highlight-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = HIGHLIGHT_DEMO_KEYS.demo_free.highlight.terms;\n\n/** Highlight: two terms marked in one sentence. */\nexport default function Terms() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View>\n      <Highlight query={[t(K.a), t(K.b)]}>{t(K.text)}</Highlight>\n    </View>\n  );\n}\n';

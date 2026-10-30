@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Widget frame. */
+/** The Widget frame entry of the component registry. */
 export const FREE_WIDGET_FRAME: ComponentEntry = {
   slug: "widget-frame",
   tier: "free",

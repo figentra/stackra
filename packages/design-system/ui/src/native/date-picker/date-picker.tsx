@@ -53,7 +53,12 @@ export function DatePicker({
     };
     return (
       <View className="gap-2">
-        <DateInput {...rest} value={day} onChange={pick} calendarButtonLabel={calendarButtonLabel} />
+        <DateInput
+          {...rest}
+          value={day}
+          onChange={pick}
+          calendarButtonLabel={calendarButtonLabel}
+        />
         <NativeDatePresets
           presets={presets}
           today={today ?? todayIn(getLocalTimeZone())}

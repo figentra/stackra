@@ -15,7 +15,7 @@ import { NUMBER_TICKER_KEYS } from "#src/demos/free/number-ticker/number-ticker-
 /** The demo's keys. */
 const K = NUMBER_TICKER_KEYS.number_ticker;
 
-/** NumberTicker: counter. */
+/** The NumberTicker demo: counter. */
 export default function Counter() {
   const t = useCatalogueText(MESSAGES.en);
   const [sales, setSales] = useState(1280);

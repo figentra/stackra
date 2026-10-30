@@ -9,7 +9,10 @@ import type { TREND_ICON } from "#core/constants/trend-icon.constant";
 
 /** A change's direction, icon and tone. */
 export interface Trend {
+  /** Whether the value went up, down or stayed flat. */
   readonly direction: keyof typeof TREND_ICON;
+  /** The arrow icon for the direction. */
   readonly icon: (typeof TREND_ICON)[keyof typeof TREND_ICON];
+  /** The colour tone: good, bad or neutral. */
   readonly tone: "success" | "danger" | "default";
 }

@@ -9,11 +9,16 @@
 
 /** One series' value at the pointed row. */
 export interface ChartTooltipItem {
+  /** The series name shown in the row. */
   readonly name?: unknown;
   /** A number is written by the tooltip's `formatValue`; a string is shown as already written. */
   readonly value?: unknown;
+  /** The series colour, drawn as the swatch. */
   readonly color?: string | undefined;
+  /** The key of the series in the data rows. */
   readonly dataKey?: unknown;
+  /** The chart library item type; `none` rows are hidden. */
   readonly type?: string | undefined;
+  /** The whole data row the value came from. */
   readonly payload?: unknown;
 }

@@ -313,6 +313,7 @@ function chartRamp(theme: Theme, mode: "light" | "dark"): Record<string, string>
 /** A bound as CSS writes it, free of floating-point dust. */
 const round = (value: number) => Number(value.toFixed(3));
 
+/** Renders a theme to the CSS custom properties HeroUI reads on the web. */
 export function renderWebCss(theme: Theme): string {
   const { heroui, stackra } = themeVariables(theme);
   const motion = Object.keys(theme.motion);

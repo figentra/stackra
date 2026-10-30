@@ -7,7 +7,7 @@
  */
 import type { TableOrder } from "#src/demos/free/table/table-order.type";
 
-/** Four orders. */
+/** The four orders every Table demo lists. */
 export const TABLE_ORDERS: readonly TableOrder[] = [
   { id: "ord-1001", order: "#1001", customer: "Ada Lovelace", status: "paid", total: 124.5 },
   { id: "ord-1002", order: "#1002", customer: "Grace Hopper", status: "pending", total: 38 },

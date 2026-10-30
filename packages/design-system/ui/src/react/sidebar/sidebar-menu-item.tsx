@@ -124,7 +124,7 @@ export function SidebarMenuItem({
         // An element, not a ::before: axe cannot measure the contrast of text whose ancestor draws a pseudo-element.
         <span
           aria-hidden="true"
-          className="absolute inset-y-1.5 start-0 w-[3px] rounded-full bg-current"
+          className="absolute inset-y-1.5 start-0 w-[3px] rounded-[var(--radius-pill)] bg-current"
         />
       ) : null}
       {icon === undefined && (isNested || !isRail) ? null : (
@@ -137,7 +137,7 @@ export function SidebarMenuItem({
             <SlotIcon icon={icon} />
           )}
           {isRail && showBadge ? (
-            <span className="absolute -end-1 -top-1 size-2 rounded-full bg-accent ring-2 ring-surface" />
+            <span className="absolute -end-1 -top-1 size-2 rounded-[var(--radius-pill)] bg-accent ring-2 ring-surface" />
           ) : null}
         </span>
       )}

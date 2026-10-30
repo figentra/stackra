@@ -10,8 +10,11 @@
 export interface ChartPaint {
   /** One value per requested series colour, in order. */
   readonly series: readonly string[];
+  /** The muted colour for axes and labels. */
   readonly muted: string;
+  /** The main text colour. */
   readonly foreground: string;
+  /** The background colour behind the plot. */
   readonly surface: string;
   /** The grid and the radial track: the muted colour at 15%. */
   readonly grid: string;

@@ -13,7 +13,9 @@ import { Meter } from "#react/meter/meter";
 
 describe("Meter (web)", () => {
   it("is a named meter with its value text and tone", () => {
-    const { container } = render(<Meter label="Storage" value={92} low={60} high={85} optimum={0} />);
+    const { container } = render(
+      <Meter label="Storage" value={92} low={60} high={85} optimum={0} />,
+    );
     const meter = screen.getByRole("meter", { name: "Storage" });
     expect(meter.getAttribute("aria-valuenow")).toBe("92");
     expect(meter.getAttribute("aria-valuetext")).toBe("92%");

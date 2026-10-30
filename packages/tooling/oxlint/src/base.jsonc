@@ -122,8 +122,7 @@
     "stackra/no-enum": "error",
     "stackra/no-hash-private": "error",
     "stackra/no-kind-decorator": "error",
-    // shortcut: warn while the showcase redesign clears the 228 existing radius literals; error once they reach zero.
-    "stackra/no-literal-radius": "warn",
+    "stackra/no-literal-radius": "error",
     "stackra/no-parameter-decorator": "error",
     "stackra/no-raw-key-literal": "error",
     "stackra/no-tenant-vocabulary": "error",
@@ -206,6 +205,12 @@
       // system, the code that draws surfaces. Everywhere else a `rounded-*` string is plain data.
       "files": ["**/*"],
       "excludeFiles": ["**/apps/**", "**/packages/design-system/**"],
+      "rules": { "stackra/no-literal-radius": "off" },
+    },
+    {
+      // A test's class names are fixture data: it passes a caller's `rounded-*` to check that a component merges or
+      // keeps it, and asserts the classes a component draws.
+      "files": ["**/__tests__/**"],
       "rules": { "stackra/no-literal-radius": "off" },
     },
     {

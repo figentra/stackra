@@ -48,7 +48,7 @@ const tableRows = Array.from({ length: 6 }, (_, index) =>
 /** The rows of a form: a label, then an input, for each of four fields. */
 const formFieldRows = ["one", "two", "three", "four"].flatMap((field) => [
   wide(`${field}-label`, "h-4 w-24 rounded"),
-  wide(`${field}-input`, "h-10 w-full rounded-lg"),
+  wide(`${field}-input`, "h-10 w-full rounded-[var(--radius-control)]"),
 ]);
 
 /** The rows of each layout, top to bottom. */
@@ -56,20 +56,26 @@ export const PAGE_SKELETON_ROWS = Object.freeze({
   page: [
     row(
       "header",
-      [bone("title", "h-8 w-1/3 rounded"), bone("action", "h-9 w-28 rounded-lg")],
+      [
+        bone("title", "h-8 w-1/3 rounded-[var(--radius-control-inner)]"),
+        bone("action", "h-9 w-28 rounded-[var(--radius-control)]"),
+      ],
       "justify-between",
     ),
     wide("subtitle", "h-4 w-1/2 rounded"),
     row("blocks", [
-      bone("first", "h-40 flex-1 rounded-lg"),
-      bone("second", "h-40 flex-1 rounded-lg"),
+      bone("first", "h-40 flex-1 rounded-[var(--radius-control)]"),
+      bone("second", "h-40 flex-1 rounded-[var(--radius-control)]"),
     ]),
-    wide("detail", "h-24 w-full rounded-lg"),
+    wide("detail", "h-24 w-full rounded-[var(--radius-control)]"),
   ],
   table: [
     row(
       "toolbar",
-      [bone("search", "h-9 w-64 rounded-lg"), bone("action", "h-9 w-24 rounded-lg")],
+      [
+        bone("search", "h-9 w-64 rounded-[var(--radius-control)]"),
+        bone("action", "h-9 w-24 rounded-[var(--radius-control)]"),
+      ],
       "justify-between",
     ),
     row(
@@ -83,10 +89,13 @@ export const PAGE_SKELETON_ROWS = Object.freeze({
     wide("line-one", "h-4 w-full rounded"),
     wide("line-two", "h-4 w-full rounded"),
     wide("line-three", "h-4 w-3/4 rounded"),
-    wide("block", "h-32 w-full rounded-lg"),
+    wide("block", "h-32 w-full rounded-[var(--radius-control)]"),
   ],
   form: [
     ...formFieldRows,
-    row("actions", [bone("save", "h-9 w-24 rounded-lg"), bone("cancel", "h-9 w-20 rounded-lg")]),
+    row("actions", [
+      bone("save", "h-9 w-24 rounded-[var(--radius-control)]"),
+      bone("cancel", "h-9 w-20 rounded-[var(--radius-control)]"),
+    ]),
   ],
 } as const satisfies Record<PageSkeletonLayout, readonly SkeletonRow[]>);

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/popover/arrow.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "arrow" demo of the native Popover: `hasArrow` points it back at its trigger.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Button, Popover, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { POPOVER_DEMO_KEYS } from "#src/demos/free/popover/popover-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = POPOVER_DEMO_KEYS.demo_free.popover.arrow;\n\n/** With an arrow. */\nexport default function Arrow() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <Popover hasArrow trigger={<Button variant="secondary">{t(K.open)}</Button>}>\n      {t(K.body)}\n    </Popover>\n  );\n}\n';

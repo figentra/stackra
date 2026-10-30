@@ -98,7 +98,7 @@ function Questions() {
   );
 }
 
-/** useConfirmation: Questions. */
+/** The useConfirmation demo: questions. */
 export default function QuestionsDemo() {
   return (
     <ConfirmationProvider>

@@ -17,7 +17,7 @@ const K = NUMBER_TICKER_KEYS.number_ticker;
 /** Riyals with two decimals. */
 const MONEY = { style: "currency", currency: "SAR", minimumFractionDigits: 2 } as const;
 
-/** NumberTicker: currency. */
+/** The NumberTicker demo: currency. */
 export default function Currency() {
   const t = useCatalogueText(MESSAGES.en);
   return (

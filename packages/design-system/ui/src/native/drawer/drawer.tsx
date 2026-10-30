@@ -122,7 +122,7 @@ function DrawerRoot({
                 ? { entering: SlideInRight, exiting: SlideOutRight }
                 : { entering: SlideInLeft, exiting: SlideOutLeft }
             }
-            className={`flex-1 ${PANEL_WIDTH[size]} ${inset ? "rounded-3xl" : "rounded-none"}`}
+            className={`flex-1 ${PANEL_WIDTH[size]} ${inset ? "rounded-[var(--radius-container)]" : "rounded-none"}`}
             style={{
               marginTop: insets.top + gap,
               marginBottom: insets.bottom + gap,
@@ -148,7 +148,7 @@ function DrawerRoot({
           detached={inset}
           bottomInset={inset ? insets.bottom + 12 : 0}
           className={inset ? "mx-4" : ""}
-          backgroundClassName={inset ? "rounded-4xl" : "rounded-b-none"}
+          backgroundClassName={inset ? "rounded-[var(--radius-container)]" : "rounded-b-none"}
           {...(snapPoints ? { snapPoints: [...snapPoints] } : {})}
           {...rest}
           enablePanDownToClose={isDismissable}

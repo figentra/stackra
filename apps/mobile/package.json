@@ -65,7 +65,6 @@
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
     "@shopify/react-native-skia": "catalog:mobile",
-    "@stackra/config": "workspace:*",
     "@stackra/consent": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",

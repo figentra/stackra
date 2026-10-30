@@ -14,5 +14,5 @@ export const MARKER_TONE_CLASS_NAME = Object.freeze({
   success: "bg-success/15 text-success",
   warning: "bg-warning/15 text-warning",
   danger: "bg-danger/15 text-danger",
-} as const satisfies Record<Tone, string>);import type { Tone } from "@stackra/contracts";
-
+} as const satisfies Record<Tone, string>);
+import type { Tone } from "@stackra/contracts";

@@ -4,21 +4,23 @@
  *          white-label variant), it reads the app from the root runway's `mobile`, checks the white-label mode and the
  *          store accounts, refuses a white-label build under the platform's Apple account until the 4.2.6 and 4.3
  *          checks are recorded as passed, writes the template checkout's Expo config with the capability flags applied
- *          (unused plugins, native modules, permission strings and entitlements left out), and starts the build
+ *          (unused plugins, native modules, permission strings and entitlements left out, the Firebase config files
+ *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins, and starts the build
  *          through the `eas` provider on the app's EAS channel. With `line`, it first checks the app's template line
  *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
  *          so EAS builds exactly that commit.
- * Boundary: reads the root runway, the record file and the template's `app.json`, `capabilities.json` and
- *           `package.json`; writes only `app.json`, `package.json` and, with `packages`, the product module in the
+ * Boundary: reads the root runway, the record file, `mise.toml`, the app's Firebase config files and the template's
+ *           `app.json`, `capabilities.json`, `eas.json` and `package.json`; writes only `app.json`, `eas.json`, the
+ *           Firebase config files, `package.json` and, with `packages`, the product module in the
  *           template checkout (and, with `line`, the checkout itself); runs `npm`, `tar`, `git` and `eas` through the
  *           command runner, so `dryRunCommand` makes the whole job a dry run that still writes the generated config.
  *           Store submission and the scope theme's icon and splash (stackra-13) are not this job's; `buildOnly` skips
  *           the store account check for a build that submits later. Store accounts arrive resolved (`storeAccountsOf`).
  * Runtime: node
- * Governing contract: ADR 0439 (decisions 2, 3, 7 and 8, and enforcement); ADR 0352 (decision 3); ADR 0180 and ADR
+ * Governing contract: ADR 0439 (decisions 2, 3, 7 and 8, and enforcement); ADR 0352 (decision 3); ADR 0482; ADR 0180 and ADR
  *                     0344 (EAS builds); app-shells D3, D13, D14.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { buildConfig } from "@stackra/config";
@@ -33,12 +35,15 @@ import { APPLE_GUIDELINE_CHECKS } from "#node/constants/apple-guideline-checks.c
 import { APPLE_GUIDELINE_RECORD } from "#node/constants/apple-guideline-record.constant";
 import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 import { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
+import { MOBILE_ONBOARD_SETTINGS } from "#node/constants/mobile-onboard-settings.constant";
 import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 import { capabilityConfig } from "#node/functions/capability-config.function";
 import { checkoutLine } from "#node/functions/checkout-line.function";
+import { easJsonOf } from "#node/functions/eas-json-of.function";
 import { expoConfigOf } from "#node/functions/expo-config-of.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { runCommand } from "#node/functions/run-command.function";
+import { toolVersionOf } from "#node/functions/tool-version-of.function";
 import type { LineCheckout } from "#node/types/line-checkout.type";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
 import type { MobileJobRequest } from "#node/types/mobile-job-request.type";
@@ -180,9 +185,29 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     capabilities,
     variant,
   });
+  // Firebase config files from onboarding (ADR 0482 decision 5) travel into the checkout beside app.json.
+  const assets = join(repository, entry.assets ?? `assets/mobile/${app}`);
+  for (const platform of ["ios", "android"] as const) {
+    const file = MOBILE_ONBOARD_SETTINGS.firebaseFiles[platform];
+    if (!existsSync(join(assets, file))) continue;
+    copyFileSync(join(assets, file), join(templateDir, file));
+    config[platform] = { ...blockOf(config, platform), googleServicesFile: `./${file}` };
+  }
   writeFileSync(
     join(templateDir, "app.json"),
     `${JSON.stringify({ ...appJson, expo: config }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(templateDir, "eas.json"),
+    `${JSON.stringify(
+      easJsonOf(readJson(join(templateDir, "eas.json"), {}), {
+        node: toolVersionOf(repository, "node"),
+        pnpm: toolVersionOf(repository, "pnpm"),
+        channel: channel as string,
+      }),
+      null,
+      2,
+    )}\n`,
   );
 
   const packageFile = join(templateDir, "package.json");

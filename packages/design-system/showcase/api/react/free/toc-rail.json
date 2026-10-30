@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "9bd8332698ded697",
+    "hash": "0b49623ba0f7c0e2",
     "propsFiles": ["ui/src/react/toc-rail/toc-rail.props.ts"]
   },
   "importLine": "import { TocRail } from \"@stackra/ui/react\";",
@@ -19,7 +19,7 @@
       "name": "TocRail",
       "props": [
         {
-          "description": "",
+          "description": "The entries of the table of contents, in page order.",
           "name": "items",
           "required": true,
           "source": "stackra",

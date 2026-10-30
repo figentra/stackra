@@ -13,9 +13,13 @@ import { QrCode } from "#react/qr-code/qr-code";
 
 describe("QrCode (web)", () => {
   it("is a named image of the encoded value", () => {
-    const { container } = render(<QrCode value="https://stackra.dev" label="Open stackra.dev" size={120} />);
+    const { container } = render(
+      <QrCode value="https://stackra.dev" label="Open stackra.dev" size={120} />,
+    );
     const image = screen.getByRole("img", { name: "Open stackra.dev" });
     expect(image.getAttribute("width")).toBe("120");
-    expect(container.querySelector("path")?.getAttribute("d")).toBe(qrPathOf("https://stackra.dev").path);
+    expect(container.querySelector("path")?.getAttribute("d")).toBe(
+      qrPathOf("https://stackra.dev").path,
+    );
   });
 });

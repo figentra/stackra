@@ -72,7 +72,7 @@ export function CommandPalette({
                       setOpen(false);
                       onAction(item.id);
                     }}
-                    className="flex-row items-center gap-3 rounded-lg px-2 py-2.5 active:bg-default/60"
+                    className="flex-row items-center gap-3 rounded-[var(--radius-control)] px-2 py-2.5 active:bg-default/60"
                   >
                     {item.icon ? <Icon name={item.icon} size="sm" tone="muted" /> : null}
                     <View className="flex-1">

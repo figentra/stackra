@@ -23,7 +23,7 @@ export function ChartReadout({ title, items, indicator = "dot" }: ChartReadoutPr
       pointerEvents="none"
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
-      className="absolute start-0 top-0 z-10 min-w-[140px] gap-1.5 rounded-lg border border-separator bg-overlay px-3 py-2 shadow-overlay"
+      className="absolute start-0 top-0 z-10 min-w-[140px] gap-1.5 rounded-[var(--radius-control)] border border-separator bg-overlay px-3 py-2 shadow-overlay"
     >
       <Text type="caption" tone="muted" className="text-xs font-medium">
         {title}
@@ -31,7 +31,11 @@ export function ChartReadout({ title, items, indicator = "dot" }: ChartReadoutPr
       {items.map((item) => (
         <View key={item.label} className="flex-row items-center gap-2">
           <View
-            className={indicator === "line" ? "h-3 w-1 rounded-full" : "size-2 rounded-full"}
+            className={
+              indicator === "line"
+                ? "h-3 w-1 rounded-[var(--radius-pill)]"
+                : "size-2 rounded-[var(--radius-pill)]"
+            }
             style={{ backgroundColor: item.color }}
           />
           <Text type="caption" tone="muted" className="flex-1 text-xs">

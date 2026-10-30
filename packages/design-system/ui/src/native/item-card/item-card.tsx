@@ -16,7 +16,7 @@ import { ItemCardGroupContext } from "#native/item-card/item-card-group-context"
 import { Text } from "#native/text/text";
 import type { ItemCardProps } from "#native/item-card/item-card.props";
 
-/** One card. */
+/** Draws one item as a card with its title and details. */
 export function ItemCard({
   title,
   description,
@@ -27,11 +27,11 @@ export function ItemCard({
   className,
 }: ItemCardProps): ReactElement {
   const isGrouped = use(ItemCardGroupContext);
-  const look = `min-h-14 flex-row items-center gap-3 px-4 py-3 ${isGrouped ? "" : "rounded-2xl border border-border bg-surface"} ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`;
+  const look = `min-h-14 flex-row items-center gap-3 px-4 py-3 ${isGrouped ? "" : "rounded-[var(--radius-container)] border border-border bg-surface"} ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`;
   const body = (
     <>
       {icon ? (
-        <View className="size-9 items-center justify-center rounded-xl bg-default">
+        <View className="size-9 items-center justify-center rounded-[var(--radius-container)] bg-default">
           <Icon name={icon} size="sm" />
         </View>
       ) : null}

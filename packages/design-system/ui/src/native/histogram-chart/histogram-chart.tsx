@@ -75,7 +75,7 @@ export function HistogramChart(props: HistogramChartProps): ReactElement {
             onPressOut={() => setPressed(-1)}
           >
             <View
-              className="rounded-t-sm"
+              className="rounded-t-[var(--radius-control-inner)]"
               style={{
                 height: `${(item.count / top) * 100}%`,
                 backgroundColor: paint.series[0],

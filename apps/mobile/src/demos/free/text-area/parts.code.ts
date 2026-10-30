@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/text-area/parts.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "parts" demo of the native TextArea: each part appears only when it is given.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { TextArea, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { TEXT_AREA_DEMO_KEYS } from "#src/demos/free/text-area/text-area-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = TEXT_AREA_DEMO_KEYS.demo_free.text_area.parts;\n\n/** A label, a placeholder, a description. */\nexport default function Parts() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-4">\n      <TextArea label={t(K.label_only)} />\n      <TextArea label={t(K.with_placeholder)} placeholder={t(K.placeholder)} />\n      <TextArea label={t(K.with_description)} description={t(K.hint)} />\n    </View>\n  );\n}\n';

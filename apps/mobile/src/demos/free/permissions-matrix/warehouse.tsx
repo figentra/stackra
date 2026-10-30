@@ -56,7 +56,7 @@ const GRANTS = {
   stock_controller: ["check_in", "put_away", "pick", "pack", "adjust", "transfer"],
 };
 
-/** PermissionsMatrix: Warehouse. */
+/** The PermissionsMatrix demo: warehouse. */
 export default function Warehouse() {
   const t = useCatalogueText(MESSAGES.en);
   const roles = ROLES.map(([id, label]) => ({ id, label: t(label) }));

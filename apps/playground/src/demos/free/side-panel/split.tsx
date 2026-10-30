@@ -13,7 +13,7 @@ import { SIDE_PANEL_KEYS } from "#src/demos/free/side-panel/side-panel-keys.cons
 /** The demo's keys. */
 const K = SIDE_PANEL_KEYS.side_panel;
 
-/** SidePanel: Split. */
+/** The SidePanel demo: split. */
 export default function Split() {
   const t = useCatalogueText(MESSAGES.en);
   return (

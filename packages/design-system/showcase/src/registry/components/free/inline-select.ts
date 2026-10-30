@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Inline select. */
+/** The Inline select entry of the component registry. */
 export const FREE_INLINE_SELECT: ComponentEntry = {
   slug: "inline-select",
   tier: "free",

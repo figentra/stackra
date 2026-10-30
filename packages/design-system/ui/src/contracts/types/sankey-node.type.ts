@@ -11,6 +11,7 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 export interface SankeyNode {
   /** The key links name it by. */
   readonly key: string;
+  /** The name shown beside the node. */
   readonly label: string;
   /** Its theme colour; the palette's, by position, by default. */
   readonly color?: ChartColor | undefined;

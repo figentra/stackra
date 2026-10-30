@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tab bar. */
+/** The Tab bar entry of the component registry. */
 export const FREE_TAB_BAR: ComponentEntry = {
   slug: "tab-bar",
   tier: "free",

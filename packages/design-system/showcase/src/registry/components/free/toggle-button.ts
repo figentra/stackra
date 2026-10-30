@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Toggle button. */
+/** The Toggle button entry of the component registry. */
 export const FREE_TOGGLE_BUTTON: ComponentEntry = {
   slug: "toggle-button",
   tier: "free",

@@ -120,6 +120,9 @@ describe("resolveTool", () => {
       args: [],
       cwd: root,
     });
+    // Never `--config .stackra/…`: tsdown would take `.stackra/` as cwd; the root shim loads the generated config.
+    generated("tsdown.config.ts");
+    expect(resolveTool("build", member("package"), {}).args).toEqual([]);
     generated("wrangler.jsonc");
     expect(resolveTool("dev", member("worker"), {}).args).toEqual([
       "dev",

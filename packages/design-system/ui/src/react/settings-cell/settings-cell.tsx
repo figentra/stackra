@@ -36,7 +36,7 @@ export function SettingsCell({
       className={
         cn(
           "grid gap-3 px-4 py-3",
-          !isGrouped && "rounded-2xl border border-border bg-surface",
+          !isGrouped && "rounded-[var(--radius-container)] border border-border bg-surface",
           isDisabled && "opacity-60",
           className,
         ) ?? ""
@@ -46,7 +46,7 @@ export function SettingsCell({
         {icon ? (
           <span
             aria-hidden
-            className="grid size-8 shrink-0 place-items-center rounded-lg bg-default text-foreground"
+            className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] bg-default text-foreground"
           >
             <Icon name={icon} size="sm" />
           </span>

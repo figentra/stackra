@@ -98,7 +98,7 @@ export function Stepper({
         </View>
         <View className="flex-row gap-1.5">
           {states.map(({ step, status }) => (
-            <View key={step.id} className={`h-2 rounded-full ${DOT[status]}`} />
+            <View key={step.id} className={`h-2 rounded-[var(--radius-pill)] ${DOT[status]}`} />
           ))}
         </View>
       </View>
@@ -123,7 +123,9 @@ export function Stepper({
                 ? t(K.optional)
                 : undefined;
         const disc = (
-          <View className={`size-8 items-center justify-center rounded-full ${MARKER[status]}`}>
+          <View
+            className={`size-8 items-center justify-center rounded-[var(--radius-pill)] ${MARKER[status]}`}
+          >
             {status === "complete" ? (
               <Icon name="check" size="sm" tone="accent" />
             ) : marker === "icon" && step.icon ? (

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Error page. */
+/** The Error page entry of the component registry. */
 export const FREE_ERROR_PAGE: ComponentEntry = {
   slug: "error-page",
   tier: "free",

@@ -10,7 +10,7 @@ import type { BarListItem } from "#contracts/types/bar-list-item.type";
 
 /** Props shared by the web and native `BarList`. */
 export interface BarListContractProps {
-  /** The rows. */
+  /** The rows to draw, one bar each. */
   readonly items: readonly BarListItem[];
   /** The list's name, for example "Sales by city". */
   readonly label: string;

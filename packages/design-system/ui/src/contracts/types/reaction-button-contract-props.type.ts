@@ -9,7 +9,7 @@
 
 /** Props shared by the web and native `ReactionButton`. */
 export interface ReactionButtonContractProps {
-  /** The emoji. */
+  /** The emoji drawn on the button. */
   readonly emoji: string;
   /** How many reacted, the user included when selected (at first, when uncontrolled). */
   readonly count: number;

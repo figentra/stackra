@@ -21,6 +21,14 @@ export const DISPLAY_KEYS = keys({
     truncate: ["more", "less"],
     countdown: ["left", "elapsed", "done"],
     multi_select_more: ["select_all", "clear_all", "more", "more_label"],
-    date_presets: ["label", "today", "yesterday", "tomorrow", "in_7_days", "start_of_month", "end_of_month"],
+    date_presets: [
+      "label",
+      "today",
+      "yesterday",
+      "tomorrow",
+      "in_7_days",
+      "start_of_month",
+      "end_of_month",
+    ],
   },
 });

@@ -44,8 +44,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
   `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
   only because the template imports it from here.
 - The records, the widget and resource registries, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`,
-  `changeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey` and
-  `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
+  `changeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey`,
+  `actionFormKeys`, `fieldsForInput`, `enumLabelKeys`, `listCellCurrency` and `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
 - Case helpers (`snakeCase`) come from `@stackra/support`; never add a copy here (stackra-224).
 
 ## This package
@@ -77,6 +77,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - Resource pages (`src/react/resource-pages/`) are generic: they read the route constants, the registered tree
   (`registerResources`) and the wire data, never a product's code. A resource without a tree still gets every page from
   the data's own keys. Every button runs through `useActionRunner`; nothing calls the transport directly.
+  A record action whose input needs more than the id (`actionFormKeys`) opens `ActionInputModal`, once for a whole
+  bulk selection; the modal is its confirmation (`{ confirmed: true }`).
 - Resource labels are derived by `resourceLabel` (`<module>::resources.<model>.<part>.<path>`); never add a label
   option. Logic a native page needs too (list input, places, id key, input kind) goes in a pure `core` function.
 - `SearchPalette` reads only generated search queries (`<model>.search`) through `useQuery`, one hook per source

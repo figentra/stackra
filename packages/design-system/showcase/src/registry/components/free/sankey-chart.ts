@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Sankey chart. */
+/** The Sankey chart entry of the component registry. */
 export const FREE_SANKEY_CHART: ComponentEntry = {
   slug: "sankey-chart",
   tier: "free",

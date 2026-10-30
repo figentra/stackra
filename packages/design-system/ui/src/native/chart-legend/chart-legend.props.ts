@@ -20,5 +20,6 @@ export interface ChartLegendProps {
   readonly hiddenKeys?: readonly string[] | undefined;
   /** Adds a dashed "Previous period" entry, for a chart drawing its comparison. */
   readonly showComparison?: boolean | undefined;
+  /** Extra classes for the legend container. */
   readonly className?: string | undefined;
 }

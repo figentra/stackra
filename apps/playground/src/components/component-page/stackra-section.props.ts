@@ -12,5 +12,6 @@ import type { SectionProps } from "#src/components/component-page/section.props"
 
 /** Props of `StackraSection`. */
 export interface StackraSectionProps extends SectionProps {
+  /** The entry's API doc, for the props Stackra replaces. */
   readonly apiDoc?: ApiDoc | undefined;
 }

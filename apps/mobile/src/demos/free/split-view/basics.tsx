@@ -23,7 +23,7 @@ export default function Basics() {
   const isPhone = useBreakpoint().sizeClass === "phone";
   const [order, setOrder] = useState<string | undefined>(undefined);
   return (
-    <View className="h-80 overflow-hidden rounded-2xl border border-border">
+    <View className="h-80 overflow-hidden rounded-[var(--radius-container)] border border-border">
       <SplitView
         primaryLabel={t(K.orders)}
         secondaryLabel={t(K.details)}

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Avatar group. */
+/** The Avatar group entry of the component registry. */
 export const FREE_AVATAR_GROUP: ComponentEntry = {
   slug: "avatar-group",
   tier: "free",

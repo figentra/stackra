@@ -20,7 +20,7 @@ export function Kpi({ icon, className, ...stat }: KpiProps): ReactElement {
     <Card className={["flex-row items-start gap-3", className].filter(Boolean).join(" ")}>
       {icon ? (
         <View
-          className="size-9 items-center justify-center rounded-lg bg-accent-soft"
+          className="size-9 items-center justify-center rounded-[var(--radius-control)] bg-accent-soft"
           importantForAccessibility="no-hide-descendants"
         >
           <Icon name={icon} size="sm" tone="accent" />

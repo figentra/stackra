@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Typography. */
+/** The Typography entry of the component registry. */
 export const FREE_TYPOGRAPHY: ComponentEntry = {
   slug: "typography",
   tier: "free",

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/avatar/names.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "names" demo of the native Avatar: initials from the first and last words; an Arabic name gives one letter.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Avatar } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { Sample } from "#src/components/ui/sample";\n\n/** Sample people\'s names (never translated), each beside its initials. */\nconst NAMES = ["Ada Lovelace", "Plato", "émile zola", "ليلى أحمد"] as const;\n\n/** Each name and the initials it gives. */\nexport default function Names() {\n  return (\n    <View className="flex-row flex-wrap items-start gap-4">\n      {NAMES.map((name) => (\n        <Sample key={name} caption={name}>\n          <Avatar name={name} tone="accent" variant="soft" />\n        </Sample>\n      ))}\n    </View>\n  );\n}\n';

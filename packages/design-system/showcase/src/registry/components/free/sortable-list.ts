@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Sortable list. */
+/** The Sortable list entry of the component registry. */
 export const FREE_SORTABLE_LIST: ComponentEntry = {
   slug: "sortable-list",
   tier: "free",

@@ -54,7 +54,7 @@ function Sample({ buttonLabel, title, body, ...modalProps }: SampleProps) {
   );
 }
 
-/** Modal: Dismissal. */
+/** The Modal demo: dismissal. */
 export default function Dismissal() {
   const t = useCatalogueText(MESSAGES.en);
   return (

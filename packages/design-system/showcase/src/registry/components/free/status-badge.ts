@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Status badge. */
+/** The Status badge entry of the component registry. */
 export const FREE_STATUS_BADGE: ComponentEntry = {
   slug: "status-badge",
   tier: "free",

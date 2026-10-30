@@ -11,9 +11,9 @@ import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 
 /** One write a runtime asks for: a cell and its new value. */
 export interface DataGridWrite {
-  /** The row. */
+  /** The row of the cell to write. */
   readonly row: DataGridRow;
-  /** The column. */
+  /** The column of the cell to write. */
   readonly column: DataGridColumn;
   /** The new value. */
   readonly value: DataGridValue;

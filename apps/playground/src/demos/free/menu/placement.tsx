@@ -37,7 +37,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Menu: Placement. */
+/** The Menu demo: placement. */
 export default function Placement() {
   const t = useCatalogueText(MESSAGES.en);
   /** Two actions, for the placement samples. */

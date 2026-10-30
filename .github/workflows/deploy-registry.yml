@@ -56,7 +56,7 @@ jobs:
       id-token: write # GitHub OIDC token, exchanged with Infisical for /ci and /ci/registry
     env:
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_REGISTRY_IDENTITY_ID }}
-      INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      INFISICAL_PROJECT_ID: ${{ vars.INFISICAL_REGISTRY_PROJECT_ID }}
       INFISICAL_DOMAIN: https://eu.infisical.com
       REGISTRY_URL: https://npm.stackra.figentra.com
       # 'true' only for a dispatch run that keeps the default; a main push has no inputs and deploys.
@@ -80,6 +80,20 @@ jobs:
       # in are not installed; neither is deployed here (as deploy-static.yml).
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+
+      # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
+      - name: Turborepo remote cache (Infisical OIDC)
+        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/turbo
+          export-type: env
 
       # A broken build or a failing test never reaches Cloudflare.
       - name: Test and build

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/progress-bar/indeterminate.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "indeterminate" demo of the native ProgressBar: without a `value` the end is unknown.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { ProgressBar, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { PROGRESS_BAR_DEMO_KEYS } from "#src/demos/free/progress-bar/progress-bar-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = PROGRESS_BAR_DEMO_KEYS.demo_free.progress_bar.indeterminate;\n\n/** Work under way. */\nexport default function Indeterminate() {\n  const t = useCatalogueText(MESSAGES.en);\n  return <ProgressBar label={t(K.label)} isLabelVisible />;\n}\n';

@@ -14,7 +14,7 @@ import { DRAWER_KEYS } from "#src/demos/free/drawer/drawer-keys.constant";
 /** The demo's keys. */
 const K = DRAWER_KEYS.drawer;
 
-/** Drawer: Stacked. */
+/** The Drawer demo: stacked. */
 export default function Stacked() {
   const t = useCatalogueText(MESSAGES.en);
   return (

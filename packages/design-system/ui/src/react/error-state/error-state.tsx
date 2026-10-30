@@ -53,7 +53,7 @@ export function ErrorState({
       {details === undefined ? null : (
         <div
           data-slot="error-state-details"
-          className="w-full max-w-prose rounded-lg border border-separator p-3 text-start"
+          className="w-full max-w-prose rounded-[var(--radius-control)] border border-separator p-3 text-start"
         >
           <Text type="small" className="break-words">
             {details.message}

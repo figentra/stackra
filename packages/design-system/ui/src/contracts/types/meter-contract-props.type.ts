@@ -9,7 +9,7 @@
 
 /** Props shared by the web and native `Meter`. */
 export interface MeterContractProps {
-  /** The measure. */
+  /** The measure the bar fills to. */
   readonly value: number;
   /** The scale's start; defaults to 0. */
   readonly minValue?: number | undefined;

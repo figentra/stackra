@@ -19,6 +19,6 @@ export function useInsetSheet() {
     detached: true,
     bottomInset: bottom + SHEET_GAP,
     className: "mx-4",
-    backgroundClassName: "rounded-4xl",
+    backgroundClassName: "rounded-[var(--radius-container)]",
   } as const;
 }

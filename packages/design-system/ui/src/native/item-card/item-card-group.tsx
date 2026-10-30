@@ -28,7 +28,7 @@ export function ItemCardGroup({
         </Text>
       ) : null}
       <ItemCardGroupContext value>
-        <View className="overflow-hidden rounded-2xl border border-border bg-surface">
+        <View className="overflow-hidden rounded-[var(--radius-container)] border border-border bg-surface">
           {Children.toArray(children).map((child, index) => (
             // oxlint-disable-next-line react/no-array-index-key -- the wrapped children have no identity but their place in the group
             <View key={index} className={index > 0 ? "border-t border-separator" : ""}>

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Skeleton. */
+/** The Skeleton entry of the component registry. */
 export const FREE_SKELETON: ComponentEntry = {
   slug: "skeleton",
   tier: "free",

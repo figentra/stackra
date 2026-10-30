@@ -3,13 +3,15 @@
  * Purpose: `EasProviderDriver`, the `eas` driver of the `RunwayProvider` port: from a checkout of the release commit,
  *          apply starts an EAS build of the environment's profile (`targets.eas.release: build`, the default) or
  *          publishes an over-the-air update to its channel (`release: update`); verify reads the build or update;
- *          rollback republishes an earlier update group; current reads the commit of the latest build or update.
+ *          rollback republishes an earlier update group; current reads the commit of the latest build or update;
+ *          submit sends a finished store build to TestFlight or the Play internal track (ADR 0482).
  * Boundary: runs `git` and `eas` only, through the given `CommandRunner`, in the app's folder; the EAS login is the
  *           job's `EXPO_TOKEN`, never an argument. The profile is `mobile.profile`, else `mobile.channel`, of the
  *           environment (the update channel is the profile name). A store build cannot be rolled back: rollback
  *           refuses it, and the release skill ships a fix forward or an update instead.
  * Runtime: node
- * Governing contract: ADR 0352 (decision 3), ADR 0180 and ADR 0344 (EAS builds and updates), ADR 0170 (rollback).
+ * Governing contract: ADR 0352 (decision 3), ADR 0180 and ADR 0344 (EAS builds and updates), ADR 0170 (rollback),
+ *                     ADR 0482 (submit).
  */
 import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
@@ -151,6 +153,42 @@ export class EasProviderDriver extends Driver(RunwayProvider) {
       sha: to.sha,
       reference: typeof group === "string" ? group : to.reference,
     };
+  }
+
+  /** The platform of the build `build` (`ios`, `android`), or `all` when the answer cannot be read (a dry run). */
+  async platformOf(build: string): Promise<string> {
+    try {
+      const value = itemsOf(
+        await this.run("eas", ["build:view", build, "--json"], { cwd: this.projectDir }),
+      )[0]?.["platform"];
+      return typeof value === "string" ? value.toLowerCase() : "all";
+    } catch {
+      return "all";
+    }
+  }
+
+  /**
+   * Submits the finished store build `build` to its store with the submit profile `profile` (TestFlight, or the Play
+   * track the profile names, `internal` by default) and answers the build's platform.
+   */
+  async submit(build: string, profile = "production", known?: string): Promise<string> {
+    const platform = known ?? (await this.platformOf(build));
+    await this.run(
+      "eas",
+      [
+        "submit",
+        "--platform",
+        platform,
+        "--id",
+        build,
+        "--profile",
+        profile,
+        "--non-interactive",
+        "--json",
+      ],
+      { cwd: this.projectDir },
+    );
+    return platform;
   }
 
   /** The commit of the latest build of the profile, or the latest update on its channel. */

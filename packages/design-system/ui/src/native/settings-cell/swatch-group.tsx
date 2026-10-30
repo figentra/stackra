@@ -49,12 +49,12 @@ export function SwatchGroup({
             haptics.play("selection");
             onChange(hex);
           }}
-          className={`size-9 items-center justify-center rounded-full border ${hex === value ? "border-2 border-accent" : "border-border"}`}
+          className={`size-9 items-center justify-center rounded-[var(--radius-pill)] border ${hex === value ? "border-2 border-accent" : "border-border"}`}
           style={{ backgroundColor: hex }}
         >
           {hex === value ? (
             <View
-              className="size-3 rounded-full"
+              className="size-3 rounded-[var(--radius-pill)]"
               style={{ backgroundColor: isLight(hex) ? "#000000" : "#ffffff" }}
             />
           ) : null}

@@ -26,7 +26,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Icon: Sizes. */
+/** The Icon demo: sizes. */
 export default function Sizes() {
   return (
     <ul className={ROW}>

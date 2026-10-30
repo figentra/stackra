@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ResourceViewPage`, the generic View page of any resource: the title, the header actions (edit, the placed
  *          View actions run through the action runner, delete), the record's entries and sections, and its relation
- *          managers.
+ *          managers; a list entry's cells format like any value, a `…Minor` cell as money (`listCellCurrency`).
  * Boundary: reads the record with the get query (`useRecord`) and the registered tree; a resource with no infolist
  *           shows the record's own keys. A section's `aside` is drawn in the main column (no side column yet). The
  *           built-in View as JSON, clone and activity tab (ADR 0334 rules 9 to 11) are not built.
@@ -22,6 +22,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
+import { listCellCurrency } from "#core/functions/list-cell-currency.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { resourceTreeOf } from "#core/functions/resource-tree-of.function";
 import { valueAt } from "#core/functions/value-at.function";
@@ -75,12 +76,27 @@ function Entries({
               ...item,
               id: String(index),
             }))}
+            renderCell={(item, column) => {
+              const currency = listCellCurrency(item, column.id, record, entry.currency);
+              return (
+                <ResourceValue
+                  resourceKey={resourceKey}
+                  path={column.id}
+                  kind={currency === undefined ? "value" : "money"}
+                  value={valueAt(item, column.id)}
+                  currency={currency}
+                />
+              );
+            }}
           />
         ) : (
           <ResourceValue
+            resourceKey={resourceKey}
+            path={entry.key}
             kind={entry.kind}
             value={value}
             currency={entry.kind === "money" ? valueAt(record, entry.currency) : undefined}
+            labels={entry.kind === "value" ? entry.labels : undefined}
           />
         ),
     });
@@ -118,6 +134,7 @@ export function ResourceViewPage({ resource, id }: ResourceViewPageProps): React
   return (
     <>
       <PageHeader title={title} actions={actions.at(ActionPlace.View, record)} />
+      {actions.modal}
       <Entries
         resourceKey={resource.key}
         entries={tree.infolist?.entries ?? derived(record)}

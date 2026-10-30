@@ -98,7 +98,8 @@ describe("StatusIndicator (native)", () => {
   });
 
   it("draws a distinct shape per tone, in the tone's colour, hidden from screen readers", () => {
-    for (const tone of Enum.values(Tone)) render(<StatusIndicator tone={tone}>Late</StatusIndicator>);
+    for (const tone of Enum.values(Tone))
+      render(<StatusIndicator tone={tone}>Late</StatusIndicator>);
     expect(new Set(state.shapes.map((shape) => shape["name"])).size).toBe(Enum.values(Tone).length);
     expect(state.shapes.map((shape) => shape["color"])).toEqual(
       Enum.values(Tone).map((tone) => `color:${STATUS_DOT_ROLE[tone]}`),

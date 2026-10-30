@@ -31,7 +31,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Menu: Selection. */
+/** The Menu demo: selection. */
 export default function Selection() {
   const t = useCatalogueText(MESSAGES.en);
   /** Two groups with one choice each: the order and the field to sort by. */

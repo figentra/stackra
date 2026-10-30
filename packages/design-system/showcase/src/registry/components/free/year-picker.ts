@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Year picker. */
+/** The Year picker entry of the component registry. */
 export const FREE_YEAR_PICKER: ComponentEntry = {
   slug: "year-picker",
   tier: "free",

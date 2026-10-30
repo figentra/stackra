@@ -48,7 +48,7 @@ function Account() {
   );
 }
 
-/** Sidebar: Arabic. */
+/** The Sidebar demo: arabic. */
 export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

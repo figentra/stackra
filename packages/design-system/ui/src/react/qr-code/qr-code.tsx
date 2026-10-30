@@ -14,7 +14,13 @@ import { qrPathOf } from "#core/functions/qr-path-of.function";
 import type { QrCodeProps } from "#react/qr-code/qr-code.props";
 
 /** A QR code. */
-export function QrCode({ value, label, size = 160, level = "M", className }: QrCodeProps): ReactElement {
+export function QrCode({
+  value,
+  label,
+  size = 160,
+  level = "M",
+  className,
+}: QrCodeProps): ReactElement {
   const qr = useMemo(() => qrPathOf(value, level), [value, level]);
   return (
     <svg

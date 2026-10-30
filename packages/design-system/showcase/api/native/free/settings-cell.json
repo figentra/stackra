@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ca4f27ba26a62be2",
+    "hash": "5110d1787e2bf198",
     "propsFiles": [
       "ui/src/native/settings-cell/settings-cell.props.ts",
       "ui/src/native/settings-cell/settings-color-cell.props.ts",
@@ -163,7 +163,7 @@
           "type": "string"
         },
         {
-          "description": "The choices.",
+          "description": "The choices the select offers.",
           "name": "items",
           "required": true,
           "source": "stackra",

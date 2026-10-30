@@ -8,6 +8,7 @@
  */
 import type { ComponentType, LazyExoticComponent } from "react";
 
+/** The demo components already made, by demo path: loaded modules and lazy components. */
 export const DEMO_CACHE = {
   loaded: new Map<string, ComponentType>(),
   // One per path: a lazy made per mount suspends again on every mount.

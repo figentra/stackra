@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `parsePath` and `splitName`: every route of ADR 0453 decision 4, the licence API (decision 14), `%2f` and `/` forms, and
- *          the unknown paths.
+ *          the browser routes (`/`, `/ar`, `/package/…`) and the unknown paths.
  * Boundary: pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 4).
@@ -49,17 +49,33 @@ describe("parsePath", () => {
     ],
     ["/-/stackra/v1/catalogue/@stackra/core", { kind: "catalogueItem", name: "@stackra/core" }],
     ["/-/stackra/v1/entitlements", { kind: "entitlements" }],
-    ["/", { kind: "landing" }],
+    ["/", { kind: "browseList", locale: "en" }],
+    ["/ar", { kind: "browseList", locale: "ar" }],
+    ["/ar/", { kind: "browseList", locale: "ar" }],
+    ["/package/@stackra/core", { kind: "browsePackage", locale: "en", name: "@stackra/core" }],
+    ["/package/@stackra%2fcore", { kind: "browsePackage", locale: "en", name: "@stackra/core" }],
+    [
+      "/ar/package/@stackra-pro/sync",
+      { kind: "browsePackage", locale: "ar", name: "@stackra-pro/sync" },
+    ],
   ])("parses %s", (path, route) => {
     expect(parsePath(path)).toEqual(route);
   });
 
-  it.each(["/lodash", "/@Stackra/core", "/-/v1/search", "/@stackra/core/a/b", "/%E0%A4%A"])(
-    "refuses %s",
-    (path) => {
-      expect(parsePath(path)).toEqual({ kind: "unknown" });
-    },
-  );
+  it.each([
+    "/lodash",
+    "/@Stackra/core",
+    "/-/v1/search",
+    "/@stackra/core/a/b",
+    "/%E0%A4%A",
+    "/package",
+    "/package/lodash",
+    "/package/@stackra/core/1.0.0",
+    "/ar/lodash",
+    "/arabic",
+  ])("refuses %s", (path) => {
+    expect(parsePath(path)).toEqual({ kind: "unknown" });
+  });
 });
 
 describe("splitName", () => {

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0a4db7c806436e46",
+    "hash": "b5d332ab83123718",
     "propsFiles": [
       "ui/src/native/import-flow/import-flow.props.ts",
       "ui/src/native/import-flow/import-mapping-list.props.ts",
@@ -13,7 +13,7 @@
     {
       "events": [
         {
-          "description": "",
+          "description": "Called with the new mapping when the user changes a column.",
           "name": "onMappingChange",
           "required": false,
           "source": "stackra",
@@ -58,7 +58,7 @@
           "type": "Readonly<Record<string, string>>"
         },
         {
-          "description": "",
+          "description": "The fields a column can map to.",
           "name": "fields",
           "required": true,
           "source": "stackra",
@@ -97,7 +97,7 @@
     {
       "events": [
         {
-          "description": "",
+          "description": "Called with the new mapping when a column changes.",
           "name": "onChange",
           "required": true,
           "source": "stackra",
@@ -107,28 +107,28 @@
       "name": "ImportMappingList",
       "props": [
         {
-          "description": "",
+          "description": "The file column names, in order.",
           "name": "columns",
           "required": true,
           "source": "stackra",
           "type": "readonly string[]"
         },
         {
-          "description": "",
+          "description": "The first value of each column, shown as a hint.",
           "name": "sample",
           "required": false,
           "source": "stackra",
           "type": "Readonly<Record<string, string>>"
         },
         {
-          "description": "",
+          "description": "The fields a column can map to.",
           "name": "fields",
           "required": true,
           "source": "stackra",
           "type": "readonly ImportField[]"
         },
         {
-          "description": "",
+          "description": "The current mapping of columns to fields.",
           "name": "mapping",
           "required": true,
           "source": "stackra",

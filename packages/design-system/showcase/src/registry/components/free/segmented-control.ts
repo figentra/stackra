@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Segmented control. */
+/** The Segmented control entry of the component registry. */
 export const FREE_SEGMENTED_CONTROL: ComponentEntry = {
   slug: "segmented-control",
   tier: "free",

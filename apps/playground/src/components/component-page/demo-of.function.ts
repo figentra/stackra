@@ -12,6 +12,7 @@ import { lazy } from "react";
 import { DEMO_CACHE } from "#src/components/component-page/demo-cache.constant";
 import { DEMOS } from "#src/demos";
 
+/** Returns the component for a demo path, reusing a cached one; undefined when no demo file exists. */
 export function demoOf(
   path: string,
 ): ComponentType | LazyExoticComponent<ComponentType> | undefined {

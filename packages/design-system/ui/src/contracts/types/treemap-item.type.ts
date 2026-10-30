@@ -9,9 +9,12 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 
 /** One tile of a treemap chart. */
 export interface TreemapItem {
+  /** A stable id, unique within the chart. */
   readonly key: string;
+  /** The name shown on the tile. */
   readonly label: string;
   /** The tile's size; zero and negative values are left out. */
   readonly value: number;
+  /** Its theme colour; the palette picks one by position by default. */
   readonly color?: ChartColor | undefined;
 }

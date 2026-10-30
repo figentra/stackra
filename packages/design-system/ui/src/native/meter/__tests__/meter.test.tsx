@@ -19,16 +19,21 @@ import { Result } from "#native/result/result";
 
 vi.mock("react-native", async () => (await import("#testing/fakes/native-dom")).nativeDom);
 vi.mock("#native/text/text", async () => (await import("#testing/fakes/text-dom")).textDom);
-vi.mock("#native/spinner/spinner", () => ({ Spinner: () => createElement("i", { "data-testid": "spinner" }) }));
+vi.mock("#native/spinner/spinner", () => ({
+  Spinner: () => createElement("i", { "data-testid": "spinner" }),
+}));
 vi.mock("#native/feedback-icon/feedback-icon", () => ({ FeedbackIcon: () => null }));
 vi.mock("#native/state-layout/state-layout", () => ({
-  StateLayout: (props: { title: ReactNode; icon: ReactNode }) => createElement("section", null, props.icon, props.title),
+  StateLayout: (props: { title: ReactNode; icon: ReactNode }) =>
+    createElement("section", null, props.icon, props.title),
 }));
 
 describe("wave A display components (native)", () => {
   it("Meter reads its label and value text", () => {
     render(<Meter label="Storage" value={45} />);
-    expect(screen.getByRole("progressbar", { name: "Storage" }).getAttribute("aria-valuetext")).toBe("45%");
+    expect(
+      screen.getByRole("progressbar", { name: "Storage" }).getAttribute("aria-valuetext"),
+    ).toBe("45%");
   });
 
   it("ButtonGroup hands its props to each button", () => {

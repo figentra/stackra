@@ -11,6 +11,7 @@ import type { ApiProp } from "@stackra/showcase";
 export interface PropsTableProps {
   /** The table's accessible name. */
   readonly label: string;
+  /** The props the table lists, one per row. */
   readonly rows: readonly ApiProp[];
   /** Render props have no Default column. */
   readonly hasDefault?: boolean | undefined;

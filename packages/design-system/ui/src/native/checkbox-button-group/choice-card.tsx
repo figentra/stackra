@@ -15,7 +15,7 @@ import { haptics } from "#native/haptics/haptics";
 import { Icon } from "#native/icon/icon";
 import { Text } from "#native/text/text";
 
-/** One card. */
+/** Draws one choice card of a button group. */
 export function ChoiceCard({
   item,
   isSelected,
@@ -43,7 +43,7 @@ export function ChoiceCard({
       accessibilityLabel={item.label}
       accessibilityHint={item.description}
       accessibilityState={{ checked: isSelected, disabled: off }}
-      className={`flex-row items-start gap-3 rounded-2xl border p-4 ${isWide ? "flex-1" : ""} ${isSelected ? "border-accent bg-accent-soft" : "border-border bg-surface"} ${off ? "opacity-50" : ""}`}
+      className={`flex-row items-start gap-3 rounded-[var(--radius-container)] border p-4 ${isWide ? "flex-1" : ""} ${isSelected ? "border-accent bg-accent-soft" : "border-border bg-surface"} ${off ? "opacity-50" : ""}`}
     >
       {item.icon ? <Icon name={item.icon} tone={isSelected ? "accent" : "muted"} /> : null}
       <View className="flex-1 gap-0.5">
@@ -55,11 +55,11 @@ export function ChoiceCard({
         ) : null}
       </View>
       <View
-        className={`size-5 items-center justify-center border-2 ${mark === "radio" ? "rounded-full" : "rounded-md"} ${isSelected ? "border-accent bg-accent" : "border-border"}`}
+        className={`size-5 items-center justify-center border-2 ${mark === "radio" ? "rounded-[var(--radius-pill)]" : "rounded-[var(--radius-control)]"} ${isSelected ? "border-accent bg-accent" : "border-border"}`}
       >
         {isSelected ? (
           mark === "radio" ? (
-            <View className="size-2 rounded-full bg-accent-foreground" />
+            <View className="size-2 rounded-[var(--radius-pill)] bg-accent-foreground" />
           ) : (
             <Icon name="check" size="sm" />
           )

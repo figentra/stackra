@@ -15,7 +15,7 @@ import { CARD_KEYS } from "#src/demos/free/card/card-keys.constant";
 /** The demo's keys. */
 const K = CARD_KEYS.card;
 
-/** Card: Levels. */
+/** The Card demo: levels. */
 export default function Levels() {
   const t = useCatalogueText(MESSAGES.en);
   return (

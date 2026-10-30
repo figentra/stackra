@@ -14,7 +14,7 @@ import { INLINE_LOADING_KEYS } from "#src/demos/free/inline-loading/inline-loadi
 /** The demo's keys. */
 const K = INLINE_LOADING_KEYS.inline_loading;
 
-/** InlineLoading: States. */
+/** The InlineLoading demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   return (

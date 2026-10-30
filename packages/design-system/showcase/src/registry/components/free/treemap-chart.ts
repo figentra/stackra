@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Treemap chart. */
+/** The Treemap chart entry of the component registry. */
 export const FREE_TREEMAP_CHART: ComponentEntry = {
   slug: "treemap-chart",
   tier: "free",

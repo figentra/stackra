@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Histogram chart. */
+/** The Histogram chart entry of the component registry. */
 export const FREE_HISTOGRAM_CHART: ComponentEntry = {
   slug: "histogram-chart",
   tier: "free",

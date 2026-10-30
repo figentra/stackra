@@ -9,4 +9,4 @@
  */
 
 /** The theme's field radius as a Uniwind class. */
-export const FIELD_RADIUS_CLASS_NAME = "rounded-field";
+export const FIELD_RADIUS_CLASS_NAME = "rounded-[var(--radius-control)]";

@@ -26,6 +26,7 @@
   },
   "type": "module",
   "imports": {
+    "#src/*.function": "./src/*.function.ts",
     "#src/*": [
       "./src/*",
       "./src/*.ts",
@@ -73,9 +74,6 @@
     "react-hook-form": "catalog:frontend",
     "react-router": "catalog:frontend",
     "recharts": "catalog:frontend",
-    "remark-breaks": "catalog:frontend",
-    "remark-gfm": "catalog:frontend",
-    "streamdown": "catalog:frontend",
     "uniwind": "catalog:uniwind-pro"
   },
   "devDependencies": {

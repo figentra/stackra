@@ -29,15 +29,15 @@ import type { BadgeAnchorProps } from "#native/badge/badge-anchor.props";
 const BADGE_CLASS_NAME: Readonly<Record<Size, { readonly root: string; readonly label: string }>> =
   Object.freeze({
     sm: {
-      root: "min-h-4 min-w-4 px-0 py-0 rounded-xl border border-background",
+      root: "min-h-4 min-w-4 px-0 py-0 rounded-[var(--radius-container)] border border-background",
       label: "px-0.5 text-[10px] leading-[1.34]",
     },
     md: {
-      root: "min-h-7 min-w-7 px-0 py-0 rounded-3xl border border-background",
+      root: "min-h-7 min-w-7 px-0 py-0 rounded-[var(--radius-container)] border border-background",
       label: "px-0.5 text-xs leading-[1.34]",
     },
     lg: {
-      root: "min-h-8 min-w-8 px-0 py-0 rounded-2xl border border-background",
+      root: "min-h-8 min-w-8 px-0 py-0 rounded-[var(--radius-container)] border border-background",
       label: "px-0.5 text-sm leading-[1.43]",
     },
   });

@@ -104,7 +104,7 @@ export function Fab({
     variant,
     size,
     onPress: press,
-    className: "rounded-full shadow-lg",
+    className: "rounded-[var(--radius-pill)] shadow-lg",
     ...(hasDial ? { accessibilityState: { expanded: open } } : {}),
     ...omitUndefined({ isDisabled }),
   };
@@ -152,7 +152,7 @@ export function Fab({
                 <View
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
-                  className="rounded-full bg-surface px-3 py-1.5 shadow-sm"
+                  className="rounded-[var(--radius-pill)] bg-surface px-3 py-1.5 shadow-sm"
                 >
                   <Text type="small">{action.label}</Text>
                 </View>
@@ -160,7 +160,7 @@ export function Fab({
                   label={action.label}
                   icon={action.icon}
                   variant="secondary"
-                  className="rounded-full shadow-sm"
+                  className="rounded-[var(--radius-pill)] shadow-sm"
                   onPress={() => choose(action)}
                 />
               </Animated.View>

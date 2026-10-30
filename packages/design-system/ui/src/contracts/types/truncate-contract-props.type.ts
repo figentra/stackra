@@ -9,7 +9,7 @@
 
 /** Props shared by the web and native `Truncate`. */
 export interface TruncateContractProps {
-  /** The text. */
+  /** The text to clip and expand. */
   readonly children: string;
   /** How many lines show while closed; defaults to 3. */
   readonly lines?: number | undefined;

@@ -19,6 +19,7 @@ export interface CalendarHeatmapContractProps {
   readonly end?: string | undefined;
   /** The chart's accessible name, such as "Orders per day, this year". */
   readonly label: string;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
   /** The colour the shades are mixed from; the first step of the accent ramp by default. */
   readonly color?: ChartColor | undefined;

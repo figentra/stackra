@@ -9,6 +9,7 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 
 /** One group of a box plot. */
 export interface BoxPlotGroup {
+  /** A stable id, unique within the chart. */
   readonly key: string;
   /** What people call it: the axis label, the tooltip and the data table. */
   readonly label: string;

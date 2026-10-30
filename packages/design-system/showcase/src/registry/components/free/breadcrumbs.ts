@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Breadcrumbs. */
+/** The Breadcrumbs entry of the component registry. */
 export const FREE_BREADCRUMBS: ComponentEntry = {
   slug: "breadcrumbs",
   tier: "free",

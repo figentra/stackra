@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** DateLabel. */
+/** The DateLabel entry of the component registry. */
 export const FREE_DATE_LABEL: ComponentEntry = {
   slug: "date-label",
   tier: "free",

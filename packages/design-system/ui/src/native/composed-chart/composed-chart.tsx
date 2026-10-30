@@ -116,7 +116,7 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
       className={props.className}
       readout={
         row && props.showTooltip !== false ? (
-          <View className="gap-1.5 rounded-lg border border-separator bg-overlay px-3 py-2">
+          <View className="gap-1.5 rounded-[var(--radius-control)] border border-separator bg-overlay px-3 py-2">
             <Text type="caption" tone="muted" className="font-medium">
               {category(row[xKey])}
             </Text>
@@ -124,7 +124,9 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
               <View key={item.key} className="flex-row items-center gap-2">
                 <View
                   className={
-                    lineKeys.has(item.key) ? "h-3 w-1 rounded-full" : "size-2 rounded-full"
+                    lineKeys.has(item.key)
+                      ? "h-3 w-1 rounded-[var(--radius-pill)]"
+                      : "size-2 rounded-[var(--radius-pill)]"
                   }
                   style={{ backgroundColor: paint.series[index] }}
                 />

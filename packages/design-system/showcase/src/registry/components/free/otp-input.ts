@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** OTP input. */
+/** The OTP input entry of the component registry. */
 export const FREE_OTP_INPUT: ComponentEntry = {
   slug: "otp-input",
   tier: "free",

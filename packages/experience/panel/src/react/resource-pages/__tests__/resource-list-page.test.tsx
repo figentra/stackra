@@ -29,6 +29,17 @@ const spies = vi.hoisted(() => ({ useQuery: vi.fn(), run: vi.fn(), navigate: vi.
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("#react/action-runner/use-action-runner", () => ({ useActionRunner: () => spies.run }));
 vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => spies.navigate }));
+vi.mock("#react/resource-pages/action-input-modal", async () => {
+  const { createElement } = await import("react");
+  return {
+    ActionInputModal: (props: { ids: string[]; keys: string[]; idKey: string }) =>
+      createElement(
+        "dialog",
+        { open: true },
+        `${props.idKey}:${props.ids.join(",")}:${props.keys.join(",")}`,
+      ),
+  };
+});
 vi.mock("@stackra/i18n/react", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
   useMoney: () => (minor: number, currency: string) => `${currency} ${minor}`,
@@ -109,6 +120,10 @@ const UpdateOrderAction = actionRef("orders.order.update@1", {
 });
 const CancelOrderAction = actionRef("orders.order.cancel@1", {
   input: z.object({ orderId: z.string() }),
+  output: z.object({}),
+});
+const HoldOrderAction = actionRef("orders.order.hold@1", {
+  input: z.object({ orderId: z.string(), reason: z.string(), note: z.string().optional() }),
   output: z.object({}),
 });
 const DeleteOrderAction = actionRef("orders.order.delete@1", {
@@ -245,6 +260,34 @@ describe("ResourceListPage", () => {
     expect(spies.run).toHaveBeenNthCalledWith(1, CancelOrderAction, { orderId: "ord_1" });
     expect(spies.run).toHaveBeenNthCalledWith(2, CancelOrderAction, { orderId: "ord_2" });
     expect(bulk.textContent).toContain("panel::resources.delete");
+    dispose();
+  });
+
+  it("opens one input modal for a row or the whole selection when the input needs more than the id", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        actions: [{ kind: "run", action: HoldOrderAction, bulk: true }],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} />);
+    press("orders::resources.order.actions.hold", 1);
+    await vi.waitFor(() => expect(screen.getByText("orderId:ord_2:reason,note")).toBeTruthy());
+
+    fireEvent.click(screen.getByText("select"));
+    const first = screen.getByRole("navigation").querySelector("button");
+    if (first === null) throw new Error("the bulk bar has no button");
+    fireEvent.click(first);
+    await vi.waitFor(() =>
+      expect(screen.getByText("orderId:ord_1,ord_2:reason,note")).toBeTruthy(),
+    );
+    expect(spies.run).not.toHaveBeenCalled();
     dispose();
   });
 

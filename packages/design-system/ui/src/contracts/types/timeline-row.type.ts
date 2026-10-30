@@ -8,6 +8,8 @@
 
 /** One lane of a timeline. */
 export interface TimelineRow {
+  /** A stable id that tasks name their lane by. */
   readonly key: string;
+  /** The name shown at the start of the lane. */
   readonly label: string;
 }

@@ -10,6 +10,8 @@
 export interface ImportIssue {
   /** The 1-based row in the file, after the header. */
   readonly row: number;
+  /** The key of the field with the problem. */
   readonly field: string;
+  /** What is wrong, in words for the user. */
   readonly message: string;
 }

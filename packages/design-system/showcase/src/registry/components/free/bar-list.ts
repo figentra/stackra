@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Bar list. */
+/** The Bar list entry of the component registry. */
 export const FREE_BAR_LIST: ComponentEntry = {
   slug: "bar-list",
   tier: "free",

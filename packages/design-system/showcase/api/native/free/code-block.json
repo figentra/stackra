@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "93b1580aad307741",
+    "hash": "b203aaeecf3af541",
     "propsFiles": [
       "ui/src/native/code-block/code-block.props.ts",
       "ui/src/native/code-block/json-viewer.props.ts",
@@ -42,7 +42,7 @@
           "type": "readonly CodeFile[]"
         },
         {
-          "description": "",
+          "description": "Shows a number beside each line when true.",
           "name": "showLineNumbers",
           "required": false,
           "source": "stackra",
@@ -157,7 +157,7 @@
       "name": "MarkdownViewer",
       "props": [
         {
-          "description": "",
+          "description": "The Markdown text to render.",
           "name": "source",
           "required": true,
           "source": "stackra",

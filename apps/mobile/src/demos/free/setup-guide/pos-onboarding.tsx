@@ -18,7 +18,7 @@ const K = SETUP_GUIDE_DEMO_KEYS.demo_free.setup_guide;
 /** The terminal's tasks, in the order the system completes them. */
 const STEPS = ["printer", "staff", "shift"] as const;
 
-/** POS onboarding. */
+/** The SetupGuide demo: a point of sale terminal's onboarding. */
 export default function PosOnboarding() {
   const t = useCatalogueText(MESSAGES.en);
   const [done, setDone] = useState(1);

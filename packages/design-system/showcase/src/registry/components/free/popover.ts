@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Popover. */
+/** The Popover entry of the component registry. */
 export const FREE_POPOVER: ComponentEntry = {
   slug: "popover",
   tier: "free",

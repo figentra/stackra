@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** NumberTicker. */
+/** The NumberTicker entry of the component registry. */
 export const FREE_NUMBER_TICKER: ComponentEntry = {
   slug: "number-ticker",
   tier: "free",

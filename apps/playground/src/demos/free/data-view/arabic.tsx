@@ -33,7 +33,10 @@ function Orders() {
     paging: "page",
     initialState: {
       pageSize: 8,
-      columns: columns.map((column) => ({ id: column.id, ...(column.id === "order" ? { pin: "start" as const } : {}) })),
+      columns: columns.map((column) => ({
+        id: column.id,
+        ...(column.id === "order" ? { pin: "start" as const } : {}),
+      })),
       sort: [{ column: "total", direction: "descending" }],
     },
   });

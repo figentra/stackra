@@ -7,6 +7,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128), as ColorRole.
+/** The syntax colour roles a code block paints its tokens in. */
 export const SyntaxRole = Object.freeze([
   "keyword",
   "string",

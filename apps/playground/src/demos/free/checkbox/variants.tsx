@@ -14,7 +14,7 @@ import { CHECKBOX_KEYS } from "#src/demos/free/checkbox/checkbox-keys.constant";
 /** The demo's keys. */
 const K = CHECKBOX_KEYS.checkbox;
 
-/** Checkbox: Variants. */
+/** The Checkbox demo: variants. */
 export default function Variants() {
   const t = useCatalogueText(MESSAGES.en);
   return (

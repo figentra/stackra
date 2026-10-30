@@ -15,7 +15,7 @@ import { BREADCRUMBS_KEYS } from "#src/demos/free/breadcrumbs/breadcrumbs-keys.c
 /** The demo's keys. */
 const K = BREADCRUMBS_KEYS.breadcrumbs;
 
-/** Breadcrumbs: Lengths. */
+/** The Breadcrumbs demo: lengths. */
 export default function Lengths() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

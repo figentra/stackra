@@ -28,7 +28,7 @@ export function ItemCardGroup({
         </h3>
       ) : null}
       <ItemCardGroupContext value>
-        <ul className="divide-y divide-separator overflow-hidden rounded-2xl border border-border bg-surface">
+        <ul className="divide-y divide-separator overflow-hidden rounded-[var(--radius-container)] border border-border bg-surface">
           {Children.map(Children.toArray(children), (child) => (
             <li>{child}</li>
           ))}

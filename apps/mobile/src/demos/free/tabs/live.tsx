@@ -17,7 +17,7 @@ import { TABS_DEMO_KEYS } from "#src/demos/free/tabs/tabs-demo-keys.constant";
 const S = TABS_DEMO_KEYS.demo_free.tabs.sections;
 const K = TABS_DEMO_KEYS.demo_free.tabs.live;
 
-/** Controlled tabs. */
+/** The Tabs demo: tabs whose selection the demo controls. */
 export default function Live() {
   const [selected, setSelected] = useState<readonly string[]>(["items"]);
   const t = useCatalogueText(MESSAGES.en);

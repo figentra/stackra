@@ -163,7 +163,7 @@ describe("Drawer (native)", () => {
       detached: true,
       bottomInset: 32,
       className: "mx-4",
-      backgroundClassName: "rounded-4xl",
+      backgroundClassName: "rounded-[var(--radius-container)]",
     });
   });
 
@@ -232,7 +232,7 @@ describe("Drawer (native)", () => {
     expect(propsOf("dialog")["isDefaultOpen"]).toBe(true);
     expect(propsOf("dialog-portal")["className"]).toContain("items-end");
     expect(propsOf("dialog-content")["className"]).toContain("w-[720px]");
-    expect(propsOf("dialog-content")["className"]).toContain("rounded-3xl");
+    expect(propsOf("dialog-content")["className"]).toContain("rounded-[var(--radius-container)]");
     expect(propsOf("dialog-content")["style"]).toMatchObject({
       marginBottom: 28,
       marginHorizontal: 8,

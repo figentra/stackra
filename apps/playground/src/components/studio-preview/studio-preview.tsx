@@ -39,7 +39,7 @@ const GAP = 32;
 
 type TemplateId = (typeof STUDIO_TEMPLATES)[number]["id"];
 
-/** The canvas. */
+/** The theme studio canvas: the theme drawn on templates in device frames. */
 export function StudioPreview({ theme, scheme, view, fonts }: StudioPreviewProps) {
   const t = useCatalogueText(MESSAGES.en);
   const [templateId, setTemplateId] = useState<TemplateId>("dashboard");

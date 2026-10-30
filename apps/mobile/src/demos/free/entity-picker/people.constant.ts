@@ -16,7 +16,7 @@ const person = (name: string, isDisabled = false): EntityOption => ({
   ...(isDisabled ? { isDisabled } : {}),
 });
 
-/** Twelve people. */
+/** The twelve people the picker searches; Linus is refused. */
 export const PEOPLE: readonly EntityOption[] = [
   person("Ada Lovelace"),
   person("Grace Hopper"),

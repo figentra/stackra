@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Result. */
+/** The Result entry of the component registry. */
 export const FREE_RESULT: ComponentEntry = {
   slug: "result",
   tier: "free",

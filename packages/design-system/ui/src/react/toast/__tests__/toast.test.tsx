@@ -299,6 +299,37 @@ describe("toast (web)", () => {
       toast("Rana replied", { avatar: { name: "Rana Haddad" } });
     });
     expect(indicator()?.textContent).toContain("RH");
-    expect(toastElement()?.className).toContain("rounded-full");
+    expect(toastElement()?.className).toContain("rounded-[var(--radius-pill)]");
+  });
+  it("follows a sideways swipe, springs back when short and dismisses when long", () => {
+    const onClose = vi.fn();
+    render(<ToastProvider dismissLabel="Dismiss notification" variant="flip-bar" />);
+    act(() => {
+      toast("Swiped", { timeout: 0, onClose });
+    });
+    const card = toastElement() as HTMLElement;
+    const pointer = (type: string, clientX: number, target: Element = card) =>
+      act(() => {
+        target.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX }));
+      });
+    // A move without a press, and a press on a button, start nothing.
+    pointer("pointermove", 50);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 0, screen.getByRole("button", { name: "Dismiss notification" }));
+    pointer("pointermove", 50);
+    pointer("pointerup", 50);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 0);
+    pointer("pointermove", 40);
+    expect(card.style.translate).toBe("40px 0");
+    expect(card.style.opacity).toBe("0.75");
+    pointer("pointercancel", 40);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 100);
+    pointer("pointermove", 0);
+    pointer("pointerup", 0);
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByText("Swiped")).toBeNull();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

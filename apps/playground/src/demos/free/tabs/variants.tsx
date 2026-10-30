@@ -14,7 +14,7 @@ import { TABS_KEYS } from "#src/routes/tabs/tabs-keys.constant";
 /** The demo's keys. */
 const K = TABS_KEYS.tabs.variants;
 
-/** Both variants. */
+/** The Tabs demo: both visual variants. */
 export default function Variants() {
   const t = useCatalogueText(MESSAGES.en);
   const sections = tabsSections(t);

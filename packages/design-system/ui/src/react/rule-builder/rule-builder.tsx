@@ -87,7 +87,7 @@ export function RuleBuilder({
             <li
               key={condition.id}
               // Narrow: field and operator on one line, the value and the remove button under them. Wide: one line.
-              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-separator p-2 @lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-[var(--radius-control)] border border-separator p-2 @lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
             >
               <div className="min-w-0">
                 <Select

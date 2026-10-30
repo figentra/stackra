@@ -8,6 +8,8 @@
 
 /** One run of a description: prose, or the code between a pair of backticks (without them). */
 export interface CodeSpan {
+  /** The run's text. */
   readonly text: string;
+  /** True when the run is code. */
   readonly isCode: boolean;
 }

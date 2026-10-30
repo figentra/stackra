@@ -7,6 +7,7 @@
  * Governing contract: ADR 0307 (rule 1).
  */
 import type { Enum } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 
 import type { EntryNode } from "#core/types/entry-node.type";
 
@@ -14,6 +15,7 @@ import type { EntryNode } from "#core/types/entry-node.type";
 interface EntryOptions {
   readonly copyable?: boolean;
   readonly enum?: Enum.Any;
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
 /**
@@ -38,7 +40,10 @@ export const Entry = Object.freeze({
     options: { readonly currency: string; readonly copyable?: boolean },
   ): EntryNode => Object.freeze({ kind: "money", key, ...options }),
 
-  /** A list field as a small table of the item paths `columns`. */
-  list: (key: string, options: { readonly columns: readonly string[] }): EntryNode =>
-    Object.freeze({ kind: "list", key, columns: Object.freeze([...options.columns]) }),
+  /** A list field as a small table of the item paths `columns`; `…Minor` columns are money in `currency`. */
+  list: (
+    key: string,
+    options: { readonly columns: readonly string[]; readonly currency?: string },
+  ): EntryNode =>
+    Object.freeze({ ...options, kind: "list", key, columns: Object.freeze([...options.columns]) }),
 });

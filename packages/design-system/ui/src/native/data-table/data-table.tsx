@@ -150,7 +150,9 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       // Anything but a sum names itself ("Average 6.5"), so it never reads as a total.
       const named = layout.summaryLabel(column);
       const cell = layout.summaryCell(item.id, column);
-      return named && layout.summaryValue(item.id, column) !== null ? `${named} ${String(cell)}` : cell;
+      return named && layout.summaryValue(item.id, column) !== null
+        ? `${named} ${String(cell)}`
+        : cell;
     }
     if (column.id === ACTIONS_COLUMN_ID) {
       const menuItems = menuItemsOf(item);

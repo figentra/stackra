@@ -27,7 +27,7 @@ export default function SpeedDial() {
     { id: "photo", label: t(K.photo), icon: Icons.Camera },
   ];
   return (
-    <View className="h-80 rounded-2xl border border-dashed border-border p-4">
+    <View className="h-80 rounded-[var(--radius-container)] border border-dashed border-border p-4">
       <Text type="small" tone="muted" accessibilityLiveRegion="polite">
         {chosen === undefined ? t(K.nothing_chosen) : t(K.chosen, { action: chosen })}
       </Text>

@@ -57,7 +57,7 @@ export function MorphTabs({
             isDisabled={item.isDisabled === true}
             className={({ isSelected, isFocusVisible }) =>
               cn(
-                "flex h-10 cursor-pointer items-center rounded-full px-3 outline-none transition-colors duration-[var(--duration-base)] motion-reduce:transition-none",
+                "flex h-10 cursor-pointer items-center rounded-[var(--radius-pill)] px-3 outline-none transition-colors duration-[var(--duration-base)] motion-reduce:transition-none",
                 isSelected ? "bg-accent-soft text-accent-soft-foreground" : "text-muted",
                 isFocusVisible && "ring-2 ring-focus",
                 item.isDisabled && "cursor-not-allowed opacity-50",

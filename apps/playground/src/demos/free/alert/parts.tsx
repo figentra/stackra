@@ -31,7 +31,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   );
 }
 
-/** Alert: Parts. */
+/** The Alert demo: parts. */
 export default function Parts() {
   const t = useCatalogueText(MESSAGES.en);
   /** A title and a description that fit each tone. */

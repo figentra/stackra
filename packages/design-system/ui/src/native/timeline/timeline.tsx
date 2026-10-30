@@ -70,12 +70,12 @@ export function Timeline({
               <View key={item.id} accessible className="flex-row gap-3">
                 <View className="items-center">
                   <View
-                    className={`${disc} items-center justify-center rounded-full ${MARKER_TONE_CLASS_NAME[item.tone ?? "default"]}`}
+                    className={`${disc} items-center justify-center rounded-[var(--radius-pill)] ${MARKER_TONE_CLASS_NAME[item.tone ?? "default"]}`}
                   >
                     {item.icon ? (
                       <SlotIcon icon={item.icon} />
                     ) : (
-                      <View className="size-1.5 rounded-full bg-muted" />
+                      <View className="size-1.5 rounded-[var(--radius-pill)] bg-muted" />
                     )}
                   </View>
                   {isLast ? null : <View className="w-px flex-1 bg-muted/40" />}

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Radio cards. */
+/** The Radio cards entry of the component registry. */
 export const FREE_RADIO_BUTTON_GROUP: ComponentEntry = {
   slug: "radio-button-group",
   tier: "free",

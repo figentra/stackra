@@ -35,7 +35,7 @@ export default function Basics() {
         {last === undefined ? t(K.hint) : t(K.chosen, { action: last })}
       </Text>
       {[t(K.huda), t(K.omar)].map((title) => (
-        <View key={title} className="overflow-hidden rounded-2xl">
+        <View key={title} className="overflow-hidden rounded-[var(--radius-container)]">
           <SwipeableRow
             startActions={start}
             endActions={end}

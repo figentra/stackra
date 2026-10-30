@@ -5,8 +5,8 @@
  *          `DataTable` and `FilterBar`. The List page and every relation manager draw it.
  * Boundary: internal to the resource pages. Holds the list state (search, filters, sort, cursor history, selection)
  *           and reads one page with `useQuery`; `tableInput` builds the closed input, so only declared sorts and
- *           filters are sent. Enum codes show as codes and a value filter is a text filter until gen writes enum labels
- *           and filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
+ *           filters are sent. A cell shows an enum code by its label (`ResourceValue`); a value filter is a text filter
+ *           until gen writes filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
  *           yes or no, and contains and compare as text. A principal column shows the principal's name. A saved view
  *           (`view`) sets the columns shown and the filter values and sort the table starts with (`savedViewState`); the
  *           caller keys the table by view so a new view starts fresh. A page that carries a count shows it beside the
@@ -206,9 +206,12 @@ export function ResourceTable({
             : valueAt(row, node.currency.replace(/^record\./, ""));
         return (
           <ResourceValue
+            resourceKey={resourceKey}
+            path={column.id}
             kind={node?.kind ?? "value"}
             value={valueAt(row, column.id)}
             currency={currency}
+            labels={node?.labels}
           />
         );
       }}

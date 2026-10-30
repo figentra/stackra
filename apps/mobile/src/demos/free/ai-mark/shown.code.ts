@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/ai-mark/shown.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "shown" demo of the native AiMark: `isLabelVisible` under content shown to customers.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { AiMark, Text, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { AI_MARK_DEMO_KEYS } from "#src/demos/free/ai-mark/ai-mark-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = AI_MARK_DEMO_KEYS.demo_free.ai_mark;\n\n/** Customers must know an answer is AI: the label is shown. */\nexport default function Shown() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-1">\n      <Text>{t(K.shown.content)}</Text>\n      <AiMark kind="generated" label={t(K.labels.generated)} isLabelVisible />\n    </View>\n  );\n}\n';

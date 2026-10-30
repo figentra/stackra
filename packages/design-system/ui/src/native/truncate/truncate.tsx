@@ -45,7 +45,9 @@ export function Truncate({
           onPress={() => setOpen(!isOpen)}
           className="min-h-11 justify-center"
         >
-          <Text className="font-medium text-accent-soft-foreground">{t(isOpen ? K.less : K.more)}</Text>
+          <Text className="font-medium text-accent-soft-foreground">
+            {t(isOpen ? K.less : K.more)}
+          </Text>
         </Pressable>
       ) : null}
     </View>

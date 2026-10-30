@@ -29,7 +29,7 @@ export function HeatScale({ paint }: { readonly paint: ChartPaint }): ReactEleme
       {[0, 1, 2, 3, 4].map((level) => (
         <View
           key={level}
-          className="size-3 rounded-[3px]"
+          className="size-3 rounded-[var(--radius-control-inner)]"
           style={{ backgroundColor: heatPaintOf(level, paint) }}
         />
       ))}

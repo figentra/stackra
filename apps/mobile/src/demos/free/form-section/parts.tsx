@@ -14,7 +14,7 @@ import { FORM_SECTION_DEMO_KEYS } from "#src/demos/free/form-section/form-sectio
 /** The demo's keys. */
 const K = FORM_SECTION_DEMO_KEYS.demo_free.form_section.parts;
 
-/** Three sections. */
+/** The FormSection demo: three sections of a form. */
 export default function Parts() {
   const t = useCatalogueText(MESSAGES.en);
   return (

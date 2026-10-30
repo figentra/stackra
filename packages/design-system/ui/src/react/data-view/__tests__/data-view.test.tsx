@@ -31,7 +31,12 @@ function Harness({ initialFilter }: { readonly initialFilter?: boolean }) {
     columns: COLUMNS,
     items: ROWS,
     initialState: initialFilter
-      ? { filter: { match: "all", conditions: [{ id: "c1", field: "city", operator: "equals", value: "Riyadh" }] } }
+      ? {
+          filter: {
+            match: "all",
+            conditions: [{ id: "c1", field: "city", operator: "equals", value: "Riyadh" }],
+          },
+        }
       : {},
   });
   return <DataView label="Customers" collection={collection} />;
@@ -47,19 +52,26 @@ describe("DataView (web)", () => {
 
   it("keeps the search and sort when switching to cards, the list and back", () => {
     render(<Harness />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search Customers" }), { target: { value: "riyadh" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Customers" }), {
+      target: { value: "riyadh" },
+    });
     expect(screen.getByText("2 results")).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "Cards" }));
     const cards = screen.getByRole("list", { name: "Customers" });
-    expect(within(cards).getAllByRole("heading").map((heading) => heading.textContent)).toEqual([
-      "Al Noor Trading",
-      "Najd Coffee",
-    ]);
+    expect(
+      within(cards)
+        .getAllByRole("heading")
+        .map((heading) => heading.textContent),
+    ).toEqual(["Al Noor Trading", "Najd Coffee"]);
     fireEvent.click(screen.getByRole("radio", { name: "List" }));
     expect(screen.getByText("Najd Coffee")).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "Table" }));
-    expect((screen.getByRole("searchbox", { name: "Search Customers" }) as HTMLInputElement).value).toBe("riyadh");
-    expect(within(screen.getByRole("grid", { name: "Customers" })).getAllByRole("row")).toHaveLength(3);
+    expect(
+      (screen.getByRole("searchbox", { name: "Search Customers" }) as HTMLInputElement).value,
+    ).toBe("riyadh");
+    expect(
+      within(screen.getByRole("grid", { name: "Customers" })).getAllByRole("row"),
+    ).toHaveLength(3);
   });
 
   it("shows a filter condition as a chip that removes it", () => {
@@ -73,7 +85,9 @@ describe("DataView (web)", () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "View actions" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Save as a new view" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "View name" }), { target: { value: "Riyadh VIP" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "View name" }), {
+      target: { value: "Riyadh VIP" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.getAllByText("Riyadh VIP").length).toBeGreaterThan(0);
   });

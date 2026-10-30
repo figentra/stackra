@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Close button. */
+/** The Close button entry of the component registry. */
 export const FREE_CLOSE_BUTTON: ComponentEntry = {
   slug: "close-button",
   tier: "free",

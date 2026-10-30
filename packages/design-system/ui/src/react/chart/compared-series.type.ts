@@ -15,5 +15,6 @@ export interface ComparedSeries {
   readonly index: number;
   /** The row key of the previous values. */
   readonly key: string;
+  /** The name shown for the previous values. */
   readonly label: string;
 }

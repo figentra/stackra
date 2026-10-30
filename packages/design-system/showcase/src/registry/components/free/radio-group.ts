@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Radio group. */
+/** The Radio group entry of the component registry. */
 export const FREE_RADIO_GROUP: ComponentEntry = {
   slug: "radio-group",
   tier: "free",

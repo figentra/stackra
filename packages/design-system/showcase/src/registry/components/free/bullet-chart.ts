@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Bullet chart. */
+/** The Bullet chart entry of the component registry. */
 export const FREE_BULLET_CHART: ComponentEntry = {
   slug: "bullet-chart",
   tier: "free",

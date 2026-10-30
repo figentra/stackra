@@ -29,7 +29,10 @@ function Harness() {
       <ColumnEditor collection={collection} />
       <output data-testid="columns">
         {collection.columns
-          .map((column) => `${column.label}${column.isHidden ? "-hidden" : ""}${column.pin ? `-${column.pin}` : ""}${column.width ? `-${column.width}` : ""}`)
+          .map(
+            (column) =>
+              `${column.label}${column.isHidden ? "-hidden" : ""}${column.pin ? `-${column.pin}` : ""}${column.width ? `-${column.width}` : ""}`,
+          )
           .join(",")}
       </output>
     </>
@@ -50,7 +53,9 @@ describe("ColumnEditor (web)", () => {
     const grid = open();
     expect(within(grid).getAllByRole("row")).toHaveLength(3);
     expect(screen.getByRole("button", { name: "Reorder Customer" })).toBeTruthy();
-    expect((screen.getByRole("checkbox", { name: /^Show Order/ }) as HTMLInputElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: /^Show Order/ }) as HTMLInputElement).disabled,
+    ).toBe(true);
   });
 
   it("hides a column when its box is unticked", () => {
@@ -65,7 +70,9 @@ describe("ColumnEditor (web)", () => {
     const grid = open();
     expect(within(grid).getAllByRole("row")).toHaveLength(3);
     fireEvent.click(screen.getByRole("button", { name: "Rename Total" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Column name" }), { target: { value: "المبلغ" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Column name" }), {
+      target: { value: "المبلغ" },
+    });
     expect(readout()).toContain("المبلغ");
     fireEvent.click(screen.getByRole("radio", { name: "Pin to start" }));
     expect(readout()).toBe("المبلغ-start,Order,Customer");

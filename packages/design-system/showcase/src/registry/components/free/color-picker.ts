@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Colour picker. */
+/** The Colour picker entry of the component registry. */
 export const FREE_COLOR_PICKER: ComponentEntry = {
   slug: "color-picker",
   tier: "free",

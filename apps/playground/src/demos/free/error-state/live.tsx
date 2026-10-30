@@ -60,7 +60,10 @@ export default function Live() {
       title: t(K.sample.something_went_wrong),
       description: t(K.sample.we_could_not_load_this),
     },
-  } as const satisfies Record<ErrorStateKind, { readonly title: string; readonly description: string }>;
+  } as const satisfies Record<
+    ErrorStateKind,
+    { readonly title: string; readonly description: string }
+  >;
   const [phase, setPhase] = useState<Phase>("failed");
 
   const region = useRef<HTMLDivElement>(null);

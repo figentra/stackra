@@ -8,7 +8,7 @@
 
 /** The outcome of the registry gate. */
 export interface RegistryReport {
-  /** Fatal findings. */
+  /** Findings that fail the gate. */
   readonly errors: readonly string[];
   /** Findings that become fatal at a later milestone. */
   readonly warnings: readonly string[];

@@ -7,7 +7,10 @@
  */
 /** One inline run. */
 export interface MarkdownInline {
+  /** The style of the run: plain, bold, italic, code or link. */
   readonly kind: "text" | "strong" | "emphasis" | "code" | "link";
+  /** The words of the run. */
   readonly text: string;
+  /** The link target, for a `link` run. */
   readonly href?: string | undefined;
 }

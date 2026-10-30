@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `readTarball`: the files and package.json of an npm tarball.
- * Boundary: reads bytes only; keeps no file body but package.json. Throws `TarballError` on a malformed archive, a
+ * Purpose: `readTarball`: the files, package.json and top-level README of an npm tarball.
+ * Boundary: reads bytes only; keeps no file body but package.json and the README (for the registry browser). Throws `TarballError` on a malformed archive, a
  *           missing package.json or an unpacked size over the limit.
  * Runtime: worker
  * Governing contract: ADR 0453 (decision 7).
@@ -63,7 +63,7 @@ const paxPath = (body: Uint8Array): string | null => {
 };
 
 /**
- * The files and package.json of an npm tarball.
+ * The files, package.json and top-level README of an npm tarball.
  *
  * @param bytes - the `.tgz` bytes.
  * @param maxUnpackedBytes - the largest unpacked size read.
@@ -77,6 +77,7 @@ export async function readTarball(
   const tar = await gunzip(bytes, maxUnpackedBytes);
   const files: string[] = [];
   let packageJson: Record<string, unknown> | null = null;
+  let readme: string | null = null;
   let longName: string | null = null;
   for (let at = 0; at + BLOCK <= tar.length;) {
     const header = tar.subarray(at, at + BLOCK);
@@ -102,6 +103,7 @@ export async function readTarball(
     if (type !== "0" && type !== "\0") continue;
     const path = name.slice(name.indexOf("/") + 1);
     files.push(path);
+    if (readme === null && /^readme(\.md|\.markdown)?$/i.test(path)) readme = decoder.decode(body);
     if (path === "package.json") {
       try {
         packageJson = JSON.parse(decoder.decode(body)) as Record<string, unknown>;
@@ -111,5 +113,5 @@ export async function readTarball(
     }
   }
   if (packageJson === null) throw new TarballError("tarball has no package.json");
-  return { files, packageJson };
+  return { files, packageJson, ...(readme === null ? {} : { readme }) };
 }

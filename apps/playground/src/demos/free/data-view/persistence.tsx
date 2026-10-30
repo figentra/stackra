@@ -14,7 +14,7 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 /** The key the layout persists under. */
 const KEY = "playground.orders.persistence";
 
-/** DataView: Persistence. */
+/** The DataView demo: persistence. */
 export default function Persistence() {
   const [mount, setMount] = useState(0);
   return <Saved key={mount} onForget={() => setMount((count) => count + 1)} />;

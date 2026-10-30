@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Phone field. */
+/** The Phone field entry of the component registry. */
 export const FREE_PHONE_FIELD: ComponentEntry = {
   slug: "phone-field",
   tier: "free",

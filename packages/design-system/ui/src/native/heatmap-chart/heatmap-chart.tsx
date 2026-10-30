@@ -85,7 +85,7 @@ export function HeatmapChart({
               <Pressable
                 key={column}
                 onPress={() => setPressed([rowIndex, columnIndex])}
-                className="h-6 flex-1 rounded-[4px]"
+                className="h-6 flex-1 rounded-[var(--radius-control-inner)]"
                 style={{
                   backgroundColor: heatPaintOf(
                     heatLevelOf(grid.cells[rowIndex]?.[columnIndex], grid.min, grid.max),

@@ -9,9 +9,11 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 
 /** One task on a timeline. */
 export interface TimelineTask {
+  /** A stable id, unique within the timeline. */
   readonly key: string;
   /** The key of the lane it sits in. */
   readonly rowKey: string;
+  /** The name shown on the bar. */
   readonly label: string;
   /** Its first day, an ISO date (`2026-11-03`). */
   readonly start: string;

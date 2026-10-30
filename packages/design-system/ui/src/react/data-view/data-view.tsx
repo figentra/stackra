@@ -338,10 +338,20 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
     <div className="flex flex-wrap items-center gap-2">
       <SavedViewsMenu collection={collection} onShareView={onShareView} />
       <div className="min-w-48 flex-1">{search}</div>
-      <Popover title={t(K.filter_title, { label })} trigger={filterTrigger} placement="bottom" align="start">
+      <Popover
+        title={t(K.filter_title, { label })}
+        trigger={filterTrigger}
+        placement="bottom"
+        align="start"
+      >
         <div className="w-[min(40rem,calc(100vw-2rem))]">{filterEditor}</div>
       </Popover>
-      <Popover title={t(K.sort_title, { label })} trigger={sortTrigger} placement="bottom" align="start">
+      <Popover
+        title={t(K.sort_title, { label })}
+        trigger={sortTrigger}
+        placement="bottom"
+        align="start"
+      >
         <div className="w-[min(22rem,calc(100vw-2rem))]">{sortEditor}</div>
       </Popover>
       {groupMenu}
@@ -357,7 +367,10 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
 
   const chips =
     state.filter.conditions.length > 0 || (state.filter.groups ?? []).length > 0 ? (
-      <ul className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0" aria-label={t(K.filter)}>
+      <ul
+        className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0"
+        aria-label={t(K.filter)}
+      >
         {state.filter.conditions.map((condition) => (
           <li key={condition.id} className="inline-flex items-center gap-0.5">
             <Chip variant="secondary">{chipText(condition)}</Chip>
@@ -457,7 +470,11 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         role="region"
         aria-label={label}
         className={
-          cn("grid w-full min-w-0 content-start gap-3", isFullscreen && "overflow-auto bg-background p-4", className) ?? ""
+          cn(
+            "grid w-full min-w-0 content-start gap-3",
+            isFullscreen && "overflow-auto bg-background p-4",
+            className,
+          ) ?? ""
         }
         style={{ minInlineSize: "min(36rem, calc(100vw - 6rem))", ...rest.style }}
       >
@@ -472,19 +489,39 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         </div>
         {body}
         {collection.paging === "page" && layout !== "table" && collection.pageCount > 1 ? (
-          <nav className="flex items-center justify-end gap-2" aria-label={t(K.page_of, { page: state.page + 1, count: collection.pageCount })}>
-            <Button size="sm" variant="secondary" isDisabled={state.page === 0} onPress={() => collection.setPage(state.page - 1)}>
+          <nav
+            className="flex items-center justify-end gap-2"
+            aria-label={t(K.page_of, { page: state.page + 1, count: collection.pageCount })}
+          >
+            <Button
+              size="sm"
+              variant="secondary"
+              isDisabled={state.page === 0}
+              onPress={() => collection.setPage(state.page - 1)}
+            >
               {t(K.previous_page)}
             </Button>
-            <span className="text-sm text-muted">{t(K.page_of, { page: state.page + 1, count: collection.pageCount })}</span>
-            <Button size="sm" variant="secondary" isDisabled={!collection.hasMore} onPress={() => collection.setPage(state.page + 1)}>
+            <span className="text-sm text-muted">
+              {t(K.page_of, { page: state.page + 1, count: collection.pageCount })}
+            </span>
+            <Button
+              size="sm"
+              variant="secondary"
+              isDisabled={!collection.hasMore}
+              onPress={() => collection.setPage(state.page + 1)}
+            >
               {t(K.next_page)}
             </Button>
           </nav>
         ) : null}
         {collection.paging === "infinite" && layout !== "table" && collection.hasMore ? (
           <div className="flex justify-center">
-            <Button size="sm" variant="secondary" isLoading={collection.isLoading} onPress={collection.loadMore}>
+            <Button
+              size="sm"
+              variant="secondary"
+              isLoading={collection.isLoading}
+              onPress={collection.loadMore}
+            >
               {t(K.load_more)}
             </Button>
           </div>

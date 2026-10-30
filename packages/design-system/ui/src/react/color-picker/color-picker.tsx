@@ -57,7 +57,7 @@ export function ColorPicker({
         xChannel="saturation"
         yChannel="brightness"
         isDisabled={isDisabled ?? false}
-        className="aspect-[4/3] w-full rounded-xl"
+        className="aspect-[4/3] w-full rounded-[var(--radius-container)]"
       >
         <ColorArea.Thumb />
       </ColorArea>
@@ -82,7 +82,7 @@ export function ColorPicker({
       <div className="flex items-end gap-2">
         <span
           aria-hidden
-          className="size-10 shrink-0 rounded-field border border-border"
+          className="size-10 shrink-0 rounded-[var(--radius-control)] border border-border"
           style={{ backgroundColor: hex }}
         />
         <TextField

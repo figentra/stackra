@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Property list. */
+/** The Property list entry of the component registry. */
 export const FREE_PROPERTY_LIST: ComponentEntry = {
   slug: "property-list",
   tier: "free",

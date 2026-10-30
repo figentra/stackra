@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Date field. */
+/** The Date field entry of the component registry. */
 export const FREE_DATE_FIELD: ComponentEntry = {
   slug: "date-field",
   tier: "free",

@@ -78,7 +78,7 @@ export function NumberPad({
               key={index}
               className={
                 cn(
-                  "size-3.5 rounded-full border border-foreground",
+                  "size-3.5 rounded-[var(--radius-pill)] border border-foreground",
                   index < current.length && "bg-foreground",
                 ) ?? ""
               }
@@ -115,7 +115,7 @@ export function NumberPad({
                   onPress={() => press(key)}
                   className={
                     cn(
-                      "h-14 flex-1 items-center justify-center rounded-2xl",
+                      "h-14 flex-1 items-center justify-center rounded-[var(--radius-container)]",
                       key === "delete" ? "bg-transparent" : "bg-default",
                       isDisabled && "opacity-50",
                     ) ?? ""

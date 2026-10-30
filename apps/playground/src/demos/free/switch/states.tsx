@@ -29,7 +29,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   );
 }
 
-/** Switch: States. */
+/** The Switch demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   const [allowed, setAllowed] = useState(false);

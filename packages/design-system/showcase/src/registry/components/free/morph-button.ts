@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Morph button. */
+/** The Morph button entry of the component registry. */
 export const FREE_MORPH_BUTTON: ComponentEntry = {
   slug: "morph-button",
   tier: "free",

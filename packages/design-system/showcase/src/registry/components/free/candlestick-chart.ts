@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Candlestick chart. */
+/** The Candlestick chart entry of the component registry. */
 export const FREE_CANDLESTICK_CHART: ComponentEntry = {
   slug: "candlestick-chart",
   tier: "free",

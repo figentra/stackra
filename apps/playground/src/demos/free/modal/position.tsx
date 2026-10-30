@@ -54,7 +54,7 @@ function Sample({ buttonLabel, title, body, ...modalProps }: SampleProps) {
   );
 }
 
-/** Modal: Position. */
+/** The Modal demo: position. */
 export default function Position() {
   const t = useCatalogueText(MESSAGES.en);
   /** The vertical positions the modal takes, each with the label of the button that opens it. */

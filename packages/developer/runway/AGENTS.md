@@ -54,6 +54,12 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
   unless an enabled flag lists it), and never hide a feature at run time instead. It
   never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
   store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
+- Mobile onboarding (`onboardMobile`, ADR 0482) reaches Apple, Google Play, Expo, Google Cloud, Firebase, Sentry and
+  Infisical only through its ports (`src/core/ports/`); each has a real driver and a `Memory…` driver in
+  `src/node/drivers/`, and a new store call gets both. Drivers read secrets by NAME from the job's environment per
+  request (`secretOf`) and send them only inside it (`requestJson` never puts a header or body in an error). Runway
+  never generates or holds a signing credential (EAS does); the one key it creates (FCM v1) goes to `VaultWriter` and
+  EAS from a local and is never returned, logged or written to disk. A set store id is never changed.
 - The one entitlement written from runway data rather than a capability is Sign in with Apple: `apple` in
   `mobile.<app>.signIn.social` sets `usesAppleSignIn` and `com.apple.developer.applesignin` (STA-1578). A social list
   without `apple` is a schema refusal (App Store guideline 4.8); keep that refine and both JSON schema copies in step.

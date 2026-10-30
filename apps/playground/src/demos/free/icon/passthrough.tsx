@@ -30,7 +30,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Icon: Pass-through. */
+/** The Icon demo: pass-through. */
 export default function Passthrough() {
   const t = useCatalogueText(MESSAGES.en);
   return (

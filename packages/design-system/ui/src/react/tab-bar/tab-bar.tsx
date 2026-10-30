@@ -67,7 +67,7 @@ export function TabBar({ items, label, position = "fixed", className }: TabBarPr
                     // matched the name "Orders, 3" (axe label-content-name-mismatch).
                     <span
                       data-count={item.badge}
-                      className="absolute -end-2 -top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[0.625rem] leading-4 font-semibold text-danger-foreground tabular-nums before:content-[attr(data-count)]"
+                      className="absolute -end-2 -top-1 min-w-4 rounded-[var(--radius-pill)] bg-danger px-1 text-center text-[0.625rem] leading-4 font-semibold text-danger-foreground tabular-nums before:content-[attr(data-count)]"
                     />
                   )}
                 </span>

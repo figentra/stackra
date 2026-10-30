@@ -18,6 +18,7 @@ import { NotificationsPanel } from "#native/notifications-panel/notifications-pa
 
 type Gesture = { dx: number; dy: number };
 type Responder = {
+  onPanResponderTerminate: () => void;
   onMoveShouldSetPanResponder: (event: unknown, gesture: Gesture) => boolean;
   onPanResponderMove: (event: unknown, gesture: Gesture) => void;
   onPanResponderRelease: (event: unknown, gesture: Gesture) => void;
@@ -30,14 +31,17 @@ const state = vi.hoisted(() => ({
   sets: [] as unknown[],
   drawer: {} as Record<string, unknown>,
   responders: [] as Responder[],
+  animated: [] as Record<string, unknown>[],
 }));
 
 vi.mock("react-native-reanimated", async () => {
   const { createElement, useRef } = await import("react");
   return {
     default: {
-      View: (props: Record<string, unknown>) =>
-        createElement("div", null, props["children"] as never),
+      View: (props: Record<string, unknown>) => {
+        state.animated.push(props);
+        return createElement("div", null, props["children"] as never);
+      },
     },
     useSharedValue: (initial: unknown) => {
       const ref = useRef<{ get: () => unknown; set: (next: unknown) => void } | null>(null);
@@ -173,6 +177,7 @@ describe("NotificationsPanel (native)", () => {
     state.sets = [];
     state.drawer = {};
     state.responders = [];
+    state.animated = [];
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -252,5 +257,69 @@ describe("NotificationsPanel (native)", () => {
     expect(onDismiss).toHaveBeenCalledWith("3");
     press(screen.getAllByRole("button", { name: "Dismiss notification" })[0] as HTMLElement);
     expect(onDismiss).toHaveBeenCalledWith("1");
+  });
+
+  it("says it is empty in its own words, the caller's or the caller's node", () => {
+    const { rerender } = render(<NotificationsPanel items={[]} isInline title="Inbox" />);
+    expect(screen.getByText("Inbox")).toBeTruthy();
+    expect(screen.getByText("You're all caught up")).toBeTruthy();
+    rerender(<NotificationsPanel items={[]} isInline emptyState="Nothing new" />);
+    expect(screen.getByText("Nothing new")).toBeTruthy();
+    rerender(
+      <NotificationsPanel items={[]} isInline emptyState={<p>Quiet</p>} footer={<b>All</b>} />,
+    );
+    expect(screen.getByText("Quiet")).toBeTruthy();
+    expect(screen.getByText("All")).toBeTruthy();
+  });
+
+  it("takes its own label, draws no badge when all is read and follows the owner's open state", () => {
+    const onOpenChange = vi.fn();
+    render(
+      <NotificationsPanel
+        items={[{ id: "9", title: "Read", description: "More", time: "2m" }]}
+        label="Alerts"
+        isOpen={false}
+        onOpenChange={onOpenChange}
+        onMarkAllRead={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+    press(screen.getByRole("button", { name: "Alerts" }));
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(state.drawer["isOpen"]).toBe(false);
+    act(() => (state.drawer["onOpenChange"] as (next: boolean) => void)(false));
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("names the bell plainly with nothing unread and draws an ungrouped row's details", () => {
+    render(
+      <NotificationsPanel
+        items={[{ id: "9", title: "Read", description: "More", time: "2m" }]}
+        defaultOpen
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+    expect(screen.getByText("More")).toBeTruthy();
+    expect(screen.getByText("2m")).toBeTruthy();
+    expect(screen.queryByText("Mark all as read")).toBeNull();
+  });
+
+  it("follows a swipe, measures its row, settles when cancelled and dismisses at once when reduced", () => {
+    state.reduced = true;
+    const onDismiss = vi.fn();
+    render(<NotificationsPanel items={ITEMS} onDismiss={onDismiss} defaultOpen />);
+    const responder = state.responders.at(-1) as Responder;
+    const row = [...state.animated].reverse().find((props) => props["onLayout"]);
+    act(() =>
+      (row?.["onLayout"] as ((event: unknown) => void) | undefined)?.({
+        nativeEvent: { layout: { width: 90 } },
+      }),
+    );
+    responder.onPanResponderMove(null, { dx: 25, dy: 0 });
+    expect(state.sets).toContain(25);
+    responder.onPanResponderTerminate();
+    expect(state.sets.at(-1)).toBe(0);
+    responder.onPanResponderRelease(null, { dx: 40, dy: 0 });
+    expect(onDismiss).toHaveBeenCalledWith("3");
   });
 });

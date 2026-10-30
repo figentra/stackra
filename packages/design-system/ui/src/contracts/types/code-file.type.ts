@@ -10,6 +10,8 @@
 export interface CodeFile {
   /** The tab's label, usually a file name. */
   readonly title: string;
+  /** The source text shown in the tab. */
   readonly code: string;
+  /** The language used to colour the code. */
   readonly language?: string | undefined;
 }

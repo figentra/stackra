@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Composed chart. */
+/** The Composed chart entry of the component registry. */
 export const FREE_COMPOSED_CHART: ComponentEntry = {
   slug: "composed-chart",
   tier: "free",

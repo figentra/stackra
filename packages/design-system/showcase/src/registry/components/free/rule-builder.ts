@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Rule builder. */
+/** The Rule builder entry of the component registry. */
 export const FREE_RULE_BUILDER: ComponentEntry = {
   slug: "rule-builder",
   tier: "free",

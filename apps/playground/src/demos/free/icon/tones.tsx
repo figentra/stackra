@@ -31,7 +31,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Icon: Tones. */
+/** The Icon demo: tones. */
 export default function Tones() {
   const t = useCatalogueText(MESSAGES.en);
   return (

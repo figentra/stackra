@@ -18,7 +18,7 @@ const K = LINK_KEYS.link;
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-x-6 gap-y-2";
 
-/** Link: States. */
+/** The Link demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

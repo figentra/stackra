@@ -64,7 +64,7 @@ export function Carousel({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScroll}
-        className="rounded-xl"
+        className="rounded-[var(--radius-container)]"
       >
         {children.map((slide, position) => (
           <View
@@ -103,7 +103,7 @@ export function Carousel({
                   hitSlop={8}
                   onPress={() => goTo(position)}
                   className={[
-                    "h-2 rounded-full",
+                    "h-2 rounded-[var(--radius-pill)]",
                     position === index ? "w-5 bg-foreground" : "w-2 bg-default",
                   ].join(" ")}
                 />

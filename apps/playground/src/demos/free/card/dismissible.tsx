@@ -17,7 +17,7 @@ const K = CARD_KEYS.card;
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Card: Dismissible. */
+/** The Card demo: dismissible. */
 export default function Dismissible() {
   const t = useCatalogueText(MESSAGES.en);
   const [isShown, setIsShown] = useState(true);

@@ -7,7 +7,7 @@
  */
 import type { WheelPickerItem } from "#contracts/types/wheel-picker-item.type";
 
-/** One wheel. */
+/** One wheel of a wheel picker and its items. */
 export interface WheelPickerColumn {
   /** The column's key, unique within the picker. */
   readonly id: string;

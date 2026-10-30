@@ -18,6 +18,7 @@ import { preloadApiDoc } from "#src/components/component-page/preload-api-doc.fu
 const arabic = () =>
   import("@stackra/showcase/assets/lang/ar/api.json").then((json) => json.default);
 
+/** Returns an entry's API doc for a platform in the page's language; undefined until it loads. */
 export function useApiDoc(platform: Platform, key: string): ApiDoc | undefined {
   const { locale } = useDesignSystem();
   const isArabic = locale.startsWith("ar");

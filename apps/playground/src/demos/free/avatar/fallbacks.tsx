@@ -25,7 +25,7 @@ const BROKEN_IMAGE = "/missing-avatar.png";
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Avatar: Fallbacks. */
+/** The Avatar demo: fallbacks. */
 export default function Fallbacks() {
   const t = useCatalogueText(MESSAGES.en);
   return (

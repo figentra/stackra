@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Form section. */
+/** The Form section entry of the component registry. */
 export const FREE_FORM_SECTION: ComponentEntry = {
   slug: "form-section",
   tier: "free",

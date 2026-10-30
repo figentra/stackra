@@ -29,7 +29,8 @@ export function CollectionSortEditor<TItem extends CollectionItem = CollectionIt
 }: CollectionSortEditorProps<TItem>): ReactElement {
   const t = useUiText();
   const { sort } = collection.state;
-  const labelOf = (id: string) => collection.columns.find((column) => column.id === id)?.label ?? id;
+  const labelOf = (id: string) =>
+    collection.columns.find((column) => column.id === id)?.label ?? id;
   const free = collection.columns.filter(
     (column) => column.isSortable && !sort.some((key) => key.column === column.id),
   );
@@ -71,7 +72,9 @@ export function CollectionSortEditor<TItem extends CollectionItem = CollectionIt
                   variant="ghost"
                   icon="x"
                   label={t(K.remove_sort, { label: item.label })}
-                  onPress={() => collection.setSort(sort.filter((entry) => entry.column !== item.id))}
+                  onPress={() =>
+                    collection.setSort(sort.filter((entry) => entry.column !== item.id))
+                  }
                 />
               </div>
             );

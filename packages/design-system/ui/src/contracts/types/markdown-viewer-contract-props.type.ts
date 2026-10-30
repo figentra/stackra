@@ -10,5 +10,6 @@
 
 /** Props shared by the web and native `MarkdownViewer`. */
 export interface MarkdownViewerContractProps {
+  /** The Markdown text to render. */
   readonly source: string;
 }

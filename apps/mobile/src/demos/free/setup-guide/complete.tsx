@@ -13,7 +13,7 @@ import { SETUP_GUIDE_DEMO_KEYS } from "#src/demos/free/setup-guide/setup-guide-d
 /** The demo's keys. */
 const K = SETUP_GUIDE_DEMO_KEYS.demo_free.setup_guide;
 
-/** All done. */
+/** The SetupGuide demo: every task done. */
 export default function Complete() {
   const t = useCatalogueText(MESSAGES.en);
   return (

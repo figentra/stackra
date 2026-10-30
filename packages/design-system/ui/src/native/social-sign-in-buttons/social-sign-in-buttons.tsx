@@ -47,7 +47,7 @@ function markOf(provider: SocialProvider, ink: string) {
   }
   return (
     provider.icon ?? (
-      <View className="size-5 items-center justify-center rounded-full bg-default">
+      <View className="size-5 items-center justify-center rounded-[var(--radius-pill)] bg-default">
         <Text type="caption" className="font-semibold">
           {provider.name.slice(0, 1)}
         </Text>

@@ -3,8 +3,8 @@
  * Purpose: `useTagInputState(props)`, the state every runtime's TagInput shares: the tags (controlled or not), the
  *          draft text, adding typed or pasted text through `splitTags` and `addTags`, removing, and the message for the
  *          last refused tag in the `ui` catalogue's words.
- * Boundary: a React hook with no rendering; the runtimes draw the field.
- * Runtime: isomorphic (the web and native TagInput both use it)
+ * Boundary: a React hook with no rendering; the runtimes draw the field; the web and native TagInput both use it.
+ * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); STA-1371 (wave A, owner request 2026-10-29).
  */
 import { useState } from "react";

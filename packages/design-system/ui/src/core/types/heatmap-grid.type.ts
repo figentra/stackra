@@ -14,6 +14,8 @@ export interface HeatmapGrid {
   readonly rows: readonly string[];
   /** One line per row, one value per column; null for a gap. */
   readonly cells: readonly (readonly (number | null)[])[];
+  /** The smallest value in the grid, for the colour scale. */
   readonly min: number;
+  /** The largest value in the grid, for the colour scale. */
   readonly max: number;
 }

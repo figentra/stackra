@@ -20,7 +20,9 @@ describe("LoadingOverlay (web)", () => {
     );
     expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
     expect(screen.getByRole("button", { hidden: true }).closest("[inert]")).toBeTruthy();
-    expect(screen.getAllByRole("status").some((s) => s.textContent?.includes("Saving the price list…"))).toBe(true);
+    expect(
+      screen.getAllByRole("status").some((s) => s.textContent?.includes("Saving the price list…")),
+    ).toBe(true);
   });
 
   it("leaves the content alone when not loading", () => {

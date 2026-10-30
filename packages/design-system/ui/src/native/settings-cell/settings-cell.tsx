@@ -14,7 +14,7 @@ import { ItemCardGroupContext } from "#native/item-card/item-card-group-context"
 import { Text } from "#native/text/text";
 import type { SettingsCellProps } from "#native/settings-cell/settings-cell.props";
 
-/** One setting. */
+/** Draws one setting row with its title and control. */
 export function SettingsCell({
   title,
   description,
@@ -27,11 +27,11 @@ export function SettingsCell({
   const isGrouped = use(ItemCardGroupContext);
   return (
     <View
-      className={`gap-3 px-4 py-3 ${isGrouped ? "" : "rounded-2xl border border-border bg-surface"} ${isDisabled ? "opacity-60" : ""} ${className ?? ""}`}
+      className={`gap-3 px-4 py-3 ${isGrouped ? "" : "rounded-[var(--radius-container)] border border-border bg-surface"} ${isDisabled ? "opacity-60" : ""} ${className ?? ""}`}
     >
       <View className="min-h-8 flex-row items-center gap-3">
         {icon ? (
-          <View className="size-8 items-center justify-center rounded-lg bg-default">
+          <View className="size-8 items-center justify-center rounded-[var(--radius-control)] bg-default">
             <Icon name={icon} size="sm" />
           </View>
         ) : null}

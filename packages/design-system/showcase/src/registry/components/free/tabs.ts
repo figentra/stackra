@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tabs. */
+/** The Tabs entry of the component registry. */
 export const FREE_TABS: ComponentEntry = {
   slug: "tabs",
   tier: "free",

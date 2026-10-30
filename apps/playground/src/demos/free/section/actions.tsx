@@ -45,7 +45,7 @@ const actionsOf = (t: ReturnType<typeof useCatalogueText>, count: number): MenuL
   return all.slice(0, count);
 };
 
-/** Section: Actions. */
+/** The Section demo: actions. */
 export default function Actions() {
   const t = useCatalogueText(MESSAGES.en);
 

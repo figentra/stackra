@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Carousel. */
+/** The Carousel entry of the component registry. */
 export const FREE_CAROUSEL: ComponentEntry = {
   slug: "carousel",
   tier: "free",

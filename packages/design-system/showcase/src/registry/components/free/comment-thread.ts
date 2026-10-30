@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Comment thread. */
+/** The Comment thread entry of the component registry. */
 export const FREE_COMMENT_THREAD: ComponentEntry = {
   slug: "comment-thread",
   tier: "free",

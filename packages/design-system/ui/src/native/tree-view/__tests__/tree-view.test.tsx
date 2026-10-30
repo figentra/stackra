@@ -16,6 +16,7 @@ import { TreeView } from "#native/tree-view/tree-view";
 
 const state = vi.hoisted(() => ({
   direction: "ltr",
+  isReduced: true,
   played: [] as string[],
   styles: [] as unknown[],
 }));
@@ -54,7 +55,7 @@ vi.mock("react-native-reanimated", async () => {
       },
     },
     FadeInDown: chain,
-    useReducedMotion: () => true,
+    useReducedMotion: () => state.isReduced,
     useSharedValue: (value: unknown) => {
       let current = value;
       return { get: () => current, set: (next: unknown) => (current = next) };
@@ -92,9 +93,13 @@ const CATEGORIES: readonly TreeViewNode[] = [
   { id: "food", label: "Food" },
 ];
 
+/** The Food row. */
+const food = () => screen.getByRole("button", { name: "Food" });
+
 describe("TreeView (native)", () => {
   beforeEach(() => {
     state.direction = "ltr";
+    state.isReduced = true;
     state.played = [];
     state.styles = [];
   });
@@ -133,5 +138,78 @@ describe("TreeView (native)", () => {
     act(() => screen.getByRole("button", { name: "Food" }).click());
     expect(onAction).toHaveBeenCalledWith("food");
     expect(state.styles.at(-1)).toEqual({ transform: [{ rotate: "180deg" }] });
+  });
+
+  it("selects one row at a time and clears it on a second press", () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <TreeView
+        items={CATEGORIES}
+        label="Menu"
+        selectionMode="single"
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    act(() => food().click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["food"]);
+    expect(JSON.parse(food().dataset["state"] ?? "{}")).toEqual({
+      disabled: false,
+      selected: true,
+    });
+    act(() => food().click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("follows the owner's selection and expansion, unselecting from multiple", () => {
+    const onSelectionChange = vi.fn();
+    const onExpandedChange = vi.fn();
+    render(
+      <TreeView
+        items={CATEGORIES}
+        label="Menu"
+        selectionMode="multiple"
+        selectedKeys={["hot"]}
+        expandedKeys={["drinks"]}
+        onSelectionChange={onSelectionChange}
+        onExpandedChange={onExpandedChange}
+      />,
+    );
+    expect(
+      JSON.parse(screen.getByRole("button", { name: "Hot" }).dataset["state"] ?? "{}"),
+    ).toEqual({
+      disabled: false,
+      checked: true,
+    });
+    act(() => screen.getByRole("button", { name: "Hot" }).click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+    expect(screen.getByRole("button", { name: "Hot" }).dataset["state"]).toContain(
+      '"checked":true',
+    );
+    act(() => screen.getByRole("button", { name: "Collapse Drinks" }).click());
+    expect(onExpandedChange).toHaveBeenLastCalledWith([]);
+    expect(screen.getByText("Hot")).toBeTruthy();
+  });
+
+  it("draws a disabled row and its description, and staggers children in with motion on", () => {
+    state.isReduced = false;
+    render(
+      <TreeView
+        items={[
+          {
+            id: "a",
+            label: "A",
+            description: "first",
+            isDisabled: true,
+            children: [{ id: "b", label: "B" }],
+          },
+        ]}
+        label="Tree"
+        defaultExpandedKeys={["a"]}
+      />,
+    );
+    expect(screen.getByText("first")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "A" }).dataset["state"]).toContain('"disabled":true');
+    expect(screen.getByText("B")).toBeTruthy();
+    expect(state.styles.at(-1)).toEqual({ transform: [{ rotate: "90deg" }] });
   });
 });

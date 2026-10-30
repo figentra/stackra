@@ -47,7 +47,7 @@ function Account() {
   );
 }
 
-/** Sidebar: Collapsed. */
+/** The Sidebar demo: collapsed. */
 export default function Collapsed() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

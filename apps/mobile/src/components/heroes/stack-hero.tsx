@@ -58,7 +58,11 @@ const BARS = [0.42, 0.64, 0.5, 0.78, 0.58, 0.88, 0.7, 0.96, 0.74, 1] as const;
 const SWATCHES = ["bg-accent", "bg-accent-soft", "bg-foreground", "bg-default"] as const;
 
 /** The token layer's corner samples. */
-const CORNERS = ["rounded-sm", "rounded-lg", "rounded-full"] as const;
+const CORNERS = [
+  "rounded-[var(--radius-control-inner)]",
+  "rounded-[var(--radius-control)]",
+  "rounded-[var(--radius-pill)]",
+] as const;
 
 /** A layer's float: how far it drifts up (points, at full size) in the 6-second breath. */
 const DRIFT = [-7, 6, 13] as const;
@@ -132,7 +136,7 @@ function Blink({ isStill }: { isStill: boolean }) {
     return () => cancelAnimation(glow);
   }, [glow, isStill]);
   const fade = useAnimatedStyle(() => ({ opacity: glow.value }));
-  return <Animated.View className="size-2 rounded-full bg-success" style={fade} />;
+  return <Animated.View className="size-2 rounded-[var(--radius-pill)] bg-success" style={fade} />;
 }
 
 /** Landing hero A: the three layers of the system. */
@@ -190,7 +194,10 @@ export function StackHero({ onBrowse }: HeroProps) {
                 </Text>
                 <View className="flex-row gap-2">
                   {SWATCHES.map((swatch) => (
-                    <View key={swatch} className={`h-10 flex-1 rounded-xl ${swatch}`} />
+                    <View
+                      key={swatch}
+                      className={`h-10 flex-1 rounded-[var(--radius-container)] ${swatch}`}
+                    />
                   ))}
                 </View>
                 <View className="flex-row items-center justify-between">
@@ -222,7 +229,7 @@ export function StackHero({ onBrowse }: HeroProps) {
                     <Switch value isReadOnly />
                   </View>
                 </View>
-                <View className="h-10 justify-center rounded-xl border border-border bg-field px-3">
+                <View className="h-10 justify-center rounded-[var(--radius-container)] border border-border bg-field px-3">
                   <Text type="small" tone="muted">
                     {t(K.stack.search)}
                   </Text>
@@ -263,13 +270,16 @@ export function StackHero({ onBrowse }: HeroProps) {
                       height={height}
                       index={index}
                       isStill={isStill}
-                      className="rounded-t-md bg-accent"
+                      className="rounded-t-[var(--radius-control)] bg-accent"
                     />
                   ))}
                 </View>
                 <View className="flex-row gap-2">
                   {stats.map(({ label, value }) => (
-                    <View key={label} className="flex-1 rounded-xl bg-default/60 px-2 py-1">
+                    <View
+                      key={label}
+                      className="flex-1 rounded-[var(--radius-container)] bg-default/60 px-2 py-1"
+                    >
                       <Text type="small" tone="muted" numberOfLines={1} adjustsFontSizeToFit>
                         {t(label)}
                       </Text>

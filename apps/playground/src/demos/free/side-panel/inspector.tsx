@@ -39,7 +39,7 @@ function Toggle() {
   );
 }
 
-/** SidePanel: Inspector. */
+/** The SidePanel demo: inspector. */
 export default function Inspector() {
   const t = useCatalogueText(MESSAGES.en);
   return (

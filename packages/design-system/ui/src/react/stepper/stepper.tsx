@@ -86,7 +86,10 @@ export function Stepper({
         </div>
         <span aria-hidden className="flex gap-1.5">
           {states.map(({ step, status }) => (
-            <span key={step.id} className={cn("h-2 rounded-full", fill, DOT[status])} />
+            <span
+              key={step.id}
+              className={cn("h-2 rounded-[var(--radius-pill)]", fill, DOT[status])}
+            />
           ))}
         </span>
       </div>
@@ -110,7 +113,7 @@ export function Stepper({
             <span
               aria-hidden
               className={cn(
-                "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium tabular-nums [&_svg]:size-4",
+                "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-pill)] text-sm font-medium tabular-nums [&_svg]:size-4",
                 fill,
                 MARKER[status],
               )}

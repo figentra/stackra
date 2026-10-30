@@ -55,7 +55,7 @@ function markOf(provider: SocialProvider) {
       <span
         aria-hidden="true"
         data-glyph={provider.name.slice(0, 1)}
-        className="inline-flex size-5 items-center justify-center rounded-full bg-default text-xs font-semibold before:content-[attr(data-glyph)]"
+        className="inline-flex size-5 items-center justify-center rounded-[var(--radius-pill)] bg-default text-xs font-semibold before:content-[attr(data-glyph)]"
       />
     )
   );

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/search-field/surfaces.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "surfaces" demo of the native SearchField: `primary` is the field colour; `secondary` sits on a card.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { SearchField, Surface, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { SEARCH_FIELD_DEMO_KEYS } from "#src/demos/free/search-field/search-field-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = SEARCH_FIELD_DEMO_KEYS.demo_free.search_field.surfaces;\n\n/** Each variant where it belongs. */\nexport default function Surfaces() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-4">\n      <SearchField label={t(K.primary)} variant="primary" />\n      <Surface variant="secondary">\n        <SearchField label={t(K.secondary)} variant="secondary" />\n      </Surface>\n    </View>\n  );\n}\n';

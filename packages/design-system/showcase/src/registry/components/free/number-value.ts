@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Number value. */
+/** The Number value entry of the component registry. */
 export const FREE_NUMBER_VALUE: ComponentEntry = {
   slug: "number-value",
   tier: "free",

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/form/label.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "label" demo of the native Label: each state; the asterisk marks a required field.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Label, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { FORM_DEMO_KEYS } from "#src/demos/free/form/form-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = FORM_DEMO_KEYS.demo_free.form.label;\n\n/** Default, required, invalid and disabled. */\nexport default function LabelDemo() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-2">\n      <Label>{t(K.default)}</Label>\n      <Label isRequired>{t(K.required)}</Label>\n      <Label isInvalid>{t(K.invalid)}</Label>\n      <Label isDisabled>{t(K.disabled)}</Label>\n    </View>\n  );\n}\n';

@@ -34,7 +34,7 @@ export function SidebarMenuSkeleton({
       {hasIcon || isRail ? (
         <Skeleton className="size-5 shrink-0 rounded-[var(--radius-control)]" />
       ) : null}
-      {isRail ? null : <Skeleton className="h-3 w-3/4 rounded-full" />}
+      {isRail ? null : <Skeleton className="h-3 w-3/4 rounded-[var(--radius-pill)]" />}
     </li>
   );
 }

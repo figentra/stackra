@@ -103,7 +103,7 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
               <View className="h-5 flex-1">
                 {row.range ? (
                   <View
-                    className="absolute h-full rounded"
+                    className="absolute h-full rounded-[var(--radius-control-inner)]"
                     style={{
                       start: `${percent(row.range[0])}%`,
                       width: `${percent(row.range[1]) - percent(row.range[0])}%`,
@@ -128,7 +128,7 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
               >
                 {row.range ? (
                   <View
-                    className="absolute w-3/5 max-w-10 rounded"
+                    className="absolute w-3/5 max-w-10 rounded-[var(--radius-control-inner)]"
                     style={{
                       bottom: `${percent(row.range[0])}%`,
                       top: `${100 - percent(row.range[1])}%`,

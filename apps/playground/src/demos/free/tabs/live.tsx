@@ -15,7 +15,7 @@ import { TABS_KEYS } from "#src/routes/tabs/tabs-keys.constant";
 /** The demo's keys. */
 const K = TABS_KEYS.tabs.live;
 
-/** Controlled tabs. */
+/** The Tabs demo: tabs whose selection the demo controls. */
 export default function Live() {
   const t = useCatalogueText(MESSAGES.en);
   const [picked, setPicked] = useState<readonly string[]>(["overview"]);

@@ -49,7 +49,7 @@ export function ChartLegend({
         const body = (
           <>
             <View
-              className="size-2 rounded-full"
+              className="size-2 rounded-[var(--radius-pill)]"
               style={
                 isHidden ? { borderWidth: 1.5, borderColor: color } : { backgroundColor: color }
               }

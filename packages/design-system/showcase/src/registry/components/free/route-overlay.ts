@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Route overlay. */
+/** The Route overlay entry of the component registry. */
 export const FREE_ROUTE_OVERLAY: ComponentEntry = {
   slug: "route-overlay",
   tier: "free",

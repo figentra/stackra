@@ -63,6 +63,10 @@ tester.run(
       { filename: "packages/security/tenancy/src/a.ts", code: "export class TenantGuard {}" },
       { filename: "packages/security/tenancy/src/tenant-context.ts", code: "const tenantId = 1;" },
       {
+        filename: "services/tenancy/src/modules/tenants/models/tenant.model.ts",
+        code: "export class Tenant {}",
+      },
+      {
         filename: "packages/security/iam/src/core/drivers/iam-granted-scopes.driver.ts",
         code: "const tenantId = 1;",
       },
@@ -121,6 +125,8 @@ tester.run(
       ),
       // A tenancy-named folder outside the packages tree is not the tenancy package.
       refused("const tenantId = 1;", "tenantId", "apps/console/src/tenancy/a.ts"),
+      // Another service is not the tenancy service.
+      refused("const tenantId = 1;", "tenantId", "services/billing/src/tenancy/a.ts"),
       // IAM code that is not its scope code is not exempt.
       refused(
         "const tenantId = 1;",

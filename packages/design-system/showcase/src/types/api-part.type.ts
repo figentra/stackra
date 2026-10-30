@@ -9,9 +9,11 @@ import type { ApiProp } from "#src/types/api-prop.type";
 
 /** The generated API of one part. */
 export interface ApiPart {
+  /** The part's name, such as "Tabs.List". */
   readonly name: string;
   /** The base it extends, such as "PressableFeedback". */
   readonly extends?: string;
+  /** The part's props. */
   readonly props: readonly ApiProp[];
   /** Render props: no Default column. */
   readonly renderProps?: readonly ApiProp[];

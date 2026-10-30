@@ -42,7 +42,14 @@ export function Truncate({
     return () => observer.disconnect();
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- new text, lines or state must be measured again
   }, [children, lines, isOpen]);
-  const clamp = isOpen ? undefined : { WebkitLineClamp: lines, display: "-webkit-box", WebkitBoxOrient: "vertical" as const, overflow: "hidden" };
+  const clamp = isOpen
+    ? undefined
+    : {
+        WebkitLineClamp: lines,
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical" as const,
+        overflow: "hidden",
+      };
   const text = (
     <p ref={ref} id={id} dir="auto" style={clamp} className="m-0">
       {children}

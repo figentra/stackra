@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Page skeleton. */
+/** The Page skeleton entry of the component registry. */
 export const FREE_PAGE_SKELETON: ComponentEntry = {
   slug: "page-skeleton",
   tier: "free",

@@ -10,5 +10,6 @@
 export interface CalendarValue {
   /** `YYYY-MM-DD`; values on the same day add up. */
   readonly date: string;
+  /** The amount counted for that day. */
   readonly value: number;
 }

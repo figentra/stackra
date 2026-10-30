@@ -53,7 +53,7 @@ function Lines({
   );
 }
 
-/** Screen: Scrolling. */
+/** The Screen demo: scrolling. */
 export default function Scrolling() {
   const t = useCatalogueText(MESSAGES.en);
   return (

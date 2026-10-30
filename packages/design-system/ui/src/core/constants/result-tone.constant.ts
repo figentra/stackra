@@ -12,5 +12,5 @@ export const RESULT_TONE = Object.freeze({
   error: "danger",
   info: "accent",
   pending: "default",
-} as const satisfies Record<string, Tone>);import type { Tone } from "@stackra/contracts";
-
+} as const satisfies Record<string, Tone>);
+import type { Tone } from "@stackra/contracts";

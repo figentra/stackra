@@ -29,5 +29,7 @@ export default function ColumnTools() {
     jeddah: (index * 7) % 30,
     dammam: (index * 5) % 20,
   }));
-  return <DataGrid label={t(K.grid_label)} columns={columns} rows={rows} hasColumnTools height="20rem" />;
+  return (
+    <DataGrid label={t(K.grid_label)} columns={columns} rows={rows} hasColumnTools height="20rem" />
+  );
 }

@@ -158,8 +158,8 @@ describe("Avatar (native)", () => {
 
   it("squares the root and the fallback, keeping the caller's class", () => {
     const { rerender } = render(<Avatar shape="square" className="mine" />);
-    expect(propsOf("avatar")["className"]).toBe("rounded-lg mine");
-    expect(propsOf("fallback")["className"]).toBe("rounded-lg");
+    expect(propsOf("avatar")["className"]).toBe("rounded-[var(--radius-control)] mine");
+    expect(propsOf("fallback")["className"]).toBe("rounded-[var(--radius-control)]");
     rerender(<Avatar className="mine" />);
     expect(propsOf("avatar")["className"]).toBe("mine");
     expect(propsOf("fallback")).not.toHaveProperty("className");

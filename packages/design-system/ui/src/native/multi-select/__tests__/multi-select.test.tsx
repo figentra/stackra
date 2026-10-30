@@ -193,4 +193,67 @@ describe("MultiSelect (native)", () => {
     expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     expect(screen.getByText("Nothing")).toBeTruthy();
   });
+
+  it("selects every choosable option and clears them all, skipping disabled ones", () => {
+    const onChange = vi.fn();
+    render(
+      <MultiSelect
+        label="Tags"
+        items={[...ITEMS, { id: "off", label: "Off", isDisabled: true }]}
+        onChange={onChange}
+        hasSelectAll
+      />,
+    );
+    act(() => field().click());
+    act(() => screen.getByText("ui::multi_select_more.select_all").click());
+    expect(onChange).toHaveBeenLastCalledWith(["halal", "vegan", "spicy"]);
+    act(() => screen.getByText("ui::multi_select_more.clear_all").click());
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("shows only maxVisible chips and names the rest, keeping the owner's value", () => {
+    const onChange = vi.fn();
+    render(
+      <MultiSelect
+        accessibilityLabel="Tags"
+        label={<b>Rich</b>}
+        items={ITEMS}
+        value={["halal", "vegan", "spicy", "gone"]}
+        maxVisible={1}
+        onChange={onChange}
+        isFullWidth={false}
+        description="Pick some"
+        errorMessage="Required"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "remove" })).toBeTruthy();
+    expect(state.pressable.find((entry) => entry["accessible"])).toBeUndefined();
+    expect(screen.getByText(/ui::multi_select_more.more/)).toBeTruthy();
+    expect(screen.getByText("Pick some")).toBeTruthy();
+    expect(screen.getByText("Required")).toBeTruthy();
+    act(() => screen.getByRole("button", { name: "remove" }).click());
+    expect(onChange).toHaveBeenLastCalledWith(["vegan", "spicy", "gone"]);
+    expect(screen.getAllByText(/ui::multi_select_more.more/)).toHaveLength(1);
+  });
+
+  it("locks its chips while disabled", () => {
+    render(
+      <MultiSelect
+        label="Tags"
+        items={ITEMS}
+        defaultValue={["halal"]}
+        isDisabled
+        placeholder="Pick"
+      />,
+    );
+    expect(state.pressable.every((entry) => entry["disabled"] === true)).toBe(true);
+  });
+
+  it("shows the placeholder with nothing chosen and the catalogue's empty words", () => {
+    render(<MultiSelect label="Tags" items={[]} placeholder="Pick" hasSelectAll />);
+    expect(screen.getByText("Pick")).toBeTruthy();
+    act(() => field().click());
+    expect(screen.queryByText(/select_all/)).toBeNull();
+    expect(screen.getByText("none")).toBeTruthy();
+  });
 });

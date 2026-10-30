@@ -17,7 +17,7 @@ const K = SPINNER_KEYS.spinner;
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-6";
 
-/** Spinner: Tones. */
+/** The Spinner demo: tones. */
 export default function Tones() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -80,7 +80,7 @@ export function SlideToConfirm({
         confirm();
       }}
       className={cn(
-        "relative flex h-14 touch-pan-y select-none items-center overflow-hidden rounded-full bg-default outline-none focus-visible:ring-2 focus-visible:ring-focus",
+        "relative flex h-14 touch-pan-y select-none items-center overflow-hidden rounded-[var(--radius-pill)] bg-default outline-none focus-visible:ring-2 focus-visible:ring-focus",
         isDisabled && "opacity-50",
         className,
       )}
@@ -88,7 +88,7 @@ export function SlideToConfirm({
       <span
         aria-hidden="true"
         className={cn(
-          "absolute inset-y-0 start-0 rounded-full opacity-25",
+          "absolute inset-y-0 start-0 rounded-[var(--radius-pill)] opacity-25",
           color === "danger" ? "bg-danger" : "bg-accent",
         )}
         style={{ width: offset + THUMB + PAD * 2 }}
@@ -103,7 +103,7 @@ export function SlideToConfirm({
       <span
         aria-hidden="true"
         className={cn(
-          "relative flex cursor-grab items-center justify-center rounded-full active:cursor-grabbing",
+          "relative flex cursor-grab items-center justify-center rounded-[var(--radius-pill)] active:cursor-grabbing",
           color === "danger"
             ? "bg-danger text-danger-foreground"
             : "bg-accent text-accent-foreground",

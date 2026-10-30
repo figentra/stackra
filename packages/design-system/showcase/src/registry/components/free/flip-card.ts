@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Flip card. */
+/** The Flip card entry of the component registry. */
 export const FREE_FLIP_CARD: ComponentEntry = {
   slug: "flip-card",
   tier: "free",

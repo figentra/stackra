@@ -78,7 +78,7 @@ function sortedOrders(sort: SortDescriptor | undefined): readonly Order[] {
   });
 }
 
-/** Table: Sorting. */
+/** The Table demo: sorting. */
 export default function Sorting() {
   const t = useCatalogueText(MESSAGES.en);
   /** The columns: every one sortable but the status. */

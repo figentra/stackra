@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/code-block/json.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "json" demo of the native CodeBlock: a json payload.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); STA-1371 (wave 3b).\n */\nimport { JsonViewer, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { CODE_BLOCK_DEMO_KEYS } from "#src/demos/free/code-block/code-block-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = CODE_BLOCK_DEMO_KEYS.demo_free.code_block.json;\n\nconst PAYLOAD = {\n  event: "order.paid",\n  order: {\n    id: "ord_2048",\n    total: 186.5,\n    currency: "SAR",\n    lines: [{ sku: "BEAN-250", quantity: 2 }],\n  },\n  test: false,\n  coupon: null,\n};\n\n/** A JSON payload that folds. */\nexport default function Json() {\n  const t = useCatalogueText(MESSAGES.en);\n  return <JsonViewer label={t(K.label)} value={PAYLOAD} defaultExpandDepth={2} />;\n}\n';

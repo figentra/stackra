@@ -14,13 +14,19 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 export default function Aggregates() {
   const { orders, columns, renderCell, t, K } = useGulfOrders(30);
   // The footer's defaults: the total's own sum, every other number column summed, nothing under text.
-  const collection = useCollection({ columns, items: orders, initialState: {
+  const collection = useCollection({
+    columns,
+    items: orders,
+    initialState: {
       // The totals in view: the long text columns are hidden (the column editor can show them).
-      columns: columns.map((column) => ({ id: column.id, isHidden: ["city", "product", "channel", "date"].includes(column.id) })),
-    } });
+      columns: columns.map((column) => ({
+        id: column.id,
+        isHidden: ["city", "product", "channel", "date"].includes(column.id),
+      })),
+    },
+  });
   return (
     <div className="grid gap-3">
-      
       <DataTable
         label={t(K.aggregates_label)}
         items={collection.rows}

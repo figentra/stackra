@@ -10,5 +10,14 @@ import { keys } from "@stackra/i18n";
 
 /** The collection_engine namespace's keys. */
 export const COLLECTION_ENGINE_KEYS = keys({
-  collection_engine: ["search", "sort_total", "sort_customer", "previous", "next", "page", "rows", "query"],
+  collection_engine: [
+    "search",
+    "sort_total",
+    "sort_customer",
+    "previous",
+    "next",
+    "page",
+    "rows",
+    "query",
+  ],
 });

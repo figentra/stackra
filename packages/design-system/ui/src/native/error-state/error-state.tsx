@@ -52,7 +52,7 @@ export function ErrorState({
       }
     >
       {details === undefined ? null : (
-        <View className="w-full rounded-lg border border-separator p-3">
+        <View className="w-full rounded-[var(--radius-control)] border border-separator p-3">
           <Text type="small">{details.message}</Text>
           {details.stack === undefined || isProduction ? null : (
             <Text type="caption" className="mt-2" selectable>

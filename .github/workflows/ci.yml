@@ -91,7 +91,7 @@ jobs:
           method: oidc
           identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
           domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci
           secret-name: HEROUI_AUTH_TOKEN
@@ -104,10 +104,26 @@ jobs:
           method: oidc
           identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
           domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci
           secret-name: UNIWIND_AUTH_TOKEN
+          export-type: env
+
+      # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
+      # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
+      # needed to keep a fork from writing to the remote cache.
+      - name: Turborepo remote cache (Infisical OIDC)
+        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != '' && !github.event.pull_request.head.repo.fork
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/turbo
           export-type: env
 
       - name: Install dependencies

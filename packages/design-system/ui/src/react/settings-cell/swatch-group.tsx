@@ -49,7 +49,7 @@ export function SwatchGroup({
           aria-label={hex}
           className={({ isSelected, isFocusVisible }) =>
             cn(
-              "grid size-8 cursor-pointer place-items-center rounded-full border border-border outline-none",
+              "grid size-8 cursor-pointer place-items-center rounded-[var(--radius-pill)] border border-border outline-none",
               isSelected && "ring-2 ring-accent ring-offset-2 ring-offset-background",
               isFocusVisible && "outline-2 outline-offset-4 outline-focus",
             ) ?? ""

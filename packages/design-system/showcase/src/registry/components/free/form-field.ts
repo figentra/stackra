@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Form field. */
+/** The Form field entry of the component registry. */
 export const FREE_FORM_FIELD: ComponentEntry = {
   slug: "form-field",
   tier: "free",

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Mode switch. */
+/** The Mode switch entry of the component registry. */
 export const FREE_MODE_SWITCH: ComponentEntry = {
   slug: "mode-switch",
   tier: "free",

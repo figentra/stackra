@@ -19,7 +19,12 @@ const E = COLLECTION_ENGINE_KEYS.collection_engine;
 export default function Headless() {
   const words = useCatalogueText(MESSAGES.en);
   const { orders, columns, t, K } = useGulfOrders(40);
-  const collection = useCollection({ columns, items: orders, paging: "page", initialState: { pageSize: 5 } });
+  const collection = useCollection({
+    columns,
+    items: orders,
+    paging: "page",
+    initialState: { pageSize: 5 },
+  });
   const { state } = collection;
   return (
     <div className="grid w-full gap-3">
@@ -31,10 +36,18 @@ export default function Headless() {
         isFullWidth
       />
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onPress={() => collection.setSort([{ column: "total", direction: "descending" }])}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onPress={() => collection.setSort([{ column: "total", direction: "descending" }])}
+        >
           {words(E.sort_total)}
         </Button>
-        <Button size="sm" variant="secondary" onPress={() => collection.setSort([{ column: "customer", direction: "ascending" }])}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onPress={() => collection.setSort([{ column: "customer", direction: "ascending" }])}
+        >
           {words(E.sort_customer)}
         </Button>
       </div>
@@ -54,11 +67,23 @@ export default function Headless() {
         ))}
       </ol>
       <div className="flex items-center justify-between gap-2">
-        <Button size="sm" variant="ghost" isDisabled={state.page === 0} onPress={() => collection.setPage(state.page - 1)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          isDisabled={state.page === 0}
+          onPress={() => collection.setPage(state.page - 1)}
+        >
           {words(E.previous)}
         </Button>
-        <Text tone="muted">{words(E.page, { page: state.page + 1, count: collection.pageCount })}</Text>
-        <Button size="sm" variant="ghost" isDisabled={!collection.hasMore} onPress={() => collection.setPage(state.page + 1)}>
+        <Text tone="muted">
+          {words(E.page, { page: state.page + 1, count: collection.pageCount })}
+        </Text>
+        <Button
+          size="sm"
+          variant="ghost"
+          isDisabled={!collection.hasMore}
+          onPress={() => collection.setPage(state.page + 1)}
+        >
           {words(E.next)}
         </Button>
       </div>

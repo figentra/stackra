@@ -64,9 +64,7 @@ export default function Live() {
   const clearSearch = () => {
     setQuery("");
     // The button is about to leave the page, so focus goes back to the field it was clearing.
-    requestAnimationFrame(() =>
-      document.getElementById(searchId)?.querySelector("input")?.focus(),
-    );
+    requestAnimationFrame(() => document.getElementById(searchId)?.querySelector("input")?.focus());
   };
 
   return (

@@ -12,9 +12,11 @@ import type { TreemapItem } from "#contracts/types/treemap-item.type";
 
 /** Props shared by the web and native `TreemapChart`. */
 export interface TreemapChartContractProps {
+  /** The tiles to lay out. */
   readonly items: readonly TreemapItem[];
   /** The chart's accessible name, such as "Revenue by category". */
   readonly label: string;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
   /** `accent` steps (the default) or the `categorical` set. */
   readonly palette?: ChartPalette | undefined;

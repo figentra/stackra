@@ -8,11 +8,13 @@
 
 /** One order of the demos. */
 export interface Order {
+  /** The row's stable key. */
   readonly id: string;
   /** The order number as shown, never translated: `#1001`. */
   readonly order: string;
   /** A sample person's name, never translated. */
   readonly customer: string;
+  /** Where the order stands in payment. */
   readonly status: "paid" | "pending" | "refunded";
   /** In US dollars. */
   readonly total: number;

@@ -13,7 +13,12 @@ import type { BytesValueProps } from "#native/number-value/bytes-value.props";
 import { Text } from "#native/text/text";
 
 /** A size in bytes in its best unit. */
-export function BytesValue({ value, base = "decimal", fractionDigits = 1, className }: BytesValueProps): ReactElement {
+export function BytesValue({
+  value,
+  base = "decimal",
+  fractionDigits = 1,
+  className,
+}: BytesValueProps): ReactElement {
   const format = useNumberFormat();
   const size = bytesUnitOf(value, base);
   return (

@@ -14,7 +14,7 @@ import { CARD_KEYS } from "#src/demos/free/card/card-keys.constant";
 /** The demo's keys. */
 const K = CARD_KEYS.card;
 
-/** Card: Anatomy. */
+/** The Card demo: anatomy. */
 export default function Anatomy() {
   const t = useCatalogueText(MESSAGES.en);
   return (

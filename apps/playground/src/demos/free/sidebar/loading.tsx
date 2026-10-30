@@ -35,7 +35,7 @@ function Brand() {
   );
 }
 
-/** Sidebar: Loading. */
+/** The Sidebar demo: loading. */
 export default function Loading() {
   const t = useCatalogueText(MESSAGES.en);
   const [isLoading, setIsLoading] = useState(true);

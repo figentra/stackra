@@ -13,7 +13,7 @@ import { TYPOGRAPHY_KEYS } from "#src/demos/free/typography/typography-keys.cons
 /** The demo's keys. */
 const K = TYPOGRAPHY_KEYS.typography;
 
-/** Typography: Inline. */
+/** The Typography demo: inline. */
 export default function Inline() {
   const t = useCatalogueText(MESSAGES.en);
   return (

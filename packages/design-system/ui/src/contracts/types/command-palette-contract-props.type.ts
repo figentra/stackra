@@ -11,6 +11,7 @@ import type { OpenStateContractProps } from "#contracts/types/open-state-contrac
 
 /** Props shared by the web and native `CommandPalette`. */
 export interface CommandPaletteContractProps extends OpenStateContractProps {
+  /** The groups of commands to offer, in order. */
   readonly sections: readonly CommandSection[];
   /** Called with the id of the command chosen; the palette then closes. */
   readonly onAction: (id: string) => void;

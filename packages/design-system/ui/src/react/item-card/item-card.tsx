@@ -16,7 +16,7 @@ import { Icon } from "#react/icon/icon";
 import { ItemCardGroupContext } from "#react/item-card/item-card-group-context";
 import type { ItemCardProps } from "#react/item-card/item-card.props";
 
-/** One card. */
+/** Draws one item as a card with its title and details. */
 export function ItemCard({
   title,
   description,
@@ -32,7 +32,7 @@ export function ItemCard({
       {icon ? (
         <span
           aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-xl bg-default text-foreground"
+          className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-container)] bg-default text-foreground"
         >
           <Icon name={icon} size="sm" />
         </span>
@@ -48,7 +48,7 @@ export function ItemCard({
   const look =
     cn(
       "flex min-h-14 w-full items-center gap-3 px-4 py-3",
-      isGrouped ? "" : "rounded-2xl border border-border bg-surface",
+      isGrouped ? "" : "rounded-[var(--radius-container)] border border-border bg-surface",
       className,
     ) ?? "";
   if (!onPress) return <div className={cn(look, isDisabled && "opacity-50") ?? ""}>{body}</div>;

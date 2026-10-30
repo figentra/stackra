@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "4e21585893dcd507",
+    "hash": "07437a561cc9d4c0",
     "propsFiles": [
       "ui/src/react/chart/chart-frame.props.ts",
       "ui/src/react/chart/pie-figure.props.ts"
@@ -71,14 +71,14 @@
           "type": "readonly string[]"
         },
         {
-          "description": "",
+          "description": "Extra classes for the frame container.",
           "name": "className",
           "required": false,
           "source": "stackra",
           "type": "string"
         },
         {
-          "description": "The plot.",
+          "description": "The plot drawn inside the frame.",
           "name": "children",
           "required": true,
           "source": "stackra",

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Chip. */
+/** The Chip entry of the component registry. */
 export const FREE_CHIP: ComponentEntry = {
   slug: "chip",
   tier: "free",

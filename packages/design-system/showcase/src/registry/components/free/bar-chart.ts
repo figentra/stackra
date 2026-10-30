@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Bar chart. */
+/** The Bar chart entry of the component registry. */
 export const FREE_BAR_CHART: ComponentEntry = {
   slug: "bar-chart",
   tier: "free",

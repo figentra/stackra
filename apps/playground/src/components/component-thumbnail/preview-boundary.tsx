@@ -13,16 +13,20 @@ export class PreviewBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { hasError: boolean }
 > {
+  /** True once the preview has thrown. */
   override state = { hasError: false };
 
+  /** Marks the boundary failed so the next render draws the fallback. */
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
+  /** Logs the error and the component stack. */
   override componentDidCatch(error: Error, info: ErrorInfo) {
     console.warn("component thumbnail failed", error, info.componentStack);
   }
 
+  /** Draws the fallback after an error, else the preview. */
   override render() {
     return this.state.hasError ? this.props.fallback : this.props.children;
   }

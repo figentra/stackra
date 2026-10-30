@@ -107,7 +107,7 @@ export function GaugeChart({
         <div
           aria-hidden="true"
           // A disc of the surface under the words: text over the SVG leaves axe no ground to measure it against.
-          className="absolute inset-[22%] flex flex-col items-center justify-center rounded-full bg-surface text-center"
+          className="absolute inset-[22%] flex flex-col items-center justify-center rounded-[var(--radius-pill)] bg-surface text-center"
         >
           <span className="text-xl leading-tight font-bold tabular-nums">{written(value)}</span>
           {centerLabel ? <span className="text-xs text-muted">{centerLabel}</span> : null}

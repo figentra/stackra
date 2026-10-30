@@ -15,7 +15,7 @@ import { SETTING_ROW_DEMO_KEYS } from "#src/demos/free/setting-row/setting-row-d
 /** The demo's keys. */
 const K = SETTING_ROW_DEMO_KEYS.demo_free.setting_row;
 
-/** POS settings. */
+/** The SettingRow demo: a point of sale settings list. */
 export default function PosSettings() {
   const t = useCatalogueText(MESSAGES.en);
   return (

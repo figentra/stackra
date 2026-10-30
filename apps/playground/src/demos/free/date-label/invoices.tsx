@@ -28,7 +28,7 @@ const INVOICES = [
   { id: "INV-2026-0423", customer: "مقهى الرمال", amount: 960, due: 21 },
 ] as const;
 
-/** DateLabel: Invoices. */
+/** The DateLabel demo: invoices. */
 export default function Invoices() {
   const t = useCatalogueText(MESSAGES.en);
   const { locale } = useDesignSystem();

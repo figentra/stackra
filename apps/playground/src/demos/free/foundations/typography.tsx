@@ -17,7 +17,7 @@ const K = FOUNDATIONS_KEYS.foundations;
 /** A CSS custom property reference. */
 const cssVar = (name: string) => `var(--${name})`;
 
-/** Foundations: Typography. */
+/** The Foundations demo: typography. */
 export default function Typography() {
   const t = useCatalogueText(MESSAGES.en);
   return (

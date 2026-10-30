@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Progress circle. */
+/** The Progress circle entry of the component registry. */
 export const FREE_PROGRESS_CIRCLE: ComponentEntry = {
   slug: "progress-circle",
   tier: "free",

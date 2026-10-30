@@ -9,7 +9,7 @@
  */
 import { keys } from "@stackra/i18n";
 
-/** SetupGuide's keys. */
+/** The catalogue keys for the SetupGuide words. */
 export const SETUP_GUIDE_KEYS = keys({
   ui: { setup_guide: ["progress", "complete", "show", "hide"] },
 });

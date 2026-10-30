@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves `useSchemaFormHandle` opens with the schema's defaults under the caller's, binds a field through
  *          `field(name)` (value, change, error), shows a server error until the field changes, refuses an invalid
- *          submit with errors on the fields and an `undefined` result, and hands back the submit's result when valid.
+ *          submit with errors on the fields and an `undefined` result, hands back the submit's result when valid, and
+ *          validates a field on blur only once the form was submitted.
  * Boundary: jsdom through `renderHook`; the schema is registered for the class the way gen does.
  * Runtime: browser
  * Governing contract: ADR 0055; ADR 0140; ADR 0022 (test placement).
@@ -79,5 +80,19 @@ describe("useSchemaFormHandle", () => {
       answer = await result.current.handleSubmit(onValid)();
     });
     expect(answer).toEqual({ ordered: 1 });
+  });
+
+  it("validates a field on blur only after a submit", async () => {
+    const { result } = renderHook(() => useSchemaFormHandle(OrderForm));
+    act(() => result.current.field("variantId").onBlur?.());
+    expect(result.current.field("variantId").isInvalid).toBe(false);
+
+    await act(async () => {
+      await result.current.handleSubmit(() => undefined)();
+    });
+    act(() => result.current.clearErrors("variantId"));
+    expect(result.current.field("variantId").isInvalid).toBe(false);
+    act(() => result.current.field("variantId").onBlur?.());
+    await waitFor(() => expect(result.current.field("variantId").errorMessage).toBe("required"));
   });
 });

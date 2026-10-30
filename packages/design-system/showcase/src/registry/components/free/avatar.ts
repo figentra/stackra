@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Avatar. */
+/** The Avatar entry of the component registry. */
 export const FREE_AVATAR: ComponentEntry = {
   slug: "avatar",
   tier: "free",

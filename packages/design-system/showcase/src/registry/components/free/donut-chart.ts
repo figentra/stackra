@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Donut chart. */
+/** The Donut chart entry of the component registry. */
 export const FREE_DONUT_CHART: ComponentEntry = {
   slug: "donut-chart",
   tier: "free",
@@ -17,10 +17,7 @@ export const FREE_DONUT_CHART: ComponentEntry = {
   exportName: "DonutChart",
   parts: ["DonutChart"],
   hero: {},
-  examples: [
-    { id: "total", card: true },
-    { id: "plain" },
-  ],
+  examples: [{ id: "total", card: true }, { id: "plain" }],
   related: ["free/pie-chart", "free/radial-bar-chart", "free/progress-circle"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["donut", "doughnut", "ring", "share", "total"],

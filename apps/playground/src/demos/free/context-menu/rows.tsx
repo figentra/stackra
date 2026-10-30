@@ -51,7 +51,7 @@ export default function Rows() {
           <div
             // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- reason: the row is the context menu target; it takes focus so a keyboard user can open the menu (Shift+F10)
             tabIndex={0}
-            className="rounded-lg border border-separator px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            className="rounded-[var(--radius-control)] border border-separator px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             <bdi>{order}</bdi>
           </div>

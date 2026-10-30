@@ -191,7 +191,10 @@
       // (i18n, storage, platform), declared only so Expo autolinks them (tools/scripts/app-native-deps.mjs, STA-1544);
       // the app never imports them itself. expo-tracking-transparency: the same for platform's ExpoSystemSettingsDriver,
       // which reads the App Tracking Transparency answer; the app carries no ATT plugin since it never prompts (STA-1587).
+      // expo-status-bar: the app no longer imports it, but the mobile scaffold template does through the same
+      // `catalog:mobile` entry, and knip ignores the templates; this keeps that entry named by a member.
       "ignoreDependencies": [
+        "expo-status-bar",
         "expo-updates",
         "@babel/plugin-transform-flow-strip-types",
         "expo-intent-launcher",
@@ -239,6 +242,8 @@
     "**/__tests__/fixtures/**",
     "**/dist/**",
     "packages/design-system/ui/src/**/*.returns.ts",
+    // A build box's untracked leftover, not a file of this repository.
+    "workers/registry/src/http/handle-landing.ts",
   ],
   // Unlisted dependencies in gen's output only (stackra-247, ADR 0295 decision 5, ADR 0261): gen's
   // generated_dependency_missing and schema_dependency_missing already hold every @stackra/* (and a schemas file's
@@ -251,7 +256,8 @@
   "ignoreIssues": {
     "**/.stackra/**": ["unlisted", "duplicates"],
   },
-  "ignoreBinaries": ["gitleaks", "mint"],
+  // sips: macOS's image tool, which tools/scripts/brand-pull.mjs runs to rasterise a brand SVG (brand rules §32).
+  "ignoreBinaries": ["gitleaks", "mint", "sips"],
   "rules": {
     // A catalog entry no member names is an error (rule-gap B-10, stackra-235): add the entry with its first consumer,
     // and drop it with the last one.

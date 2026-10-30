@@ -29,7 +29,7 @@ export default function Basics() {
             key={kind}
             feedback={kind}
             onPress={() => setCount((value) => value + 1)}
-            className="rounded-2xl"
+            className="rounded-[var(--radius-container)]"
           >
             <Card className="w-40 gap-1 p-4">
               <Text type="caption" tone="muted">

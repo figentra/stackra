@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3dfc211e1645955e",
+    "hash": "3fb4079bc618ad0d",
     "propsFiles": ["ui/src/native/treemap-chart/treemap-chart.props.ts"]
   },
   "importLine": "import { TreemapChart } from \"@stackra/ui/native\";",
@@ -10,7 +10,7 @@
       "name": "TreemapChart",
       "props": [
         {
-          "description": "",
+          "description": "The tiles to lay out.",
           "name": "items",
           "required": true,
           "source": "stackra",
@@ -24,7 +24,7 @@
           "type": "string"
         },
         {
-          "description": "",
+          "description": "How values are written; plain numbers in the locale by default.",
           "name": "valueFormat",
           "required": false,
           "source": "stackra",

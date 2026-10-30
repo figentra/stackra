@@ -39,7 +39,9 @@
     "all_views": "Alle",
     "saved_views": "Gespeicherte Ansichten",
     "count": "{count, plural, one {# Datensatz} other {# Datensätze}}",
-    "count_capped": "{count, plural, other {#+ Datensätze}}"
+    "count_capped": "{count, plural, other {#+ Datensätze}}",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "plan_catalogue": {
     "history": "Versionen",

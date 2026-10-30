@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Listbox. */
+/** The Listbox entry of the component registry. */
 export const FREE_LISTBOX: ComponentEntry = {
   slug: "listbox",
   tier: "free",

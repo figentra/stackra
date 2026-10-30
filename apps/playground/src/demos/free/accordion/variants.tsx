@@ -21,7 +21,7 @@ const ROW = "flex flex-wrap items-start gap-8";
 /** The width of one accordion in a row. */
 const WIDTH = "w-96 max-w-full";
 
-/** Accordion: Variants. */
+/** The Accordion demo: variants. */
 export default function Variants() {
   const t = useCatalogueText(MESSAGES.en);
   /** The sections of most samples. */

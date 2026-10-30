@@ -33,7 +33,11 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
   const t = useUiText();
   const slots = dataViewFieldsOf(fields, collection.visibleColumns);
   const valueOf = (item: TItem, column: ResolvedCollectionColumn | undefined): ReactNode =>
-    column === undefined ? null : renderCell ? renderCell(item, column) : cellTextOf(item, column.id);
+    column === undefined
+      ? null
+      : renderCell
+        ? renderCell(item, column)
+        : cellTextOf(item, column.id);
   const isList = layout === "list";
 
   const card = (item: TItem) => {
@@ -56,10 +60,19 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
         className="relative grid content-start gap-3 border border-separator bg-surface p-4 shadow-surface"
         style={{ borderRadius: "var(--radius-container)" }}
       >
-        {media ? <div className="-mx-4 -mt-4 overflow-hidden" style={{ borderStartStartRadius: "inherit", borderStartEndRadius: "inherit" }}>{media}</div> : null}
+        {media ? (
+          <div
+            className="-mx-4 -mt-4 overflow-hidden"
+            style={{ borderStartStartRadius: "inherit", borderStartEndRadius: "inherit" }}
+          >
+            {media}
+          </div>
+        ) : null}
         <div className="flex items-start justify-between gap-2">
           <h3 className="m-0 min-w-0 text-base">{titleNode}</h3>
-          {slots.meta ? <span className="shrink-0 text-sm">{valueOf(item, slots.meta)}</span> : null}
+          {slots.meta ? (
+            <span className="shrink-0 text-sm">{valueOf(item, slots.meta)}</span>
+          ) : null}
         </div>
         {slots.subtitle ? (
           <p className="m-0 -mt-2 text-sm text-muted">{valueOf(item, slots.subtitle)}</p>

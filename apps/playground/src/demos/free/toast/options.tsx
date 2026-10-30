@@ -18,7 +18,7 @@ const K = TOAST_KEYS.toast;
 /** The row that lays buttons out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Toast: Options. */
+/** The Toast demo: options. */
 export default function Options() {
   const t = useCatalogueText(MESSAGES.en);
   return (

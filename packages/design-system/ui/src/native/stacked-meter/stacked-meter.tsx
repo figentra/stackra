@@ -50,7 +50,7 @@ export function StackedMeter({
       <View
         importantForAccessibility="no-hide-descendants"
         accessibilityElementsHidden
-        className="h-2.5 w-full flex-row gap-0.5 overflow-hidden rounded-full bg-default/50"
+        className="h-2.5 w-full flex-row gap-0.5 overflow-hidden rounded-[var(--radius-pill)] bg-default/50"
       >
         {segments.map((segment, index) =>
           (shares[index] ?? 0) > 0 ? (
@@ -70,7 +70,7 @@ export function StackedMeter({
           {segments.map((segment, index) => (
             <View key={segment.key} className="flex-row items-center gap-1.5">
               <View
-                className="size-2 rounded-full"
+                className="size-2 rounded-[var(--radius-pill)]"
                 style={{ backgroundColor: paint.series[index] }}
               />
               <Text type="caption" tone="muted">

@@ -47,7 +47,7 @@ function Account() {
   );
 }
 
-/** Sidebar: Basic. */
+/** The Sidebar demo: basic. */
 export default function Expanded() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

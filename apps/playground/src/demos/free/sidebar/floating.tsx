@@ -71,7 +71,7 @@ function Page() {
   );
 }
 
-/** Sidebar: Floating. */
+/** The Sidebar demo: floating. */
 export default function Floating() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

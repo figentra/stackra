@@ -8,8 +8,12 @@
 
 /** A duration in parts. */
 export interface ClockParts {
+  /** Whole days in the duration. */
   readonly days: number;
+  /** Hours left after the days. */
   readonly hours: number;
+  /** Minutes left after the hours. */
   readonly minutes: number;
+  /** Seconds left after the minutes. */
   readonly seconds: number;
 }

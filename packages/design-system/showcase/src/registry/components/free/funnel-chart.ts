@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Funnel chart. */
+/** The Funnel chart entry of the component registry. */
 export const FREE_FUNNEL_CHART: ComponentEntry = {
   slug: "funnel-chart",
   tier: "free",

@@ -16,12 +16,12 @@ const MARK = /[ؐ-ؚـً-ٰٟۖ-ۜ۟-۪ۨ-ۭ]/u;
 
 /** Letter variants folded together. */
 const FOLD: Readonly<Record<string, string>> = {
-  "آ": "ا",
-  "أ": "ا",
-  "إ": "ا",
-  "ٱ": "ا",
-  "ى": "ي",
-  "ة": "ه",
+  آ: "ا",
+  أ: "ا",
+  إ: "ا",
+  ٱ: "ا",
+  ى: "ي",
+  ة: "ه",
 };
 
 /** The text without marks, folded, with each kept character's offset in the original. */
@@ -44,13 +44,20 @@ function folded(text: string): { readonly value: string; readonly at: readonly n
  * @param text - the text shown
  * @param terms - one search, or several; empty ones are ignored
  */
-export function highlightRangesOf(text: string, terms: string | readonly string[]): readonly TextRange[] {
+export function highlightRangesOf(
+  text: string,
+  terms: string | readonly string[],
+): readonly TextRange[] {
   const source = folded(text);
   const ranges: TextRange[] = [];
   for (const term of typeof terms === "string" ? [terms] : terms) {
     const needle = folded(term.trim()).value;
     if (!needle) continue;
-    for (let from = source.value.indexOf(needle); from !== -1; from = source.value.indexOf(needle, from + needle.length)) {
+    for (
+      let from = source.value.indexOf(needle);
+      from !== -1;
+      from = source.value.indexOf(needle, from + needle.length)
+    ) {
       const start = source.at[from] ?? 0;
       let end = (source.at[from + needle.length - 1] ?? start) + 1;
       while (end < text.length && MARK.test(text[end] ?? "")) end += 1;
@@ -61,7 +68,8 @@ export function highlightRangesOf(text: string, terms: string | readonly string[
   const merged: TextRange[] = [];
   for (const range of ranges) {
     const last = merged.at(-1);
-    if (last && range.start <= last.end) merged[merged.length - 1] = { start: last.start, end: Math.max(last.end, range.end) };
+    if (last && range.start <= last.end)
+      merged[merged.length - 1] = { start: last.start, end: Math.max(last.end, range.end) };
     else merged.push(range);
   }
   return merged;

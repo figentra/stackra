@@ -32,13 +32,22 @@ const ROWS = Array.from({ length: 30 }, (_, index) => ({
 /** A store in a map. */
 function memoryStore(): CollectionStore & { readonly saved: Map<string, CollectionSnapshot> } {
   const saved = new Map<string, CollectionSnapshot>();
-  return { saved, get: (key) => saved.get(key) ?? null, save: (key, value) => void saved.set(key, value) };
+  return {
+    saved,
+    get: (key) => saved.get(key) ?? null,
+    save: (key, value) => void saved.set(key, value),
+  };
 }
 
 describe("useCollection", () => {
   it("searches, sorts and pages in client mode", () => {
     const { result } = renderHook(() =>
-      useCollection({ columns: COLUMNS, items: ROWS, paging: "page", initialState: { pageSize: 10 } }),
+      useCollection({
+        columns: COLUMNS,
+        items: ROWS,
+        paging: "page",
+        initialState: { pageSize: 10 },
+      }),
     );
     expect(result.current.rows).toHaveLength(10);
     expect(result.current.pageCount).toBe(3);
@@ -57,20 +66,37 @@ describe("useCollection", () => {
     act(() => result.current.moveColumn("total", 0));
     act(() => result.current.updateColumn("city", { label: "المدينة", pin: "end", width: 180 }));
     act(() => result.current.updateColumn("customer", { isHidden: true }));
-    expect(result.current.columns.map((column) => column.id)).toEqual(["total", "customer", "city"]);
+    expect(result.current.columns.map((column) => column.id)).toEqual([
+      "total",
+      "customer",
+      "city",
+    ]);
     expect(result.current.columns[2]).toMatchObject({ label: "المدينة", pin: "end", width: 180 });
     // The first defined column is the row header, which never hides.
-    expect(result.current.visibleColumns.map((column) => column.id)).toEqual(["total", "customer", "city"]);
+    expect(result.current.visibleColumns.map((column) => column.id)).toEqual([
+      "total",
+      "customer",
+      "city",
+    ]);
     act(() => result.current.updateColumn("total", { isHidden: true }));
     expect(result.current.visibleColumns.map((column) => column.id)).toEqual(["customer", "city"]);
     act(() => result.current.resetColumns());
-    expect(result.current.columns.map((column) => column.label)).toEqual(["Customer", "City", "Total"]);
+    expect(result.current.columns.map((column) => column.label)).toEqual([
+      "Customer",
+      "City",
+      "Total",
+    ]);
   });
 
   it("reads a controlled slice and reports every change", () => {
     const onStateChange = vi.fn();
     const { result } = renderHook(() =>
-      useCollection({ columns: COLUMNS, items: ROWS, state: { density: "compact" }, onStateChange }),
+      useCollection({
+        columns: COLUMNS,
+        items: ROWS,
+        state: { density: "compact" },
+        onStateChange,
+      }),
     );
     act(() => result.current.setDensity("roomy"));
     expect(result.current.state.density).toBe("compact");
@@ -106,7 +132,13 @@ describe("useCollection", () => {
       useCollection({
         columns: COLUMNS,
         items: ROWS,
-        views: [{ id: "big", label: "Big", state: { sort: [{ column: "total", direction: "descending" }] } }],
+        views: [
+          {
+            id: "big",
+            label: "Big",
+            state: { sort: [{ column: "total", direction: "descending" }] },
+          },
+        ],
         defaultViewId: "big",
       }),
     );

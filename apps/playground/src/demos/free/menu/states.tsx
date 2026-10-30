@@ -32,7 +32,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Menu: States. */
+/** The Menu demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   /** A plain menu: one group of labels. */

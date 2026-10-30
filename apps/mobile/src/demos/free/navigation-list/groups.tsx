@@ -16,10 +16,10 @@ import { NAVIGATION_LIST_DEMO_KEYS } from "#src/demos/free/navigation-list/navig
 const K = NAVIGATION_LIST_DEMO_KEYS.demo_free.navigation_list.places;
 const G = NAVIGATION_LIST_DEMO_KEYS.demo_free.navigation_list.groups;
 
-/** Account is a heading; Settings is a link with places under it. */
 /** The places do nothing when pressed: the demo shows the list, not the screens. */
 const ignore = (): undefined => undefined;
 
+/** The NavigationList demo: Account is a heading; Settings is a link with places under it. */
 export default function Groups() {
   const t = useCatalogueText(MESSAGES.en);
   const places: readonly NavigationItem[] = [

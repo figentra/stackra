@@ -73,7 +73,7 @@ export function PhoneField({
       <View
         className={
           cn(
-            "h-12 flex-row items-stretch overflow-hidden rounded-field border bg-field",
+            "h-12 flex-row items-stretch overflow-hidden rounded-[var(--radius-control)] border bg-field",
             isInvalid ? "border-danger" : "border-field-border",
             isDisabled && "opacity-60",
           ) ?? ""

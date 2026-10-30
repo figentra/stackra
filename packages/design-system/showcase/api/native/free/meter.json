@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "03f6c25babbe3d8a",
+    "hash": "41c605b2ec1b683b",
     "propsFiles": ["ui/src/native/meter/meter.props.ts"]
   },
   "importLine": "import { Meter } from \"@stackra/ui/native\";",
@@ -10,7 +10,7 @@
       "name": "Meter",
       "props": [
         {
-          "description": "The measure.",
+          "description": "The measure the bar fills to.",
           "name": "value",
           "required": true,
           "source": "stackra",

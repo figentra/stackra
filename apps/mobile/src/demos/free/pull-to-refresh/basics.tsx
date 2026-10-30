@@ -20,7 +20,7 @@ export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const [count, setCount] = useState(0);
   return (
-    <View className="h-72 overflow-hidden rounded-2xl border border-border">
+    <View className="h-72 overflow-hidden rounded-[var(--radius-container)] border border-border">
       <PullToRefresh
         label={t(K.label)}
         onRefresh={() =>

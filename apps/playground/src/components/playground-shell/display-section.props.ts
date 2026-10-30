@@ -11,6 +11,6 @@ import type { ReactNode } from "react";
 export interface DisplaySectionProps {
   /** The section's title. */
   readonly title: string;
-  /** Its fields. */
+  /** The section's fields. */
   readonly children: ReactNode;
 }

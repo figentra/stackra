@@ -15,5 +15,6 @@ export interface TimelineDay {
   readonly daysAgo: number;
   /** The day's first entry's instant, for writing the date. */
   readonly at: Date;
+  /** The entries of the day, in their given order. */
   readonly items: readonly TimelineItem[];
 }

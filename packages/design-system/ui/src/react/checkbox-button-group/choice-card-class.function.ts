@@ -18,7 +18,7 @@ export const choiceCardClass = ({
   readonly isDisabled: boolean;
 }): string =>
   cn(
-    "flex min-w-48 flex-1 cursor-pointer items-start gap-3 rounded-2xl border bg-surface p-4 text-start transition-colors outline-none motion-reduce:transition-none",
+    "flex min-w-48 flex-1 cursor-pointer items-start gap-3 rounded-[var(--radius-container)] border bg-surface p-4 text-start transition-colors outline-none motion-reduce:transition-none",
     isSelected ? "border-accent bg-accent-soft" : "border-border hover:border-field-border-hover",
     isFocusVisible && "outline-2 outline-offset-2 outline-focus",
     isDisabled && "cursor-not-allowed opacity-50",

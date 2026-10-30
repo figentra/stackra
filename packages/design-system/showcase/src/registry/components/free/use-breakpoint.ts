@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** useBreakpoint. */
+/** The useBreakpoint entry of the component registry. */
 export const FREE_USE_BREAKPOINT: ComponentEntry = {
   slug: "use-breakpoint",
   tier: "free",

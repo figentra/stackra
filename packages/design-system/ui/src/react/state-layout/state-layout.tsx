@@ -42,7 +42,7 @@ export function StateLayout({
       {icon === false ? null : (
         <div
           data-slot="state-icon"
-          className="flex size-12 items-center justify-center rounded-full bg-default"
+          className="flex size-12 items-center justify-center rounded-[var(--radius-pill)] bg-default"
         >
           {icon !== undefined && typeof icon !== "string" ? (
             icon

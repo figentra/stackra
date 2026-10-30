@@ -13,7 +13,16 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 /** Data table: Multi-sort. */
 export default function MultiSort() {
   const { orders, columns, renderCell, t, K } = useGulfOrders(16);
-  const collection = useCollection({ columns, items: orders, initialState: { sort: [{ column: "city", direction: "ascending" }, { column: "total", direction: "descending" }] } });
+  const collection = useCollection({
+    columns,
+    items: orders,
+    initialState: {
+      sort: [
+        { column: "city", direction: "ascending" },
+        { column: "total", direction: "descending" },
+      ],
+    },
+  });
   return (
     <div className="grid gap-3">
       <Text tone="muted">{t(K.multisort_hint)}</Text>

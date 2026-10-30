@@ -29,7 +29,10 @@ function runOf(run: MarkdownInline): ReactElement {
     }
     case "code": {
       return (
-        <code dir="ltr" className="rounded bg-default/60 px-1 font-mono text-[0.9em]">
+        <code
+          dir="ltr"
+          className="rounded-[var(--radius-control-inner)] bg-default/60 px-1 font-mono text-[0.9em]"
+        >
           {run.text}
         </code>
       );

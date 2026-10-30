@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c9b178a9494672f0",
+    "hash": "fa212928802c48d1",
     "propsFiles": ["ui/src/react/waterfall-chart/waterfall-chart.props.ts"]
   },
   "importLine": "import { WaterfallChart } from \"@stackra/ui/react\";",
@@ -38,7 +38,7 @@
           "type": "string"
         },
         {
-          "description": "",
+          "description": "How values are written; plain numbers in the locale by default.",
           "name": "valueFormat",
           "required": false,
           "source": "stackra",

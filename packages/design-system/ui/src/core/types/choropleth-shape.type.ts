@@ -9,7 +9,9 @@
 
 /** One region, ready to draw. */
 export interface ChoroplethShape {
+  /** The region id that values are matched by. */
   readonly id: string;
+  /** The region name shown in the tooltip and table. */
   readonly name: string;
   /** Its outline and holes as one SVG path, for the even-odd fill rule. */
   readonly path: string;

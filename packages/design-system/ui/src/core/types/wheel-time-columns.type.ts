@@ -9,6 +9,8 @@ import type { WheelPickerColumn } from "#contracts/types/wheel-picker-column.typ
 
 /** The wheels of a time and the value as their keys. */
 export interface WheelTimeColumns {
+  /** The hour, minute and period wheels, in order. */
   readonly columns: readonly WheelPickerColumn[];
+  /** The chosen item key of each wheel, by wheel key. */
   readonly value: Readonly<Record<string, string>>;
 }

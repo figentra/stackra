@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Button group. */
+/** The Button group entry of the component registry. */
 export const FREE_BUTTON_GROUP: ComponentEntry = {
   slug: "button-group",
   tier: "free",

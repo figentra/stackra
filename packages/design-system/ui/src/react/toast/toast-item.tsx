@@ -81,7 +81,7 @@ const FLIP_CLASS_NAME =
 
 /** The classes of one look, given its tone and whether the flip plays. */
 function lookClassName(variant: ToastVariant, tone: Tone, isFlipping: boolean): string {
-  if (variant === "bubble") return "items-center rounded-full py-2 ps-2 pe-2";
+  if (variant === "bubble") return "items-center rounded-[var(--radius-pill)] py-2 ps-2 pe-2";
   if (variant === "alert") return "rounded-[var(--radius-container)]";
   const bar = `rounded-[var(--radius-container)] border-s-2 ${BAR_EDGE[tone]}`;
   return variant === "flip-bar" && isFlipping ? `${bar} ${FLIP_CLASS_NAME}` : bar;

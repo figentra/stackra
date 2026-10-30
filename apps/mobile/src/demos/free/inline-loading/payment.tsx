@@ -19,7 +19,7 @@ const K = INLINE_LOADING_DEMO_KEYS.demo_free.inline_loading;
 /** How long the fake charge takes. */
 const DELAY = 1200;
 
-/** Card payment. */
+/** The InlineLoading demo: a card payment that loads, succeeds or fails. */
 export default function Payment() {
   const t = useCatalogueText(MESSAGES.en);
   const [status, setStatus] = useState<InlineLoadingStatus>("idle");

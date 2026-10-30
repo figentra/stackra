@@ -16,7 +16,7 @@ import { useTableColumns } from "#src/demos/free/table/use-table-columns";
 /** The demo's keys. */
 const K = TABLE_DEMO_KEYS.demo_free.table.cells;
 
-/** Drawn cells. */
+/** The Table demo: cells drawn by a render function. */
 export default function Cells() {
   const t = useCatalogueText(MESSAGES.en);
   const { columns, renderCell } = useTableColumns();

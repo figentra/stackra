@@ -8,6 +8,8 @@
 
 /** The bar's fill (0 to 1) and whether it is drawn at all (it stays while it fades out). */
 export interface RouteProgressState {
+  /** How full the bar is, from 0 to 1. */
   readonly value: number;
+  /** True while the bar is drawn, fading out included. */
   readonly isVisible: boolean;
 }

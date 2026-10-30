@@ -17,10 +17,7 @@ export const FREE_RADIAL_BAR_CHART: ComponentEntry = {
   exportName: "RadialBarChart",
   parts: ["RadialBarChart"],
   hero: {},
-  examples: [
-    { id: "simple", card: true },
-    { id: "text" },
-  ],
+  examples: [{ id: "simple", card: true }, { id: "text" }],
   related: ["free/donut-chart", "free/progress-circle", "free/pie-chart"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["radial", "ring", "gauge", "goal"],

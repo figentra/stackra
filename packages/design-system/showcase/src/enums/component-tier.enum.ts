@@ -7,8 +7,8 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 2; ADR 0305 (one declaration per file).
  */
 
-/** The tiers. */
+/** The component tiers an entry can belong to. */
 export const ComponentTier = Object.freeze(["free", "pro"] as const);
 
-/** One tier. */
+/** One component tier. */
 export type ComponentTier = (typeof ComponentTier)[number];

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Foundations. */
+/** The Foundations entry of the component registry. */
 export const FREE_FOUNDATIONS: ComponentEntry = {
   slug: "foundations",
   tier: "free",

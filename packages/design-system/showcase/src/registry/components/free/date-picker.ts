@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Date picker. */
+/** The Date picker entry of the component registry. */
 export const FREE_DATE_PICKER: ComponentEntry = {
   slug: "date-picker",
   tier: "free",

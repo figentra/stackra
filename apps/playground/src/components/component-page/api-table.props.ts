@@ -9,5 +9,6 @@ import type { ApiPart } from "@stackra/showcase";
 
 /** Props of `ApiTable`. */
 export interface ApiTableProps {
+  /** The part whose API the table lists. */
   readonly part: ApiPart;
 }

@@ -12,7 +12,7 @@ import { View } from "react-native";
 
 import type { ButtonGroupProps } from "#native/button-group/button-group.props";
 
-/** Attached buttons. */
+/** Draws buttons joined into one attached row. */
 export function ButtonGroup({
   children,
   label,

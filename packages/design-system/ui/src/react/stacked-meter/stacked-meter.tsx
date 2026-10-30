@@ -54,13 +54,13 @@ export function StackedMeter({
       </div>
       <div
         aria-hidden
-        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-default/50"
+        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-[var(--radius-pill)] bg-default/50"
       >
         {segments.map((segment, index) =>
           (shares[index] ?? 0) > 0 ? (
             <span
               key={segment.key}
-              className="h-full first:rounded-s-full"
+              className="h-full first:rounded-s-[var(--radius-pill)]"
               style={{ width: `${(shares[index] ?? 0) * 100}%`, backgroundColor: color(index) }}
             />
           ) : null,
@@ -72,7 +72,7 @@ export function StackedMeter({
             <li key={segment.key} className="flex items-center gap-1.5 text-xs">
               <span
                 aria-hidden
-                className="size-2 rounded-full"
+                className="size-2 rounded-[var(--radius-pill)]"
                 style={{ backgroundColor: color(index) }}
               />
               <span className="text-muted">{segment.label}</span>

@@ -18,5 +18,5 @@ export const ComponentStatus = Object.freeze([
   "stable",
 ] as const);
 
-/** One status. */
+/** One status chip value. */
 export type ComponentStatus = (typeof ComponentStatus)[number];

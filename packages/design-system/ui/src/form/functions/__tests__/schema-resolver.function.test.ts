@@ -47,4 +47,10 @@ describe("schemaResolver", () => {
       lines: [{ variantId: { message: "required" } }],
     });
   });
+
+  it("keeps a path's first message when Zod reports several", async () => {
+    const code = z.object({ code: z.string().min(4, "too_short").regex(/^\d+$/, "digits_only") });
+    const result = await schemaResolver(code)({ code: "ab" }, undefined, options);
+    expect(result.errors).toEqual({ code: { type: "too_small", message: "too_short" } });
+  });
 });

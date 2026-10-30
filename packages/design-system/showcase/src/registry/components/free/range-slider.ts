@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Range slider. */
+/** The Range slider entry of the component registry. */
 export const FREE_RANGE_SLIDER: ComponentEntry = {
   slug: "range-slider",
   tier: "free",

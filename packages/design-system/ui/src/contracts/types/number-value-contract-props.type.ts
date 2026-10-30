@@ -9,7 +9,7 @@
 
 /** Props shared by the web and native `NumberValue`. */
 export interface NumberValueContractProps {
-  /** The number. */
+  /** The number to write. */
   readonly value: number;
   /** How it is written: grouping, fraction digits, compact notation, a unit. */
   readonly options?: Intl.NumberFormatOptions | undefined;

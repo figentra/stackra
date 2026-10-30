@@ -31,7 +31,7 @@ const SAMPLES = [
   { caption: K.batch_expired, kind: "expiry", offset: -10 },
 ] as const;
 
-/** DateLabel: States. */
+/** The DateLabel demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   return (

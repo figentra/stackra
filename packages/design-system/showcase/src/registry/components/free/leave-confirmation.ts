@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Leave confirmation. */
+/** The Leave confirmation entry of the component registry. */
 export const FREE_LEAVE_CONFIRMATION: ComponentEntry = {
   slug: "leave-confirmation",
   tier: "free",

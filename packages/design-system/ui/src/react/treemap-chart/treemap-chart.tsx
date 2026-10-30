@@ -65,7 +65,7 @@ export function TreemapChart({
           <div
             key={tile.item.key}
             aria-hidden
-            className="absolute overflow-hidden rounded-md border-2 border-surface p-1.5"
+            className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5"
             style={{
               insetInlineStart: `${tile.x}%`,
               top: `${tile.y}%`,
@@ -74,7 +74,7 @@ export function TreemapChart({
               backgroundColor: paintOf(chartColorOf(tile.item, items.indexOf(tile.item), palette)),
             }}
           >
-            <span className="inline-flex max-w-full flex-col rounded bg-surface/85 px-1.5 py-0.5 text-xs">
+            <span className="inline-flex max-w-full flex-col rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5 py-0.5 text-xs">
               <span className="truncate text-muted">{tile.item.label}</span>
               <span className="truncate font-semibold tabular-nums">{value(tile.item.value)}</span>
             </span>

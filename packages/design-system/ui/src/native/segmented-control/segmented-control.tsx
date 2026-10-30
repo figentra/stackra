@@ -57,7 +57,7 @@ export function SegmentedControl({
       accessibilityLabel={label}
       className={
         cn(
-          "relative flex-row rounded-full bg-default p-1",
+          "relative flex-row rounded-[var(--radius-pill)] bg-default p-1",
           isFullWidth ? "self-stretch" : "self-start",
           isDisabled && "opacity-50",
           className,
@@ -67,7 +67,7 @@ export function SegmentedControl({
       <Animated.View
         pointerEvents="none"
         style={[{ position: "absolute", top: 4, bottom: 4, left: 0 }, thumbStyle]}
-        className="rounded-full bg-surface shadow-sm"
+        className="rounded-[var(--radius-pill)] bg-surface shadow-sm"
       />
       {items.map((item) => {
         const isSelected = item.id === selected;
@@ -83,7 +83,7 @@ export function SegmentedControl({
             onPress={() => choose(item.id)}
             className={
               cn(
-                "flex-row items-center justify-center gap-1.5 rounded-full px-3",
+                "flex-row items-center justify-center gap-1.5 rounded-[var(--radius-pill)] px-3",
                 HEIGHT[size],
                 isFullWidth && "flex-1",
                 item.isDisabled && "opacity-50",

@@ -137,8 +137,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
     state: controlled,
     onStateChange: (next) => {
       const before = own.state;
-      if (next.sort[0] !== before.sort[0])
-        onQueryChange({ ...query, sort: next.sort[0] ?? null });
+      if (next.sort[0] !== before.sort[0]) onQueryChange({ ...query, sort: next.sort[0] ?? null });
       if (next.selection !== before.selection) onSelectionChange?.(next.selection);
       if (next.isAllMatchingSelected !== before.isAllMatchingSelected)
         onAllMatchingSelectedChange?.(next.isAllMatchingSelected);
@@ -367,7 +366,10 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
               : {})}
             {...(hasColumnTools
               ? {
-                  renderColumnMenu: (column: TableColumn, tools: { readonly startResize: () => void }) => {
+                  renderColumnMenu: (
+                    column: TableColumn,
+                    tools: { readonly startResize: () => void },
+                  ) => {
                     const resolved = collection.columns.find((entry) => entry.id === column.id);
                     return resolved ? (
                       <ColumnMenu

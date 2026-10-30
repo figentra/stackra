@@ -19,7 +19,13 @@ const spies = vi.hoisted(() => ({ useQuery: vi.fn() }));
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("@stackra/i18n/react", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  // A derived enum label is not in the catalogue, so `t` throws for it as the real one does.
+  useTranslation: () => ({
+    t: (key: string) => {
+      if (key.includes("::enums.")) throw new RangeError(`No message for "${key}"`);
+      return key;
+    },
+  }),
   useMoney: () => (minor: number, currency: string) => `${currency} ${minor}`,
 }));
 vi.mock("@stackra/ui/react", async () => {

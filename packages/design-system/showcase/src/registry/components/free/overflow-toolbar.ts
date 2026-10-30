@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Overflow toolbar. */
+/** The Overflow toolbar entry of the component registry. */
 export const FREE_OVERFLOW_TOOLBAR: ComponentEntry = {
   slug: "overflow-toolbar",
   tier: "free",

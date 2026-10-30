@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `ResourceFormPage`, the generic Create and Edit page of any resource: the recorded form fields (or the
- *          action input's own keys) in a schema form over the create or update action's input, validated by that
+ * Purpose: `ResourceFormPage`, the generic Create and Edit page of any resource: the recorded form fields its own
+ *          action's input takes (or that input's own keys) in a schema form over the create or update action's input, validated by that
  *          schema, submitted through the action runner, with the server's field errors on their fields; then the View
  *          page (or the list) of the record.
  * Boundary: registers the action's input schema under the action ref so `@stackra/ui`'s schema form reads it. On Edit
  *           it reads the record first (`useRecord`) and starts the form from it, the record id under the input's id
- *           key. The PUT address a create mints (ADR 0307: a client-minted id field) and the modal form of a record
- *           action are not built.
+ *           key. The PUT address a create mints (ADR 0307: a client-minted id field) is not built; a record
+ *           action's modal form is `ActionInputModal`.
  * Runtime: browser
  * Governing contract: ADR 0307 (form keys; rule 3); ADR 0139 (declared confirmation); ADR 0055.
  */
@@ -27,6 +27,7 @@ import { useState, type ReactElement } from "react";
 import type { ZodType } from "zod";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { fieldsForInput } from "#core/functions/fields-for-input.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { resourceTreeOf } from "#core/functions/resource-tree-of.function";
@@ -68,7 +69,9 @@ function ResourceForm({
     serverErrors,
   });
   const idKey = recordIdKey(action.input, resource.key);
-  const fields = resourceTreeOf(resource.key).form?.fields ?? derived(action.input, idKey);
+  // One recorded form serves Create and Edit: each page keeps the fields its own action takes.
+  const recorded = fieldsForInput(resourceTreeOf(resource.key).form?.fields ?? [], action.input);
+  const fields = recorded.length > 0 ? recorded : derived(action.input, idKey);
   const pages = resource as ResourceRoutes & { readonly view?: PageRef };
   const submit = async (values: Readonly<Record<string, unknown>>) => {
     const done = await run(action, values as never);

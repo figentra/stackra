@@ -152,12 +152,8 @@ catalogs:
     # Animation for @stackra/ui and the playground. The HeroUI Pro set (@heroui-pro/react and its optional peers)
     # left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189); figentra/stackra-pro pins it.
     motion: 12.43.0
-    # Free charts of @stackra/ui/react (a dev dependency there, a peer for apps) and the playground; the markdown set
-    # renders the showcase docs in the playground (STA-1371, c6). MIT.
+    # Free charts of @stackra/ui/react (a dev dependency there, a peer for apps) and the playground. MIT.
     recharts: 3.10.1
-    remark-breaks: 4.0.0
-    remark-gfm: 4.0.1
-    streamdown: 2.7.0
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.

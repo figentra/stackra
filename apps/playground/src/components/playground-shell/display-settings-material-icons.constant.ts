@@ -9,8 +9,12 @@ import type { MaterialMode } from "@stackra/tokens/contracts";
 
 /** The icon of each material mode. */
 export const MATERIAL_ICONS = {
+  /** The icon of the solid material. */
   solid: "square",
+  /** The icon of the frosted material. */
   frosted: "snowflake",
+  /** The icon of the glass material. */
   glass: "layers",
+  /** The icon of the liquid glass material. */
   liquid: "droplet",
 } as const satisfies Record<MaterialMode, string>;

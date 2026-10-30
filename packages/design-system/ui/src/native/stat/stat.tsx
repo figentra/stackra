@@ -82,7 +82,7 @@ export function Stat({
       accessibilityLabel={
         pressLabel ?? (name ? t(UI_KEYS.ui.stat.drill_down, { label: name }) : undefined)
       }
-      className="-m-2 rounded-lg p-2 active:bg-default/40"
+      className="-m-2 rounded-[var(--radius-control)] p-2 active:bg-default/40"
     >
       {body}
     </Pressable>

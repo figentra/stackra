@@ -14,7 +14,7 @@ import { LIST_KEYS } from "#src/demos/free/list/list-keys.constant";
 /** The demo's keys. */
 const K = LIST_KEYS.list;
 
-/** List: Selection. */
+/** The List demo: selection. */
 export default function Selection() {
   const t = useCatalogueText(MESSAGES.en);
   /** The three channels of the selection samples. */

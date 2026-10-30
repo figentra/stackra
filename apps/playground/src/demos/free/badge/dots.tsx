@@ -24,7 +24,7 @@ function Disc() {
   return <span aria-hidden="true" className="inline-flex size-10 bg-default" />;
 }
 
-/** Badge: Dots. */
+/** The Badge demo: dots. */
 export default function Dots() {
   const t = useCatalogueText(MESSAGES.en);
   return (

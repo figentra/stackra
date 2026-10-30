@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Alert dialog. */
+/** The Alert dialog entry of the component registry. */
 export const FREE_ALERT_DIALOG: ComponentEntry = {
   slug: "alert-dialog",
   tier: "free",

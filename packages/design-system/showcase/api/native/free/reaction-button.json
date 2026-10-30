@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "b21250ede0c23742",
+    "hash": "7d1a5360c1e06a9e",
     "propsFiles": ["ui/src/native/reaction-button/reaction-button.props.ts"]
   },
   "importLine": "import { ReactionButton } from \"@stackra/ui/native\";",
@@ -19,7 +19,7 @@
       "name": "ReactionButton",
       "props": [
         {
-          "description": "The emoji.",
+          "description": "The emoji drawn on the button.",
           "name": "emoji",
           "required": true,
           "source": "stackra",

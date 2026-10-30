@@ -40,12 +40,19 @@ export function Countdown(props: CountdownProps): ReactElement {
         time: spokenDurationOf({ ...parts, seconds: 0 }, format, locale),
       });
   return (
-    <div role="timer" aria-label={label} data-slot="countdown" className={cn("grid gap-1", className)}>
+    <div
+      role="timer"
+      aria-label={label}
+      data-slot="countdown"
+      className={cn("grid gap-1", className)}
+    >
       <span aria-hidden className="text-xs font-medium text-muted">
         {label}
       </span>
       <span aria-hidden className="flex items-baseline gap-2 text-2xl font-semibold tabular-nums">
-        {parts.days > 0 ? <span>{format(parts.days, { style: "unit", unit: "day", unitDisplay: "narrow" })}</span> : null}
+        {parts.days > 0 ? (
+          <span>{format(parts.days, { style: "unit", unit: "day", unitDisplay: "narrow" })}</span>
+        ) : null}
         <bdi dir="ltr">{`${two(parts.hours)}:${two(parts.minutes)}:${two(parts.seconds)}`}</bdi>
       </span>
       <span aria-live="polite" className="sr-only">

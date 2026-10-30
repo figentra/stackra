@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Gauge chart. */
+/** The Gauge chart entry of the component registry. */
 export const FREE_GAUGE_CHART: ComponentEntry = {
   slug: "gauge-chart",
   tier: "free",

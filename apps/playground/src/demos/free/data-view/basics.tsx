@@ -17,7 +17,7 @@ const later = <T,>(ms: number, value: T) =>
     setTimeout(() => resolve(value), ms);
   });
 
-/** DataView: Basics. */
+/** The DataView demo: basics. */
 export default function Basics() {
   const { orders, columns, renderCell, t, K } = useGulfOrders();
   const collection = useCollection({

@@ -34,7 +34,9 @@ export function Meter({
   const format = useNumberFormat();
   const tone = meterToneOf(value, { minValue, maxValue, low, high, optimum });
   const share = Math.min(1, Math.max(0, (value - minValue) / (maxValue - minValue || 1)));
-  const text = valueLabel ?? (formatOptions ? format(value, formatOptions) : format(share, { style: "percent" }));
+  const text =
+    valueLabel ??
+    (formatOptions ? format(value, formatOptions) : format(share, { style: "percent" }));
   return (
     <View
       accessible
@@ -49,8 +51,11 @@ export function Meter({
           {text}
         </Text>
       </View>
-      <View className="h-2 overflow-hidden rounded-full bg-default">
-        <View className={`h-full rounded-full ${FILL[tone]}`} style={{ width: `${share * 100}%` }} />
+      <View className="h-2 overflow-hidden rounded-[var(--radius-pill)] bg-default">
+        <View
+          className={`h-full rounded-[var(--radius-pill)] ${FILL[tone]}`}
+          style={{ width: `${share * 100}%` }}
+        />
       </View>
     </View>
   );

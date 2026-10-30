@@ -16,9 +16,11 @@ export interface ImportFlowContractProps {
   readonly columns: readonly string[];
   /** The first value of each column, shown as a hint beside it. */
   readonly sample?: Readonly<Record<string, string>> | undefined;
+  /** The fields a column can map to. */
   readonly fields: readonly ImportField[];
   /** The mapping; leave it out to start from the automatic match. */
   readonly mapping?: ImportMapping | undefined;
+  /** Called with the new mapping when the user changes a column. */
   readonly onMappingChange?: ((mapping: ImportMapping) => void) | undefined;
   /** Called to check the file with the mapping; the result comes back as `dryRun`. */
   readonly onDryRun: (mapping: ImportMapping) => void;

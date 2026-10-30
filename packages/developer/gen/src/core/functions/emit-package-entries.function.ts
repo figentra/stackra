@@ -8,7 +8,8 @@
  *          schemas (`<MODULE>_ENTITIES`) for the host to register.
  * Boundary: pure. `.` holds `src/config` and `src/core`; `node` holds `src/node` except `database/factories` and
  *           `database/seeders`, which `testing` holds with `src/testing`, so a server never loads a factory. An entry
- *           with nothing to export is not written. No symbol is exported from two entries.
+ *           with nothing to export is not written. No symbol is exported from two entries. A file directly in `src/` is
+ *           a hand-written entry and is in no barrel.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15: entry folders; the barrels are generated); ADR 0295 (decision 7); ADR
  *                     0305 (rules 16 and 18); ADR 0127 2026-10-24 note (the allowed entries); ADR 0336 (a module of
@@ -73,7 +74,14 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     left.importPath < right.importPath ? -1 : 1,
   )) {
     const entry = entryOf(file.file);
-    if (entry === undefined || file.names.length === 0 || /\/index\.tsx?$/.test(file.file))
+    // shortcut: a file directly in `src/` is a hand-written entry its package.json export names (an OS shell's
+    // `register`), so no barrel re-exports it; replace this once gen writes the shell entries itself (STA-339).
+    if (
+      entry === undefined ||
+      file.names.length === 0 ||
+      /\/index\.tsx?$/.test(file.file) ||
+      /^src\/[^/]+$/.test(file.file)
+    )
       continue;
     lines.get(entry)?.push(exportLine(file.names, file.importPath));
   }

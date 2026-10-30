@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Settings cell. */
+/** The Settings cell entry of the component registry. */
 export const FREE_SETTINGS_CELL: ComponentEntry = {
   slug: "settings-cell",
   tier: "free",

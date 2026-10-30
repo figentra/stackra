@@ -36,9 +36,7 @@
 }
 
 body {
-  font-feature-settings:
-    "cv01",
-    "ss03"; /* --font-settings */
+  font-feature-settings: "cv01", "ss03"; /* --font-settings */
 }
 
 /* Buttons: 32px, 13px medium (`--text-mini`, weight 510 drawn at Inter's 500). */

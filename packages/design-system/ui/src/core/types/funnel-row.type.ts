@@ -9,6 +9,7 @@ import type { FunnelStage } from "#contracts/types/funnel-stage.type";
 
 /** One step with its share and conversion. */
 export interface FunnelRow {
+  /** The step as the caller gave it. */
   readonly stage: FunnelStage;
   /** Its value over the first step's. */
   readonly share: number;

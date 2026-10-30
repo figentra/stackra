@@ -21,7 +21,7 @@ const PRODUCT = `data:image/svg+xml,${encodeURIComponent(
 /** The sizes, each with its caption. */
 const SIZES = ["sm", "md", "lg"] as const;
 
-/** Thumbnail: Sizes. */
+/** The Thumbnail demo: sizes. */
 export default function Sizes() {
   const t = useCatalogueText(MESSAGES.en);
   return (

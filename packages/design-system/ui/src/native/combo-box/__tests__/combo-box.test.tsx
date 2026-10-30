@@ -128,7 +128,7 @@ describe("ComboBox (native)", () => {
       detached: true,
       bottomInset: 32,
       className: "mx-4",
-      backgroundClassName: "rounded-4xl",
+      backgroundClassName: "rounded-[var(--radius-container)]",
     });
   });
 

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Emoji picker. */
+/** The Emoji picker entry of the component registry. */
 export const FREE_EMOJI_PICKER: ComponentEntry = {
   slug: "emoji-picker",
   tier: "free",

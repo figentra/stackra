@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Entity picker. */
+/** The Entity picker entry of the component registry. */
 export const FREE_ENTITY_PICKER: ComponentEntry = {
   slug: "entity-picker",
   tier: "free",

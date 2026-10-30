@@ -14,8 +14,11 @@ import type { ApiSlot } from "#src/types/api-slot.type";
 export interface ApiDoc {
   /** The entry key, "free/button". */
   readonly key: string;
+  /** The platform the API was generated for. */
   readonly platform: Platform;
+  /** The line that imports the entry. */
   readonly importLine: string;
+  /** The sources the API was generated from and their hash. */
   readonly generatedFrom: {
     readonly propsFiles: readonly string[];
     readonly heroDoc?: string;

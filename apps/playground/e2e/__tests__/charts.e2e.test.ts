@@ -77,7 +77,9 @@ for (const slug of CHARTS.filter((name) => name !== "sparkline"))
   test(`every ${slug} plot is a named image with its numbers in a table`, async ({ page }) => {
     await visit(page, `/${slug}`, "light");
     // A plot with a brush is a named group, since the brush's sliders sit inside it (axe nested-interactive).
-    const plots = page.locator(EXAMPLES).locator("[data-slot=chart] svg:is([role=img], [role=group])");
+    const plots = page
+      .locator(EXAMPLES)
+      .locator("[data-slot=chart] svg:is([role=img], [role=group])");
     const tables = page.locator(EXAMPLES).locator("[data-slot=chart-table]");
     await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
     await expect(plots.first()).toBeVisible();

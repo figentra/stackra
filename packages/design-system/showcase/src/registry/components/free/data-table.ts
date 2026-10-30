@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Data table. */
+/** The Data table entry of the component registry. */
 export const FREE_DATA_TABLE: ComponentEntry = {
   slug: "data-table",
   tier: "free",
@@ -15,7 +15,14 @@ export const FREE_DATA_TABLE: ComponentEntry = {
   platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "DataTable",
-  parts: ["DataTable", "ColumnEditor", "ColumnMenu", "SavedViews", "SavedViewsMenu", "ColumnChooser"],
+  parts: [
+    "DataTable",
+    "ColumnEditor",
+    "ColumnMenu",
+    "SavedViews",
+    "SavedViewsMenu",
+    "ColumnChooser",
+  ],
   hero: {},
   examples: [
     { id: "basics", card: true },

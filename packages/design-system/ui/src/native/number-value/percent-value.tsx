@@ -12,11 +12,20 @@ import type { PercentValueProps } from "#native/number-value/percent-value.props
 import { Text } from "#native/text/text";
 
 /** A share written as a percent. */
-export function PercentValue({ value, fractionDigits = 0, showSign = false, className }: PercentValueProps): ReactElement {
+export function PercentValue({
+  value,
+  fractionDigits = 0,
+  showSign = false,
+  className,
+}: PercentValueProps): ReactElement {
   const format = useNumberFormat();
   return (
     <Text {...(className ? { className } : {})}>
-      {format(value, { style: "percent", maximumFractionDigits: fractionDigits, ...(showSign ? { signDisplay: "exceptZero" as const } : {}) })}
+      {format(value, {
+        style: "percent",
+        maximumFractionDigits: fractionDigits,
+        ...(showSign ? { signDisplay: "exceptZero" as const } : {}),
+      })}
     </Text>
   );
 }

@@ -10,6 +10,7 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 
 /** Props shared by the web and native `GaugeChart`. */
 export interface GaugeChartContractProps {
+  /** The measure the ring fills to. */
   readonly value: number;
   /** The ring's start; 0 by default. */
   readonly min?: number | undefined;

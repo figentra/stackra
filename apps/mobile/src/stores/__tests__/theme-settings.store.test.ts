@@ -11,7 +11,7 @@
 import { STACKRA_THEME } from "@stackra/tokens";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SHOWCASE_THEME } from "../../constants/showcase-theme.constant";
+import { SHOWCASE_THEME } from "#src/constants/showcase-theme.constant";
 import { THEME_PRESETS } from "../theme-presets.constant";
 import { uniwindVariables } from "../uniwind-variables.function";
 import { contrastReport } from "../contrast-report.function";

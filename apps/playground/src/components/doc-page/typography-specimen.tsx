@@ -25,7 +25,7 @@ const SCRIPTS = [
   { lang: "ar", dir: "rtl", glyphs: "أب" },
 ] as const;
 
-/** The specimen. */
+/** Shows the heading levels and both scripts in the theme's type. */
 export function TypographySpecimen() {
   const t = useCatalogueText(MESSAGES.en);
   // Each script reads its own catalogue, whatever the page's language.

@@ -16,7 +16,9 @@ export default function ColumnEditorDemo() {
   const collection = useCollection({ columns, items: orders });
   return (
     <div className="grid gap-3">
-      <div className="flex justify-end"><ColumnEditor collection={collection} /></div>
+      <div className="flex justify-end">
+        <ColumnEditor collection={collection} />
+      </div>
       <DataTable
         label={t(K.editor_label)}
         items={collection.rows}

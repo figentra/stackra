@@ -14,7 +14,7 @@ import { LIST_KEYS } from "#src/demos/free/list/list-keys.constant";
 /** The demo's keys. */
 const K = LIST_KEYS.list;
 
-/** List: Surfaces. */
+/** The List demo: surfaces. */
 export default function Surfaces() {
   const t = useCatalogueText(MESSAGES.en);
   /** The rows of the basic list. */

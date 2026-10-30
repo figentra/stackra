@@ -24,7 +24,7 @@ const STAFF = [
   { id: "7", name: "خالد الحربي" },
 ];
 
-/** AvatarGroup: Shift. */
+/** The AvatarGroup demo: shift. */
 export default function Shift() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -49,8 +49,9 @@ export function parseGridValue(text: string, column: DataGridColumn): DataGridVa
       if (!match) return trimmed;
       const [, year, month, day] = match;
       const iso = `${year}-${month?.padStart(2, "0")}-${day?.padStart(2, "0")}`;
-      // A day that rolls over (31 April) is not a day.
-      return new Date(`${iso}T00:00:00Z`).toISOString().startsWith(iso) ? iso : trimmed;
+      // A day that rolls over (31 April) is not a day; month 13 or day 0 is an invalid Date, whose toISOString throws.
+      const date = new Date(`${iso}T00:00:00Z`);
+      return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(iso) ? iso : trimmed;
     }
     default: {
       return text;

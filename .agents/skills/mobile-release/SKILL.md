@@ -8,6 +8,10 @@ description: Cut a Stackra mobile release or over-the-air update - decide binary
 House rules on top of the vendored `eas-app-stores`, `eas-update` and `eas-workflows` skills, implementing ADR 0180. The
 agent prepares and verifies; a human submits for review, promotes tracks and approves production.
 
+For a product, the release is `stackra build --product` then `stackra deploy --product --env <e> --mobile-only`: each
+build goes to TestFlight and the Play internal track through the `eas` driver, and an Android build waits until the
+manual first Play upload exists (`stackra mobile onboard` lists it).
+
 ## 1. Binary or update?
 
 | Change                                                                  | Ships as                         |

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Import flow. */
+/** The Import flow entry of the component registry. */
 export const FREE_IMPORT_FLOW: ComponentEntry = {
   slug: "import-flow",
   tier: "free",

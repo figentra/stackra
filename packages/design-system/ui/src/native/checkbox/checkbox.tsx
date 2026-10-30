@@ -89,7 +89,7 @@ export function Checkbox({
           >
             {isIndeterminate ? (
               <HeroCheckbox.Indicator>
-                <View className="bg-accent-foreground h-0.5 w-2.5 rounded-full" />
+                <View className="bg-accent-foreground h-0.5 w-2.5 rounded-[var(--radius-pill)]" />
               </HeroCheckbox.Indicator>
             ) : undefined}
           </HeroCheckbox>

@@ -69,7 +69,10 @@ export function List<TItem extends ListItemData = ListItemData>({
           emptyState
         )
       ) : (
-        <Surface {...omitUndefined({ variant })} className="overflow-hidden rounded-2xl">
+        <Surface
+          {...omitUndefined({ variant })}
+          className="overflow-hidden rounded-[var(--radius-container)]"
+        >
           <Reveal isAnimated={isAnimated}>
             {selectionMode === "none" ? (
               <ul aria-label={label} className="divide-y divide-separator">

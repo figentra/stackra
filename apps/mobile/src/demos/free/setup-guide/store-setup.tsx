@@ -17,7 +17,7 @@ const K = SETUP_GUIDE_DEMO_KEYS.demo_free.setup_guide;
 /** The tasks, by key. */
 const TASKS = ["menu", "printer", "staff"] as const;
 
-/** Store setup. */
+/** The SetupGuide demo: setting up a store. */
 export default function StoreSetup() {
   const t = useCatalogueText(MESSAGES.en);
   const [done, setDone] = useState<readonly string[]>(["printer"]);

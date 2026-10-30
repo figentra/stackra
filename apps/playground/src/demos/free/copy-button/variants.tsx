@@ -13,7 +13,7 @@ import { COPY_BUTTON_KEYS } from "#src/demos/free/copy-button/copy-button-keys.c
 /** The demo's keys. */
 const K = COPY_BUTTON_KEYS.copy_button;
 
-/** CopyButton: Variants. */
+/** The CopyButton demo: variants. */
 export default function Variants() {
   const t = useCatalogueText(MESSAGES.en);
   return (

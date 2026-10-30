@@ -24,7 +24,7 @@ const DATA = [
   { month: "2026-06-01", desktop: 214, mobile: 140 },
 ];
 
-/** AreaChart: percent. */
+/** The AreaChart demo: percent. */
 export default function Percent() {
   const t = useCatalogueText(MESSAGES.en);
   return (

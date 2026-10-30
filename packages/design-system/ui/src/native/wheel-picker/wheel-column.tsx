@@ -22,7 +22,7 @@ import { WHEEL_ROW } from "#native/wheel-picker/wheel-row.constant";
 import { haptics } from "#native/haptics/haptics";
 import { Text } from "#native/text/text";
 
-/** One wheel. */
+/** Draws one scrolling wheel of a wheel picker. */
 export function WheelColumn({
   column,
   selected,

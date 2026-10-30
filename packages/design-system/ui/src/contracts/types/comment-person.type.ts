@@ -8,7 +8,10 @@
 
 /** A person in a comment thread. */
 export interface CommentPerson {
+  /** A stable id, handed back for mentions. */
   readonly id: string;
+  /** The name shown and matched after `@`. */
   readonly name: string;
+  /** The address of their picture; initials are drawn without it. */
   readonly avatar?: string | undefined;
 }

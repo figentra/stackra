@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "aa8165296fdb7277",
+    "hash": "fc35b3d865e5643b",
     "propsFiles": ["ui/src/native/choropleth-map/choropleth-map.props.ts"]
   },
   "importLine": "import { ChoroplethMap } from \"@stackra/ui/native\";",
@@ -45,7 +45,7 @@
           "type": "string"
         },
         {
-          "description": "",
+          "description": "How values are written; plain numbers in the locale by default.",
           "name": "valueFormat",
           "required": false,
           "source": "stackra",

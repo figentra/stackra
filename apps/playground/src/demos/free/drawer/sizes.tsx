@@ -15,7 +15,7 @@ import { DRAWER_KEYS } from "#src/demos/free/drawer/drawer-keys.constant";
 /** The demo's keys. */
 const K = DRAWER_KEYS.drawer;
 
-/** Drawer: Sizes. */
+/** The Drawer demo: sizes. */
 export default function Sizes() {
   const t = useCatalogueText(MESSAGES.en);
   const SIZES: readonly { readonly size: DrawerSize; readonly label: string }[] = [

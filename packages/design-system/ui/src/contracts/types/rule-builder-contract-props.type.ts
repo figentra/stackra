@@ -11,10 +11,14 @@ import type { RuleGroup } from "#contracts/types/rule-group.type";
 
 /** Props shared by the web and native `RuleBuilder`. */
 export interface RuleBuilderContractProps {
+  /** The fields a condition can test. */
   readonly fields: readonly RuleField[];
+  /** The rule being edited. */
   readonly value: RuleGroup;
+  /** Called with the new rule after each edit. */
   readonly onChange: (value: RuleGroup) => void;
   /** The builder's accessible name, such as "Discount applies when". */
   readonly label: string;
+  /** True to show the rule but refuse edits. */
   readonly isDisabled?: boolean | undefined;
 }

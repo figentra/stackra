@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "e07d2d9cbef53f4e",
+    "hash": "44a26a36dbf91487",
     "propsFiles": ["ui/src/native/bar-list/bar-list.props.ts"]
   },
   "importLine": "import { BarList } from \"@stackra/ui/native\";",
@@ -10,7 +10,7 @@
       "name": "BarList",
       "props": [
         {
-          "description": "The rows.",
+          "description": "The rows to draw, one bar each.",
           "name": "items",
           "required": true,
           "source": "stackra",

@@ -13,7 +13,7 @@ import { MULTI_SELECT_KEYS } from "#src/demos/free/multi-select/multi-select-key
 /** The demo's keys. */
 const K = MULTI_SELECT_KEYS.multi_select;
 
-/** Multi-select: Collections. */
+/** The Multi-select demo: collections. */
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const items = [

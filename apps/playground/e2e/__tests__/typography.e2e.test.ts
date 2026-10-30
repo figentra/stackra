@@ -14,8 +14,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { pageTitle } from "../support/page-title.function";
 import { fontStackOf } from "@stackra/tokens";
-import { buildBrandTheme } from "../../src/constants/brand-themes/build-brand-theme.function";
-import STACKRA from "../../src/constants/brand-themes/stackra.json" with { type: "json" };
+import { buildBrandTheme } from "#src/constants/brand-themes/build-brand-theme.function";
+import STACKRA from "#src/constants/brand-themes/stackra.json" with { type: "json" };
 
 /** The theme the page draws: the Stackra steel layer over the base (`SHOWCASE_THEME`), not the bare base theme. */
 const SHOWCASE_THEME = buildBrandTheme(STACKRA);

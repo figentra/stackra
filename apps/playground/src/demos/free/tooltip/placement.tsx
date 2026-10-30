@@ -17,7 +17,7 @@ const K = TOOLTIP_KEYS.tooltip;
 /** The row that lays samples out in the middle of the page, where a tooltip has room on every side. */
 const ROW = "flex flex-wrap items-center justify-center gap-4";
 
-/** Tooltip: Placement. */
+/** The Tooltip demo: placement. */
 export default function Placement() {
   const t = useCatalogueText(MESSAGES.en);
   return (

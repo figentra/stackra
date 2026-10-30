@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/separator/horizontal.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "horizontal" demo of the native Separator: between two paragraphs, the full width of the container.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Separator, Text, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { SEPARATOR_DEMO_KEYS } from "#src/demos/free/separator/separator-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = SEPARATOR_DEMO_KEYS.demo_free.separator.paragraphs;\n\n/** A rule between two paragraphs. */\nexport default function Horizontal() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-3">\n      <Text>{t(K.before)}</Text>\n      <Separator />\n      <Text>{t(K.after)}</Text>\n    </View>\n  );\n}\n';

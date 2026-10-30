@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5d126232fbd77a47",
+    "hash": "fd67cfde101607d6",
     "propsFiles": ["ui/src/react/chart-legend/chart-legend.props.ts"]
   },
   "importLine": "import { ChartLegend } from \"@stackra/ui/react\";",
@@ -47,7 +47,7 @@
           "type": "boolean"
         },
         {
-          "description": "",
+          "description": "Extra classes for the legend container.",
           "name": "className",
           "required": false,
           "source": "stackra",

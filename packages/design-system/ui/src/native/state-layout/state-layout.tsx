@@ -40,7 +40,7 @@ export function StateLayout({
       className={["items-center gap-3 px-6 py-12", className].filter(Boolean).join(" ")}
     >
       {icon === false ? null : (
-        <View className="size-12 items-center justify-center rounded-full bg-default">
+        <View className="size-12 items-center justify-center rounded-[var(--radius-pill)] bg-default">
           {icon !== undefined && typeof icon !== "string" ? (
             icon
           ) : (

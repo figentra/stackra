@@ -10,7 +10,7 @@ import { formatMessage, type I18nKey } from "@stackra/i18n";
 import { COMPONENTS, matchEntries } from "@stackra/showcase";
 import { describe, expect, it } from "vitest";
 
-import { MESSAGES } from "../../constants/messages.constant";
+import { MESSAGES } from "#src/constants/messages.constant";
 import { searchDocs } from "../search-docs.function";
 
 const english = (key: I18nKey) => formatMessage(MESSAGES.en, key, undefined, "en");

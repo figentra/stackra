@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 
 /** Props of `DemoBoundary`. */
 export interface DemoBoundaryProps {
-  /** The demo. */
+  /** The demo to guard. */
   readonly children: ReactNode;
   /** What to draw when the demo throws. */
   readonly fallback: ReactNode;

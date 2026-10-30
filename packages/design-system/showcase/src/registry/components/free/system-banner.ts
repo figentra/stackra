@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** System banner. */
+/** The System banner entry of the component registry. */
 export const FREE_SYSTEM_BANNER: ComponentEntry = {
   slug: "system-banner",
   tier: "free",

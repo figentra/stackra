@@ -50,7 +50,7 @@ const FLIP = { entering: { top: FlipInXUp, bottom: FlipInXDown } } as const;
 
 /** The classes of one look, beside the row layout every look shares. */
 function lookClassName(variant: ToastVariant, tone: ToastItemProps["tone"]): string {
-  if (variant === "bubble") return "items-center rounded-full py-2 ps-2 pe-2";
+  if (variant === "bubble") return "items-center rounded-[var(--radius-pill)] py-2 ps-2 pe-2";
   if (variant === "alert") return "";
   return `border-s-2 ${BAR_EDGE[tone]}`;
 }

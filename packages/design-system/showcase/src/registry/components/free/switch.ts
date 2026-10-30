@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Switch. */
+/** The Switch entry of the component registry. */
 export const FREE_SWITCH: ComponentEntry = {
   slug: "switch",
   tier: "free",

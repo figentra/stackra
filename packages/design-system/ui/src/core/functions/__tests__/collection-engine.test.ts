@@ -234,9 +234,17 @@ describe("applyCollection and the query", () => {
     expect(state.aggregates).toEqual({ total: "sum" });
   });
   it("sums the other number columns once a footer is on, and leaves text columns empty", () => {
-    const withQuantity = [...COLUMNS, { id: "quantity", label: "Quantity", type: "number" as const }];
-    expect(defaultCollectionStateOf(withQuantity).aggregates).toEqual({ total: "sum", quantity: "sum" });
-    expect(defaultCollectionStateOf(withQuantity.filter((c) => c.id !== "total")).aggregates).toEqual({});
+    const withQuantity = [
+      ...COLUMNS,
+      { id: "quantity", label: "Quantity", type: "number" as const },
+    ];
+    expect(defaultCollectionStateOf(withQuantity).aggregates).toEqual({
+      total: "sum",
+      quantity: "sum",
+    });
+    expect(
+      defaultCollectionStateOf(withQuantity.filter((c) => c.id !== "total")).aggregates,
+    ).toEqual({});
   });
 });
 

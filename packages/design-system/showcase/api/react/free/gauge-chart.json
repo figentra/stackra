@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d6fca78f7821d7f9",
+    "hash": "fd634da4692c121f",
     "propsFiles": ["ui/src/react/gauge-chart/gauge-chart.props.ts"]
   },
   "importLine": "import { GaugeChart } from \"@stackra/ui/react\";",
@@ -10,7 +10,7 @@
       "name": "GaugeChart",
       "props": [
         {
-          "description": "",
+          "description": "The measure the ring fills to.",
           "name": "value",
           "required": true,
           "source": "stackra",

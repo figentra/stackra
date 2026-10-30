@@ -30,9 +30,9 @@ export function DropZone({
   const K = FORMS_KEYS.ui.drop_zone;
   return (
     <View
-      className={`items-center gap-2 rounded-2xl border-2 border-dashed border-border bg-surface p-8 ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`}
+      className={`items-center gap-2 rounded-[var(--radius-container)] border-2 border-dashed border-border bg-surface p-8 ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`}
     >
-      <View className="size-11 items-center justify-center rounded-full bg-default">
+      <View className="size-11 items-center justify-center rounded-[var(--radius-pill)] bg-default">
         <Icon name="upload" tone="muted" />
       </View>
       <Text className="font-medium" align="center">

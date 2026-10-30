@@ -19,7 +19,13 @@ import { Spinner } from "#native/spinner/spinner";
 import { StateLayout } from "#native/state-layout/state-layout";
 
 /** The outcome of an action. */
-export function Result({ status, icon, headingLevel = 2, className, ...rest }: ResultProps): ReactElement {
+export function Result({
+  status,
+  icon,
+  headingLevel = 2,
+  className,
+  ...rest
+}: ResultProps): ReactElement {
   const tone = RESULT_TONE[status];
   return (
     <StateLayout
@@ -34,9 +40,13 @@ export function Result({ status, icon, headingLevel = 2, className, ...rest }: R
         ) : (
           <View
             importantForAccessibility="no-hide-descendants"
-            className={`size-12 items-center justify-center rounded-full ${MARKER_TONE_CLASS_NAME[tone]}`}
+            className={`size-12 items-center justify-center rounded-[var(--radius-pill)] ${MARKER_TONE_CLASS_NAME[tone]}`}
           >
-            {status === "pending" ? <Spinner /> : <FeedbackIcon tone={tone} {...(icon ? { icon } : {})} />}
+            {status === "pending" ? (
+              <Spinner />
+            ) : (
+              <FeedbackIcon tone={tone} {...(icon ? { icon } : {})} />
+            )}
           </View>
         )
       }

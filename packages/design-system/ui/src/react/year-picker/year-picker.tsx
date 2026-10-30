@@ -69,7 +69,7 @@ export function YearPicker({
           textValue={String(each)}
           className={({ isSelected, isFocusVisible }) =>
             cn(
-              "grid min-h-10 cursor-pointer place-items-center rounded-lg px-2 py-1 text-center outline-none tabular-nums hover:bg-default",
+              "grid min-h-10 cursor-pointer place-items-center rounded-[var(--radius-control)] px-2 py-1 text-center outline-none tabular-nums hover:bg-default",
               isSelected && "bg-accent text-accent-foreground hover:bg-accent",
               isFocusVisible && "outline-2 outline-focus",
               each === thisYear && !isSelected && "font-semibold text-accent-soft-foreground",

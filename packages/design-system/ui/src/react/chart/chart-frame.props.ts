@@ -29,7 +29,8 @@ export interface ChartFrameProps {
   readonly showComparison?: boolean | undefined;
   /** Lines read after the data table, such as each reference line's label and value. */
   readonly notes?: readonly string[] | undefined;
+  /** Extra classes for the frame container. */
   readonly className?: string | undefined;
-  /** The plot. */
+  /** The plot drawn inside the frame. */
   readonly children: ReactNode;
 }

@@ -23,7 +23,7 @@ const DATA = [
   { month: "2026-06-01", desktop: 214, mobile: 140 },
 ];
 
-/** Straight segments. */
+/** The LineChart demo: straight segments between points. */
 export default function Linear() {
   const t = useCatalogueText(MESSAGES.en);
   const series = [{ key: "desktop", label: t(K.desktop) }];

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/empty-state/actions.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "actions" demo of the native EmptyState: `actions`, the reader\'s next step under the description.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Button, EmptyState, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { EMPTY_STATE_DEMO_KEYS } from "#src/demos/free/empty-state/empty-state-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = EMPTY_STATE_DEMO_KEYS.demo_free.empty_state.actions;\n\n/** Create or import. */\nexport default function Actions() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <EmptyState\n      headingLevel={3}\n      title={t(K.heading)}\n      description={t(K.body)}\n      actions={\n        <>\n          <Button>{t(K.create)}</Button>\n          <Button variant="secondary">{t(K.import)}</Button>\n        </>\n      }\n    />\n  );\n}\n';

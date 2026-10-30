@@ -20,10 +20,10 @@ export default function Membership() {
     <HoloCard className="w-full max-w-sm">
       <div className="flex aspect-[1.6] flex-col justify-between bg-gradient-to-br from-warning/30 to-accent-soft p-5">
         {/* The words sit on plates of the surface, not on the gradient, so they read (and measure) on one ground. */}
-        <Surface className="w-fit rounded-full px-3 py-1">
+        <Surface className="w-fit rounded-[var(--radius-pill)] px-3 py-1">
           <p className="m-0 text-sm font-semibold">{t(K.tier)}</p>
         </Surface>
-        <Surface className="flex items-end justify-between gap-4 rounded-xl p-3">
+        <Surface className="flex items-end justify-between gap-4 rounded-[var(--radius-container)] p-3">
           <div>
             <p className="m-0 text-lg font-semibold">{t(K.name)}</p>
             <p className="m-0 text-xs text-muted">{t(K.since)}</p>

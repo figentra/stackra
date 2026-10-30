@@ -53,7 +53,9 @@ export function Countdown(props: CountdownProps): ReactElement {
       </Text>
       <View className="flex-row items-baseline gap-2" style={{ direction: "ltr" }}>
         {parts.days > 0 ? (
-          <Text className="text-2xl font-semibold">{format(parts.days, { style: "unit", unit: "day", unitDisplay: "narrow" })}</Text>
+          <Text className="text-2xl font-semibold">
+            {format(parts.days, { style: "unit", unit: "day", unitDisplay: "narrow" })}
+          </Text>
         ) : null}
         <Text className="text-2xl font-semibold" style={{ fontVariant: ["tabular-nums"] }}>
           {`${two(parts.hours)}:${two(parts.minutes)}:${two(parts.seconds)}`}

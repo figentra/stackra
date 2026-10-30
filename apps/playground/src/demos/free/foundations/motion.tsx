@@ -14,7 +14,7 @@ import { FOUNDATIONS_KEYS } from "#src/demos/free/foundations/foundations-keys.c
 /** The demo's keys. */
 const K = FOUNDATIONS_KEYS.foundations;
 
-/** Foundations: Motion. */
+/** The Foundations demo: motion. */
 export default function Motion() {
   const t = useCatalogueText(MESSAGES.en);
   return (

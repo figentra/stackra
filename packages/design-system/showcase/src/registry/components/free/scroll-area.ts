@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Scroll area. */
+/** The Scroll area entry of the component registry. */
 export const FREE_SCROLL_AREA: ComponentEntry = {
   slug: "scroll-area",
   tier: "free",

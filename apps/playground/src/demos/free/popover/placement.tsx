@@ -29,7 +29,7 @@ function Body({ children }: { readonly children: string }) {
   );
 }
 
-/** Popover: Placement. */
+/** The Popover demo: placement. */
 export default function Placement() {
   const t = useCatalogueText(MESSAGES.en);
   return (

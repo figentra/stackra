@@ -7,10 +7,13 @@
  */
 import type { CommentPerson } from "#contracts/types/comment-person.type";
 
-/** One comment. */
+/** One comment in a thread, with its author and text. */
 export interface CommentItem {
+  /** A stable id, unique within the thread. */
   readonly id: string;
+  /** The person who wrote it. */
   readonly author: CommentPerson;
+  /** The comment text as written. */
   readonly body: string;
   /** When it was written, ISO 8601. */
   readonly createdAt: string;

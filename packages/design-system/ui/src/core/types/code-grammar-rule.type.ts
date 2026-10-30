@@ -12,5 +12,8 @@ import type { SyntaxRole } from "@stackra/tokens/contracts";
 /** A pattern (with the `y` flag) and its role. */
 export type CodeGrammarRule = readonly [
   pattern: RegExp,
-  role: SyntaxRole | "plain" | ((match: string, source: string, at: number) => SyntaxRole | "plain" | null),
+  role:
+    | SyntaxRole
+    | "plain"
+    | ((match: string, source: string, at: number) => SyntaxRole | "plain" | null),
 ];

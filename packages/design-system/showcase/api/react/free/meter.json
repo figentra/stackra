@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "03f6c25babbe3d8a",
+    "hash": "41c605b2ec1b683b",
     "heroDoc": "vendor/heroui/react/meter.json",
     "propsFiles": ["ui/src/react/meter/meter.props.ts"]
   },
@@ -11,7 +11,7 @@
       "name": "Meter",
       "props": [
         {
-          "description": "The measure.",
+          "description": "The measure the bar fills to.",
           "name": "value",
           "required": true,
           "source": "stackra",

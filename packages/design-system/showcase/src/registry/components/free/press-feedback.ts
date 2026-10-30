@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Press feedback. */
+/** The Press feedback entry of the component registry. */
 export const FREE_PRESS_FEEDBACK: ComponentEntry = {
   slug: "press-feedback",
   tier: "free",

@@ -52,7 +52,7 @@ const actionsOf = (t: ReturnType<typeof useCatalogueText>, count: number): MenuL
   return all.slice(0, count);
 };
 
-/** Section: Parts. */
+/** The Section demo: parts. */
 export default function Parts() {
   const t = useCatalogueText(MESSAGES.en);
 

@@ -63,7 +63,7 @@ export function ChartLegend({
                 aria-pressed={!isHidden}
                 onClick={() => onToggle(item.key)}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1.5 rounded-sm px-1 py-0.5 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus",
+                  "flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-control-inner)] px-1 py-0.5 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus",
                   isHidden && "line-through",
                 )}
               >

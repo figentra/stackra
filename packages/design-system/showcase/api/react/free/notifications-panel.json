@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "8346b136e5e1e12d",
+    "hash": "481cb082022b6a6a",
     "propsFiles": [
       "ui/src/react/notifications-panel/notification-row.props.ts",
       "ui/src/react/notifications-panel/notifications-panel.props.ts"
@@ -111,14 +111,14 @@
     {
       "events": [
         {
-          "description": "",
+          "description": "Called with the item id when the row is pressed.",
           "name": "onPress",
           "required": false,
           "source": "stackra",
           "type": "(id: string) => void"
         },
         {
-          "description": "",
+          "description": "Called with the item id when it is dismissed.",
           "name": "onDismiss",
           "required": false,
           "source": "stackra",
@@ -128,21 +128,21 @@
       "name": "NotificationRow",
       "props": [
         {
-          "description": "",
+          "description": "The notification the row draws.",
           "name": "item",
           "required": true,
           "source": "stackra",
           "type": "NotificationItem"
         },
         {
-          "description": "",
+          "description": "The accessible name of the dismiss button.",
           "name": "dismissLabel",
           "required": true,
           "source": "stackra",
           "type": "string"
         },
         {
-          "description": "",
+          "description": "The spoken word for an unread item.",
           "name": "unreadLabel",
           "required": true,
           "source": "stackra",

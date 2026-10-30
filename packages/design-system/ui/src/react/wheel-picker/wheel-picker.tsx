@@ -53,7 +53,7 @@ export function WheelPicker({
         aria-hidden
         // The band is an inset shadow, not a background: axe took a background band as partly covering the rows
         // beside it and left every one for review; on screen the two are the same.
-        className="pointer-events-none absolute inset-x-0 rounded-xl shadow-[inset_0_0_0_100vmax_var(--default)]"
+        className="pointer-events-none absolute inset-x-0 rounded-[var(--radius-container)] shadow-[inset_0_0_0_100vmax_var(--default)]"
         style={{ top: (WHEEL_ROW * (rows - 1)) / 2, height: WHEEL_ROW }}
       />
       {/* Clipped as well as scrolled: axe takes only `overflow: hidden` as clipping, so rows scrolled out of a wheel

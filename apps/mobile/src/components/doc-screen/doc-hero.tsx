@@ -19,7 +19,7 @@ import { MESSAGES } from "#src/constants/messages.constant";
 
 const K = DOC_KEYS.showcase.doc.ui;
 
-/** The hero. */
+/** The top of a doc screen: chips, headline, intro and tags. */
 export function DocHero({ chips, headline, intro, tags, page, introLines }: DocHeroProps) {
   const t = useCatalogueText(MESSAGES.en);
   const { play } = useHaptic();

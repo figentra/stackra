@@ -20,7 +20,7 @@ const RADII: readonly (readonly [string, string])[] = [
 /** A CSS custom property reference. */
 const cssVar = (name: string) => `var(--${name})`;
 
-/** Foundations: Radius. */
+/** The Foundations demo: radius. */
 export default function Radius() {
   return (
     <ul className="flex flex-wrap gap-4">

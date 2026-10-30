@@ -53,7 +53,10 @@ export function QuantityStepper({
       role="group"
       aria-label={label}
       data-slot="quantity-stepper"
-      className={cn("inline-flex items-center gap-1 rounded-full bg-default p-1", className)}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-default p-1",
+        className,
+      )}
     >
       <IconButton
         size="sm"

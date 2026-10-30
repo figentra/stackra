@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Card. */
+/** The Card entry of the component registry. */
 export const FREE_CARD: ComponentEntry = {
   slug: "card",
   tier: "free",

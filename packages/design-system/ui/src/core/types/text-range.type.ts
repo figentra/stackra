@@ -8,6 +8,8 @@
 
 /** A span of a string. */
 export interface TextRange {
+  /** The first character index of the span. */
   readonly start: number;
+  /** The index just past the last character. */
   readonly end: number;
 }

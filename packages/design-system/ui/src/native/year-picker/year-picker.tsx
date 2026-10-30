@@ -60,7 +60,7 @@ export function YearPicker({
                 if (value === undefined) setOwn(each);
                 onChange?.(each);
               }}
-              className={`min-h-11 items-center justify-center rounded-lg ${isChosen ? "bg-accent" : "bg-default"} ${isDisabled ? "opacity-50" : ""}`}
+              className={`min-h-11 items-center justify-center rounded-[var(--radius-control)] ${isChosen ? "bg-accent" : "bg-default"} ${isDisabled ? "opacity-50" : ""}`}
             >
               <Text
                 tone={isChosen ? "default" : each === thisYear ? "accent" : "default"}

@@ -11,7 +11,9 @@ import type { ComponentEntry, ExampleEntry } from "@stackra/showcase";
 export interface ExamplePreviewProps {
   /** The anchor id of the block. */
   readonly id: string;
+  /** The registry entry the example belongs to. */
   readonly entry: ComponentEntry;
+  /** The example to draw. */
   readonly example: ExampleEntry;
   /** The translated title. */
   readonly title: string;

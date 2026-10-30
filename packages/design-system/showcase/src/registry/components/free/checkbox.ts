@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Checkbox. */
+/** The Checkbox entry of the component registry. */
 export const FREE_CHECKBOX: ComponentEntry = {
   slug: "checkbox",
   tier: "free",

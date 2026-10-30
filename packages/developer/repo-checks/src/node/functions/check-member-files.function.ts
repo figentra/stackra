@@ -26,8 +26,10 @@ export function checkMemberFiles(member: {
   readonly agents?: string | undefined;
   readonly licenseText?: string | undefined;
   readonly rootLicense?: string | undefined;
+  /** False in a product repository: the licence and publish rules are the Stackra repository's own (ADR 0453). */
+  readonly stackra?: boolean | undefined;
 }): string[] {
-  const { dir, pkg, files, agents, licenseText, rootLicense } = member;
+  const { dir, pkg, files, agents, licenseText, rootLicense, stackra = true } = member;
   const out: string[] = [];
   // ADR 0195 decision 7: @stackra/* is MIT with a LICENSE; @figentra/* apps and services are UNLICENSED with none.
   const unlicensed = ["tier:app", "tier:service"].includes(tierFor(dir) ?? "");
@@ -39,6 +41,7 @@ export function checkMemberFiles(member: {
   if (!unlicensed && files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
+  if (!stackra) return out;
   const license = unlicensed ? "UNLICENSED" : "MIT";
   if (pkg.license !== license) out.push(`package.json license must be "${license}" (ADR 0195)`);
   if (tierFor(dir) === "tier:lib") {

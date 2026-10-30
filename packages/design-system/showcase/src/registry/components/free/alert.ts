@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Alert. */
+/** The Alert entry of the component registry. */
 export const FREE_ALERT: ComponentEntry = {
   slug: "alert",
   tier: "free",

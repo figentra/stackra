@@ -27,8 +27,19 @@ export function PieFigure(props: PieFigureProps): ReactElement {
   const { data, series, label, nameKey, valueKey, valueFormat, height = 240, isDonut } = props;
   const { locale, words } = useChartLocale();
   const paint = useChartPaint(sliceColorsOf(data, series, nameKey, props.palette));
-  const table = chartTableOf({ data, series, categoryKey: nameKey, valueKey, locale, valueFormat, words });
-  const total = data.reduce((sum, row) => sum + (typeof row[valueKey] === "number" ? row[valueKey] : 0), 0);
+  const table = chartTableOf({
+    data,
+    series,
+    categoryKey: nameKey,
+    valueKey,
+    locale,
+    valueFormat,
+    words,
+  });
+  const total = data.reduce(
+    (sum, row) => sum + (typeof row[valueKey] === "number" ? row[valueKey] : 0),
+    0,
+  );
   const rows = data.map((row, index) => ({
     name: String(row[nameKey] ?? ""),
     value: typeof row[valueKey] === "number" ? row[valueKey] : 0,
@@ -56,7 +67,10 @@ export function PieFigure(props: PieFigureProps): ReactElement {
           </Pie.Chart>
         </PolarChart>
         {isDonut && props.centerLabel ? (
-          <RingCentre value={formatChartNumber(total, locale, valueFormat)} word={props.centerLabel} />
+          <RingCentre
+            value={formatChartNumber(total, locale, valueFormat)}
+            word={props.centerLabel}
+          />
         ) : null}
       </View>
     </ChartFrame>

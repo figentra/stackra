@@ -19,6 +19,6 @@ export interface SettingsSelectCellContractProps extends Omit<
   readonly defaultValue?: string | undefined;
   /** Called with each new value. */
   readonly onChange?: ((value: string) => void) | undefined;
-  /** The choices. */
+  /** The choices the select offers. */
   readonly items: readonly SelectItem[];
 }

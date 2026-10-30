@@ -48,7 +48,7 @@ function Section({
             accessibilityRole="button"
             accessibilityLabel={WORDS.get(each) ?? each}
             onPress={() => onSelect(each)}
-            className="size-11 items-center justify-center rounded-lg active:bg-default"
+            className="size-11 items-center justify-center rounded-[var(--radius-control)] active:bg-default"
           >
             <Text className="text-2xl">{each}</Text>
           </Pressable>

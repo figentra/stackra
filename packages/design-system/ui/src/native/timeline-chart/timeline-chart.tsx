@@ -98,14 +98,18 @@ export function TimelineChart({
               .map(({ task, at, length, color }) => (
                 <View
                   key={task.key}
-                  className="absolute top-2 h-6 flex-row items-center overflow-hidden rounded-md px-1"
+                  className="absolute top-2 h-6 flex-row items-center overflow-hidden rounded-[var(--radius-control)] px-1"
                   style={{
                     start: `${at * 100}%`,
                     width: `${length * 100}%`,
                     backgroundColor: color,
                   }}
                 >
-                  <Text type="caption" numberOfLines={1} className="rounded bg-surface/85 px-1.5">
+                  <Text
+                    type="caption"
+                    numberOfLines={1}
+                    className="rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5"
+                  >
                     {task.label}
                   </Text>
                 </View>

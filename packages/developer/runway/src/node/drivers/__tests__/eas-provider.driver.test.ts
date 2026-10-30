@@ -3,10 +3,11 @@
  * Purpose: unit tests of `EasProviderDriver`: a build target plans and starts `eas build` of the channel's profile
  *          from the release checkout, verifies by the build status and refuses a rollback; an update target publishes
  *          to the channel, verifies the group and republishes the earlier group; a checkout of another commit and an
- *          environment without a channel are refused.
+ *          environment without a channel are refused; submit sends a build of the platform EAS reports to its store,
+ *          and falls back to `--platform all` on an unreadable answer.
  * Boundary: test only; the command runner is a fake, nothing runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), ADR 0180, ADR 0344.
+ * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), ADR 0180, ADR 0344, ADR 0482.
  */
 import { buildConfig } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
@@ -106,5 +107,27 @@ describe("EasProviderDriver", () => {
       driver.rollback(mobile, { target: mobile.id, sha: SHA, reference: "x" }),
     ).rejects.toThrow(RunwayUnresolvedError);
     expect(() => driver.plan({ ...mobile, scope: {} }, SHA)).toThrow(RunwayInvalidError);
+  });
+});
+
+describe("EasProviderDriver submit", () => {
+  // @covers sta-1623:FR-008
+  it("submits a finished build of the platform EAS reports on the production submit profile", async () => {
+    const { run, calls } = fakeRunner({ "eas build:view": JSON.stringify({ platform: "IOS" }) });
+
+    const platform = await eas(run).submit("build-ios");
+
+    expect(platform).toBe("ios");
+    expect(calls).toEqual([
+      "eas build:view build-ios --json",
+      "eas submit --platform ios --id build-ios --profile production --non-interactive --json",
+    ]);
+  });
+
+  it("submits with --platform all when the build answer cannot be read", async () => {
+    const { run, calls } = fakeRunner({ "eas build:view": "not json" });
+
+    expect(await eas(run).submit("build-x", "production")).toBe("all");
+    expect(calls[1]).toContain("--platform all");
   });
 });

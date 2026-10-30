@@ -59,7 +59,7 @@ export function TreemapChart({
           ).map((tile) => (
             <View
               key={tile.item.key}
-              className="absolute overflow-hidden rounded-md border-2 border-surface p-1.5"
+              className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5"
               style={{
                 start: `${tile.x}%`,
                 top: `${tile.y}%`,
@@ -68,7 +68,7 @@ export function TreemapChart({
                 backgroundColor: paint.series[items.indexOf(tile.item)],
               }}
             >
-              <View className="self-start rounded bg-surface/85 px-1.5 py-0.5">
+              <View className="self-start rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5 py-0.5">
                 <Text type="caption" tone="muted" numberOfLines={1}>
                   {tile.item.label}
                 </Text>

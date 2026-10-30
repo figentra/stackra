@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/notifications-panel/empty.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "empty" demo of the native NotificationsPanel: no notifications, so no badge, and the sheet says what\n *          will appear there.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6); gap inventory row 13.\n */\nimport { NotificationsPanel, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { NOTIFICATIONS_PANEL_DEMO_KEYS } from "#src/demos/free/notifications-panel/notifications-panel-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = NOTIFICATIONS_PANEL_DEMO_KEYS.demo_free.notifications_panel;\n\n/** An empty inbox. */\nexport default function Empty() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="flex-row justify-end">\n      <NotificationsPanel items={[]} emptyState={t(K.empty)} />\n    </View>\n  );\n}\n';

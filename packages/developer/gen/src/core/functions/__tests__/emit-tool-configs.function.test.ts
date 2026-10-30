@@ -16,6 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 describe("emitToolConfigs", () => {
@@ -40,14 +41,46 @@ describe("emitToolConfigs", () => {
     );
   });
 
+  it("gives a package, not a service, the root tsdown shim", () => {
+    expect(content("tsdown.config.ts")).toBe("");
+    const pkg = emitToolConfigs(LOYALTY_KIT_IR, {
+      entries: [{ path: ".stackra/entry/index.ts", content: "" }],
+      registrations: false,
+    });
+    // The re-export names the generated config with its extension (tsdown's native loader needs it).
+    const shim = pkg.find((file) => file.path === "tsdown.config.ts")?.content;
+    expect(shim).toContain("export { default } from ");
+    expect(shim).toContain('"./.stackra/tsdown.config.ts";');
+    const tsdown = pkg.find((file) => file.path === ".stackra/tsdown.config.ts")?.content;
+    expect(tsdown).toContain('"index": fileURLToPath(new URL("entry/index.ts", import.meta.url)),');
+    expect(tsdown).toContain(
+      'dts: { tsconfig: fileURLToPath(new URL("../tsconfig.build.json", import.meta.url)) },',
+    );
+    const tsconfig = JSON.parse(
+      pkg.find((file) => file.path === "tsconfig.build.json")?.content ?? "{}",
+    ) as Record<string, unknown>;
+    expect(tsconfig["extends"]).toBe("./tsconfig.json");
+    expect(tsconfig["include"]).toEqual(["src", ".stackra/entry"]);
+    expect(content("tsconfig.build.json")).toBe("");
+  });
+
   it("runs the unit tier on the decorators preset with the coverage gate", () => {
     const vitest = content(".stackra/vitest.config.ts");
     expect(vitest).toContain(
       'import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";',
     );
-    expect(vitest).toContain("    withCoverage({");
-    expect(vitest).toContain('        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
-    expect(vitest).toContain('        setupFiles: [".stackra/vitest.setup.ts"],');
+    expect(vitest).toContain("  withCoverage({");
+    expect(vitest).not.toContain("defineConfig");
+    expect(vitest).not.toContain("defineConfig");
+    expect(vitest).toContain('      exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],');
+    expect(vitest).toContain('      setupFiles: [".stackra/vitest.setup.ts"],');
+    expect(vitest).toContain("      passWithNoTests: true,");
+  });
+
+  it("fails a member with source and no tests: only an empty member passes with none", () => {
+    const withSource = emitToolConfigs(LOYALTY_KIT_IR, { entries: [], registrations: false });
+    const vitest = withSource.find((file) => file.path === ".stackra/vitest.config.ts")?.content;
+    expect(vitest).not.toContain("passWithNoTests");
   });
 
   it("loads the registrations, the wiring and the factory partners in the setup", () => {

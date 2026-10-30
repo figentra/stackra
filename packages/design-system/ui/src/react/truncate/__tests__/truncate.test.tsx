@@ -23,7 +23,9 @@ describe("Truncate (web)", () => {
     const more = screen.getByRole("button", { name: "Show more" });
     expect(more.getAttribute("aria-controls")).toBe(text?.id);
     fireEvent.click(more);
-    expect(screen.getByRole("button", { name: "Show less" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("button", { name: "Show less" }).getAttribute("aria-expanded")).toBe(
+      "true",
+    );
   });
 
   it("shows no button when the text fits", () => {

@@ -10,6 +10,8 @@ import type { RuleCondition } from "#contracts/types/rule-condition.type";
 
 /** A rule of conditions. */
 export interface RuleGroup {
+  /** Whether every condition or any one must hold. */
   readonly match: "all" | "any";
+  /** The conditions of the rule, in order. */
   readonly conditions: readonly RuleCondition[];
 }

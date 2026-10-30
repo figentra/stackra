@@ -83,6 +83,28 @@ export function sigstoreBundle(digest: Readonly<Record<string, string>>, identit
     _type: "https://in-toto.io/Statement/v1",
     predicateType: "https://slsa.dev/provenance/v1",
     subject: [{ name: "pkg:npm/%40stackra/pkg@1.0.0", digest }],
+    predicate: {
+      buildDefinition: {
+        externalParameters: {
+          workflow: {
+            ref: "refs/heads/main",
+            repository: identity.slice(0, identity.indexOf("/.github/")),
+            path: ".github/workflows/release.yml",
+          },
+        },
+        resolvedDependencies: [
+          {
+            uri: "git+https://github.com/figentra/stackra@refs/heads/main",
+            digest: { gitCommit: "0d5f464aabbccddeeff00112233445566778899a" },
+          },
+        ],
+      },
+      runDetails: {
+        metadata: {
+          invocationId: "https://github.com/figentra/stackra/actions/runs/42/attempts/1",
+        },
+      },
+    },
   };
   const der = new TextEncoder().encode(`\x30\x82fake-der\x86${identity}\x00`);
   return JSON.stringify({

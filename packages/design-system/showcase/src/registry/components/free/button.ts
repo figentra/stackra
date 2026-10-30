@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Button. */
+/** The Button entry of the component registry. */
 export const FREE_BUTTON: ComponentEntry = {
   slug: "button",
   tier: "free",

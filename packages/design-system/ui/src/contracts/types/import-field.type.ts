@@ -9,8 +9,11 @@
 
 /** A field an import maps a column to. */
 export interface ImportField {
+  /** A stable id, the key of the mapping. */
   readonly key: string;
+  /** The name shown for the field. */
   readonly label: string;
+  /** True when every import must map a column to it. */
   readonly isRequired?: boolean | undefined;
   /** Other column names that mean this field: "e-mail", "البريد". */
   readonly aliases?: readonly string[] | undefined;

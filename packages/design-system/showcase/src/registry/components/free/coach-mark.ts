@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Coach mark. */
+/** The Coach mark entry of the component registry. */
 export const FREE_COACH_MARK: ComponentEntry = {
   slug: "coach-mark",
   tier: "free",

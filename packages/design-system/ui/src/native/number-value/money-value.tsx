@@ -12,11 +12,22 @@ import type { MoneyValueProps } from "#native/number-value/money-value.props";
 import { Text } from "#native/text/text";
 
 /** An amount in a currency. */
-export function MoneyValue({ amount, currency, currencyDisplay, isCompact = false, className }: MoneyValueProps): ReactElement {
+export function MoneyValue({
+  amount,
+  currency,
+  currencyDisplay,
+  isCompact = false,
+  className,
+}: MoneyValueProps): ReactElement {
   const format = useNumberFormat();
   return (
     <Text {...(className ? { className } : {})}>
-      {format(amount, { style: "currency", currency, ...(currencyDisplay ? { currencyDisplay } : {}), ...(isCompact ? { notation: "compact" as const } : {}) })}
+      {format(amount, {
+        style: "currency",
+        currency,
+        ...(currencyDisplay ? { currencyDisplay } : {}),
+        ...(isCompact ? { notation: "compact" as const } : {}),
+      })}
     </Text>
   );
 }

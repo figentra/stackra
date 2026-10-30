@@ -30,7 +30,7 @@ function Sample({ caption, children }: { readonly caption: string; readonly chil
   );
 }
 
-/** Section: Names. */
+/** The Section demo: names. */
 export default function Names() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -17,7 +17,7 @@ const K = CHIP_KEYS.chip;
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-3";
 
-/** Chip: Icons. */
+/** The Chip demo: icons. */
 export default function Icons() {
   const t = useCatalogueText(MESSAGES.en);
   return (

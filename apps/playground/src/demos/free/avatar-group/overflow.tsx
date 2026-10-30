@@ -24,7 +24,7 @@ const STAFF = [
   { id: "7", name: "خالد الحربي" },
 ];
 
-/** AvatarGroup: Overflow. */
+/** The AvatarGroup demo: overflow. */
 export default function Overflow() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6e2bd4f7c928f508",
+    "hash": "9e6d6129c608e68f",
     "propsFiles": ["ui/src/react/truncate/truncate.props.ts"]
   },
   "importLine": "import { Truncate } from \"@stackra/ui/react\";",
@@ -10,7 +10,7 @@
       "name": "Truncate",
       "props": [
         {
-          "description": "The text.",
+          "description": "The text to clip and expand.",
           "name": "children",
           "required": true,
           "source": "stackra",

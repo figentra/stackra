@@ -10,6 +10,7 @@ import type { ComponentEntry } from "#src/types/component-entry.type";
 
 /** What the gate reads besides the entries. */
 export interface RegistryCheckInput {
+  /** The registry entries to check. */
   readonly entries: readonly ComponentEntry[];
   /** The parsed `showcase.json` per locale. */
   readonly catalogues: { readonly en: unknown; readonly ar: unknown };

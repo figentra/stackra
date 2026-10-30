@@ -225,6 +225,13 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
 - **Actions**: placed actions follow ADR 0307 rule 3 (`placementsAt`): a record action on the row, View and Edit, and in
   the bulk bar with `.bulk()` (one run per selected record); an action without a record in the list header. View and
   edit links, the create link and delete (`operations.delete`) are derived. Every run goes through `useActionRunner`.
+  A record action whose input has a required field besides the record id opens a modal form over that input (one for
+  a whole bulk selection), with the id pre-filled, the declared confirm copy and the server's field errors.
+- **Values**: a flag shows as a localised yes or no; an enum code shows its label `<module>::enums.<model>_<field>.<code>`
+  (else `<module>::enums.<field>.<code>`, else the code). An enum whose label the convention misses, such as one another
+  module declares, is named on its column or entry: `c.from("mode").labels(I18n.commerce_packs.enums.provider_mode)`.
+  A list entry's `…Minor` cells are money in the item's own `currency`, else the record's at
+  `e.list("customs", ["sku", "valueMinor"], { currency: "currency" })`.
 - **Labels** are derived: `<module>::resources.<model>.title`, `.columns.<path>`, `.filters.<path>`, `.entries.<path>`,
   `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (paths in
   snake_case).
@@ -278,7 +285,7 @@ Texts are `panel::search_palette.*`. No native palette yet.
 
 On the resource pages: the built-in View as JSON, clone and activity tab (ADR 0334), grouping and the board, gallery,
 calendar and chart layouts of a saved view (they draw as the table), saving and editing a view from the List, the
-`.renamed()` migration of stored views, a view that targets a `Report` key, the modal form of a record action that needs more than the id, a selection-input (`Selection<...>`) action, the
+`.renamed()` migration of stored views, a view that targets a `Report` key, a selection-input (`Selection<...>`) action, the
 upload and repeater fields, the step wizard (steps show one under another), the id a create mints for its PUT address,
 enum labels (codes show), the native pages, and nesting the resource routes under the panel shell. Elsewhere: the
 import pipeline with the `ImportMapper` port, gen emitting each resource's export action from `a.export()` and the List

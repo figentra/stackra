@@ -13,7 +13,7 @@ import { LIST_KEYS } from "#src/demos/free/list/list-keys.constant";
 /** The demo's keys. */
 const K = LIST_KEYS.list;
 
-/** List: Basics. */
+/** The List demo: basics. */
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   /** The rows of the basic list. */

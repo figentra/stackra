@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Navigation header. */
+/** The Navigation header entry of the component registry. */
 export const FREE_NAVIGATION_HEADER: ComponentEntry = {
   slug: "navigation-header",
   tier: "free",

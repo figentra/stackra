@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Truncate. */
+/** The Truncate entry of the component registry. */
 export const FREE_TRUNCATE: ComponentEntry = {
   slug: "truncate",
   tier: "free",

@@ -71,7 +71,7 @@ function Page() {
   );
 }
 
-/** Sidebar: Inset. */
+/** The Sidebar demo: inset. */
 export default function Inset() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

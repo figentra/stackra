@@ -9,7 +9,9 @@
 
 /** A GeoJSON FeatureCollection of polygons. */
 export interface GeoFeatureCollection {
+  /** The GeoJSON object type, always `FeatureCollection`. */
   readonly type: "FeatureCollection";
+  /** The regions, each a polygon or multipolygon feature. */
   readonly features: readonly {
     readonly type: "Feature";
     readonly properties: Readonly<Record<string, unknown>> | null;

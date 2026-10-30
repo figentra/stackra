@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Radar chart. */
+/** The Radar chart entry of the component registry. */
 export const FREE_RADAR_CHART: ComponentEntry = {
   slug: "radar-chart",
   tier: "free",
@@ -17,10 +17,7 @@ export const FREE_RADAR_CHART: ComponentEntry = {
   exportName: "RadarChart",
   parts: ["RadarChart"],
   hero: {},
-  examples: [
-    { id: "single", card: true },
-    { id: "multiple" },
-  ],
+  examples: [{ id: "single", card: true }, { id: "multiple" }],
   related: ["free/bar-chart", "free/line-chart", "free/radial-bar-chart"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["radar", "spider", "web", "polar"],

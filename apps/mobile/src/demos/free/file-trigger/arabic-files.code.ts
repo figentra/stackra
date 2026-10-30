@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/file-trigger/arabic-files.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "arabic-files" demo of the native FileTrigger: Arabic and Latin file names in one list.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6);\n *          design-system gap inventory row 6.\n */\nimport { UploadList } from "@stackra/ui/native";\n\n/** Mixed-script file names from a Riyadh branch (data, never translated). */\nconst FILES = [\n  { id: "1", name: "فاتورة-المورد-١٠٤٢.pdf", size: 1_310_720, status: "done" },\n  { id: "2", name: "قائمة-الطعام-رمضان.jpg", size: 3_145_728, status: "uploading", progress: 35 },\n  { id: "3", name: "Z-report-2026-10-27.pdf", size: 98_304, status: "uploading" },\n] as const;\n\n/** Each name keeps its own direction. */\nexport default function ArabicFiles() {\n  return <UploadList items={FILES} />;\n}\n';

@@ -89,7 +89,7 @@ export function Stat({
     <AriaButton
       onPress={onPress}
       {...(pressLabel || name ? { "aria-describedby": hintId } : {})}
-      className="-m-2 block w-[calc(100%+1rem)] cursor-pointer rounded-lg p-2 outline-none hover:bg-default/40 focus-visible:ring-2 focus-visible:ring-focus"
+      className="-m-2 block w-[calc(100%+1rem)] cursor-pointer rounded-[var(--radius-control)] p-2 outline-none hover:bg-default/40 focus-visible:ring-2 focus-visible:ring-focus"
     >
       {body}
       {pressLabel || name ? (

@@ -30,7 +30,7 @@ export default function Basics(): ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const next = FIRST_ORDER + count;
   return (
-    <div className="relative grid h-56 w-full content-start gap-1 rounded-2xl border border-dashed border-border p-4">
+    <div className="relative grid h-56 w-full content-start gap-1 rounded-[var(--radius-container)] border border-dashed border-border p-4">
       <Text type="small" tone="muted">
         {t(K.area)} · {count}
       </Text>

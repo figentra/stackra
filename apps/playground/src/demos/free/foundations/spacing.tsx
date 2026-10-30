@@ -11,7 +11,7 @@ import { SHOWCASE_THEME } from "#src/constants/showcase-theme.constant";
 /** A CSS custom property reference. */
 const cssVar = (name: string) => `var(--${name})`;
 
-/** Foundations: Spacing. */
+/** The Foundations demo: spacing. */
 export default function Spacing() {
   return (
     <ul className="grid gap-2">

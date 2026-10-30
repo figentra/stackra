@@ -33,7 +33,7 @@ function Ask() {
   );
 }
 
-/** SidePanel: Assistant. */
+/** The SidePanel demo: assistant. */
 export default function Assistant() {
   const t = useCatalogueText(MESSAGES.en);
   return (

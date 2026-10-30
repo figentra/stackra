@@ -103,6 +103,9 @@ export function expoConfigOf(
 
   const extra = blockOf(base["extra"]);
   if (projectId !== undefined) extra["eas"] = { ...blockOf(extra["eas"]), projectId };
+  // The template line's Sentry setup reads the public DSN from here (ADR 0062 decision 3, ADR 0482 decision 6).
+  if (entry.sentry?.dsn !== undefined)
+    extra["sentry"] = { ...blockOf(extra["sentry"]), dsn: entry.sentry.dsn };
   // The app wires a driver only for a flag it was built with: the other modules are not in the binary.
   extra["capabilities"] = [...(entry.capabilities ?? [])];
 
@@ -110,6 +113,7 @@ export function expoConfigOf(
     ...base,
     ...(name === undefined ? {} : { name }),
     slug: `${input.project}-${input.app}`,
+    ...(entry.eas?.owner === undefined ? {} : { owner: entry.eas.owner }),
     ...(identity.scheme === undefined ? {} : { scheme: identity.scheme }),
     // The template line is the native line: an update only reaches binaries built from the same line.
     runtimeVersion: entry.template.replaceAll(/[^A-Za-z0-9._+-]+/g, "-"),

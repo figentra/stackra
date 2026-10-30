@@ -8,6 +8,7 @@
 
 /** One measure against its target. */
 export interface BulletItem {
+  /** A stable id, unique within the chart. */
   readonly key: string;
   /** What is measured: "Revenue", "New customers". */
   readonly label: string;

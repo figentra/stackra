@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Account connection. */
+/** The Account connection entry of the component registry. */
 export const FREE_ACCOUNT_CONNECTION: ComponentEntry = {
   slug: "account-connection",
   tier: "free",

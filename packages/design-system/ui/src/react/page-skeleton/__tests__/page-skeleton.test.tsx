@@ -43,7 +43,7 @@ describe("PageSkeleton (web)", () => {
   it("gives each bone the classes of its row, and each row its own", () => {
     const { container } = render(<PageSkeleton layout="page" loadingLabel="Loading" />);
     const [title] = bonesOf(container);
-    for (const name of ["h-8", "w-1/3", "rounded"])
+    for (const name of ["h-8", "w-1/3", "rounded-[var(--radius-control-inner)]"])
       expect(title?.classList.contains(name)).toBe(true);
     expect(title?.parentElement?.classList.contains("justify-between")).toBe(true);
   });

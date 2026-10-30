@@ -15,7 +15,7 @@ import { SIDE_PANEL_KEYS } from "#src/demos/free/side-panel/side-panel-keys.cons
 /** The demo's keys. */
 const K = SIDE_PANEL_KEYS.side_panel;
 
-/** SidePanel: Controlled. */
+/** The SidePanel demo: controlled. */
 export default function Controlled() {
   const t = useCatalogueText(MESSAGES.en);
   const [state, setState] = useState<SidePanelState>("open");

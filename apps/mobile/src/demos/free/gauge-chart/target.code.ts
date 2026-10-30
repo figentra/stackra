@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/gauge-chart/target.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "target" demo of the native GaugeChart: this month\'s sales against the monthly target.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); STA-1371 (charts wave 2).\n */\nimport { GaugeChart, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { GAUGE_CHART_DEMO_KEYS } from "#src/demos/free/gauge-chart/gauge-chart-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = GAUGE_CHART_DEMO_KEYS.demo_free.gauge_chart.target;\n\n/** Sales against the monthly target. */\nexport default function Target() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <GaugeChart\n      value={72_400}\n      max={100_000}\n      target={80_000}\n      valueFormat={{ style: "currency", currency: "SAR", notation: "compact" }}\n      centerLabel={t(K.sold)}\n      label={t(K.label)}\n    />\n  );\n}\n';

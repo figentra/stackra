@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/alert/plain.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "plain" demo of the native Alert: a title only; the description is optional.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { Alert, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { ALERT_DEMO_KEYS } from "#src/demos/free/alert/alert-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = ALERT_DEMO_KEYS.demo_free.alert.plain;\n\n/** A title and no description. */\nexport default function Plain() {\n  const t = useCatalogueText(MESSAGES.en);\n  return <Alert tone="success" title={t(K.alert_title)} />;\n}\n';

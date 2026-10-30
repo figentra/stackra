@@ -30,7 +30,7 @@ function ToneList({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** Link: Tones. */
+/** The Link demo: tones. */
 export default function Tones() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

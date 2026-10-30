@@ -52,9 +52,9 @@ const propsOf = (name: string) => received.props[name] ?? {};
 
 /** The size classes and offsets the badge is expected to use, copied from the web Badge's CSS. */
 const ROOT_CLASS = {
-  sm: "min-h-4 min-w-4 px-0 py-0 rounded-xl border border-background",
-  md: "min-h-7 min-w-7 px-0 py-0 rounded-3xl border border-background",
-  lg: "min-h-8 min-w-8 px-0 py-0 rounded-2xl border border-background",
+  sm: "min-h-4 min-w-4 px-0 py-0 rounded-[var(--radius-container)] border border-background",
+  md: "min-h-7 min-w-7 px-0 py-0 rounded-[var(--radius-container)] border border-background",
+  lg: "min-h-8 min-w-8 px-0 py-0 rounded-[var(--radius-container)] border border-background",
 } as const;
 const LABEL_CLASS = {
   sm: "px-0.5 text-[10px] leading-[1.34]",

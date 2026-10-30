@@ -76,7 +76,10 @@ export function RuleBuilder({
         const needsValue =
           condition.operator !== "is_empty" && condition.operator !== "is_not_empty";
         return (
-          <View key={condition.id} className="gap-2 rounded-xl border border-separator p-3">
+          <View
+            key={condition.id}
+            className="gap-2 rounded-[var(--radius-container)] border border-separator p-3"
+          >
             <View className="flex-row items-start gap-2">
               <View className="flex-1">
                 <Select

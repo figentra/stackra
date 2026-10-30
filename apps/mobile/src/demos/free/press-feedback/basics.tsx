@@ -29,7 +29,7 @@ export default function Basics() {
           key={kind}
           feedback={kind}
           onPress={() => setCount((value) => value + 1)}
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-[var(--radius-container)]"
         >
           <Card className="gap-1 p-4">
             <Text type="caption" tone="muted">

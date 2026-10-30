@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Money field. */
+/** The Money field entry of the component registry. */
 export const FREE_MONEY_FIELD: ComponentEntry = {
   slug: "money-field",
   tier: "free",

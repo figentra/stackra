@@ -20,7 +20,14 @@ const CITIES = [
 
 describe("MultiSelect extras (web)", () => {
   it("folds the chips past maxVisible into +N", () => {
-    render(<MultiSelect label="Cities" items={CITIES} defaultValue={["ruh", "jed", "dmm"]} maxVisible={1} />);
+    render(
+      <MultiSelect
+        label="Cities"
+        items={CITIES}
+        defaultValue={["ruh", "jed", "dmm"]}
+        maxVisible={1}
+      />,
+    );
     expect(screen.getByText("+2")).toBeTruthy();
     expect(screen.getByRole("row", { name: "2 more: Jeddah, Dammam" })).toBeTruthy();
   });
@@ -28,7 +35,12 @@ describe("MultiSelect extras (web)", () => {
   it("selects every enabled option", () => {
     const seen: (readonly string[])[] = [];
     const { container } = render(
-      <MultiSelect label="Cities" items={CITIES} hasSelectAll onChange={(keys) => seen.push(keys)} />,
+      <MultiSelect
+        label="Cities"
+        items={CITIES}
+        hasSelectAll
+        onChange={(keys) => seen.push(keys)}
+      />,
     );
     fireEvent.click(container.querySelector('button[aria-haspopup="listbox"]') as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: "Select all" }));

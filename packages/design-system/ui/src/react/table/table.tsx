@@ -421,7 +421,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                         >
                           <span className={LABEL_CLASS}>{column.label}</span>
                           {rank > 0 || (rank === 0 && sortKeys.length > 1) ? (
-                            <span className="ms-1 inline-flex size-4 items-center justify-center rounded-full bg-default text-[0.625rem] text-foreground tabular-nums">
+                            <span className="ms-1 inline-flex size-4 items-center justify-center rounded-[var(--radius-pill)] bg-default text-[0.625rem] text-foreground tabular-nums">
                               <span aria-hidden="true">{rank + 1}</span>
                               <span className="sr-only">
                                 {t(COLLECTION_KEYS.ui.collection.sort_rank, { rank: rank + 1 })}

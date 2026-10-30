@@ -104,7 +104,7 @@ export function CalendarHeatmap({
                     aria-hidden="true"
                     onPointerEnter={() => setPointed(item.isInRange ? item.date : null)}
                     className={cn(
-                      "size-3 rounded-[3px] outline-offset-1",
+                      "size-3 rounded-[var(--radius-control-inner)] outline-offset-1",
                       !item.isInRange && "invisible",
                       pointed === item.date && "outline-2 outline-foreground",
                     )}

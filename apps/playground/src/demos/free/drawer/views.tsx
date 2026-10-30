@@ -24,7 +24,7 @@ function Row({ to, label }: { readonly to: string; readonly label: string }) {
   );
 }
 
-/** Drawer: Views. */
+/** The Drawer demo: views. */
 export default function Views() {
   const t = useCatalogueText(MESSAGES.en);
   const close = <Drawer.Close label={t(K.close)} />;

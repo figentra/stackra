@@ -13,7 +13,7 @@ import { Skeleton as UiSkeleton, Text } from "@stackra/ui/react";
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-start gap-6";
 
-/** Skeleton: Animations. */
+/** The Skeleton demo: animations. */
 export default function Animations() {
   return (
     <div className={ROW}>

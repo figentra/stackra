@@ -84,7 +84,7 @@ export function DateRangePicker({
                   setShown(dateRangeOfPreset(preset, from));
                   setKey((n) => n + 1);
                 }}
-                className="min-h-9 justify-center rounded-full bg-default px-3"
+                className="min-h-9 justify-center rounded-[var(--radius-pill)] bg-default px-3"
               >
                 <Text type="small">{t(K[preset])}</Text>
               </Pressable>

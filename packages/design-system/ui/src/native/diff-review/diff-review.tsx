@@ -61,7 +61,7 @@ export function DiffReview({
           <View
             key={change.id}
             className={[
-              "gap-2 rounded-xl border border-separator p-3",
+              "gap-2 rounded-[var(--radius-container)] border border-separator p-3",
               answer === "rejected" ? "opacity-60" : "",
             ].join(" ")}
           >
@@ -73,11 +73,18 @@ export function DiffReview({
               accessible
               accessibilityLabel={`${t(K.before)} ${change.before ?? t(K.not_set)}، ${t(K.after)} ${change.after ?? t(K.not_set)}`}
             >
-              <Text type="small" tone="muted" className="rounded bg-danger/10 px-1 line-through">
+              <Text
+                type="small"
+                tone="muted"
+                className="rounded-[var(--radius-control-inner)] bg-danger/10 px-1 line-through"
+              >
                 {change.before ?? t(K.not_set)}
               </Text>
               <Icon name="arrow-right" size="sm" tone="muted" />
-              <Text type="small" className="rounded bg-success/10 px-1 font-medium">
+              <Text
+                type="small"
+                className="rounded-[var(--radius-control-inner)] bg-success/10 px-1 font-medium"
+              >
                 {change.after ?? t(K.not_set)}
               </Text>
             </View>

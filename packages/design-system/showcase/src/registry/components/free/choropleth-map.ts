@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Choropleth map. */
+/** The Choropleth map entry of the component registry. */
 export const FREE_CHOROPLETH_MAP: ComponentEntry = {
   slug: "choropleth-map",
   tier: "free",

@@ -9,7 +9,7 @@ import { InlineLoadingStatus } from "@stackra/ui/contracts";
 import { InlineLoading } from "@stackra/ui/native";
 import { View } from "react-native";
 
-/** States. */
+/** The InlineLoading demo: the loading, success and error states. */
 export default function States() {
   return (
     <View className="gap-3">

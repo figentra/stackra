@@ -56,7 +56,7 @@ export function BulletChart({
               <Text type="caption" tone="muted" numberOfLines={1} className="w-24 text-xs">
                 {item.label}
               </Text>
-              <View className="h-6 flex-1 overflow-hidden rounded">
+              <View className="h-6 flex-1 overflow-hidden rounded-[var(--radius-control-inner)]">
                 {scale.bands.map((band, index) => (
                   <View
                     key={band.from}
@@ -72,7 +72,7 @@ export function BulletChart({
                   />
                 ))}
                 <View
-                  className="absolute start-0 rounded-e"
+                  className="absolute start-0 rounded-e-[var(--radius-control-inner)]"
                   style={{
                     top: "30%",
                     bottom: "30%",

@@ -89,7 +89,7 @@ export function HeatmapChart({
                   aria-hidden="true"
                   onPointerEnter={() => setPointed([rowIndex, columnIndex])}
                   className={cn(
-                    "h-6 rounded-[4px] outline-offset-1",
+                    "h-6 rounded-[var(--radius-control-inner)] outline-offset-1",
                     isPointed && "outline-2 outline-foreground",
                   )}
                   style={{

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Toast. */
+/** The Toast entry of the component registry. */
 export const FREE_TOAST: ComponentEntry = {
   slug: "toast",
   tier: "free",

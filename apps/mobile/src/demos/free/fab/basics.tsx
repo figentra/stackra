@@ -20,7 +20,7 @@ export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const [count, setCount] = useState(0);
   return (
-    <View className="h-56 rounded-2xl border border-dashed border-border p-4">
+    <View className="h-56 rounded-[var(--radius-container)] border border-dashed border-border p-4">
       <Text type="small" tone="muted" accessibilityLiveRegion="polite">
         {t(K.area)} · {count}
       </Text>

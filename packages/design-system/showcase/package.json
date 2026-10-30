@@ -3,7 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "description": "The one component registry of the Stackra showcases: categories, entries, docs links, lang catalogues, generated API docs and the search index",
+  "keywords": [
+    "api-docs",
+    "component-registry",
+    "design-system",
+    "showcase",
+    "stackra"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/design-system/showcase#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
   "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/figentra/stackra.git",
@@ -44,8 +56,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",
@@ -74,5 +85,18 @@
     "typescript": "catalog:build",
     "typescript6": "catalog:tooling",
     "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "design-system",
+    "runtimes": [
+      "isomorphic",
+      "node"
+    ],
+    "summary": "Use it to add or change a showcase entry: the component registry, its categories and docs links, the showcase catalogues, and the generated API docs and search index both showcases read."
   }
 }

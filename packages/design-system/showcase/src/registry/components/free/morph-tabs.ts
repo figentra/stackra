@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Morph tabs. */
+/** The Morph tabs entry of the component registry. */
 export const FREE_MORPH_TABS: ComponentEntry = {
   slug: "morph-tabs",
   tier: "free",

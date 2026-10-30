@@ -57,7 +57,10 @@ export function QuantityStepper({
     <View
       {...rest}
       className={
-        cn("flex-row items-center gap-1 self-start rounded-full bg-default p-1", className) ?? ""
+        cn(
+          "flex-row items-center gap-1 self-start rounded-[var(--radius-pill)] bg-default p-1",
+          className,
+        ) ?? ""
       }
     >
       <IconButton

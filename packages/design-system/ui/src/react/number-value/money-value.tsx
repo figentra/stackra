@@ -13,11 +13,22 @@ import { useNumberFormat } from "#react/hooks/use-number-format";
 import type { MoneyValueProps } from "#react/number-value/money-value.props";
 
 /** An amount in a currency. */
-export function MoneyValue({ amount, currency, currencyDisplay, isCompact = false, className }: MoneyValueProps): ReactElement {
+export function MoneyValue({
+  amount,
+  currency,
+  currencyDisplay,
+  isCompact = false,
+  className,
+}: MoneyValueProps): ReactElement {
   const format = useNumberFormat();
   return (
     <bdi data-slot="money-value" className={cn("tabular-nums", className)}>
-      {format(amount, { style: "currency", currency, ...(currencyDisplay ? { currencyDisplay } : {}), ...(isCompact ? { notation: "compact" as const } : {}) })}
+      {format(amount, {
+        style: "currency",
+        currency,
+        ...(currencyDisplay ? { currencyDisplay } : {}),
+        ...(isCompact ? { notation: "compact" as const } : {}),
+      })}
     </bdi>
   );
 }

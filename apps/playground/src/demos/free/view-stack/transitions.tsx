@@ -68,7 +68,7 @@ function OrderList({ onOpen }: { readonly onOpen: (number: number) => void }) {
   );
 }
 
-/** ViewStack: transitions. */
+/** The ViewStack demo: transitions. */
 export default function Transitions() {
   const t = useCatalogueText(MESSAGES.en);
   const [transition, setTransition] = useState<ViewStackTransition>("push");

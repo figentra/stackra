@@ -9,6 +9,7 @@
  */
 
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the colours carry no labels.
+/** The theme colours a chart series can take, as token names. */
 export const ChartColor = Object.freeze([
   "chart-ramp-1",
   "chart-ramp-2",

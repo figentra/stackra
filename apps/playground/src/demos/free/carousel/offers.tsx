@@ -26,7 +26,7 @@ export default function Offers() {
       {slides.map(([title, note, surface]) => (
         <div
           key={title}
-          className={`flex h-40 flex-col justify-end gap-1 rounded-xl p-5 ${surface}`}
+          className={`flex h-40 flex-col justify-end gap-1 rounded-[var(--radius-container)] p-5 ${surface}`}
         >
           <p className="m-0 text-lg font-semibold">{t(K[title])}</p>
           <p className="m-0 text-sm text-muted">{t(K[note])}</p>

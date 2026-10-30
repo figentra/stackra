@@ -186,7 +186,7 @@ describe("Sidebar (web)", () => {
     const orders = within(nav).getByRole("link", { name: /Orders/ });
     expect(orders.getAttribute("data-active")).toBe("true");
     expect(orders.querySelector("svg")).not.toBeNull();
-    expect(orders.querySelector(".rounded-full.size-2")).not.toBeNull();
+    expect(orders.querySelector('[class~="rounded-[var(--radius-pill)]"].size-2')).not.toBeNull();
     // Every label stays a spoken name.
     expect(within(nav).getByRole("link", { name: "Home" })).toBeTruthy();
     expect(within(nav).getByRole("link", { name: "Billing" })).toBeTruthy();
@@ -264,6 +264,45 @@ describe("Sidebar (web)", () => {
     expect(onWidthChange).toHaveBeenLastCalledWith(272);
     fireEvent.keyDown(rail, { key: "Home" });
     expect(screen.getByTestId("sidebar").style.width).toBe("208px");
+  });
+
+  it("drags its rail: a press toggles, a drag resizes, a drag past half the minimum collapses, and out expands", () => {
+    Element.prototype.setPointerCapture = vi.fn();
+    const onWidthChange = vi.fn();
+    const onCollapsedChange = vi.fn();
+    render(
+      <Sidebar
+        items={ITEMS}
+        isResizable
+        onWidthChange={onWidthChange}
+        onCollapsedChange={onCollapsedChange}
+        data-testid="sidebar"
+      />,
+    );
+    const root = screen.getByTestId("sidebar");
+    const rail = () => root.querySelector<HTMLElement>("[data-slot=sidebar-rail]") as HTMLElement;
+    const drag = (from: number, to: number) => {
+      fireEvent.pointerDown(rail(), { button: 0, pointerId: 1, clientX: from });
+      fireEvent.pointerMove(rail(), { pointerId: 1, clientX: to });
+      fireEvent.pointerUp(rail(), { pointerId: 1, clientX: to });
+    };
+    // A secondary button starts nothing.
+    fireEvent.pointerDown(rail(), { button: 2, clientX: 0 });
+    fireEvent.pointerUp(rail(), { clientX: 0 });
+    expect(onCollapsedChange).not.toHaveBeenCalled();
+    drag(0, 20);
+    expect(onWidthChange).toHaveBeenLastCalledWith(276);
+    drag(0, -200);
+    expect(onCollapsedChange).toHaveBeenLastCalledWith(true);
+    expect(rail().getAttribute("aria-hidden")).toBe("true");
+    // Collapsed: a small drag out does nothing, a long one expands.
+    drag(0, 5);
+    expect(root.getAttribute("data-collapsed")).toBe("true");
+    drag(0, 40);
+    expect(onCollapsedChange).toHaveBeenLastCalledWith(false);
+    // A press without a move toggles.
+    drag(0, 0);
+    expect(onCollapsedChange).toHaveBeenLastCalledWith(true);
   });
 
   it("leaves the toggle out when it is not collapsible", () => {

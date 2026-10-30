@@ -13,7 +13,7 @@ import { BULLET_CHART_DEMO_KEYS } from "#src/demos/free/bullet-chart/bullet-char
 /** The demo's keys. */
 const K = BULLET_CHART_DEMO_KEYS.demo_free.bullet_chart.targets;
 
-/** Quarter targets. */
+/** The BulletChart demo: quarter targets. */
 export default function Targets() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -11,11 +11,13 @@ import type { CommentPerson } from "#contracts/types/comment-person.type";
 
 /** Props shared by the web and native `CommentThread`. */
 export interface CommentThreadContractProps {
+  /** The comments to show, oldest first. */
   readonly comments: readonly CommentItem[];
   /** The people `@` can mention. */
   readonly people?: readonly CommentPerson[] | undefined;
   /** Called with the reply's text and the ids of the people it mentions. */
   readonly onReply?: ((body: string, mentions: readonly string[]) => void) | undefined;
+  /** True when the thread is marked resolved. */
   readonly isResolved?: boolean | undefined;
   /** Called with the new resolved state; no resolve button without it. */
   readonly onResolvedChange?: ((isResolved: boolean) => void) | undefined;

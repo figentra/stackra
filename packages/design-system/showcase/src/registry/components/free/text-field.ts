@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Text field. */
+/** The Text field entry of the component registry. */
 export const FREE_TEXT_FIELD: ComponentEntry = {
   slug: "text-field",
   tier: "free",

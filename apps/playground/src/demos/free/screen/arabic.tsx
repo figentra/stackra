@@ -37,7 +37,7 @@ function Lines({
   );
 }
 
-/** Screen: Arabic. */
+/** The Screen demo: arabic. */
 export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   return (

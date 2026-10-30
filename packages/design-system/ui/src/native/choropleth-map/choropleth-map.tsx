@@ -99,7 +99,7 @@ export function ChoroplethMap({
         {CHART_SHADES.map((shade) => (
           <View
             key={shade}
-            className="size-2.5 rounded-sm"
+            className="size-2.5 rounded-[var(--radius-control-inner)]"
             style={{ backgroundColor: alphaOf(fill, shade) }}
           />
         ))}
@@ -108,7 +108,10 @@ export function ChoroplethMap({
         </Text>
         {known.length < shapes.length ? (
           <>
-            <View className="ms-3 size-2.5 rounded-sm" style={{ backgroundColor: paint.grid }} />
+            <View
+              className="ms-3 size-2.5 rounded-[var(--radius-control-inner)]"
+              style={{ backgroundColor: paint.grid }}
+            />
             <Text type="caption" tone="muted">
               {t(K.no_data)}
             </Text>

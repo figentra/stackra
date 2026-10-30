@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Filter bar. */
+/** The Filter bar entry of the component registry. */
 export const FREE_FILTER_BAR: ComponentEntry = {
   slug: "filter-bar",
   tier: "free",

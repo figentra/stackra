@@ -8,6 +8,7 @@
 import { DEMO_CACHE } from "#src/components/component-page/demo-cache.constant";
 import { DEMOS } from "#src/demos";
 
+/** Fetches the demo at a path ahead of its first mount, so it mounts with no skeleton. */
 export function preloadDemo(path: string) {
   const load = DEMOS.modules[path];
   if (!load || DEMO_CACHE.loaded.has(path)) return;

@@ -19,7 +19,13 @@ import { Spinner } from "#react/spinner/spinner";
 import { StateLayout } from "#react/state-layout/state-layout";
 
 /** The outcome of an action. */
-export function Result({ status, icon, headingLevel = 2, className, ...rest }: ResultProps): ReactElement {
+export function Result({
+  status,
+  icon,
+  headingLevel = 2,
+  className,
+  ...rest
+}: ResultProps): ReactElement {
   const tone = RESULT_TONE[status];
   return (
     <StateLayout
@@ -36,11 +42,15 @@ export function Result({ status, icon, headingLevel = 2, className, ...rest }: R
           <span
             aria-hidden
             className={cn(
-              "flex size-12 items-center justify-center rounded-full [&_svg]:size-6",
+              "flex size-12 items-center justify-center rounded-[var(--radius-pill)] [&_svg]:size-6",
               MARKER_TONE_CLASS_NAME[tone],
             )}
           >
-            {status === "pending" ? <Spinner size="md" /> : <FeedbackIcon tone={tone} {...(icon ? { icon } : {})} />}
+            {status === "pending" ? (
+              <Spinner size="md" />
+            ) : (
+              <FeedbackIcon tone={tone} {...(icon ? { icon } : {})} />
+            )}
           </span>
         )
       }

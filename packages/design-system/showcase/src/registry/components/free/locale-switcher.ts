@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Language switcher. */
+/** The Language switcher entry of the component registry. */
 export const FREE_LOCALE_SWITCHER: ComponentEntry = {
   slug: "locale-switcher",
   tier: "free",

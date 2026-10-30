@@ -9,7 +9,7 @@
 
 /** Props shared by the web and native `Highlight`. */
 export interface HighlightContractProps {
-  /** The text. */
+  /** The text to search and mark. */
   readonly children: string;
   /** The search, or several terms; empty highlights nothing. */
   readonly query: string | readonly string[];

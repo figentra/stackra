@@ -284,7 +284,7 @@
     "bar_list": {
       "BarList": {
         "className": "Styles the root.",
-        "items": "The rows.",
+        "items": "The rows to draw, one bar each.",
         "label": "The list's name, for example \"Sales by city\".",
         "max": "The value of a full bar; defaults to the largest value.",
         "sort": "`descending` (the default) ranks the rows by value; `none` keeps the order given.",
@@ -453,6 +453,7 @@
         "label": "The chart's accessible name, such as \"Orders per day, this year\".",
         "showLegend": "Shows the \"Less … More\" scale; on by default.",
         "start": "The first day shown (`YYYY-MM-DD`); the earliest value's day by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default.",
         "values": "The days' values; days without one stay empty.",
         "weekStart": "The first day of each week column, 0 (Sunday) to 6 (Saturday); the locale's by default."
       }
@@ -522,7 +523,8 @@
         "xKey": "The key of each row's category: a month name, an ISO date."
       },
       "ChartFrame": {
-        "children": "The plot.",
+        "children": "The plot drawn inside the frame.",
+        "className": "Extra classes for the frame container.",
         "hiddenKeys": "The series hidden from the plot.",
         "label": "The data table's caption, the chart's name.",
         "legend": "The legend's series; no legend when empty.",
@@ -535,7 +537,9 @@
         "table": "The chart's numbers as text."
       },
       "ChartReadout": {
-        "indicator": "An 8px round dot (the default) or a 4×12 rounded bar, for line series."
+        "indicator": "An 8px round dot (the default) or a 4×12 rounded bar, for line series.",
+        "items": "Each series value at the pressed row, with its colour.",
+        "title": "The pressed row name, shown as the heading."
       },
       "HorizontalBars": {
         "data": "The rows, in reading order.",
@@ -585,6 +589,7 @@
     },
     "chart_legend": {
       "ChartLegend": {
+        "className": "Extra classes for the legend container.",
         "hiddenKeys": "The keys of the series hidden from the plot: their swatch is hollow and their label struck through.",
         "onToggle": "Called with a series' key when its entry is pressed; each entry is then a toggle button (`aria-pressed` while\nthe series is shown). Every chart passes it, so a reader can hide and show series.",
         "palette": "The palette the chart's series take by position; `accent` by default.",
@@ -661,7 +666,7 @@
         "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
         "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
         "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
-        "items": "The cards.",
+        "items": "The choice cards, one per option.",
         "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
         "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
         "onChange": "Called with the new value each time the user changes it.",
@@ -777,6 +782,7 @@
         "idKey": "The property that identifies a region in `values`; `id` by default.",
         "label": "The map's accessible name and the data table's caption, such as \"Orders by region, October\".",
         "nameKey": "The property that names a region; `name` by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default.",
         "values": "Each region's value, by its `idKey` property; a region with none is drawn empty."
       }
     },
@@ -860,6 +866,7 @@
         "language": "The language, highlighted and shown as a tag: ts, tsx, js, json, css, html, bash, md, yaml, sql, diff.",
         "maxLines": "The lines shown before a \"Show all N lines\" button (no inner scroll); 30 by default, `0` for all.",
         "prompt": "A prompt drawn before each line and left out of selection and copy, such as `$` for shell commands.",
+        "showLineNumbers": "Shows a number beside each line when true.",
         "showWrapToggle": "Shows a header button that turns wrapping on and off.",
         "theme": "`auto` follows the page's scheme; `light` or `dark` keep the block in that scheme.",
         "title": "A file name or caption over the code."
@@ -868,6 +875,9 @@
         "defaultExpandDepth": "How many levels start open; 1 by default.",
         "label": "The tree's accessible name, such as \"Webhook payload\".",
         "value": "Any JSON value: a payload, a webhook body, an event."
+      },
+      "MarkdownViewer": {
+        "source": "The Markdown text to render."
       }
     },
     "color_picker": {
@@ -972,11 +982,14 @@
         "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
         "onAction": "Called with the id of the command chosen; the palette then closes.",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
-        "placeholder": "The search field's hint; \"Search commands\" by default."
+        "placeholder": "The search field's hint; \"Search commands\" by default.",
+        "sections": "The groups of commands to offer, in order."
       }
     },
     "comment_thread": {
       "CommentThread": {
+        "comments": "The comments to show, oldest first.",
+        "isResolved": "True when the thread is marked resolved.",
         "label": "The thread's accessible name, such as \"Comments on line 3\".",
         "onReply": "Called with the reply's text and the ids of the people it mentions.",
         "onResolvedChange": "Called with the new resolved state; no resolve button without it.",
@@ -1574,8 +1587,11 @@
     },
     "diff_review": {
       "DiffReview": {
+        "changes": "The changes to review, in order.",
+        "decisions": "The reviewer decision for each change, by change id.",
         "label": "The review's accessible name, such as \"Changes from the supplier feed\".",
-        "onApply": "Called with the decisions when the reviewer applies them."
+        "onApply": "Called with the decisions when the reviewer applies them.",
+        "onDecisionsChange": "Called with the new decisions when the reviewer accepts or rejects a change."
       }
     },
     "donut_chart": {
@@ -2231,6 +2247,7 @@
         "min": "The ring's start; 0 by default.",
         "size": "The gauge's width and height in pixels; 200 by default.",
         "target": "A mark across the ring where the goal is.",
+        "value": "The measure the ring fills to.",
         "valueFormat": "How the value and target are written."
       }
     },
@@ -2265,7 +2282,7 @@
     },
     "highlight": {
       "Highlight": {
-        "children": "The text.",
+        "children": "The text to search and mark.",
         "className": "Styles the text.",
         "query": "The search, or several terms; empty highlights nothing."
       }
@@ -2286,6 +2303,7 @@
     },
     "holo_card": {
       "HoloCard": {
+        "children": "The content drawn on the card.",
         "isStill": "True to hold the card still with no sheen.",
         "maxTilt": "The most the card tilts, in degrees; 10 by default."
       }
@@ -2388,12 +2406,21 @@
       "ImportFlow": {
         "columns": "The file's column names, in order.",
         "dryRun": "The dry run's result; the flow shows the review step while it is set.",
+        "fields": "The fields a column can map to.",
         "isBusy": "True while the dry run or the import runs.",
         "mapping": "The mapping; leave it out to start from the automatic match.",
         "onBack": "Called from the review step to change the mapping again.",
         "onDryRun": "Called to check the file with the mapping; the result comes back as `dryRun`.",
         "onImport": "Called to import for real.",
+        "onMappingChange": "Called with the new mapping when the user changes a column.",
         "sample": "The first value of each column, shown as a hint beside it."
+      },
+      "ImportMappingList": {
+        "columns": "The file column names, in order.",
+        "fields": "The fields a column can map to.",
+        "mapping": "The current mapping of columns to fields.",
+        "onChange": "Called with the new mapping when a column changes.",
+        "sample": "The first value of each column, shown as a hint."
       },
       "ImportReview": {
         "isDone": "True for the summary of a finished import: the labels say what was done, not what would be.",
@@ -2439,7 +2466,7 @@
         "className": "Styles the trigger.",
         "defaultValue": "The starting key, for an uncontrolled select; defaults to the first choice.",
         "isDisabled": "True to refuse change.",
-        "items": "The choices.",
+        "items": "The choices the control offers.",
         "label": "The spoken name of the control; it is not drawn, the sentence around it is.",
         "onChange": "Called with the key chosen.",
         "value": "The chosen key, for a controlled select."
@@ -2776,7 +2803,7 @@
         "maxValue": "The scale's end; defaults to 100.",
         "minValue": "The scale's start; defaults to 0.",
         "optimum": "The best value: its part is green, the next part amber, the far part red. Defaults to the middle.",
-        "value": "The measure.",
+        "value": "The measure the bar fills to.",
         "valueLabel": "Words to show and say instead of the number, for example \"8.2 of 10 GB\"."
       }
     },
@@ -3126,6 +3153,13 @@
       }
     },
     "notifications_panel": {
+      "NotificationRow": {
+        "dismissLabel": "The accessible name of the dismiss button.",
+        "item": "The notification the row draws.",
+        "onDismiss": "Called with the item id when it is dismissed.",
+        "onPress": "Called with the item id when the row is pressed.",
+        "unreadLabel": "The spoken word for an unread item."
+      },
       "NotificationsPanel": {
         "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
         "emptyState": "What an empty panel shows; defaults to \"You're all caught up\".",
@@ -3243,7 +3277,7 @@
       "NumberValue": {
         "className": "Styles the text.",
         "options": "How it is written: grouping, fraction digits, compact notation, a unit.",
-        "value": "The number."
+        "value": "The number to write."
       },
       "PercentValue": {
         "className": "Styles the text.",
@@ -3768,7 +3802,7 @@
         "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
         "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
         "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
-        "items": "The cards.",
+        "items": "The choice cards, one per option.",
         "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
         "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
         "onChange": "Called with the new value each time the user changes it.",
@@ -3870,7 +3904,7 @@
         "className": "Styles the root.",
         "count": "How many reacted, the user included when selected (at first, when uncontrolled).",
         "defaultSelected": "The first state when uncontrolled; toggling adds or removes the user's 1 from `count`.",
-        "emoji": "The emoji.",
+        "emoji": "The emoji drawn on the button.",
         "isDisabled": "True to refuse presses.",
         "isSelected": "True when the user has reacted; set it to control the state (the count is then shown as given).",
         "label": "The emoji's name, read with the count (for example \"thumbs up\").",
@@ -3913,7 +3947,11 @@
     },
     "rule_builder": {
       "RuleBuilder": {
-        "label": "The builder's accessible name, such as \"Discount applies when\"."
+        "fields": "The fields a condition can test.",
+        "isDisabled": "True to show the rule but refuse edits.",
+        "label": "The builder's accessible name, such as \"Discount applies when\".",
+        "onChange": "Called with the new rule after each edit.",
+        "value": "The rule being edited."
       }
     },
     "sankey_chart": {
@@ -4254,7 +4292,7 @@
         "description": "A line under the title; it describes the control.",
         "icon": "A leading icon from the house set.",
         "isDisabled": "True to refuse change and show the disabled style.",
-        "items": "The choices.",
+        "items": "The choices the select offers.",
         "onChange": "Called with each new value.",
         "title": "The setting's title; it names the control.",
         "value": "The value, for a controlled cell."
@@ -4778,7 +4816,10 @@
       "StackedMeter": {
         "label": "The meter's accessible name and visible title, such as \"Storage\".",
         "max": "The whole; the segments' sum by default (a full bar).",
-        "showLegend": "Shows the legend of parts under the bar; on by default."
+        "palette": "`accent` steps (the default) or the `categorical` set.",
+        "segments": "The parts of the bar, in order.",
+        "showLegend": "Shows the legend of parts under the bar; on by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
       }
     },
     "stat": {
@@ -4854,7 +4895,8 @@
         "items": "The top slices, each with its nested slices.",
         "label": "The chart's accessible name, such as \"Revenue by category and product\".",
         "palette": "`accent` steps (the default) or the `categorical` set, by top slice.",
-        "size": "The chart's width and height in pixels; 260 by default."
+        "size": "The chart's width and height in pixels; 260 by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
       }
     },
     "surface": {
@@ -5494,6 +5536,7 @@
     "toc_rail": {
       "TocRail": {
         "activeId": "The id of the section in view, for a controlled rail.",
+        "items": "The entries of the table of contents, in page order.",
         "label": "The navigation's name; \"On this page\" by default.",
         "onSelect": "Called with the id chosen; on web the page also scrolls to it.",
         "variant": "`rail` (the default) is a list; `floating` is a button at the bottom end that opens it."
@@ -5591,14 +5634,16 @@
     "treemap_chart": {
       "TreemapChart": {
         "height": "The plot's height in pixels; 240 by default.",
+        "items": "The tiles to lay out.",
         "label": "The chart's accessible name, such as \"Revenue by category\".",
         "palette": "`accent` steps (the default) or the `categorical` set.",
-        "sort": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default."
+        "sort": "Orders the categories: largest first, smallest first, or by label; the rows' own order by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
       }
     },
     "truncate": {
       "Truncate": {
-        "children": "The text.",
+        "children": "The text to clip and expand.",
         "className": "Styles the root.",
         "defaultExpanded": "The starting state, for an uncontrolled expand.",
         "lines": "How many lines show while closed; defaults to 3.",
@@ -5654,7 +5699,8 @@
         "label": "The chart's accessible name, such as \"Profit, Q3 to Q4\".",
         "showTooltip": "Shows the values of the pointed or pressed bar; on by default.",
         "start": "The opening total, such as last quarter's profit.",
-        "steps": "The changes, in order."
+        "steps": "The changes, in order.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
       }
     },
     "wheel_picker": {

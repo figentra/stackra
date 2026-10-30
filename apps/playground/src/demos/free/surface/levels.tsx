@@ -18,7 +18,7 @@ const K = SURFACE_KEYS.surface;
 /** The padding and radius every sample adds, since the web surface has neither. */
 const BOX = "p-6";
 
-/** Surface: Levels. */
+/** The Surface demo: levels. */
 export default function Levels() {
   const t = useCatalogueText(MESSAGES.en);
   return (

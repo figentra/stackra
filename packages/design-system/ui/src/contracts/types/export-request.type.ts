@@ -15,7 +15,7 @@ export interface ExportRequest {
   readonly format: string;
   /** The `value`s of the chosen columns, in the order they are offered; empty when no columns were offered. */
   readonly columns: readonly string[];
-  /** Which rows. */
+  /** Which rows go into the file. */
   readonly scope: ExportScope;
   /** How the file reaches the user. */
   readonly delivery: ExportDelivery;

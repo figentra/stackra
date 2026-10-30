@@ -13,11 +13,20 @@ import { useNumberFormat } from "#react/hooks/use-number-format";
 import type { PercentValueProps } from "#react/number-value/percent-value.props";
 
 /** A share written as a percent. */
-export function PercentValue({ value, fractionDigits = 0, showSign = false, className }: PercentValueProps): ReactElement {
+export function PercentValue({
+  value,
+  fractionDigits = 0,
+  showSign = false,
+  className,
+}: PercentValueProps): ReactElement {
   const format = useNumberFormat();
   return (
     <bdi data-slot="percent-value" className={cn("tabular-nums", className)}>
-      {format(value, { style: "percent", maximumFractionDigits: fractionDigits, ...(showSign ? { signDisplay: "exceptZero" as const } : {}) })}
+      {format(value, {
+        style: "percent",
+        maximumFractionDigits: fractionDigits,
+        ...(showSign ? { signDisplay: "exceptZero" as const } : {}),
+      })}
     </bdi>
   );
 }

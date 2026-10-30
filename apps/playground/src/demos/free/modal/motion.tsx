@@ -14,7 +14,7 @@ import { MODAL_KEYS } from "#src/demos/free/modal/modal-keys.constant";
 /** The demo's keys. */
 const K = MODAL_KEYS.modal;
 
-/** Modal: Motion. */
+/** The Modal demo: motion. */
 export default function Motion() {
   const t = useCatalogueText(MESSAGES.en);
   /** The motions, each with the label of the button that opens it. */

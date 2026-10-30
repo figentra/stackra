@@ -10,7 +10,10 @@ import type { StepperStepStatus } from "#contracts/types/stepper-step-status.typ
 
 /** A step with its resolved status and whether it can be pressed. */
 export interface StepperState {
+  /** The step as the caller gave it. */
   readonly step: StepperStep;
+  /** The status worked out from the current step. */
   readonly status: StepperStepStatus;
+  /** True when pressing the step moves to it. */
   readonly isPressable: boolean;
 }

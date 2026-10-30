@@ -14,7 +14,7 @@ import { TYPOGRAPHY_KEYS } from "#src/demos/free/typography/typography-keys.cons
 /** The demo's keys. */
 const K = TYPOGRAPHY_KEYS.typography;
 
-/** Typography: Weight. */
+/** The Typography demo: weight. */
 export default function Weight() {
   const t = useCatalogueText(MESSAGES.en);
   return (

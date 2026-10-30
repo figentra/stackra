@@ -23,7 +23,7 @@ export default function Basics() {
   const [order, setOrder] = useState<string | undefined>(undefined);
   return (
     <SplitView
-      className="h-72 w-full rounded-2xl border border-border"
+      className="h-72 w-full rounded-[var(--radius-container)] border border-border"
       primaryLabel={t(K.orders)}
       secondaryLabel={t(K.details)}
       primaryWidth={220}

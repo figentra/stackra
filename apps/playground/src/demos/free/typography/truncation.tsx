@@ -14,7 +14,7 @@ import { TYPOGRAPHY_KEYS } from "#src/demos/free/typography/typography-keys.cons
 /** The demo's keys. */
 const K = TYPOGRAPHY_KEYS.typography;
 
-/** Typography: Truncation. */
+/** The Typography demo: truncation. */
 export default function Truncation() {
   const t = useCatalogueText(MESSAGES.en);
   return (

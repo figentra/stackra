@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Quantity stepper. */
+/** The Quantity stepper entry of the component registry. */
 export const FREE_QUANTITY_STEPPER: ComponentEntry = {
   slug: "quantity-stepper",
   tier: "free",

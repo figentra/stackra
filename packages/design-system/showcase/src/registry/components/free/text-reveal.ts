@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** TextReveal. */
+/** The TextReveal entry of the component registry. */
 export const FREE_TEXT_REVEAL: ComponentEntry = {
   slug: "text-reveal",
   tier: "free",

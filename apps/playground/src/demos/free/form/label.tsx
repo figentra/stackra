@@ -52,7 +52,7 @@ function LabelSample({
   );
 }
 
-/** Form: Label. */
+/** The Form demo: label. */
 export default function LabelDemo() {
   const t = useCatalogueText(MESSAGES.en);
   /** The four states of the label, each beside a control that shows the same state. */

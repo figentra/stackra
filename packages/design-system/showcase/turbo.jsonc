@@ -1,4 +1,9 @@
-// Turborepo package configuration: extends the root turbo.jsonc and declares this member's one tier tag
-// (pnpm validate checks it matches the directory). Task overrides for this member only go here.
+// Turborepo package configuration: extends the root turbo.jsonc and declares this member's one tier tag, then its
+// category and runtime tags (pnpm validate checks them against the folder and package.json). Task overrides for this
+// member only go here.
 // Owner: release-operations · Secrets: forbidden
-{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ["tier:lib"] }
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tags": ["tier:lib", "category:design-system", "runtime:isomorphic", "runtime:node"],
+}

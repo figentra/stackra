@@ -14,7 +14,7 @@ import { SIDE_PANEL_KEYS } from "#src/demos/free/side-panel/side-panel-keys.cons
 /** The demo's keys. */
 const K = SIDE_PANEL_KEYS.side_panel;
 
-/** SidePanel: Resizable. */
+/** The SidePanel demo: resizable. */
 export default function Resizable() {
   const t = useCatalogueText(MESSAGES.en);
   const [width, setWidth] = useState(320);

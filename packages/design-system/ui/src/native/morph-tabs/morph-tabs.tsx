@@ -67,7 +67,7 @@ export function MorphTabs({
               onPress={() => choose(item.id)}
               className={
                 cn(
-                  "h-10 flex-row items-center gap-1.5 rounded-full px-3",
+                  "h-10 flex-row items-center gap-1.5 rounded-[var(--radius-pill)] px-3",
                   isSelected && "bg-accent-soft",
                 ) ?? ""
               }

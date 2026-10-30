@@ -20,7 +20,7 @@ const ROW = "flex flex-wrap items-start gap-6";
 /** The width of a sample field, so its label and error wrap the same way in every sample. */
 const SAMPLE = "w-72";
 
-/** Select: Items. */
+/** The Select demo: items. */
 export default function Items() {
   const t = useCatalogueText(MESSAGES.en);
   /** The plans of the sample whose choices carry a second line. */

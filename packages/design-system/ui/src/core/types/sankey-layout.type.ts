@@ -10,6 +10,7 @@ import type { SankeyNode } from "#contracts/types/sankey-node.type";
 
 /** The nodes' boxes and the flows' bands. */
 export interface SankeyLayout {
+  /** Each node with its box on the plot. */
   readonly nodes: readonly {
     readonly node: SankeyNode;
     /** Its position in the caller's nodes, which picks its colour. */
@@ -22,6 +23,7 @@ export interface SankeyLayout {
     /** The larger of what flows in and what flows out. */
     readonly value: number;
   }[];
+  /** Each flow with its band between two nodes. */
   readonly links: readonly {
     readonly link: SankeyLink;
     /** The source node's position, which picks the band's colour. */

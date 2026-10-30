@@ -94,7 +94,7 @@ export function SankeyChart({
               aria-hidden="true"
               className={cn(
                 // On a plate of the surface: text over the SVG leaves axe no ground to measure it against.
-                "absolute flex -translate-y-1/2 flex-col rounded-sm bg-surface py-0.5 text-xs leading-tight whitespace-nowrap",
+                "absolute flex -translate-y-1/2 flex-col rounded-[var(--radius-control-inner)] bg-surface py-0.5 text-xs leading-tight whitespace-nowrap",
                 isRight ? "items-start text-left" : "items-end text-right",
               )}
               style={{

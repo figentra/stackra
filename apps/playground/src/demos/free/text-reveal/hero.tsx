@@ -15,7 +15,7 @@ import { TEXT_REVEAL_KEYS } from "#src/demos/free/text-reveal/text-reveal-keys.c
 /** The demo's keys. */
 const K = TEXT_REVEAL_KEYS.text_reveal;
 
-/** TextReveal: hero. */
+/** The TextReveal demo: hero. */
 export default function Hero() {
   const t = useCatalogueText(MESSAGES.en);
   const [play, setPlay] = useState(0);

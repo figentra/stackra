@@ -49,7 +49,9 @@ describe("renderNativeCss", () => {
         expect(block).toContain(`--${shadow}-shadow: ${STACKRA_THEME.shadows[shadow][mode]};`);
     }
     expect(names(variantOf("dark"))).toEqual(names(variantOf("light")));
-    expect(names(variantOf("light"))).toHaveLength(ColorRole.length + 3 + PALETTE.length + SyntaxRole.length);
+    expect(names(variantOf("light"))).toHaveLength(
+      ColorRole.length + 3 + PALETTE.length + SyntaxRole.length,
+    );
   });
 
   // @covers sta-455:FR-001

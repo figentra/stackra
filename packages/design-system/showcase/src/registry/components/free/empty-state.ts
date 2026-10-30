@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Empty state. */
+/** The Empty state entry of the component registry. */
 export const FREE_EMPTY_STATE: ComponentEntry = {
   slug: "empty-state",
   tier: "free",

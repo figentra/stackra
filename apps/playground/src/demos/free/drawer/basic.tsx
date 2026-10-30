@@ -14,7 +14,7 @@ import { DRAWER_KEYS } from "#src/demos/free/drawer/drawer-keys.constant";
 /** The demo's keys. */
 const K = DRAWER_KEYS.drawer;
 
-/** Drawer: Basic. */
+/** The Drawer demo: basic. */
 export default function Basic() {
   const t = useCatalogueText(MESSAGES.en);
   return (

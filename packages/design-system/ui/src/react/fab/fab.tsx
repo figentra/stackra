@@ -81,7 +81,7 @@ export function Fab({
     variant,
     size,
     onPress: press,
-    className: "pointer-events-auto rounded-full shadow-lg",
+    className: "pointer-events-auto rounded-[var(--radius-pill)] shadow-lg",
     ...(hasDial ? { "aria-expanded": open, "aria-controls": dialId } : {}),
     ...omitUndefined({ isDisabled }),
   };
@@ -144,7 +144,7 @@ export function Fab({
                 >
                   <span
                     aria-hidden="true"
-                    className="rounded-full bg-surface px-3 py-1.5 text-sm shadow-sm"
+                    className="rounded-[var(--radius-pill)] bg-surface px-3 py-1.5 text-sm shadow-sm"
                   >
                     {action.label}
                   </span>
@@ -152,7 +152,7 @@ export function Fab({
                     label={action.label}
                     icon={action.icon}
                     variant="secondary"
-                    className="rounded-full shadow-sm"
+                    className="rounded-[var(--radius-pill)] shadow-sm"
                     onPress={() => choose(action)}
                   />
                 </motion.li>

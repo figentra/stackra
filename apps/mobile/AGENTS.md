@@ -25,11 +25,13 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 - Native permission strings and the Expo libraries' native settings go in `app.json` through each library's config
   plugin (the camera through expo-camera, the per-app languages through expo-localization); never hand-edit `ios/` or
   `android/` (ADR 0478).
-- The app never shows the App Tracking Transparency prompt: it only reads the answer (`followSystem`), so it has no
-  expo-tracking-transparency plugin and no `NSUserTrackingUsageDescription`, and `ios.privacyManifests` says
-  `NSPrivacyTracking: false`. expo-tracking-transparency stays a dependency only so Expo autolinks it for
-  `@stackra/platform`. Adding cross-app tracking means the plugin, its usage string, `NSPrivacyTracking: true` with
-  `NSPrivacyTrackingDomains`, and a row in `store/data-collection.yaml`, in one change.
+- The app never shows the App Tracking Transparency prompt, so it has no expo-tracking-transparency plugin and no
+  `NSUserTrackingUsageDescription`, and `ios.privacyManifests` says `NSPrivacyTracking: false`. `followSystem` reads
+  tracking as `denied` without calling the library: `ExpoSystemSettingsDriver` touches it only when a host sets
+  `asksForTracking`, because the library's status read itself is fatal (`RCTFatal`) without the usage string.
+  expo-tracking-transparency stays a dependency only so Expo autolinks it for `@stackra/platform`. Adding cross-app
+  tracking means the plugin, its usage string, a `SystemSettings` driver subclass with `asksForTracking = true`,
+  `NSPrivacyTracking: true` with `NSPrivacyTrackingDomains`, and a row in `store/data-collection.yaml`, in one change.
 - `app.json` and `eas.json` are hand-written in the shape `stackra gen` emits for a template app (runtime policy
   `fingerprint`, the privacy manifest, `blockedPermissions` with the advertising id; one EAS channel and environment
   per profile, `staging` and `production` store builds). This app has no `stackra.config.ts`, so gen does not write

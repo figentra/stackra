@@ -91,7 +91,7 @@ export function CalendarHeatmap({
                       key={item.date}
                       disabled={!item.isInRange}
                       onPress={() => setPressed(item.date)}
-                      className="size-3 rounded-[3px]"
+                      className="size-3 rounded-[var(--radius-control-inner)]"
                       style={{
                         opacity: item.isInRange ? 1 : 0,
                         backgroundColor: heatPaintOf(heatLevelOf(item.value, min, max), paint),

@@ -9,10 +9,12 @@ import type { CodeToken } from "#core/types/code-token.type";
 
 /** One line of a code block. */
 export interface CodeRow {
+  /** The coloured runs of text on the line. */
   readonly tokens: readonly CodeToken[];
   /** The line number, from 1. */
   readonly number: number;
   /** In diff mode, a line that starts with `+` (inserted) or `-` (deleted); the marker is not in the tokens. */
   readonly change?: "inserted" | "deleted" | undefined;
+  /** True when the line is in the highlighted set. */
   readonly isHighlighted: boolean;
 }

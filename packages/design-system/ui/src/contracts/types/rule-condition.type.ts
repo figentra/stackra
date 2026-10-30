@@ -9,8 +9,12 @@ import type { RuleOperator } from "#contracts/enums/rule-operator.enum";
 
 /** One condition of a rule. */
 export interface RuleCondition {
+  /** A stable id, unique within the rule. */
   readonly id: string;
+  /** The key of the field it tests. */
   readonly field: string;
+  /** How the field is compared with the value. */
   readonly operator: RuleOperator;
+  /** The value the field is compared with. */
   readonly value: string;
 }

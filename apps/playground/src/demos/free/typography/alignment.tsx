@@ -15,7 +15,7 @@ import { TYPOGRAPHY_KEYS } from "#src/demos/free/typography/typography-keys.cons
 /** The demo's keys. */
 const K = TYPOGRAPHY_KEYS.typography;
 
-/** Typography: Alignment. */
+/** The Typography demo: alignment. */
 export default function Alignment() {
   const t = useCatalogueText(MESSAGES.en);
   return (

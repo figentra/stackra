@@ -24,7 +24,7 @@ const TINY = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#d6c3a5"/><rect x="1" y="1" width="2" height="3" fill="#6b4f3a"/></svg>',
 )}`;
 
-/** Thumbnail: Blur-up. */
+/** The Thumbnail demo: blur-up. */
 export default function BlurUp() {
   const t = useCatalogueText(MESSAGES.en);
   const [round, setRound] = useState(0);

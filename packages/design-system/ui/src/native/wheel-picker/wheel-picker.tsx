@@ -13,7 +13,7 @@ import { WheelColumn } from "#native/wheel-picker/wheel-column";
 import { WHEEL_ROW } from "#native/wheel-picker/wheel-row.constant";
 import type { WheelPickerProps } from "#native/wheel-picker/wheel-picker.props";
 
-/** Side-by-side wheels. */
+/** Draws several wheels side by side. */
 export function WheelPicker({
   columns,
   value,
@@ -42,7 +42,7 @@ export function WheelPicker({
     >
       <View
         pointerEvents="none"
-        className="absolute inset-x-0 rounded-xl bg-default"
+        className="absolute inset-x-0 rounded-[var(--radius-container)] bg-default"
         style={{ top: (WHEEL_ROW * (rows - 1)) / 2, height: WHEEL_ROW }}
       />
       {columns.map((column) => (

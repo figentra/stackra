@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Thumbnail. */
+/** The Thumbnail entry of the component registry. */
 export const FREE_THUMBNAIL: ComponentEntry = {
   slug: "thumbnail",
   tier: "free",

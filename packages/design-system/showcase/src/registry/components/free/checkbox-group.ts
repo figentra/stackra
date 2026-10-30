@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Checkbox group. */
+/** The Checkbox group entry of the component registry. */
 export const FREE_CHECKBOX_GROUP: ComponentEntry = {
   slug: "checkbox-group",
   tier: "free",

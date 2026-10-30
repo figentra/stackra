@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "7f44fe2e2adc623f",
+    "hash": "63b6bbf6acfa1f9d",
     "propsFiles": ["ui/src/native/coach-mark/coach-mark.props.ts"]
   },
   "importLine": "import { CoachMark } from \"@stackra/ui/native\";",
@@ -30,7 +30,7 @@
           "name": "steps",
           "required": true,
           "source": "stackra",
-          "type": "readonly CoachMarkStep<View>[]"
+          "type": "readonly CoachMarkStep<{ readonly measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => void; }>[]"
         },
         {
           "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",

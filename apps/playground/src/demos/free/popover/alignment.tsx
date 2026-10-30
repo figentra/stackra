@@ -29,7 +29,7 @@ function Body({ children }: { readonly children: string }) {
   );
 }
 
-/** Popover: Alignment. */
+/** The Popover demo: alignment. */
 export default function Alignment() {
   const t = useCatalogueText(MESSAGES.en);
   return (

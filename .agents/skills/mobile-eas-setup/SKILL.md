@@ -9,6 +9,10 @@ House rules on top of the vendored `eas-app-stores`, `eas-update`, `eas-workflow
 those for EAS mechanics; this skill encodes Stackra's decisions (ADR 0180) and the lessons from earlier apps. The human
 steps (store accounts, keys, the first Play upload) are in `apps/docs/src/docs/runbooks/mobile-release.mdx`.
 
+A product's app (no app member, ADR 0441) is onboarded with `stackra mobile onboard --app <key>` (ADR 0482,
+`runbooks/mobile-onboarding.mdx`): it sets the ids, the EAS project, the Apple bundle id, Firebase, Sentry and push,
+and the mobile job writes `eas.json` at each build. Do not hand-write a product's `eas.json` or run `eas init` for it.
+
 ## Rules
 
 1. **Profiles** in `apps/mobile/eas.json`, each extending `base`:

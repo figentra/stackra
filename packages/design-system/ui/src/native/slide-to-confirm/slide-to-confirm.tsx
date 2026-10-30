@@ -115,7 +115,7 @@ export function SlideToConfirm({
       }}
       className={
         cn(
-          "h-14 justify-center overflow-hidden rounded-full bg-default",
+          "h-14 justify-center overflow-hidden rounded-[var(--radius-pill)] bg-default",
           isDisabled && "opacity-50",
           className,
         ) ?? ""
@@ -134,7 +134,7 @@ export function SlideToConfirm({
           },
           fillStyle,
         ]}
-        className="rounded-full"
+        className="rounded-[var(--radius-pill)]"
       />
       <Animated.View
         pointerEvents="none"

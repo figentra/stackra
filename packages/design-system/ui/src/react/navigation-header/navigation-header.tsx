@@ -77,7 +77,7 @@ export function NavigationHeader({
             label={backLabel}
             underline="hover"
             data-slot="navigation-header-back"
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-pill)]"
             {...(onBack ? { onPress: onBack } : {})}
           >
             {BACK_ICON}

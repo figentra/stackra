@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Inline edit. */
+/** The Inline edit entry of the component registry. */
 export const FREE_INLINE_EDIT: ComponentEntry = {
   slug: "inline-edit",
   tier: "free",

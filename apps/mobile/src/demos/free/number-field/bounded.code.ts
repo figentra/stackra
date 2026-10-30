@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/number-field/bounded.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "bounded" demo of the native NumberField: `minValue`, `maxValue` and `step` hold the number.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { NumberField, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { NUMBER_FIELD_DEMO_KEYS } from "#src/demos/free/number-field/number-field-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = NUMBER_FIELD_DEMO_KEYS.demo_free.number_field.bounded;\n\n/** A stepper stops at a bound. */\nexport default function Bounded() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <NumberField\n      label={t(K.label)}\n      description={t(K.hint)}\n      defaultValue={3}\n      minValue={1}\n      maxValue={10}\n      incrementLabel={t(K.increment)}\n      decrementLabel={t(K.decrement)}\n    />\n  );\n}\n';

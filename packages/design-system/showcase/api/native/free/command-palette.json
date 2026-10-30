@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "367323de0ad17315",
+    "hash": "ae2d86f2749baaee",
     "propsFiles": ["ui/src/native/command-palette/command-palette.props.ts"]
   },
   "importLine": "import { CommandPalette } from \"@stackra/ui/native\";",
@@ -26,7 +26,7 @@
       "name": "CommandPalette",
       "props": [
         {
-          "description": "",
+          "description": "The groups of commands to offer, in order.",
           "name": "sections",
           "required": true,
           "source": "stackra",

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Overflow list. */
+/** The Overflow list entry of the component registry. */
 export const FREE_OVERFLOW_LIST: ComponentEntry = {
   slug: "overflow-list",
   tier: "free",

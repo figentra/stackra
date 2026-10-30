@@ -29,7 +29,7 @@ function Body({ children }: { readonly children: string }) {
   );
 }
 
-/** Popover: Content. */
+/** The Popover demo: content. */
 export default function Content() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -10,7 +10,9 @@ import type { ReactNode } from "react";
 
 /** Props of `ComponentPage`. */
 export interface ComponentPageProps {
+  /** The registry tier of the entry. */
   readonly tier: ComponentTier;
+  /** The entry's slug within its tier. */
   readonly slug: string;
   /** A page's own block under the pillars, such as the typography specimen or the icon search. */
   readonly lead?: ReactNode;

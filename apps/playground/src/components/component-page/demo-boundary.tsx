@@ -12,16 +12,20 @@ import type { DemoBoundaryProps } from "#src/components/component-page/demo-boun
 
 /** Catches a demo's render error and draws the fallback. */
 export class DemoBoundary extends Component<DemoBoundaryProps, { readonly hasError: boolean }> {
+  /** True once the demo has thrown. */
   override state = { hasError: false };
 
+  /** Marks the boundary failed so the next render draws the fallback. */
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
+  /** Logs the error and the component stack. */
   override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("demo failed to render", error, info.componentStack);
   }
 
+  /** Draws the fallback after an error, else the demo. */
   override render() {
     return this.state.hasError ? this.props.fallback : this.props.children;
   }

@@ -11,12 +11,15 @@ import type { MeterSegment } from "#contracts/types/meter-segment.type";
 
 /** Props shared by the web and native `StackedMeter`. */
 export interface StackedMeterContractProps {
+  /** The parts of the bar, in order. */
   readonly segments: readonly MeterSegment[];
   /** The meter's accessible name and visible title, such as "Storage". */
   readonly label: string;
   /** The whole; the segments' sum by default (a full bar). */
   readonly max?: number | undefined;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
+  /** `accent` steps (the default) or the `categorical` set. */
   readonly palette?: ChartPalette | undefined;
   /** Shows the legend of parts under the bar; on by default. */
   readonly showLegend?: boolean | undefined;

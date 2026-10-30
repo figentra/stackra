@@ -151,7 +151,7 @@ export function StormHero({ onBrowse }: HeroProps) {
             startIcon={
               // Each dot is drawn in its own brand's accent, through that brand's variables.
               <ScopedVariables variables={variables[at] ?? {}}>
-                <View className="size-3 rounded-full border border-border bg-accent" />
+                <View className="size-3 rounded-[var(--radius-pill)] border border-border bg-accent" />
               </ScopedVariables>
             }
             onPress={() => pick(at)}
@@ -161,7 +161,7 @@ export function StormHero({ onBrowse }: HeroProps) {
         ))}
       </View>
       {isCycling ? (
-        <View className="h-1 w-full max-w-80 overflow-hidden rounded-full bg-border">
+        <View className="h-1 w-full max-w-80 overflow-hidden rounded-[var(--radius-pill)] bg-border">
           <Animated.View
             className="h-full bg-accent"
             style={[{ transformOrigin: direction === "rtl" ? "right" : "left" }, fill]}
@@ -197,7 +197,7 @@ export function StormHero({ onBrowse }: HeroProps) {
 
   const preview = (
     <View
-      className="gap-3 overflow-hidden rounded-3xl border border-border bg-background p-3"
+      className="gap-3 overflow-hidden rounded-[var(--radius-container)] border border-border bg-background p-3"
       onLayout={(event) => setPreviewWidth(event.nativeEvent.layout.width)}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
@@ -223,7 +223,7 @@ export function StormHero({ onBrowse }: HeroProps) {
               index={at}
               replay={index}
               isStill={isStill}
-              className={`rounded-t-md ${at === BARS.length - 1 ? "bg-accent" : "bg-accent/35"}`}
+              className={`rounded-t-[var(--radius-control)] ${at === BARS.length - 1 ? "bg-accent" : "bg-accent/35"}`}
             />
           ))}
         </View>
@@ -239,8 +239,8 @@ export function StormHero({ onBrowse }: HeroProps) {
           <Text type="small" tone="muted">
             {t(K.storm.plan)}
           </Text>
-          <View className="flex-row gap-1 rounded-xl border border-border p-1">
-            <View className="flex-1 items-center rounded-lg bg-accent py-1.5">
+          <View className="flex-row gap-1 rounded-[var(--radius-container)] border border-border p-1">
+            <View className="flex-1 items-center rounded-[var(--radius-control)] bg-accent py-1.5">
               <Text type="small" className="font-semibold !text-accent-foreground">
                 {t(K.storm.team)}
               </Text>
@@ -267,7 +267,7 @@ export function StormHero({ onBrowse }: HeroProps) {
           </Card>
         </View>
       ) : null}
-      <View className="flex-row items-center gap-3 rounded-2xl bg-accent p-4">
+      <View className="flex-row items-center gap-3 rounded-[var(--radius-container)] bg-accent p-4">
         <View className="flex-1">
           <Text className="font-semibold !text-accent-foreground">{t(K.storm.deploy)}</Text>
           <Text type="small" className="!text-accent-foreground opacity-80">

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Text area. */
+/** The Text area entry of the component registry. */
 export const FREE_TEXT_AREA: ComponentEntry = {
   slug: "text-area",
   tier: "free",

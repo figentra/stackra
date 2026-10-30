@@ -14,7 +14,7 @@ import { SEPARATOR_KEYS } from "#src/demos/free/separator/separator-keys.constan
 /** The demo's keys. */
 const K = SEPARATOR_KEYS.separator;
 
-/** Separator: Vertical. */
+/** The Separator demo: vertical. */
 export default function Vertical() {
   const t = useCatalogueText(MESSAGES.en);
   /** The pages the vertical row links to: the playground's own, so every link works. */

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2f0333b708da3e92",
+    "hash": "701b8d093ba723e0",
     "propsFiles": [
       "ui/src/native/number-value/bytes-value.props.ts",
       "ui/src/native/number-value/money-value.props.ts",
@@ -15,7 +15,7 @@
       "name": "NumberValue",
       "props": [
         {
-          "description": "The number.",
+          "description": "The number to write.",
           "name": "value",
           "required": true,
           "source": "stackra",

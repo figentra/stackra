@@ -47,7 +47,7 @@ function Account() {
   );
 }
 
-/** Sidebar: Controlled. */
+/** The Sidebar demo: controlled. */
 export default function Live() {
   const t = useCatalogueText(MESSAGES.en);
   const [isCollapsed, setIsCollapsed] = useState(false);

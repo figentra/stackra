@@ -8,4 +8,4 @@
  */
 
 /** The class of a square avatar: Tailwind's `rounded-lg`, the theme's large radius. */
-export const AVATAR_SQUARE_CLASS_NAME = "rounded-lg";
+export const AVATAR_SQUARE_CLASS_NAME = "rounded-[var(--radius-control)]";

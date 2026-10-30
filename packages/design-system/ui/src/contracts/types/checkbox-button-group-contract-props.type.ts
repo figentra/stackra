@@ -11,7 +11,7 @@ import type { FieldContractProps } from "#contracts/types/field-contract-props.t
 
 /** Props shared by the web and native `CheckboxButtonGroup`. */
 export interface CheckboxButtonGroupContractProps extends FieldContractProps<readonly string[]> {
-  /** The cards. */
+  /** The choice cards, one per option. */
   readonly items: readonly ChoiceItem[];
   /** `vertical` (the default) stacks the cards; `horizontal` puts them side by side and wraps. */
   readonly orientation?: Orientation | undefined;

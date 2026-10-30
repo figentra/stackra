@@ -26,7 +26,7 @@ const RULE_FOR: Readonly<Record<SurfaceVariant, SeparatorVariant>> = {
   transparent: "default",
 };
 
-/** Separator: Levels. */
+/** The Separator demo: levels. */
 export default function Levels() {
   const t = useCatalogueText(MESSAGES.en);
   return (

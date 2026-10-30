@@ -15,6 +15,7 @@ export interface SunburstChartContractProps {
   readonly items: readonly SunburstItem[];
   /** The chart's accessible name, such as "Revenue by category and product". */
   readonly label: string;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
   /** `accent` steps (the default) or the `categorical` set, by top slice. */
   readonly palette?: ChartPalette | undefined;

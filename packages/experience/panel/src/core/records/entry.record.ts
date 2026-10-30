@@ -5,6 +5,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1).
  */
+import type { I18nKey } from "@stackra/i18n";
+
 import { DraftRecord } from "#core/records/draft.record";
 import type { EntryBuilder } from "#core/types/entry-builder.type";
 import type { EntryNode } from "#core/types/entry-node.type";
@@ -12,6 +14,7 @@ import type { EntryNode } from "#core/types/entry-node.type";
 /** The flags an entry records. */
 interface EntryFlags {
   readonly copyable?: boolean;
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
 /** Records the flags of one entry before it builds. */
@@ -26,5 +29,10 @@ export class EntryRecord extends DraftRecord<EntryFlags, EntryNode> implements E
   /** Adds a copy button. */
   copyable(): this {
     return this.set({ copyable: true });
+  }
+
+  /** Names the label key of each enum code. */
+  labels(labels: Readonly<Record<string, I18nKey>>): this {
+    return this.set({ labels });
   }
 }

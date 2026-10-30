@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Address field. */
+/** The Address field entry of the component registry. */
 export const FREE_ADDRESS_FIELD: ComponentEntry = {
   slug: "address-field",
   tier: "free",

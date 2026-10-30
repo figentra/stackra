@@ -8,6 +8,8 @@
 
 /** One emoji and its search words. */
 export interface EmojiEntry {
+  /** The emoji character itself. */
   readonly emoji: string;
+  /** The English words a search matches, space separated. */
   readonly words: string;
 }

@@ -25,7 +25,7 @@ function Disc() {
   return <span aria-hidden="true" className="inline-flex size-10 bg-default" />;
 }
 
-/** Badge: Corners. */
+/** The Badge demo: corners. */
 export default function Corners() {
   const t = useCatalogueText(MESSAGES.en);
   return (

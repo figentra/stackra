@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Sidebar. */
+/** The Sidebar entry of the component registry. */
 export const FREE_SIDEBAR: ComponentEntry = {
   slug: "sidebar",
   tier: "free",

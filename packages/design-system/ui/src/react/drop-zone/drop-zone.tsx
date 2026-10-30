@@ -56,7 +56,7 @@ export function DropZone({
       }}
       className={({ isDropTarget, isFocusVisible }) =>
         cn(
-          "grid place-items-center gap-2 rounded-2xl border-2 border-dashed p-8 text-center transition-colors motion-reduce:transition-none",
+          "grid place-items-center gap-2 rounded-[var(--radius-container)] border-2 border-dashed p-8 text-center transition-colors motion-reduce:transition-none",
           isDropTarget ? "border-accent bg-accent-soft" : "border-border bg-surface",
           isFocusVisible && "outline-2 outline-offset-2 outline-focus",
           isDisabled && "opacity-50",
@@ -66,7 +66,7 @@ export function DropZone({
     >
       <span
         aria-hidden
-        className="grid size-11 place-items-center rounded-full bg-default text-muted"
+        className="grid size-11 place-items-center rounded-[var(--radius-pill)] bg-default text-muted"
       >
         <Icon name="upload" />
       </span>

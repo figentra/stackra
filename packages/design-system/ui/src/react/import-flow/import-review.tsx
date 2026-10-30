@@ -52,7 +52,7 @@ export function ImportReview({
             <h3 className="m-0 text-sm font-semibold">{t(K.issues)}</h3>
             {issuesAction}
           </div>
-          <ul className="m-0 flex max-h-56 list-none flex-col divide-y divide-separator overflow-y-auto rounded-lg border border-separator p-0">
+          <ul className="m-0 flex max-h-56 list-none flex-col divide-y divide-separator overflow-y-auto rounded-[var(--radius-control)] border border-separator p-0">
             {result.issues.map((issue) => (
               <li
                 key={`${issue.row}:${issue.field}:${issue.message}`}

@@ -38,9 +38,12 @@ export function ImportMappingList({
   ];
   return (
     <>
-      <ul className="@container m-0 flex list-none flex-col divide-y divide-separator rounded-lg border border-separator p-0">
+      <ul className="@container m-0 flex list-none flex-col divide-y divide-separator rounded-[var(--radius-control)] border border-separator p-0">
         {columns.map((column) => (
-          <li key={column} className="grid grid-cols-1 items-center gap-2 px-3 py-2 @md:grid-cols-2">
+          <li
+            key={column}
+            className="grid grid-cols-1 items-center gap-2 px-3 py-2 @md:grid-cols-2"
+          >
             <div className="flex min-w-0 flex-col">
               <bdi className="truncate text-sm font-medium">{column}</bdi>
               {sample?.[column] ? (

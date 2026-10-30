@@ -30,7 +30,7 @@ function Sample({ caption, children }: { caption: string; children: ReactNode })
   );
 }
 
-/** Alert: Tones. */
+/** The Alert demo: tones. */
 export default function Tones() {
   const t = useCatalogueText(MESSAGES.en);
   /** A title and a description that fit each tone. */

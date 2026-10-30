@@ -64,7 +64,7 @@ const FEW = ORDERS.slice(0, 5);
 /** The grid that lays the samples out one under the other. */
 const STACK = "grid gap-8";
 
-/** Table: Selection. */
+/** The Table demo: selection. */
 export default function Selection() {
   const t = useCatalogueText(MESSAGES.en);
   /** The columns: every one sortable but the status. */

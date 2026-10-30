@@ -30,6 +30,7 @@ const numberOf = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
 /** A bar's data end is rounded (the reading end, so the right in English and the left in Arabic); its base is square. */
+// oxlint-disable-next-line stackra/no-literal-radius -- reason: a data mark's end cap, not a surface; React Native styles cannot read the --radius-* tokens, and a brand's corners do not reshape chart marks.
 const END_ROUNDED = { borderTopEndRadius: 4, borderBottomEndRadius: 4 } as const;
 
 /** Bars along their categories. */

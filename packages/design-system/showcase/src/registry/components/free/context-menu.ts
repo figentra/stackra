@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Context menu. */
+/** The Context menu entry of the component registry. */
 export const FREE_CONTEXT_MENU: ComponentEntry = {
   slug: "context-menu",
   tier: "free",

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Error state. */
+/** The Error state entry of the component registry. */
 export const FREE_ERROR_STATE: ComponentEntry = {
   slug: "error-state",
   tier: "free",

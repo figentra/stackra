@@ -14,7 +14,7 @@ import { SPINNER_KEYS } from "#src/demos/free/spinner/spinner-keys.constant";
 /** The demo's keys. */
 const K = SPINNER_KEYS.spinner;
 
-/** Spinner: Speed. */
+/** The Spinner demo: speed. */
 export default function Speed() {
   const t = useCatalogueText(MESSAGES.en);
   return (

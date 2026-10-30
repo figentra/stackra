@@ -10,14 +10,19 @@ import type { ApiPart, ApiSlot } from "@stackra/showcase";
 
 /** What the markdown is made of. */
 export interface MarkdownInput {
+  /** The translated entry title. */
   readonly title: string;
+  /** The translated entry description. */
   readonly description: string;
+  /** The line that imports the component. */
   readonly importLine: string;
   /** The compound code block, when the entry has parts. */
   readonly anatomy?: string | undefined;
   /** The examples in page order, `[0]` is Usage; `code` is undefined while a demo is missing. */
   readonly examples: readonly { readonly title: string; readonly code?: string | undefined }[];
+  /** The generated API of each part. */
   readonly parts: readonly ApiPart[];
+  /** The styling slots, when the entry has any. */
   readonly slots?: readonly ApiSlot[] | undefined;
   /** The translated headings and column labels. */
   readonly words: {

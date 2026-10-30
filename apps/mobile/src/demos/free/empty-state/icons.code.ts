@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/empty-state/icons.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "icons" demo of the native EmptyState: `icon` by name instead of the reason\'s, and `false` for none.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).\n */\nimport { EmptyState, useCatalogueText } from "@stackra/ui/native";\nimport { View } from "react-native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { EMPTY_STATE_DEMO_KEYS } from "#src/demos/free/empty-state/empty-state-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = EMPTY_STATE_DEMO_KEYS.demo_free.empty_state.icons;\n\n/** A bell, then no icon at all. */\nexport default function Icons() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <View className="gap-4">\n      <EmptyState headingLevel={3} icon="bell" title={t(K.custom)} description={t(K.custom_body)} />\n      <EmptyState headingLevel={3} icon={false} title={t(K.none)} description={t(K.none_body)} />\n    </View>\n  );\n}\n';

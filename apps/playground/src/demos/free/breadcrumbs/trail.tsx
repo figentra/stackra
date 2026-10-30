@@ -15,7 +15,7 @@ import { BREADCRUMBS_KEYS } from "#src/demos/free/breadcrumbs/breadcrumbs-keys.c
 /** The demo's keys. */
 const K = BREADCRUMBS_KEYS.breadcrumbs;
 
-/** Breadcrumbs: Trail. */
+/** The Breadcrumbs demo: trail. */
 export default function Trail() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

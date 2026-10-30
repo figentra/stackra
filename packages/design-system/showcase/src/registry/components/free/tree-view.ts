@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tree view. */
+/** The Tree view entry of the component registry. */
 export const FREE_TREE_VIEW: ComponentEntry = {
   slug: "tree-view",
   tier: "free",

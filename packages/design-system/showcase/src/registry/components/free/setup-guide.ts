@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Setup guide. */
+/** The Setup guide entry of the component registry. */
 export const FREE_SETUP_GUIDE: ComponentEntry = {
   slug: "setup-guide",
   tier: "free",

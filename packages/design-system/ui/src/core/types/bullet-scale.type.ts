@@ -8,7 +8,9 @@
 
 /** A row's bands, value and target, in percent of its scale. */
 export interface BulletScale {
+  /** The background bands, each a start and end in percent. */
   readonly bands: readonly { readonly from: number; readonly to: number }[];
+  /** Where the value bar ends, in percent. */
   readonly value: number;
   /** Null when the row has no target. */
   readonly target: number | null;

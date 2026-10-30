@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Select. */
+/** The Select entry of the component registry. */
 export const FREE_SELECT: ComponentEntry = {
   slug: "select",
   tier: "free",

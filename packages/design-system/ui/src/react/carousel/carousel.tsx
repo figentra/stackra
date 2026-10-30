@@ -65,7 +65,7 @@ export function Carousel({
         // Focusable, so a keyboard user can scroll the slides with the arrow keys (WCAG 2.1.1, axe scrollable-region-focusable).
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- reason: a scroll region must take focus so a keyboard user can scroll it (WCAG 2.1.1)
         tabIndex={0}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-xl outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-focus"
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[var(--radius-container)] outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-focus"
       >
         {Children.map(children, (slide, position) => (
           <div
@@ -101,12 +101,12 @@ export function Carousel({
                   aria-label={t(K.slide, { index: position + 1, count })}
                   aria-current={position === index ? "true" : undefined}
                   onClick={() => goTo(position)}
-                  className="group grid h-6 min-w-6 place-items-center rounded-full outline-none"
+                  className="group grid h-6 min-w-6 place-items-center rounded-[var(--radius-pill)] outline-none"
                 >
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "h-2 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-focus motion-reduce:transition-none",
+                      "h-2 rounded-[var(--radius-pill)] transition-all group-focus-visible:ring-2 group-focus-visible:ring-focus motion-reduce:transition-none",
                       position === index ? "w-5 bg-foreground" : "w-2 bg-default",
                     )}
                   />

@@ -78,7 +78,7 @@ export function Timeline({
                   <span
                     aria-hidden
                     className={cn(
-                      "relative flex shrink-0 items-center justify-center rounded-full [&_svg]:size-3.5",
+                      "relative flex shrink-0 items-center justify-center rounded-[var(--radius-pill)] [&_svg]:size-3.5",
                       isCompact ? "size-6" : "size-8",
                       MARKER_TONE_CLASS_NAME[item.tone ?? "default"],
                     )}
@@ -86,7 +86,7 @@ export function Timeline({
                     {item.icon ? (
                       <SlotIcon icon={item.icon} />
                     ) : (
-                      <span className="size-1.5 rounded-full bg-current" />
+                      <span className="size-1.5 rounded-[var(--radius-pill)] bg-current" />
                     )}
                   </span>
                   <div

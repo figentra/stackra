@@ -108,7 +108,7 @@ export function BoxPlotChart(props: BoxPlotChartProps): ReactElement {
               />
             ))}
             <View
-              className="absolute w-3/5 max-w-12 rounded-sm border-2"
+              className="absolute w-3/5 max-w-12 rounded-[var(--radius-control-inner)] border-2"
               style={{
                 bottom: `${percent(stats.q1)}%`,
                 top: `${100 - percent(stats.q3)}%`,
@@ -124,7 +124,7 @@ export function BoxPlotChart(props: BoxPlotChartProps): ReactElement {
               <View
                 // oxlint-disable-next-line react/no-array-index-key -- outliers are bare numbers that may repeat; their place in the sorted list is their identity
                 key={at}
-                className="absolute size-2 rounded-full border-2"
+                className="absolute size-2 rounded-[var(--radius-pill)] border-2"
                 style={{
                   bottom: `${percent(outlier)}%`,
                   marginBottom: -4,

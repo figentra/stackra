@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "107048f2c8ed3100",
+    "hash": "ed1472f3c00e594a",
     "propsFiles": ["ui/src/react/holo-card/holo-card.props.ts"]
   },
   "importLine": "import { HoloCard } from \"@stackra/ui/react\";",
@@ -10,7 +10,7 @@
       "name": "HoloCard",
       "props": [
         {
-          "description": "",
+          "description": "The content drawn on the card.",
           "name": "children",
           "required": true,
           "source": "stackra",

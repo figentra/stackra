@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Area chart. */
+/** The Area chart entry of the component registry. */
 export const FREE_AREA_CHART: ComponentEntry = {
   slug: "area-chart",
   tier: "free",

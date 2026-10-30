@@ -119,6 +119,24 @@ function Probe() {
   );
 }
 
+function Pickers() {
+  const { brand, transition, motion, setBrand, setTransition, setMotion } = useDesignSystem();
+  return (
+    <>
+      <output data-testid="picked">{`${String(brand)} ${transition} ${motion}`}</output>
+      <button type="button" onClick={() => setBrand("ocean")}>
+        brand
+      </button>
+      <button type="button" onClick={() => setTransition("fade")}>
+        transition
+      </button>
+      <button type="button" onClick={() => setMotion("none")}>
+        motion
+      </button>
+    </>
+  );
+}
+
 function MotionProbe() {
   const { motion, resolvedMotion } = useDesignSystem();
   return <output data-testid="motion">{`${motion} ${resolvedMotion}`}</output>;
@@ -325,5 +343,28 @@ describe("DesignSystemProvider (native)", () => {
     );
     expect(screen.getByTestId("motion").textContent).toBe("none none");
     expect(screen.getByTestId("heroui").dataset["animation"]).toBe("disable-all");
+  });
+
+  it("holds the picked brand, transition and motion and reports each change", () => {
+    const onBrandChange = vi.fn();
+    const onTransitionChange = vi.fn();
+    const onMotionChange = vi.fn();
+    render(
+      <DesignSystemProvider
+        onBrandChange={onBrandChange}
+        onTransitionChange={onTransitionChange}
+        onMotionChange={onMotionChange}
+      >
+        <Pickers />
+      </DesignSystemProvider>,
+    );
+    expect(screen.getByTestId("picked").textContent).toBe("undefined none full");
+    act(() => screen.getByRole("button", { name: "brand" }).click());
+    act(() => screen.getByRole("button", { name: "transition" }).click());
+    act(() => screen.getByRole("button", { name: "motion" }).click());
+    expect(onBrandChange).toHaveBeenCalledWith("ocean");
+    expect(onTransitionChange).toHaveBeenCalledWith("fade");
+    expect(onMotionChange).toHaveBeenCalledWith("none");
+    expect(screen.getByTestId("picked").textContent).toBe("ocean fade none");
   });
 });

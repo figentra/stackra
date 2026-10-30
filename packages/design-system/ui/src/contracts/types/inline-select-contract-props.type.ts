@@ -10,7 +10,7 @@ import type { SelectItem } from "#contracts/types/select-item.type";
 
 /** Props shared by the web and native `InlineSelect`. */
 export interface InlineSelectContractProps {
-  /** The choices. */
+  /** The choices the control offers. */
   readonly items: readonly SelectItem[];
   /** The spoken name of the control; it is not drawn, the sentence around it is. */
   readonly label: string;

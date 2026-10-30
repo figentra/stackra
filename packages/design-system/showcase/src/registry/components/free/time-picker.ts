@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Time picker. */
+/** The Time picker entry of the component registry. */
 export const FREE_TIME_PICKER: ComponentEntry = {
   slug: "time-picker",
   tier: "free",

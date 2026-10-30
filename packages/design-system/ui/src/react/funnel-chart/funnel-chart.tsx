@@ -53,9 +53,12 @@ export function FunnelChart({
             className="grid grid-cols-[minmax(0,8rem)_1fr_auto] items-center gap-3"
           >
             <span className="truncate text-xs text-muted">{stage.label}</span>
-            <span aria-hidden className="flex h-7 justify-center rounded bg-default/40">
+            <span
+              aria-hidden
+              className="flex h-7 justify-center rounded-[var(--radius-control-inner)] bg-default/40"
+            >
               <span
-                className="h-full rounded transition-[width] duration-300 motion-reduce:transition-none"
+                className="h-full rounded-[var(--radius-control-inner)] transition-[width] duration-300 motion-reduce:transition-none"
                 style={{ width: `${Math.max(share * 100, 1)}%`, backgroundColor: paintOf(color) }}
               />
             </span>

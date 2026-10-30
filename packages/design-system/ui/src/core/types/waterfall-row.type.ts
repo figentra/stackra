@@ -8,10 +8,13 @@
 
 /** One bar of a waterfall. */
 export interface WaterfallRow {
+  /** A stable id, unique within the chart. */
   readonly key: string;
+  /** The name shown under the bar. */
   readonly label: string;
   /** The bar's lower and upper ends on the value axis. */
   readonly low: number;
+  /** The upper end of the bar on the value axis. */
   readonly high: number;
   /** The step's change, or the total for a total bar. */
   readonly value: number;

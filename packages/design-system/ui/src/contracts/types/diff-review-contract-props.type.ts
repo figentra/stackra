@@ -11,8 +11,11 @@ import type { DiffDecision } from "#contracts/types/diff-decision.type";
 
 /** Props shared by the web and native `DiffReview`. */
 export interface DiffReviewContractProps {
+  /** The changes to review, in order. */
   readonly changes: readonly DiffChange[];
+  /** The reviewer decision for each change, by change id. */
   readonly decisions: DiffDecision;
+  /** Called with the new decisions when the reviewer accepts or rejects a change. */
   readonly onDecisionsChange: (decisions: DiffDecision) => void;
   /** Called with the decisions when the reviewer applies them. */
   readonly onApply?: ((decisions: DiffDecision) => void) | undefined;

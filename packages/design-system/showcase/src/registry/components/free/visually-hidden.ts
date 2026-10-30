@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** VisuallyHidden. */
+/** The VisuallyHidden entry of the component registry. */
 export const FREE_VISUALLY_HIDDEN: ComponentEntry = {
   slug: "visually-hidden",
   tier: "free",

@@ -12,6 +12,7 @@ import type { TimelineTask } from "#contracts/types/timeline-task.type";
 export interface TimelineLayout {
   /** The span's first and last instant, in milliseconds since the epoch (UTC days). */
   readonly from: number;
+  /** The last instant of the span. */
   readonly to: number;
   /** `month` ticks for a span over about two months, `week` ticks under it. */
   readonly unit: "month" | "week";

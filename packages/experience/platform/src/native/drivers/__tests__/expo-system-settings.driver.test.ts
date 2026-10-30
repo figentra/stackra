@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ExpoSystemSettingsDriver`: tracking reads through expo-tracking-transparency on iOS, reads
- *          `denied` on iOS without it and `null` elsewhere, prompts only when undecided; Low Power Mode follows
+ * Purpose: unit tests of `ExpoSystemSettingsDriver`: tracking reads through expo-tracking-transparency on iOS in an app
+ *          that asks for it, reads `denied` without calling it in one that does not (and without the library) and
+ *          `null` elsewhere, prompts only when undecided; Low Power Mode follows
  *          expo-battery; background refresh maps expo-background-task's status; an expensive connection follows
  *          NetInfo; the settings deep link opens; constructed bare, it reads through the Expo libraries it imports.
  * Boundary: test only; react-native, NetInfo and the Expo libraries are mocked, and a subclass also hands fakes in.
@@ -44,8 +45,11 @@ vi.mock("@react-native-community/netinfo", () => ({
   },
 }));
 
-/** A driver over `modules`, as the host declares it. */
-function driverWith(modules: Partial<ExpoSystemModules> = {}): ExpoSystemSettingsDriver {
+/** A driver over `modules`, as the host declares it; `asks` stands for an app with the tracking usage string. */
+function driverWith(
+  modules: Partial<ExpoSystemModules> = {},
+  asks = true,
+): ExpoSystemSettingsDriver {
   const all: ExpoSystemModules = {
     trackingTransparency: null,
     battery: null,
@@ -54,6 +58,8 @@ function driverWith(modules: Partial<ExpoSystemModules> = {}): ExpoSystemSetting
   };
   return new (class extends ExpoSystemSettingsDriver {
     protected override readonly modules = all;
+
+    protected override readonly asksForTracking = asks;
   })();
 }
 
@@ -65,7 +71,7 @@ beforeEach(() => {
 describe("ExpoSystemSettingsDriver", () => {
   it("reads through the Expo libraries it imports when constructed bare", async () => {
     const settings = new ExpoSystemSettingsDriver();
-    expect(await settings.tracking()).toBe("granted");
+    expect(await settings.tracking()).toBe("denied");
     expect(await settings.backgroundRefresh()).toBe("granted");
     expect(settings.lowPowerMode.get()).toBe(false);
   });
@@ -82,6 +88,24 @@ describe("ExpoSystemSettingsDriver", () => {
     expect(await settings.tracking()).toBe("prompt");
     expect(await settings.requestTracking()).toBe("granted");
     expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it("never calls the library in an app that does not ask for tracking (no usage string: its read is fatal)", async () => {
+    const read = vi.fn(async () => ({ granted: false, status: "undetermined" }));
+    const request = vi.fn(async () => ({ granted: true, status: "granted" }));
+    const settings = driverWith(
+      {
+        trackingTransparency: {
+          getTrackingPermissionsAsync: read,
+          requestTrackingPermissionsAsync: request,
+        },
+      },
+      false,
+    );
+    expect(await settings.tracking()).toBe("denied");
+    expect(await settings.requestTracking()).toBe("denied");
+    expect(read).not.toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
   });
 
   it("reads tracking as refused on iOS without the library, and as no control elsewhere", async () => {

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** App shell. */
+/** The App shell entry of the component registry. */
 export const FREE_APP_SHELL: ComponentEntry = {
   slug: "app-shell",
   tier: "free",

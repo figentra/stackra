@@ -9,7 +9,9 @@
 
 /** A refused tag. */
 export interface TagRejection {
+  /** The tag text that was refused. */
   readonly tag: string;
+  /** Why it was refused: a duplicate, over the limit, or invalid. */
   readonly reason: "duplicate" | "max" | "invalid";
   /** The caller's words, for an invalid tag. */
   readonly message?: string | undefined;

@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Split view. */
+/** The Split view entry of the component registry. */
 export const FREE_SPLIT_VIEW: ComponentEntry = {
   slug: "split-view",
   tier: "free",

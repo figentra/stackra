@@ -10,18 +10,16 @@ import { fileURLToPath } from "node:url";
 
 import { withCoverage } from "@stackra/vitest-config/coverage";
 import { stackraVitestDecorators } from "@stackra/vitest-config/preset-decorators";
-import { defineConfig, mergeConfig } from "vitest/config";
+import { mergeConfig } from "vitest/config";
 
 export default mergeConfig(
   stackraVitestDecorators,
-  defineConfig(
-    withCoverage({
-      root: fileURLToPath(new URL("..", import.meta.url)),
-      test: {
-        include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
-        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
-        setupFiles: [".stackra/vitest.setup.ts"],
-      },
-    }),
-  ),
+  withCoverage({
+    root: fileURLToPath(new URL("..", import.meta.url)),
+    test: {
+      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+      exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
+      setupFiles: [".stackra/vitest.setup.ts"],
+    },
+  }),
 );

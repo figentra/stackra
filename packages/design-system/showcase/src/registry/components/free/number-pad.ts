@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Number pad. */
+/** The Number pad entry of the component registry. */
 export const FREE_NUMBER_PAD: ComponentEntry = {
   slug: "number-pad",
   tier: "free",

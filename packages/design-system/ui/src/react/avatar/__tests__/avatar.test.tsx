@@ -143,11 +143,11 @@ describe("Avatar (web)", () => {
   it("is a default-tone circle with no props, and a square keeps the caller's class", () => {
     const { container, rerender } = render(<Avatar name="Ada Lovelace" className="mine" />);
     expect(container.querySelector(".avatar__fallback--default")).toBeTruthy();
-    expect(rootOf(container)?.classList.contains("rounded-lg")).toBe(false);
-    expect(rootOf(container)?.classList.contains("rounded-full")).toBe(true);
+    expect(rootOf(container)?.classList.contains("rounded-[var(--radius-control)]")).toBe(false);
+    expect(rootOf(container)?.classList.contains("rounded-[var(--radius-pill)]")).toBe(true);
     rerender(<Avatar name="Acme" shape="square" className="mine" />);
-    expect(rootOf(container)?.classList.contains("rounded-lg")).toBe(true);
-    expect(rootOf(container)?.classList.contains("rounded-full")).toBe(false);
+    expect(rootOf(container)?.classList.contains("rounded-[var(--radius-control)]")).toBe(true);
+    expect(rootOf(container)?.classList.contains("rounded-[var(--radius-pill)]")).toBe(false);
     expect(rootOf(container)?.classList.contains("mine")).toBe(true);
   });
 

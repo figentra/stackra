@@ -14,7 +14,12 @@ import { Result } from "#react/result/result";
 describe("Result (web)", () => {
   it("draws the outcome with a heading, description and actions", () => {
     const { container } = render(
-      <Result status="success" title="Payment received" description="Receipt sent." actions={<button type="button">Done</button>} />,
+      <Result
+        status="success"
+        title="Payment received"
+        description="Receipt sent."
+        actions={<button type="button">Done</button>}
+      />,
     );
     expect(screen.getByRole("heading", { level: 2, name: "Payment received" })).toBeTruthy();
     expect(screen.getByText("Receipt sent.")).toBeTruthy();

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Separator. */
+/** The Separator entry of the component registry. */
 export const FREE_SEPARATOR: ComponentEntry = {
   slug: "separator",
   tier: "free",

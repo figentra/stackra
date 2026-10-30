@@ -139,7 +139,7 @@ export function DateRangePicker({
                     }}
                     className={
                       cn(
-                        "min-h-8 rounded-lg px-3 text-start text-sm outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus",
+                        "min-h-8 rounded-[var(--radius-control)] px-3 text-start text-sm outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus",
                         picked(preset) && "bg-accent-soft text-accent-soft-foreground",
                       ) ?? ""
                     }

@@ -101,7 +101,7 @@ export function CommentThread({
                     <bdi
                       // oxlint-disable-next-line react/no-array-index-key -- segments are cut from the comment in order and may repeat; their place is their identity
                       key={index}
-                      className="rounded bg-accent-soft px-0.5 font-medium text-accent-soft-foreground"
+                      className="rounded-[var(--radius-control-inner)] bg-accent-soft px-0.5 font-medium text-accent-soft-foreground"
                     >
                       {segment.text}
                     </bdi>

@@ -9,6 +9,7 @@ import type { SearchDoc } from "#src/types/search-doc.type";
 
 /** One search result. */
 export interface SearchHit {
+  /** The matched search entry. */
   readonly doc: SearchDoc;
   /** Higher is better. */
   readonly score: number;

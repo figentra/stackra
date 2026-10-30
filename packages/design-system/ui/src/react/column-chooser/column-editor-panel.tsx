@@ -86,140 +86,159 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
 
   return (
     <IconRegistryProvider registry={COLLECTION_ICONS}>
-        <div className="grid w-full gap-3" data-slot="column-editor">
-          <p className="m-0 text-sm text-muted">{t(K.editor_hint)}</p>
-          <GridList
-            aria-label={name}
-            items={columns}
-            selectionMode="multiple"
-            selectionBehavior="toggle"
-            disallowEmptySelection={false}
-            selectedKeys={new Set(columns.filter((column) => !column.isHidden).map((column) => column.id))}
-            onSelectionChange={(keys) => {
-              const shown =
-                keys === "all" ? columns.map((column) => column.id) : [...keys].map(String);
-              for (const column of columns)
-                if (column.canHide && column.isHidden === shown.includes(column.id))
-                  collection.updateColumn(column.id, { isHidden: !shown.includes(column.id) });
-            }}
-            onAction={(key) => setOpenId(openId === String(key) ? null : String(key))}
-            dragAndDropHooks={dragAndDropHooks}
-            className="flex max-h-72 flex-col overflow-auto rounded-[var(--radius-container)] border border-separator"
+      <div className="grid w-full gap-3" data-slot="column-editor">
+        <p className="m-0 text-sm text-muted">{t(K.editor_hint)}</p>
+        <GridList
+          aria-label={name}
+          items={columns}
+          selectionMode="multiple"
+          selectionBehavior="toggle"
+          disallowEmptySelection={false}
+          selectedKeys={
+            new Set(columns.filter((column) => !column.isHidden).map((column) => column.id))
+          }
+          onSelectionChange={(keys) => {
+            const shown =
+              keys === "all" ? columns.map((column) => column.id) : [...keys].map(String);
+            for (const column of columns)
+              if (column.canHide && column.isHidden === shown.includes(column.id))
+                collection.updateColumn(column.id, { isHidden: !shown.includes(column.id) });
+          }}
+          onAction={(key) => setOpenId(openId === String(key) ? null : String(key))}
+          dragAndDropHooks={dragAndDropHooks}
+          className="flex max-h-72 flex-col overflow-auto rounded-[var(--radius-container)] border border-separator"
+        >
+          {(column) => (
+            <GridListItem
+              id={column.id}
+              textValue={column.label}
+              className={
+                cn(
+                  "border-b border-separator bg-surface text-foreground outline-none last:border-b-0",
+                  "data-[focus-visible]:outline-2 data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-focus",
+                  "data-[dragging]:opacity-40",
+                  openId === column.id && "bg-accent-soft",
+                ) ?? ""
+              }
+            >
+              <motion.div
+                layout={!isReduced}
+                transition={SETTLE}
+                className="flex min-h-11 items-center gap-1 pe-2"
+              >
+                <AriaButton
+                  slot="drag"
+                  aria-label={t(UI_KEYS.ui.sortable_list.handle, { label: column.label })}
+                  className="inline-flex size-10 shrink-0 cursor-grab items-center justify-center text-muted"
+                >
+                  <Icon name="grip-vertical" size="sm" />
+                </AriaButton>
+                <HeroCheckbox
+                  slot="selection"
+                  isDisabled={!column.canHide}
+                  aria-label={t(K.show_column, { label: column.label })}
+                >
+                  <HeroCheckbox.Content className="inline-flex min-h-6 min-w-6 items-center justify-center">
+                    <HeroCheckbox.Control>
+                      <HeroCheckbox.Indicator />
+                    </HeroCheckbox.Control>
+                  </HeroCheckbox.Content>
+                </HeroCheckbox>
+                <span className="min-w-0 flex-1 truncate ps-2 text-sm">{column.label}</span>
+                {column.pin ? (
+                  <span
+                    className="inline-flex text-muted"
+                    title={t(column.pin === "start" ? K.pin_start : K.pin_end)}
+                  >
+                    <Icon
+                      name="pin"
+                      size="sm"
+                      label={t(column.pin === "start" ? K.pin_start : K.pin_end)}
+                    />
+                  </span>
+                ) : null}
+                <IconButton
+                  icon="pencil"
+                  size="sm"
+                  variant="ghost"
+                  label={t(K.rename_column, { label: column.label })}
+                  onPress={() => setOpenId(openId === column.id ? null : column.id)}
+                />
+              </motion.div>
+            </GridListItem>
+          )}
+        </GridList>
+        {open ? (
+          <fieldset
+            className="m-0 grid gap-3 rounded-[var(--radius-container)] border border-separator p-3"
+            aria-label={open.label}
           >
-            {(column) => (
-              <GridListItem
-                id={column.id}
-                textValue={column.label}
-                className={
-                  cn(
-                    "border-b border-separator bg-surface text-foreground outline-none last:border-b-0",
-                    "data-[focus-visible]:outline-2 data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-focus",
-                    "data-[dragging]:opacity-40",
-                    openId === column.id && "bg-accent-soft",
-                  ) ?? ""
+            <legend className="sr-only">{open.label}</legend>
+            <TextField
+              label={t(K.column_name)}
+              value={open.label === open.defaultLabel ? "" : open.label}
+              placeholder={open.defaultLabel}
+              onChange={(value) => collection.updateColumn(open.id, { label: value })}
+            />
+            <SegmentedControl
+              label={t(K.pin)}
+              size="sm"
+              isFullWidth
+              selectedKey={open.pin ?? "none"}
+              onSelectionChange={(key) =>
+                collection.updateColumn(open.id, {
+                  pin: key === "start" || key === "end" ? key : null,
+                })
+              }
+              items={[
+                { id: "start", label: t(K.pin_start) },
+                { id: "none", label: t(K.pin_none) },
+                { id: "end", label: t(K.pin_end) },
+              ]}
+            />
+            <div className="flex items-end gap-2">
+              <NumberField
+                label={t(K.width)}
+                placeholder={t(K.width_auto)}
+                value={open.width ?? null}
+                minValue={open.minWidth ?? 64}
+                maxValue={open.maxWidth ?? 640}
+                step={8}
+                onChange={(value) =>
+                  collection.updateColumn(
+                    open.id,
+                    value === null ? { width: undefined } : { width: value },
+                  )
+                }
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() =>
+                  collection.updateColumn(open.id, { width: fitColumnWidth(open, collection.rows) })
                 }
               >
-                <motion.div
-                  layout={!isReduced}
-                  transition={SETTLE}
-                  className="flex min-h-11 items-center gap-1 pe-2"
-                >
-                  <AriaButton
-                    slot="drag"
-                    aria-label={t(UI_KEYS.ui.sortable_list.handle, { label: column.label })}
-                    className="inline-flex size-10 shrink-0 cursor-grab items-center justify-center text-muted"
-                  >
-                    <Icon name="grip-vertical" size="sm" />
-                  </AriaButton>
-                  <HeroCheckbox
-                    slot="selection"
-                    isDisabled={!column.canHide}
-                    aria-label={t(K.show_column, { label: column.label })}
-                  >
-                    <HeroCheckbox.Content className="inline-flex min-h-6 min-w-6 items-center justify-center">
-                      <HeroCheckbox.Control>
-                        <HeroCheckbox.Indicator />
-                      </HeroCheckbox.Control>
-                    </HeroCheckbox.Content>
-                  </HeroCheckbox>
-                  <span className="min-w-0 flex-1 truncate ps-2 text-sm">{column.label}</span>
-                  {column.pin ? (
-                    <span className="inline-flex text-muted" title={t(column.pin === "start" ? K.pin_start : K.pin_end)}>
-                      <Icon name="pin" size="sm" label={t(column.pin === "start" ? K.pin_start : K.pin_end)} />
-                    </span>
-                  ) : null}
-                  <IconButton
-                    icon="pencil"
-                    size="sm"
-                    variant="ghost"
-                    label={t(K.rename_column, { label: column.label })}
-                    onPress={() => setOpenId(openId === column.id ? null : column.id)}
-                  />
-                </motion.div>
-              </GridListItem>
-            )}
-          </GridList>
-          {open ? (
-            <fieldset
-              className="m-0 grid gap-3 rounded-[var(--radius-container)] border border-separator p-3"
-              aria-label={open.label}
-            >
-              <legend className="sr-only">{open.label}</legend>
-              <TextField
-                label={t(K.column_name)}
-                value={open.label === open.defaultLabel ? "" : open.label}
-                placeholder={open.defaultLabel}
-                onChange={(value) => collection.updateColumn(open.id, { label: value })}
-              />
-              <SegmentedControl
-                label={t(K.pin)}
-                size="sm"
-                isFullWidth
-                selectedKey={open.pin ?? "none"}
-                onSelectionChange={(key) =>
-                  collection.updateColumn(open.id, {
-                    pin: key === "start" || key === "end" ? key : null,
-                  })
-                }
-                items={[
-                  { id: "start", label: t(K.pin_start) },
-                  { id: "none", label: t(K.pin_none) },
-                  { id: "end", label: t(K.pin_end) },
-                ]}
-              />
-              <div className="flex items-end gap-2">
-                <NumberField
-                  label={t(K.width)}
-                  placeholder={t(K.width_auto)}
-                  value={open.width ?? null}
-                  minValue={open.minWidth ?? 64}
-                  maxValue={open.maxWidth ?? 640}
-                  step={8}
-                  onChange={(value) => collection.updateColumn(open.id, value === null ? { width: undefined } : { width: value })}
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onPress={() =>
-                    collection.updateColumn(open.id, { width: fitColumnWidth(open, collection.rows) })
-                  }
-                >
-                  {t(K.fit_width)}
-                </Button>
-              </div>
-              <Switch
-                label={t(K.wrap)}
-                value={open.wrap === true}
-                onChange={(wrap) => collection.updateColumn(open.id, { wrap })}
-              />
-            </fieldset>
-          ) : null}
-          <div>
-            <Button variant="ghost" size="sm" startIcon="rotate-ccw" onPress={collection.resetColumns}>
-              {t(K.reset_columns)}
-            </Button>
-          </div>
+                {t(K.fit_width)}
+              </Button>
+            </div>
+            <Switch
+              label={t(K.wrap)}
+              value={open.wrap === true}
+              onChange={(wrap) => collection.updateColumn(open.id, { wrap })}
+            />
+          </fieldset>
+        ) : null}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            startIcon="rotate-ccw"
+            onPress={collection.resetColumns}
+          >
+            {t(K.reset_columns)}
+          </Button>
         </div>
+      </div>
     </IconRegistryProvider>
   );
 }

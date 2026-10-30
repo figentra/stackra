@@ -15,7 +15,7 @@ import { SURFACE_DEMO_KEYS } from "#src/demos/free/surface/surface-demo-keys.con
 /** The demo's keys. */
 const K = SURFACE_DEMO_KEYS.demo_free.surface;
 
-/** Every level. */
+/** The Surface demo: every level. */
 export default function Levels() {
   const t = useCatalogueText(MESSAGES.en);
   return (

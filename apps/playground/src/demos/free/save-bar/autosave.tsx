@@ -19,7 +19,7 @@ const K = SAVE_BAR_KEYS.save_bar;
 const DEBOUNCE = 600;
 const DELAY = 700;
 
-/** SaveStatus: Autosave. */
+/** The SaveStatus demo: autosave. */
 export default function Autosave() {
   const t = useCatalogueText(MESSAGES.en);
   const [note, setNote] = useState("");

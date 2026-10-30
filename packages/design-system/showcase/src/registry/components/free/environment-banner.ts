@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Environment banner. */
+/** The Environment banner entry of the component registry. */
 export const FREE_ENVIRONMENT_BANNER: ComponentEntry = {
   slug: "environment-banner",
   tier: "free",

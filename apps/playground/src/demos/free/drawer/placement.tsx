@@ -54,7 +54,7 @@ function Sample({ buttonLabel, title, body, ...drawerProps }: SampleProps) {
   );
 }
 
-/** Drawer: Placement. */
+/** The Drawer demo: placement. */
 export default function Placement() {
   const t = useCatalogueText(MESSAGES.en);
   /** The edges the drawer opens on, each with the label of the button that opens it. */

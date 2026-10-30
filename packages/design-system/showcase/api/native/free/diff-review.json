@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "45c1d8804bf084e9",
+    "hash": "93ac3822d0c3b147",
     "propsFiles": ["ui/src/native/diff-review/diff-review.props.ts"]
   },
   "importLine": "import { DiffReview } from \"@stackra/ui/native\";",
@@ -9,7 +9,7 @@
     {
       "events": [
         {
-          "description": "",
+          "description": "Called with the new decisions when the reviewer accepts or rejects a change.",
           "name": "onDecisionsChange",
           "required": true,
           "source": "stackra",
@@ -26,14 +26,14 @@
       "name": "DiffReview",
       "props": [
         {
-          "description": "",
+          "description": "The changes to review, in order.",
           "name": "changes",
           "required": true,
           "source": "stackra",
           "type": "readonly DiffChange[]"
         },
         {
-          "description": "",
+          "description": "The reviewer decision for each change, by change id.",
           "name": "decisions",
           "required": true,
           "source": "stackra",

@@ -5,7 +5,10 @@
  *          publishes the web surfaces (`publishProduct`: bundles to the asset store, the platform `host:` and
  *          `wellknown:` rows, the release pointer or the canary); lists each landing surface's seed documents; submits
  *          each mobile app's EAS builds to its stores; and writes the deploy manifest.
- *          `surfacesOnly` publishes the web surfaces only, with no store check and no submission (dev and preview).
+ *          `surfacesOnly` publishes the web surfaces only, with no store check and no submission (dev and preview);
+ *          `mobileOnly` submits the mobile builds only (`stackra deploy --product --mobile-only`). Submission goes
+ *          through the `eas` driver to TestFlight and the Play internal track, and holds an Android build back while
+ *          Play has no release yet (the first upload is by hand).
  *          A dry run records every upload, KV write and submission instead of making it.
  * Boundary: reads `dist/product/build.json` (from `buildProduct`), so a deploy ships exactly what was built. Writes
  *           through the KV writer and runs `wrangler` and `eas` only. Importing the landing seeds into experience is
@@ -13,17 +16,21 @@
  *           before anything is submitted.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decisions 2 and 7); ADR 0440 (decision 2);
- *                     ADR 0170 (approvals).
+ *                     ADR 0170 (approvals); ADR 0482 (decision 8: the first Play upload).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import { buildConfig } from "@stackra/config";
+
+import { RunwayConfig } from "#config/runway.config";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
 import { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
+import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { publishProduct } from "#node/functions/publish-product.function";
 import { readRunway } from "#node/functions/read-runway.function";
@@ -31,19 +38,7 @@ import { runCommand } from "#node/functions/run-command.function";
 import type { ProductBuild } from "#node/types/product-build.type";
 import type { ProductDeploy } from "#node/types/product-deploy.type";
 import type { ProductDeployRequest } from "#node/types/product-deploy-request.type";
-
-/** The platform of an EAS build, from `eas build:view <id> --json`. */
-function platformOf(out: string): string {
-  try {
-    const value = JSON.parse(out) as { platform?: unknown } | readonly { platform?: unknown }[];
-    const platform = Array.isArray(value)
-      ? value[0]?.platform
-      : (value as { platform?: unknown }).platform;
-    return typeof platform === "string" ? platform.toLowerCase() : "all";
-  } catch {
-    return "all";
-  }
-}
+import type { ProductPublishResult } from "#node/types/product-publish-result.type";
 
 /**
  * Deploys the built product.
@@ -88,21 +83,24 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const kv = request.dryRun === true ? new DryRunEdgeKvDriver() : request.kv;
-  if (kv === undefined)
+  if (kv === undefined && request.mobileOnly !== true)
     throw new RunwayUnresolvedError("Name the edge KV namespace the deploy writes to");
-  const surfaces = await publishProduct({
-    repository,
-    environment: request.environment,
-    kv,
-    assets: request.assets,
-    served: request.served,
-    ...(request.canaryScopes === undefined ? {} : { canaryScopes: request.canaryScopes }),
-    ...(request.firstRelease === undefined ? {} : { firstRelease: request.firstRelease }),
-    ...(request.region === undefined ? {} : { region: request.region }),
-    ...(request.appLinks === undefined ? {} : { appLinks: request.appLinks }),
-    ...(request.review === undefined ? {} : { review: request.review }),
-    run,
-  });
+  const surfaces: ProductPublishResult =
+    request.mobileOnly === true || kv === undefined
+      ? { product: build.product, uploaded: [], written: [], releases: {}, canaries: {} }
+      : await publishProduct({
+          repository,
+          environment: request.environment,
+          kv,
+          assets: request.assets,
+          served: request.served,
+          ...(request.canaryScopes === undefined ? {} : { canaryScopes: request.canaryScopes }),
+          ...(request.firstRelease === undefined ? {} : { firstRelease: request.firstRelease }),
+          ...(request.region === undefined ? {} : { region: request.region }),
+          ...(request.appLinks === undefined ? {} : { appLinks: request.appLinks }),
+          ...(request.review === undefined ? {} : { review: request.review }),
+          run,
+        });
 
   const seeds = Object.fromEntries(
     Object.entries(build.surfaces)
@@ -111,26 +109,27 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
   );
 
   const submitted: Record<string, string[]> = {};
+  const held: Record<string, string> = {};
   for (const [app, built] of Object.entries(build.mobile).filter(([key]) => apps.includes(key))) {
-    const cwd = join(repository, built.dir);
+    const eas = Object.assign(new EasProviderDriver(buildConfig(RunwayConfig)), {
+      projectDir: join(repository, built.dir),
+      run,
+    });
+    // Play takes the first bundle only by hand (ADR 0482 decision 8): hold Android until that upload exists.
+    const packageName = root.mobile?.[app]?.identity?.android?.package;
+    const firstUpload =
+      request.play === undefined || packageName === undefined || request.dryRun === true
+        ? true
+        : (await request.play.findApp(packageName))?.hasRelease === true;
     submitted[app] = [];
     for (const id of built.buildIds) {
-      const platform = platformOf(await run("eas", ["build:view", id, "--json"], { cwd }));
-      await run(
-        "eas",
-        [
-          "submit",
-          "--platform",
-          platform,
-          "--id",
-          id,
-          "--profile",
-          "production",
-          "--non-interactive",
-          "--json",
-        ],
-        { cwd },
-      );
+      const platform = await eas.platformOf(id);
+      if (!firstUpload && platform === "android") {
+        held[app] =
+          `${packageName} has no Play release yet: upload ${id} by hand first (stackra mobile onboard lists the steps)`;
+        continue;
+      }
+      await eas.submit(id, "production", platform);
       submitted[app].push(id);
     }
   }
@@ -143,6 +142,7 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
     surfaces,
     seeds,
     submitted,
+    ...(Object.keys(held).length === 0 ? {} : { held }),
     planned: "calls" in run ? (run.calls as DeployStep[]) : [],
   };
   const out = join(repository, PRODUCT_BUILD_SETTINGS.deployManifest(request.environment));

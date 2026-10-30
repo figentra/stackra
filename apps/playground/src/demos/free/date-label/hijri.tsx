@@ -23,7 +23,7 @@ const CALENDARS = [
   { caption: K.hijri, calendar: "islamic-umalqura" },
 ] as const;
 
-/** DateLabel: Hijri. */
+/** The DateLabel demo: hijri. */
 export default function Hijri() {
   const t = useCatalogueText(MESSAGES.en);
   return (

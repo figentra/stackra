@@ -18,7 +18,7 @@ const K = FORM_KEYS.form;
 /** HeroUI's own field look, for the plain controls: border, background, focus ring, invalid and disabled states. */
 const CONTROL = "input w-full";
 
-/** Form: Description. */
+/** The Form demo: description. */
 export default function DescriptionDemo() {
   const t = useCatalogueText(MESSAGES.en);
   // useId, not a literal: the page draws a demo more than once (its section, the hero, the RTL panel).

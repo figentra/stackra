@@ -16,7 +16,7 @@ import { STEPPER_DEMO_KEYS } from "#src/demos/free/stepper/stepper-demo-keys.con
 /** The demo's keys. */
 const K = STEPPER_DEMO_KEYS.demo_free.stepper.compact;
 
-/** Stepper: compact. */
+/** The Stepper demo: compact. */
 export default function Compact() {
   const t = useCatalogueText(MESSAGES.en);
   const steps = [

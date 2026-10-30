@@ -423,7 +423,7 @@ export function SettingsScreen() {
             <View
               accessible
               accessibilityLabel={t(K.accent_swatch, { hex: accentHex })}
-              className="size-8 rounded-full border border-border"
+              className="size-8 rounded-[var(--radius-pill)] border border-border"
               style={{ backgroundColor: accentHex }}
             />
             <Switch

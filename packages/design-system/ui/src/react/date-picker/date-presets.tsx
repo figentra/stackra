@@ -21,7 +21,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 /** The presets' keys. */
 const K = DISPLAY_KEYS.ui.date_presets;
 
-/** One-day shortcuts. */
+/** Draws one-day shortcut buttons such as today. */
 export function DatePresets({
   presets,
   today,

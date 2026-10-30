@@ -8,6 +8,8 @@
 
 /** The ids a control is named and described by. */
 export interface SettingsCellIds {
+  /** The id of the title element that names the control. */
   readonly title: string;
+  /** The id of the description element; undefined without one. */
   readonly description: string | undefined;
 }

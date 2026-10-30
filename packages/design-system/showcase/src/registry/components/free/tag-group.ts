@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tag group. */
+/** The Tag group entry of the component registry. */
 export const FREE_TAG_GROUP: ComponentEntry = {
   slug: "tag-group",
   tier: "free",

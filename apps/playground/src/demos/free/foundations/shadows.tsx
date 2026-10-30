@@ -11,7 +11,7 @@ import { SHOWCASE_THEME } from "#src/constants/showcase-theme.constant";
 /** A CSS custom property reference. */
 const cssVar = (name: string) => `var(--${name})`;
 
-/** Foundations: Shadows. */
+/** The Foundations demo: shadows. */
 export default function Shadows() {
   return (
     <ul className="flex flex-wrap gap-6">

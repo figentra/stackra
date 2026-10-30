@@ -18,7 +18,7 @@ const PRODUCT = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#d6c3a5"/><path d="M20 22h24l-3 28H23z" fill="#6b4f3a"/><rect x="18" y="18" width="28" height="5" fill="#3f2e22"/></svg>',
 )}`;
 
-/** Thumbnail: Fallbacks. */
+/** The Thumbnail demo: fallbacks. */
 export default function Fallbacks() {
   const t = useCatalogueText(MESSAGES.en);
   const samples = [

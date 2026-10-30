@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Pagination. */
+/** The Pagination entry of the component registry. */
 export const FREE_PAGINATION: ComponentEntry = {
   slug: "pagination",
   tier: "free",

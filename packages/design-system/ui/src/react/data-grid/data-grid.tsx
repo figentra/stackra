@@ -580,7 +580,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
           aria-readonly={isReadOnly || undefined}
           aria-activedescendant={draft === null && rows.length > 0 ? cellId(active) : undefined}
           tabIndex={0}
-          className="relative overflow-auto rounded-lg border border-separator bg-background outline-none select-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="relative overflow-auto rounded-[var(--radius-control)] border border-separator bg-background outline-none select-none focus-visible:ring-2 focus-visible:ring-focus"
           style={{ maxHeight: height }}
           onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           onKeyDown={onKeyDown}
@@ -673,7 +673,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
                               label={`${column.label}, ${model.textOf(model.valueOf(row, columnOf(0)), columnOf(0))}`}
                             />
                           ) : column.type === "boolean" ? (
-                            <span className="inline-flex size-4 items-center justify-center rounded border border-default">
+                            <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control-inner)] border border-default">
                               {value === true ? <Icon name="check" size="sm" /> : null}
                               <span className="sr-only">
                                 {model.textOf(value === true, column)}
@@ -692,7 +692,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
                               data-fill-handle
                               aria-hidden
                               title={t(K.fill_handle)}
-                              className="absolute -end-1 -bottom-1 z-[3] size-2.5 cursor-crosshair rounded-sm border border-background bg-accent"
+                              className="absolute -end-1 -bottom-1 z-[3] size-2.5 cursor-crosshair rounded-[var(--radius-control-inner)] border border-background bg-accent"
                               onPointerDown={(event) => {
                                 event.stopPropagation();
                                 dragging.current = "fill";

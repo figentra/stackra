@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Slider. */
+/** The Slider entry of the component registry. */
 export const FREE_SLIDER: ComponentEntry = {
   slug: "slider",
   tier: "free",

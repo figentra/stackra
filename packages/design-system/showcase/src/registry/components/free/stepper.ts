@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Stepper. */
+/** The Stepper entry of the component registry. */
 export const FREE_STEPPER: ComponentEntry = {
   slug: "stepper",
   tier: "free",

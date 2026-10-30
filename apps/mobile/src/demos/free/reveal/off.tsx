@@ -16,7 +16,7 @@ import { REVEAL_DEMO_KEYS } from "#src/demos/free/reveal/reveal-demo-keys.consta
 const K = REVEAL_DEMO_KEYS.demo_free.reveal.off;
 const R = REVEAL_DEMO_KEYS.demo_free.reveal.replay;
 
-/** No entrance. */
+/** The Reveal demo: content with no entrance motion. */
 export default function Off() {
   const [run, setRun] = useState(0);
   const t = useCatalogueText(MESSAGES.en);

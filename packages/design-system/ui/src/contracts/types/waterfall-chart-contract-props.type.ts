@@ -18,6 +18,7 @@ export interface WaterfallChartContractProps {
   readonly endLabel: string;
   /** The chart's accessible name, such as "Profit, Q3 to Q4". */
   readonly label: string;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
   /** The plot's height in pixels; 240 by default. */
   readonly height?: number | undefined;

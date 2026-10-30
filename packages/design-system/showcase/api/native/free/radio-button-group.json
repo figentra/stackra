@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "f0fbe27d3a48b310",
+    "hash": "cce76521f418073d",
     "propsFiles": ["ui/src/native/radio-button-group/radio-button-group.props.ts"]
   },
   "importLine": "import { RadioButtonGroup } from \"@stackra/ui/native\";",
@@ -19,7 +19,7 @@
       "name": "RadioButtonGroup",
       "props": [
         {
-          "description": "The cards.",
+          "description": "The choice cards, one per option.",
           "name": "items",
           "required": true,
           "source": "stackra",

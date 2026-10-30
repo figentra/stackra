@@ -14,7 +14,7 @@ import { LIST_KEYS } from "#src/demos/free/list/list-keys.constant";
 /** The demo's keys. */
 const K = LIST_KEYS.list;
 
-/** List: Slots. */
+/** The List demo: slots. */
 export default function Slots() {
   const t = useCatalogueText(MESSAGES.en);
   /** Rows with every slot. */

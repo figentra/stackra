@@ -27,6 +27,7 @@ import TAMO from "./tamo.json";
 import VELORA from "./velora.json";
 import type { BrandTheme } from "./brand-theme.type";
 
+/** The approved brand layers the showcase offers, Stackra first. */
 // shortcut: vendored copies of the brand repo's layers; read them from @figentra/brand once the showcase may depend on it.
 export const BRAND_THEMES: readonly BrandTheme[] = [
   {

@@ -25,7 +25,7 @@ function Disc() {
   return <span aria-hidden="true" className="inline-flex size-10 bg-default" />;
 }
 
-/** Badge: Sizes. */
+/** The Badge demo: sizes. */
 export default function Sizes() {
   const t = useCatalogueText(MESSAGES.en);
   return (

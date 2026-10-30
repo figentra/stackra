@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Data view. */
+/** The Data view entry of the component registry. */
 export const FREE_DATA_VIEW: ComponentEntry = {
   slug: "data-view",
   tier: "free",
@@ -15,7 +15,13 @@ export const FREE_DATA_VIEW: ComponentEntry = {
   platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "DataView",
-  parts: ["DataView", "CollectionFilterEditor", "CollectionSortEditor", "DataViewCards", "SavedViewsMenu"],
+  parts: [
+    "DataView",
+    "CollectionFilterEditor",
+    "CollectionSortEditor",
+    "DataViewCards",
+    "SavedViewsMenu",
+  ],
   hero: {},
   examples: [
     { id: "basics", card: true, platforms: ["react"] },
@@ -29,6 +35,17 @@ export const FREE_DATA_VIEW: ComponentEntry = {
   ],
   related: ["free/data-table", "free/collection-engine", "free/data-grid"],
   tokens: ["color.surface", "color.border", "radius.container"],
-  keywords: ["table", "grid", "list", "cards", "filter", "sort", "group", "saved views", "toolbar", "export"],
+  keywords: [
+    "table",
+    "grid",
+    "list",
+    "cards",
+    "filter",
+    "sort",
+    "group",
+    "saved views",
+    "toolbar",
+    "export",
+  ],
   status: "new",
 };

@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/typography/tones.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "tones" demo of the native `Text`: each `tone` on the page background and on a surface.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6); STA-416 FR-013.\n */\nimport { TextTone } from "@stackra/ui/contracts";\nimport { Surface, Text } from "@stackra/ui/native";\nimport { View } from "react-native";\n\n/** The tone names, side by side on the page and on a secondary surface. */\nexport default function Tones() {\n  return (\n    <View className="flex-row gap-3">\n      <View className="flex-1 gap-1">\n        {TextTone.map((tone) => (\n          <Text key={tone} tone={tone}>\n            {tone}\n          </Text>\n        ))}\n      </View>\n      <Surface variant="secondary" className="flex-1 gap-1">\n        {TextTone.map((tone) => (\n          <Text key={tone} tone={tone}>\n            {tone}\n          </Text>\n        ))}\n      </Surface>\n    </View>\n  );\n}\n';

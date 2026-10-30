@@ -25,7 +25,10 @@ export default function Offers() {
   return (
     <Carousel label={t(K.label)}>
       {slides.map(([title, note, surface]) => (
-        <View key={title} className={`h-40 justify-end gap-1 rounded-xl p-5 ${surface}`}>
+        <View
+          key={title}
+          className={`h-40 justify-end gap-1 rounded-[var(--radius-container)] p-5 ${surface}`}
+        >
           <Text className="text-lg font-semibold">{t(K[title])}</Text>
           <Text type="small" tone="muted">
             {t(K[note])}

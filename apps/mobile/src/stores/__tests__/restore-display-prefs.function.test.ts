@@ -43,7 +43,7 @@ const fakes = vi.hoisted(() => {
 vi.mock("@stackra/ui/native", () => ({ haptics: fakes.haptics }));
 vi.mock("../theme-settings.store", () => ({ themeSettings: { dispatch: fakes.dispatch } }));
 vi.mock("../theme-transition.store", () => ({ themeTransition: fakes.themeTransition }));
-vi.mock("../../constants/brand-themes.constant", () => ({
+vi.mock("#src/constants/brand-themes.constant", () => ({
   BRAND_THEMES: [
     { id: "figentra", theme: "figentra-theme" },
     { id: "organza", theme: "organza-theme" },

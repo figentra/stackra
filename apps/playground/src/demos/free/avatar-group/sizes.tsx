@@ -31,7 +31,7 @@ const BRANCHES = [
   { id: "dmm", name: "Dammam Corniche" },
 ];
 
-/** AvatarGroup: Sizes. */
+/** The AvatarGroup demo: sizes. */
 export default function Sizes() {
   const t = useCatalogueText(MESSAGES.en);
   return (

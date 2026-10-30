@@ -124,7 +124,11 @@ export function MorphButton({
         size={size}
         label={words}
         className={
-          cn("overflow-hidden", isRound && "aspect-square rounded-full px-0", className) || ""
+          cn(
+            "overflow-hidden",
+            isRound && "aspect-square rounded-[var(--radius-pill)] px-0",
+            className,
+          ) || ""
         }
         accessibilityState={{ busy: shown === "loading" }}
         {...(isDisabled === undefined ? {} : { isDisabled })}

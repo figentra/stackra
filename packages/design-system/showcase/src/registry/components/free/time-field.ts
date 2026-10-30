@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Time field. */
+/** The Time field entry of the component registry. */
 export const FREE_TIME_FIELD: ComponentEntry = {
   slug: "time-field",
   tier: "free",

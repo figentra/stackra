@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Collection engine. */
+/** The Collection engine entry of the component registry. */
 export const FREE_COLLECTION_ENGINE: ComponentEntry = {
   slug: "collection-engine",
   tier: "free",

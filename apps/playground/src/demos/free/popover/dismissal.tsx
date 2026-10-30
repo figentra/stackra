@@ -77,7 +77,7 @@ function ClosableSample({
   );
 }
 
-/** Popover: Dismissal. */
+/** The Popover demo: dismissal. */
 export default function Dismissal() {
   const t = useCatalogueText(MESSAGES.en);
   return (

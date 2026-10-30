@@ -23,6 +23,6 @@ export interface StudioDeviceProps {
   readonly time: string;
   /** True while the screen is a picture (scaled down): its content takes no input, yet still scrolls. */
   readonly isInert: boolean;
-  /** The template. */
+  /** The template drawn on the screen. */
   readonly children: ReactNode;
 }

@@ -28,7 +28,11 @@ function runOf(run: ReturnType<typeof markdownInlineOf>[number]): ReactElement {
       return <Text className="italic">{run.text}</Text>;
     }
     case "code": {
-      return <Text className="rounded bg-default/60 font-mono">{run.text}</Text>;
+      return (
+        <Text className="rounded-[var(--radius-control-inner)] bg-default/60 font-mono">
+          {run.text}
+        </Text>
+      );
     }
     case "link": {
       const href = run.href ?? "";

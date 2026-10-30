@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Filter panel. */
+/** The Filter panel entry of the component registry. */
 export const FREE_FILTER_PANEL: ComponentEntry = {
   slug: "filter-panel",
   tier: "free",

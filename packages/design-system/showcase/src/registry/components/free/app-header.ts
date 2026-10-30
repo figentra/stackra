@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** App header. */
+/** The App header entry of the component registry. */
 export const FREE_APP_HEADER: ComponentEntry = {
   slug: "app-header",
   tier: "free",

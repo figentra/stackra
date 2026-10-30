@@ -8,6 +8,8 @@
 
 /** One styling slot. */
 export interface ApiSlot {
+  /** The class name or `classNames` key. */
   readonly name: string;
+  /** What the slot styles. */
   readonly description: string;
 }

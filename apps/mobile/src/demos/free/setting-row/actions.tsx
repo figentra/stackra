@@ -14,7 +14,7 @@ import { SETTING_ROW_DEMO_KEYS } from "#src/demos/free/setting-row/setting-row-d
 /** The demo's keys. */
 const K = SETTING_ROW_DEMO_KEYS.demo_free.setting_row;
 
-/** Actions. */
+/** The SettingRow demo: a row with actions. */
 export default function Actions() {
   const t = useCatalogueText(MESSAGES.en);
   return (

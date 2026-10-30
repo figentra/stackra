@@ -14,9 +14,5 @@ import { Text } from "#native/text/text";
 /** A number in the locale and the customer's digits. */
 export function NumberValue({ value, options, className }: NumberValueProps): ReactElement {
   const format = useNumberFormat();
-  return (
-    <Text {...(className ? { className } : {})}>
-      {format(value, options)}
-    </Text>
-  );
+  return <Text {...(className ? { className } : {})}>{format(value, options)}</Text>;
 }

@@ -12,6 +12,7 @@ import { API_DOCS } from "#src/components/component-page/api-docs.constant";
 
 const CACHE = new Map<string, Promise<ApiDoc>>();
 
+/** Starts loading an entry's API doc for a platform, cached per doc; undefined when none was generated. */
 export function preloadApiDoc(platform: Platform, key: string): Promise<ApiDoc> | undefined {
   const id = `${platform}/${key}`;
   const load = API_DOCS[id];

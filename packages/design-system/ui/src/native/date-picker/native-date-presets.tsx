@@ -20,7 +20,7 @@ import { Text } from "#native/text/text";
 /** The presets' keys. */
 const K = DISPLAY_KEYS.ui.date_presets;
 
-/** One-day shortcuts. */
+/** Draws one-day shortcut buttons such as today. */
 export function NativeDatePresets({
   presets,
   today,

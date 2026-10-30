@@ -30,7 +30,13 @@ export function ScrollArea({
       orientation={orientation}
       size={fadeSize}
       data-slot="scroll-area"
-      style={maxSize === undefined ? undefined : isVertical ? { maxHeight: maxSize } : { maxWidth: maxSize }}
+      style={
+        maxSize === undefined
+          ? undefined
+          : isVertical
+            ? { maxHeight: maxSize }
+            : { maxWidth: maxSize }
+      }
       className={cn(
         "rounded-[var(--radius-container)] outline-none focus-visible:outline-2 focus-visible:outline-focus",
         className,

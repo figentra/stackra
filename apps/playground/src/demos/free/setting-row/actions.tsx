@@ -21,7 +21,7 @@ const ROWS = [
   { id: "staff", icon: Icons.Users },
 ] as const;
 
-/** SettingRow: Actions. */
+/** The SettingRow demo: actions. */
 export default function Actions() {
   const t = useCatalogueText(MESSAGES.en);
   return (

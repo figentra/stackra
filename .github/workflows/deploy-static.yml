@@ -62,5 +62,5 @@ jobs:
       # in are not installed; neither is deployed here.
       install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      infisical-project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
       smoke-url: https://static.stackra.figentra.com/schemas/index.json

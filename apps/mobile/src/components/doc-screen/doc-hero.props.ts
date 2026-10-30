@@ -11,7 +11,9 @@ import type { ReactNode } from "react";
 export interface DocHeroProps {
   /** Chips above the headline. */
   readonly chips?: ReactNode;
+  /** The page's headline, already translated. */
   readonly headline: string;
+  /** The paragraph under the headline, already translated. */
   readonly intro: string;
   /** "A · B · C". */
   readonly tags: string;

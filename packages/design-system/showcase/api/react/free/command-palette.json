@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "cdc07e355e729ef2",
+    "hash": "d3385790b92f0b99",
     "propsFiles": ["ui/src/react/command-palette/command-palette.props.ts"]
   },
   "importLine": "import { CommandPalette } from \"@stackra/ui/react\";",
@@ -26,7 +26,7 @@
       "name": "CommandPalette",
       "props": [
         {
-          "description": "",
+          "description": "The groups of commands to offer, in order.",
           "name": "sections",
           "required": true,
           "source": "stackra",

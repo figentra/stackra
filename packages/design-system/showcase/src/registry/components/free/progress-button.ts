@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Progress button. */
+/** The Progress button entry of the component registry. */
 export const FREE_PROGRESS_BUTTON: ComponentEntry = {
   slug: "progress-button",
   tier: "free",

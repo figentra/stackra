@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** AI mark. */
+/** The AI mark entry of the component registry. */
 export const FREE_AI_MARK: ComponentEntry = {
   slug: "ai-mark",
   tier: "free",

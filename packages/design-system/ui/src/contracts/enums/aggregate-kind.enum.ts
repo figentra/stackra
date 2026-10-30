@@ -10,5 +10,5 @@
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128).
 export const AggregateKind = Object.freeze(["sum", "avg", "min", "max", "count"] as const);
 
-/** One aggregate. */
+/** One way to fold a column into a single value. */
 export type AggregateKind = (typeof AggregateKind)[number];

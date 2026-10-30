@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** QR code. */
+/** The QR code entry of the component registry. */
 export const FREE_QR_CODE: ComponentEntry = {
   slug: "qr-code",
   tier: "free",

@@ -14,7 +14,7 @@ import { SIDE_PANEL_KEYS } from "#src/demos/free/side-panel/side-panel-keys.cons
 /** The demo's keys. */
 const K = SIDE_PANEL_KEYS.side_panel;
 
-/** SidePanel: Arabic. */
+/** The SidePanel demo: arabic. */
 export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   return (

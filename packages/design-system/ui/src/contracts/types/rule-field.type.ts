@@ -10,8 +10,11 @@ import type { SelectItem } from "#contracts/types/select-item.type";
 
 /** A field of a rule builder. */
 export interface RuleField {
+  /** A stable id, used by conditions. */
   readonly key: string;
+  /** The name shown for the field. */
   readonly label: string;
+  /** The kind of value, which picks the operators and the input. */
   readonly type: RuleFieldType;
   /** The choices of a `choice` field. */
   readonly options?: readonly SelectItem[] | undefined;

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Command palette. */
+/** The Command palette entry of the component registry. */
 export const FREE_COMMAND_PALETTE: ComponentEntry = {
   slug: "command-palette",
   tier: "free",

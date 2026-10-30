@@ -46,7 +46,7 @@ export function HoloCard({
         onPointerMove={isLive ? onMove : undefined}
         onPointerLeave={isLive ? () => set(0.5, 0.5, false) : undefined}
         className={cn(
-          "relative isolate overflow-hidden rounded-2xl bg-surface shadow-lg transition-transform duration-200 ease-out [transform-style:preserve-3d] [transform:rotateX(var(--holo-rx,0deg))_rotateY(var(--holo-ry,0deg))] motion-reduce:transition-none",
+          "relative isolate overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg transition-transform duration-200 ease-out [transform-style:preserve-3d] [transform:rotateX(var(--holo-rx,0deg))_rotateY(var(--holo-ry,0deg))] motion-reduce:transition-none",
           className,
         )}
       >

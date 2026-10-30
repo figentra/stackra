@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Swipeable tabs. */
+/** The Swipeable tabs entry of the component registry. */
 export const FREE_SWIPEABLE_TABS: ComponentEntry = {
   slug: "swipeable-tabs",
   tier: "free",

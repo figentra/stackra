@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/kpi/band.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "band" demo of the native Kpi: a band of kpis.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); STA-1371 (wave 3b).\n */\nimport { KpiGroup, Stat, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { KPI_DEMO_KEYS } from "#src/demos/free/kpi/kpi-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = KPI_DEMO_KEYS.demo_free.kpi.band;\n\n/** A month at a glance in one band. */\nexport default function Band() {\n  const t = useCatalogueText(MESSAGES.en);\n  return (\n    <KpiGroup label={t(K.band)}>\n      <Stat\n        label={t(K.revenue)}\n        value={184_200}\n        trend={0.124}\n        sparkline={[12, 14, 13, 17, 16, 19, 22]}\n      />\n      <Stat label={t(K.orders)} value={2140} trend={0.06} />\n      <Stat label={t(K.refunds)} value={38} trend={0.18} better="down" />\n      <Stat label={t(K.basket)} value={86} target={100} />\n    </KpiGroup>\n  );\n}\n';

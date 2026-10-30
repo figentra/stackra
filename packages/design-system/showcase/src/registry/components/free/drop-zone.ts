@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Drop zone. */
+/** The Drop zone entry of the component registry. */
 export const FREE_DROP_ZONE: ComponentEntry = {
   slug: "drop-zone",
   tier: "free",

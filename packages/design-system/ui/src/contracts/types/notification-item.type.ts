@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 
-/** One notification. */
+/** One notification in a notifications panel. */
 export interface NotificationItem {
   /** A stable id, handed back to `onItemPress` and `onDismiss`. */
   readonly id: string;

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "eba1c6ed74cbfc10",
+    "hash": "16220e3fe31825e1",
     "propsFiles": [
       "ui/src/native/chart/cartesian-figure.props.ts",
       "ui/src/native/chart/chart-frame.props.ts",
@@ -233,14 +233,14 @@
           "type": "ReactNode"
         },
         {
-          "description": "",
+          "description": "Extra classes for the frame container.",
           "name": "className",
           "required": false,
           "source": "stackra",
           "type": "string"
         },
         {
-          "description": "The plot.",
+          "description": "The plot drawn inside the frame.",
           "name": "children",
           "required": true,
           "source": "stackra",
@@ -252,14 +252,14 @@
       "name": "ChartReadout",
       "props": [
         {
-          "description": "",
+          "description": "The pressed row name, shown as the heading.",
           "name": "title",
           "required": true,
           "source": "stackra",
           "type": "string"
         },
         {
-          "description": "",
+          "description": "Each series value at the pressed row, with its colour.",
           "name": "items",
           "required": true,
           "source": "stackra",

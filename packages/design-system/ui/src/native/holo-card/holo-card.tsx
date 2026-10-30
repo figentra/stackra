@@ -69,7 +69,10 @@ export function HoloCard({
       {...(isLive
         ? { onTouchStart: move, onTouchMove: move, onTouchEnd: release, onTouchCancel: release }
         : {})}
-      className={["overflow-hidden rounded-2xl bg-surface shadow-lg", className]
+      className={[
+        "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg",
+        className,
+      ]
         .filter(Boolean)
         .join(" ")}
       style={isLive ? card : undefined}
@@ -82,7 +85,7 @@ export function HoloCard({
           className="absolute inset-0"
         >
           <Animated.View
-            className="absolute left-0 top-0 rounded-full bg-white"
+            className="absolute left-0 top-0 rounded-[var(--radius-pill)] bg-white"
             style={[{ width: GLARE, height: GLARE }, glare]}
           />
         </View>

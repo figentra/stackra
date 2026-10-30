@@ -8,9 +8,13 @@
 
 /** One order of the demos; the number and the customer are sample data, never translated. */
 export interface TableOrder {
+  /** The row's stable key. */
   readonly id: string;
+  /** The order number as shown: `#1001`. */
   readonly order: string;
+  /** A sample person's name. */
   readonly customer: string;
+  /** Where the order stands in payment. */
   readonly status: "paid" | "pending" | "refunded";
   /** In US dollars. */
   readonly total: number;

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** KPI. */
+/** The KPI entry of the component registry. */
 export const FREE_KPI: ComponentEntry = {
   slug: "kpi",
   tier: "free",

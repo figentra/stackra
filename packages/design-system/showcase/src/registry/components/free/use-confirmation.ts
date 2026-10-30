@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** useConfirmation. */
+/** The useConfirmation entry of the component registry. */
 export const FREE_USE_CONFIRMATION: ComponentEntry = {
   slug: "use-confirmation",
   tier: "free",

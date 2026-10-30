@@ -9,6 +9,8 @@ import type { NotificationItem } from "#contracts/types/notification-item.type";
 
 /** A group heading (undefined for items with none) and its items in their given order. */
 export interface NotificationGroup {
+  /** The group heading; undefined for items with none. */
   readonly heading: string | undefined;
+  /** The notifications in the group, in their given order. */
   readonly items: readonly NotificationItem[];
 }

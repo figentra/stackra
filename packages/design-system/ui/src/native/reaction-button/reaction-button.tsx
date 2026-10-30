@@ -61,7 +61,7 @@ export function ReactionButton({
         count: number,
       })}
       accessibilityState={{ checked: isSelected, disabled: Boolean(isDisabled) }}
-      className={`min-h-9 flex-row items-center gap-1.5 self-start rounded-full border px-3 ${isSelected ? "border-accent bg-accent-soft" : "border-border bg-surface"} ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`}
+      className={`min-h-9 flex-row items-center gap-1.5 self-start rounded-[var(--radius-pill)] border px-3 ${isSelected ? "border-accent bg-accent-soft" : "border-border bg-surface"} ${isDisabled ? "opacity-50" : ""} ${className ?? ""}`}
     >
       <Text>{emoji}</Text>
       <Text type="small" tone={isSelected ? "accent" : "default"}>

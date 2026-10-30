@@ -20,7 +20,7 @@ const NAMES = [
 /** The list that lays samples out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Avatar: Names. */
+/** The Avatar demo: names. */
 export default function Names() {
   return (
     <ul className={ROW}>

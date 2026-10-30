@@ -10,10 +10,14 @@ import type { ImportIssue } from "#contracts/types/import-issue.type";
 
 /** The result of an import's dry run. */
 export interface ImportDryRun {
+  /** How many rows would be created. */
   readonly created: number;
+  /** How many existing rows would be updated. */
   readonly updated: number;
   /** Rows left alone (unchanged, or duplicates); left out, none are shown. */
   readonly skipped?: number | undefined;
+  /** How many rows would fail. */
   readonly failed: number;
+  /** The problems found, one per bad cell or row. */
   readonly issues: readonly ImportIssue[];
 }

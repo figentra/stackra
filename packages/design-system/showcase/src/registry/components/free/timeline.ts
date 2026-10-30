@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Timeline. */
+/** The Timeline entry of the component registry. */
 export const FREE_TIMELINE: ComponentEntry = {
   slug: "timeline",
   tier: "free",

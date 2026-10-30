@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Inline loading. */
+/** The Inline loading entry of the component registry. */
 export const FREE_INLINE_LOADING: ComponentEntry = {
   slug: "inline-loading",
   tier: "free",

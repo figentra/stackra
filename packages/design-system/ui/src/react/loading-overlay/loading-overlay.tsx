@@ -36,7 +36,9 @@ export function LoadingOverlay({
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[inherit] bg-background/75 p-4 text-center"
         >
           <Spinner size="md" />
-          <span className="text-sm font-medium">{message ?? t(DISPLAY_KEYS.ui.loading_overlay.loading)}</span>
+          <span className="text-sm font-medium">
+            {message ?? t(DISPLAY_KEYS.ui.loading_overlay.loading)}
+          </span>
         </div>
       ) : null}
     </div>

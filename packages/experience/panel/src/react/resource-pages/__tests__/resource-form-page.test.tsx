@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ResourceFormPage`: Create draws the input's own fields (no tree) and submits the values
  *          through the action runner, then opens the new record's View page; a refusal puts the server's field errors
  *          on the form; Edit reads the record first and starts the form from it with the id under the input's id key;
- *          the recorded fields draw by input type.
+ *          the recorded fields draw by input type; one recorded form shows each mode only the fields its action takes.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner, navigation and the schema form are spies, the web kit is
  *           DOM stand-ins, translation returns the key.
  * Runtime: node (vitest)
@@ -155,6 +155,35 @@ describe("ResourceFormPage", () => {
     expect(screen.queryByText("text:accountId")).toBeNull();
     await act(async () => fireEvent.click(screen.getByText("submit")));
     expect(spies.navigate).toHaveBeenCalledWith(Accounts.view, { id: "acc_1" });
+    dispose();
+  });
+
+  it("draws one recorded form per mode, each with only the fields its action takes", () => {
+    const dispose = registerResources({
+      "loyalty_kit.loyalty_account": {
+        options: { area: ApiArea.Admin, operations: { get: true, create: true, update: true } },
+        form: {
+          fields: [
+            { kind: "value", key: "principalId" },
+            { kind: "value", key: "nickname" },
+          ],
+        },
+      },
+    });
+    render(<ResourceFormPage resource={Accounts} mode="create" />);
+    expect(screen.getByText("text:principalId")).toBeTruthy();
+    expect(screen.queryByText("text:nickname")).toBeNull();
+    cleanup();
+
+    spies.useQuery.mockReturnValue({
+      data: { id: "acc_1", nickname: "Ada" },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceFormPage resource={Accounts} mode="edit" id="acc_1" />);
+    expect(screen.getByText("text:nickname")).toBeTruthy();
+    expect(screen.queryByText("text:principalId")).toBeNull();
     dispose();
   });
 });

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Search field. */
+/** The Search field entry of the component registry. */
 export const FREE_SEARCH_FIELD: ComponentEntry = {
   slug: "search-field",
   tier: "free",

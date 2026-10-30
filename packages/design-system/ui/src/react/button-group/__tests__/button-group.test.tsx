@@ -21,6 +21,8 @@ describe("ButtonGroup (web)", () => {
     );
     expect(screen.getByRole("group", { name: "Period" })).toBeTruthy();
     const week = screen.getByRole("button", { name: "Week" });
-    expect(week.hasAttribute("disabled") || week.getAttribute("aria-disabled") === "true").toBe(true);
+    expect(week.hasAttribute("disabled") || week.getAttribute("aria-disabled") === "true").toBe(
+      true,
+    );
   });
 });

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Sparkline. */
+/** The Sparkline entry of the component registry. */
 export const FREE_SPARKLINE: ComponentEntry = {
   slug: "sparkline",
   tier: "free",
@@ -17,10 +17,7 @@ export const FREE_SPARKLINE: ComponentEntry = {
   exportName: "Sparkline",
   parts: ["Sparkline"],
   hero: {},
-  examples: [
-    { id: "kinds", card: true },
-    { id: "stat" },
-  ],
+  examples: [{ id: "kinds", card: true }, { id: "stat" }],
   related: ["free/line-chart", "free/area-chart", "free/bar-chart"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["sparkline", "trend", "micro chart", "inline"],

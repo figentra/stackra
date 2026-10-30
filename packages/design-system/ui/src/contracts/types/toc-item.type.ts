@@ -10,6 +10,7 @@
 export interface TocItem {
   /** The id of the heading (web) or the key the app scrolls to (native). */
   readonly id: string;
+  /** The words shown for the entry. */
   readonly label: string;
   /** 2 for a section, 3 for a subsection; 2 by default. */
   readonly level?: 2 | 3 | undefined;

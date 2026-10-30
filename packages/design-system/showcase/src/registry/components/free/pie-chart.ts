@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Pie chart. */
+/** The Pie chart entry of the component registry. */
 export const FREE_PIE_CHART: ComponentEntry = {
   slug: "pie-chart",
   tier: "free",
@@ -17,10 +17,7 @@ export const FREE_PIE_CHART: ComponentEntry = {
   exportName: "PieChart",
   parts: ["PieChart"],
   hero: {},
-  examples: [
-    { id: "simple", card: true },
-    { id: "legend" },
-  ],
+  examples: [{ id: "simple", card: true }, { id: "legend" }],
   related: ["free/donut-chart", "free/radial-bar-chart", "free/bar-chart"],
   tokens: ["color.chart-1", "color.chart-2", "color.chart-3", "color.chart-4", "color.chart-5"],
   keywords: ["pie", "share", "proportion"],

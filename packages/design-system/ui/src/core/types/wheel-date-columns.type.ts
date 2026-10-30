@@ -9,6 +9,8 @@ import type { WheelPickerColumn } from "#contracts/types/wheel-picker-column.typ
 
 /** The wheels and the value as their keys. */
 export interface WheelDateColumns {
+  /** The day, month and year wheels, in locale order. */
   readonly columns: readonly WheelPickerColumn[];
+  /** The chosen item key of each wheel, by wheel key. */
   readonly value: Readonly<Record<string, string>>;
 }

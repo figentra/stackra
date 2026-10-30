@@ -89,7 +89,7 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
         // An element, not a ::before: axe cannot measure the contrast of text whose ancestor draws a pseudo-element.
         <span
           aria-hidden="true"
-          className="absolute inset-y-2 start-0 w-1 rounded-full bg-accent"
+          className="absolute inset-y-2 start-0 w-1 rounded-[var(--radius-pill)] bg-accent"
         />
       ) : null}
       {item.icon === undefined ? (

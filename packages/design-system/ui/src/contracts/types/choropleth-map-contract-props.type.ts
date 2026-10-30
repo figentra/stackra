@@ -22,6 +22,7 @@ export interface ChoroplethMapContractProps {
   readonly nameKey?: string | undefined;
   /** The map's accessible name and the data table's caption, such as "Orders by region, October". */
   readonly label: string;
+  /** How values are written; plain numbers in the locale by default. */
   readonly valueFormat?: Intl.NumberFormatOptions | undefined;
   /** The colour the five shades are made from; the first accent step by default. */
   readonly color?: ChartColor | undefined;

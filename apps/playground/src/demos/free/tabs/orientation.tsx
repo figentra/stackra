@@ -14,7 +14,7 @@ import { TABS_KEYS } from "#src/routes/tabs/tabs-keys.constant";
 /** The demo's keys. */
 const K = TABS_KEYS.tabs.orientation;
 
-/** Both orientations. */
+/** The Tabs demo: horizontal and vertical orientations. */
 export default function Orientation() {
   const t = useCatalogueText(MESSAGES.en);
   const sections = tabsSections(t);

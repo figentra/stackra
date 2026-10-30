@@ -10,6 +10,7 @@ import type { TocItem } from "#contracts/types/toc-item.type";
 
 /** Props shared by the web and native `TocRail`. */
 export interface TocRailContractProps {
+  /** The entries of the table of contents, in page order. */
   readonly items: readonly TocItem[];
   /** The id of the section in view, for a controlled rail. */
   readonly activeId?: string | undefined;

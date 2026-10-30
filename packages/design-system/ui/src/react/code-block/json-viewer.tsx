@@ -50,7 +50,7 @@ function Node({
   const [start, end] = isArray ? ["[", "]"] : ["{", "}"];
   return (
     <details open={depth < open} className="ps-4 [&[open]>summary>.count]:hidden">
-      <summary className="cursor-pointer list-item rounded outline-none focus-visible:ring-2 focus-visible:ring-focus">
+      <summary className="cursor-pointer list-item rounded-[var(--radius-control-inner)] outline-none focus-visible:ring-2 focus-visible:ring-focus">
         {key}
         {start}
         <span className="count text-muted"> {entries.length} </span>
@@ -84,7 +84,7 @@ export function JsonViewer({
       dir="ltr"
       data-slot="json-viewer"
       className={cn(
-        "overflow-x-auto rounded-xl border border-separator bg-surface-secondary p-3 text-start font-mono text-[13px] leading-6",
+        "overflow-x-auto rounded-[var(--radius-container)] border border-separator bg-surface-secondary p-3 text-start font-mono text-[13px] leading-6",
         className,
       )}
     >

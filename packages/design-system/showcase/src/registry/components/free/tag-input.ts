@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Tag input. */
+/** The Tag input entry of the component registry. */
 export const FREE_TAG_INPUT: ComponentEntry = {
   slug: "tag-input",
   tier: "free",

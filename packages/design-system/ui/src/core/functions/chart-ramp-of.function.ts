@@ -32,6 +32,8 @@ export function chartRampOf(
   const half = (reach / 2) * scale;
   const centre = Math.max(low + half, Math.min(lightness, high - half));
   return CHART_RAMP.steps.map((step) =>
-    oklchToHex(`oklch(${(centre + step * scale).toFixed(4)} ${chroma.toFixed(4)} ${hue.toFixed(2)})`),
+    oklchToHex(
+      `oklch(${(centre + step * scale).toFixed(4)} ${chroma.toFixed(4)} ${hue.toFixed(2)})`,
+    ),
   );
 }

@@ -8,7 +8,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Fullscreen bar. */
+/** The Fullscreen bar entry of the component registry. */
 export const FREE_FULLSCREEN_BAR: ComponentEntry = {
   slug: "fullscreen-bar",
   tier: "free",

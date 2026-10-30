@@ -32,7 +32,13 @@ export default function Server() {
             page: query.page,
             pageSize: query.pageSize,
           };
-          const page = applyCollection(orders, state, resolveCollectionColumns(columns, []), "page", "en");
+          const page = applyCollection(
+            orders,
+            state,
+            resolveCollectionColumns(columns, []),
+            "page",
+            "en",
+          );
           resolve({ items: page.rows, totalCount: page.matched.length });
         }, 600);
         signal.addEventListener("abort", () => {

@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Save bar. */
+/** The Save bar entry of the component registry. */
 export const FREE_SAVE_BAR: ComponentEntry = {
   slug: "save-bar",
   tier: "free",

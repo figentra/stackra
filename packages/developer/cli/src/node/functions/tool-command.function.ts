@@ -8,7 +8,8 @@
  *          checks the site gen assembles: `dev` keeps gen watching `src/` while `mint dev` runs, and `lint` runs
  *          `mint broken-links`, then `mint a11y`.
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
- *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown.
+ *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
+ *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
  * Boundary: starts at most one tool (two in sequence for a docs app's `lint`); a gen refusal stops before the tool
  *           and exits 1.
  * Runtime: node
@@ -91,6 +92,10 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       const member = readMember(cwd);
       if (task === "build" && member.layout === "package" && !hasTsdownConfig(cwd)) {
         io.out(`nothing to build in ${cwd}: gen wrote no entry\n`);
+        return 0;
+      }
+      if (task === "build" && member.layout === "service") {
+        io.out(`nothing to build in ${cwd}: Encore builds a service at deploy\n`);
         return 0;
       }
       const tool = resolveTool(task, member, { target, tier });

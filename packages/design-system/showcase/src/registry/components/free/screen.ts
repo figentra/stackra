@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Screen. */
+/** The Screen entry of the component registry. */
 export const FREE_SCREEN: ComponentEntry = {
   slug: "screen",
   tier: "free",

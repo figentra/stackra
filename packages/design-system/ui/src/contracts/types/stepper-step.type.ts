@@ -9,7 +9,7 @@
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { StepperStepStatus } from "#contracts/types/stepper-step-status.type";
 
-/** One step. */
+/** One step of a stepper, with its label and state. */
 export interface StepperStep {
   /** Unique within the stepper. */
   readonly id: string;

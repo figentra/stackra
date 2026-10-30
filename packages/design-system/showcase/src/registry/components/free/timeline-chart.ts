@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Timeline chart. */
+/** The Timeline chart entry of the component registry. */
 export const FREE_TIMELINE_CHART: ComponentEntry = {
   slug: "timeline-chart",
   tier: "free",

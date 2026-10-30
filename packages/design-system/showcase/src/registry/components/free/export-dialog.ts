@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Export dialog. */
+/** The Export dialog entry of the component registry. */
 export const FREE_EXPORT_DIALOG: ComponentEntry = {
   slug: "export-dialog",
   tier: "free",

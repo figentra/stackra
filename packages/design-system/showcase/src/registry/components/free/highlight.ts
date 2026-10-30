@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Highlight. */
+/** The Highlight entry of the component registry. */
 export const FREE_HIGHLIGHT: ComponentEntry = {
   slug: "highlight",
   tier: "free",

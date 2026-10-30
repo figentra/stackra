@@ -6,8 +6,8 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 2; ADR 0305 (one declaration per file).
  */
 
-/** The platforms. */
+/** The platforms an entry can ship on. */
 export const Platform = Object.freeze(["react", "native"] as const);
 
-/** One platform. */
+/** One component platform. */
 export type Platform = (typeof Platform)[number];

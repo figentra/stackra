@@ -15,7 +15,7 @@ import { LINK_KEYS } from "#src/demos/free/link/link-keys.constant";
 /** The demo's keys. */
 const K = LINK_KEYS.link;
 
-/** Link: Router. */
+/** The Link demo: router. */
 export default function Router() {
   const t = useCatalogueText(MESSAGES.en);
   const { search } = useLocation();

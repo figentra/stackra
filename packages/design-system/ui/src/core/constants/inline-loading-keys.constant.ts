@@ -9,7 +9,7 @@
  */
 import { keys } from "@stackra/i18n";
 
-/** InlineLoading's keys. */
+/** The catalogue keys for the InlineLoading words. */
 export const INLINE_LOADING_KEYS = keys({
   ui: { inline_loading: ["loading", "success", "error"] },
 });

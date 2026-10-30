@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Stacked meter. */
+/** The Stacked meter entry of the component registry. */
 export const FREE_STACKED_METER: ComponentEntry = {
   slug: "stacked-meter",
   tier: "free",

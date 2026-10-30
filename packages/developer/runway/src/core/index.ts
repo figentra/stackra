@@ -6,7 +6,8 @@
  *          check, the duplicate dev port check (`checkPorts`, STA-863), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
- *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), their enums, errors and types.
+ *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
+ *          (`mobileIdsOf`, ADR 0482), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -14,8 +15,11 @@
  */
 export { RunwayConfig } from "#config/runway.config";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
+export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
+export { GoogleProjectState } from "#core/enums/google-project-state.enum";
+export { OnboardStepState } from "#core/enums/onboard-step-state.enum";
 export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";
 export { RunwayCloud } from "#core/enums/runway-cloud.enum";
@@ -34,6 +38,7 @@ export { checkRegions } from "#core/functions/check-regions.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devPorts } from "#core/functions/dev-ports.function";
+export { mobileIdsOf } from "#core/functions/mobile-ids-of.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
 export { poolMaxOf } from "#core/functions/pool-max-of.function";
 export { previewDatabaseOf } from "#core/functions/preview-database-of.function";
@@ -45,9 +50,17 @@ export { rollback } from "#core/functions/rollback.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";
+export { AppleDeveloper } from "#core/ports/apple-developer.port";
+export { ExpoProjects } from "#core/ports/expo-projects.port";
+export { Firebase } from "#core/ports/firebase.port";
+export { GoogleCloud } from "#core/ports/google-cloud.port";
+export { PlayConsole } from "#core/ports/play-console.port";
 export { PreviewDatabaseBrancher } from "#core/ports/preview-database-brancher.port";
 export { RunwayProvider } from "#core/ports/runway-provider.port";
+export { SentryProjects } from "#core/ports/sentry-projects.port";
+export { VaultWriter } from "#core/ports/vault-writer.port";
 export type { AppRunway } from "#core/types/app-runway.type";
+export type { AppleBundle } from "#core/types/apple-bundle.type";
 export type { Brand } from "#core/types/brand.type";
 export type { DeployLock } from "#core/types/deploy-lock.type";
 export type { DeployRecord } from "#core/types/deploy-record.type";
@@ -56,7 +69,10 @@ export type { DeployStep } from "#core/types/deploy-step.type";
 export type { DeployTarget } from "#core/types/deploy-target.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
+export type { ExpoCredentials } from "#core/types/expo-credentials.type";
+export type { MobileIds } from "#core/types/mobile-ids.type";
 export type { PlacementIssue } from "#core/types/placement-issue.type";
+export type { PlayApp } from "#core/types/play-app.type";
 export type { PortIssue } from "#core/types/port-issue.type";
 export type { PreviewDatabase } from "#core/types/preview-database.type";
 export type { Product } from "#core/types/product.type";

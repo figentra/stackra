@@ -63,7 +63,7 @@ const FEW = ORDERS.slice(0, 5);
 /** The grid that lays the samples out one under the other. */
 const STACK = "grid gap-8";
 
-/** Table: States. */
+/** The Table demo: states. */
 export default function States() {
   const t = useCatalogueText(MESSAGES.en);
   /** The columns: every one sortable but the status. */

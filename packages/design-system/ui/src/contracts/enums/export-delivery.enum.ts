@@ -11,5 +11,5 @@
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the deliveries carry no labels.
 export const ExportDelivery = Object.freeze(["download", "email"] as const);
 
-/** One delivery. */
+/** One way an export reaches the user. */
 export type ExportDelivery = (typeof ExportDelivery)[number];

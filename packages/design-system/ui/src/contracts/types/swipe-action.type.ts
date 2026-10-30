@@ -14,7 +14,7 @@ import type { IconSlot } from "#contracts/types/icon-slot.type";
 export interface SwipeAction extends CollectionItem {
   /** The words under the icon, which are also the accessible name. */
   readonly label: string;
-  /** The icon. */
+  /** The icon drawn above the label. */
   readonly icon?: IconSlot | undefined;
   /** The fill colour. Defaults to `default`. */
   readonly tone?: Tone | undefined;

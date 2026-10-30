@@ -51,7 +51,7 @@ export function ColorPicker({
       />
       <View className="flex-row items-end gap-2">
         <View
-          className="size-11 rounded-xl border border-border"
+          className="size-11 rounded-[var(--radius-container)] border border-border"
           style={{ backgroundColor: hex }}
         />
         <View className="flex-1" style={{ direction: "ltr" }}>

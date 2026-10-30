@@ -116,7 +116,7 @@ export function TocRail({
             icon="list"
             label={t(UI_KEYS.ui.toc_rail.open)}
             variant="secondary"
-            className="rounded-full shadow-md"
+            className="rounded-[var(--radius-pill)] shadow-md"
           />
         }
       >

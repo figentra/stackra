@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "be06c8acca2de754",
+    "hash": "e2fbc1222741daf3",
     "propsFiles": ["ui/src/react/sunburst-chart/sunburst-chart.props.ts"]
   },
   "importLine": "import { SunburstChart } from \"@stackra/ui/react\";",
@@ -24,7 +24,7 @@
           "type": "string"
         },
         {
-          "description": "",
+          "description": "How values are written; plain numbers in the locale by default.",
           "name": "valueFormat",
           "required": false,
           "source": "stackra",

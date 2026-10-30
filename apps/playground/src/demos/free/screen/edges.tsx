@@ -58,7 +58,7 @@ function EdgesSample({
   );
 }
 
-/** Screen: Edges. */
+/** The Screen demo: edges. */
 export default function Edges() {
   const t = useCatalogueText(MESSAGES.en);
   return (

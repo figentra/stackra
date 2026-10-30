@@ -190,7 +190,7 @@ export function MirrorHero({ onBrowse, onTheme }: HeroProps) {
             <Button size="sm">{s(K.mirror.new_order)}</Button>
           </View>
         </View>
-        <View className="h-10 justify-center rounded-xl border border-border bg-field px-3">
+        <View className="h-10 justify-center rounded-[var(--radius-container)] border border-border bg-field px-3">
           <Text type="small" tone="muted" lang={lang}>
             {s(K.mirror.search)}
           </Text>
@@ -222,7 +222,7 @@ export function MirrorHero({ onBrowse, onTheme }: HeroProps) {
     <View className="gap-5 pb-6">
       <View className="flex-row items-center gap-2 px-4">
         <View
-          className="flex-row gap-1 rounded-2xl border border-border bg-surface p-1"
+          className="flex-row gap-1 rounded-[var(--radius-container)] border border-border bg-surface p-1"
           accessibilityRole="radiogroup"
           accessibilityLabel={t(K.mirror.direction)}
         >

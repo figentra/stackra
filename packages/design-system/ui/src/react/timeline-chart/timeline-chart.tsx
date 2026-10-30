@@ -90,14 +90,14 @@ export function TimelineChart({
                     key={task.key}
                     aria-hidden="true"
                     title={`${task.label}: ${date(task.start)} – ${date(task.end)}`}
-                    className="absolute top-2 flex h-6 items-center overflow-hidden rounded-md px-1"
+                    className="absolute top-2 flex h-6 items-center overflow-hidden rounded-[var(--radius-control)] px-1"
                     style={{
                       insetInlineStart: `${at * 100}%`,
                       width: `${length * 100}%`,
                       backgroundColor: paintOf(chartColorOf(task, 0)),
                     }}
                   >
-                    <span className="truncate rounded bg-surface/85 px-1.5 leading-5">
+                    <span className="truncate rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5 leading-5">
                       {task.label}
                     </span>
                   </span>

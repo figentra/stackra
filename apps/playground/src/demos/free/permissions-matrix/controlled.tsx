@@ -85,7 +85,7 @@ const GRANTS = {
   ],
 };
 
-/** PermissionsMatrix: Controlled. */
+/** The PermissionsMatrix demo: controlled. */
 export default function Controlled() {
   const t = useCatalogueText(MESSAGES.en);
   const roles = ROLES.map(([id, label]) => ({ id, label: t(label) }));

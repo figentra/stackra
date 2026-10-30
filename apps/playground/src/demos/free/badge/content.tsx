@@ -24,7 +24,7 @@ function Disc() {
   return <span aria-hidden="true" className="inline-flex size-10 bg-default" />;
 }
 
-/** Badge: Content. */
+/** The Badge demo: content. */
 export default function Content() {
   const t = useCatalogueText(MESSAGES.en);
   return (

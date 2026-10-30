@@ -7,7 +7,7 @@
  */
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
-/** Progress bar. */
+/** The Progress bar entry of the component registry. */
 export const FREE_PROGRESS_BAR: ComponentEntry = {
   slug: "progress-bar",
   tier: "free",

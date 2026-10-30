@@ -5,4 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.
  */
+
+/** The source text of `free/code-block/markdown.tsx`, as the Usage tab shows it. */
 export default '/**\n * Stackra file contract:\n * Purpose: the "markdown" demo of the native CodeBlock: markdown notes.\n * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.\n * Runtime: react-native\n * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); STA-1371 (wave 3b).\n */\nimport { MarkdownViewer, useCatalogueText } from "@stackra/ui/native";\n\nimport { MESSAGES } from "#src/constants/messages.constant";\nimport { CODE_BLOCK_DEMO_KEYS } from "#src/demos/free/code-block/code-block-demo-keys.constant";\n\n/** The demo\'s keys. */\nconst K = CODE_BLOCK_DEMO_KEYS.demo_free.code_block.markdown;\n\n/** Release notes written in Markdown. */\nexport default function Markdown() {\n  const t = useCatalogueText(MESSAGES.en);\n  return <MarkdownViewer source={t(K.source)} />;\n}\n';

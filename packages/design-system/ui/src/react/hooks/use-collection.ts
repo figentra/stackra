@@ -160,15 +160,18 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
   });
   const [refreshCount, setRefreshCount] = useState(0);
   const queryKey = JSON.stringify(query);
-  const previousKey = useRef<string | null>(null);
+  // The last fetched query without its page and cursor, and its page: `loadMore` moves both page and cursor.
+  const previous = useRef<{ rest: string; page: number } | null>(null);
   useEffect(() => {
     if (mode !== "server" || fetch === undefined) return;
     const controller = new AbortController();
+    const rest = JSON.stringify({ ...query, page: 0, cursor: null });
     const isAppend =
       paging === "infinite" &&
       query.page > 0 &&
-      previousKey.current === JSON.stringify({ ...query, page: query.page - 1 });
-    previousKey.current = queryKey;
+      previous.current?.rest === rest &&
+      previous.current.page === query.page - 1;
+    previous.current = { rest, page: query.page };
     setFetchState({ isLoading: true, error: undefined });
     fetch(query, controller.signal).then(
       (page) => {
