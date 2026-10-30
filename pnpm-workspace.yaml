@@ -227,6 +227,12 @@ catalogs:
     "@react-native-community/netinfo": 12.0.1
     expo-camera: 57.0.6
     expo-haptics: 57.0.3
+    # @stackra/ui's native copy button, file and image pickers, and the showcase's font loading (owner approval
+    # 2026-10-30, STA-1371): Expo SDK 57's bundled versions.
+    expo-clipboard: 57.0.2
+    expo-document-picker: 57.0.3
+    expo-image-picker: 57.0.20
+    expo-font: 57.0.4
     babel-preset-expo: 57.0.16
     react: 19.2.3
     react-dom: 19.2.3
