@@ -95,9 +95,13 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
-      # A broken build or a failing test never reaches Cloudflare.
+      # A broken build or a failing test never reaches Cloudflare. Gen runs for this member only: the root //#gen that
+      # test depends on walks every member, and the two left uninstalled above fail it (kind_unregistered_base).
       - name: Test and build
-        run: pnpm turbo run test build --filter=@figentra/worker-registry
+        run: |
+          pnpm turbo run build --filter=@figentra/worker-registry^... --filter=@stackra/cli...
+          (cd workers/registry && node ../../packages/developer/cli/dist/stackra.mjs gen)
+          pnpm turbo run test build --filter=@figentra/worker-registry --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
