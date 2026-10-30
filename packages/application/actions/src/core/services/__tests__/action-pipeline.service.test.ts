@@ -67,6 +67,7 @@ import { AnalyticsEvent, DomainEvent, IntegrationEvent } from "@stackra/events";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it, onTestFinished } from "@stackra/testing";
+import { vi } from "vitest";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
@@ -2143,6 +2144,9 @@ class BrokenQuery extends Query({
 
 describe("ActionPipeline tracing (ADR 0147, STA-1513)", () => {
   it("runs an action in one span with the call's ids and an ok outcome, no input values", async () => {
+    // A measured latency could equal the input value 7 (it did once, at 7 ms); a frozen clock makes it a known 0.
+    const now = vi.spyOn(globalThis.performance, "now").mockReturnValue(1000);
+    onTestFinished(() => now.mockRestore());
     const tracer = new RecordingTracer();
     const { pipeline } = setup([[Tracer, tracer]]);
     await pipeline.execute(
@@ -2160,7 +2164,7 @@ describe("ActionPipeline tracing (ADR 0147, STA-1513)", () => {
       actorId: "usr_1",
       scopeId: SCOPE.id,
     });
-    expect(span?.set).toMatchObject({ outcome: "ok", latencyMs: expect.any(Number) });
+    expect(span?.set).toMatchObject({ outcome: "ok", latencyMs: 0 });
     expect(span?.failed).toBeUndefined();
     const values = Object.values({ ...span?.attributes, ...span?.set });
     expect(values).not.toContain(7);
