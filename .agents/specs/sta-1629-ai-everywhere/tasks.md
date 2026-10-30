@@ -3,7 +3,7 @@
 **Input**: `.agents/specs/sta-1629-ai-everywhere/`
 
 - [x] T001 Verify core main state; ADRs 0490, 0491, 0492; spec, plan, tasks; Linear STA-1629 to STA-1638
-- [ ] T002 Owner approval of the ADRs and answers to the six owner questions (gate for every task below)
+- [x] T002 Owner approval of the ADRs and answers to the six owner questions (gate for every task below)
 
 ## Wave A
 

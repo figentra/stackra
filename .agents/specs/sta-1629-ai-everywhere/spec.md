@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft — waiting on the owner's approval of ADRs 0490, 0491 and 0492. No code before it.
+**Status**: Approved by the owner on 2026-10-30 (ADRs 0490, 0491, 0492 accepted; owner questions 1 to 5 answered yes). Building lane by lane.
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
@@ -156,6 +156,9 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 | Owner                                             | ADR approval; catalog entries; GPU cost per region; Meta business verification; MCP host directory reviews | all                      |
 
 ## Owner questions
+
+Answered 2026-10-30: 1 to 5 approved as proposed (recommender threshold 10,000 orders or 100,000 events). Still open: 6, the
+GCC speech provider; lane 8 builds `tools-speech` either way and the region map names the provider when chosen.
 
 1. Approve ADRs 0490, 0491, 0492 as written, or with changes.
 2. Catalog: `@ai-sdk/react` and `expo-audio`.

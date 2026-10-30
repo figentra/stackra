@@ -1,12 +1,12 @@
 ---
 title: "0490 — AI everywhere: client tools from frontend declarations, page context, personalisation as actions and tours as data"
-description: "Proposed · 2026-10-30"
+description: "Accepted · 2026-10-30"
 ---
 
 {/* Stackra file contract: Purpose: the decision record that one tool system drives every surface: server tools stay generated from actions and queries, client tools are generated from an app's routes, resources, panel actions, theming and tours, a declared page context travels with each turn, personalisation is ordinary actions, tours are documents of client-tool steps, and @stackra/ai gains react and native entries with the sidekick and generative cards. Boundary: decision text only; the lanes are .agents/specs/sta-1629-ai-everywhere. Runtime: docs. Governing contract: ADR template; ADR 0155, 0245, 0271, 0307, 0348, 0360, 0376, 0398, 0491, 0492. */}
 
 <Note>
-  Proposed (STA-1629). Amends
+  Accepted by the owner on 2026-10-30 (STA-1629). Amends
   [0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents)
   decision 3 and [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1. The
   shopper side is
@@ -33,7 +33,7 @@ must be closed the way server tools were: by generation from what the app alread
 
 1. **A client tool is the projection of a frontend declaration, generated, never hand-written.** 0245 decision 3
    reads: "A tool is the projection of a capability or of a frontend declaration, generated, never hand-written."
-   `ToolSource` gains `Client`. gen writes one client tool table per app member into `#stackra/client-tools` from:
+   `ToolSource` gains `Client`. gen collects the client tools of every module an app member mounts into its `#stackra/client-tools` (decision 16), from:
 
    | Declaration                               | Client tools                                                                                                  |
    | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -140,6 +140,18 @@ must be closed the way server tools were: by generation from what the app alread
     `native-audio` Expo module package on mobile and the till, per 0478) and streams it to the ai service, which runs
     `SpeechService.listen` for the tenant's region and metered on `speech.seconds`. No speech provider is named in
     client code.
+
+### Modularity
+
+16. **A tool belongs to the module that declares it.** Server tools come from a module's own actions and queries;
+    client tools come from a module's own routes, resources, placements, anchors, tours and cards, whether that module
+    lives in an app, a service or a package (0259, 0294 decision 13). Each module's rows carry its module key, ship
+    with the module and appear in its member's `stackra.manifest.json`; nothing outside the module lists, wraps or
+    edits them. gen only collects: an app's client tool table is the union of the modules it mounts, the gateway's
+    server tool table is the union of the deployed services' manifests (0492 decision 3). Removing a module removes
+    its tools, and a module never declares a tool for another module's capability. Isolation at run time stays the
+    service and the module boundary of 0294 decision 24, not a container per module: the only containers added by
+    this work are the tools-stack images of 0492.
 
 ## Consequences
 

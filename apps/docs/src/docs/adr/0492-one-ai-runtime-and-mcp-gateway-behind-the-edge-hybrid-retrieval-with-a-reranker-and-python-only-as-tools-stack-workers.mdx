@@ -1,14 +1,14 @@
 ---
 title: "0492 — One AI runtime and MCP gateway behind the edge, hybrid retrieval with a reranker, and Python only as tools-stack workers"
-description: "Proposed · 2026-10-30"
+description: "Accepted · 2026-10-30"
 ---
 
 {/* Stackra file contract: Purpose: the decision record that the AI runtime and the one MCP gateway are modules of OS's ai service, in-region, with Cloudflare only as layer 1 in front; that @stackra/search keeps its Postgres hybrid lanes and gains a reranker port, Arabic stemming, Arabizi and synonyms, with pgvector until a measured trigger; that Python runs only as pinned tools-stack images behind ports (OCR, reranking and embeddings, forecasting, recommendations, in-region speech); and which tools those are. Boundary: decision text only; lanes 7 to 9 of .agents/specs/sta-1629-ai-everywhere. Runtime: docs. Governing contract: ADR template; ADR 0155, 0221, 0237, 0284, 0348, 0360, 0376, 0404, 0444, 0490, 0491. */}
 
 <Note>
-  Proposed (STA-1629). Restates [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free)
-  decision 4 with its deployment, extends
-  [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) and
+  Accepted by the owner on 2026-10-30 (STA-1629). Restates
+  [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 4 with its deployment,
+  extends [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) and
   [0404](/adr/0404-search-facets-under-record-visibility-one-arabic-normaliser-and-the-embedder-token-from-the-secret-store),
   and adds images to the tools stack of
   [0444](/adr/0444-one-self-hosted-tools-stack-per-region-from-the-root-runway).
